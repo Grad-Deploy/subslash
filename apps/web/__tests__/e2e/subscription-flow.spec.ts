@@ -38,9 +38,10 @@ test.describe("Subscription Flow (E2E)", () => {
     await dialog.locator('input[name="billingDay"]').fill("15");
     await dialog.locator('button[type="submit"]').click();
 
-    // Submitting redirects to the dashboard, where the new card is listed.
+    // Submitting redirects to the dashboard, where the new card is listed. The
+    // first client-side hit may also wait on the dev server compiling the route.
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByRole("link", { name: /Netflix/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Netflix/ })).toBeVisible({ timeout: 30_000 });
   });
 
   test("체크인 플로우", async ({ page }) => {

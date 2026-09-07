@@ -6,6 +6,9 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "./ThemeProvider";
 import { AccountHubModal } from "../account/AccountHubModal";
 import { AutoImportModal } from "../import/AutoImportModal";
+import { NotifySettingsModal } from "../notify/NotifySettingsModal";
+import { useStore } from "@lib/store";
+import { useMirrorSync } from "@hooks/useMirrorSync";
 import { cn } from "@lib/utils";
 
 export function Header() {
@@ -13,6 +16,13 @@ export function Header() {
   const { theme, toggleTheme } = useTheme();
   const [isAccountsOpen, setIsAccountsOpen] = useState(false);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
+  const [isNotifyOpen, setIsNotifyOpen] = useState(false);
+  // Only the badge flag, so sync timestamps do not re-render the root layout.
+  const remindersOn = useStore((state) => state.notify.verified);
+
+  // The header is mounted on every route, so the mirror stays in step wherever
+  // the user edits their subscriptions.
+  useMirrorSync();
 
   const navLinks = [
     { name: "대시보드", href: "/dashboard" },
@@ -65,6 +75,20 @@ export function Header() {
             </button>
 
             <button
+              onClick={() => setIsNotifyOpen(true)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-sm active:scale-95",
+                remindersOn
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+                  : "bg-card hover:bg-muted",
+              )}
+              title="결제 임박 이메일 알림 설정"
+            >
+              <span>{remindersOn ? "🔔" : "🔕"}</span>
+              <span className="hidden sm:inline">결제 알림</span>
+            </button>
+
+            <button
               onClick={() => setIsAccountsOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border bg-card hover:bg-muted text-xs font-semibold transition-all shadow-sm active:scale-95"
               title="사용하는 구독 계정 관리 허브"
@@ -89,6 +113,7 @@ export function Header() {
         </div>
       </header>
 
+      <NotifySettingsModal isOpen={isNotifyOpen} onClose={() => setIsNotifyOpen(false)} />
       <AccountHubModal isOpen={isAccountsOpen} onClose={() => setIsAccountsOpen(false)} />
       <AutoImportModal isOpen={isAutoImportOpen} onClose={() => setIsAutoImportOpen(false)} />
     </>

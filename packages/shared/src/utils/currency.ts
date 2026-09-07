@@ -2,7 +2,8 @@ import { BillingCycle, Currency } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 
 export function formatKRW(amount: number): string {
-  return `₩${amount.toLocaleString("ko-KR")}`;
+  // The won has no subunit; never render fractional amounts.
+  return `₩${Math.round(amount).toLocaleString("ko-KR")}`;
 }
 
 export function formatUSD(amount: number): string {

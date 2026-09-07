@@ -16,6 +16,8 @@ interface CheckInModalProps {
   onSubmit: (count: number) => void;
   onKill?: (id: string) => void;
   result?: CheckInResponse;
+  /** Pre-selected answer, e.g. the one-tap button pressed in a reminder email. */
+  initialCount?: number;
 }
 
 export function CheckInModal({
@@ -25,18 +27,19 @@ export function CheckInModal({
   onSubmit,
   onKill,
   result,
+  initialCount = 0,
 }: CheckInModalProps) {
-  const [count, setCount] = useState<number>(0);
+  const [count, setCount] = useState<number>(initialCount);
   const [copied, setCopied] = useState(false);
 
   // The modal stays mounted on the detail page, so reset the counter whenever
   // it is reopened or pointed at a different subscription.
   useEffect(() => {
     if (isOpen) {
-      setCount(0);
+      setCount(initialCount);
       setCopied(false);
     }
-  }, [isOpen, subscription.id]);
+  }, [isOpen, subscription.id, initialCount]);
 
   const presets = [0, 1, 3, 5, 10, 20, 30];
   const isRed = result?.riskLevel === "red";

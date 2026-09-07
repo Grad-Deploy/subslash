@@ -61,7 +61,7 @@ export default function Home() {
   // Demo sample loader — skips anything already registered so repeat clicks
   // do not pile up duplicates.
   const handleLoadDemo = () => {
-    const existingNames = new Set(subscriptions.map((sub) => sub.name));
+    const existingNames = new Set(useStore.getState().subscriptions.map((sub) => sub.name));
     DEMO_SUBSCRIPTIONS.filter((item) => !existingNames.has(item.name)).forEach((item) =>
       addSubscription(item),
     );
@@ -124,7 +124,7 @@ export default function Home() {
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        🔒 별도 회원가입 없이 브라우저에 안전하게 저장됩니다.
+        🔒 별도 회원가입 없이 브라우저에 저장됩니다. 결제 알림을 켤 때만 이메일을 받습니다.
       </p>
 
       {/* Quick Add Presets Carousel / Grid */}

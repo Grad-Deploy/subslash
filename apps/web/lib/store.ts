@@ -47,10 +47,31 @@ export const DEFAULT_ACCOUNTS: LinkedAccount[] = [
   },
 ];
 
+/**
+ * Email-reminder opt-in. The token authenticates this browser's uploads to the
+ * server mirror; localStorage remains the source of truth for the data itself.
+ */
+export interface NotifySettings {
+  email: string | null;
+  syncToken: string | null;
+  verified: boolean;
+  reminderDays: number;
+  lastSyncedAt: string | null;
+}
+
+export const DEFAULT_NOTIFY: NotifySettings = {
+  email: null,
+  syncToken: null,
+  verified: false,
+  reminderDays: 3,
+  lastSyncedAt: null,
+};
+
 interface SubSlashStore {
   subscriptions: Subscription[];
   usageLogs: UsageLog[];
   accounts: LinkedAccount[];
+  notify: NotifySettings;
 
   // Subscription actions
   addSubscription: (data: SubscriptionFormData) => Subscription;
@@ -70,6 +91,10 @@ interface SubSlashStore {
   getDashboardStats: () => DashboardStats;
   getAtRiskSubscriptions: () => Subscription[];
 
+  // Email reminder actions
+  setNotify: (settings: Partial<NotifySettings>) => void;
+  clearNotify: () => void;
+
   // Linked Account actions
   addAccount: (account: Omit<LinkedAccount, "id" | "createdAt">) => LinkedAccount;
   updateAccount: (id: string, data: Partial<Omit<LinkedAccount, "id" | "createdAt">>) => void;
@@ -84,6 +109,7 @@ export const useStore = create<SubSlashStore>()(
       subscriptions: [],
       usageLogs: [],
       accounts: DEFAULT_ACCOUNTS,
+      notify: DEFAULT_NOTIFY,
 
       addSubscription: (data) => {
         const newSub: Subscription = {
@@ -119,6 +145,8 @@ export const useStore = create<SubSlashStore>()(
         set({ subscriptions: [], usageLogs: [] });
       },
       clearAllData: () => {
+        // The reminder opt-in is deliberately preserved: it lives on the server
+        // too, so silently forgetting the token here would orphan that record.
         set({ subscriptions: [], usageLogs: [], accounts: DEFAULT_ACCOUNTS });
       },
       updateSubscription: (id, data) => {
@@ -209,6 +237,13 @@ export const useStore = create<SubSlashStore>()(
         });
       },
 
+      setNotify: (settings) => {
+        set((state) => ({ notify: { ...state.notify, ...settings } }));
+      },
+      clearNotify: () => {
+        set({ notify: DEFAULT_NOTIFY });
+      },
+
       // Linked Accounts implementation
       addAccount: (accountData) => {
         const newAccount: LinkedAccount = {
@@ -251,6 +286,7 @@ export const useStore = create<SubSlashStore>()(
         subscriptions: state.subscriptions,
         usageLogs: state.usageLogs,
         accounts: state.accounts,
+        notify: state.notify,
       }),
     },
   ),

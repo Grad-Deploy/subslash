@@ -38,14 +38,19 @@ test.describe("Dashboard (E2E)", () => {
   });
 
   test("샘플 데이터를 두 번 불러와도 중복 등록되지 않는다", async ({ page }) => {
+    // These assertions follow a client-side navigation rather than a page load,
+    // so on the first hit they also wait for the dev server to compile
+    // /dashboard — which comfortably exceeds the default 5s expect timeout.
+    const dashboardHeading = page.getByRole("heading", { name: /다음 결제 임박 순 \(3\)/ });
+
     // The landing page's demo button stays available once subscriptions exist,
     // so it is the path where a repeat load could duplicate the sample set.
     await page.goto("/");
     await page.getByRole("button", { name: /샘플 데이터로 1초 체험/ }).click();
-    await expect(page.getByRole("heading", { name: /다음 결제 임박 순 \(3\)/ })).toBeVisible();
+    await expect(dashboardHeading).toBeVisible({ timeout: 30_000 });
 
     await page.goto("/");
     await page.getByRole("button", { name: /샘플 데이터로 1초 체험/ }).click();
-    await expect(page.getByRole("heading", { name: /다음 결제 임박 순 \(3\)/ })).toBeVisible();
+    await expect(dashboardHeading).toBeVisible({ timeout: 30_000 });
   });
 });

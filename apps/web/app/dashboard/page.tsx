@@ -104,7 +104,7 @@ export default function Dashboard() {
   };
 
   const handleLoadDemo = () => {
-    const existingNames = new Set(subscriptions.map((sub) => sub.name));
+    const existingNames = new Set(useStore.getState().subscriptions.map((sub) => sub.name));
     const added = DEMO_SUBSCRIPTIONS.filter((item) => !existingNames.has(item.name));
     added.forEach((item) => addSubscription(item));
     showToast(

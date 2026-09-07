@@ -13,7 +13,8 @@ export function getRiskLevel(costPerUse: number, amount: number, usageCount: num
 
 export function formatCurrency(amount: number, currency: Currency): string {
   if (currency === "KRW") {
-    return `₩${amount.toLocaleString("ko-KR")}`;
+    // The won has no subunit; a divided cost-per-use must not show decimals.
+    return `₩${Math.round(amount).toLocaleString("ko-KR")}`;
   }
   return `$${amount.toFixed(2)}`;
 }

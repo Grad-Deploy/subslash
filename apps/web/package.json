@@ -10,13 +10,16 @@
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
     "@subslash/shared": "workspace:*",
     "clsx": "^2.1.0",
-    "drizzle-orm": "^0.35.0",
+    "drizzle-orm": "^0.36.0",
     "lucide-react": "^0.454.0",
     "next": "^15.1.7",
     "react": "^19.0.0",

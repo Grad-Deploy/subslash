@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useStore } from "../../lib/store";
 import {
   Subscription,
@@ -21,6 +22,37 @@ import {
   DialogDescription,
 } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
+
+/** Feedback for the redirect targets of the reminder emails' links. */
+const NOTIFY_MESSAGES: Record<string, string> = {
+  verified: "🔔 결제 알림이 켜졌습니다. 결제일 전에 메일로 알려드릴게요.",
+  unsubscribed: "🔕 결제 알림을 껐습니다. 서버에 있던 구독 사본도 삭제했습니다.",
+  invalid: "링크가 만료되었거나 올바르지 않습니다. 알림 설정에서 다시 시도해주세요.",
+  error: "알림 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+};
+
+function NotifyBanner({ onMessage }: { onMessage: (message: string) => void }) {
+  const searchParams = useSearchParams();
+  const setNotify = useStore((state) => state.setNotify);
+  const clearNotify = useStore((state) => state.clearNotify);
+  const notifyResult = searchParams.get("notify");
+
+  useEffect(() => {
+    if (!notifyResult) return;
+
+    const message = NOTIFY_MESSAGES[notifyResult];
+    if (message) onMessage(message);
+
+    // The link acted on the server; mirror the outcome locally so the header
+    // badge and settings modal do not keep showing a stale state.
+    if (notifyResult === "verified") setNotify({ verified: true });
+    if (notifyResult === "unsubscribed") clearNotify();
+
+    window.history.replaceState(null, "", window.location.pathname);
+  }, [notifyResult, onMessage, setNotify, clearNotify]);
+
+  return null;
+}
 
 export default function SubscriptionsPage() {
   const {
@@ -128,6 +160,10 @@ export default function SubscriptionsPage() {
 
   return (
     <div className="space-y-6">
+      <Suspense fallback={null}>
+        <NotifyBanner onMessage={showToast} />
+      </Suspense>
+
       {/* Toast */}
       {toastMessage && (
         <div className="fixed top-16 right-4 z-50 bg-foreground text-background px-4 py-2.5 rounded-xl shadow-2xl text-sm font-medium animate-in fade-in slide-in-from-top-4">

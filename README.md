@@ -8,7 +8,8 @@
 
 ### 1. 💰 1회 사용 단가(Cost-Per-Use) 체감 엔진
 
-- 결제일 3일 전, 단 하나의 질문: **"지난 30일 동안 몇 번 이용하셨나요?"**
+- 결제일 3일 전, 이메일로 단 하나의 질문: **"지난 30일 동안 몇 번 이용하셨나요?"**
+- 메일 본문의 `0회 / 1회 / 3회 / 5회 / 10회` 버튼을 한 번 누르면 바로 결과 화면
 - 충격 요법 UI: `"이번 달 영화 1편을 ₩17,000에 보셨습니다"`
 - 가성비 신호등: 🟢 유지 · 🟡 주의 · 🔴 해지 권고
 
@@ -30,7 +31,7 @@
 | 스타일링   | Tailwind CSS 4               |
 | 상태관리   | Zustand + localStorage       |
 | DB         | Turso (libSQL) + Drizzle ORM |
-| 알림       | Resend (이메일) + Web Push   |
+| 알림       | Resend (이메일)              |
 | 배포       | Vercel (서버리스)            |
 | 모노레포   | Turborepo + pnpm             |
 | 테스트     | Vitest + Playwright          |
@@ -93,11 +94,41 @@ pnpm turbo lint typecheck
 2. 브라우저 localStorage에 데이터 저장
 3. 알림이 필요할 때만 이메일 입력
 
+## 🔔 결제 알림 아키텍처 (미러 모델)
+
+기본 경험은 100% 로컬·익명입니다. 서버는 **알림을 켠 사용자에 한해서만**,
+그것도 알림에 필요한 최소 정보만 보관합니다.
+
+```
+localStorage (원본)  ──PUT /api/notify/sync──▶  서버 미러
+    │                                              │
+    │ 체크인·절약자산·해지구독·연동계정              │ 이메일 · 이름 · 금액 · 결제일
+    │ (전송되지 않음)                               ▼
+    └──────◀── /check-in?sub=&count= ────  일일 크론 → Resend 이메일
+```
+
+- **단방향 동기화**: 서버는 절대 클라이언트로 되쓰지 않습니다. 동기화는 전체 교체
+  방식이라 병합·충돌 해결이 없고, 마지막으로 동기화한 기기가 서버 상태를 정의합니다.
+- **옵트인 + 이메일 확인**: 확인 링크를 누르기 전에는 어떤 알림도 발송되지 않습니다.
+- **원탭 체크인**: 메일의 버튼은 서버를 거치지 않고 해당 기기의 localStorage에
+  기록합니다. 따라서 토큰도, 왕복도 없습니다.
+- **수신 거부 = 완전 삭제**: 서버가 갖고 있던 모든 행이 함께 지워집니다.
+
+### 로컬에서 알림 흐름 테스트하기
+
+```bash
+cp .env.example apps/web/.env.local   # CRON_SECRET만 채우면 충분합니다
+cd apps/web && pnpm db:push           # TURSO_* 미설정 시 로컬 SQLite 사용
+pnpm dev
+
+# RESEND_API_KEY가 없으면 메일을 보내지 않고 서버 로그에 출력합니다
+curl -H "Authorization: Bearer <CRON_SECRET>" http://localhost:3000/api/cron/notify
+```
+
 ## 📱 PWA 지원
 
 - 모바일 홈 화면 추가 가능
-- Android: Share Target API로 외부 앱에서 바로 구독 등록
-- iOS: 클립보드 자동 감지로 대체
+- Android: Share Target API로 외부 앱에서 바로 구독 등록 (`/share`)
 
 ## 📄 라이선스
 
