@@ -29,6 +29,12 @@ coverage/
 playwright-report/
 test-results/
 
+# Local database (dev fallback when TURSO_DATABASE_URL is unset)
+local.db
+local.db-*
+*.sqlite
+*.sqlite3
+
 # Misc
 *.log
 *.tsbuildinfo
