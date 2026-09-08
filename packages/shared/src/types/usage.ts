@@ -10,11 +10,6 @@ export interface UsageLog {
   checkedAt: string;
 }
 
-export interface CheckInRequest {
-  subscriptionId: string;
-  usageCount: number;
-}
-
 export interface CheckInResponse {
   costPerUse: number;
   riskLevel: RiskLevel;
