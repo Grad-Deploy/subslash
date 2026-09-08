@@ -12,6 +12,7 @@ import {
   isDemoOrTestAccount,
 } from "@subslash/shared";
 import { useStore } from "../../lib/store";
+import { SHOW_INBOX_PREVIEW } from "../../lib/flags";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -421,38 +422,44 @@ export function AutoImportModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Tab Selector */}
-        <div className="flex gap-2 border-b border-border pt-2 pb-3">
-          <Button
-            type="button"
-            variant={activeTab === "email" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => {
-              setActiveTab("email");
-              handleClearParsingRecords();
-            }}
-            className="flex-1 text-sm font-medium gap-1.5"
-          >
-            <span>🧪</span> 메일함 스캔 (미리보기)
-          </Button>
-          <Button
-            type="button"
-            variant={activeTab === "sms" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => {
-              setActiveTab("sms");
-              handleClearParsingRecords();
-            }}
-            className="flex-1 text-sm font-medium gap-1.5"
-          >
-            <span>💬</span> 결제 문자 · 영수증 붙여넣기
-          </Button>
-        </div>
+        {/*
+          Tab Selector — only meaningful while the simulated inbox preview is
+          enabled. With it off there is a single real input mode, so the modal
+          shows no tabs at all.
+        */}
+        {SHOW_INBOX_PREVIEW && (
+          <div className="flex gap-2 border-b border-border pt-2 pb-3">
+            <Button
+              type="button"
+              variant={activeTab === "email" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => {
+                setActiveTab("email");
+                handleClearParsingRecords();
+              }}
+              className="flex-1 text-sm font-medium gap-1.5"
+            >
+              <span>🧪</span> 메일함 스캔 (미리보기)
+            </Button>
+            <Button
+              type="button"
+              variant={activeTab === "sms" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => {
+                setActiveTab("sms");
+                handleClearParsingRecords();
+              }}
+              className="flex-1 text-sm font-medium gap-1.5"
+            >
+              <span>💬</span> 결제 문자 · 영수증 붙여넣기
+            </Button>
+          </div>
+        )}
 
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto py-3 space-y-4 pr-1">
           {/* TAB 1: EMAIL SCAN (Google & Naver) — simulated preview */}
-          {activeTab === "email" && (
+          {SHOW_INBOX_PREVIEW && activeTab === "email" && (
             <div className="space-y-4">
               {/*
                 This tab does not read anyone's mail. It generates sample

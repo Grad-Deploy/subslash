@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useStore } from "../../lib/store";
+import { SHOW_INBOX_PREVIEW } from "../../lib/flags";
 import { AccountProvider, ACCOUNT_PROVIDERS, sumMonthlyKRW } from "@subslash/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
@@ -205,15 +206,18 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
                         </div>
 
                         <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs gap-1 border-primary/30 text-primary hover:bg-primary/10"
-                            onClick={() => setScanAccountId(acc.id)}
-                            title="이 계정의 영수증 메일을 스캔하여 구독 자동 탐지"
-                          >
-                            <span>⚡</span> 구독 스캔
-                          </Button>
+                          {/* Per-account scan only drives the simulated inbox preview. */}
+                          {SHOW_INBOX_PREVIEW && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1 border-primary/30 text-primary hover:bg-primary/10"
+                              onClick={() => setScanAccountId(acc.id)}
+                              title="이 계정으로 예시 영수증 스캔 미리보기 실행"
+                            >
+                              <span>🧪</span> 예시 스캔
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
