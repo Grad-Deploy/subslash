@@ -43,20 +43,54 @@ export function calculateAnnualSavings(monthlyAmount: number): number {
   return monthlyAmount * 12;
 }
 
+export interface SavingsEquivalent {
+  emoji: string;
+  /** Reward name, e.g. "맛있는 치킨". */
+  label: string;
+  /** Korean counter word, e.g. "마리". */
+  unit: string;
+  /** How many the savings actually cover. Always at least 1. */
+  count: number;
+}
+
+/**
+ * Reward tiers with the real price each is worth, cheapest first.
+ *
+ * Counts are derived from these prices rather than written by hand, so a tier
+ * can never claim more than the savings cover.
+ */
+const REWARD_TIERS: ReadonlyArray<Omit<SavingsEquivalent, "count"> & { unitPrice: number }> = [
+  { emoji: "☕", label: "카페 라떼", unit: "잔", unitPrice: 5000 },
+  { emoji: "🍗", label: "맛있는 치킨", unit: "마리", unitPrice: 20000 },
+  { emoji: "🍣", label: "고급 레스토랑 저녁", unit: "회", unitPrice: 100000 },
+  { emoji: "✈️", label: "가까운 해외 여행", unit: "회", unitPrice: 500000 },
+];
+
+/**
+ * The rewards `annualSavings` genuinely covers, cheapest first.
+ *
+ * A tier the savings cannot cover is left out rather than rounded up to one:
+ * telling someone who saved ₩12,000 that it buys a ₩100,000 dinner discredits
+ * every other number on the page. Returns an empty array below the cheapest
+ * tier.
+ */
+export function getSavingsEquivalents(annualSavings: number): SavingsEquivalent[] {
+  return REWARD_TIERS.filter((tier) => annualSavings >= tier.unitPrice).map(
+    ({ emoji, label, unit, unitPrice }) => ({
+      emoji,
+      label,
+      unit,
+      count: Math.floor(annualSavings / unitPrice),
+    }),
+  );
+}
+
+/**
+ * The single headline equivalent: the priciest reward the savings actually
+ * cover. Empty when they do not cover even the cheapest tier.
+ */
 export function getSavingsEquivalent(annualSavings: number): string[] {
-  const equivalents: string[] = [];
-
-  if (annualSavings >= 500000) {
-    equivalents.push("해외 여행 1회");
-  } else if (annualSavings >= 200000) {
-    equivalents.push("고급 레스토랑 저녁 식사 4회");
-  } else if (annualSavings >= 100000) {
-    equivalents.push("최신 무선 이어폰 1개");
-  } else if (annualSavings >= 50000) {
-    equivalents.push("맛있는 치킨 5마리");
-  } else {
-    equivalents.push(`카페 라떼 ${Math.floor(annualSavings / 5000)}잔`);
-  }
-
-  return equivalents;
+  const affordable = getSavingsEquivalents(annualSavings);
+  const best = affordable[affordable.length - 1];
+  return best ? [`${best.label} ${best.count}${best.unit}`] : [];
 }
