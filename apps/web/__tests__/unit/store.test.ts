@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useStore } from "../../lib/store";
+import { useStore, migrateSeededAccounts } from "../../lib/store";
 
 describe("Zustand Store", () => {
   beforeEach(() => {
@@ -293,5 +293,87 @@ describe("Zustand Store", () => {
     expect(currentSubs).toHaveLength(1);
     expect(currentSubs[0].name).toBe("새로 파싱된 유튜브 프리미엄");
     expect(currentSubs.find((s) => s.name === "이전 구독")).toBeUndefined();
+  });
+
+  it("clearAllData: 데모 계정을 되살리지 않고 계정 목록까지 비운다", () => {
+    useStore.setState({
+      accounts: [
+        {
+          id: "acc-mine",
+          provider: "google",
+          name: "내 계정",
+          emailOrId: "me@gmail.com",
+          createdAt: new Date().toISOString(),
+        },
+      ],
+    });
+
+    useStore.getState().clearAllData();
+
+    expect(useStore.getState().accounts).toEqual([]);
+  });
+});
+
+describe("migrateSeededAccounts", () => {
+  const seededAccount = {
+    id: "acc-google-1",
+    provider: "google" as const,
+    name: "Google 개인 계정",
+    emailOrId: "myaccount@gmail.com",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  };
+
+  it("초기 빌드가 심어둔 가짜 계정을 제거한다", () => {
+    const migrated = migrateSeededAccounts({ accounts: [seededAccount], subscriptions: [] });
+
+    expect(migrated.accounts).toEqual([]);
+  });
+
+  it("가짜 계정에 연결돼 있던 구독의 연동 표시를 지운다", () => {
+    const migrated = migrateSeededAccounts({
+      accounts: [seededAccount],
+      subscriptions: [
+        {
+          id: "sub-1",
+          name: "Netflix",
+          amount: 17000,
+          currency: "KRW",
+          billingDay: 15,
+          billingCycle: "monthly",
+          category: "ott",
+          status: "active",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          linkedAccountId: "acc-google-1",
+          linkedAccountName: "Google 개인 계정 (myaccount@gmail.com)",
+        },
+      ],
+    });
+
+    expect(migrated.subscriptions?.[0].linkedAccountId).toBeUndefined();
+    expect(migrated.subscriptions?.[0].linkedAccountName).toBeUndefined();
+    // 구독 자체는 사용자가 등록한 실제 데이터이므로 지우지 않는다.
+    expect(migrated.subscriptions).toHaveLength(1);
+  });
+
+  it("사용자가 주소를 자기 것으로 고친 계정은 건드리지 않는다", () => {
+    const edited = { ...seededAccount, emailOrId: "real.person@gmail.com" };
+
+    const migrated = migrateSeededAccounts({ accounts: [edited], subscriptions: [] });
+
+    expect(migrated.accounts).toEqual([edited]);
+  });
+
+  it("사용자가 직접 추가한 계정은 그대로 남긴다", () => {
+    const mine = {
+      id: "acc-mine",
+      provider: "naver" as const,
+      name: "내 네이버",
+      emailOrId: "me@naver.com",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    };
+
+    const migrated = migrateSeededAccounts({ accounts: [seededAccount, mine], subscriptions: [] });
+
+    expect(migrated.accounts).toEqual([mine]);
   });
 });

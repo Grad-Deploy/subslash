@@ -16,36 +16,54 @@ import {
   sumAnnualKRW,
 } from "@subslash/shared";
 
-export const DEFAULT_ACCOUNTS: LinkedAccount[] = [
-  {
-    id: "acc-google-1",
-    provider: "google",
-    name: "Google 개인 계정",
-    emailOrId: "myaccount@gmail.com",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "acc-naver-1",
-    provider: "naver",
-    name: "네이버 개인 계정",
-    emailOrId: "myaccount@naver.com",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "acc-kakao-1",
-    provider: "kakao",
-    name: "카카오 로그인 계정",
-    emailOrId: "kakao_user@kakao.com",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "acc-apple-1",
-    provider: "apple",
-    name: "Apple ID (App Store)",
-    emailOrId: "apple_user@icloud.com",
-    createdAt: new Date().toISOString(),
-  },
+/**
+ * Accounts that early builds seeded into every new browser.
+ *
+ * The addresses were invented, but the app presents a linked account as "log in
+ * with this one and the cancel button appears", and even offers to copy the ID
+ * to the clipboard. Handing someone `myaccount@gmail.com` for that walks them
+ * into a dead end, so a new store now starts with no accounts at all.
+ */
+const SEEDED_DEMO_ACCOUNTS: ReadonlyArray<Pick<LinkedAccount, "id" | "name" | "emailOrId">> = [
+  { id: "acc-google-1", name: "Google 개인 계정", emailOrId: "myaccount@gmail.com" },
+  { id: "acc-naver-1", name: "네이버 개인 계정", emailOrId: "myaccount@naver.com" },
+  { id: "acc-kakao-1", name: "카카오 로그인 계정", emailOrId: "kakao_user@kakao.com" },
+  { id: "acc-apple-1", name: "Apple ID (App Store)", emailOrId: "apple_user@icloud.com" },
 ];
+
+type PersistedState = Pick<SubSlashStore, "subscriptions" | "usageLogs" | "accounts" | "notify">;
+
+/**
+ * Strips the seeded demo accounts out of a store that already has them, and
+ * unlinks every subscription that pointed at one.
+ *
+ * An account whose name or address the user changed is left alone: once they
+ * typed their own address into it, it stopped being invented data.
+ */
+export function migrateSeededAccounts(state: Partial<PersistedState>): Partial<PersistedState> {
+  const accounts = state.accounts ?? [];
+  const seededIds = new Set(
+    accounts
+      .filter((acc) =>
+        SEEDED_DEMO_ACCOUNTS.some(
+          (seed) =>
+            seed.id === acc.id && seed.name === acc.name && seed.emailOrId === acc.emailOrId,
+        ),
+      )
+      .map((acc) => acc.id),
+  );
+  if (seededIds.size === 0) return state;
+
+  return {
+    ...state,
+    accounts: accounts.filter((acc) => !seededIds.has(acc.id)),
+    subscriptions: (state.subscriptions ?? []).map((sub) =>
+      sub.linkedAccountId && seededIds.has(sub.linkedAccountId)
+        ? { ...sub, linkedAccountId: undefined, linkedAccountName: undefined }
+        : sub,
+    ),
+  };
+}
 
 /**
  * Email-reminder opt-in. The token authenticates this browser's uploads to the
@@ -108,7 +126,7 @@ export const useStore = create<SubSlashStore>()(
     (set, get) => ({
       subscriptions: [],
       usageLogs: [],
-      accounts: DEFAULT_ACCOUNTS,
+      accounts: [],
       notify: DEFAULT_NOTIFY,
 
       addSubscription: (data) => {
@@ -147,7 +165,7 @@ export const useStore = create<SubSlashStore>()(
       clearAllData: () => {
         // The reminder opt-in is deliberately preserved: it lives on the server
         // too, so silently forgetting the token here would orphan that record.
-        set({ subscriptions: [], usageLogs: [], accounts: DEFAULT_ACCOUNTS });
+        set({ subscriptions: [], usageLogs: [], accounts: [] });
       },
       updateSubscription: (id, data) => {
         set((state) => ({
@@ -282,6 +300,13 @@ export const useStore = create<SubSlashStore>()(
     {
       name: "subslash-storage",
       storage: createJSONStorage(() => localStorage),
+      version: 1,
+      // Stores written before v1 carry the seeded demo accounts; drop them on
+      // the first load rather than leaving invented addresses in place.
+      migrate: (persisted, version) =>
+        version >= 1
+          ? (persisted as Partial<PersistedState>)
+          : migrateSeededAccounts(persisted as Partial<PersistedState>),
       partialize: (state) => ({
         subscriptions: state.subscriptions,
         usageLogs: state.usageLogs,
