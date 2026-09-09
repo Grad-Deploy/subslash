@@ -5,7 +5,7 @@ import {
   isValidExchangeRate,
   DEFAULT_EXCHANGE_RATE_SETTING,
 } from "../../lib/store";
-import { DEFAULT_EXCHANGE_RATE } from "@subslash/shared";
+import { DEFAULT_EXCHANGE_RATE, type SubscriptionFormData } from "@subslash/shared";
 
 describe("Zustand Store", () => {
   beforeEach(() => {
@@ -447,5 +447,69 @@ describe("migrateSeededAccounts", () => {
     const migrated = migrateSeededAccounts({ accounts: [seededAccount, mine], subscriptions: [] });
 
     expect(migrated.accounts).toEqual([mine]);
+  });
+});
+
+describe("체크인 1회 단가", () => {
+  beforeEach(() => {
+    useStore.setState({ subscriptions: [], usageLogs: [] });
+  });
+
+  function addAndCheckIn(data: SubscriptionFormData, count: number) {
+    const sub = useStore.getState().addSubscription(data);
+    return useStore.getState().checkIn(sub.id, count);
+  }
+
+  it("월간 구독은 결제액을 사용 횟수로 나눈다", () => {
+    const result = addAndCheckIn(
+      {
+        name: "넷플릭스",
+        amount: 17000,
+        currency: "KRW",
+        billingDay: 15,
+        billingCycle: "monthly",
+        category: "ott",
+      },
+      2,
+    );
+
+    expect(result.costPerUse).toBe(8500);
+  });
+
+  it("연간 구독은 한 달치로 나눈다", () => {
+    // 체크인은 '지난 30일 동안 몇 번'을 묻는다. 연 결제액을 그대로 나누면
+    // 1회 단가가 12배로 나온다.
+    const result = addAndCheckIn(
+      {
+        name: "노션",
+        amount: 120000,
+        currency: "KRW",
+        billingDay: 3,
+        billingCycle: "yearly",
+        billingMonth: 6,
+        category: "ai",
+      },
+      2,
+    );
+
+    expect(result.costPerUse).toBe(5000);
+    expect(result.shockMessage).toContain("₩5,000");
+  });
+
+  it("나눠 쓰는 구독은 내 몫으로만 계산한다", () => {
+    const result = addAndCheckIn(
+      {
+        name: "유튜브 프리미엄",
+        amount: 14900,
+        currency: "KRW",
+        billingDay: 10,
+        billingCycle: "monthly",
+        category: "ott",
+        sharingCount: 4,
+      },
+      1,
+    );
+
+    expect(result.costPerUse).toBe(3725);
   });
 });
