@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { useStore } from "../../lib/store";
 import {
   formatCurrency,
-  getAnnualAmountKRW,
-  getMonthlyAmountKRW,
+  getMyAnnualAmountKRW,
+  getMyMonthlyAmountKRW,
   getSavingsEquivalent,
   getSavingsEquivalents,
-  sumAnnualKRW,
+  sumMyAnnualKRW,
 } from "@subslash/shared";
 import { SavingsPot } from "../../components/dashboard/SavingsPot";
 import { Button } from "../../components/ui/button";
@@ -35,7 +35,7 @@ export default function SavingsDashboard() {
   }
 
   const killedSubs = getKilledSubscriptions();
-  const annualSavings = sumAnnualKRW(killedSubs, rate);
+  const annualSavings = sumMyAnnualKRW(killedSubs, rate);
   const equivalents = getSavingsEquivalents(annualSavings);
   const headlineEquivalent = getSavingsEquivalent(annualSavings)[0] ?? "";
 
@@ -137,7 +137,7 @@ export default function SavingsDashboard() {
                         {sub.name}
                       </h4>
                       <p className="text-xs text-emerald-600 font-medium">
-                        연간 ₩{getAnnualAmountKRW(sub, rate).toLocaleString()} 방어 성공
+                        연간 ₩{getMyAnnualAmountKRW(sub, rate).toLocaleString()} 방어 성공
                       </p>
                     </div>
                   </div>
@@ -149,7 +149,7 @@ export default function SavingsDashboard() {
                           {formatCurrency(sub.amount, sub.currency)}
                           <span className="text-xs font-normal text-muted-foreground">
                             {" "}
-                            (월 ₩{getMonthlyAmountKRW(sub, rate).toLocaleString()})
+                            (월 ₩{getMyMonthlyAmountKRW(sub, rate).toLocaleString()})
                           </span>
                         </>
                       ) : (

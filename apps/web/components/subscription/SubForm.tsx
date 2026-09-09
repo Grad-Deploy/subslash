@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { SubscriptionFormData, ServicePreset, PAYMENT_METHOD_OPTIONS } from "@subslash/shared";
+import {
+  SubscriptionFormData,
+  ServicePreset,
+  PAYMENT_METHOD_OPTIONS,
+  formatAmount,
+  getMyShareAmount,
+  getSharingCount,
+} from "@subslash/shared";
 import { useStore } from "../../lib/store";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -47,6 +54,24 @@ export function SubForm({
       ...prev,
       [name]: name === "amount" || name === "billingDay" ? Number(value) : value,
     }));
+  };
+
+  /**
+   * Sharing fields are cleared rather than zeroed when emptied: a stored 0
+   * would read as "I pay nothing", which is a different claim from "I did not
+   * fill this in".
+   */
+  const handleSharingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value === "" ? undefined : Number(value) };
+      // An even split needs no override, and keeping a stale one would show a
+      // share that no longer matches the people on the plan.
+      if (name === "sharingCount" && (next.sharingCount ?? 1) <= 1) {
+        next.myShareAmount = undefined;
+      }
+      return next;
+    });
   };
 
   const handleAccountChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -234,6 +259,69 @@ export function SubForm({
             <option value="USD">USD ($)</option>
           </Select>
         </div>
+      </div>
+
+      {/* Cost Splitting */}
+      <div className="space-y-2 rounded-xl border border-border/80 bg-muted/30 p-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-foreground">함께 쓰는 인원</label>
+            <Select
+              name="sharingCount"
+              value={String(formData.sharingCount ?? 1)}
+              onChange={handleSharingChange}
+            >
+              <option value="1">나 혼자 (1명)</option>
+              {[2, 3, 4, 5, 6].map((n) => (
+                <option key={n} value={String(n)}>
+                  {n}명이서 나눔
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          {(formData.sharingCount ?? 1) > 1 && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-foreground">
+                내 부담금 <span className="font-normal text-muted-foreground">(선택)</span>
+              </label>
+              <Input
+                type="number"
+                name="myShareAmount"
+                min="0"
+                placeholder={String(
+                  Math.round(
+                    (formData.amount ?? 0) /
+                      getSharingCount({
+                        amount: formData.amount ?? 0,
+                        sharingCount: formData.sharingCount,
+                      }),
+                  ),
+                )}
+                value={formData.myShareAmount ?? ""}
+                onChange={handleSharingChange}
+              />
+            </div>
+          )}
+        </div>
+
+        {(formData.sharingCount ?? 1) > 1 && (
+          <p className="text-[11px] text-muted-foreground">
+            내가 내는 몫은{" "}
+            <strong className="text-foreground">
+              {formatAmount(
+                getMyShareAmount({
+                  amount: formData.amount ?? 0,
+                  sharingCount: formData.sharingCount,
+                  myShareAmount: formData.myShareAmount,
+                }),
+                formData.currency || "KRW",
+              )}
+            </strong>
+            로 계산됩니다. 비워두면 인원수로 똑같이 나눕니다. 대시보드의 월 고정지출과 절약 자산은
+            이 금액을 기준으로 집계됩니다.
+          </p>
+        )}
       </div>
 
       {/* Billing Day & Cycle */}
