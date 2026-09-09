@@ -77,6 +77,60 @@ describe("Payment SMS & Receipt Parser", () => {
     expect(results.map((r) => r.amount)).toContain(7890);
   });
 
+  it("줄이 나뉜 카드 승인 문자에서 가맹점과 금액을 한 건으로 묶는다", () => {
+    // 국내 카드 문자는 은행 헤더·금액·가맹점이 각각 다른 줄에 오는 경우가 흔하다.
+    // 금액이 있는 줄마다 새 메시지로 잘라내면 가맹점 이름이 떨어져 나간다.
+    const sms = `[국민카드] 승인 홍*동
+17,000원 일시불
+09/15 14:30
+넷플릭스`;
+
+    const results = parsePaymentSms(sms);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].name).toBe("넷플릭스");
+    expect(results[0].amount).toBe(17000);
+    expect(results[0].billingDay).toBe(15);
+    expect(results[0].confidence).toBe("high");
+  });
+
+  it("[Web발신] 뒤에 여러 줄이 이어져도 한 건으로 본다", () => {
+    const sms = `[Web발신]
+노션 연간 결제 안내
+결제금액 : 120,000원
+결제일시 : 2026-03-11`;
+
+    const results = parsePaymentSms(sms);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].name).toBe("노션");
+    expect(results[0].amount).toBe(120000);
+  });
+
+  it("영수증 필드 이름이 구독 이름이 되지 않는다", () => {
+    const sms = `[Web발신]
+결제금액 : 8,900원
+결제일시 : 2026-03-11`;
+
+    const results = parsePaymentSms(sms);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].name).not.toBe("결제금액");
+    expect(results[0].name).toContain("알 수 없는 결제");
+  });
+
+  it("날짜가 구독 이름이 되지 않는다", () => {
+    const sms = `[하나카드] 승인
+9,900원 일시불
+03/11`;
+
+    const results = parsePaymentSms(sms);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].name).not.toBe("03/11");
+    expect(results[0].name).toContain("알 수 없는 결제");
+  });
+
   it("Google Play의 Google AI Pro 결제 문자를 정상 파싱하고 AI 카테고리로 분류한다", () => {
     const sms = "[KB국민카드] 29,000원 구글페이먼트(Google AI Pro) 승인 08/31 11:20";
     const results = parsePaymentSms(sms);
