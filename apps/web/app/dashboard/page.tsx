@@ -8,7 +8,7 @@ import {
   CheckInResponse,
   DEMO_SUBSCRIPTIONS,
   POPULAR_SERVICES,
-  getDaysUntilBilling,
+  getDaysUntilBillingFor,
 } from "@subslash/shared";
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { SavingsPot } from "../../components/dashboard/SavingsPot";
@@ -67,9 +67,13 @@ export default function Dashboard() {
   const atRiskSubs = getAtRiskSubscriptions();
   const stats = getDashboardStats();
 
-  // Sort upcoming subscriptions by days until billing
+  // Sort upcoming subscriptions by days until billing. A yearly plan with no
+  // billing month has no date, so it sorts last rather than pretending to be
+  // due today.
   const sortedActiveSubs = [...activeSubs].sort((a, b) => {
-    return getDaysUntilBilling(a.billingDay) - getDaysUntilBilling(b.billingDay);
+    const left = getDaysUntilBillingFor(a) ?? Number.POSITIVE_INFINITY;
+    const right = getDaysUntilBillingFor(b) ?? Number.POSITIVE_INFINITY;
+    return left - right;
   });
 
   const handleOpenCheckIn = (id: string) => {

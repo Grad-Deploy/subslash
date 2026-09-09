@@ -52,7 +52,16 @@ export function SubForm({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "amount" || name === "billingDay" ? Number(value) : value,
+      // An unpicked billing month must stay absent, not become 0: the helpers
+      // read "no month recorded" from its absence.
+      [name]:
+        name === "billingMonth"
+          ? value === ""
+            ? undefined
+            : Number(value)
+          : name === "amount" || name === "billingDay"
+            ? Number(value)
+            : value,
     }));
   };
 
@@ -350,6 +359,29 @@ export function SubForm({
           </Select>
         </div>
       </div>
+
+      {/* Yearly plans need the month too, or there is no date to count down to */}
+      {formData.billingCycle === "yearly" && (
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-foreground">결제 월</label>
+          <Select
+            name="billingMonth"
+            value={String(formData.billingMonth ?? "")}
+            onChange={handleChange}
+          >
+            <option value="">선택해주세요</option>
+            {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
+              <option key={month} value={String(month)}>
+                {month}월
+              </option>
+            ))}
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            연간 결제는 며칠에 빠져나가는지만으로는 날짜를 알 수 없습니다. 결제 월을 넣어야 D-day와
+            알림, 캘린더가 실제 결제일을 가리킵니다.
+          </p>
+        </div>
+      )}
 
       {/* Category & Payment Method */}
       <div className="grid grid-cols-2 gap-3">

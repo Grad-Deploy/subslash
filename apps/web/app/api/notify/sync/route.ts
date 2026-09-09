@@ -12,6 +12,7 @@ interface MirrorInput {
   currency: string;
   billingDay: number;
   billingCycle: string;
+  billingMonth: number | null;
 }
 
 const MAX_SUBSCRIPTIONS = 100;
@@ -31,6 +32,13 @@ function sanitize(raw: unknown): MirrorInput | null {
       ? (item.billingDay as number)
       : null;
 
+  const billingMonth =
+    Number.isInteger(item.billingMonth) &&
+    (item.billingMonth as number) >= 1 &&
+    (item.billingMonth as number) <= 12
+      ? (item.billingMonth as number)
+      : null;
+
   if (!clientId || !name || amount === null || billingDay === null) return null;
 
   return {
@@ -40,6 +48,7 @@ function sanitize(raw: unknown): MirrorInput | null {
     currency: item.currency === "USD" ? "USD" : "KRW",
     billingDay,
     billingCycle: item.billingCycle === "yearly" ? "yearly" : "monthly",
+    billingMonth,
   };
 }
 

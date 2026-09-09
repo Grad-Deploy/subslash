@@ -241,7 +241,7 @@ describe("확인 링크", () => {
 });
 
 describe("크론 알림 발송", () => {
-  async function seedVerifiedUser(billingDay: number) {
+  async function seedVerifiedUser(billingDay: number, overrides: Record<string, unknown> = {}) {
     const token = await optIn();
     await putMirror(token, [
       {
@@ -251,11 +251,19 @@ describe("크론 알림 발송", () => {
         currency: "KRW",
         billingDay,
         billingCycle: "monthly",
+        ...overrides,
       },
     ]);
     const userId = (await getDb().select().from(users))[0].id;
     await markVerified(userId);
     return { token, userId };
+  }
+
+  /** The month a date `days` from now falls in, as 1-12. */
+  function billingMonthIn(days: number): number {
+    const target = new Date();
+    target.setDate(target.getDate() + days);
+    return target.getMonth() + 1;
   }
 
   const runCron = (auth = "Bearer test-cron-secret") =>
@@ -287,6 +295,32 @@ describe("크론 알림 발송", () => {
     ]);
 
     expect(await (await runCron()).json()).toMatchObject({ recipients: 0, notified: 0 });
+  });
+
+  it("결제 월을 모르는 연간 구독에는 알림을 보내지 않는다", async () => {
+    // 연간 구독은 '며칠'만으로 날짜를 알 수 없다. 매월 결제인 척 계산하면
+    // 실제로 일어나지 않는 결제 11건에 대해 메일이 나간다.
+    await seedVerifiedUser(billingDayIn(3), { billingCycle: "yearly" });
+
+    expect(await (await runCron()).json()).toMatchObject({ considered: 1, notified: 0 });
+  });
+
+  it("결제 월이 있는 연간 구독은 그 달에만 알린다", async () => {
+    await seedVerifiedUser(billingDayIn(3), {
+      billingCycle: "yearly",
+      billingMonth: billingMonthIn(3),
+    });
+
+    expect(await (await runCron()).json()).toMatchObject({ notified: 1 });
+  });
+
+  it("결제 월이 다른 연간 구독은 건너뛴다", async () => {
+    await seedVerifiedUser(billingDayIn(3), {
+      billingCycle: "yearly",
+      billingMonth: (billingMonthIn(3) % 12) + 1,
+    });
+
+    expect(await (await runCron()).json()).toMatchObject({ notified: 0 });
   });
 
   it("같은 결제 건에 대해 두 번 보내지 않는다", async () => {

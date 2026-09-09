@@ -1,4 +1,5 @@
 import {
+  BillingCycle,
   DiscoveredSubscription,
   EmailReceipt,
   SubscriptionCategory,
@@ -115,8 +116,8 @@ const SERVICE_KEYWORDS: {
     presetId: "claude-pro",
     defaultPaymentMethod: "credit_card",
   },
-  { keywords: ["어도비", "adobe"], presetId: "adobe" },
-  { keywords: ["마이크로소프트", "microsoft", "ms 365", "m365"], presetId: "ms-365" },
+  { keywords: ["어도비", "adobe"], presetId: "adobe-cc" },
+  { keywords: ["마이크로소프트", "microsoft", "ms 365", "m365"], presetId: "microsoft-365" },
   { keywords: ["밀리", "밀리의 서재", "millie"], presetId: "millie" },
   { keywords: ["리디", "리디셀렉트", "ridi"], presetId: "ridi-select" },
 ];
@@ -125,6 +126,43 @@ const SERVICE_KEYWORDS: {
  * Parses raw SMS / push notification text containing payment approvals
  * Handles multi-line or multi-message input.
  */
+/**
+ * Wording that marks a receipt as a yearly plan.
+ *
+ * Deliberately narrow: reading a monthly plan as yearly divides the reported
+ * cost by twelve, which is just as wrong in the other direction.
+ */
+const YEARLY_HINT =
+  /연간|연\s*결제|1년|12개월|년\s*이용권|연회비|annual|yearly|per\s*year|\/\s*yr/i;
+
+/**
+ * Every preset the keyword table points at.
+ *
+ * Exported so a test can prove each one resolves: a typo here fails silently —
+ * the lookup returns undefined, the receipt keeps scanning other keywords, and
+ * the subscription is imported with no cancel URL, no category and a fallback
+ * name, without anything reporting an error.
+ */
+export const SERVICE_KEYWORD_PRESET_IDS = SERVICE_KEYWORDS.map((item) => item.presetId);
+
+/**
+ * Where one pasted message ends and the next begins.
+ *
+ * Korean card SMS is routinely multi-line — the bank header, the amount and the
+ * merchant each get their own line — so a boundary has to be a *message*
+ * header, never merely "a line that mentions an amount". Splitting on the
+ * amount tore single messages in half: the merchant name stayed in one block
+ * and the money went to another, so the block holding the amount had no service
+ * to match and got named after whatever token survived cleaning ("03/11").
+ *
+ * A new message starts at a forwarding marker, a blank line, a divider rule, or
+ * a line opening with a bracketed sender, a card issuer, a bank or a payment
+ * provider. The colon guard keeps receipt fields such as "결제카드 : 신한카드"
+ * from reading as the start of another message.
+ */
+const MESSAGE_BOUNDARY =
+  /(?=\[Web발신\])|\n\s*[-=_]{3,}\s*\n|\n\s*\n|(?<=\n)(?=\s*(?:\[[^\]\n]{1,24}\]|[가-힣A-Za-z]{1,10}(?:카드|은행|페이|페이먼트)(?!\s*[:：])|토스|PAYCO))/i;
+
 export function parsePaymentSms(
   rawText: string,
   options?: { linkedAccountId?: string; linkedAccountName?: string },
@@ -147,11 +185,8 @@ export function parsePaymentSms(
       .map((b) => b.trim())
       .filter((b) => b.length > 5);
   } else {
-    // For regular SMS / notifications: split on newlines before card/pay names or amounts
     rawBlocks = clean
-      .split(
-        /(?=\[Web발신\]|\[.+?\]|\n\s*\n|(?<=\n)(?=[^\n]*(?:카드|페이|토스|[0-9,]+원|\$[0-9.]+|USD)))/i,
-      )
+      .split(MESSAGE_BOUNDARY)
       .map((b) => b.trim())
       .filter((b) => b.length > 5);
   }
@@ -175,6 +210,42 @@ export function parsePaymentSms(
   }
 
   return results;
+}
+
+/** Receipt field labels, which name the row rather than the merchant. */
+const FIELD_LABELS = [
+  "결제금액",
+  "총결제금액",
+  "청구금액",
+  "이용금액",
+  "결제일",
+  "결제일시",
+  "승인일시",
+  "결제수단",
+  "결제카드",
+  "카드번호",
+  "주문번호",
+  "상품명",
+  "서비스명",
+  "가맹점",
+  "이용기간",
+  "다음결제일",
+];
+
+/**
+ * Whether a leftover token could plausibly be the merchant.
+ *
+ * The fallback name is whatever survives cleaning, so without this a card SMS
+ * whose merchant was never recognised ends up registered as "03/11", and a
+ * receipt as "결제금액". Both read like real subscriptions in the list, which
+ * is worse than admitting the merchant is unknown.
+ */
+function looksLikeMerchantName(word: string): boolean {
+  const token = word.replace(/[[\](){}:：,]/g, "").trim();
+  if (!token) return false;
+  // Dates, times and bare numbers: 03/11, 2026-03-11, 14:22, 17000
+  if (/^[0-9]+(?:[./:-][0-9]+)*$/.test(token)) return false;
+  return !FIELD_LABELS.includes(token);
 }
 
 function parseSingleMessageBlock(
@@ -250,16 +321,30 @@ function parseSingleMessageBlock(
 
   // 4. Extract Date (explicit 결제일시 or MM/DD, M월 D일, MM.DD, MM-DD)
   let billingDay = new Date().getDate();
+  // Month is only carried through for yearly plans, which have no date without
+  // it. Monthly plans repeat every month, so the month a receipt happens to
+  // mention says nothing extra.
+  let billingMonth: number | undefined;
   const explicitDateMatch = block.match(
-    /(?:결제일시|결제일|승인일시|일시|다음\s*결제\s*(?:예정)?일)\s*[:：]?\s*(?:[0-9]{4}[./-][0-9]{1,2}[./-]([0-3]?[0-9])|([0-1]?[0-9])[/.-]([0-3]?[0-9])|([0-3]?[0-9])일)/i,
+    /(?:결제일시|결제일|승인일시|일시|다음\s*결제\s*(?:예정)?일)\s*[:：]?\s*(?:[0-9]{4}[./-]([0-9]{1,2})[./-]([0-3]?[0-9])|([0-1]?[0-9])[/.-]([0-3]?[0-9])|([0-3]?[0-9])일)/i,
   );
 
-  if (explicitDateMatch) {
-    const rawDay = explicitDateMatch[1] || explicitDateMatch[3] || explicitDateMatch[4];
-    const day = parseInt(rawDay, 10);
-    if (!isNaN(day) && day >= 1 && day <= 31) {
-      billingDay = day;
+  const takeDate = (rawMonth?: string, rawDay?: string) => {
+    const day = parseInt(rawDay ?? "", 10);
+    if (isNaN(day) || day < 1 || day > 31) return false;
+    billingDay = day;
+    const month = parseInt(rawMonth ?? "", 10);
+    if (!isNaN(month) && month >= 1 && month <= 12) {
+      billingMonth = month;
     }
+    return true;
+  };
+
+  if (explicitDateMatch) {
+    takeDate(
+      explicitDateMatch[1] || explicitDateMatch[3],
+      explicitDateMatch[2] || explicitDateMatch[4] || explicitDateMatch[5],
+    );
   } else {
     // Strip currency amounts so numbers like "$20.00" are not mistaken for MM.DD
     const dateScanText = normalized.replace(/\$\s*[0-9.]+/g, "").replace(/[0-9.]+\s*USD/gi, "");
@@ -267,12 +352,16 @@ function parseSingleMessageBlock(
       /(?:([0-1]?[0-9])[/.-]([0-3]?[0-9])|([0-1]?[0-9])\s*월\s*([0-3]?[0-9])\s*일)/g;
     let match: RegExpExecArray | null;
     while ((match = dateRegex.exec(dateScanText)) !== null) {
-      const day = parseInt(match[2] || match[4], 10);
-      if (!isNaN(day) && day >= 1 && day <= 31) {
-        billingDay = day;
-        break;
-      }
+      if (takeDate(match[1] || match[3], match[2] || match[4])) break;
     }
+  }
+
+  // 4b. Yearly plans: a receipt that says so is the only place the app can
+  // learn the billing cycle, and importing one as monthly multiplies the user's
+  // reported fixed spend by twelve.
+  const billingCycle: BillingCycle = YEARLY_HINT.test(normalized) ? "yearly" : "monthly";
+  if (billingCycle !== "yearly") {
+    billingMonth = undefined;
   }
 
   // 5. Extract Payment Method
@@ -346,7 +435,9 @@ function parseSingleMessageBlock(
       .replace(/[0-9]{1,2}:[0-9]{1,2}/g, "")
       .trim();
 
-    const words = cleaned.split(/\s+/).filter((w) => w.length > 1 && !w.includes("*"));
+    const words = cleaned
+      .split(/\s+/)
+      .filter((w) => w.length > 1 && !w.includes("*") && looksLikeMerchantName(w));
     name = words[0] || `알 수 없는 결제 (${amount.toLocaleString()}원)`;
   }
 
@@ -356,7 +447,8 @@ function parseSingleMessageBlock(
     amount,
     currency,
     billingDay,
-    billingCycle: "monthly",
+    billingCycle,
+    billingMonth,
     category,
     cancelUrl,
     cancelGuide,

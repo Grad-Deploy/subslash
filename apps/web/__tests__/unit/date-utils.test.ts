@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   getNextBillingDate,
   getDaysUntilBilling,
+  getNextBillingDateFor,
+  getDaysUntilBillingFor,
+  needsBillingMonth,
   isPaymentImminent,
   formatDday,
   formatCountdown,
@@ -117,5 +120,67 @@ describe("Date Utils", () => {
       const target = new Date("2023-09-05T00:00:00Z");
       expect(formatCountdown(target, now)).toBe("D-Day 00:00:00");
     });
+  });
+});
+
+describe("연간 결제 구독의 다음 결제일", () => {
+  const SEP_9 = new Date(2026, 8, 9);
+
+  it("월간 구독은 기존 동작 그대로다", () => {
+    const next = getNextBillingDateFor({ billingDay: 15, billingCycle: "monthly" }, SEP_9);
+
+    expect(next).not.toBeNull();
+    expect(next!.getMonth()).toBe(8);
+    expect(next!.getDate()).toBe(15);
+  });
+
+  it("결제 월이 아직 오지 않았으면 올해로 잡는다", () => {
+    const next = getNextBillingDateFor(
+      { billingDay: 3, billingCycle: "yearly", billingMonth: 11 },
+      SEP_9,
+    );
+
+    expect(next!.getFullYear()).toBe(2026);
+    expect(next!.getMonth()).toBe(10);
+    expect(next!.getDate()).toBe(3);
+  });
+
+  it("올해 결제 월이 지났으면 내년으로 넘긴다", () => {
+    const next = getNextBillingDateFor(
+      { billingDay: 3, billingCycle: "yearly", billingMonth: 2 },
+      SEP_9,
+    );
+
+    expect(next!.getFullYear()).toBe(2027);
+    expect(next!.getMonth()).toBe(1);
+  });
+
+  it("평년 2월 29일 결제는 28일로 당긴다", () => {
+    const next = getNextBillingDateFor(
+      { billingDay: 29, billingCycle: "yearly", billingMonth: 2 },
+      new Date(2026, 0, 5),
+    );
+
+    expect(next!.getMonth()).toBe(1);
+    expect(next!.getDate()).toBe(28);
+  });
+
+  it("결제 월을 모르는 연간 구독은 날짜를 지어내지 않고 null을 준다", () => {
+    expect(getNextBillingDateFor({ billingDay: 15, billingCycle: "yearly" }, SEP_9)).toBeNull();
+    expect(getDaysUntilBillingFor({ billingDay: 15, billingCycle: "yearly" }, SEP_9)).toBeNull();
+  });
+
+  it("needsBillingMonth가 보완이 필요한 구독만 짚는다", () => {
+    expect(needsBillingMonth({ billingDay: 15, billingCycle: "yearly" })).toBe(true);
+    expect(needsBillingMonth({ billingDay: 15, billingCycle: "yearly", billingMonth: 6 })).toBe(
+      false,
+    );
+    expect(needsBillingMonth({ billingDay: 15, billingCycle: "monthly" })).toBe(false);
+  });
+
+  it("남은 일수를 결제 월 기준으로 센다", () => {
+    expect(
+      getDaysUntilBillingFor({ billingDay: 12, billingCycle: "yearly", billingMonth: 9 }, SEP_9),
+    ).toBe(3);
   });
 });
