@@ -385,6 +385,7 @@ export function AutoImportModal({
       currency: item.currency,
       billingDay: item.billingDay,
       billingCycle: item.billingCycle,
+      billingMonth: item.billingMonth,
       category: item.category,
       cancelUrl: item.cancelUrl,
       cancelGuide: item.cancelGuide,

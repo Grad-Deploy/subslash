@@ -93,6 +93,8 @@ export interface DiscoveredSubscription {
   currency: Currency;
   billingDay: number;
   billingCycle: BillingCycle;
+  /** Set only for yearly plans, when the receipt said which month. */
+  billingMonth?: number;
   category: SubscriptionCategory;
   cancelUrl?: string;
   cancelGuide?: string;

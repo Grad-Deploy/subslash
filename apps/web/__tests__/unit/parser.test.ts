@@ -161,6 +161,37 @@ describe("Payment SMS & Receipt Parser", () => {
     expect(results[0].cancelUrl).toBeTruthy();
   });
 
+  it("연간 결제 영수증을 연간 구독으로 인식하고 결제 월까지 가져온다", () => {
+    // 월간으로 등록하면 월 고정지출이 12배로 잡힌다.
+    const results = parsePaymentSms(`[Web발신]
+노션 연간 결제 안내
+결제금액 : 120,000원
+결제일시 : 2026-03-11`);
+
+    expect(results[0].billingCycle).toBe("yearly");
+    expect(results[0].billingMonth).toBe(3);
+    expect(results[0].billingDay).toBe(11);
+  });
+
+  it("1년 이용권 문구도 연간으로 본다", () => {
+    const results = parsePaymentSms(`[국민카드] 승인
+99,000원 일시불
+03/11
+유튜브 프리미엄 1년 이용권`);
+
+    expect(results[0].billingCycle).toBe("yearly");
+    expect(results[0].billingMonth).toBe(3);
+  });
+
+  it("월간 결제에는 결제 월을 붙이지 않는다", () => {
+    // 매달 반복되는 결제라 영수증에 적힌 달은 아무것도 알려주지 않는다.
+    const results = parsePaymentSms(`[Web발신]
+신한카드 승인 17,000원 넷플릭스 09/15 일시불`);
+
+    expect(results[0].billingCycle).toBe("monthly");
+    expect(results[0].billingMonth).toBeUndefined();
+  });
+
   it("Google Play의 Google AI Pro 결제 문자를 정상 파싱하고 AI 카테고리로 분류한다", () => {
     const sms = "[KB국민카드] 29,000원 구글페이먼트(Google AI Pro) 승인 08/31 11:20";
     const results = parsePaymentSms(sms);
