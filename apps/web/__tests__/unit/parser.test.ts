@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
+  POPULAR_SERVICES,
+  SERVICE_KEYWORD_PRESET_IDS,
   parsePaymentSms,
   simulateGmailScan,
   simulateNaverScan,
@@ -129,6 +131,34 @@ describe("Payment SMS & Receipt Parser", () => {
     expect(results).toHaveLength(1);
     expect(results[0].name).not.toBe("03/11");
     expect(results[0].name).toContain("알 수 없는 결제");
+  });
+
+  it("키워드 표의 presetId가 모두 실제 프리셋을 가리킨다", () => {
+    // 오타가 나면 매칭이 조용히 실패한다. 해지 URL도 카테고리도 붙지 않고,
+    // 이름은 폴백으로 떨어지는데 어디에서도 오류가 나지 않는다.
+    const known = new Set(POPULAR_SERVICES.map((service) => service.id));
+    const dangling = SERVICE_KEYWORD_PRESET_IDS.filter((id) => !known.has(id));
+
+    expect(dangling).toEqual([]);
+  });
+
+  it("어도비 결제 문자가 프리셋에 매칭된다", () => {
+    const results = parsePaymentSms(`[신한카드] 승인
+24,000원 일시불
+어도비`);
+
+    expect(results[0].name).toBe("어도비");
+    expect(results[0].cancelUrl).toBeTruthy();
+    expect(results[0].confidence).toBe("high");
+  });
+
+  it("마이크로소프트 365 결제 문자가 프리셋에 매칭된다", () => {
+    const results = parsePaymentSms(`[국민카드] 승인
+11,900원
+마이크로소프트 365`);
+
+    expect(results[0].name).toBe("마이크로소프트 365");
+    expect(results[0].cancelUrl).toBeTruthy();
   });
 
   it("Google Play의 Google AI Pro 결제 문자를 정상 파싱하고 AI 카테고리로 분류한다", () => {
