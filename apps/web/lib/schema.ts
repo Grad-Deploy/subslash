@@ -64,6 +64,12 @@ export const mirroredSubscriptions = sqliteTable(
     currency: text("currency").notNull().default("KRW"),
     billingDay: integer("billing_day").notNull(),
     billingCycle: text("billing_cycle").notNull().default("monthly"),
+    /**
+     * Which month a yearly plan is charged in (1-12), or null when the browser
+     * has not recorded one. Without it the reminder has no date, so the sweep
+     * skips the subscription rather than mailing about it every month.
+     */
+    billingMonth: integer("billing_month"),
     updatedAt: text("updated_at")
       .notNull()
       .default(sql`(datetime('now'))`),

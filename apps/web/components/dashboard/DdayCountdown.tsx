@@ -1,25 +1,32 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getDaysUntilBilling, getNextBillingDate } from "@subslash/shared";
+import {
+  getDaysUntilBillingFor,
+  getNextBillingDateFor,
+  type BillingSchedule,
+} from "@subslash/shared";
 import { cn } from "@lib/utils";
 
 /**
  * Uses the shared billing-date helpers so the badge always agrees with the
  * D-Day ordering the dashboard applies to the same list.
  */
-function useLocalDday(billingDay: number) {
-  const [dDay, setDDay] = useState(() => getDaysUntilBilling(billingDay));
+function useLocalDday(schedule: BillingSchedule) {
+  const [dDay, setDDay] = useState<number | null>(() => getDaysUntilBillingFor(schedule));
   const [timeLeft, setTimeLeft] = useState("00:00:00");
+  const { billingDay, billingCycle, billingMonth } = schedule;
 
   useEffect(() => {
+    const current = { billingDay, billingCycle, billingMonth };
     const updateTime = () => {
       const now = new Date();
-      const days = getDaysUntilBilling(billingDay, now);
+      const days = getDaysUntilBillingFor(current, now);
       setDDay(days);
 
-      if (days <= 1) {
-        const diffMs = getNextBillingDate(billingDay, now).getTime() - now.getTime();
+      if (days !== null && days <= 1) {
+        const next = getNextBillingDateFor(current, now);
+        const diffMs = next ? next.getTime() - now.getTime() : 0;
         const clamped = Math.max(0, diffMs);
         const hours = Math.floor((clamped % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((clamped % (1000 * 60 * 60)) / (1000 * 60));
@@ -32,19 +39,30 @@ function useLocalDday(billingDay: number) {
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
-  }, [billingDay]);
+  }, [billingDay, billingCycle, billingMonth]);
 
   return { dDay, timeLeft };
 }
 
 export function DdayCountdown({
-  billingDay,
+  subscription,
   className,
 }: {
-  billingDay: number;
+  subscription: BillingSchedule;
   className?: string;
 }) {
-  const { dDay, timeLeft } = useLocalDday(billingDay);
+  const { dDay, timeLeft } = useLocalDday(subscription);
+
+  // A yearly plan with no billing month has no date to count down to. Showing
+  // a number here would be inventing one.
+  if (dDay === null) {
+    return (
+      <div className={cn("flex flex-col items-end", className)}>
+        <div className="text-xs font-semibold text-muted-foreground">결제 월 미설정</div>
+        <div className="text-[10px] text-muted-foreground opacity-80">연간 결제일을 알려주세요</div>
+      </div>
+    );
+  }
 
   const isDanger = dDay <= 1;
   const isWarning = dDay === 2 || dDay === 3;

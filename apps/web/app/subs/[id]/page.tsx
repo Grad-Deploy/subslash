@@ -9,7 +9,7 @@ import {
   POPULAR_SERVICES,
   PAYMENT_METHOD_OPTIONS,
   formatCurrency,
-  getDaysUntilBilling,
+  getDaysUntilBillingFor,
 } from "@subslash/shared";
 import { SubForm } from "../../../components/subscription/SubForm";
 import { CheckInModal } from "../../../components/subscription/CheckInModal";
@@ -74,7 +74,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
 
   const subLogs = usageLogs.filter((log) => log.subscriptionId === id);
   const isKilled = sub.status === "killed";
-  const daysLeft = getDaysUntilBilling(sub.billingDay);
+  const daysLeft = getDaysUntilBillingFor(sub);
 
   const handleEditSubmit = (data: SubscriptionFormData) => {
     updateSubscription(sub.id, data);
@@ -178,7 +178,14 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
         {!isKilled ? (
           <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t">
             <div className="text-sm font-medium">
-              다음 결제까지: <span className="font-bold text-destructive">D-{daysLeft}일</span>
+              다음 결제까지:{" "}
+              {daysLeft === null ? (
+                <span className="font-bold text-muted-foreground">
+                  연간 결제 월이 등록되지 않았습니다
+                </span>
+              ) : (
+                <span className="font-bold text-destructive">D-{daysLeft}일</span>
+              )}
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={handleOpenCheckIn}>
