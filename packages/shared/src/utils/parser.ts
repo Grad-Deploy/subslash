@@ -125,6 +125,24 @@ const SERVICE_KEYWORDS: {
  * Parses raw SMS / push notification text containing payment approvals
  * Handles multi-line or multi-message input.
  */
+/**
+ * Where one pasted message ends and the next begins.
+ *
+ * Korean card SMS is routinely multi-line — the bank header, the amount and the
+ * merchant each get their own line — so a boundary has to be a *message*
+ * header, never merely "a line that mentions an amount". Splitting on the
+ * amount tore single messages in half: the merchant name stayed in one block
+ * and the money went to another, so the block holding the amount had no service
+ * to match and got named after whatever token survived cleaning ("03/11").
+ *
+ * A new message starts at a forwarding marker, a blank line, a divider rule, or
+ * a line opening with a bracketed sender, a card issuer, a bank or a payment
+ * provider. The colon guard keeps receipt fields such as "결제카드 : 신한카드"
+ * from reading as the start of another message.
+ */
+const MESSAGE_BOUNDARY =
+  /(?=\[Web발신\])|\n\s*[-=_]{3,}\s*\n|\n\s*\n|(?<=\n)(?=\s*(?:\[[^\]\n]{1,24}\]|[가-힣A-Za-z]{1,10}(?:카드|은행|페이|페이먼트)(?!\s*[:：])|토스|PAYCO))/i;
+
 export function parsePaymentSms(
   rawText: string,
   options?: { linkedAccountId?: string; linkedAccountName?: string },
@@ -147,11 +165,8 @@ export function parsePaymentSms(
       .map((b) => b.trim())
       .filter((b) => b.length > 5);
   } else {
-    // For regular SMS / notifications: split on newlines before card/pay names or amounts
     rawBlocks = clean
-      .split(
-        /(?=\[Web발신\]|\[.+?\]|\n\s*\n|(?<=\n)(?=[^\n]*(?:카드|페이|토스|[0-9,]+원|\$[0-9.]+|USD)))/i,
-      )
+      .split(MESSAGE_BOUNDARY)
       .map((b) => b.trim())
       .filter((b) => b.length > 5);
   }
@@ -175,6 +190,42 @@ export function parsePaymentSms(
   }
 
   return results;
+}
+
+/** Receipt field labels, which name the row rather than the merchant. */
+const FIELD_LABELS = [
+  "결제금액",
+  "총결제금액",
+  "청구금액",
+  "이용금액",
+  "결제일",
+  "결제일시",
+  "승인일시",
+  "결제수단",
+  "결제카드",
+  "카드번호",
+  "주문번호",
+  "상품명",
+  "서비스명",
+  "가맹점",
+  "이용기간",
+  "다음결제일",
+];
+
+/**
+ * Whether a leftover token could plausibly be the merchant.
+ *
+ * The fallback name is whatever survives cleaning, so without this a card SMS
+ * whose merchant was never recognised ends up registered as "03/11", and a
+ * receipt as "결제금액". Both read like real subscriptions in the list, which
+ * is worse than admitting the merchant is unknown.
+ */
+function looksLikeMerchantName(word: string): boolean {
+  const token = word.replace(/[[\](){}:：,]/g, "").trim();
+  if (!token) return false;
+  // Dates, times and bare numbers: 03/11, 2026-03-11, 14:22, 17000
+  if (/^[0-9]+(?:[./:-][0-9]+)*$/.test(token)) return false;
+  return !FIELD_LABELS.includes(token);
 }
 
 function parseSingleMessageBlock(
@@ -346,7 +397,9 @@ function parseSingleMessageBlock(
       .replace(/[0-9]{1,2}:[0-9]{1,2}/g, "")
       .trim();
 
-    const words = cleaned.split(/\s+/).filter((w) => w.length > 1 && !w.includes("*"));
+    const words = cleaned
+      .split(/\s+/)
+      .filter((w) => w.length > 1 && !w.includes("*") && looksLikeMerchantName(w));
     name = words[0] || `알 수 없는 결제 (${amount.toLocaleString()}원)`;
   }
 
