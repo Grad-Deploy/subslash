@@ -3,9 +3,14 @@
 import React, { useEffect, useState } from "react";
 import { Subscription, sumMonthlyKRW } from "@subslash/shared";
 import { Card, CardContent } from "../ui/card";
+import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 export function TotalSpend({ subscriptions }: { subscriptions: Subscription[] }) {
-  const total = sumMonthlyKRW(subscriptions.filter((sub) => sub.status === "active"));
+  const rate = useExchangeRate();
+  const total = sumMonthlyKRW(
+    subscriptions.filter((sub) => sub.status === "active"),
+    rate,
+  );
   const [displayTotal, setDisplayTotal] = useState(0);
 
   useEffect(() => {

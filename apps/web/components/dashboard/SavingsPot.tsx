@@ -3,9 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { Subscription, formatCurrency, getSavingsEquivalent, sumAnnualKRW } from "@subslash/shared";
 import { Card, CardContent } from "../ui/card";
+import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 export function SavingsPot({ killedSubscriptions }: { killedSubscriptions: Subscription[] }) {
-  const annualSavings = sumAnnualKRW(killedSubscriptions);
+  const rate = useExchangeRate();
+  const annualSavings = sumAnnualKRW(killedSubscriptions, rate);
   const equivalents = getSavingsEquivalent(annualSavings);
   const [mounted, setMounted] = useState(false);
 

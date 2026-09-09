@@ -14,6 +14,7 @@ import {
   formatShockMessage,
   sumMonthlyKRW,
   sumAnnualKRW,
+  DEFAULT_EXCHANGE_RATE,
 } from "@subslash/shared";
 
 /**
@@ -31,7 +32,10 @@ const SEEDED_DEMO_ACCOUNTS: ReadonlyArray<Pick<LinkedAccount, "id" | "name" | "e
   { id: "acc-apple-1", name: "Apple ID (App Store)", emailOrId: "apple_user@icloud.com" },
 ];
 
-type PersistedState = Pick<SubSlashStore, "subscriptions" | "usageLogs" | "accounts" | "notify">;
+type PersistedState = Pick<
+  SubSlashStore,
+  "subscriptions" | "usageLogs" | "accounts" | "notify" | "exchangeRate"
+>;
 
 /**
  * Strips the seeded demo accounts out of a store that already has them, and
@@ -85,11 +89,42 @@ export const DEFAULT_NOTIFY: NotifySettings = {
   lastSyncedAt: null,
 };
 
+/** Where the USD → KRW rate in use came from. */
+export type ExchangeRateSource = "default" | "manual" | "ecb";
+
+/**
+ * The rate every USD subscription is converted with.
+ *
+ * A single hardcoded constant put every won total slightly off whenever the
+ * market moved, with nothing on screen to say so. The rate is now part of the
+ * user's data: they can type the one their card statement implies, or pull the
+ * latest published reference rate, and the app shows which one it used.
+ */
+export interface ExchangeRateSetting {
+  /** Null while nobody has chosen one; reads fall back to DEFAULT_EXCHANGE_RATE. */
+  rate: number | null;
+  source: ExchangeRateSource;
+  /** ISO timestamp of when this rate was set or published. */
+  updatedAt: string | null;
+}
+
+export const DEFAULT_EXCHANGE_RATE_SETTING: ExchangeRateSetting = {
+  rate: null,
+  source: "default",
+  updatedAt: null,
+};
+
+/** Rejects rates that would silently corrupt every total. */
+export function isValidExchangeRate(rate: number): boolean {
+  return Number.isFinite(rate) && rate > 0 && rate <= 100000;
+}
+
 interface SubSlashStore {
   subscriptions: Subscription[];
   usageLogs: UsageLog[];
   accounts: LinkedAccount[];
   notify: NotifySettings;
+  exchangeRate: ExchangeRateSetting;
 
   // Subscription actions
   addSubscription: (data: SubscriptionFormData) => Subscription;
@@ -113,6 +148,12 @@ interface SubSlashStore {
   setNotify: (settings: Partial<NotifySettings>) => void;
   clearNotify: () => void;
 
+  // Exchange rate actions
+  setExchangeRate: (rate: number, source: Exclude<ExchangeRateSource, "default">) => void;
+  resetExchangeRate: () => void;
+  /** The rate to convert with, falling back to the built-in default. */
+  getExchangeRate: () => number;
+
   // Linked Account actions
   addAccount: (account: Omit<LinkedAccount, "id" | "createdAt">) => LinkedAccount;
   updateAccount: (id: string, data: Partial<Omit<LinkedAccount, "id" | "createdAt">>) => void;
@@ -128,6 +169,7 @@ export const useStore = create<SubSlashStore>()(
       usageLogs: [],
       accounts: [],
       notify: DEFAULT_NOTIFY,
+      exchangeRate: DEFAULT_EXCHANGE_RATE_SETTING,
 
       addSubscription: (data) => {
         const newSub: Subscription = {
@@ -230,8 +272,9 @@ export const useStore = create<SubSlashStore>()(
         const killed = state.getKilledSubscriptions();
         // Normalised to KRW/month so USD and yearly plans are not summed as if
         // they were monthly won amounts.
-        const totalMonthlySpend = sumMonthlyKRW(active);
-        const totalSaved = sumAnnualKRW(killed);
+        const rate = state.getExchangeRate();
+        const totalMonthlySpend = sumMonthlyKRW(active, rate);
+        const totalSaved = sumAnnualKRW(killed, rate);
         const atRisk = state.getAtRiskSubscriptions();
         return {
           totalMonthlySpend,
@@ -261,6 +304,15 @@ export const useStore = create<SubSlashStore>()(
       clearNotify: () => {
         set({ notify: DEFAULT_NOTIFY });
       },
+
+      setExchangeRate: (rate, source) => {
+        if (!isValidExchangeRate(rate)) return;
+        set({ exchangeRate: { rate, source, updatedAt: new Date().toISOString() } });
+      },
+      resetExchangeRate: () => {
+        set({ exchangeRate: DEFAULT_EXCHANGE_RATE_SETTING });
+      },
+      getExchangeRate: () => get().exchangeRate.rate ?? DEFAULT_EXCHANGE_RATE,
 
       // Linked Accounts implementation
       addAccount: (accountData) => {
@@ -312,6 +364,7 @@ export const useStore = create<SubSlashStore>()(
         usageLogs: state.usageLogs,
         accounts: state.accounts,
         notify: state.notify,
+        exchangeRate: state.exchangeRate,
       }),
     },
   ),
