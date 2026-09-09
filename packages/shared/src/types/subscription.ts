@@ -27,6 +27,12 @@ export interface Subscription {
   currency: Currency;
   billingDay: number;
   billingCycle: BillingCycle;
+  /**
+   * Which month a yearly plan is charged in (1-12). Meaningless for monthly
+   * plans, and absent on yearly subscriptions registered before the field
+   * existed — code that needs a date must handle "not known yet".
+   */
+  billingMonth?: number;
   category: SubscriptionCategory;
   status: SubscriptionStatus;
   cancelUrl?: string;
@@ -87,6 +93,8 @@ export interface DiscoveredSubscription {
   currency: Currency;
   billingDay: number;
   billingCycle: BillingCycle;
+  /** Set only for yearly plans, when the receipt said which month. */
+  billingMonth?: number;
   category: SubscriptionCategory;
   cancelUrl?: string;
   cancelGuide?: string;

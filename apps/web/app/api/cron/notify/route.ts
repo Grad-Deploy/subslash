@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { and, eq, isNotNull } from "drizzle-orm";
-import { getDaysUntilBilling, getNextBillingDate, type Currency } from "@subslash/shared";
+import {
+  getDaysUntilBillingFor,
+  getNextBillingDateFor,
+  type BillingCycle,
+  type Currency,
+} from "@subslash/shared";
 import { getDb } from "@lib/db";
 import { mirroredSubscriptions, notificationLog, users } from "@lib/schema";
 import { signLink } from "@lib/tokens";
@@ -50,10 +55,21 @@ export async function GET(request: NextRequest) {
 
       for (const sub of subs) {
         considered += 1;
-        const daysLeft = getDaysUntilBilling(sub.billingDay, now);
-        if (daysLeft !== user.reminderDays) continue;
+        const schedule = {
+          billingDay: sub.billingDay,
+          billingCycle: sub.billingCycle as BillingCycle,
+          billingMonth: sub.billingMonth ?? undefined,
+        };
 
-        const billingDate = toDateKey(getNextBillingDate(sub.billingDay, now));
+        // A yearly plan with no billing month has no date to remind about.
+        // Treating it as monthly, which this sweep used to do, mailed the user
+        // about eleven charges a year that never happen.
+        const daysLeft = getDaysUntilBillingFor(schedule, now);
+        if (daysLeft === null || daysLeft !== user.reminderDays) continue;
+
+        const nextBillingDate = getNextBillingDateFor(schedule, now);
+        if (!nextBillingDate) continue;
+        const billingDate = toDateKey(nextBillingDate);
 
         // Idempotency: claim the send before doing it. A duplicate row means a
         // previous run already covered this billing date.

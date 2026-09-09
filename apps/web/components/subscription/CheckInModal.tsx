@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Subscription, CheckInResponse, PAYMENT_METHOD_OPTIONS } from "@subslash/shared";
+import {
+  Subscription,
+  CheckInResponse,
+  PAYMENT_METHOD_OPTIONS,
+  getCancelUrlKind,
+} from "@subslash/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -49,7 +54,17 @@ export function CheckInModal({
     (pm) => pm.value === subscription.paymentMethod,
   );
 
+  // The payment-method link manages the recurring charge at the payment
+  // provider, not at the service, so it cannot be labelled as the service's
+  // cancellation page.
+  const usesPaymentMethodUrl = Boolean(paymentMethodInfo?.directCancelUrl);
   const directUrl = paymentMethodInfo?.directCancelUrl || subscription.cancelUrl;
+  const cancelUrlKind = getCancelUrlKind(subscription.cancelUrl);
+  const cancelButtonLabel = usesPaymentMethodUrl
+    ? `💳 ${paymentMethodInfo?.label} 정기결제 관리 열기 (새 창)`
+    : cancelUrlKind === "direct"
+      ? `🚀 ${subscription.name} 해지 페이지 바로가기 (새 창)`
+      : `🚀 ${subscription.name} 열기 (새 창)`;
 
   const handleCopyId = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -191,7 +206,7 @@ export function CheckInModal({
                   className="w-full h-12 text-sm font-bold rounded-xl shadow-lg"
                   onClick={() => window.open(directUrl, "_blank")}
                 >
-                  🚀 {subscription.name} 해지 페이지 바로가기 (새 창)
+                  {cancelButtonLabel}
                 </Button>
               )}
               {onKill && (

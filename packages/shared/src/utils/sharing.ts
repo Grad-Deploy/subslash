@@ -34,6 +34,19 @@ export function getMyShareAmount(sub: SharedPlan): number {
   return sub.amount / getSharingCount(sub);
 }
 
+/**
+ * What one month of this plan costs the user, in the subscription's own
+ * currency.
+ *
+ * This is the figure the cost-per-use engine must divide: a check-in asks how
+ * many times the service was used in the last 30 days, so pairing that count
+ * with a yearly charge reports a per-use cost twelve times too high.
+ */
+export function getMyMonthlyShareAmount(sub: SharedPlan & { billingCycle?: BillingCycle }): number {
+  const mine = getMyShareAmount(sub);
+  return sub.billingCycle === "yearly" ? mine / 12 : mine;
+}
+
 /** What the other members owe the payer each billing date, in their currency. */
 export function getOthersShareAmount(sub: SharedPlan): number {
   return Math.max(0, sub.amount - getMyShareAmount(sub));

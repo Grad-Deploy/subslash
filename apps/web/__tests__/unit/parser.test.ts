@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
+  POPULAR_SERVICES,
+  SERVICE_KEYWORD_PRESET_IDS,
   parsePaymentSms,
   simulateGmailScan,
   simulateNaverScan,
@@ -75,6 +77,119 @@ describe("Payment SMS & Receipt Parser", () => {
     expect(results.map((r) => r.amount)).toContain(17000);
     expect(results.map((r) => r.amount)).toContain(14900);
     expect(results.map((r) => r.amount)).toContain(7890);
+  });
+
+  it("줄이 나뉜 카드 승인 문자에서 가맹점과 금액을 한 건으로 묶는다", () => {
+    // 국내 카드 문자는 은행 헤더·금액·가맹점이 각각 다른 줄에 오는 경우가 흔하다.
+    // 금액이 있는 줄마다 새 메시지로 잘라내면 가맹점 이름이 떨어져 나간다.
+    const sms = `[국민카드] 승인 홍*동
+17,000원 일시불
+09/15 14:30
+넷플릭스`;
+
+    const results = parsePaymentSms(sms);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].name).toBe("넷플릭스");
+    expect(results[0].amount).toBe(17000);
+    expect(results[0].billingDay).toBe(15);
+    expect(results[0].confidence).toBe("high");
+  });
+
+  it("[Web발신] 뒤에 여러 줄이 이어져도 한 건으로 본다", () => {
+    const sms = `[Web발신]
+노션 연간 결제 안내
+결제금액 : 120,000원
+결제일시 : 2026-03-11`;
+
+    const results = parsePaymentSms(sms);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].name).toBe("노션");
+    expect(results[0].amount).toBe(120000);
+  });
+
+  it("영수증 필드 이름이 구독 이름이 되지 않는다", () => {
+    const sms = `[Web발신]
+결제금액 : 8,900원
+결제일시 : 2026-03-11`;
+
+    const results = parsePaymentSms(sms);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].name).not.toBe("결제금액");
+    expect(results[0].name).toContain("알 수 없는 결제");
+  });
+
+  it("날짜가 구독 이름이 되지 않는다", () => {
+    const sms = `[하나카드] 승인
+9,900원 일시불
+03/11`;
+
+    const results = parsePaymentSms(sms);
+
+    expect(results).toHaveLength(1);
+    expect(results[0].name).not.toBe("03/11");
+    expect(results[0].name).toContain("알 수 없는 결제");
+  });
+
+  it("키워드 표의 presetId가 모두 실제 프리셋을 가리킨다", () => {
+    // 오타가 나면 매칭이 조용히 실패한다. 해지 URL도 카테고리도 붙지 않고,
+    // 이름은 폴백으로 떨어지는데 어디에서도 오류가 나지 않는다.
+    const known = new Set(POPULAR_SERVICES.map((service) => service.id));
+    const dangling = SERVICE_KEYWORD_PRESET_IDS.filter((id) => !known.has(id));
+
+    expect(dangling).toEqual([]);
+  });
+
+  it("어도비 결제 문자가 프리셋에 매칭된다", () => {
+    const results = parsePaymentSms(`[신한카드] 승인
+24,000원 일시불
+어도비`);
+
+    expect(results[0].name).toBe("어도비");
+    expect(results[0].cancelUrl).toBeTruthy();
+    expect(results[0].confidence).toBe("high");
+  });
+
+  it("마이크로소프트 365 결제 문자가 프리셋에 매칭된다", () => {
+    const results = parsePaymentSms(`[국민카드] 승인
+11,900원
+마이크로소프트 365`);
+
+    expect(results[0].name).toBe("마이크로소프트 365");
+    expect(results[0].cancelUrl).toBeTruthy();
+  });
+
+  it("연간 결제 영수증을 연간 구독으로 인식하고 결제 월까지 가져온다", () => {
+    // 월간으로 등록하면 월 고정지출이 12배로 잡힌다.
+    const results = parsePaymentSms(`[Web발신]
+노션 연간 결제 안내
+결제금액 : 120,000원
+결제일시 : 2026-03-11`);
+
+    expect(results[0].billingCycle).toBe("yearly");
+    expect(results[0].billingMonth).toBe(3);
+    expect(results[0].billingDay).toBe(11);
+  });
+
+  it("1년 이용권 문구도 연간으로 본다", () => {
+    const results = parsePaymentSms(`[국민카드] 승인
+99,000원 일시불
+03/11
+유튜브 프리미엄 1년 이용권`);
+
+    expect(results[0].billingCycle).toBe("yearly");
+    expect(results[0].billingMonth).toBe(3);
+  });
+
+  it("월간 결제에는 결제 월을 붙이지 않는다", () => {
+    // 매달 반복되는 결제라 영수증에 적힌 달은 아무것도 알려주지 않는다.
+    const results = parsePaymentSms(`[Web발신]
+신한카드 승인 17,000원 넷플릭스 09/15 일시불`);
+
+    expect(results[0].billingCycle).toBe("monthly");
+    expect(results[0].billingMonth).toBeUndefined();
   });
 
   it("Google Play의 Google AI Pro 결제 문자를 정상 파싱하고 AI 카테고리로 분류한다", () => {
