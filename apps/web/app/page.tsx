@@ -161,10 +161,10 @@ export default function Home() {
         </div>
         <div className="p-5 border rounded-2xl bg-card shadow-sm space-y-2">
           <div className="text-2xl">⚡</div>
-          <h3 className="font-bold text-base">1초 해지 직통 딥링크</h3>
+          <h3 className="font-bold text-base">해지 직통 링크 + 단계별 안내</h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            해지 메뉴를 꼭꼭 숨겨둔 다크패턴을 파쇄합니다. 원클릭으로 서비스별 최종 해지 페이지로
-            바로 이동합니다.
+            해지 메뉴를 꼭꼭 숨겨둔 다크패턴을 파쇄합니다. 대부분의 서비스는 해지 화면으로 바로
+            연결되고, 그럴 수 없는 곳은 어디서 몇 단계를 더 가야 하는지 알려드립니다.
           </p>
         </div>
         <div className="p-5 border rounded-2xl bg-card shadow-sm space-y-2">
