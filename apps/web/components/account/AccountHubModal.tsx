@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useStore } from "../../lib/store";
+import { SHOW_INBOX_PREVIEW } from "../../lib/flags";
 import { AccountProvider, ACCOUNT_PROVIDERS, sumMonthlyKRW } from "@subslash/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
@@ -39,12 +40,14 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
     setIsAdding(false);
   };
 
+  // Picking a provider only prefills the manual form. It must never invent an
+  // address: the stored account is shown as "log in with this account" on the
+  // cancellation guide, so a made-up one would send the user to a dead end.
   const handleQuickAdd = (p: (typeof ACCOUNT_PROVIDERS)[number]) => {
-    addAccount({
-      provider: p.id as AccountProvider,
-      name: `${p.name} 연동 계정`,
-      emailOrId: `user${Math.floor(Math.random() * 900 + 100)}${p.defaultDomain}`,
-    });
+    setProvider(p.id as AccountProvider);
+    setName("");
+    setEmailOrId(p.defaultDomain);
+    setIsAdding(true);
   };
 
   const getProviderBadge = (p: AccountProvider) => {
@@ -85,8 +88,14 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
         <div className="space-y-6 py-2">
           {/* Quick Connect / Simulation */}
           <div className="p-4 bg-muted/40 rounded-2xl border space-y-3">
-            <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              간편 소셜 연동 추가
+            <div className="space-y-1">
+              <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                제공자 선택해서 추가
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                제공자를 고르면 아래 입력란이 열립니다. 평소 그 서비스에 로그인할 때 쓰는 실제
+                주소를 입력해주세요.
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
               {ACCOUNT_PROVIDERS.map((p) => (
@@ -169,7 +178,8 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
 
             {accounts.length === 0 ? (
               <div className="text-center py-8 border border-dashed rounded-2xl text-xs text-muted-foreground">
-                등록된 연동 계정이 없습니다. 위 간편 연동 버튼을 눌러 계정을 등록해보세요.
+                등록된 연동 계정이 없습니다. 위에서 제공자를 고르거나 &lsquo;직접 계정 입력&rsquo;을
+                눌러 등록해보세요.
               </div>
             ) : (
               <div className="space-y-2.5">
@@ -196,15 +206,18 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
                         </div>
 
                         <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs gap-1 border-primary/30 text-primary hover:bg-primary/10"
-                            onClick={() => setScanAccountId(acc.id)}
-                            title="이 계정의 영수증 메일을 스캔하여 구독 자동 탐지"
-                          >
-                            <span>⚡</span> 구독 스캔
-                          </Button>
+                          {/* Per-account scan only drives the simulated inbox preview. */}
+                          {SHOW_INBOX_PREVIEW && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs gap-1 border-primary/30 text-primary hover:bg-primary/10"
+                              onClick={() => setScanAccountId(acc.id)}
+                              title="이 계정으로 예시 영수증 스캔 미리보기 실행"
+                            >
+                              <span>🧪</span> 예시 스캔
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"

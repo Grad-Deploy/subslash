@@ -8,6 +8,7 @@ import {
   getAnnualAmountKRW,
   getMonthlyAmountKRW,
   getSavingsEquivalent,
+  getSavingsEquivalents,
   sumAnnualKRW,
 } from "@subslash/shared";
 import { SavingsPot } from "../../components/dashboard/SavingsPot";
@@ -33,7 +34,8 @@ export default function SavingsDashboard() {
 
   const killedSubs = getKilledSubscriptions();
   const annualSavings = sumAnnualKRW(killedSubs);
-  const equivalents = getSavingsEquivalent(annualSavings);
+  const equivalents = getSavingsEquivalents(annualSavings);
+  const headlineEquivalent = getSavingsEquivalent(annualSavings)[0] ?? "";
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -46,7 +48,7 @@ export default function SavingsDashboard() {
   };
 
   const handleShare = async () => {
-    const text = `✂️ SubSlash로 불필요한 구독을 해지하여 연간 ₩${annualSavings.toLocaleString()}을 방어했습니다! ${equivalents[0] || ""}`;
+    const text = `✂️ SubSlash로 불필요한 구독을 해지하여 연간 ₩${annualSavings.toLocaleString()}을 방어했습니다! ${headlineEquivalent}`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -89,35 +91,26 @@ export default function SavingsDashboard() {
           {/* Main Savings Pot Widget */}
           <SavingsPot killedSubscriptions={killedSubs} />
 
-          {/* Reward Equivalent Cards */}
+          {/* Reward Equivalent Cards — only the tiers the savings actually cover */}
           <div className="space-y-3">
             <h3 className="font-bold text-base">🎁 절약한 돈으로 누릴 수 있는 현실적 보상</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-4 border rounded-2xl bg-card space-y-1">
-                <p className="text-xs text-muted-foreground">치킨 환산</p>
-                <p className="text-lg font-bold text-foreground">
-                  🍗 맛있는 치킨 {Math.max(1, Math.floor(annualSavings / 20000))}마리
-                </p>
+            {equivalents.length === 0 ? (
+              <div className="p-4 border border-dashed rounded-2xl text-sm text-muted-foreground">
+                아직 환산할 만큼 모이지 않았습니다. 연간 ₩5,000부터 여기에 표시됩니다.
               </div>
-              <div className="p-4 border rounded-2xl bg-card space-y-1">
-                <p className="text-xs text-muted-foreground">커피 환산</p>
-                <p className="text-lg font-bold text-foreground">
-                  ☕ 카페 라떼 {Math.max(1, Math.floor(annualSavings / 5000))}잔
-                </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {equivalents.map((item) => (
+                  <div key={item.label} className="p-4 border rounded-2xl bg-card space-y-1">
+                    <p className="text-xs text-muted-foreground">{item.label} 환산</p>
+                    <p className="text-lg font-bold text-foreground">
+                      {item.emoji} {item.label} {item.count.toLocaleString()}
+                      {item.unit}
+                    </p>
+                  </div>
+                ))}
               </div>
-              <div className="p-4 border rounded-2xl bg-card space-y-1">
-                <p className="text-xs text-muted-foreground">외식 환산</p>
-                <p className="text-lg font-bold text-foreground">
-                  🍣 고급 레스토랑 {Math.max(1, Math.floor(annualSavings / 100000))}회
-                </p>
-              </div>
-              <div className="p-4 border rounded-2xl bg-card space-y-1">
-                <p className="text-xs text-muted-foreground">여행 환산</p>
-                <p className="text-lg font-bold text-foreground">
-                  ✈️ {annualSavings >= 500000 ? "해외 여행 경비 지원" : "제주도 힐링 여행"}
-                </p>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Defended Subscriptions List with Actions */}

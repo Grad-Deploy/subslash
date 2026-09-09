@@ -12,6 +12,7 @@ import {
   isDemoOrTestAccount,
 } from "@subslash/shared";
 import { useStore } from "../../lib/store";
+import { SHOW_INBOX_PREVIEW } from "../../lib/flags";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -57,7 +58,7 @@ export function AutoImportModal({
 }: AutoImportModalProps) {
   const { accounts, addAccount, addBatchSubscriptions, subscriptions, clearSubscriptions } =
     useStore();
-  const [activeTab, setActiveTab] = useState<"email" | "sms">(initialSmsText ? "sms" : "email");
+  const [activeTab, setActiveTab] = useState<"email" | "sms">("sms");
 
   // Email scan options (Google & Naver)
   const [selectedAccountId, setSelectedAccountId] = useState<string>(
@@ -198,7 +199,7 @@ export function AutoImportModal({
           ? "Google 및 네이버 메일함"
           : "Google 메일함";
 
-    setScanProgressText(`${providerLabel} (${emailToScan}) 수신함 연결 중...`);
+    setScanProgressText(`${providerLabel} 형식으로 예시 영수증을 생성하는 중... (${emailToScan})`);
 
     clearScanTimers();
 
@@ -206,10 +207,10 @@ export function AutoImportModal({
       setTimeout(() => {
         setScanProgressText(
           effectiveProvider === "naver"
-            ? "네이버페이 결제 영수증 및 상태 메일(해지 완료 안내, 단발성 결제) 정밀 분석 중..."
+            ? "네이버페이 영수증·해지 안내·단발성 결제 메일 형식을 구성하는 중..."
             : effectiveProvider === "all"
-              ? "Google Play, Anthropic, 네이버페이 등 전체 결제 영수증 탐색 중..."
-              : "Google Play, Anthropic (YouTube, Google AI Pro, Claude Pro) 결제 영수증 탐색 중...",
+              ? "Google Play, Anthropic, 네이버페이 영수증 형식을 구성하는 중..."
+              : "Google Play, Anthropic (YouTube, Google AI Pro) 영수증 형식을 구성하는 중...",
         );
       }, 500),
     );
@@ -218,8 +219,8 @@ export function AutoImportModal({
       setTimeout(() => {
         setScanProgressText(
           filterLimit === 30
-            ? `최근 30일 이내 청구 여부 정밀 검증 중 (${emailToScan})...`
-            : `전체 기간 결제 이력 분석 중 (${emailToScan})...`,
+            ? "최근 30일 이내 청구 건만 남기는 판별 로직을 적용하는 중..."
+            : "전체 기간 결제 이력에 판별 로직을 적용하는 중...",
         );
       }, 1000),
     );
@@ -417,43 +418,75 @@ export function AutoImportModal({
             </DialogTitle>
           </div>
           <DialogDescription className="text-sm text-muted-foreground">
-            수신함 결제 영수증이나 카드 문자를 분석하여 현재 실제로 결제 중인 구독만 추출합니다.
+            카드 결제 문자나 영수증 메일 본문을 붙여넣으면 현재 실제로 결제 중인 구독만 추출합니다.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Tab Selector */}
-        <div className="flex gap-2 border-b border-border pt-2 pb-3">
-          <Button
-            type="button"
-            variant={activeTab === "email" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => {
-              setActiveTab("email");
-              handleClearParsingRecords();
-            }}
-            className="flex-1 text-sm font-medium gap-1.5"
-          >
-            <span>📧</span> 이메일 영수증 스캔 (Google / Naver)
-          </Button>
-          <Button
-            type="button"
-            variant={activeTab === "sms" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => {
-              setActiveTab("sms");
-              handleClearParsingRecords();
-            }}
-            className="flex-1 text-sm font-medium gap-1.5"
-          >
-            <span>💬</span> 결제 문자 / 영수증 메일 파싱
-          </Button>
-        </div>
+        {/*
+          Tab Selector — only meaningful while the simulated inbox preview is
+          enabled. With it off there is a single real input mode, so the modal
+          shows no tabs at all.
+        */}
+        {SHOW_INBOX_PREVIEW && (
+          <div className="flex gap-2 border-b border-border pt-2 pb-3">
+            <Button
+              type="button"
+              variant={activeTab === "email" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => {
+                setActiveTab("email");
+                handleClearParsingRecords();
+              }}
+              className="flex-1 text-sm font-medium gap-1.5"
+            >
+              <span>🧪</span> 메일함 스캔 (미리보기)
+            </Button>
+            <Button
+              type="button"
+              variant={activeTab === "sms" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => {
+                setActiveTab("sms");
+                handleClearParsingRecords();
+              }}
+              className="flex-1 text-sm font-medium gap-1.5"
+            >
+              <span>💬</span> 결제 문자 · 영수증 붙여넣기
+            </Button>
+          </div>
+        )}
 
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto py-3 space-y-4 pr-1">
-          {/* TAB 1: EMAIL SCAN (Google & Naver) */}
-          {activeTab === "email" && (
+          {/* TAB 1: EMAIL SCAN (Google & Naver) — simulated preview */}
+          {SHOW_INBOX_PREVIEW && activeTab === "email" && (
             <div className="space-y-4">
+              {/*
+                This tab does not read anyone's mail. It generates sample
+                receipts to demonstrate the filtering logic, so it has to say so
+                plainly rather than imply a live inbox connection.
+              */}
+              <div className="p-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 space-y-1.5">
+                <div className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                  🧪 미리보기 — 실제 메일함에 연결하지 않습니다
+                </div>
+                <p className="text-[11px] leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+                  Gmail · 네이버 메일 연동은 아직 준비 중입니다. 아래 결과는 해지·단발성 결제·30일
+                  초과 건을 걸러내는 판별 방식을 보여주기 위해 <strong>생성한 예시 영수증</strong>
+                  이며, 실제 결제 내역이 아닙니다. 내 구독을 실제로 불러오려면{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("sms");
+                      handleClearParsingRecords();
+                    }}
+                    className="underline font-semibold hover:opacity-80"
+                  >
+                    결제 문자 · 영수증 붙여넣기
+                  </button>{" "}
+                  탭을 이용하세요.
+                </p>
+              </div>
               {/* Scan Control Box */}
               <div className="p-4 rounded-xl bg-muted/40 border border-border/80 space-y-3">
                 <div className="space-y-2">
@@ -480,7 +513,7 @@ export function AutoImportModal({
                           스캔할 이메일 주소 (아이디 + 도메인 선택):
                         </label>
                         <span className="text-[10px] text-muted-foreground">
-                          도메인 선택 시 메일함 자동 감지
+                          도메인 선택 시 공급자 자동 감지
                         </span>
                       </div>
                       <EmailDomainInput
@@ -518,7 +551,9 @@ export function AutoImportModal({
                 {/* Mailbox Provider Selector */}
                 <div className="pt-2 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-foreground">📫 스캔할 메일함:</span>
+                    <span className="text-xs font-semibold text-foreground">
+                      📫 예시 영수증 공급자:
+                    </span>
                     {mailboxProvider === "auto" && (
                       <Badge variant="outline" className="text-[10px] font-normal py-0">
                         {getEffectiveProvider() === "naver"
@@ -614,7 +649,7 @@ export function AutoImportModal({
                     onClick={() => handleStartEmailScan()}
                     className="shrink-0 font-medium self-end sm:self-auto"
                   >
-                    {scanStep === "scanning" ? "스캔 중..." : "🚀 영수증 스캔 실행"}
+                    {scanStep === "scanning" ? "생성 중..." : "🧪 예시 스캔 실행"}
                   </Button>
                 </div>
               </div>
@@ -625,7 +660,7 @@ export function AutoImportModal({
                   <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                   <p className="text-sm font-semibold text-foreground">{scanProgressText}</p>
                   <p className="text-xs text-muted-foreground">
-                    수신함 청구 메일 날짜를 대조하여 30일 이내 결제 여부를 판별합니다.
+                    예시 영수증의 날짜를 대조하여 30일 이내 결제 여부를 판별합니다.
                   </p>
                 </div>
               )}
@@ -636,10 +671,10 @@ export function AutoImportModal({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-bold text-foreground">
-                        📬 수신함 영수증 메일 분석 증거
+                        🧪 예시 영수증 판별 내역
                       </span>
                       <Badge variant="outline" className="text-[10px]">
-                        총 {inboxEvidence.length}개 영수증 검토됨
+                        예시 {inboxEvidence.length}건
                       </Badge>
                     </div>
                     <button
@@ -809,13 +844,15 @@ export function AutoImportModal({
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-border/50">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                        <span>검색된 구독 서비스</span>
+                        <span>
+                          {activeTab === "email" ? "예시 구독 서비스" : "검색된 구독 서비스"}
+                        </span>
                         <Badge variant="secondary" className="text-xs font-bold">
                           {discoveredItems.length}건
                         </Badge>
                         {daysFilter === 30 && activeTab === "email" && (
                           <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                            (최근 30일 실결제 기준)
+                            (예시 · 최근 30일 기준)
                           </span>
                         )}
                       </span>
@@ -975,12 +1012,12 @@ export function AutoImportModal({
               <div className="p-8 text-center border border-dashed rounded-2xl space-y-3 bg-muted/10">
                 <div className="text-3xl">📭</div>
                 <p className="text-sm font-bold text-foreground">
-                  가상 이메일({customEmail.trim() || "입력된 이메일"}) 수신함에 결제 영수증이
-                  없습니다 (0건).
+                  {customEmail.trim() || "입력된 이메일"} 계정으로 생성된 예시 영수증이 없습니다
+                  (0건).
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed max-w-lg mx-auto">
-                  입력하신 가상 이메일(<strong>{customEmail.trim() || "새 이메일"}</strong>)은 신규
-                  주소이므로 이전 연동 계정의 결제 내역을 불러오지 않고 안전하게
+                  입력하신 이메일(<strong>{customEmail.trim() || "새 이메일"}</strong>)은 예시
+                  데이터가 없는 신규 주소이므로, 다른 계정의 예시 영수증을 재사용하지 않고 계정별로
                   분리·격리되었습니다.
                 </p>
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
@@ -1002,11 +1039,11 @@ export function AutoImportModal({
               <div className="p-8 text-center border border-dashed rounded-2xl space-y-3 bg-muted/10">
                 <div className="text-3xl">✅</div>
                 <p className="text-sm font-bold text-foreground">
-                  최근 30일 이내에 청구된 활성 정기구독 결제 메일이 없습니다.
+                  최근 30일 이내에 청구된 활성 정기구독 예시가 없습니다.
                 </p>
                 <p className="text-xs text-muted-foreground leading-relaxed max-w-lg mx-auto">
-                  수신함 영수증 및 상태 메일 정밀 분석 결과, 해지 완료 메일이 수신된 서비스 및 일반
-                  단발성 결제, 30일 초과 만료 내역이 활성 구독에서 정확히 제외되었습니다.
+                  예시 영수증 및 상태 메일 판별 결과, 해지 완료 메일이 있는 서비스와 일반 단발성
+                  결제, 30일 초과 만료 내역이 활성 구독에서 제외되었습니다.
                 </p>
                 <div className="pt-1 flex items-center justify-center gap-2">
                   <button
@@ -1023,6 +1060,14 @@ export function AutoImportModal({
 
         {/* Modal Footer Actions */}
         <div className="pt-3 border-t border-border mt-auto flex flex-col gap-3">
+          {/* Registering preview results writes sample data into the real list. */}
+          {activeTab === "email" && discoveredItems.length > 0 && (
+            <div className="px-3 py-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-[11px] leading-relaxed text-amber-900 dark:text-amber-200">
+              지금 등록하면 <strong>예시 데이터</strong>가 내 구독 목록에 그대로 저장됩니다. 실제
+              결제 내역을 등록하려면 <strong>결제 문자 · 영수증 붙여넣기</strong> 탭을 이용하세요.
+            </div>
+          )}
+
           {/* Previous records replacement option & clear button */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs py-2 px-3 bg-muted/30 rounded-xl border border-border/70">
             <label className="flex items-center gap-2 cursor-pointer select-none">
