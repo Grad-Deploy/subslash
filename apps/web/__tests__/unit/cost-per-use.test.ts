@@ -6,6 +6,7 @@ import {
   formatCurrency,
   calculateAnnualSavings,
   getSavingsEquivalent,
+  getSavingsEquivalents,
 } from "@subslash/shared";
 
 describe("Cost Per Use Utils", () => {
@@ -109,9 +110,56 @@ describe("Cost Per Use Utils", () => {
       expect(equivalents.some((e) => e.includes("레스토랑"))).toBe(true);
     });
 
-    it('25000 -> includes "카페 라떼" with correct count', () => {
-      const equivalents = getSavingsEquivalent(25000);
-      expect(equivalents.some((e) => e.includes("카페 라떼"))).toBe(true);
+    it("25000 -> 실제로 살 수 있는 것 중 가장 큰 보상인 치킨 1마리를 제시한다", () => {
+      expect(getSavingsEquivalent(25000)).toEqual(["맛있는 치킨 1마리"]);
+    });
+
+    it("가장 싼 보상에도 못 미치면 아무것도 제시하지 않는다", () => {
+      expect(getSavingsEquivalent(4999)).toEqual([]);
+      expect(getSavingsEquivalent(0)).toEqual([]);
+    });
+
+    it("환산 카드와 공유 문구가 같은 값을 말한다", () => {
+      const annualSavings = 60000;
+      const cards = getSavingsEquivalents(annualSavings);
+      const headline = getSavingsEquivalent(annualSavings)[0];
+      const best = cards[cards.length - 1];
+
+      expect(headline).toBe(`${best.label} ${best.count}${best.unit}`);
+    });
+  });
+
+  describe("getSavingsEquivalents", () => {
+    it("절약액이 감당하지 못하는 보상은 아예 제외한다", () => {
+      // ₩12,000이면 라떼 2잔은 되지만 ₩20,000짜리 치킨부터는 아직 못 산다.
+      expect(getSavingsEquivalents(12000).map((e) => e.label)).toEqual(["카페 라떼"]);
+
+      // ₩30,000이면 치킨까지는 되지만 ₩100,000짜리 레스토랑 저녁은 안 된다.
+      expect(getSavingsEquivalents(30000).map((e) => e.label)).toEqual([
+        "카페 라떼",
+        "맛있는 치킨",
+      ]);
+    });
+
+    it("개수는 단가로 나눈 실제 수량이다", () => {
+      const chicken = getSavingsEquivalents(65000).find((e) => e.label === "맛있는 치킨");
+
+      expect(chicken?.count).toBe(3); // floor(65000 / 20000)
+    });
+
+    it("가장 싼 보상에도 못 미치면 빈 배열을 반환한다", () => {
+      expect(getSavingsEquivalents(4999)).toEqual([]);
+    });
+
+    it("싼 것부터 비싼 순서로 반환한다", () => {
+      const labels = getSavingsEquivalents(600000).map((e) => e.label);
+
+      expect(labels).toEqual([
+        "카페 라떼",
+        "맛있는 치킨",
+        "고급 레스토랑 저녁",
+        "가까운 해외 여행",
+      ]);
     });
   });
 });

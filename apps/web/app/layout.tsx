@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "../components/layout/Header";
 import { BottomNav } from "../components/layout/BottomNav";
 import { ThemeProvider } from "../components/layout/ThemeProvider";
+import { ServiceWorkerRegistrar } from "../components/layout/ServiceWorkerRegistrar";
 
 const geist = Geist({ subsets: ["latin"] });
 
@@ -57,6 +58,7 @@ export default function RootLayout({
         className={`${geist.className} min-h-screen flex flex-col bg-background text-foreground antialiased`}
       >
         <ThemeProvider>
+          <ServiceWorkerRegistrar />
           <Header />
           <main className="flex-1 container max-w-4xl mx-auto px-4 py-6 pb-24 md:pb-8">
             {children}

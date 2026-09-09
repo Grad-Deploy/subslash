@@ -68,7 +68,7 @@ export function Header() {
             <button
               onClick={() => setIsAutoImportOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-all shadow-sm active:scale-95"
-              title="이메일 영수증 스캔 및 결제문자 자동 분석"
+              title="결제 문자·영수증을 붙여넣어 구독 자동 등록"
             >
               <span>⚡</span>
               <span className="hidden sm:inline">자동 불러오기</span>
