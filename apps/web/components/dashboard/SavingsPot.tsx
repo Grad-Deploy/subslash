@@ -1,11 +1,19 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Subscription, formatCurrency, getSavingsEquivalent, sumAnnualKRW } from "@subslash/shared";
+import {
+  Subscription,
+  formatCurrency,
+  getSavingsEquivalent,
+  sumMyAnnualKRW,
+} from "@subslash/shared";
 import { Card, CardContent } from "../ui/card";
+import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 export function SavingsPot({ killedSubscriptions }: { killedSubscriptions: Subscription[] }) {
-  const annualSavings = sumAnnualKRW(killedSubscriptions);
+  const rate = useExchangeRate();
+  // Cancelling a plan split four ways saves the user a quarter, not all of it.
+  const annualSavings = sumMyAnnualKRW(killedSubscriptions, rate);
   const equivalents = getSavingsEquivalent(annualSavings);
   const [mounted, setMounted] = useState(false);
 

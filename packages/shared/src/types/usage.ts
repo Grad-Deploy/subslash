@@ -17,7 +17,10 @@ export interface CheckInResponse {
 }
 
 export interface DashboardStats {
+  /** What the user personally pays each month, after splitting shared plans. */
   totalMonthlySpend: number;
+  /** What the card is charged each month, shared plans included in full. */
+  totalMonthlyBilled: number;
   activeCount: number;
   killedCount: number;
   totalSaved: number;

@@ -17,7 +17,7 @@ export function formatAmount(amount: number, currency: Currency): string {
   return formatUSD(amount);
 }
 
-export function convertUSDtoKRW(usd: number, rate: number = 1350): number {
+export function convertUSDtoKRW(usd: number, rate: number = DEFAULT_EXCHANGE_RATE): number {
   return usd * rate;
 }
 
