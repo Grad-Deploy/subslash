@@ -23,6 +23,15 @@ export const users = sqliteTable(
     verifiedAt: text("verified_at"),
     /** How many days before a billing date the reminder goes out. */
     reminderDays: integer("reminder_days").notNull().default(3),
+    /**
+     * SHA-256 of the calendar feed token, or null while the feed is off.
+     *
+     * Kept separate from the sync token on purpose: a calendar URL is pasted
+     * into apps, synced between devices and sometimes shared, so the credential
+     * it carries must not be the one that can overwrite the mirror. This one
+     * only reads, and rotating it revokes every subscribed calendar at once.
+     */
+    calendarTokenHash: text("calendar_token_hash"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(datetime('now'))`),
@@ -31,6 +40,7 @@ export const users = sqliteTable(
   (table) => ({
     emailIdx: uniqueIndex("users_email_idx").on(table.email),
     syncTokenIdx: uniqueIndex("users_sync_token_idx").on(table.syncTokenHash),
+    calendarTokenIdx: uniqueIndex("users_calendar_token_idx").on(table.calendarTokenHash),
   }),
 );
 

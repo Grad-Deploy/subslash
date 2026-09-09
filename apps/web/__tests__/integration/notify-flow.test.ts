@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
-import { readFileSync } from "fs";
+import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 
 /**
@@ -26,17 +26,28 @@ const { POST: subscribeRoute } = await import("../../app/api/notify/subscribe/ro
 const { PUT: syncRoute, GET: statusRoute } = await import("../../app/api/notify/sync/route");
 const { GET: verifyRoute } = await import("../../app/api/notify/verify/route");
 const { GET: cronRoute } = await import("../../app/api/cron/notify/route");
+const { POST: calendarOnRoute, DELETE: calendarOffRoute } =
+  await import("../../app/api/notify/calendar/route");
+const { GET: calendarFeedRoute } = await import("../../app/api/calendar/[token]/route");
 
-const migration = readFileSync(join(process.cwd(), "drizzle", "0000_light_reavers.sql"), "utf-8");
+// Every migration in order, so a new one is exercised the day it lands rather
+// than the day someone notices the suite still builds the old schema.
+const migrationsDir = join(process.cwd(), "drizzle");
+const migrations = readdirSync(migrationsDir)
+  .filter((file) => file.endsWith(".sql"))
+  .sort()
+  .map((file) => readFileSync(join(migrationsDir, file), "utf-8"));
 
 async function resetDatabase() {
   const db = getDb();
   for (const table of ["notification_log", "mirrored_subscriptions", "users"]) {
     await db.run(`DROP TABLE IF EXISTS ${table}` as never);
   }
-  for (const statement of migration.split("--> statement-breakpoint")) {
-    const sql = statement.trim();
-    if (sql) await db.run(sql as never);
+  for (const migration of migrations) {
+    for (const statement of migration.split("--> statement-breakpoint")) {
+      const sql = statement.trim();
+      if (sql) await db.run(sql as never);
+    }
   }
 }
 
@@ -285,6 +296,104 @@ describe("크론 알림 발송", () => {
     // A second sweep on the same day must be a no-op.
     expect(await (await runCron()).json()).toMatchObject({ notified: 0, skipped: 1 });
     expect(await getDb().select().from(notificationLog)).toHaveLength(1);
+  });
+});
+
+describe("캘린더 피드", () => {
+  async function enableFeed(token: string): Promise<string> {
+    const response = await calendarOnRoute(
+      request("http://localhost:3000/api/notify/calendar", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    );
+    expect(response.status).toBe(200);
+    return (await response.json()).url as string;
+  }
+
+  function feedTokenOf(url: string): string {
+    return url.split("/").pop()!.replace(".ics", "");
+  }
+
+  async function fetchFeed(feedToken: string) {
+    return calendarFeedRoute(request(`http://localhost:3000/api/calendar/${feedToken}.ics`), {
+      params: Promise.resolve({ token: `${feedToken}.ics` }),
+    });
+  }
+
+  it("동기화한 구독을 캘린더 일정으로 내려준다", async () => {
+    const token = await optIn();
+    await putMirror(token, [
+      { id: "s1", name: "넷플릭스", amount: 17000, billingDay: 15, billingCycle: "monthly" },
+    ]);
+
+    const url = await enableFeed(token);
+    const response = await fetchFeed(feedTokenOf(url));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/calendar");
+    const body = await response.text();
+    expect(body).toContain("BEGIN:VCALENDAR");
+    expect(body).toContain("넷플릭스");
+    expect(body).toContain("RRULE:FREQ=MONTHLY;BYMONTHDAY=15");
+  });
+
+  it("확인 메일을 누르지 않아도 동작한다", async () => {
+    const token = await optIn();
+    await putMirror(token, [{ id: "s1", name: "왓챠", amount: 7900, billingDay: 3 }]);
+
+    const response = await fetchFeed(feedTokenOf(await enableFeed(token)));
+
+    expect(response.status).toBe(200);
+    expect((await getDb().select().from(users))[0].verifiedAt).toBeNull();
+  });
+
+  it("원본 토큰이 아니라 해시만 저장한다", async () => {
+    const token = await optIn();
+    const feedToken = feedTokenOf(await enableFeed(token));
+
+    const row = (await getDb().select().from(users))[0];
+    expect(row.calendarTokenHash).toBe(hashSyncToken(feedToken));
+    expect(row.calendarTokenHash).not.toBe(feedToken);
+  });
+
+  it("캘린더 토큰으로는 미러를 덮어쓸 수 없다", async () => {
+    const token = await optIn();
+    const feedToken = feedTokenOf(await enableFeed(token));
+
+    const response = await putMirror(feedToken, [
+      { id: "x", name: "침입", amount: 1, billingDay: 1 },
+    ]);
+
+    expect(response.status).toBe(401);
+  });
+
+  it("새 주소를 만들면 이전 주소는 끊긴다", async () => {
+    const token = await optIn();
+    const oldToken = feedTokenOf(await enableFeed(token));
+    const newToken = feedTokenOf(await enableFeed(token));
+
+    expect(newToken).not.toBe(oldToken);
+    expect((await fetchFeed(oldToken)).status).toBe(404);
+    expect((await fetchFeed(newToken)).status).toBe(200);
+  });
+
+  it("구독을 끊으면 주소가 더 이상 열리지 않는다", async () => {
+    const token = await optIn();
+    const feedToken = feedTokenOf(await enableFeed(token));
+
+    await calendarOffRoute(
+      request("http://localhost:3000/api/notify/calendar", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    );
+
+    expect((await fetchFeed(feedToken)).status).toBe(404);
+  });
+
+  it("존재하지 않는 토큰은 404로만 답한다", async () => {
+    expect((await fetchFeed("deadbeef")).status).toBe(404);
   });
 });
 
