@@ -94,7 +94,7 @@ export function SubCard({ subscription, onCheckIn, onKill, onRevive, onDelete }:
 
           {!isKilled && (
             <div className="flex flex-col items-end gap-2">
-              <DdayCountdown billingDay={subscription.billingDay} />
+              <DdayCountdown subscription={subscription} />
             </div>
           )}
         </div>

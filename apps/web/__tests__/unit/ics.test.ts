@@ -14,13 +14,25 @@ const NOW = new Date(2026, 8, 9); // 2026-09-09
 
 describe("billingRRule", () => {
   it("모든 달에 있는 날짜는 그대로 반복한다", () => {
-    expect(billingRRule(15)).toBe("FREQ=MONTHLY;BYMONTHDAY=15");
+    expect(billingRRule({ billingDay: 15 })).toBe("FREQ=MONTHLY;BYMONTHDAY=15");
   });
 
   it("29~31일은 짧은 달의 말일로 당겨지도록 규칙을 만든다", () => {
     // BYMONTHDAY=31,-1 + BYSETPOS=1 은 "31일"과 "말일" 중 이른 쪽을 고른다.
-    expect(billingRRule(31)).toBe("FREQ=MONTHLY;BYMONTHDAY=31,-1;BYSETPOS=1");
-    expect(billingRRule(29)).toBe("FREQ=MONTHLY;BYMONTHDAY=29,-1;BYSETPOS=1");
+    expect(billingRRule({ billingDay: 31 })).toBe("FREQ=MONTHLY;BYMONTHDAY=31,-1;BYSETPOS=1");
+    expect(billingRRule({ billingDay: 29 })).toBe("FREQ=MONTHLY;BYMONTHDAY=29,-1;BYSETPOS=1");
+  });
+
+  it("연간 구독은 결제 월까지 고정해 1년에 한 번만 반복한다", () => {
+    expect(billingRRule({ billingDay: 3, billingCycle: "yearly", billingMonth: 11 })).toBe(
+      "FREQ=YEARLY;BYMONTH=11;BYMONTHDAY=3",
+    );
+  });
+
+  it("연간 2월 29일 결제는 평년에 28일로 당겨진다", () => {
+    expect(billingRRule({ billingDay: 29, billingCycle: "yearly", billingMonth: 2 })).toBe(
+      "FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=29,-1;BYSETPOS=1",
+    );
   });
 });
 
@@ -29,6 +41,12 @@ describe("calendarEligible", () => {
     const entries = [netflix, { ...netflix, clientId: "sub-2", billingCycle: "yearly" }];
 
     expect(calendarEligible(entries).map((e) => e.clientId)).toEqual(["sub-1"]);
+  });
+
+  it("결제 월이 있는 연간 구독은 내보낸다", () => {
+    const entries = [{ ...netflix, clientId: "sub-3", billingCycle: "yearly", billingMonth: 6 }];
+
+    expect(calendarEligible(entries).map((e) => e.clientId)).toEqual(["sub-3"]);
   });
 });
 
@@ -46,7 +64,7 @@ describe("buildBillingCalendar", () => {
     expect(ics).toContain("BEGIN:VALARM");
   });
 
-  it("연간 구독만 있으면 일정 없는 빈 캘린더를 준다", () => {
+  it("결제 월 없는 연간 구독만 있으면 일정 없는 빈 캘린더를 준다", () => {
     const ics = buildBillingCalendar([{ ...netflix, billingCycle: "yearly" }], {
       reminderDays: 3,
       now: NOW,
@@ -54,6 +72,25 @@ describe("buildBillingCalendar", () => {
 
     expect(ics).not.toContain("BEGIN:VEVENT");
     expect(ics).toContain("END:VCALENDAR");
+  });
+
+  it("결제 월이 있는 연간 구독은 그 달의 일정으로 나간다", () => {
+    const ics = buildBillingCalendar(
+      [{ ...netflix, billingDay: 3, billingCycle: "yearly", billingMonth: 11 }],
+      { reminderDays: 3, now: NOW },
+    );
+
+    expect(ics).toContain("DTSTART;VALUE=DATE:20261103");
+    expect(ics).toContain("RRULE:FREQ=YEARLY;BYMONTH=11;BYMONTHDAY=3");
+  });
+
+  it("올해 결제 월이 지났으면 내년 날짜로 시작한다", () => {
+    const ics = buildBillingCalendar(
+      [{ ...netflix, billingDay: 3, billingCycle: "yearly", billingMonth: 2 }],
+      { reminderDays: 3, now: NOW },
+    );
+
+    expect(ics).toContain("DTSTART;VALUE=DATE:20270203");
   });
 
   it("RFC 5545가 요구하는 CRLF로 끝난다", () => {

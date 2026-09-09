@@ -1,4 +1,10 @@
-import { formatAmount, getNextBillingDate, type Currency } from "@subslash/shared";
+import {
+  formatAmount,
+  getNextBillingDateFor,
+  needsBillingMonth,
+  type BillingCycle,
+  type Currency,
+} from "@subslash/shared";
 
 /**
  * Builds the iCalendar feed a calendar app subscribes to.
@@ -15,6 +21,7 @@ export interface CalendarEntry {
   currency: string;
   billingDay: number;
   billingCycle: string;
+  billingMonth?: number | null;
 }
 
 /** Escapes the characters RFC 5545 gives special meaning inside a TEXT value. */
@@ -67,23 +74,43 @@ function toUTCStamp(date: Date): string {
 }
 
 /**
- * Repeat rule for a billing day.
+ * Repeat rule for a billing date.
  *
  * Days 29-31 do not exist in every month. `BYMONTHDAY=<day>,-1;BYSETPOS=1`
  * takes the earlier of "that day" and "the last day of the month", which is the
- * same clamping `getNextBillingDate` applies in the app.
+ * same clamping the app applies when it works out the next billing date. A
+ * yearly plan pins the month as well, so Feb 29 lands on Feb 28 off-leap-years
+ * instead of skipping three years at a time.
  */
-export function billingRRule(billingDay: number): string {
-  if (billingDay <= 28) return `FREQ=MONTHLY;BYMONTHDAY=${billingDay}`;
-  return `FREQ=MONTHLY;BYMONTHDAY=${billingDay},-1;BYSETPOS=1`;
+export function billingRRule(entry: {
+  billingDay: number;
+  billingCycle?: string;
+  billingMonth?: number | null;
+}): string {
+  const dayPart =
+    entry.billingDay <= 28
+      ? `BYMONTHDAY=${entry.billingDay}`
+      : `BYMONTHDAY=${entry.billingDay},-1;BYSETPOS=1`;
+
+  if (entry.billingCycle === "yearly" && entry.billingMonth) {
+    return `FREQ=YEARLY;BYMONTH=${entry.billingMonth};${dayPart}`;
+  }
+  return `FREQ=MONTHLY;${dayPart}`;
 }
 
 /** Subscriptions this feed can place on a calendar. */
 export function calendarEligible(entries: CalendarEntry[]): CalendarEntry[] {
-  // A yearly plan records the day of the month but not which month, so the
-  // feed has no date to publish. Emitting it as a monthly event would put
-  // eleven charges on the calendar that will never happen.
-  return entries.filter((entry) => entry.billingCycle !== "yearly");
+  // A yearly plan whose billing month was never recorded has no date to
+  // publish. Emitting it as a monthly event would put eleven charges on the
+  // calendar that will never happen.
+  return entries.filter(
+    (entry) =>
+      !needsBillingMonth({
+        billingDay: entry.billingDay,
+        billingCycle: entry.billingCycle as BillingCycle,
+        billingMonth: entry.billingMonth ?? undefined,
+      }),
+  );
 }
 
 export function buildBillingCalendar(
@@ -108,7 +135,17 @@ export function buildBillingCalendar(
   ];
 
   for (const entry of calendarEligible(entries)) {
-    const start = getNextBillingDate(entry.billingDay, now);
+    const start = getNextBillingDateFor(
+      {
+        billingDay: entry.billingDay,
+        billingCycle: entry.billingCycle as BillingCycle,
+        billingMonth: entry.billingMonth ?? undefined,
+      },
+      now,
+    );
+    // calendarEligible already dropped the undated ones; this keeps the types
+    // honest rather than asserting.
+    if (!start) continue;
     const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
     const currency: Currency = entry.currency === "USD" ? "USD" : "KRW";
     const price = formatAmount(entry.amount, currency);
@@ -119,7 +156,7 @@ export function buildBillingCalendar(
       `DTSTAMP:${stamp}`,
       `DTSTART;VALUE=DATE:${toDateValue(start)}`,
       `DTEND;VALUE=DATE:${toDateValue(end)}`,
-      `RRULE:${billingRRule(entry.billingDay)}`,
+      `RRULE:${billingRRule(entry)}`,
       `SUMMARY:💳 ${escapeText(entry.name)} ${escapeText(price)}`,
       `DESCRIPTION:${escapeText(
         `${entry.name} 결제일입니다. 지난 30일 동안 몇 번 썼는지 돌아보고, 아깝다면 지금 해지하세요.`,

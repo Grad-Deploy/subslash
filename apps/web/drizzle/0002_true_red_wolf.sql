@@ -1,0 +1,1 @@
+ALTER TABLE `mirrored_subscriptions` ADD `billing_month` integer;

@@ -24,6 +24,7 @@ export function toMirrorPayload(subscriptions: Subscription[]) {
       currency: sub.currency,
       billingDay: sub.billingDay,
       billingCycle: sub.billingCycle,
+      billingMonth: sub.billingMonth ?? null,
     }));
 }
 
