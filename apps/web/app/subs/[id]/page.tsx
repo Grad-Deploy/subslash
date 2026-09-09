@@ -9,6 +9,7 @@ import {
   POPULAR_SERVICES,
   PAYMENT_METHOD_OPTIONS,
   formatCurrency,
+  getCancelUrlKind,
   getDaysUntilBillingFor,
 } from "@subslash/shared";
 import { SubForm } from "../../../components/subscription/SubForm";
@@ -75,6 +76,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
   const subLogs = usageLogs.filter((log) => log.subscriptionId === id);
   const isKilled = sub.status === "killed";
   const daysLeft = getDaysUntilBillingFor(sub);
+  const cancelUrlKind = getCancelUrlKind(sub.cancelUrl);
 
   const handleEditSubmit = (data: SubscriptionFormData) => {
     updateSubscription(sub.id, data);
@@ -278,13 +280,24 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                   </Button>
                 )}
                 {sub.cancelUrl && (
-                  <Button
-                    size="lg"
-                    className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold h-12 rounded-xl shadow-md"
-                    onClick={() => window.open(sub.cancelUrl, "_blank")}
-                  >
-                    🚀 {sub.name} 공식 해지 페이지 바로가기 (새 창)
-                  </Button>
+                  <>
+                    <Button
+                      size="lg"
+                      className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold h-12 rounded-xl shadow-md"
+                      onClick={() => window.open(sub.cancelUrl, "_blank")}
+                    >
+                      {cancelUrlKind === "direct"
+                        ? `🚀 ${sub.name} 해지 페이지 바로가기 (새 창)`
+                        : `🚀 ${sub.name} 열기 (새 창)`}
+                    </Button>
+                    {cancelUrlKind !== "direct" && (
+                      <p className="text-[11px] text-muted-foreground text-center">
+                        {cancelUrlKind === "entry"
+                          ? "이 링크는 해지 화면이 아니라 서비스 첫 화면으로 갑니다. 아래 안내를 따라 해지 메뉴까지 이동하세요."
+                          : "직접 입력한 주소입니다. 어디로 연결되는지는 확인되지 않았습니다."}
+                      </p>
+                    )}
+                  </>
                 )}
               </>
             );
