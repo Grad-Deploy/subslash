@@ -513,3 +513,39 @@ describe("체크인 1회 단가", () => {
     expect(result.costPerUse).toBe(3725);
   });
 });
+
+describe("Store addBatchSubscriptions", () => {
+  beforeEach(() => {
+    useStore.setState({ subscriptions: [], usageLogs: [] });
+  });
+
+  it("여러 구독을 한 번에 일괄 추가하고 고유 ID를 부여한다", () => {
+    const newSubs = useStore.getState().addBatchSubscriptions([
+      {
+        name: "서비스 A",
+        amount: 10000,
+        currency: "KRW",
+        billingDay: 5,
+        billingCycle: "monthly",
+        category: "ott",
+      },
+      {
+        name: "서비스 B",
+        amount: 20000,
+        currency: "KRW",
+        billingDay: 15,
+        billingCycle: "monthly",
+        category: "music",
+      },
+    ]);
+
+    expect(newSubs).toHaveLength(2);
+    expect(newSubs[0].id).toBeDefined();
+    expect(newSubs[1].id).toBeDefined();
+    expect(newSubs[0].id).not.toBe(newSubs[1].id);
+
+    const storeSubs = useStore.getState().subscriptions;
+    expect(storeSubs).toHaveLength(2);
+    expect(useStore.getState().getDashboardStats().totalMonthlySpend).toBe(30000);
+  });
+});

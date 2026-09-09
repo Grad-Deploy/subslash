@@ -6,3 +6,4 @@ export * from "./utils/sharing";
 export * from "./constants/thresholds";
 export * from "./constants/services";
 export * from "./utils/parser";
+export * from "./utils/inbox-simulation";
