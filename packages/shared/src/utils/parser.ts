@@ -115,8 +115,8 @@ const SERVICE_KEYWORDS: {
     presetId: "claude-pro",
     defaultPaymentMethod: "credit_card",
   },
-  { keywords: ["어도비", "adobe"], presetId: "adobe" },
-  { keywords: ["마이크로소프트", "microsoft", "ms 365", "m365"], presetId: "ms-365" },
+  { keywords: ["어도비", "adobe"], presetId: "adobe-cc" },
+  { keywords: ["마이크로소프트", "microsoft", "ms 365", "m365"], presetId: "microsoft-365" },
   { keywords: ["밀리", "밀리의 서재", "millie"], presetId: "millie" },
   { keywords: ["리디", "리디셀렉트", "ridi"], presetId: "ridi-select" },
 ];
@@ -125,6 +125,16 @@ const SERVICE_KEYWORDS: {
  * Parses raw SMS / push notification text containing payment approvals
  * Handles multi-line or multi-message input.
  */
+/**
+ * Every preset the keyword table points at.
+ *
+ * Exported so a test can prove each one resolves: a typo here fails silently —
+ * the lookup returns undefined, the receipt keeps scanning other keywords, and
+ * the subscription is imported with no cancel URL, no category and a fallback
+ * name, without anything reporting an error.
+ */
+export const SERVICE_KEYWORD_PRESET_IDS = SERVICE_KEYWORDS.map((item) => item.presetId);
+
 /**
  * Where one pasted message ends and the next begins.
  *
