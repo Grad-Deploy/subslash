@@ -7,6 +7,8 @@ import {
   requestReminders,
   pushMirror,
   stopReminders,
+  enableCalendarFeed,
+  disableCalendarFeed,
 } from "../../lib/notify-client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
@@ -26,6 +28,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justSent, setJustSent] = useState(false);
+  const [copiedFeed, setCopiedFeed] = useState(false);
 
   const isOptedIn = Boolean(notify.syncToken);
   const activeCount = subscriptions.filter((sub) => sub.status === "active").length;
@@ -67,6 +70,51 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
       setError(e instanceof Error ? e.message : "상태를 불러오지 못했습니다.");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleCalendar = async (mode: "create" | "rotate") => {
+    if (!notify.syncToken) return;
+    if (mode === "rotate" && !confirm("새 주소를 만들면 기존 주소로 구독한 캘린더는 끊깁니다.")) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const url = await enableCalendarFeed(notify.syncToken);
+      setNotify({ calendarUrl: url });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "캘린더 주소를 만들지 못했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCalendarOff = async () => {
+    if (!notify.syncToken) return;
+    if (!confirm("캘린더 구독을 끊을까요? 이미 등록한 캘린더에서 결제일이 사라집니다.")) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await disableCalendarFeed(notify.syncToken);
+      setNotify({ calendarUrl: null });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "캘린더 구독 해제에 실패했습니다.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyFeedUrl = async () => {
+    if (!notify.calendarUrl) return;
+    try {
+      await navigator.clipboard.writeText(notify.calendarUrl);
+      setCopiedFeed(true);
+      setTimeout(() => setCopiedFeed(false), 2000);
+    } catch {
+      // Clipboard access can be refused; the URL is on screen either way, but
+      // a button that silently does nothing would look broken.
+      window.prompt("아래 주소를 복사해 캘린더 앱에 등록하세요", notify.calendarUrl);
     }
   };
 
@@ -172,6 +220,68 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                   누르셨다면 아래 &lsquo;상태 새로고침&rsquo;을 눌러보세요.
                 </div>
               )}
+
+              <div className="p-3.5 rounded-xl border bg-card space-y-2 text-xs">
+                <div className="font-bold text-foreground flex items-center gap-1.5">
+                  <span>📅</span>
+                  <span>캘린더에 결제일 띄우기</span>
+                </div>
+
+                {notify.calendarUrl ? (
+                  <>
+                    <p className="text-muted-foreground leading-relaxed">
+                      캘린더 앱의 &lsquo;URL로 구독&rsquo;에 아래 주소를 넣으면 결제{" "}
+                      {notify.reminderDays}일 전에 폰 알림이 울립니다. 앱에서 구독을 고치면 캘린더도
+                      따라 바뀝니다.
+                    </p>
+                    <code className="block break-all rounded-lg bg-muted px-2.5 py-2 text-[11px] text-foreground">
+                      {notify.calendarUrl}
+                    </code>
+                    <p className="text-muted-foreground">
+                      이 주소를 가진 사람은 구독 목록을 볼 수 있습니다. 공유했다면 새 주소를 만들어
+                      이전 주소를 끊으세요.
+                    </p>
+                    <div className="flex flex-wrap gap-2 pt-0.5">
+                      <Button size="sm" variant="outline" onClick={copyFeedUrl}>
+                        {copiedFeed ? "✅ 복사됨" : "주소 복사"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={busy}
+                        onClick={() => handleCalendar("rotate")}
+                      >
+                        새 주소 만들기
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:bg-destructive/10"
+                        disabled={busy}
+                        onClick={handleCalendarOff}
+                      >
+                        구독 끊기
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-muted-foreground leading-relaxed">
+                      매월 결제되는 구독의 결제일을 캘린더 앱에 반복 일정으로 띄웁니다. 확인 메일을
+                      누르지 않아도 동작합니다. 연간 결제 구독은 결제 &lsquo;월&rsquo; 정보를 앱이
+                      아직 저장하지 않아 제외됩니다.
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      onClick={() => handleCalendar("create")}
+                    >
+                      캘린더 주소 만들기
+                    </Button>
+                  </>
+                )}
+              </div>
 
               <div className="flex gap-2">
                 <Button

@@ -80,6 +80,12 @@ export interface NotifySettings {
   verified: boolean;
   reminderDays: number;
   lastSyncedAt: string | null;
+  /**
+   * The calendar feed URL, which embeds a read-only token. Only its hash is
+   * stored server-side, so this browser copy is the only way back to it; losing
+   * it means rotating rather than recovering.
+   */
+  calendarUrl: string | null;
 }
 
 export const DEFAULT_NOTIFY: NotifySettings = {
@@ -88,6 +94,7 @@ export const DEFAULT_NOTIFY: NotifySettings = {
   verified: false,
   reminderDays: 3,
   lastSyncedAt: null,
+  calendarUrl: null,
 };
 
 /** Where the USD → KRW rate in use came from. */
