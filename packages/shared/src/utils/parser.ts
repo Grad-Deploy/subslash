@@ -1,4 +1,5 @@
 import {
+  BillingCycle,
   DiscoveredSubscription,
   EmailReceipt,
   SubscriptionCategory,
@@ -125,6 +126,15 @@ const SERVICE_KEYWORDS: {
  * Parses raw SMS / push notification text containing payment approvals
  * Handles multi-line or multi-message input.
  */
+/**
+ * Wording that marks a receipt as a yearly plan.
+ *
+ * Deliberately narrow: reading a monthly plan as yearly divides the reported
+ * cost by twelve, which is just as wrong in the other direction.
+ */
+const YEARLY_HINT =
+  /연간|연\s*결제|1년|12개월|년\s*이용권|연회비|annual|yearly|per\s*year|\/\s*yr/i;
+
 /**
  * Every preset the keyword table points at.
  *
@@ -311,16 +321,30 @@ function parseSingleMessageBlock(
 
   // 4. Extract Date (explicit 결제일시 or MM/DD, M월 D일, MM.DD, MM-DD)
   let billingDay = new Date().getDate();
+  // Month is only carried through for yearly plans, which have no date without
+  // it. Monthly plans repeat every month, so the month a receipt happens to
+  // mention says nothing extra.
+  let billingMonth: number | undefined;
   const explicitDateMatch = block.match(
-    /(?:결제일시|결제일|승인일시|일시|다음\s*결제\s*(?:예정)?일)\s*[:：]?\s*(?:[0-9]{4}[./-][0-9]{1,2}[./-]([0-3]?[0-9])|([0-1]?[0-9])[/.-]([0-3]?[0-9])|([0-3]?[0-9])일)/i,
+    /(?:결제일시|결제일|승인일시|일시|다음\s*결제\s*(?:예정)?일)\s*[:：]?\s*(?:[0-9]{4}[./-]([0-9]{1,2})[./-]([0-3]?[0-9])|([0-1]?[0-9])[/.-]([0-3]?[0-9])|([0-3]?[0-9])일)/i,
   );
 
-  if (explicitDateMatch) {
-    const rawDay = explicitDateMatch[1] || explicitDateMatch[3] || explicitDateMatch[4];
-    const day = parseInt(rawDay, 10);
-    if (!isNaN(day) && day >= 1 && day <= 31) {
-      billingDay = day;
+  const takeDate = (rawMonth?: string, rawDay?: string) => {
+    const day = parseInt(rawDay ?? "", 10);
+    if (isNaN(day) || day < 1 || day > 31) return false;
+    billingDay = day;
+    const month = parseInt(rawMonth ?? "", 10);
+    if (!isNaN(month) && month >= 1 && month <= 12) {
+      billingMonth = month;
     }
+    return true;
+  };
+
+  if (explicitDateMatch) {
+    takeDate(
+      explicitDateMatch[1] || explicitDateMatch[3],
+      explicitDateMatch[2] || explicitDateMatch[4] || explicitDateMatch[5],
+    );
   } else {
     // Strip currency amounts so numbers like "$20.00" are not mistaken for MM.DD
     const dateScanText = normalized.replace(/\$\s*[0-9.]+/g, "").replace(/[0-9.]+\s*USD/gi, "");
@@ -328,12 +352,16 @@ function parseSingleMessageBlock(
       /(?:([0-1]?[0-9])[/.-]([0-3]?[0-9])|([0-1]?[0-9])\s*월\s*([0-3]?[0-9])\s*일)/g;
     let match: RegExpExecArray | null;
     while ((match = dateRegex.exec(dateScanText)) !== null) {
-      const day = parseInt(match[2] || match[4], 10);
-      if (!isNaN(day) && day >= 1 && day <= 31) {
-        billingDay = day;
-        break;
-      }
+      if (takeDate(match[1] || match[3], match[2] || match[4])) break;
     }
+  }
+
+  // 4b. Yearly plans: a receipt that says so is the only place the app can
+  // learn the billing cycle, and importing one as monthly multiplies the user's
+  // reported fixed spend by twelve.
+  const billingCycle: BillingCycle = YEARLY_HINT.test(normalized) ? "yearly" : "monthly";
+  if (billingCycle !== "yearly") {
+    billingMonth = undefined;
   }
 
   // 5. Extract Payment Method
@@ -419,7 +447,8 @@ function parseSingleMessageBlock(
     amount,
     currency,
     billingDay,
-    billingCycle: "monthly",
+    billingCycle,
+    billingMonth,
     category,
     cancelUrl,
     cancelGuide,
