@@ -12,6 +12,7 @@ import {
   calculateCostPerUse,
   getRiskLevel,
   formatShockMessage,
+  getMyMonthlyShareAmount,
   sumMonthlyKRW,
   sumMyMonthlyKRW,
   sumMyAnnualKRW,
@@ -249,9 +250,14 @@ export const useStore = create<SubSlashStore>()(
         const sub = state.subscriptions.find((s) => s.id === subscriptionId);
         if (!sub) throw new Error("Subscription not found");
 
-        const costPerUse = calculateCostPerUse(sub.amount, usageCount);
-        const riskLevel = getRiskLevel(costPerUse, sub.amount, usageCount);
-        const shockMessage = formatShockMessage(sub.name, sub.amount, usageCount, sub.currency);
+        // A check-in counts uses over the last 30 days, so it has to be divided
+        // into one month of cost — and into the part of it this user actually
+        // pays. Feeding it the raw `amount` reported a yearly plan's per-use
+        // cost twelve times too high, and ignored every shared plan's split.
+        const monthlyShare = getMyMonthlyShareAmount(sub);
+        const costPerUse = calculateCostPerUse(monthlyShare, usageCount);
+        const riskLevel = getRiskLevel(costPerUse, monthlyShare, usageCount);
+        const shockMessage = formatShockMessage(sub.name, monthlyShare, usageCount, sub.currency);
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
