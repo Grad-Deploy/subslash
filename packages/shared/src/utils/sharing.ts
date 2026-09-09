@@ -1,0 +1,107 @@
+import { BillingCycle, Currency } from "../types";
+import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
+import { formatAmount, formatKRW, getAnnualAmountKRW, getMonthlyAmountKRW } from "./currency";
+
+/** The fields that describe how a plan is split. */
+export interface SharedPlan {
+  amount: number;
+  sharingCount?: number;
+  myShareAmount?: number;
+}
+
+/** A plan is only "shared" once more than one person is on it. */
+export function isShared(sub: SharedPlan): boolean {
+  return (sub.sharingCount ?? 1) > 1;
+}
+
+/** People on the plan, normalised: anything below 1 is one person. */
+export function getSharingCount(sub: SharedPlan): number {
+  const count = sub.sharingCount ?? 1;
+  return Number.isFinite(count) && count > 1 ? Math.floor(count) : 1;
+}
+
+/**
+ * The slice of the bill the user carries, in the subscription's own currency.
+ *
+ * An explicit `myShareAmount` wins because real splits are often uneven — the
+ * person holding the card frequently pays a bit more. Without one the bill is
+ * divided evenly.
+ */
+export function getMyShareAmount(sub: SharedPlan): number {
+  if (typeof sub.myShareAmount === "number" && Number.isFinite(sub.myShareAmount)) {
+    return Math.max(0, sub.myShareAmount);
+  }
+  return sub.amount / getSharingCount(sub);
+}
+
+/** What the other members owe the payer each billing date, in their currency. */
+export function getOthersShareAmount(sub: SharedPlan): number {
+  return Math.max(0, sub.amount - getMyShareAmount(sub));
+}
+
+type SharedSubscription = SharedPlan & { currency: Currency; billingCycle?: BillingCycle };
+
+/**
+ * The same subscription restated as the user's own cost, so the existing KRW
+ * helpers can be reused instead of a second conversion path.
+ */
+function asMyShare<T extends SharedSubscription>(sub: T): T {
+  return { ...sub, amount: getMyShareAmount(sub) };
+}
+
+/** The user's own monthly cost in KRW, after splitting. */
+export function getMyMonthlyAmountKRW(
+  sub: SharedSubscription,
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): number {
+  return getMonthlyAmountKRW(asMyShare(sub), rate);
+}
+
+/** The user's own annual cost in KRW, after splitting. */
+export function getMyAnnualAmountKRW(
+  sub: SharedSubscription,
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): number {
+  return getAnnualAmountKRW(asMyShare(sub), rate);
+}
+
+/** Sum of what the user personally pays each month, in KRW. */
+export function sumMyMonthlyKRW(
+  subs: SharedSubscription[],
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): number {
+  return subs.reduce((total, sub) => total + getMyMonthlyAmountKRW(sub, rate), 0);
+}
+
+/** Sum of what the user personally pays each year, in KRW. */
+export function sumMyAnnualKRW(
+  subs: SharedSubscription[],
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): number {
+  return subs.reduce((total, sub) => total + getMyAnnualAmountKRW(sub, rate), 0);
+}
+
+/**
+ * Message the payer sends to the other members to collect their share.
+ *
+ * Deliberately plain text rather than a payment-app deep link: a transfer link
+ * needs the recipient's bank and account number, which this app never asks for,
+ * and a link built without them would open an empty transfer screen while
+ * promising a one-tap request.
+ */
+export function formatSettlementMessage(sub: {
+  name: string;
+  amount: number;
+  currency: Currency;
+  billingDay: number;
+  sharingCount?: number;
+  myShareAmount?: number;
+}): string {
+  const count = getSharingCount(sub);
+  const perPerson = count > 1 ? getOthersShareAmount(sub) / (count - 1) : 0;
+  const total = formatAmount(sub.amount, sub.currency);
+  const each =
+    sub.currency === "KRW" ? formatKRW(perPerson) : formatAmount(perPerson, sub.currency);
+
+  return `[${sub.name}] 매월 ${sub.billingDay}일 ${total} 결제 · ${count}명이서 나눠서 1인 ${each}입니다. 정산 부탁드려요!`;
+}

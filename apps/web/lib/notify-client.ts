@@ -81,6 +81,37 @@ export async function fetchNotifyStatus(syncToken: string): Promise<NotifyStatus
   return (await response.json()) as NotifyStatus;
 }
 
+/**
+ * Turns the calendar feed on, or rotates its URL.
+ *
+ * The returned URL is shown once: the server keeps only a hash of the token
+ * inside it, so a lost URL is replaced rather than looked up.
+ */
+export async function enableCalendarFeed(syncToken: string): Promise<string> {
+  const response = await fetch("/api/notify/calendar", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${syncToken}` },
+  });
+
+  if (!response.ok) {
+    throw new Error(await readError(response, "캘린더 주소를 만들지 못했습니다."));
+  }
+
+  const body = (await response.json()) as { url: string };
+  return body.url;
+}
+
+/** Switches the feed off; calendars subscribed to the old URL stop resolving. */
+export async function disableCalendarFeed(syncToken: string) {
+  const response = await fetch("/api/notify/calendar", {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${syncToken}` },
+  });
+  if (!response.ok && response.status !== 401) {
+    throw new Error(await readError(response, "캘린더 구독 해제에 실패했습니다."));
+  }
+}
+
 export async function stopReminders(syncToken: string) {
   const response = await fetch("/api/notify/sync", {
     method: "DELETE",

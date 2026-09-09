@@ -8,7 +8,7 @@ import {
   SubscriptionFormData,
   CheckInResponse,
   POPULAR_SERVICES,
-  sumMonthlyKRW,
+  sumMyMonthlyKRW,
 } from "@subslash/shared";
 import { SubCard } from "../../components/subscription/SubCard";
 import { SubForm } from "../../components/subscription/SubForm";
@@ -22,6 +22,8 @@ import {
   DialogDescription,
 } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
+import { useExchangeRate } from "../../hooks/useExchangeRate";
+import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 
 /** Feedback for the redirect targets of the reminder emails' links. */
 const NOTIFY_MESSAGES: Record<string, string> = {
@@ -66,6 +68,7 @@ export default function SubscriptionsPage() {
     getActiveSubscriptions,
     getKilledSubscriptions,
   } = useStore();
+  const rate = useExchangeRate();
 
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"active" | "killed">("active");
@@ -212,6 +215,8 @@ export default function SubscriptionsPage() {
         </div>
       </div>
 
+      <ExchangeRateNote />
+
       {/* Tabs */}
       <div className="flex border-b">
         <button
@@ -296,8 +301,8 @@ export default function SubscriptionsPage() {
             <div className="space-y-3">
               <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300">
                 🎉 축하합니다! {filteredKilled.length}개의 불필요한 구독을 차단하여 매달 총{" "}
-                <strong>₩{sumMonthlyKRW(filteredKilled).toLocaleString()}</strong>을 방어하고
-                계십니다!
+                <strong>₩{sumMyMonthlyKRW(filteredKilled, rate).toLocaleString()}</strong>을
+                방어하고 계십니다!
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

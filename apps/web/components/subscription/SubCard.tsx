@@ -1,13 +1,22 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { Subscription, formatCurrency, getMonthlyAmountKRW } from "@subslash/shared";
+import {
+  Subscription,
+  formatCurrency,
+  formatSettlementMessage,
+  getMonthlyAmountKRW,
+  getMyMonthlyAmountKRW,
+  getSharingCount,
+  isShared,
+} from "@subslash/shared";
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { DdayCountdown } from "../dashboard/DdayCountdown";
 import { cn } from "@lib/utils";
+import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 interface SubCardProps {
   subscription: Subscription;
@@ -19,6 +28,22 @@ interface SubCardProps {
 
 export function SubCard({ subscription, onCheckIn, onKill, onRevive, onDelete }: SubCardProps) {
   const isKilled = subscription.status === "killed";
+  const rate = useExchangeRate();
+  const [copied, setCopied] = useState(false);
+  const shared = isShared(subscription);
+
+  const copySettlementMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(formatSettlementMessage(subscription));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard access can be refused (insecure context, denied permission);
+      // saying nothing would look like the copy silently worked.
+      setCopied(false);
+      window.prompt("아래 문구를 복사해 보내세요", formatSettlementMessage(subscription));
+    }
+  };
 
   return (
     <Card
@@ -54,10 +79,16 @@ export function SubCard({ subscription, onCheckIn, onKill, onRevive, onDelete }:
                 {(subscription.currency !== "KRW" || subscription.billingCycle === "yearly") && (
                   <span className="text-xs opacity-80">
                     {" "}
-                    (월 ₩{getMonthlyAmountKRW(subscription).toLocaleString()})
+                    (월 ₩{getMonthlyAmountKRW(subscription, rate).toLocaleString()})
                   </span>
                 )}
               </p>
+              {shared && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  👥 {getSharingCount(subscription)}명이서 나눔 · 내 몫 월 ₩
+                  {getMyMonthlyAmountKRW(subscription, rate).toLocaleString()}
+                </p>
+              )}
             </div>
           </div>
 
@@ -75,6 +106,16 @@ export function SubCard({ subscription, onCheckIn, onKill, onRevive, onDelete }:
               <Badge variant="secondary" className="text-[11px]">
                 👤 {subscription.linkedAccountName}
               </Badge>
+            )}
+            {shared && !isKilled && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-[11px] text-muted-foreground"
+                onClick={copySettlementMessage}
+              >
+                {copied ? "✅ 복사됨" : "💬 정산 문구 복사"}
+              </Button>
             )}
           </div>
 

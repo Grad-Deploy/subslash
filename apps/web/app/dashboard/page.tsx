@@ -24,6 +24,7 @@ import {
   DialogDescription,
 } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
+import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 
 export default function Dashboard() {
   const {
@@ -153,6 +154,8 @@ export default function Dashboard() {
 
       {/* Top Section: Total Monthly Spend Hero */}
       <TotalSpend subscriptions={activeSubs} />
+
+      <ExchangeRateNote />
 
       {/* 4 Quick Stat Cards */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">

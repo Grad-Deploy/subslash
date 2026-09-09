@@ -11,6 +11,7 @@ import { Select } from "../ui/select";
 import { Badge } from "../ui/badge";
 import { EmailDomainInput } from "../ui/email-domain-input";
 import { AutoImportModal } from "../import/AutoImportModal";
+import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 interface AccountHubModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface AccountHubModalProps {
 
 export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
   const { accounts, addAccount, deleteAccount, subscriptions } = useStore();
+  const rate = useExchangeRate();
   const [isAdding, setIsAdding] = useState(false);
   const [scanAccountId, setScanAccountId] = useState<string | null>(null);
   const [provider, setProvider] = useState<AccountProvider>("google");
@@ -187,7 +189,7 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
                   const linkedSubs = subscriptions.filter(
                     (s) => s.linkedAccountId === acc.id && s.status === "active",
                   );
-                  const totalMonthly = sumMonthlyKRW(linkedSubs);
+                  const totalMonthly = sumMonthlyKRW(linkedSubs, rate);
 
                   return (
                     <div
