@@ -13,7 +13,8 @@ import {
   getRiskLevel,
   formatShockMessage,
   sumMonthlyKRW,
-  sumAnnualKRW,
+  sumMyMonthlyKRW,
+  sumMyAnnualKRW,
   DEFAULT_EXCHANGE_RATE,
 } from "@subslash/shared";
 
@@ -273,11 +274,17 @@ export const useStore = create<SubSlashStore>()(
         // Normalised to KRW/month so USD and yearly plans are not summed as if
         // they were monthly won amounts.
         const rate = state.getExchangeRate();
-        const totalMonthlySpend = sumMonthlyKRW(active, rate);
-        const totalSaved = sumAnnualKRW(killed, rate);
+        // Spend and savings are the user's own burden: on a plan split four
+        // ways they pay a quarter, and cancelling it saves them a quarter.
+        // The gross figure is kept alongside so the card charge is still
+        // visible where it matters.
+        const totalMonthlySpend = sumMyMonthlyKRW(active, rate);
+        const totalMonthlyBilled = sumMonthlyKRW(active, rate);
+        const totalSaved = sumMyAnnualKRW(killed, rate);
         const atRisk = state.getAtRiskSubscriptions();
         return {
           totalMonthlySpend,
+          totalMonthlyBilled,
           activeCount: active.length,
           killedCount: killed.length,
           totalSaved,

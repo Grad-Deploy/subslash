@@ -35,6 +35,17 @@ export interface Subscription {
   createdAt: string;
   killedAt?: string;
 
+  /**
+   * How many people split this plan, the payer included. Absent or 1 means the
+   * user carries the whole bill.
+   */
+  sharingCount?: number;
+  /**
+   * What the user actually pays, in this subscription's currency, when the
+   * split is not even. Absent means `amount / sharingCount`.
+   */
+  myShareAmount?: number;
+
   // Linked account & payment method fields
   linkedAccountId?: string;
   linkedAccountName?: string;
