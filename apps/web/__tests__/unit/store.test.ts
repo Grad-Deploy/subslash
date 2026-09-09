@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { useStore, migrateSeededAccounts } from "../../lib/store";
+import {
+  useStore,
+  migrateSeededAccounts,
+  isValidExchangeRate,
+  DEFAULT_EXCHANGE_RATE_SETTING,
+} from "../../lib/store";
+import { DEFAULT_EXCHANGE_RATE } from "@subslash/shared";
 
 describe("Zustand Store", () => {
   beforeEach(() => {
@@ -311,6 +317,72 @@ describe("Zustand Store", () => {
     useStore.getState().clearAllData();
 
     expect(useStore.getState().accounts).toEqual([]);
+  });
+});
+
+describe("환율 설정", () => {
+  beforeEach(() => {
+    useStore.setState({
+      subscriptions: [],
+      usageLogs: [],
+      exchangeRate: DEFAULT_EXCHANGE_RATE_SETTING,
+    });
+  });
+
+  it("아무도 설정하지 않았으면 기본 환율을 쓴다", () => {
+    expect(useStore.getState().getExchangeRate()).toBe(DEFAULT_EXCHANGE_RATE);
+  });
+
+  it("사용자가 정한 환율을 출처·시각과 함께 기록한다", () => {
+    useStore.getState().setExchangeRate(1420, "manual");
+
+    const { exchangeRate, getExchangeRate } = useStore.getState();
+    expect(getExchangeRate()).toBe(1420);
+    expect(exchangeRate.source).toBe("manual");
+    expect(exchangeRate.updatedAt).not.toBeNull();
+  });
+
+  it("쓸 수 없는 값은 무시해 기존 환율을 유지한다", () => {
+    useStore.getState().setExchangeRate(1420, "manual");
+    useStore.getState().setExchangeRate(0, "manual");
+    useStore.getState().setExchangeRate(Number.NaN, "ecb");
+
+    expect(useStore.getState().getExchangeRate()).toBe(1420);
+  });
+
+  it("기본값으로 되돌리면 다시 기본 환율을 쓴다", () => {
+    useStore.getState().setExchangeRate(1420, "ecb");
+    useStore.getState().resetExchangeRate();
+
+    expect(useStore.getState().getExchangeRate()).toBe(DEFAULT_EXCHANGE_RATE);
+    expect(useStore.getState().exchangeRate.source).toBe("default");
+  });
+
+  it("대시보드 합계가 설정된 환율로 환산된다", () => {
+    useStore.getState().addSubscription({
+      name: "Claude Pro",
+      amount: 20,
+      currency: "USD",
+      billingDay: 10,
+      billingCycle: "monthly",
+      category: "ai",
+    });
+
+    expect(useStore.getState().getDashboardStats().totalMonthlySpend).toBe(
+      20 * DEFAULT_EXCHANGE_RATE,
+    );
+
+    useStore.getState().setExchangeRate(1420, "manual");
+
+    expect(useStore.getState().getDashboardStats().totalMonthlySpend).toBe(20 * 1420);
+  });
+
+  it("isValidExchangeRate가 총액을 망가뜨릴 값을 거른다", () => {
+    expect(isValidExchangeRate(1350)).toBe(true);
+    expect(isValidExchangeRate(0)).toBe(false);
+    expect(isValidExchangeRate(-1)).toBe(false);
+    expect(isValidExchangeRate(Number.POSITIVE_INFINITY)).toBe(false);
+    expect(isValidExchangeRate(100001)).toBe(false);
   });
 });
 

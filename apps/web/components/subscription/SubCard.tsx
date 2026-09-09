@@ -8,6 +8,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { DdayCountdown } from "../dashboard/DdayCountdown";
 import { cn } from "@lib/utils";
+import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 interface SubCardProps {
   subscription: Subscription;
@@ -19,6 +20,7 @@ interface SubCardProps {
 
 export function SubCard({ subscription, onCheckIn, onKill, onRevive, onDelete }: SubCardProps) {
   const isKilled = subscription.status === "killed";
+  const rate = useExchangeRate();
 
   return (
     <Card
@@ -54,7 +56,7 @@ export function SubCard({ subscription, onCheckIn, onKill, onRevive, onDelete }:
                 {(subscription.currency !== "KRW" || subscription.billingCycle === "yearly") && (
                   <span className="text-xs opacity-80">
                     {" "}
-                    (월 ₩{getMonthlyAmountKRW(subscription).toLocaleString()})
+                    (월 ₩{getMonthlyAmountKRW(subscription, rate).toLocaleString()})
                   </span>
                 )}
               </p>
