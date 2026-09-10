@@ -4,21 +4,35 @@ import React, { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "../../../components/ui/button";
-import { getSavingsEquivalents, getDetoxLevel } from "@subslash/shared";
+import {
+  formatKRW,
+  getDetoxLevel,
+  getSavingsEquivalent,
+  getSavingsEquivalents,
+} from "@subslash/shared";
+
+/** 링크의 숫자 칸. 숫자가 아니면 "NaN개"를 찍지 않도록 없는 것으로 본다. */
+function readCount(value: string | null): number | null {
+  if (value === null) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : null;
+}
 
 function SharedSavingsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const savedParam = searchParams.get("saved");
-  const countParam = searchParams.get("count");
-  const equivParam = searchParams.get("equiv");
-  const namesParam = searchParams.get("names");
-
-  const annualSavings = savedParam ? parseInt(savedParam, 10) : 0;
-  const count = countParam ? parseInt(countParam, 10) : 0;
-  const headlineEquivalent = equivParam || "";
-  const serviceNames = namesParam ? namesParam.split(",").filter(Boolean) : [];
+  const annualSavings = readCount(searchParams.get("saved")) ?? 0;
+  const count = readCount(searchParams.get("count")) ?? 0;
+  // 환산 문구는 링크에 적힌 글을 옮기지 않고 금액에서 다시 계산한다. 예전에는
+  // `equiv` 칸을 그대로 찍어서, 링크만 고치면 금액과 다른 말이 인증서에 올라갔다.
+  const headlineEquivalent = getSavingsEquivalent(annualSavings)[0] ?? "";
+  // 이름은 `name` 칸에 하나씩 온다. 예전 링크는 `names`에 쉼표로 이어 담았다.
+  const listedNames = searchParams.getAll("name").filter(Boolean);
+  const serviceNames =
+    listedNames.length > 0
+      ? listedNames
+      : (searchParams.get("names") ?? "").split(",").filter(Boolean);
 
   const equivalents = getSavingsEquivalents(annualSavings);
   const detoxLevel = getDetoxLevel(annualSavings, count);
@@ -44,8 +58,8 @@ function SharedSavingsContent() {
           </span>
           {detoxLevel.nextThreshold !== null && (
             <span className="text-[11px] text-muted-foreground">
-              다음 레벨 &lsquo;{detoxLevel.nextTitle}&rsquo;까지 ₩
-              {(detoxLevel.remainingToNext ?? 0).toLocaleString()}
+              다음 레벨 &lsquo;{detoxLevel.nextTitle}&rsquo;까지{" "}
+              {formatKRW(detoxLevel.remainingToNext ?? 0)}
             </span>
           )}
         </div>
@@ -65,7 +79,7 @@ function SharedSavingsContent() {
             연간 방어 성공 금액
           </div>
           <div className="text-4xl sm:text-5xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-            ₩{annualSavings > 0 ? annualSavings.toLocaleString() : "0"}
+            {formatKRW(annualSavings)}
           </div>
           {headlineEquivalent && (
             <p className="text-sm font-semibold text-emerald-700/80 dark:text-emerald-300/80 pt-1">
