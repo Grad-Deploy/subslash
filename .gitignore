@@ -38,3 +38,5 @@ local.db-*
 # Misc
 *.log
 *.tsbuildinfo
+
+.vercel
