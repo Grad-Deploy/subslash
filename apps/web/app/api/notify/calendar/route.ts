@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { getDb } from "@lib/db";
+import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { users } from "@lib/schema";
 import { generateSyncToken, hashSyncToken } from "@lib/tokens";
 import { userFromRequest } from "@lib/notify-server";
@@ -18,6 +18,8 @@ function feedUrl(token: string): string {
  * URL they shared or pasted somewhere they regret.
  */
 export async function POST(request: NextRequest) {
+  const unavailable = databaseUnavailableResponse();
+  if (unavailable) return unavailable;
   try {
     const user = await userFromRequest(request);
     if (!user) {
@@ -39,6 +41,8 @@ export async function POST(request: NextRequest) {
 
 /** Switches the feed off. Subscribed calendars stop resolving immediately. */
 export async function DELETE(request: NextRequest) {
+  const unavailable = databaseUnavailableResponse();
+  if (unavailable) return unavailable;
   try {
     const user = await userFromRequest(request);
     if (!user) {

@@ -304,6 +304,65 @@ describe("세션", () => {
   });
 });
 
+describe("데이터베이스가 없는 배포", () => {
+  /** NODE_ENV는 타입상 읽기 전용이라 서술자로 바꾼다. */
+  const setNodeEnv = (value: string | undefined) => {
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value,
+      configurable: true,
+      writable: true,
+      enumerable: true,
+    });
+  };
+
+  const withProductionNoDb = async (run: () => Promise<Response>) => {
+    const url = process.env.TURSO_DATABASE_URL;
+    const env = process.env.NODE_ENV;
+    delete process.env.TURSO_DATABASE_URL;
+    setNodeEnv("production");
+    try {
+      return await run();
+    } finally {
+      process.env.TURSO_DATABASE_URL = url;
+      setNodeEnv(env);
+    }
+  };
+
+  it("가입은 503으로 설정 누락임을 알린다", async () => {
+    const res = await withProductionNoDb(() =>
+      signupRoute(json("http://localhost/api/auth/signup", VALID_SIGNUP)),
+    );
+    expect(res.status).toBe(503);
+    expect((await res.json()).error).toContain("데이터베이스가 설정되어 있지 않아");
+  });
+
+  it("로그인도 503으로 답한다", async () => {
+    const res = await withProductionNoDb(() =>
+      loginRoute(
+        json("http://localhost/api/auth/login", { identifier: "sean_lee", password: "whatever!!" }),
+      ),
+    );
+    expect(res.status).toBe(503);
+  });
+
+  it("현재 계정 조회는 오류가 아니라 '로그인 안 됨'이다", async () => {
+    // 계정이라는 개념이 없는 서버에서 503을 내면 헤더가 오류 상태가 된다.
+    const res = await withProductionNoDb(() =>
+      meRoute(request("http://localhost/api/auth/me", { cookie: `${SESSION_COOKIE}=whatever` })),
+    );
+    expect(res.status).toBe(200);
+    expect((await res.json()).account).toBeNull();
+  });
+
+  it("로그아웃은 쿠키만 지우고 성공한다", async () => {
+    const res = await withProductionNoDb(() =>
+      logoutRoute(json("http://localhost/api/auth/logout", {}, `${SESSION_COOKIE}=whatever`)),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("set-cookie")).toContain(`${SESSION_COOKIE}=`);
+  });
+});
+
 describe("입력값이 쿼리문에 섞여 들어가지 않는다", () => {
   const INJECTIONS = [
     "'; DROP TABLE accounts; --",

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { getDb } from "@lib/db";
+import { getDb, isDatabaseConfigured } from "@lib/db";
 import { mirroredSubscriptions, users } from "@lib/schema";
 import { hashSyncToken } from "@lib/tokens";
 import { buildBillingCalendar } from "@lib/ics";
@@ -15,6 +15,12 @@ import { appUrl } from "@lib/email";
  * be rotated from the app to revoke every subscribed calendar at once.
  */
 export async function GET(_request: Request, context: { params: Promise<{ token: string }> }) {
+  // 캘린더 앱이 읽는 주소라 본문은 텍스트여야 한다. 503은 "지금 이 서버에서는
+  // 못 한다"는 뜻이라, 앱이 구독을 지우지 않고 다음 폴링 때 다시 시도한다.
+  if (!isDatabaseConfigured()) {
+    return new NextResponse("Calendar feed is not configured on this server.", { status: 503 });
+  }
+
   const { token: raw } = await context.params;
   // Calendar apps are happier with a URL that ends in .ics; the suffix is not
   // part of the token.
