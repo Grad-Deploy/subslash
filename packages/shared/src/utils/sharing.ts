@@ -95,68 +95,21 @@ export function sumMyAnnualKRW(
 }
 
 export type DefendedSubscription = SharedSubscription & {
+  billingDay: number;
   killedAt?: string;
   billingMonth?: number;
 };
 
-/**
- * Calculates the defended savings for the given subscription in a specific calendar year (defaults to current year).
- * If killed in September 2026, the remaining months of 2026 (Sep, Oct, Nov, Dec = 4 months) are considered defended in 2026.
- * For yearly plans, if billingMonth is in the defended window, the yearly amount is counted; otherwise 0.
- */
-export function getMyYearDefendedAmountKRW(
-  sub: DefendedSubscription,
-  targetYear: number = new Date().getFullYear(),
-  rate: number = DEFAULT_EXCHANGE_RATE,
-): number {
-  if (!sub.killedAt) {
-    return getMyAnnualAmountKRW(sub, rate);
-  }
-
-  const killDate = new Date(sub.killedAt);
-  const killYear = killDate.getFullYear();
-
-  if (killYear > targetYear) {
-    // Was killed in a future year; in targetYear it was still active
-    return 0;
-  }
-
-  if (killYear < targetYear) {
-    // Was killed before targetYear; defended for the entire targetYear
-    return getMyAnnualAmountKRW(sub, rate);
-  }
-
-  // killYear === targetYear: months remaining in this year from kill month onwards
-  const killMonth = killDate.getMonth() + 1; // 1-12
-
-  if (sub.billingCycle === "yearly") {
-    if (typeof sub.billingMonth === "number") {
-      // If the yearly billing month was after or in the kill month, it was successfully prevented
-      if (sub.billingMonth >= killMonth) {
-        return getMyAnnualAmountKRW(sub, rate);
-      }
-      // If billing month was earlier in the year, this year's payment already took place
-      return 0;
-    }
-    // Pro-rate if yearly billing month is unknown
-    const remainingFraction = Math.max(0, 13 - killMonth) / 12;
-    return Math.round(getMyAnnualAmountKRW(sub, rate) * remainingFraction);
-  }
-
-  // Monthly billing: number of billing cycles saved from kill month through December
-  const remainingMonths = Math.max(0, 13 - killMonth);
-  return Math.round(getMyMonthlyAmountKRW(sub, rate) * remainingMonths);
-}
-
-/**
- * Sum of defended savings in the target calendar year across multiple subscriptions.
- */
-export function sumMyYearDefendedKRW(
-  subs: DefendedSubscription[],
-  targetYear: number = new Date().getFullYear(),
-  rate: number = DEFAULT_EXCHANGE_RATE,
-): number {
-  return subs.reduce((total, sub) => total + getMyYearDefendedAmountKRW(sub, targetYear, rate), 0);
+/** "매월 15일", "매년 3월 15일". 결제 월을 모르는 연간 구독에는 날짜를 붙이지 않는다. */
+function describeBillingSchedule(sub: {
+  billingDay: number;
+  billingCycle?: BillingCycle;
+  billingMonth?: number;
+}): string {
+  if (sub.billingCycle !== "yearly") return `매월 ${sub.billingDay}일`;
+  return typeof sub.billingMonth === "number"
+    ? `매년 ${sub.billingMonth}월 ${sub.billingDay}일`
+    : "매년 1회";
 }
 
 /**
@@ -172,6 +125,8 @@ export function formatSettlementMessage(sub: {
   amount: number;
   currency: Currency;
   billingDay: number;
+  billingCycle?: BillingCycle;
+  billingMonth?: number;
   sharingCount?: number;
   myShareAmount?: number;
 }): string {
@@ -181,7 +136,7 @@ export function formatSettlementMessage(sub: {
   const each =
     sub.currency === "KRW" ? formatKRW(perPerson) : formatAmount(perPerson, sub.currency);
 
-  return `[${sub.name}] 매월 ${sub.billingDay}일 ${total} 결제 · ${count}명이서 나눠서 1인 ${each}입니다. 정산 부탁드려요!`;
+  return `[${sub.name}] ${describeBillingSchedule(sub)} ${total} 결제 · ${count}명이서 나눠서 1인 ${each}입니다. 정산 부탁드려요!`;
 }
 
 /**
@@ -195,7 +150,7 @@ export function formatSettlementMessage(sub: {
  * 으로 따로 세어야 한다.
  */
 export function getMyMonthDefendedAmountKRW(
-  sub: DefendedSubscription & { billingDay: number },
+  sub: DefendedSubscription,
   year: number = new Date().getFullYear(),
   month: number = new Date().getMonth() + 1,
   rate: number = DEFAULT_EXCHANGE_RATE,
@@ -228,25 +183,66 @@ export function getMyMonthDefendedAmountKRW(
     : getMyMonthlyAmountKRW(sub, rate);
 }
 
-/** `getMyMonthDefendedAmountKRW`의 합계와, 판단할 수 없었던 구독 수. */
-export interface MonthDefendedSummary {
+/**
+ * 한 해 동안 해지 덕분에 실제로 빠져나가지 않은 금액.
+ *
+ * 그 해의 결제일을 달마다 `getMyMonthDefendedAmountKRW`로 따져 더한다. 예전
+ * 계산은 해지한 달을 통째로 방어로 세어서, 결제일이 지난 뒤 해지해도 그 달
+ * 돈을 지킨 것으로 쳤다 — 같은 화면의 '이번 달 방어' 위젯은 0원이라고
+ * 말하는데도.
+ *
+ * 결제 월을 모르는 연간 구독은 올해 결제가 해지 전이었는지 후였는지 알 수
+ * 없으므로 `null`이다. 남은 달 수로 나눠 채우면, 실제로는 전액이거나 0원인
+ * 금액을 그 사이 어딘가로 지어내게 된다.
+ */
+export function getMyYearDefendedAmountKRW(
+  sub: DefendedSubscription,
+  targetYear: number = new Date().getFullYear(),
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): number | null {
+  let total = 0;
+  for (let month = 1; month <= 12; month += 1) {
+    const defended = getMyMonthDefendedAmountKRW(sub, targetYear, month, rate);
+    if (defended === null) return null;
+    total += defended;
+  }
+  return total;
+}
+
+/** 방어액 합계와, 판단할 수 없어 합계에서 뺀 구독 수. */
+export interface DefendedSummary {
   amount: number;
-  /** 결제 월을 몰라 합계에 넣지 못한 연간 구독 수. */
+  /** 결제 월이나 해지 시각을 몰라 합계에 넣지 못한 구독 수. */
   unknownCount: number;
 }
 
-export function sumMyMonthDefendedKRW(
-  subs: (DefendedSubscription & { billingDay: number })[],
-  year: number = new Date().getFullYear(),
-  month: number = new Date().getMonth() + 1,
-  rate: number = DEFAULT_EXCHANGE_RATE,
-): MonthDefendedSummary {
-  return subs.reduce<MonthDefendedSummary>(
+function summarizeDefended(
+  subs: DefendedSubscription[],
+  defendedOf: (sub: DefendedSubscription) => number | null,
+): DefendedSummary {
+  return subs.reduce<DefendedSummary>(
     (acc, sub) => {
-      const defended = getMyMonthDefendedAmountKRW(sub, year, month, rate);
+      const defended = defendedOf(sub);
       if (defended === null) return { ...acc, unknownCount: acc.unknownCount + 1 };
       return { ...acc, amount: acc.amount + defended };
     },
     { amount: 0, unknownCount: 0 },
   );
+}
+
+export function sumMyMonthDefendedKRW(
+  subs: DefendedSubscription[],
+  year: number = new Date().getFullYear(),
+  month: number = new Date().getMonth() + 1,
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): DefendedSummary {
+  return summarizeDefended(subs, (sub) => getMyMonthDefendedAmountKRW(sub, year, month, rate));
+}
+
+export function sumMyYearDefendedKRW(
+  subs: DefendedSubscription[],
+  targetYear: number = new Date().getFullYear(),
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): DefendedSummary {
+  return summarizeDefended(subs, (sub) => getMyYearDefendedAmountKRW(sub, targetYear, rate));
 }
