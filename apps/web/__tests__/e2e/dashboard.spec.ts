@@ -50,6 +50,7 @@ test.describe("Dashboard (E2E)", () => {
     await expect(dashboardHeading).toBeVisible({ timeout: 30_000 });
 
     await page.goto("/");
+    await expect(page.getByText(/현재 \d+개의 구독이 등록되어 있습니다/)).toBeVisible();
     await page.getByRole("button", { name: /샘플 데이터로 1초 체험/ }).click();
     await expect(dashboardHeading).toBeVisible({ timeout: 30_000 });
   });

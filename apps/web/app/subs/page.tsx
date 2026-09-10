@@ -8,10 +8,12 @@ import {
   SubscriptionFormData,
   CheckInResponse,
   POPULAR_SERVICES,
+  ServicePreset,
   sumMyMonthlyKRW,
 } from "@subslash/shared";
 import { SubCard } from "../../components/subscription/SubCard";
 import { SubForm } from "../../components/subscription/SubForm";
+import { QuickPresetRecommender } from "../../components/subscription/QuickPresetRecommender";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
 import {
@@ -74,6 +76,7 @@ export default function SubscriptionsPage() {
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"active" | "killed">("active");
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState<ServicePreset | null>(null);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   const [checkInSub, setCheckInSub] = useState<Subscription | null>(null);
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
@@ -300,6 +303,15 @@ export default function SubscriptionsPage() {
               ))}
             </div>
           )}
+
+          {/* Quick Preset Recommender (Issue 19) */}
+          <QuickPresetRecommender
+            subscriptions={subscriptions}
+            onSelectPreset={(preset) => {
+              setSelectedPreset(preset);
+              setIsAddOpen(true);
+            }}
+          />
         </div>
       ) : (
         /* Killed Tab */
@@ -346,16 +358,40 @@ export default function SubscriptionsPage() {
       </button>
 
       {/* SubForm Modal */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+      <Dialog
+        open={isAddOpen}
+        onOpenChange={(open) => {
+          setIsAddOpen(open);
+          if (!open) setSelectedPreset(null);
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>새 구독 추가</DialogTitle>
+            <DialogTitle>
+              {selectedPreset ? `${selectedPreset.nameKo} 등록` : "새 구독 추가"}
+            </DialogTitle>
             <DialogDescription>
               서비스 정보를 등록하면 D-Day 및 1회당 단가를 자동 계산합니다.
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
-            <SubForm popularServices={POPULAR_SERVICES} onSubmit={handleAddSubmit} />
+            <SubForm
+              popularServices={POPULAR_SERVICES}
+              initialData={
+                selectedPreset
+                  ? {
+                      name: selectedPreset.nameKo || selectedPreset.name,
+                      amount: selectedPreset.defaultAmount,
+                      currency: selectedPreset.currency,
+                      cancelUrl: selectedPreset.cancelUrl,
+                      cancelGuide: selectedPreset.cancelGuide,
+                      category: selectedPreset.category,
+                      iconUrl: selectedPreset.iconEmoji,
+                    }
+                  : undefined
+              }
+              onSubmit={handleAddSubmit}
+            />
           </div>
         </DialogContent>
       </Dialog>

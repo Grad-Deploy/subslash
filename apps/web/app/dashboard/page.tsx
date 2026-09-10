@@ -8,10 +8,13 @@ import {
   CheckInResponse,
   DEMO_SUBSCRIPTIONS,
   POPULAR_SERVICES,
+  ServicePreset,
   getDaysUntilBillingFor,
 } from "@subslash/shared";
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { SavingsPot } from "../../components/dashboard/SavingsPot";
+import { OnboardingTourCard } from "../../components/dashboard/OnboardingTourCard";
+import { QuickPresetRecommender } from "../../components/subscription/QuickPresetRecommender";
 import { SubCard } from "../../components/subscription/SubCard";
 import { SubForm } from "../../components/subscription/SubForm";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
@@ -41,6 +44,7 @@ export default function Dashboard() {
 
   const [mounted, setMounted] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState<ServicePreset | null>(null);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   const [checkInSub, setCheckInSub] = useState<Subscription | null>(null);
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
@@ -157,6 +161,9 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Onboarding Tour Card for New/Early Users (Issue 17) */}
+      <OnboardingTourCard onStartAdd={() => setIsAddOpen(true)} activeCount={activeSubs.length} />
+
       {/* Top Section: Total Monthly Spend Hero */}
       <TotalSpend subscriptions={activeSubs} />
 
@@ -257,15 +264,48 @@ export default function Dashboard() {
         )}
       </section>
 
+      {/* Quick Preset Recommender (Issue 19) */}
+      <QuickPresetRecommender
+        subscriptions={subscriptions}
+        onSelectPreset={(preset) => {
+          setSelectedPreset(preset);
+          setIsAddOpen(true);
+        }}
+      />
+
       {/* SubForm Modal for Adding */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+      <Dialog
+        open={isAddOpen}
+        onOpenChange={(open) => {
+          setIsAddOpen(open);
+          if (!open) setSelectedPreset(null);
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>새 구독 등록</DialogTitle>
+            <DialogTitle>
+              {selectedPreset ? `${selectedPreset.nameKo} 등록` : "새 구독 등록"}
+            </DialogTitle>
             <DialogDescription>인기 서비스를 선택하거나 직접 정보를 입력하세요.</DialogDescription>
           </DialogHeader>
           <div className="py-2">
-            <SubForm popularServices={POPULAR_SERVICES} onSubmit={handleAddSubmit} />
+            <SubForm
+              popularServices={POPULAR_SERVICES}
+              initialData={
+                selectedPreset
+                  ? {
+                      name: selectedPreset.nameKo || selectedPreset.name,
+                      amount: selectedPreset.defaultAmount,
+                      currency: selectedPreset.currency,
+                      cancelUrl: selectedPreset.cancelUrl,
+                      cancelGuide: selectedPreset.cancelGuide,
+                      category: selectedPreset.category,
+                      iconUrl: selectedPreset.iconEmoji,
+                    }
+                  : undefined
+              }
+              onSubmit={handleAddSubmit}
+            />
           </div>
         </DialogContent>
       </Dialog>

@@ -94,6 +94,71 @@ export function sumMyAnnualKRW(
   return subs.reduce((total, sub) => total + getMyAnnualAmountKRW(sub, rate), 0);
 }
 
+export type DefendedSubscription = SharedSubscription & {
+  killedAt?: string;
+  billingMonth?: number;
+};
+
+/**
+ * Calculates the defended savings for the given subscription in a specific calendar year (defaults to current year).
+ * If killed in September 2026, the remaining months of 2026 (Sep, Oct, Nov, Dec = 4 months) are considered defended in 2026.
+ * For yearly plans, if billingMonth is in the defended window, the yearly amount is counted; otherwise 0.
+ */
+export function getMyYearDefendedAmountKRW(
+  sub: DefendedSubscription,
+  targetYear: number = new Date().getFullYear(),
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): number {
+  if (!sub.killedAt) {
+    return getMyAnnualAmountKRW(sub, rate);
+  }
+
+  const killDate = new Date(sub.killedAt);
+  const killYear = killDate.getFullYear();
+
+  if (killYear > targetYear) {
+    // Was killed in a future year; in targetYear it was still active
+    return 0;
+  }
+
+  if (killYear < targetYear) {
+    // Was killed before targetYear; defended for the entire targetYear
+    return getMyAnnualAmountKRW(sub, rate);
+  }
+
+  // killYear === targetYear: months remaining in this year from kill month onwards
+  const killMonth = killDate.getMonth() + 1; // 1-12
+
+  if (sub.billingCycle === "yearly") {
+    if (typeof sub.billingMonth === "number") {
+      // If the yearly billing month was after or in the kill month, it was successfully prevented
+      if (sub.billingMonth >= killMonth) {
+        return getMyAnnualAmountKRW(sub, rate);
+      }
+      // If billing month was earlier in the year, this year's payment already took place
+      return 0;
+    }
+    // Pro-rate if yearly billing month is unknown
+    const remainingFraction = Math.max(0, 13 - killMonth) / 12;
+    return Math.round(getMyAnnualAmountKRW(sub, rate) * remainingFraction);
+  }
+
+  // Monthly billing: number of billing cycles saved from kill month through December
+  const remainingMonths = Math.max(0, 13 - killMonth);
+  return Math.round(getMyMonthlyAmountKRW(sub, rate) * remainingMonths);
+}
+
+/**
+ * Sum of defended savings in the target calendar year across multiple subscriptions.
+ */
+export function sumMyYearDefendedKRW(
+  subs: DefendedSubscription[],
+  targetYear: number = new Date().getFullYear(),
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): number {
+  return subs.reduce((total, sub) => total + getMyYearDefendedAmountKRW(sub, targetYear, rate), 0);
+}
+
 /**
  * Message the payer sends to the other members to collect their share.
  *
