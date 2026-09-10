@@ -5,6 +5,7 @@ import {
   POPULAR_SERVICES,
   findPresetForSubscription,
   getServiceHomeUrl,
+  getAccountFallbackUrl,
   parseCancelGuideSteps,
   type PriceCheckSubscription,
 } from "@subslash/shared";
@@ -31,9 +32,29 @@ function makeSub(overrides: Partial<PriceCheckSubscription> = {}): PriceCheckSub
 }
 
 describe("getPriceCheckCandidates", () => {
-  it("등록한 지 얼마 안 된 구독은 묻지 않는다", () => {
+  it("등록한 지 얼마 안 됐고 프리셋 요금과도 같으면 묻지 않는다", () => {
     const subs = [makeSub({ createdAt: daysAgo(10) })];
     expect(getPriceCheckCandidates(subs, NOW)).toEqual([]);
+  });
+
+  it("90일이 안 지났어도 프리셋 요금과 다르면 바로 묻는다", () => {
+    // 계획서의 조건은 '90일 경과' 또는 '프리셋 요금과 불일치' 둘 중 하나다.
+    const subs = [makeSub({ createdAt: daysAgo(3), amount: 13500 })];
+    const [candidate] = getPriceCheckCandidates(subs, NOW);
+    expect(candidate.reason).toBe("preset-mismatch");
+    expect(candidate.presetAmount).toBe(netflix.defaultAmount);
+  });
+
+  it("'요금 유지'를 누른 뒤에는 프리셋과 달라도 90일 동안 조용하다", () => {
+    const subs = [makeSub({ amount: 13500, lastPriceCheckedAt: daysAgo(5) })];
+    expect(getPriceCheckCandidates(subs, NOW)).toEqual([]);
+  });
+
+  it("확인 후 90일이 지나면 프리셋 불일치를 다시 묻는다", () => {
+    const subs = [
+      makeSub({ amount: 13500, lastPriceCheckedAt: daysAgo(PRICE_CHECK_INTERVAL_DAYS + 1) }),
+    ];
+    expect(getPriceCheckCandidates(subs, NOW)[0].reason).toBe("preset-mismatch");
   });
 
   it("확인한 지 오래된 구독은 stale로 잡는다", () => {
@@ -109,12 +130,35 @@ describe("findPresetForSubscription", () => {
   });
 });
 
+describe("getAccountFallbackUrl", () => {
+  it("해지 URL의 도메인에 /account를 붙인 주소를 준다", () => {
+    expect(getAccountFallbackUrl("https://www.netflix.com/cancelplan")).toBe(
+      "https://www.netflix.com/account",
+    );
+  });
+
+  it("해지 URL이 첫 화면이어도 계정 주소는 따로 만들어 준다", () => {
+    expect(getAccountFallbackUrl("https://m.coupang.com/")).toBe("https://m.coupang.com/account");
+  });
+
+  it("이미 /account를 가리키는 링크에는 같은 버튼을 또 만들지 않는다", () => {
+    expect(getAccountFallbackUrl("https://example.com/account")).toBeNull();
+    expect(getAccountFallbackUrl("https://example.com/account/")).toBeNull();
+  });
+
+  it("주소가 없거나 해석되지 않으면 null이다", () => {
+    expect(getAccountFallbackUrl(undefined)).toBeNull();
+    expect(getAccountFallbackUrl("고객센터에 전화")).toBeNull();
+    expect(getAccountFallbackUrl("javascript:alert(1)")).toBeNull();
+  });
+});
+
 describe("getServiceHomeUrl", () => {
   it("해지 URL에서 첫 화면 주소만 뽑는다", () => {
     expect(getServiceHomeUrl("https://www.netflix.com/cancelplan")).toBe("https://www.netflix.com");
   });
 
-  it("/account 같은 경로를 지어내지 않는다", () => {
+  it("첫 화면 주소에는 경로를 덧붙이지 않는다", () => {
     expect(getServiceHomeUrl("https://www.netflix.com/cancelplan")).not.toContain("/account");
   });
 

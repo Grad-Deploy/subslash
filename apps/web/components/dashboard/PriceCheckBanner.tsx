@@ -41,7 +41,7 @@ export function PriceCheckBanner({ subscriptions }: PriceCheckBannerProps) {
           <span className="text-xl leading-none pt-0.5">🏷️</span>
           <div className="space-y-1">
             <h3 className="font-bold text-sm text-amber-900 dark:text-amber-200">
-              {target.name} 요금, 지금도 그대로인가요?
+              {target.name} 요금, 최근 인상되었나요?
             </h3>
             {target.reason === "preset-mismatch" && target.presetAmount !== null ? (
               <p className="text-xs text-muted-foreground leading-relaxed">
@@ -86,7 +86,7 @@ export function PriceCheckBanner({ subscriptions }: PriceCheckBannerProps) {
           className="text-xs bg-background"
           onClick={() => confirmSubscriptionPrice(target.subscriptionId)}
         >
-          ✅ 이 금액 그대로예요
+          ✅ 요금 유지
         </Button>
         {target.reason === "preset-mismatch" && target.presetAmount !== null && (
           <Button
@@ -97,7 +97,7 @@ export function PriceCheckBanner({ subscriptions }: PriceCheckBannerProps) {
               confirmSubscriptionPrice(target.subscriptionId, target.presetAmount ?? undefined)
             }
           >
-            🔄 {formatCurrency(target.presetAmount, target.currency)}로 맞추기
+            🔄 최신 요금({formatCurrency(target.presetAmount, target.currency)})으로 갱신
           </Button>
         )}
         <Button
