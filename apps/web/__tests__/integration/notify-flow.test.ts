@@ -103,6 +103,70 @@ afterAll(() => {
   closeDb();
 });
 
+describe("데이터베이스가 설정되지 않은 배포", () => {
+  /**
+   * 환경 변수가 빠진 채 배포되면, 예전에는 서버리스 파일시스템에 SQLite 파일을
+   * 열려다 `Unable to open connection to local database local.db: 14` 로 500이
+   * 났다. 원인이 설정 누락이라는 사실이 어디에도 드러나지 않는 메시지였다.
+   */
+  /** NODE_ENV는 타입상 읽기 전용이라 서술자로 바꾼다. */
+  const setNodeEnv = (value: string | undefined) => {
+    Object.defineProperty(process.env, "NODE_ENV", {
+      value,
+      configurable: true,
+      writable: true,
+      enumerable: true,
+    });
+  };
+
+  const withProductionNoDb = async (run: () => Promise<Response>) => {
+    const url = process.env.TURSO_DATABASE_URL;
+    const env = process.env.NODE_ENV;
+    delete process.env.TURSO_DATABASE_URL;
+    setNodeEnv("production");
+    try {
+      return await run();
+    } finally {
+      process.env.TURSO_DATABASE_URL = url;
+      setNodeEnv(env);
+    }
+  };
+
+  it("알림 신청은 500이 아니라 503으로 설정 누락임을 알린다", async () => {
+    const res = await withProductionNoDb(() =>
+      subscribeRoute(
+        request("http://localhost/api/notify/subscribe", {
+          method: "POST",
+          body: JSON.stringify({ email: "reader@example.com" }),
+        }),
+      ),
+    );
+    expect(res.status).toBe(503);
+    expect((await res.json()).error).toContain("데이터베이스가 설정되어 있지 않아");
+  });
+
+  it("캘린더 피드도 503으로 답한다", async () => {
+    const res = await withProductionNoDb(() =>
+      calendarFeedRoute(request("http://localhost/api/calendar/whatever.ics"), {
+        params: Promise.resolve({ token: "whatever.ics" }),
+      } as never),
+    );
+    expect(res.status).toBe(503);
+  });
+
+  it("크론은 CRON_SECRET이 없으면 503으로 거부한다", async () => {
+    const secret = process.env.CRON_SECRET;
+    delete process.env.CRON_SECRET;
+    try {
+      const res = await cronRoute(request("http://localhost/api/cron/notify"));
+      expect(res.status).toBe(503);
+      expect((await res.json()).error).toContain("CRON_SECRET");
+    } finally {
+      process.env.CRON_SECRET = secret;
+    }
+  });
+});
+
 describe("알림 옵트인", () => {
   it("이메일을 등록하면 sync 토큰을 발급하고 미확인 상태로 둔다", async () => {
     const response = await subscribeRoute(

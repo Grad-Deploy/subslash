@@ -6,7 +6,7 @@ import {
   type BillingCycle,
   type Currency,
 } from "@subslash/shared";
-import { getDb } from "@lib/db";
+import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { mirroredSubscriptions, notificationLog, users } from "@lib/schema";
 import { signLink } from "@lib/tokens";
 import { appUrl, reminderEmail, sendEmail, type ReminderItem } from "@lib/email";
@@ -27,12 +27,25 @@ function toDateKey(date: Date): string {
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
-    console.error("[cron/notify] CRON_SECRET is not set; refusing to run.");
-    return NextResponse.json({ error: "Not configured" }, { status: 500 });
+    // 비밀값이 없으면 누구나 이 주소를 호출해 메일을 보낼 수 있으므로 실행하지
+    // 않는다. 500이 아니라 503인 이유는, 이것이 코드의 결함이 아니라 배포에
+    // 환경 변수가 빠진 상태이기 때문이다 — 매일 한 번씩 500이 쌓이면 진짜
+    // 장애와 구분되지 않는다.
+    console.error(
+      "[cron/notify] CRON_SECRET is not set; refusing to run. " +
+        "Set CRON_SECRET in the deployment environment to enable reminder emails.",
+    );
+    return NextResponse.json(
+      { error: "Reminder emails are not configured on this server (CRON_SECRET is missing)." },
+      { status: 503 },
+    );
   }
   if (request.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const unavailable = databaseUnavailableResponse();
+  if (unavailable) return unavailable;
 
   const now = new Date();
   const db = getDb();
