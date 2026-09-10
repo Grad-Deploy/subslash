@@ -385,6 +385,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
           </DialogHeader>
           <div className="py-2">
             <SubForm
+              mode="edit"
               popularServices={POPULAR_SERVICES}
               initialData={{
                 name: sub.name,
