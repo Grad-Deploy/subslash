@@ -22,6 +22,7 @@ import {
   DialogDescription,
 } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
+import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 
@@ -78,6 +79,10 @@ export default function SubscriptionsPage() {
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "kill" | "revive" | "delete";
+    sub: Subscription;
+  } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -127,22 +132,33 @@ export default function SubscriptionsPage() {
 
   const handleKill = (id: string) => {
     const sub = subscriptions.find((s) => s.id === id);
-    killSubscription(id);
-    showToast(`🔪 ${sub?.name || "구독"}을(를) 해지 처리했습니다.`);
+    if (sub) setConfirmAction({ type: "kill", sub });
   };
 
   const handleRevive = (id: string) => {
     const sub = subscriptions.find((s) => s.id === id);
-    reviveSubscription(id);
-    showToast(`✨ ${sub?.name || "구독"}을(를) 다시 활성화했습니다.`);
+    if (sub) setConfirmAction({ type: "revive", sub });
   };
 
   const handleDelete = (id: string) => {
     const sub = subscriptions.find((s) => s.id === id);
-    if (confirm(`'${sub?.name || "이 구독"}'을(를) 영구 삭제하시겠습니까?`)) {
-      deleteSubscription(id);
+    if (sub) setConfirmAction({ type: "delete", sub });
+  };
+
+  const executeConfirmAction = () => {
+    if (!confirmAction) return;
+    const { type, sub } = confirmAction;
+    if (type === "kill") {
+      killSubscription(sub.id);
+      showToast(`🔪 ${sub.name}을(를) 해지 처리했습니다.`);
+    } else if (type === "revive") {
+      reviveSubscription(sub.id);
+      showToast(`✨ ${sub.name}을(를) 다시 활성화했습니다.`);
+    } else if (type === "delete") {
+      deleteSubscription(sub.id);
       showToast("삭제되었습니다.");
     }
+    setConfirmAction(null);
   };
 
   const handleAddSubmit = (data: SubscriptionFormData) => {
@@ -358,6 +374,38 @@ export default function SubscriptionsPage() {
 
       {/* Auto Import Hub Modal */}
       <AutoImportModal isOpen={isAutoImportOpen} onClose={() => setIsAutoImportOpen(false)} />
+
+      {/* Confirmation Modal */}
+      {confirmAction && (
+        <ConfirmDialog
+          isOpen={!!confirmAction}
+          onClose={() => setConfirmAction(null)}
+          onConfirm={executeConfirmAction}
+          title={
+            confirmAction.type === "kill"
+              ? "구독 해지 완료 처리"
+              : confirmAction.type === "revive"
+                ? "구독 다시 살리기"
+                : "구독 영구 삭제"
+          }
+          description={
+            confirmAction.type === "kill"
+              ? `'${confirmAction.sub.name}' 구독을 해지(방어) 완료 상태로 전환하시겠습니까?\n방어 성공 자산으로 기록되며 대시보드와 절약 현황에 반영됩니다.`
+              : confirmAction.type === "revive"
+                ? `'${confirmAction.sub.name}' 구독을 다시 활성화하시겠습니까?\n활성 구독 목록으로 복원되며, 절약 방어 자산에서 제외됩니다.`
+                : `'${confirmAction.sub.name}' 구독을 영구 삭제하시겠습니까?\n삭제된 구독 데이터는 복구할 수 없습니다.`
+          }
+          confirmText={
+            confirmAction.type === "kill"
+              ? "해지 완료"
+              : confirmAction.type === "revive"
+                ? "다시 살리기"
+                : "삭제"
+          }
+          cancelText="취소"
+          variant={confirmAction.type === "revive" ? "default" : "destructive"}
+        />
+      )}
     </div>
   );
 }

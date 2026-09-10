@@ -24,6 +24,7 @@ import {
   DialogDescription,
 } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
+import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 
 export default function Dashboard() {
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const [checkInSub, setCheckInSub] = useState<Subscription | null>(null);
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [killTarget, setKillTarget] = useState<Subscription | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -98,8 +100,7 @@ export default function Dashboard() {
 
   const handleKill = (id: string) => {
     const sub = subscriptions.find((s) => s.id === id);
-    killSubscription(id);
-    showToast(`🔪 ${sub?.name || "구독"}을(를) 성공적으로 차단했습니다!`);
+    if (sub) setKillTarget(sub);
   };
 
   const handleAddSubmit = (data: SubscriptionFormData) => {
@@ -283,6 +284,26 @@ export default function Dashboard() {
 
       {/* Auto Import Hub Modal */}
       <AutoImportModal isOpen={isAutoImportOpen} onClose={() => setIsAutoImportOpen(false)} />
+
+      {/* Kill Confirmation Modal */}
+      {killTarget && (
+        <ConfirmDialog
+          isOpen={!!killTarget}
+          onClose={() => setKillTarget(null)}
+          onConfirm={() => {
+            if (killTarget) {
+              killSubscription(killTarget.id);
+              showToast(`🔪 ${killTarget.name}을(를) 성공적으로 차단했습니다!`);
+              setKillTarget(null);
+            }
+          }}
+          title="구독 해지 완료 처리"
+          description={`'${killTarget.name}' 구독을 해지(방어) 완료 상태로 전환하시겠습니까?\n방어 성공 자산으로 기록되며 대시보드와 절약 현황에 반영됩니다.`}
+          confirmText="해지 완료"
+          cancelText="취소"
+          variant="destructive"
+        />
+      )}
     </div>
   );
 }

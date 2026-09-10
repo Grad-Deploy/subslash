@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useStore } from "../../lib/store";
 import { SHOW_INBOX_PREVIEW } from "../../lib/flags";
 import { AccountProvider, ACCOUNT_PROVIDERS, sumMonthlyKRW } from "@subslash/shared";
@@ -11,6 +11,7 @@ import { Select } from "../ui/select";
 import { Badge } from "../ui/badge";
 import { EmailDomainInput } from "../ui/email-domain-input";
 import { AutoImportModal } from "../import/AutoImportModal";
+
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 interface AccountHubModalProps {
@@ -26,6 +27,19 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
   const [provider, setProvider] = useState<AccountProvider>("google");
   const [name, setName] = useState("");
   const [emailOrId, setEmailOrId] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsAdding(false);
+      setName("");
+      setEmailOrId("");
+      setProvider("google");
+    }
+  }, [isOpen]);
+
+  const handleProviderSelectChange = (newProvider: AccountProvider) => {
+    setProvider(newProvider);
+  };
 
   const handleCreateAccount = (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +62,7 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
   const handleQuickAdd = (p: (typeof ACCOUNT_PROVIDERS)[number]) => {
     setProvider(p.id as AccountProvider);
     setName("");
-    setEmailOrId(p.defaultDomain);
+    setEmailOrId("");
     setIsAdding(true);
   };
 
@@ -120,7 +134,18 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setIsAdding(!isAdding)}
+                onClick={() => {
+                  if (isAdding) {
+                    setIsAdding(false);
+                    setName("");
+                    setEmailOrId("");
+                  } else {
+                    setIsAdding(true);
+                    setName("");
+                    setEmailOrId("");
+                    setProvider("google");
+                  }
+                }}
                 className="text-xs"
               >
                 {isAdding ? "취소" : "+ 직접 계정 입력"}
@@ -138,7 +163,9 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
                     <label className="text-xs text-muted-foreground">로그인 제공자</label>
                     <Select
                       value={provider}
-                      onChange={(e) => setProvider(e.target.value as AccountProvider)}
+                      onChange={(e) =>
+                        handleProviderSelectChange(e.target.value as AccountProvider)
+                      }
                     >
                       <option value="google">Google</option>
                       <option value="kakao">카카오 (Kakao)</option>
@@ -150,7 +177,7 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
                   <div className="space-y-1">
                     <label className="text-xs text-muted-foreground">계정 칭호 / 이름</label>
                     <Input
-                      placeholder="예: 내 구글 본계정"
+                      placeholder="예: 내 구글 본계정, 업무용 계정"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
@@ -160,14 +187,12 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
                 <div className="space-y-1">
                   <label className="text-xs text-muted-foreground">로그인 이메일 / ID</label>
                   <EmailDomainInput
+                    key={provider}
                     value={emailOrId}
-                    onChange={(full, local) => {
+                    provider={provider}
+                    onChange={(full) => {
                       setEmailOrId(full);
-                      if (!name) {
-                        setName(local);
-                      }
                     }}
-                    onProviderChange={(p) => setProvider(p)}
                     placeholderId="아이디 입력"
                     required
                   />

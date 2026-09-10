@@ -36,7 +36,7 @@ export function Header() {
         <div className="container max-w-4xl mx-auto flex h-14 items-center justify-between px-4">
           <div className="flex items-center gap-6">
             <Link
-              href="/dashboard"
+              href="/"
               className="flex items-center gap-2 font-bold text-lg tracking-tight hover:opacity-80 transition-opacity"
             >
               <span className="text-2xl">✂️</span>
