@@ -62,6 +62,13 @@ test.describe("Subscription Flow (E2E)", () => {
     await page.goto("/subs");
 
     await page.getByRole("button", { name: "해지하기" }).first().click();
+
+    // 해지 확인 모달 확인 및 승인
+    const confirmDialog = page.getByRole("dialog");
+    await expect(confirmDialog).toBeVisible();
+    await confirmDialog.getByRole("button", { name: "해지 완료" }).click();
+    await expect(confirmDialog).toHaveCount(0);
+
     await page.getByRole("button", { name: /해지 완료 \(1\)/ }).click();
 
     await expect(page.getByRole("link", { name: /Netflix/ })).toBeVisible();
