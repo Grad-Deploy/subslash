@@ -9,6 +9,7 @@ import { AutoImportModal } from "../import/AutoImportModal";
 import { NotifySettingsModal } from "../notify/NotifySettingsModal";
 import { useStore } from "@lib/store";
 import { useMirrorSync } from "@hooks/useMirrorSync";
+import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
 
 export function Header() {
@@ -19,6 +20,7 @@ export function Header() {
   const [isNotifyOpen, setIsNotifyOpen] = useState(false);
   // Only the badge flag, so sync timestamps do not re-render the root layout.
   const remindersOn = useStore((state) => state.notify.verified);
+  const { account, loading: authLoading, logout } = useAuth();
 
   // The header is mounted on every route, so the mirror stays in step wherever
   // the user edits their subscriptions.
@@ -97,9 +99,36 @@ export function Header() {
               <span className="hidden sm:inline">연동 계정</span>
             </button>
 
-            <div className="hidden sm:inline-block text-xs font-medium text-muted-foreground bg-secondary px-2.5 py-1 rounded-full">
-              구독, 끊을 용기
-            </div>
+            {/*
+              로그인은 선택 기능이다. 불러오는 중에는 아무것도 그리지 않아,
+              "로그인" 버튼이 잠깐 보였다가 사라지는 일이 없게 한다.
+            */}
+            {!authLoading &&
+              (account ? (
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="hidden sm:inline-block max-w-[9rem] truncate text-xs font-semibold text-foreground bg-secondary px-2.5 py-1 rounded-full"
+                    title={account.email}
+                  >
+                    {account.username}
+                  </span>
+                  <button
+                    onClick={logout}
+                    className="px-2.5 py-1.5 rounded-xl border bg-card hover:bg-muted text-xs font-semibold transition-all shadow-sm active:scale-95"
+                    title="로그아웃"
+                  >
+                    로그아웃
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  className="px-3 py-1.5 rounded-xl border bg-card hover:bg-muted text-xs font-semibold transition-all shadow-sm active:scale-95"
+                  title="로그인 또는 회원가입"
+                >
+                  로그인
+                </Link>
+              ))}
 
             <button
               onClick={toggleTheme}

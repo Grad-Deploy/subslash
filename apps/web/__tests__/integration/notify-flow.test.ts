@@ -40,9 +40,21 @@ const migrations = readdirSync(migrationsDir)
 
 async function resetDatabase() {
   const db = getDb();
-  for (const table of ["notification_log", "mirrored_subscriptions", "users"]) {
-    await db.run(`DROP TABLE IF EXISTS ${table}` as never);
+
+  // 테이블 이름을 손으로 적어두면 마이그레이션이 새로 생길 때마다 이 목록이
+  // 낡아, "이미 존재하는 테이블" 오류로 엉뚱한 테스트가 깨진다. 지금 DB에
+  // 있는 것을 그때그때 물어보고 전부 지운다.
+  const existing = (await db.all(
+    `SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'` as never,
+  )) as unknown as Array<{ name: string }>;
+
+  // 외래키를 잠시 꺼야 순서에 상관없이 지울 수 있다.
+  await db.run(`PRAGMA foreign_keys = OFF` as never);
+  for (const { name } of existing) {
+    await db.run(`DROP TABLE IF EXISTS "${name}"` as never);
   }
+  await db.run(`PRAGMA foreign_keys = ON` as never);
+
   for (const migration of migrations) {
     for (const statement of migration.split("--> statement-breakpoint")) {
       const sql = statement.trim();
