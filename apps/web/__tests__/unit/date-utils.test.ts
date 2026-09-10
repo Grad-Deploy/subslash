@@ -5,7 +5,6 @@ import {
   getNextBillingDateFor,
   getDaysUntilBillingFor,
   needsBillingMonth,
-  isPaymentImminent,
   formatDday,
   formatCountdown,
 } from "@subslash/shared";
@@ -74,23 +73,6 @@ describe("Date Utils", () => {
     it("billingDay=6, now=Sep 6 -> next month", () => {
       const now = new Date("2023-09-06T10:00:00Z");
       expect(getDaysUntilBilling(6, now)).toBeGreaterThan(25);
-    });
-  });
-
-  describe("isPaymentImminent", () => {
-    it("D-3 with threshold 3: true", () => {
-      const now = new Date("2023-09-06T00:00:00Z");
-      expect(isPaymentImminent(9, 3, now)).toBe(true);
-    });
-
-    it("D-7 with threshold 3: false", () => {
-      const now = new Date("2023-09-06T00:00:00Z");
-      expect(isPaymentImminent(13, 3, now)).toBe(false);
-    });
-
-    it("D-1 with threshold 1: true", () => {
-      const now = new Date("2023-09-06T00:00:00Z");
-      expect(isPaymentImminent(7, 1, now)).toBe(true);
     });
   });
 

@@ -4,7 +4,6 @@ import {
   getRiskLevel,
   formatShockMessage,
   formatCurrency,
-  calculateAnnualSavings,
   getSavingsEquivalent,
   getSavingsEquivalents,
 } from "@subslash/shared";
@@ -90,12 +89,6 @@ describe("Cost Per Use Utils", () => {
 
     it('USD: formatCurrency(9.99, "USD") -> $9.99', () => {
       expect(formatCurrency(9.99, "USD")).toBe("$9.99");
-    });
-  });
-
-  describe("calculateAnnualSavings", () => {
-    it("17000 * 12 = 204000", () => {
-      expect(calculateAnnualSavings(17000)).toBe(204000);
     });
   });
 
