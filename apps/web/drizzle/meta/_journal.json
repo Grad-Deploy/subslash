@@ -22,6 +22,13 @@
       "when": 1788939964063,
       "tag": "0002_true_red_wolf",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1789021030439,
+      "tag": "0003_remarkable_talkback",
+      "breakpoints": true
     }
   ]
 }

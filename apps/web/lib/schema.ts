@@ -109,6 +109,70 @@ export const notificationLog = sqliteTable(
   }),
 );
 
+/**
+ * 로그인 계정.
+ *
+ * 알림 미러의 `users`와 일부러 분리했다. 저쪽은 "알림을 켠 브라우저"를
+ * 가리키고 이메일 하나로 식별되며, 계정 없이도 존재한다. 로그인은 그와
+ * 다른 개념이라 한 테이블에 밀어 넣으면 둘 중 하나의 규칙이 반드시 거짓이
+ * 된다. 로그인은 선택 기능이므로, 계정이 없어도 앱은 그대로 동작한다.
+ */
+export const accounts = sqliteTable(
+  "accounts",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    /** 소문자로 정규화해 저장한다. 대소문자만 다른 두 계정을 막기 위해서다. */
+    username: text("username").notNull(),
+    email: text("email").notNull(),
+    /**
+     * `scrypt$N$r$p$솔트$해시` 형식의 단방향 해시. 평문 비밀번호는 어디에도
+     * 저장하지 않고, 로그인 요청을 처리하는 순간 외에는 메모리에도 남기지 않는다.
+     */
+    passwordHash: text("password_hash").notNull(),
+    age: integer("age").notNull(),
+    /** male | female | other | undisclosed. */
+    gender: text("gender").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    lastLoginAt: text("last_login_at"),
+  },
+  (table) => ({
+    usernameIdx: uniqueIndex("accounts_username_idx").on(table.username),
+    emailIdx: uniqueIndex("accounts_email_idx").on(table.email),
+  }),
+);
+
+/**
+ * 로그인 세션.
+ *
+ * 브라우저에는 임의의 토큰만 쿠키로 내려가고, 서버에는 그 SHA-256만 남는다.
+ * DB가 통째로 새더라도 거기 있는 값으로는 로그인할 수 없다 — 알림 동기화
+ * 토큰과 같은 방식이다.
+ */
+export const sessions = sqliteTable(
+  "sessions",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: text("expires_at").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+  },
+  (table) => ({
+    tokenIdx: uniqueIndex("sessions_token_idx").on(table.tokenHash),
+    accountIdx: index("sessions_account_idx").on(table.accountId),
+  }),
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   subscriptions: many(mirroredSubscriptions),
   notifications: many(notificationLog),
@@ -133,3 +197,18 @@ export type NewUser = typeof users.$inferInsert;
 export type MirroredSubscription = typeof mirroredSubscriptions.$inferSelect;
 export type NewMirroredSubscription = typeof mirroredSubscriptions.$inferInsert;
 export type NotificationLogEntry = typeof notificationLog.$inferSelect;
+
+export const accountsRelations = relations(accounts, ({ many }) => ({
+  sessions: many(sessions),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  account: one(accounts, {
+    fields: [sessions.accountId],
+    references: [accounts.id],
+  }),
+}));
+
+export type Account = typeof accounts.$inferSelect;
+export type NewAccount = typeof accounts.$inferInsert;
+export type Session = typeof sessions.$inferSelect;
