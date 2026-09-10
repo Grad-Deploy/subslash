@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { getDb } from "@lib/db";
+import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { users } from "@lib/schema";
 import { generateSyncToken, hashSyncToken, signLink } from "@lib/tokens";
 import { appUrl, sendEmail, verificationEmail } from "@lib/email";
@@ -14,6 +14,8 @@ const VERIFY_TTL_SECONDS = 60 * 60 * 24 * 3;
  * or hostile submission cannot turn SubSlash into a spam vector.
  */
 export async function POST(request: NextRequest) {
+  const unavailable = databaseUnavailableResponse();
+  if (unavailable) return unavailable;
   try {
     const body = await request.json();
     const email = normalizeEmail(body?.email);

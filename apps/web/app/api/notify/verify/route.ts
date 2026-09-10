@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { getDb } from "@lib/db";
+import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { users } from "@lib/schema";
 import { verifyLink } from "@lib/tokens";
 import { appUrl } from "@lib/email";
 
 /** Confirmation link target from the opt-in email. Redirects back into the app. */
 export async function GET(request: NextRequest) {
+  const unavailable = databaseUnavailableResponse();
+  if (unavailable) return unavailable;
   const token = request.nextUrl.searchParams.get("token");
   const payload = token ? verifyLink(token) : null;
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { getDb } from "@lib/db";
+import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { mirroredSubscriptions, users } from "@lib/schema";
 import { deleteUserCompletely, userFromRequest } from "@lib/notify-server";
 
@@ -60,6 +60,8 @@ function sanitize(raw: unknown): MirrorInput | null {
  * Killed subscriptions are simply absent from the payload and disappear here.
  */
 export async function PUT(request: NextRequest) {
+  const unavailable = databaseUnavailableResponse();
+  if (unavailable) return unavailable;
   try {
     const user = await userFromRequest(request);
     if (!user) {
@@ -100,6 +102,8 @@ export async function PUT(request: NextRequest) {
 
 /** Lets the client show the current opt-in state without exposing the mirror. */
 export async function GET(request: NextRequest) {
+  const unavailable = databaseUnavailableResponse();
+  if (unavailable) return unavailable;
   try {
     const user = await userFromRequest(request);
     if (!user) {
@@ -119,6 +123,8 @@ export async function GET(request: NextRequest) {
 
 /** Opting out from inside the app: same effect as the email unsubscribe link. */
 export async function DELETE(request: NextRequest) {
+  const unavailable = databaseUnavailableResponse();
+  if (unavailable) return unavailable;
   try {
     const user = await userFromRequest(request);
     if (!user) {
