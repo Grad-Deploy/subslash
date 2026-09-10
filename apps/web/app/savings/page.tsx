@@ -12,6 +12,7 @@ import {
   sumMyAnnualKRW,
 } from "@subslash/shared";
 import { SavingsPot } from "../../components/dashboard/SavingsPot";
+import { SavingsBreakdownChart } from "../../components/savings/SavingsBreakdownChart";
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
@@ -102,6 +103,9 @@ export default function SavingsDashboard() {
         <div className="space-y-6">
           {/* Main Savings Pot Widget */}
           <SavingsPot killedSubscriptions={killedSubs} />
+
+          {/* Breakdown by Cancelled Service (Issue 7) */}
+          <SavingsBreakdownChart killedSubscriptions={killedSubs} exchangeRate={rate} />
 
           {/* Reward Equivalent Cards — only the tiers the savings actually cover */}
           <div className="space-y-3">

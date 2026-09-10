@@ -3,11 +3,13 @@ import {
   formatSettlementMessage,
   getMyShareAmount,
   getMyMonthlyAmountKRW,
+  getMyYearDefendedAmountKRW,
   getOthersShareAmount,
   getSharingCount,
   isShared,
   sumMyAnnualKRW,
   sumMyMonthlyKRW,
+  sumMyYearDefendedKRW,
 } from "@subslash/shared";
 
 const netflix = {
@@ -87,5 +89,76 @@ describe("공유 구독 분담", () => {
 
     // 남은 ₩8,000을 두 명이 나눠 1인 ₩4,000.
     expect(message).toContain("₩4,000");
+  });
+});
+
+describe("해지 시점 기준 당해년도 실제 방어액 계산", () => {
+  it("월간 구독을 9월에 해지하면 9~12월 4개월치가 올해 방어액으로 계산된다", () => {
+    const sub = {
+      ...netflix,
+      killedAt: "2026-09-10T10:00:00.000Z",
+    };
+    // 9, 10, 11, 12월 4회 x 17,000 = 68,000
+    const defended = getMyYearDefendedAmountKRW(sub, 2026);
+    expect(defended).toBe(68000);
+  });
+
+  it("전년도에 해지된 구독은 올해 12개월 전체가 방어된 것으로 계산된다", () => {
+    const sub = {
+      ...netflix,
+      killedAt: "2025-11-15T10:00:00.000Z",
+    };
+    const defended = getMyYearDefendedAmountKRW(sub, 2026);
+    expect(defended).toBe(17000 * 12);
+  });
+
+  it("미래 연도에 해지 예정인 구독은 당해년도 방어액이 0이다", () => {
+    const sub = {
+      ...netflix,
+      killedAt: "2027-01-01T10:00:00.000Z",
+    };
+    const defended = getMyYearDefendedAmountKRW(sub, 2026);
+    expect(defended).toBe(0);
+  });
+
+  it("연간 구독의 결제월이 해지월 이후이면 올해 결제액 전체가 방어된다", () => {
+    const yearlySub = {
+      name: "어도비 CC",
+      amount: 600000,
+      currency: "KRW" as const,
+      billingCycle: "yearly" as const,
+      billingMonth: 11, // 11월 결제 예정
+      killedAt: "2026-08-15T10:00:00.000Z", // 8월에 해지
+    };
+    const defended = getMyYearDefendedAmountKRW(yearlySub, 2026);
+    expect(defended).toBe(600000);
+  });
+
+  it("연간 구독의 결제월이 해지월 이전이면 이미 올해 결제되었으므로 올해 방어액은 0이다", () => {
+    const yearlySub = {
+      name: "어도비 CC",
+      amount: 600000,
+      currency: "KRW" as const,
+      billingCycle: "yearly" as const,
+      billingMonth: 3, // 3월 결제 완료
+      killedAt: "2026-08-15T10:00:00.000Z", // 8월에 해지
+    };
+    const defended = getMyYearDefendedAmountKRW(yearlySub, 2026);
+    expect(defended).toBe(0);
+  });
+
+  it("여러 구독의 올해 방어액 합산을 바르게 계산한다", () => {
+    const subs = [
+      { ...netflix, killedAt: "2026-09-10T10:00:00.000Z" }, // 4 x 17,000 = 68,000
+      {
+        name: "유튜브",
+        amount: 14900,
+        currency: "KRW" as const,
+        billingCycle: "monthly" as const,
+        killedAt: "2026-10-01T10:00:00.000Z", // 3 x 14,900 = 44,700
+      },
+    ];
+    const total = sumMyYearDefendedKRW(subs, 2026);
+    expect(total).toBe(68000 + 44700);
   });
 });
