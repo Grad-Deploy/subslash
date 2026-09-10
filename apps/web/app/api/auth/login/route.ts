@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { validateLogin } from "@subslash/shared";
-import { getDb } from "@lib/db";
+import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { accounts } from "@lib/schema";
 import { hashPassword, needsRehash, verifyPassword } from "@lib/password";
 import {
@@ -23,6 +23,8 @@ import {
  * 방식으로 해시해 비교하는 방향으로만 이뤄진다.
  */
 export async function POST(request: NextRequest) {
+  const unavailable = databaseUnavailableResponse();
+  if (unavailable) return unavailable;
   try {
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== "object") {

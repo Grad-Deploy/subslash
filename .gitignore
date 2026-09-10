@@ -40,3 +40,8 @@ local.db-*
 *.tsbuildinfo
 
 .vercel
+
+# vercel CLI가 받아오는 .env.local에는 OIDC 토큰이 들어간다.
+# .env.example은 문서라서 예외로 둔다.
+.env*
+!.env.example

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isDatabaseConfigured } from "@lib/db";
 import { SESSION_COOKIE, destroySession } from "@lib/auth-server";
 
 /**
@@ -9,8 +10,11 @@ import { SESSION_COOKIE, destroySession } from "@lib/auth-server";
  */
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get(SESSION_COOKIE)?.value;
-    await destroySession(token);
+    // DB가 없으면 지울 서버 세션도 없다. 쿠키만 지우면 로그아웃은 완결된다.
+    if (isDatabaseConfigured()) {
+      const token = request.cookies.get(SESSION_COOKIE)?.value;
+      await destroySession(token);
+    }
   } catch (error) {
     console.error("[api/auth/logout]", error);
     // 세션 삭제가 실패해도 브라우저 쿠키는 반드시 지운다.
