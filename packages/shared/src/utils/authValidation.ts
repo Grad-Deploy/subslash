@@ -34,11 +34,18 @@ const USERNAME_PATTERN = /^[a-z0-9_]+$/;
 /**
  * 이메일 형식 검사.
  *
- * RFC를 온전히 따르는 정규식은 실무에서 오탐이 더 많다. 여기서는 명백히
- * 틀린 것만 걸러내고, 주소가 실제로 살아있는지는 확인하지 않는다 — 그건
- * 확인 메일만이 답할 수 있다.
+ * RFC를 온전히 따르는 정규식은 실무에서 오탐이 더 많다. @ 앞부분은 명백히
+ * 틀린 것만 거르고, 도메인은 실제 DNS 이름이 될 수 있는 모양인지까지 본다 —
+ * 예전에는 `a@b.c`나 `a@exa_mple.123`도 통과했다.
+ *
+ * 도메인이 실제로 있는지는 여기서 알 수 없어 서버가 DNS로 따로 확인하고
+ * (apps/web/lib/email-domain.ts), 주소가 그 사람 것인지는 확인 메일만이 답할 수 있다.
  */
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+const EMAIL_LOCAL_PATTERN = /^[^\s@]{1,64}$/;
+/** 영문·숫자·하이픈, 하이픈으로 시작하거나 끝나지 않고 63자 이하 (RFC 1035). */
+const DOMAIN_LABEL_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+/** 숫자로만 된 최상위 도메인은 없다. 한글 도메인은 퓨니코드(xn--) 형태로 받는다. */
+const TLD_PATTERN = /^(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})$/;
 
 export interface SignupInput {
   username: string;
@@ -69,6 +76,11 @@ export function normalizeEmailAddress(value: unknown): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
+/** `@` 뒤의 도메인. `validateEmail`을 통과한 주소에 쓴다. */
+export function getEmailDomain(email: string): string {
+  return email.slice(email.lastIndexOf("@") + 1).toLowerCase();
+}
+
 export function validateUsername(value: string): string | undefined {
   if (!value) return "아이디를 입력해주세요.";
   if (value.length < USERNAME_MIN || value.length > USERNAME_MAX) {
@@ -83,14 +95,24 @@ export function validateUsername(value: string): string | undefined {
 export function validateEmail(value: string): string | undefined {
   if (!value) return "이메일을 입력해주세요.";
   if (value.length > 254) return "이메일이 너무 깁니다.";
-  if (!EMAIL_PATTERN.test(value)) return "이메일 형식을 확인해주세요.";
+  const parts = value.split("@");
+  if (parts.length !== 2 || !EMAIL_LOCAL_PATTERN.test(parts[0])) {
+    return "이메일 형식을 확인해주세요.";
+  }
+  const labels = parts[1].toLowerCase().split(".");
+  const domainOk =
+    labels.length >= 2 &&
+    labels.every((label) => DOMAIN_LABEL_PATTERN.test(label)) &&
+    TLD_PATTERN.test(labels[labels.length - 1]);
+  if (!domainOk) return "@ 뒤의 도메인을 확인해주세요. (예: gmail.com, naver.com)";
   return undefined;
 }
 
 export function validatePassword(value: string): string | undefined {
   if (!value) return "비밀번호를 입력해주세요.";
+  // 규칙만 말하면 몇 자를 더 써야 하는지 사용자가 세어야 한다. 남은 수를 알려준다.
   if (value.length < PASSWORD_MIN) {
-    return `비밀번호는 ${PASSWORD_MIN}자 이상이어야 합니다.`;
+    return `비밀번호를 ${PASSWORD_MIN - value.length}자 더 입력해주세요. (${PASSWORD_MIN}자 이상)`;
   }
   // 해시 함수에 무한정 긴 입력을 넘기면 그 자체로 부하 공격이 된다.
   if (value.length > PASSWORD_MAX) {
