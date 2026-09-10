@@ -595,6 +595,34 @@ export function getAccountFallbackUrl(cancelUrl?: string): string | null {
 }
 
 /**
+ * 사용자가 적은 서비스 주소를 링크로 쓸 수 있게 정리한다.
+ *
+ * "service.com"처럼 도메인만 적어도 받는다. 해지 페이지 주소까지 아는 사람은
+ * 드물지만 서비스 도메인은 대부분 안다. 도메인만 있어도 해지 가이드가 그
+ * 첫 화면과, 흔한 경로로 추정한 계정 관리 주소(`getAccountFallbackUrl`)를
+ * 보여줄 수 있다.
+ *
+ * 비어 있으면 `url` 없이 통과한다. http(s) 링크로 만들 수 없으면 `error`를
+ * 준다 — `javascript:` 같은 주소가 해지 버튼 뒤에 숨는 일을 막는다.
+ */
+export function parseServiceUrl(input: string): { url?: string; error?: string } {
+  const trimmed = input.trim();
+  if (!trimmed) return {};
+
+  const invalid = { error: "주소를 확인해주세요. (예: service.com)" };
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    const url = new URL(withScheme);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return invalid;
+    // 점이 없는 호스트(localhost, 오타 난 단어)는 공개된 서비스 주소가 아니다.
+    if (!url.hostname.includes(".")) return invalid;
+    return { url: url.href };
+  } catch {
+    return invalid;
+  }
+}
+
+/**
  * 이 구독이 어느 프리셋에서 온 것인지 되찾는다.
  *
  * 구독은 프리셋 id를 저장하지 않으므로 해지 URL로 먼저 맞추고, 없으면

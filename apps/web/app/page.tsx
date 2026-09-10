@@ -46,7 +46,8 @@ export default function Home() {
       cancelUrl: preset.cancelUrl,
       cancelGuide: preset.cancelGuide,
       iconUrl: preset.iconEmoji,
-      billingDay: 15,
+      // 결제일은 채우지 않는다. 15일로 채워 두면 손대지 않은 사람의 D-day가
+      // 지어낸 날짜로 계산된다.
       billingCycle: "monthly",
     });
     setIsFormOpen(true);
