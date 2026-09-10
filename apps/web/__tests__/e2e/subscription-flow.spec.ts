@@ -84,6 +84,50 @@ test.describe("Subscription Flow (E2E)", () => {
     await expect(page.getByRole("link", { name: /Netflix/ })).toBeVisible();
   });
 
+  test("메일 체크인: '해지 가이드 열기'는 가이드를 열 뿐, 확인 전에는 해지로 기록하지 않는다", async ({
+    page,
+  }) => {
+    await seed(page, [netflix]);
+    await page.goto("/check-in?sub=sub1&count=0");
+
+    await page.getByRole("button", { name: /해지 가이드 열기/ }).click({ timeout: 30_000 });
+
+    // 예전에는 이 버튼이 곧바로 해지 완료로 기록하고 대시보드로 떠났다.
+    const guideDialog = page.getByRole("dialog");
+    await expect(guideDialog.getByText("해지 메뉴까지 가는 길")).toBeVisible();
+    await expect(page).toHaveURL(/\/check-in/);
+    const statusBefore = await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key) ?? "{}").state.subscriptions[0].status,
+      STORAGE_KEY,
+    );
+    expect(statusBefore).toBe("active");
+
+    await guideDialog.getByRole("button", { name: "해지 완료했어요" }).click();
+    const confirmDialog = page.getByRole("dialog");
+    await expect(confirmDialog.getByText("구독 해지 완료 처리")).toBeVisible();
+    await confirmDialog.getByRole("button", { name: "해지 완료" }).click();
+
+    await expect(page).toHaveURL(/\/savings/);
+    await expect(page.getByText("연 ₩204,000 절약")).toBeVisible({ timeout: 30_000 });
+  });
+
+  test("메일 체크인: 가이드에서 '나중에 하기'를 누르면 해지하지 않고 대시보드로 간다", async ({
+    page,
+  }) => {
+    await seed(page, [netflix]);
+    await page.goto("/check-in?sub=sub1&count=0");
+
+    await page.getByRole("button", { name: /해지 가이드 열기/ }).click({ timeout: 30_000 });
+    await page.getByRole("dialog").getByRole("button", { name: "나중에 하기" }).click();
+
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
+    const status = await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key) ?? "{}").state.subscriptions[0].status,
+      STORAGE_KEY,
+    );
+    expect(status).toBe("active");
+  });
+
   test("행동 큐: 체크인한 구독은 큐에서 빠진다", async ({ page }) => {
     // 최근에 충분히 썼다고 체크인해두면 결정할 것이 없다. 결제일도 멀게 잡는다.
     const now = new Date();
