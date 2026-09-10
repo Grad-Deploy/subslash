@@ -131,9 +131,13 @@ export const accounts = sqliteTable(
      * 저장하지 않고, 로그인 요청을 처리하는 순간 외에는 메모리에도 남기지 않는다.
      */
     passwordHash: text("password_hash").notNull(),
-    age: integer("age").notNull(),
-    /** male | female | other | undisclosed. */
-    gender: text("gender").notNull(),
+    /**
+     * 선택 항목. 가입 때 묻지 않고 '내 정보'에서 원할 때만 적는다. 적지 않았으면
+     * null이다. 예전에는 가입 필수 항목이어서, 그때 가입한 계정에는 값이 남아 있다.
+     */
+    age: integer("age"),
+    /** male | female | other | undisclosed. 선택 항목이라 적지 않았으면 null. */
+    gender: text("gender"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(datetime('now'))`),

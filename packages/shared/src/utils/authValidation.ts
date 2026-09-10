@@ -52,8 +52,13 @@ export interface SignupInput {
   email: string;
   password: string;
   passwordConfirm: string;
-  age: number | string;
-  gender: string;
+  /**
+   * "만 14세 이상입니다" 확인. 나이 자체는 가입 때 묻지 않는다 — 가입 단계의
+   * 칸이 늘수록 가입을 포기하는 사람이 늘어서, 나이·성별은 가입 뒤 '내 정보'에서
+   * 원할 때만 적는다. 다만 만 14세 미만의 개인정보는 법정대리인 동의 없이 받을
+   * 수 없으므로 이 확인만은 필수로 남긴다.
+   */
+  isOver14: boolean;
 }
 
 /** 필드명 → 사용자에게 보여줄 오류 메시지. 통과하면 빈 객체다. */
@@ -63,8 +68,6 @@ export interface NormalizedSignup {
   username: string;
   email: string;
   password: string;
-  age: number;
-  gender: Gender;
 }
 
 /** 아이디·이메일은 대소문자 차이로 같은 사람이 두 계정을 만들지 않도록 낮춘다. */
@@ -128,7 +131,7 @@ export function validateAge(value: number | string): string | undefined {
   if (value === "" || value === null || value === undefined) return "나이를 입력해주세요.";
   const age = typeof value === "number" ? value : Number(value);
   if (!Number.isInteger(age)) return "나이는 숫자로 입력해주세요.";
-  if (age < MIN_AGE) return `만 ${MIN_AGE}세 미만은 가입할 수 없습니다.`;
+  if (age < MIN_AGE) return `만 ${MIN_AGE}세 이상만 이용할 수 있습니다.`;
   if (age > MAX_AGE) return "나이를 다시 확인해주세요.";
   return undefined;
 }
@@ -153,8 +156,6 @@ export function validateSignup(input: Partial<SignupInput>): {
   const email = normalizeEmailAddress(input.email);
   const password = typeof input.password === "string" ? input.password : "";
   const passwordConfirm = typeof input.passwordConfirm === "string" ? input.passwordConfirm : "";
-  const genderRaw = typeof input.gender === "string" ? input.gender : "";
-  const ageRaw = input.age ?? "";
 
   const errors: FieldErrors = {};
   const usernameError = validateUsername(username);
@@ -172,24 +173,64 @@ export function validateSignup(input: Partial<SignupInput>): {
     errors.passwordConfirm = "비밀번호가 서로 다릅니다.";
   }
 
-  const ageError = validateAge(ageRaw as number | string);
-  if (ageError) errors.age = ageError;
-
-  const genderError = validateGender(genderRaw);
-  if (genderError) errors.gender = genderError;
+  // 문자열 "true"나 1은 받지 않는다. 체크박스를 실제로 눌렀다는 값만 인정한다.
+  if (input.isOver14 !== true) {
+    errors.isOver14 = `만 ${MIN_AGE}세 이상인지 확인해주세요.`;
+  }
 
   if (Object.keys(errors).length > 0) return { errors, value: null };
 
-  return {
-    errors,
-    value: {
-      username,
-      email,
-      password,
-      age: typeof ageRaw === "number" ? ageRaw : Number(ageRaw),
-      gender: genderRaw as Gender,
-    },
-  };
+  return { errors, value: { username, email, password } };
+}
+
+export interface ProfileInput {
+  age?: number | string | null;
+  gender?: string | null;
+}
+
+export type ProfileErrors = Partial<Record<keyof ProfileInput, string>>;
+
+export interface NormalizedProfile {
+  /** 적지 않았으면 null. */
+  age: number | null;
+  /** 적지 않았으면 null. '밝히지 않음'을 고른 것과는 다른 상태다. */
+  gender: Gender | null;
+}
+
+function isBlank(value: unknown): boolean {
+  return value === undefined || value === null || value === "";
+}
+
+/**
+ * '내 정보'의 나이·성별 검사. 둘 다 선택 항목이다.
+ *
+ * 비운 칸은 null로 저장한다. 0이나 '밝히지 않음'으로 채우면, 적지 않은 사람과
+ * 그렇게 답한 사람이 구분되지 않는다 — 나중에 비교 통계를 낼 때 없는 응답을
+ * 있는 것처럼 세게 된다.
+ */
+export function validateProfile(input: ProfileInput): {
+  errors: ProfileErrors;
+  value: NormalizedProfile | null;
+} {
+  const errors: ProfileErrors = {};
+
+  let age: number | null = null;
+  if (!isBlank(input.age)) {
+    const ageError = validateAge(input.age as number | string);
+    if (ageError) errors.age = ageError;
+    else age = Number(input.age);
+  }
+
+  let gender: Gender | null = null;
+  if (!isBlank(input.gender)) {
+    const genderError =
+      typeof input.gender === "string" ? validateGender(input.gender) : "성별을 다시 선택해주세요.";
+    if (genderError) errors.gender = genderError;
+    else gender = input.gender as Gender;
+  }
+
+  if (Object.keys(errors).length > 0) return { errors, value: null };
+  return { errors, value: { age, gender } };
 }
 
 export interface LoginInput {
