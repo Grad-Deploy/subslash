@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useStore } from "../../lib/store";
 import {
   Subscription,
@@ -8,17 +9,14 @@ import {
   CheckInResponse,
   DEMO_SUBSCRIPTIONS,
   POPULAR_SERVICES,
-  ServicePreset,
-  getDaysUntilBillingFor,
+  getActionQueue,
+  getDetoxLevel,
+  getNextBillingHint,
+  sumMyMonthDefendedKRW,
 } from "@subslash/shared";
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
-import { SavingsPot } from "../../components/dashboard/SavingsPot";
 import { OnboardingTourCard } from "../../components/dashboard/OnboardingTourCard";
-import { MonthlyDefenseWidget } from "../../components/dashboard/MonthlyDefenseWidget";
-import { PriceCheckBanner } from "../../components/dashboard/PriceCheckBanner";
-import { DetoxLevelBadge } from "../../components/savings/DetoxLevelBadge";
-import { QuickPresetRecommender } from "../../components/subscription/QuickPresetRecommender";
-import { SubCard } from "../../components/subscription/SubCard";
+import { ActionQueue } from "../../components/dashboard/ActionQueue";
 import { SubForm } from "../../components/subscription/SubForm";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
@@ -33,28 +31,39 @@ import {
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
+import { useExchangeRate } from "../../hooks/useExchangeRate";
 
+/**
+ * 대시보드는 "지금 무엇을 결정할까"에만 답한다.
+ *
+ * 예전에는 구독 카드 그리드, 추천 프리셋, 절약 위젯을 한 화면에 모아둬서
+ * /subs와 /savings를 요약해 붙여놓은 모양이었다. 세 탭이 서로 비슷해 보였던
+ * 이유이고, 대시보드에 고유한 일이 없었던 이유이기도 하다.
+ *
+ * 이제 목록은 /subs, 성과는 /savings, 행동은 여기다.
+ */
 export default function Dashboard() {
   const {
     subscriptions,
+    usageLogs,
     addSubscription,
     killSubscription,
+    confirmSubscriptionPrice,
     checkIn,
     getActiveSubscriptions,
     getKilledSubscriptions,
     getDashboardStats,
-    getAtRiskSubscriptions,
   } = useStore();
+  const rate = useExchangeRate();
 
   const [mounted, setMounted] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState<ServicePreset | null>(null);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   const [checkInSub, setCheckInSub] = useState<Subscription | null>(null);
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [killTarget, setKillTarget] = useState<Subscription | null>(null);
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
+  const [killTarget, setKillTarget] = useState<Subscription | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -75,20 +84,23 @@ export default function Dashboard() {
 
   const activeSubs = getActiveSubscriptions();
   const killedSubs = getKilledSubscriptions();
-  const atRiskSubs = getAtRiskSubscriptions();
   const stats = getDashboardStats();
 
-  // Sort upcoming subscriptions by days until billing. A yearly plan with no
-  // billing month has no date, so it sorts last rather than pretending to be
-  // due today.
-  const sortedActiveSubs = [...activeSubs].sort((a, b) => {
-    const left = getDaysUntilBillingFor(a) ?? Number.POSITIVE_INFINITY;
-    const right = getDaysUntilBillingFor(b) ?? Number.POSITIVE_INFINITY;
-    return left - right;
-  });
+  const now = new Date();
+  const queue = getActionQueue(subscriptions, usageLogs, now, rate);
+  const nextBilling = getNextBillingHint(subscriptions, now);
+  const monthDefended = sumMyMonthDefendedKRW(
+    killedSubs,
+    now.getFullYear(),
+    now.getMonth() + 1,
+    rate,
+  );
+  const detoxLevel = getDetoxLevel(stats.totalSaved, stats.killedCount);
+
+  const findSub = (id: string) => subscriptions.find((s) => s.id === id);
 
   const handleOpenCheckIn = (id: string) => {
-    const sub = subscriptions.find((s) => s.id === id);
+    const sub = findSub(id);
     if (sub) {
       setCheckInSub(sub);
       setCheckInResult(undefined);
@@ -107,16 +119,27 @@ export default function Dashboard() {
     }
   };
 
-  // 해지 버튼은 곧바로 완료 처리하지 않는다. 실제 해지는 서비스 쪽에서
-  // 해야 하므로, 먼저 가이드를 열어 거기까지 데려다준 뒤 확인을 받는다.
-  const handleKill = (id: string) => {
-    const sub = subscriptions.find((s) => s.id === id);
+  // 실제 해지는 서비스 쪽에서 해야 하므로 가이드를 먼저 열고, 마쳤다고
+  // 알려줄 때만 완료로 기록한다.
+  const handleCancelGuide = (id: string) => {
+    const sub = findSub(id);
     if (sub) setGuideTarget(sub);
   };
 
   const handleConfirmKilled = (id: string) => {
-    const sub = subscriptions.find((s) => s.id === id);
+    const sub = findSub(id);
     if (sub) setKillTarget(sub);
+  };
+
+  const handleConfirmPrice = (id: string, newAmount?: number) => {
+    const sub = findSub(id);
+    if (!sub) return;
+    confirmSubscriptionPrice(id, newAmount);
+    showToast(
+      newAmount !== undefined
+        ? `${sub.name} 요금을 ₩${newAmount.toLocaleString()}으로 갱신했습니다.`
+        : `${sub.name} 요금을 확인한 것으로 기록했습니다.`,
+    );
   };
 
   const handleAddSubmit = (data: SubscriptionFormData) => {
@@ -137,8 +160,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Toast Notification */}
+    <div className="space-y-6">
       {toastMessage && (
         <div className="fixed top-16 right-4 z-50 bg-foreground text-background px-4 py-2.5 rounded-xl shadow-2xl text-sm font-medium animate-in fade-in slide-in-from-top-4">
           {toastMessage}
@@ -148,9 +170,9 @@ export default function Dashboard() {
       {/* Action Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight">구독 디톡스 대시보드</h1>
+          <h1 className="text-2xl font-black tracking-tight">오늘의 구독 점검</h1>
           <p className="text-sm text-muted-foreground">
-            현재 구독 상태를 점검하고 불필요한 결제를 차단하세요.
+            결정이 필요한 구독만 모았습니다. 전체 목록은 &lsquo;내 구독&rsquo;에 있습니다.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -173,179 +195,77 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Onboarding Tour Card for New/Early Users (Issue 17) */}
       <OnboardingTourCard onStartAdd={() => setIsAddOpen(true)} activeCount={activeSubs.length} />
 
-      {/* Price Check Prompt (Issue 13) */}
-      <PriceCheckBanner subscriptions={activeSubs} />
-
-      {/* Top Section: Total Monthly Spend Hero */}
-      <TotalSpend subscriptions={activeSubs} />
-
-      <ExchangeRateNote />
-
-      {/* 4 Quick Stat Cards */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="p-4 border rounded-2xl bg-card shadow-sm text-center">
-          <p className="text-xs font-medium text-muted-foreground mb-1">활성 구독</p>
-          <p className="text-2xl font-black text-foreground">{stats.activeCount}개</p>
-        </div>
-        <div className="p-4 border rounded-2xl bg-card shadow-sm text-center">
-          <p className="text-xs font-medium text-muted-foreground mb-1">방어(해지) 완료</p>
-          <p className="text-2xl font-black text-green-600 dark:text-green-400">
-            {stats.killedCount}개
-          </p>
-        </div>
-        <div className="p-4 border rounded-2xl bg-card shadow-sm text-center">
-          <p className="text-xs font-medium text-muted-foreground mb-1">월 고정지출</p>
-          <p className="text-2xl font-black text-foreground">
-            ₩{stats.totalMonthlySpend.toLocaleString()}
-          </p>
-        </div>
-        <div className="p-4 border rounded-2xl bg-card shadow-sm text-center">
-          <p className="text-xs font-medium text-muted-foreground mb-1">연간 절약 방어액</p>
-          <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-            ₩{stats.totalSaved.toLocaleString()}
-          </p>
-        </div>
-      </section>
-
-      {/* This month's defended spend (Issue 8) — 상단 요약 영역 */}
-      <MonthlyDefenseWidget killedSubscriptions={killedSubs} />
-
-      {/* At Risk Alert Section */}
-      {atRiskSubs.length > 0 && (
-        <section className="p-5 border-2 border-destructive/30 bg-destructive/5 rounded-2xl space-y-3">
-          <div className="flex items-center gap-2 text-destructive font-black text-base">
-            <span>🚨</span>
-            <h2>가성비 위험 구독 ({atRiskSubs.length}건)</h2>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            이용 횟수 대비 1회당 단가가 비정상적으로 높습니다. 지금 바로 킬(Kill) 스위치를 켜세요.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-            {atRiskSubs.map((sub) => (
-              <SubCard
-                key={sub.id}
-                subscription={sub}
-                onCheckIn={handleOpenCheckIn}
-                onKill={handleKill}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Saved Pot (Defended Subscriptions) Section */}
-      {killedSubs.length > 0 && (
-        <section className="space-y-4">
-          {/* Detox level & title (Phase 3) */}
-          <DetoxLevelBadge annualSavings={stats.totalSaved} killCount={stats.killedCount} />
-          <SavingsPot killedSubscriptions={killedSubs} />
-        </section>
-      )}
-
-      {/* Main Subscriptions List: Sorted by D-Day */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold tracking-tight">
-            🔥 다음 결제 임박 순 ({sortedActiveSubs.length})
-          </h2>
-          <span className="text-xs text-muted-foreground">D-Day 순으로 자동 정렬됩니다</span>
-        </div>
-
-        {sortedActiveSubs.length === 0 ? (
-          <div className="text-center py-16 border border-dashed rounded-2xl space-y-4">
-            <div className="text-4xl">🎉</div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold">등록된 활성 구독이 없습니다</h3>
-              <p className="text-sm text-muted-foreground">
-                매달 나가는 고정 구독을 등록하고 1회당 사용 가치를 점검해보세요.
-              </p>
-            </div>
-            <div className="flex justify-center gap-3 pt-2">
-              <Button onClick={() => setIsAddOpen(true)}>+ 첫 구독 등록하기</Button>
-              <Button variant="outline" onClick={handleLoadDemo}>
-                ✨ 샘플 데이터 불러오기
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {sortedActiveSubs.map((sub) => (
-              <SubCard
-                key={sub.id}
-                subscription={sub}
-                onCheckIn={handleOpenCheckIn}
-                onKill={handleKill}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Quick Preset Recommender (Issue 19) */}
-      <QuickPresetRecommender
-        subscriptions={subscriptions}
-        onSelectPreset={(preset) => {
-          setSelectedPreset(preset);
-          setIsAddOpen(true);
-        }}
+      {/* 지금 결정할 것 — 이 화면의 본체 */}
+      <ActionQueue
+        items={queue}
+        nextBilling={nextBilling}
+        activeCount={activeSubs.length}
+        onCheckIn={handleOpenCheckIn}
+        onCancelGuide={handleCancelGuide}
+        onConfirmPrice={handleConfirmPrice}
+        onAddFirst={() => setIsAddOpen(true)}
       />
 
+      {/* 지출 한 줄 */}
+      <TotalSpend subscriptions={activeSubs} />
+      <ExchangeRateNote />
+
+      {/*
+        절약 성과는 /savings가 전담한다. 여기서는 이번 달 실제로 막은 금액과
+        레벨만 한 줄로 보여주고 넘긴다 — 같은 위젯을 두 화면에 두면 어느 쪽이
+        본체인지 알 수 없게 된다.
+      */}
+      {killedSubs.length > 0 && (
+        <Link
+          href="/savings"
+          className="flex items-center justify-between gap-3 p-4 border rounded-2xl bg-card hover:bg-muted transition-colors"
+        >
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              {now.getMonth() + 1}월 지출 방어 성공
+            </p>
+            <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+              ₩{monthDefended.amount.toLocaleString()}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              {detoxLevel.emoji} {detoxLevel.levelLabel} {detoxLevel.title} · 누적 ₩
+              {stats.totalSaved.toLocaleString()}
+              {monthDefended.unknownCount > 0 &&
+                ` · 결제 월 미설정 ${monthDefended.unknownCount}건 제외`}
+            </p>
+          </div>
+          <span className="text-sm font-semibold text-muted-foreground shrink-0">절약 현황 →</span>
+        </Link>
+      )}
+
       {/* SubForm Modal for Adding */}
-      <Dialog
-        open={isAddOpen}
-        onOpenChange={(open) => {
-          setIsAddOpen(open);
-          if (!open) setSelectedPreset(null);
-        }}
-      >
+      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {selectedPreset ? `${selectedPreset.nameKo} 등록` : "새 구독 등록"}
-            </DialogTitle>
+            <DialogTitle>새 구독 등록</DialogTitle>
             <DialogDescription>인기 서비스를 선택하거나 직접 정보를 입력하세요.</DialogDescription>
           </DialogHeader>
           <div className="py-2">
-            <SubForm
-              popularServices={POPULAR_SERVICES}
-              initialData={
-                selectedPreset
-                  ? {
-                      name: selectedPreset.nameKo || selectedPreset.name,
-                      amount: selectedPreset.defaultAmount,
-                      currency: selectedPreset.currency,
-                      cancelUrl: selectedPreset.cancelUrl,
-                      cancelGuide: selectedPreset.cancelGuide,
-                      category: selectedPreset.category,
-                      iconUrl: selectedPreset.iconEmoji,
-                    }
-                  : undefined
-              }
-              onSubmit={handleAddSubmit}
-            />
+            <SubForm popularServices={POPULAR_SERVICES} onSubmit={handleAddSubmit} />
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* CheckIn Modal for Calculating CPU */}
       {checkInSub && (
         <CheckInModal
           subscription={checkInSub}
           isOpen={!!checkInSub}
           onClose={() => setCheckInSub(null)}
           onSubmit={handleCheckInSubmit}
-          onKill={handleKill}
+          onKill={handleCancelGuide}
           result={checkInResult}
         />
       )}
 
-      {/* Auto Import Hub Modal */}
       <AutoImportModal isOpen={isAutoImportOpen} onClose={() => setIsAutoImportOpen(false)} />
 
-      {/* Cancel Guide Modal (Issue 14) */}
       <CancelGuideModal
         subscription={guideTarget}
         isOpen={!!guideTarget}
@@ -353,7 +273,6 @@ export default function Dashboard() {
         onConfirmKilled={handleConfirmKilled}
       />
 
-      {/* Kill Confirmation Modal */}
       {killTarget && (
         <ConfirmDialog
           isOpen={!!killTarget}

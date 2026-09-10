@@ -38,10 +38,14 @@ test.describe("Subscription Flow (E2E)", () => {
     await dialog.locator('input[name="billingDay"]').fill("15");
     await dialog.locator('button[type="submit"]').click();
 
-    // Submitting redirects to the dashboard, where the new card is listed. The
-    // first client-side hit may also wait on the dev server compiling the route.
+    // 등록을 마치면 대시보드로 간다. 대시보드는 목록이 아니라 행동 큐라서,
+    // 방금 등록한 구독은 "아직 체크인한 적이 없다"는 이유로 큐에 올라온다.
+    // 첫 이동에서는 dev 서버가 라우트를 컴파일하는 시간까지 기다린다.
     await expect(page).toHaveURL(/\/dashboard/);
-    await expect(page.getByRole("link", { name: /Netflix/ })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: /지금 결정할 것/ })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByText("Netflix").first()).toBeVisible();
   });
 
   test("체크인 플로우", async ({ page }) => {
@@ -78,6 +82,59 @@ test.describe("Subscription Flow (E2E)", () => {
     await page.getByRole("button", { name: /해지 완료 \(1\)/ }).click();
 
     await expect(page.getByRole("link", { name: /Netflix/ })).toBeVisible();
+  });
+
+  test("행동 큐: 체크인한 구독은 큐에서 빠진다", async ({ page }) => {
+    // 최근에 충분히 썼다고 체크인해두면 결정할 것이 없다. 결제일도 멀게 잡는다.
+    const now = new Date();
+    const farBillingDay = ((now.getDate() + 14) % 28) + 1;
+    const quiet = {
+      ...netflix,
+      billingDay: farBillingDay,
+      lastPriceCheckedAt: now.toISOString(),
+    };
+
+    await page.addInitScript(
+      ([key, sub]) => {
+        const s = sub as Record<string, unknown>;
+        window.localStorage.setItem(
+          key as string,
+          JSON.stringify({
+            state: {
+              subscriptions: [s],
+              usageLogs: [
+                {
+                  id: "log1",
+                  subscriptionId: s.id,
+                  month: "2026-09",
+                  usageCount: 12,
+                  costPerUse: 1416,
+                  riskLevel: "green",
+                  checkedAt: new Date().toISOString(),
+                },
+              ],
+              accounts: [],
+            },
+            version: 1,
+          }),
+        );
+      },
+      [STORAGE_KEY, quiet] as const,
+    );
+
+    await page.goto("/dashboard");
+    await expect(page.getByText("지금 결정할 것이 없습니다")).toBeVisible({ timeout: 30_000 });
+  });
+
+  test("행동 큐: 체크인 기록이 없으면 이유와 함께 올라온다", async ({ page }) => {
+    await seed(page, [netflix]);
+    await page.goto("/dashboard");
+
+    await expect(page.getByRole("heading", { name: /지금 결정할 것 \(1\)/ })).toBeVisible({
+      timeout: 30_000,
+    });
+    // 목록이 아니라 "왜 떴는지"를 보여준다.
+    await expect(page.getByText(/체크인/).first()).toBeVisible();
   });
 
   test("절약 페이지", async ({ page }) => {

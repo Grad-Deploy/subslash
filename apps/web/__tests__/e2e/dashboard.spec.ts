@@ -41,7 +41,9 @@ test.describe("Dashboard (E2E)", () => {
     // These assertions follow a client-side navigation rather than a page load,
     // so on the first hit they also wait for the dev server to compile
     // /dashboard — which comfortably exceeds the default 5s expect timeout.
-    const dashboardHeading = page.getByRole("heading", { name: /다음 결제 임박 순 \(3\)/ });
+    // 샘플 3건은 모두 체크인 기록이 없으므로 행동 큐에 3줄로 올라온다.
+    // 두 번 불러와도 6줄이 되지 않아야 한다.
+    const dashboardHeading = page.getByRole("heading", { name: /지금 결정할 것 \(3\)/ });
 
     // The landing page's demo button stays available once subscriptions exist,
     // so it is the path where a repeat load could duplicate the sample set.
