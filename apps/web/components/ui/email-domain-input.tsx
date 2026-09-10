@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { Input } from "./input";
@@ -15,8 +15,28 @@ export const COMMON_EMAIL_DOMAINS = [
   { label: "직접 입력", value: "custom", provider: "email" as const },
 ];
 
+export function getDomainForProvider(
+  provider?: "google" | "naver" | "kakao" | "apple" | "email",
+): string {
+  switch (provider) {
+    case "google":
+      return "gmail.com";
+    case "kakao":
+      return "kakao.com";
+    case "naver":
+      return "naver.com";
+    case "apple":
+      return "icloud.com";
+    case "email":
+      return "custom";
+    default:
+      return "gmail.com";
+  }
+}
+
 export interface EmailDomainInputProps {
   value?: string;
+  provider?: "google" | "naver" | "kakao" | "apple" | "email";
   onChange: (fullEmail: string, localPart: string, domain: string) => void;
   placeholderId?: string;
   className?: string;
@@ -25,8 +45,19 @@ export interface EmailDomainInputProps {
   required?: boolean;
 }
 
+// Helper to parse value without defaulting domain to naver
+export const parseEmailValue = (val: string) => {
+  if (!val) return { local: "", domain: "", hasDomain: false };
+  if (val.includes("@")) {
+    const [local, ...rest] = val.split("@");
+    return { local: local || "", domain: rest.join("@") || "", hasDomain: true };
+  }
+  return { local: val, domain: "", hasDomain: false };
+};
+
 export function EmailDomainInput({
   value = "",
+  provider,
   onChange,
   placeholderId = "아이디 입력",
   className,
@@ -34,36 +65,59 @@ export function EmailDomainInput({
   onProviderChange,
   required = false,
 }: EmailDomainInputProps) {
-  // Parse initial value
-  const parseEmail = (val: string) => {
-    if (!val || !val.includes("@")) {
-      return { local: val || "", domain: "naver.com", isPreset: true };
-    }
-    const [local, ...rest] = val.split("@");
-    const dom = rest.join("@");
-    const matched = COMMON_EMAIL_DOMAINS.find((d) => d.value === dom);
-    return {
-      local: local || "",
-      domain: dom || "naver.com",
-      isPreset: !!matched,
-    };
-  };
+  const initialDomain = provider ? getDomainForProvider(provider) : "gmail.com";
+  const parsed = parseEmailValue(value);
 
-  const parsed = parseEmail(value);
   const [localPart, setLocalPart] = useState(parsed.local);
-  const [selectedPreset, setSelectedPreset] = useState(parsed.isPreset ? parsed.domain : "custom");
-  const [customDomain, setCustomDomain] = useState(parsed.isPreset ? "" : parsed.domain);
+  const [selectedPreset, setSelectedPreset] = useState(() => {
+    if (parsed.hasDomain && parsed.domain) {
+      const matched = COMMON_EMAIL_DOMAINS.find((d) => d.value === parsed.domain);
+      return matched ? matched.value : "custom";
+    }
+    return initialDomain;
+  });
+  const [customDomain, setCustomDomain] = useState(() => {
+    if (parsed.hasDomain && parsed.domain) {
+      const matched = COMMON_EMAIL_DOMAINS.find((d) => d.value === parsed.domain);
+      return matched ? "" : parsed.domain;
+    }
+    return "";
+  });
+
+  const userSelectedDomainRef = React.useRef(false);
+
+  // Sync state if provider changes externally AND user hasn't explicitly chosen a domain
+  useEffect(() => {
+    if (provider && !userSelectedDomainRef.current) {
+      const dom = getDomainForProvider(provider);
+      if (dom === "custom") {
+        setSelectedPreset("custom");
+      } else {
+        setSelectedPreset(dom);
+        setCustomDomain("");
+      }
+    }
+  }, [provider]);
 
   // Sync state if value changes externally
   useEffect(() => {
-    const p = parseEmail(value);
-    setLocalPart(p.local);
-    if (p.isPreset) {
-      setSelectedPreset(p.domain);
-      setCustomDomain("");
-    } else if (value.includes("@")) {
-      setSelectedPreset("custom");
-      setCustomDomain(p.domain);
+    if (!value) {
+      // User erased the input — clear local part but strictly KEEP selectedPreset and customDomain!
+      setLocalPart("");
+      return;
+    }
+    const { local, domain, hasDomain } = parseEmailValue(value);
+    setLocalPart(local);
+    if (hasDomain && domain) {
+      const matched = COMMON_EMAIL_DOMAINS.find((d) => d.value === domain);
+      if (matched) {
+        setSelectedPreset(matched.value);
+        setCustomDomain("");
+      } else {
+        setSelectedPreset("custom");
+        setCustomDomain(domain);
+      }
+      userSelectedDomainRef.current = true;
     }
   }, [value]);
 
@@ -72,9 +126,9 @@ export function EmailDomainInput({
     const full = newLocal.trim() ? `${newLocal.trim()}@${finalDomain}` : "";
     onChange(full, newLocal.trim(), finalDomain);
 
-    if (onProviderChange) {
+    if (onProviderChange && finalDomain) {
       const matched = COMMON_EMAIL_DOMAINS.find((d) => d.value === finalDomain);
-      if (matched) {
+      if (matched && matched.value !== "custom") {
         onProviderChange(matched.provider);
       } else if (finalDomain.includes("naver")) {
         onProviderChange("naver");
@@ -92,18 +146,46 @@ export function EmailDomainInput({
 
   const handleLocalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
+
+    // Handle user pasting or typing an email address with '@'
+    if (val.includes("@")) {
+      const [pastedLocal, ...rest] = val.split("@");
+      const pastedDomain = rest.join("@").trim();
+      const newLocal = pastedLocal.trim();
+      setLocalPart(newLocal);
+
+      if (pastedDomain) {
+        userSelectedDomainRef.current = true;
+        const matched = COMMON_EMAIL_DOMAINS.find((d) => d.value === pastedDomain);
+        if (matched) {
+          setSelectedPreset(matched.value);
+          setCustomDomain("");
+          emitChange(newLocal, matched.value, "");
+        } else {
+          setSelectedPreset("custom");
+          setCustomDomain(pastedDomain);
+          emitChange(newLocal, "custom", pastedDomain);
+        }
+      } else {
+        emitChange(newLocal, selectedPreset, customDomain);
+      }
+      return;
+    }
+
     setLocalPart(val);
     emitChange(val, selectedPreset, customDomain);
   };
 
   const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const preset = e.target.value;
+    userSelectedDomainRef.current = true;
     setSelectedPreset(preset);
     emitChange(localPart, preset, customDomain);
   };
 
   const handleCustomDomainChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const dom = e.target.value;
+    userSelectedDomainRef.current = true;
     setCustomDomain(dom);
     emitChange(localPart, "custom", dom);
   };

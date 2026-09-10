@@ -13,7 +13,9 @@ import {
 } from "@subslash/shared";
 import { SavingsPot } from "../../components/dashboard/SavingsPot";
 import { Button } from "../../components/ui/button";
+import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
+import { Subscription } from "@subslash/shared";
 
 export default function SavingsDashboard() {
   const router = useRouter();
@@ -21,6 +23,7 @@ export default function SavingsDashboard() {
   const rate = useExchangeRate();
   const [mounted, setMounted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [reviveTarget, setReviveTarget] = useState<Subscription | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -49,14 +52,21 @@ export default function SavingsDashboard() {
     }
   };
 
+  const getShareUrl = () => {
+    if (typeof window === "undefined") return "";
+    const names = killedSubs.map((s) => s.name).join(",");
+    return `${window.location.origin}/savings/share?saved=${annualSavings}&count=${killedSubs.length}&equiv=${encodeURIComponent(headlineEquivalent)}&names=${encodeURIComponent(names)}`;
+  };
+
   const handleShare = async () => {
-    const text = `✂️ SubSlash로 불필요한 구독을 해지하여 연간 ₩${annualSavings.toLocaleString()}을 방어했습니다! ${headlineEquivalent}`;
+    const shareUrl = getShareUrl();
+    const text = `✂️ SubSlash로 불필요한 구독을 해지하여 연간 ₩${annualSavings.toLocaleString()}을 방어했습니다! ${headlineEquivalent}\n👉 결과 보기: ${shareUrl}`;
     if (navigator.share) {
       try {
         await navigator.share({
           title: "SubSlash 구독 디톡스 결과",
           text,
-          url: window.location.origin,
+          url: shareUrl,
         });
         return;
       } catch (error) {
@@ -160,7 +170,7 @@ export default function SavingsDashboard() {
                       size="sm"
                       variant="outline"
                       className="text-xs"
-                      onClick={() => reviveSubscription(sub.id)}
+                      onClick={() => setReviveTarget(sub)}
                     >
                       다시 살리기
                     </Button>
@@ -170,6 +180,23 @@ export default function SavingsDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {reviveTarget && (
+        <ConfirmDialog
+          isOpen={!!reviveTarget}
+          onClose={() => setReviveTarget(null)}
+          onConfirm={() => {
+            if (reviveTarget) {
+              reviveSubscription(reviveTarget.id);
+              setReviveTarget(null);
+            }
+          }}
+          title="구독 다시 살리기"
+          description={`'${reviveTarget.name}' 구독을 다시 활성화하시겠습니까?\n활성 구독 목록으로 복원되며, 절약 방어 자산에서 제외됩니다.`}
+          confirmText="다시 살리기"
+          cancelText="취소"
+        />
       )}
     </div>
   );
