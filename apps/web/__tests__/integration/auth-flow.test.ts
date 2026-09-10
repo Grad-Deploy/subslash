@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { eq } from "drizzle-orm";
@@ -11,6 +11,19 @@ import { eq } from "drizzle-orm";
  * 2. 사용자가 넣은 값이 SQL 문장에 섞여 들어가지 않는다 — 따옴표든
  *    `DROP TABLE`이든 한 칸의 데이터로만 남는다.
  */
+
+/**
+ * 가입 라우트는 이메일 도메인을 실제 DNS에 물어본다. 테스트가 네트워크에 기대면
+ * 오프라인에서 깨지고, 여기서 쓰는 example.com은 "메일을 받지 않는 도메인"으로
+ * 선언돼 있어(null MX) 그대로 두면 모든 가입이 막힌다. 조회 로직 자체는
+ * unit/email-domain.test.ts가 가짜 응답으로 확인하고, 여기서는 라우트가 그 결과를
+ * 어떻게 다루는지만 본다.
+ */
+const { checkEmailDomain } = vi.hoisted(() => ({ checkEmailDomain: vi.fn() }));
+vi.mock("../../lib/email-domain", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../lib/email-domain")>()),
+  checkEmailDomain,
+}));
 
 process.env.TURSO_DATABASE_URL = ":memory:";
 delete process.env.TURSO_AUTH_TOKEN;
@@ -107,6 +120,8 @@ function sessionTokenFrom(response: Response): string {
 
 beforeEach(async () => {
   await resetDatabase();
+  checkEmailDomain.mockReset();
+  checkEmailDomain.mockResolvedValue({ ok: true });
 });
 
 afterAll(() => {
@@ -203,6 +218,59 @@ describe("회원가입", () => {
       }),
     );
     expect(res.status).toBe(409);
+  });
+});
+
+describe("이메일 도메인 확인", () => {
+  it("존재하지 않는 도메인이면 가입을 막는다", async () => {
+    checkEmailDomain.mockResolvedValueOnce({ ok: false, reason: "not-found" });
+    const res = await signupRoute(
+      json("http://localhost/api/auth/signup", { ...VALID_SIGNUP, email: "sean@gmial-typo.com" }),
+    );
+    expect(res.status).toBe(400);
+    const email = (await res.json()).fieldErrors.email;
+    expect(email).toContain("gmial-typo.com");
+    expect(email).toContain("존재하지 않는");
+    expect(await getDb().select().from(accounts)).toHaveLength(0);
+  });
+
+  it("메일을 받지 않는 도메인도 막는다", async () => {
+    checkEmailDomain.mockResolvedValueOnce({ ok: false, reason: "no-mail" });
+    const res = await signupRoute(json("http://localhost/api/auth/signup", VALID_SIGNUP));
+    expect(res.status).toBe(400);
+    expect((await res.json()).fieldErrors.email).toContain("메일을 받을 수 없는");
+    expect(await getDb().select().from(accounts)).toHaveLength(0);
+  });
+
+  it("도메인을 확인할 수 없으면 가입시키지 않되, 잘못된 도메인이라고 단정하지 않는다", async () => {
+    checkEmailDomain.mockResolvedValueOnce({
+      ok: false,
+      reason: "unverifiable",
+      detail: "ETIMEOUT",
+    });
+    const res = await signupRoute(json("http://localhost/api/auth/signup", VALID_SIGNUP));
+    // 입력이 틀린 게 아니라 지금 확인을 못 한 것이다.
+    expect(res.status).toBe(503);
+    const email = (await res.json()).fieldErrors.email;
+    expect(email).toContain("확인할 수 없습니다");
+    expect(email).not.toContain("존재하지 않는");
+    expect(await getDb().select().from(accounts)).toHaveLength(0);
+  });
+
+  it("조회에는 정리된(소문자) 도메인을 넘긴다", async () => {
+    const res = await signupRoute(
+      json("http://localhost/api/auth/signup", { ...VALID_SIGNUP, email: "Sean@Example.COM" }),
+    );
+    expect(res.status).toBe(201);
+    expect(checkEmailDomain).toHaveBeenCalledWith("example.com");
+  });
+
+  it("형식부터 틀린 이메일은 DNS까지 묻지 않는다", async () => {
+    const res = await signupRoute(
+      json("http://localhost/api/auth/signup", { ...VALID_SIGNUP, email: "sean@example" }),
+    );
+    expect(res.status).toBe(400);
+    expect(checkEmailDomain).not.toHaveBeenCalled();
   });
 });
 

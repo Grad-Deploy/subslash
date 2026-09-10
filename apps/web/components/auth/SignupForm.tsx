@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Check, X } from "lucide-react";
 import {
   GENDER_OPTIONS,
   MIN_AGE,
@@ -10,6 +11,7 @@ import {
   PASSWORD_MIN,
   USERNAME_MAX,
   USERNAME_MIN,
+  validatePassword,
   validateSignup,
   type FieldErrors,
 } from "@subslash/shared";
@@ -17,6 +19,7 @@ import { Input } from "@components/ui/input";
 import { Select } from "@components/ui/select";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
+import { cn } from "@lib/utils";
 
 const EMPTY = {
   username: "",
@@ -39,6 +42,10 @@ export function SignupForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // 두 비밀번호 칸은 제출을 기다리지 않고 매 글자마다 상태를 보여준다.
+  const passwordStatus = passwordStatusOf(form.password);
+  const confirmStatus = confirmStatusOf(form.password, form.passwordConfirm);
 
   const update = (field: keyof typeof EMPTY) => (value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -119,7 +126,14 @@ export function SignupForm() {
         />
       </Field>
 
-      <Field label="비밀번호" htmlFor="password" error={errors.password}>
+      {/* 두 비밀번호 칸은 입력이 있는 동안 제출 시 오류 대신 실시간 상태를 보여준다.
+          둘 다 띄우면 고쳐서 조건을 맞춘 뒤에도 제출 때의 빨간 오류가 초록 문구
+          옆에 남는다. 칸이 비어 있을 때만 제출 시 오류("입력해주세요")가 나온다. */}
+      <Field
+        label="비밀번호"
+        htmlFor="password"
+        error={passwordStatus ? undefined : errors.password}
+      >
         <Input
           id="password"
           name="password"
@@ -128,11 +142,18 @@ export function SignupForm() {
           placeholder={`${PASSWORD_MIN}자 이상`}
           value={form.password}
           onChange={(e) => update("password")(e.target.value)}
-          aria-invalid={Boolean(errors.password)}
+          aria-invalid={passwordStatus ? !passwordStatus.ok : Boolean(errors.password)}
+          aria-describedby="password-status"
+          className={statusBorder(passwordStatus)}
         />
+        <StatusMessage id="password-status" status={passwordStatus} />
       </Field>
 
-      <Field label="비밀번호 확인" htmlFor="passwordConfirm" error={errors.passwordConfirm}>
+      <Field
+        label="비밀번호 확인"
+        htmlFor="passwordConfirm"
+        error={confirmStatus ? undefined : errors.passwordConfirm}
+      >
         <Input
           id="passwordConfirm"
           name="passwordConfirm"
@@ -141,8 +162,11 @@ export function SignupForm() {
           placeholder="위와 같은 비밀번호를 한 번 더"
           value={form.passwordConfirm}
           onChange={(e) => update("passwordConfirm")(e.target.value)}
-          aria-invalid={Boolean(errors.passwordConfirm)}
+          aria-invalid={confirmStatus ? !confirmStatus.ok : Boolean(errors.passwordConfirm)}
+          aria-describedby="passwordConfirm-status"
+          className={statusBorder(confirmStatus)}
         />
+        <StatusMessage id="passwordConfirm-status" status={confirmStatus} />
       </Field>
 
       <div className="grid grid-cols-2 gap-3">
@@ -222,5 +246,54 @@ function Field({
         </p>
       )}
     </div>
+  );
+}
+
+/** 입력 중인 칸의 상태. 칸이 비어 있으면 아직 판단할 게 없어 null이다. */
+type LiveStatus = { ok: boolean; message: string } | null;
+
+/** 문구는 서버와 같은 validatePassword에서 온다. 여기서 초록이면 서버도 통과시킨다. */
+function passwordStatusOf(password: string): LiveStatus {
+  if (!password) return null;
+  const issue = validatePassword(password);
+  return issue
+    ? { ok: false, message: issue }
+    : { ok: true, message: "사용할 수 있는 비밀번호입니다." };
+}
+
+function confirmStatusOf(password: string, confirm: string): LiveStatus {
+  if (!confirm) return null;
+  return password === confirm
+    ? { ok: true, message: "비밀번호가 일치합니다." }
+    : { ok: false, message: "비밀번호가 일치하지 않습니다." };
+}
+
+function statusBorder(status: LiveStatus): string | undefined {
+  if (!status) return undefined;
+  return status.ok
+    ? "border-emerald-500 focus-visible:ring-emerald-500"
+    : "border-destructive focus-visible:ring-destructive";
+}
+
+/** 색만으로 구분하지 않도록 아이콘을 함께 붙이고, 화면 낭독기가 바뀐 상태를 읽게 한다. */
+function StatusMessage({ id, status }: { id: string; status: LiveStatus }) {
+  return (
+    <p id={id} aria-live="polite" className="text-[11px] font-medium">
+      {status && (
+        <span
+          className={cn(
+            "flex items-center gap-1",
+            status.ok ? "text-emerald-600 dark:text-emerald-400" : "text-destructive",
+          )}
+        >
+          {status.ok ? (
+            <Check className="w-3.5 h-3.5 shrink-0" aria-hidden />
+          ) : (
+            <X className="w-3.5 h-3.5 shrink-0" aria-hidden />
+          )}
+          {status.message}
+        </span>
+      )}
+    </p>
   );
 }
