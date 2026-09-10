@@ -183,3 +183,70 @@ export function formatSettlementMessage(sub: {
 
   return `[${sub.name}] 매월 ${sub.billingDay}일 ${total} 결제 · ${count}명이서 나눠서 1인 ${each}입니다. 정산 부탁드려요!`;
 }
+
+/**
+ * 이번 달에 실제로 통장에서 빠져나가지 않은 금액.
+ *
+ * 해지했다고 해서 이번 달 결제가 전부 막힌 것은 아니다. 결제일이 이미
+ * 지난 뒤에 해지했다면 그 달 돈은 이미 나갔으므로 0이다.
+ *
+ * 결제 월을 모르는 연간 구독은 이번 달에 결제일이 있었는지 판단할 근거가
+ * 없으므로 `null`을 반환한다. 화면은 이 값을 0으로 합산하지 말고 '미설정'
+ * 으로 따로 세어야 한다.
+ */
+export function getMyMonthDefendedAmountKRW(
+  sub: DefendedSubscription & { billingDay: number },
+  year: number = new Date().getFullYear(),
+  month: number = new Date().getMonth() + 1,
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): number | null {
+  if (sub.billingCycle === "yearly" && typeof sub.billingMonth !== "number") {
+    return null;
+  }
+
+  if (sub.billingCycle === "yearly" && sub.billingMonth !== month) {
+    return 0;
+  }
+
+  // 해당 월에 결제일이 며칠인지. 31일 결제인데 30일까지인 달이면 말일로 본다.
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const billingDay = Math.min(Math.max(1, sub.billingDay || 1), daysInMonth);
+  const billingDate = new Date(year, month - 1, billingDay);
+
+  if (sub.killedAt) {
+    const killDate = new Date(sub.killedAt);
+    if (Number.isNaN(killDate.getTime())) return null;
+    // 결제일이 지난 뒤에 해지했다면 이번 달 돈은 이미 나갔다. 비교는 시각이
+    // 아니라 날짜 단위로 한다 — 결제일 당일 몇 시에 눌렀는지까지 따지면
+    // 표준시가 다른 곳에서 하루가 밀려 방어액이 통째로 사라진다.
+    const killDay = new Date(killDate.getFullYear(), killDate.getMonth(), killDate.getDate());
+    if (killDay.getTime() > billingDate.getTime()) return 0;
+  }
+
+  return sub.billingCycle === "yearly"
+    ? getMyAnnualAmountKRW(sub, rate)
+    : getMyMonthlyAmountKRW(sub, rate);
+}
+
+/** `getMyMonthDefendedAmountKRW`의 합계와, 판단할 수 없었던 구독 수. */
+export interface MonthDefendedSummary {
+  amount: number;
+  /** 결제 월을 몰라 합계에 넣지 못한 연간 구독 수. */
+  unknownCount: number;
+}
+
+export function sumMyMonthDefendedKRW(
+  subs: (DefendedSubscription & { billingDay: number })[],
+  year: number = new Date().getFullYear(),
+  month: number = new Date().getMonth() + 1,
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): MonthDefendedSummary {
+  return subs.reduce<MonthDefendedSummary>(
+    (acc, sub) => {
+      const defended = getMyMonthDefendedAmountKRW(sub, year, month, rate);
+      if (defended === null) return { ...acc, unknownCount: acc.unknownCount + 1 };
+      return { ...acc, amount: acc.amount + defended };
+    },
+    { amount: 0, unknownCount: 0 },
+  );
+}

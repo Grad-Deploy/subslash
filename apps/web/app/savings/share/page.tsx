@@ -4,7 +4,7 @@ import React, { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "../../../components/ui/button";
-import { getSavingsEquivalents } from "@subslash/shared";
+import { getSavingsEquivalents, getDetoxLevel } from "@subslash/shared";
 
 function SharedSavingsContent() {
   const searchParams = useSearchParams();
@@ -21,6 +21,7 @@ function SharedSavingsContent() {
   const serviceNames = namesParam ? namesParam.split(",").filter(Boolean) : [];
 
   const equivalents = getSavingsEquivalents(annualSavings);
+  const detoxLevel = getDetoxLevel(annualSavings, count);
 
   return (
     <div className="max-w-xl mx-auto py-8 px-4 space-y-8 text-center">
@@ -32,6 +33,22 @@ function SharedSavingsContent() {
       {/* Main Hero Card */}
       <div className="p-6 sm:p-8 rounded-3xl border bg-card shadow-lg space-y-6 relative overflow-hidden">
         <div className="text-5xl animate-bounce">🎉</div>
+
+        {/* Detox level & title */}
+        <div className="flex flex-col items-center gap-2">
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-black bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 shadow-sm">
+            <span className="text-lg leading-none">{detoxLevel.emoji}</span>
+            <span>
+              {detoxLevel.levelLabel} {detoxLevel.title}
+            </span>
+          </span>
+          {detoxLevel.nextThreshold !== null && (
+            <span className="text-[11px] text-muted-foreground">
+              다음 레벨 &lsquo;{detoxLevel.nextTitle}&rsquo;까지 ₩
+              {(detoxLevel.remainingToNext ?? 0).toLocaleString()}
+            </span>
+          )}
+        </div>
 
         <div className="space-y-2">
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">

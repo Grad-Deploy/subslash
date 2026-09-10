@@ -42,6 +42,14 @@ export interface Subscription {
   killedAt?: string;
 
   /**
+   * 사용자가 "이 금액이 지금도 맞다"고 마지막으로 확인해 준 시각.
+   *
+   * 없으면 등록 이후 한 번도 확인한 적이 없다는 뜻이다. 앱은 이 값을
+   * 추측해서 채우지 않는다 — 확인 버튼을 누른 순간에만 기록된다.
+   */
+  lastPriceCheckedAt?: string;
+
+  /**
    * How many people split this plan, the payer included. Absent or 1 means the
    * user carries the whole bill.
    */
@@ -59,7 +67,10 @@ export interface Subscription {
   accountMemo?: string;
 }
 
-export type SubscriptionFormData = Omit<Subscription, "id" | "status" | "createdAt" | "killedAt">;
+export type SubscriptionFormData = Omit<
+  Subscription,
+  "id" | "status" | "createdAt" | "killedAt" | "lastPriceCheckedAt"
+>;
 
 export type EmailType = "payment" | "cancellation" | "refund" | "onetime";
 

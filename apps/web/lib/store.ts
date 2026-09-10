@@ -144,6 +144,12 @@ interface SubSlashStore {
   clearSubscriptions: () => void;
   clearAllData: () => void;
   updateSubscription: (id: string, data: Partial<SubscriptionFormData>) => void;
+  /**
+   * 사용자가 요금을 확인해 준 사실을 기록한다. `newAmount`를 주면 금액도
+   * 함께 바꾼다. 확인 시각은 이 액션을 통해서만 생기므로, 앱이 임의로
+   * "확인됨"을 만들어내지 않는다.
+   */
+  confirmSubscriptionPrice: (id: string, newAmount?: number) => void;
   killSubscription: (id: string) => void;
   reviveSubscription: (id: string) => void;
   deleteSubscription: (id: string) => void;
@@ -222,6 +228,23 @@ export const useStore = create<SubSlashStore>()(
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
             sub.id === id ? { ...sub, ...data } : sub,
+          ),
+        }));
+      },
+      confirmSubscriptionPrice: (id, newAmount) => {
+        const checkedAt = new Date().toISOString();
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            sub.id === id
+              ? {
+                  ...sub,
+                  amount:
+                    typeof newAmount === "number" && Number.isFinite(newAmount) && newAmount > 0
+                      ? newAmount
+                      : sub.amount,
+                  lastPriceCheckedAt: checkedAt,
+                }
+              : sub,
           ),
         }));
       },

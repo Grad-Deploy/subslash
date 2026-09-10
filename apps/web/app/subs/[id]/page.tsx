@@ -14,6 +14,7 @@ import {
 } from "@subslash/shared";
 import { SubForm } from "../../../components/subscription/SubForm";
 import { CheckInModal } from "../../../components/subscription/CheckInModal";
+import { CancelGuideModal } from "../../../components/subscription/CancelGuideModal";
 import { RiskBadge } from "../../../components/dashboard/RiskBadge";
 import {
   Dialog,
@@ -24,6 +25,7 @@ import {
 } from "../../../components/ui/dialog";
 import { Button } from "../../../components/ui/button";
 import { Badge } from "../../../components/ui/badge";
+import { ConfirmDialog } from "../../../components/ui/confirm-dialog";
 
 export default function SubscriptionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -43,6 +45,8 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [confirmType, setConfirmType] = useState<"kill" | "revive" | "delete" | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -100,21 +104,22 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
     }
   };
 
-  const handleKill = () => {
-    killSubscription(sub.id);
-    showToast(`🔪 ${sub.name} 해지가 완료되었습니다.`);
-  };
+  // 실제 해지는 서비스 쪽에서 이뤄진다. 버튼은 먼저 가이드를 열어 거기까지
+  // 데려다주고, 사용자가 마쳤다고 알려줄 때만 완료로 기록한다.
+  const handleKill = () => setIsGuideOpen(true);
 
-  const handleRevive = () => {
-    reviveSubscription(sub.id);
-    showToast(`✨ ${sub.name} 구독을 다시 활성화했습니다.`);
-  };
-
-  const handleDelete = () => {
-    if (confirm(`'${sub.name}' 구독을 완전히 삭제하시겠습니까?`)) {
+  const executeConfirm = () => {
+    if (confirmType === "kill") {
+      killSubscription(sub.id);
+      showToast(`🔪 ${sub.name} 해지가 완료되었습니다.`);
+    } else if (confirmType === "revive") {
+      reviveSubscription(sub.id);
+      showToast(`✨ ${sub.name} 구독을 다시 활성화했습니다.`);
+    } else if (confirmType === "delete") {
       deleteSubscription(sub.id);
       router.push("/subs");
     }
+    setConfirmType(null);
   };
 
   return (
@@ -142,7 +147,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
             variant="ghost"
             size="sm"
             className="text-destructive hover:bg-destructive/10"
-            onClick={handleDelete}
+            onClick={() => setConfirmType("delete")}
           >
             삭제
           </Button>
@@ -201,7 +206,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
         ) : (
           <div className="pt-2 flex items-center justify-between border-t text-sm">
             <span className="text-muted-foreground">차단된 구독입니다.</span>
-            <Button size="sm" variant="outline" onClick={handleRevive}>
+            <Button size="sm" variant="outline" onClick={() => setConfirmType("revive")}>
               다시 구독 중으로 변경
             </Button>
           </div>
@@ -391,6 +396,45 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
         onKill={handleKill}
         result={checkInResult}
       />
+
+      {/* Cancel Guide Modal (Issue 14) */}
+      <CancelGuideModal
+        subscription={sub}
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+        onConfirmKilled={() => setConfirmType("kill")}
+      />
+
+      {/* Confirmation Modal */}
+      {confirmType && (
+        <ConfirmDialog
+          isOpen={!!confirmType}
+          onClose={() => setConfirmType(null)}
+          onConfirm={executeConfirm}
+          title={
+            confirmType === "kill"
+              ? "구독 해지 완료 처리"
+              : confirmType === "revive"
+                ? "구독 다시 살리기"
+                : "구독 영구 삭제"
+          }
+          description={
+            confirmType === "kill"
+              ? `'${sub.name}' 구독을 해지(방어) 완료 상태로 전환하시겠습니까?
+방어 성공 자산으로 기록되며 대시보드와 절약 현황에 반영됩니다.`
+              : confirmType === "revive"
+                ? `'${sub.name}' 구독을 다시 활성화하시겠습니까?
+활성 구독 목록으로 복원되며, 절약 방어 자산에서 제외됩니다.`
+                : `'${sub.name}' 구독을 영구 삭제하시겠습니까?
+삭제된 구독 데이터는 복구할 수 없습니다.`
+          }
+          confirmText={
+            confirmType === "kill" ? "해지 완료" : confirmType === "revive" ? "다시 살리기" : "삭제"
+          }
+          cancelText="취소"
+          variant={confirmType === "revive" ? "default" : "destructive"}
+        />
+      )}
     </div>
   );
 }

@@ -218,7 +218,7 @@ export function CheckInModal({
                     onClose();
                   }}
                 >
-                  🔪 해지 완료 처리하고 방어 자산으로 등록
+                  🔪 해지 가이드 열기
                 </Button>
               )}
               <Button variant="ghost" className="w-full" onClick={onClose}>
