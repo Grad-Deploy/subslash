@@ -66,6 +66,24 @@ export async function sendEmail(params: {
   }
 }
 
+/**
+ * 메일 HTML에 사용자가 적은 글자를 넣을 때. 구독 이름은 브라우저가 올려 보낸
+ * 값이라, 그대로 넣으면 이름에 쓴 태그와 링크가 SubSlash 메일 안에서 살아난다.
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** 제목 줄은 한 줄이어야 한다. 이름에 든 줄바꿈을 공백으로 편다. */
+function oneLine(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
 const shell = (body: string) => `<!doctype html>
 <html lang="ko"><body style="margin:0;background:#f4f4f5;padding:24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
 <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;padding:28px;">
@@ -110,7 +128,7 @@ export function reminderEmail(items: ReminderItem[], unsubscribeUrl: string) {
         .join("");
 
       return `<div style="margin:0 0 22px;padding:18px;border:1px solid #e4e4e7;border-radius:12px;">
-<p style="margin:0 0 4px;font-size:15px;font-weight:700;color:#18181b;">${item.name}</p>
+<p style="margin:0 0 4px;font-size:15px;font-weight:700;color:#18181b;">${escapeHtml(item.name)}</p>
 <p style="margin:0 0 14px;font-size:13px;color:#71717a;">${item.billingDate}에 ${formatCurrency(item.amount, item.currency)}이 결제됩니다 (D-${item.daysLeft})</p>
 <p style="margin:0 0 10px;font-size:13px;color:#3f3f46;">지난 30일 동안 몇 번 이용하셨나요?</p>
 ${buttons}
@@ -120,14 +138,18 @@ ${buttons}
 
   const title =
     items.length === 1
-      ? `[SubSlash] ${items[0].name} 결제 D-${items[0].daysLeft} — 몇 번 쓰셨나요?`
+      ? `[SubSlash] ${oneLine(items[0].name)} 결제 D-${items[0].daysLeft} — 몇 번 쓰셨나요?`
       : `[SubSlash] 결제 임박 구독 ${items.length}건 — 몇 번 쓰셨나요?`;
 
   const textBody = items
     .map(
       (item) =>
         `${item.name} — ${item.billingDate} ${formatCurrency(item.amount, item.currency)} (D-${item.daysLeft})\n` +
-        counts.map((n) => `  ${n}회: ${base}/check-in?sub=${item.clientId}&count=${n}`).join("\n"),
+        counts
+          .map(
+            (n) => `  ${n}회: ${base}/check-in?sub=${encodeURIComponent(item.clientId)}&count=${n}`,
+          )
+          .join("\n"),
     )
     .join("\n\n");
 
