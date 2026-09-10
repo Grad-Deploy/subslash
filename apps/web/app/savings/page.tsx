@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "../../lib/store";
 import {
   formatCurrency,
+  formatKRW,
   getMyAnnualAmountKRW,
   getMyMonthlyAmountKRW,
   getSavingsEquivalent,
@@ -57,15 +58,21 @@ export default function SavingsDashboard() {
     }
   };
 
+  // 환산 문구는 싣지 않는다. 공유 페이지가 금액에서 다시 계산하므로, 링크를
+  // 고쳐 금액과 다른 말을 인증서에 올릴 수 없다. 이름은 하나씩 따로 실어야
+  // 쉼표가 든 이름이 둘로 쪼개지지 않는다.
   const getShareUrl = () => {
-    if (typeof window === "undefined") return "";
-    const names = killedSubs.map((s) => s.name).join(",");
-    return `${window.location.origin}/savings/share?saved=${annualSavings}&count=${killedSubs.length}&equiv=${encodeURIComponent(headlineEquivalent)}&names=${encodeURIComponent(names)}`;
+    const params = new URLSearchParams({
+      saved: String(Math.round(annualSavings)),
+      count: String(killedSubs.length),
+    });
+    killedSubs.forEach((sub) => params.append("name", sub.name));
+    return `${window.location.origin}/savings/share?${params.toString()}`;
   };
 
   const handleShare = async () => {
     const shareUrl = getShareUrl();
-    const text = `✂️ SubSlash 구독 디톡스 ${detoxLevel.levelLabel} ${detoxLevel.title} ${detoxLevel.emoji}\n불필요한 구독을 해지하여 연간 ₩${annualSavings.toLocaleString()}을 방어했습니다! ${headlineEquivalent}\n👉 결과 보기: ${shareUrl}`;
+    const text = `✂️ SubSlash 구독 디톡스 ${detoxLevel.levelLabel} ${detoxLevel.title} ${detoxLevel.emoji}\n불필요한 구독을 해지하여 연간 ${formatKRW(annualSavings)}을 방어했습니다! ${headlineEquivalent}\n👉 결과 보기: ${shareUrl}`;
     if (navigator.share) {
       try {
         await navigator.share({
