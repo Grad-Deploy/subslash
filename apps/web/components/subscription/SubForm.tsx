@@ -182,7 +182,7 @@ export function SubForm({
           </option>
           {popularServices.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.iconEmoji} {s.nameKo} (₩{s.defaultAmount.toLocaleString()})
+              {s.iconEmoji} {s.nameKo} ({formatAmount(s.defaultAmount, s.currency)})
             </option>
           ))}
         </Select>

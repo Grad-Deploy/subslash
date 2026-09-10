@@ -9,6 +9,7 @@ import {
   CheckInResponse,
   POPULAR_SERVICES,
   ServicePreset,
+  formatKRW,
   sumMyMonthlyKRW,
 } from "@subslash/shared";
 import { SubCard } from "../../components/subscription/SubCard";
@@ -338,8 +339,8 @@ export default function SubscriptionsPage() {
             <div className="space-y-3">
               <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300">
                 🎉 축하합니다! {filteredKilled.length}개의 불필요한 구독을 차단하여 매달 총{" "}
-                <strong>₩{sumMyMonthlyKRW(filteredKilled, rate).toLocaleString()}</strong>을
-                방어하고 계십니다!
+                <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 방어하고
+                계십니다!
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

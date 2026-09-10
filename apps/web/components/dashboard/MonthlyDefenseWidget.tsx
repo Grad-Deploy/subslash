@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Subscription, sumMyMonthDefendedKRW } from "@subslash/shared";
+import { Subscription, formatKRW, sumMyMonthDefendedKRW } from "@subslash/shared";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 interface MonthlyDefenseWidgetProps {
@@ -33,7 +33,7 @@ export function MonthlyDefenseWidget({ killedSubscriptions }: MonthlyDefenseWidg
             {month}월 지출 방어 성공
           </p>
           <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
-            ₩{amount.toLocaleString()}
+            {formatKRW(amount)}
           </p>
         </div>
         <span className="text-3xl leading-none">🛡️</span>

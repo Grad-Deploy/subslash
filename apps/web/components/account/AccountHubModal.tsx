@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useStore } from "../../lib/store";
 import { SHOW_INBOX_PREVIEW } from "../../lib/flags";
-import { AccountProvider, ACCOUNT_PROVIDERS, sumMonthlyKRW } from "@subslash/shared";
+import { AccountProvider, ACCOUNT_PROVIDERS, formatKRW, sumMonthlyKRW } from "@subslash/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -267,10 +267,7 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
                           )}
                         </span>
                         <span>
-                          월{" "}
-                          <strong className="text-foreground">
-                            ₩{totalMonthly.toLocaleString()}
-                          </strong>
+                          월 <strong className="text-foreground">{formatKRW(totalMonthly)}</strong>
                         </span>
                       </div>
                     </div>

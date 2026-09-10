@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { getDetoxLevel } from "@subslash/shared";
+import { formatKRW, getDetoxLevel } from "@subslash/shared";
 
 interface DetoxLevelBadgeProps {
   /** 누적 연간 방어액(KRW). */
@@ -53,7 +53,7 @@ export function DetoxLevelBadge({
         </div>
         <div className="text-right shrink-0">
           <p className="text-[11px] text-muted-foreground">누적 방어</p>
-          <p className="text-sm font-bold font-mono">₩{annualSavings.toLocaleString()}</p>
+          <p className="text-sm font-bold font-mono">{formatKRW(annualSavings)}</p>
         </div>
       </div>
 
@@ -71,10 +71,8 @@ export function DetoxLevelBadge({
               />
             </div>
             <p className="text-[11px] text-muted-foreground">
-              <strong className="text-foreground">
-                ₩{(level.remainingToNext ?? 0).toLocaleString()}
-              </strong>
-              을 더 방어하면 <strong className="text-foreground">{level.nextTitle}</strong>
+              <strong className="text-foreground">{formatKRW(level.remainingToNext ?? 0)}</strong>을
+              더 방어하면 <strong className="text-foreground">{level.nextTitle}</strong>
               (Lv.{level.level + 1})로 올라갑니다.
             </p>
           </div>
