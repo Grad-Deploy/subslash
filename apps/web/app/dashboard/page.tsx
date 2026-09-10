@@ -210,6 +210,9 @@ export default function Dashboard() {
         </div>
       </section>
 
+      {/* This month's defended spend (Issue 8) — 상단 요약 영역 */}
+      <MonthlyDefenseWidget killedSubscriptions={killedSubs} />
+
       {/* At Risk Alert Section */}
       {atRiskSubs.length > 0 && (
         <section className="p-5 border-2 border-destructive/30 bg-destructive/5 rounded-2xl space-y-3">
@@ -236,8 +239,6 @@ export default function Dashboard() {
       {/* Saved Pot (Defended Subscriptions) Section */}
       {killedSubs.length > 0 && (
         <section className="space-y-4">
-          {/* This month's defended spend (Issue 8) */}
-          <MonthlyDefenseWidget killedSubscriptions={killedSubs} />
           {/* Detox level & title (Phase 3) */}
           <DetoxLevelBadge annualSavings={stats.totalSaved} killCount={stats.killedCount} />
           <SavingsPot killedSubscriptions={killedSubs} />

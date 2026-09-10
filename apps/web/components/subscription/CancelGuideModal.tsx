@@ -4,6 +4,7 @@ import React from "react";
 import {
   Subscription,
   PAYMENT_METHOD_OPTIONS,
+  getAccountFallbackUrl,
   getCancelUrlKind,
   getServiceHomeUrl,
   parseCancelGuideSteps,
@@ -37,6 +38,7 @@ export function CancelGuideModal({
   const sub = subscription;
   const cancelUrlKind = getCancelUrlKind(sub.cancelUrl);
   const homeUrl = getServiceHomeUrl(sub.cancelUrl);
+  const accountUrl = getAccountFallbackUrl(sub.cancelUrl);
   const steps = parseCancelGuideSteps(sub.cancelGuide);
   const paymentMethod = PAYMENT_METHOD_OPTIONS.find((p) => p.value === sub.paymentMethod);
 
@@ -92,7 +94,7 @@ export function CancelGuideModal({
           </section>
 
           {/* 2. 폴백 경로 — 실제로 아는 주소만 */}
-          {(homeUrl || paymentMethod?.directCancelUrl) && (
+          {(accountUrl || homeUrl || paymentMethod?.directCancelUrl) && (
             <section className="space-y-2">
               <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 링크가 안 열릴 때
@@ -110,6 +112,22 @@ export function CancelGuideModal({
                     {paymentMethod.guide && (
                       <p className="text-[11px] text-muted-foreground">{paymentMethod.guide}</p>
                     )}
+                  </div>
+                )}
+                {accountUrl && (
+                  <div className="space-y-1">
+                    <Button
+                      variant="outline"
+                      className="w-full h-10 text-sm rounded-xl"
+                      onClick={() => openExternal(accountUrl)}
+                    >
+                      👤 계정 관리 페이지로 이동 시도
+                    </Button>
+                    <p className="text-[11px] text-muted-foreground break-all">
+                      {accountUrl} — 많은 서비스가 쓰는 주소 형태로 만든 것이라, 이 서비스에 실제로
+                      있는 주소인지는 확인되지 않았습니다. 열리지 않으면 아래 단계 안내를
+                      따라가세요.
+                    </p>
                   </div>
                 )}
                 {homeUrl && (

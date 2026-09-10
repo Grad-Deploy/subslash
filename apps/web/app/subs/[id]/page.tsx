@@ -309,6 +309,16 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
           })()}
         </div>
 
+        {/* 가이드 모달 진입점 — 링크가 죽었을 때의 폴백까지 한 화면에 모아준다. */}
+        <Button
+          variant="outline"
+          size="lg"
+          className="w-full h-11 rounded-xl font-semibold"
+          onClick={() => setIsGuideOpen(true)}
+        >
+          📖 해지 방법 보기 (단계별 안내 · 폴백 링크)
+        </Button>
+
         {sub.cancelGuide && (
           <div className="p-4 bg-background border rounded-xl space-y-2 text-xs">
             <div className="font-bold text-foreground">💡 30초 다크 패턴 탈출 가이드:</div>

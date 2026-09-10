@@ -75,7 +75,9 @@ export function getPriceCheckCandidates(
     const mismatched = presetAmount !== null && presetAmount !== sub.amount;
 
     // 사용자가 '요금 유지'를 눌렀다면 그 판단을 존중해서 다음 주기까지 조용히 둔다.
-    if (!isStale) continue;
+    // 확인해 준 적이 없다면 프리셋과 어긋난 사실만으로도 물어볼 근거가 된다.
+    if (sub.lastPriceCheckedAt && !isStale) continue;
+    if (!mismatched && !isStale) continue;
 
     if (mismatched) {
       candidates.push({

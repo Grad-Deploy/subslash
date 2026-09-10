@@ -572,6 +572,29 @@ export function parseCancelGuideSteps(cancelGuide?: string): string[] {
 }
 
 /**
+ * 직통 해지 링크가 죽었을 때 시도해 볼 계정 관리 주소.
+ *
+ * `{origin}/account`는 많은 서비스가 쓰는 관례일 뿐, 그 서비스에 실제로
+ * 있는 주소인지는 확인되지 않았다. 그래서 이 값을 "공식 계정 관리
+ * 페이지"라고 부르면 안 된다 — 화면은 '이동 시도'라고 적고, 열리지 않을 수
+ * 있다는 것을 함께 알린 뒤 단계별 안내로 넘긴다.
+ *
+ * 주소를 해석할 수 없으면 `null`이다.
+ */
+export function getAccountFallbackUrl(cancelUrl?: string): string | null {
+  if (!cancelUrl) return null;
+  try {
+    const parsed = new URL(cancelUrl);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    // 이미 계정 관리 주소를 가리키고 있으면 같은 버튼을 두 번 보여줄 이유가 없다.
+    if (parsed.pathname.replace(/\/$/, "").endsWith("/account")) return null;
+    return `${parsed.origin}/account`;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 이 구독이 어느 프리셋에서 온 것인지 되찾는다.
  *
  * 구독은 프리셋 id를 저장하지 않으므로 해지 URL로 먼저 맞추고, 없으면

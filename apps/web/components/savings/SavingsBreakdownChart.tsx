@@ -8,6 +8,7 @@ import {
   sumMyAnnualKRW,
   sumMyYearDefendedKRW,
 } from "@subslash/shared";
+import { DetoxLevelBadge } from "./DetoxLevelBadge";
 
 interface SavingsBreakdownChartProps {
   killedSubscriptions: Subscription[];
@@ -55,9 +56,17 @@ export function SavingsBreakdownChart({
     <div className="p-5 border rounded-2xl bg-card shadow-sm space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h3 className="font-bold text-base flex items-center gap-1.5">
-            <span>📊</span> 서비스별 절약 기여도
-          </h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-bold text-base flex items-center gap-1.5">
+              <span>📊</span> 서비스별 절약 기여도
+            </h3>
+            {/* 레벨은 연간 환산 누적 방어액 기준이라 보기 모드와 무관하게 같다. */}
+            <DetoxLevelBadge
+              annualSavings={totalAnnual}
+              killCount={killedSubscriptions.length}
+              variant="inline"
+            />
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             어떤 구독을 끊었을 때 가장 많은 돈이 지켜졌는지 확인해보세요.
           </p>
