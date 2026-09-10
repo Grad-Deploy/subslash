@@ -363,8 +363,8 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                 <div>
                   <div className="font-bold">{log.month} 사용 기록</div>
                   <div className="text-xs text-muted-foreground">
-                    총 {log.usageCount}회 이용 · 1회당 ₩
-                    {Math.round(log.costPerUse).toLocaleString()}
+                    총 {log.usageCount}회 이용 · 1회당{" "}
+                    {formatCurrency(log.costPerUse, sub.currency)}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

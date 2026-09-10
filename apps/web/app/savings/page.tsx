@@ -168,7 +168,7 @@ export default function SavingsDashboard() {
                         {sub.name}
                       </h4>
                       <p className="text-xs text-emerald-600 font-medium">
-                        연간 ₩{getMyAnnualAmountKRW(sub, rate).toLocaleString()} 방어 성공
+                        연간 {formatKRW(getMyAnnualAmountKRW(sub, rate))} 방어 성공
                       </p>
                     </div>
                   </div>
@@ -180,7 +180,7 @@ export default function SavingsDashboard() {
                           {formatCurrency(sub.amount, sub.currency)}
                           <span className="text-xs font-normal text-muted-foreground">
                             {" "}
-                            (월 ₩{getMyMonthlyAmountKRW(sub, rate).toLocaleString()})
+                            (월 {formatKRW(getMyMonthlyAmountKRW(sub, rate))})
                           </span>
                         </>
                       ) : (

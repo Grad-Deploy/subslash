@@ -214,6 +214,32 @@ describe("getActionQueue", () => {
     const [withRate] = getActionQueue([sub], [], NOW, 1400);
     expect(withRate.amountAtStake).toBe(14000);
   });
+
+  it("1회당 단가는 구독 자체의 통화로 적고, 걸린 금액만 원화로 환산한다", () => {
+    const sub = subDueIn(3, { currency: "USD", amount: 20 });
+    const logs = [log(sub.id, { usageCount: 2, costPerUse: 10 })];
+    const [item] = getActionQueue([sub], logs, NOW, 1400);
+
+    expect(item.currency).toBe("USD");
+    expect(item.reason).toContain("1회당 $10.00");
+    expect(item.reason).not.toContain("₩10");
+    expect(item.reason).toContain("₩28,000");
+  });
+
+  it("USD 구독의 요금 확인 문구는 달러로 적는다", () => {
+    const sub = subDueIn(20, {
+      name: "해외 툴",
+      currency: "USD",
+      amount: 20,
+      lastPriceCheckedAt: undefined,
+      createdAt: daysAgo(200),
+    });
+    const logs = [log(sub.id, { riskLevel: "green", usageCount: 12, checkedAt: daysAgo(1) })];
+    const [item] = getActionQueue([sub], logs, NOW);
+
+    expect(item.kind).toBe("price-check");
+    expect(item.reason).toContain("$20.00");
+  });
 });
 
 describe("getNextBillingHint", () => {
