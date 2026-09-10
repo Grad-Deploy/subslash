@@ -63,11 +63,17 @@ test.describe("Subscription Flow (E2E)", () => {
 
     await page.getByRole("button", { name: "해지하기" }).first().click();
 
-    // 해지 확인 모달 확인 및 승인
+    // 실제 해지는 서비스 쪽에서 해야 하므로 먼저 해지 가이드가 열린다.
+    const guideDialog = page.getByRole("dialog");
+    await expect(guideDialog).toBeVisible();
+    await expect(guideDialog.getByText("해지 메뉴까지 가는 길")).toBeVisible();
+    await guideDialog.getByRole("button", { name: "해지 완료했어요" }).click();
+
+    // 가이드가 닫히고 나서야 완료 처리 확인 모달이 뜬다.
     const confirmDialog = page.getByRole("dialog");
-    await expect(confirmDialog).toBeVisible();
+    await expect(confirmDialog.getByText("구독 해지 완료 처리")).toBeVisible();
     await confirmDialog.getByRole("button", { name: "해지 완료" }).click();
-    await expect(confirmDialog).toHaveCount(0);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
 
     await page.getByRole("button", { name: /해지 완료 \(1\)/ }).click();
 

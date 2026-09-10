@@ -532,3 +532,65 @@ export function getCancelUrlKind(cancelUrl?: string): "direct" | "entry" | "unkn
   const preset = POPULAR_SERVICES.find((service) => service.cancelUrl === cancelUrl);
   return preset?.cancelUrlKind ?? "unknown";
 }
+
+/**
+ * 해지 링크가 열리지 않을 때 쓸 폴백 주소 — 그 서비스의 첫 화면.
+ *
+ * `https://{domain}/account` 같은 주소를 만들어내지 않는다. 서비스마다
+ * 계정 관리 경로가 다르고, 없는 주소를 "계정 관리 페이지"라고 부르면
+ * 사용자를 404로 보낸다. 여기서 확실히 아는 것은 도메인의 첫 화면뿐이므로
+ * 그것만 돌려주고, 나머지는 `cancelGuide`의 단계 안내에 맡긴다.
+ *
+ * 주소를 해석할 수 없으면 `null`이다.
+ */
+export function getServiceHomeUrl(cancelUrl?: string): string | null {
+  if (!cancelUrl) return null;
+  try {
+    const parsed = new URL(cancelUrl);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    // 첫 화면이 곧 해지 링크라면 따로 보여줄 폴백이 없다.
+    if (parsed.pathname === "/" && !parsed.search) return null;
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * `cancelGuide`의 줄글을 단계 목록으로 나눈다.
+ *
+ * 프리셋 가이드는 "1. ...\n2. ..." 형식이지만, 사용자가 직접 적은 가이드는
+ * 번호가 없을 수도 있다. 번호를 찾지 못하면 줄 단위로만 나누고, 없는 순서를
+ * 지어내지 않는다.
+ */
+export function parseCancelGuideSteps(cancelGuide?: string): string[] {
+  if (!cancelGuide) return [];
+  return cancelGuide
+    .split("\n")
+    .map((line) => line.replace(/^\s*\d+[.)]\s*/, "").trim())
+    .filter((line) => line.length > 0);
+}
+
+/**
+ * 이 구독이 어느 프리셋에서 온 것인지 되찾는다.
+ *
+ * 구독은 프리셋 id를 저장하지 않으므로 해지 URL로 먼저 맞추고, 없으면
+ * 이름으로 맞춘다. 어느 쪽으로도 확정되지 않으면 `undefined` — 이름이 비슷하다는
+ * 이유만으로 남의 요금표를 그 구독의 "기준 요금"이라고 부르지 않는다.
+ */
+export function findPresetForSubscription(sub: {
+  name: string;
+  cancelUrl?: string;
+}): ServicePreset | undefined {
+  if (sub.cancelUrl) {
+    const byUrl = POPULAR_SERVICES.find((service) => service.cancelUrl === sub.cancelUrl);
+    if (byUrl) return byUrl;
+  }
+  const normalized = sub.name.trim().toLowerCase();
+  if (!normalized) return undefined;
+  return POPULAR_SERVICES.find(
+    (service) =>
+      service.nameKo.trim().toLowerCase() === normalized ||
+      service.name.trim().toLowerCase() === normalized,
+  );
+}

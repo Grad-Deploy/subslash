@@ -10,9 +10,12 @@ import {
   getSavingsEquivalent,
   getSavingsEquivalents,
   sumMyAnnualKRW,
+  getDetoxLevel,
 } from "@subslash/shared";
 import { SavingsPot } from "../../components/dashboard/SavingsPot";
 import { SavingsBreakdownChart } from "../../components/savings/SavingsBreakdownChart";
+import { DetoxLevelBadge } from "../../components/savings/DetoxLevelBadge";
+import { MonthlyDefenseWidget } from "../../components/dashboard/MonthlyDefenseWidget";
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
@@ -42,6 +45,7 @@ export default function SavingsDashboard() {
   const annualSavings = sumMyAnnualKRW(killedSubs, rate);
   const equivalents = getSavingsEquivalents(annualSavings);
   const headlineEquivalent = getSavingsEquivalent(annualSavings)[0] ?? "";
+  const detoxLevel = getDetoxLevel(annualSavings, killedSubs.length);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -61,7 +65,7 @@ export default function SavingsDashboard() {
 
   const handleShare = async () => {
     const shareUrl = getShareUrl();
-    const text = `✂️ SubSlash로 불필요한 구독을 해지하여 연간 ₩${annualSavings.toLocaleString()}을 방어했습니다! ${headlineEquivalent}\n👉 결과 보기: ${shareUrl}`;
+    const text = `✂️ SubSlash 구독 디톡스 ${detoxLevel.levelLabel} ${detoxLevel.title} ${detoxLevel.emoji}\n불필요한 구독을 해지하여 연간 ₩${annualSavings.toLocaleString()}을 방어했습니다! ${headlineEquivalent}\n👉 결과 보기: ${shareUrl}`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -101,6 +105,12 @@ export default function SavingsDashboard() {
         </div>
       ) : (
         <div className="space-y-6">
+          {/* Detox level & title (Phase 3) */}
+          <DetoxLevelBadge annualSavings={annualSavings} killCount={killedSubs.length} />
+
+          {/* This month's defended spend (Issue 8) */}
+          <MonthlyDefenseWidget killedSubscriptions={killedSubs} />
+
           {/* Main Savings Pot Widget */}
           <SavingsPot killedSubscriptions={killedSubs} />
 

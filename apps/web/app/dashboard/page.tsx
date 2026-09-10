@@ -14,10 +14,14 @@ import {
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { SavingsPot } from "../../components/dashboard/SavingsPot";
 import { OnboardingTourCard } from "../../components/dashboard/OnboardingTourCard";
+import { MonthlyDefenseWidget } from "../../components/dashboard/MonthlyDefenseWidget";
+import { PriceCheckBanner } from "../../components/dashboard/PriceCheckBanner";
+import { DetoxLevelBadge } from "../../components/savings/DetoxLevelBadge";
 import { QuickPresetRecommender } from "../../components/subscription/QuickPresetRecommender";
 import { SubCard } from "../../components/subscription/SubCard";
 import { SubForm } from "../../components/subscription/SubForm";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
+import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
 import {
   Dialog,
@@ -50,6 +54,7 @@ export default function Dashboard() {
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [killTarget, setKillTarget] = useState<Subscription | null>(null);
+  const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -102,7 +107,14 @@ export default function Dashboard() {
     }
   };
 
+  // 해지 버튼은 곧바로 완료 처리하지 않는다. 실제 해지는 서비스 쪽에서
+  // 해야 하므로, 먼저 가이드를 열어 거기까지 데려다준 뒤 확인을 받는다.
   const handleKill = (id: string) => {
+    const sub = subscriptions.find((s) => s.id === id);
+    if (sub) setGuideTarget(sub);
+  };
+
+  const handleConfirmKilled = (id: string) => {
     const sub = subscriptions.find((s) => s.id === id);
     if (sub) setKillTarget(sub);
   };
@@ -164,6 +176,9 @@ export default function Dashboard() {
       {/* Onboarding Tour Card for New/Early Users (Issue 17) */}
       <OnboardingTourCard onStartAdd={() => setIsAddOpen(true)} activeCount={activeSubs.length} />
 
+      {/* Price Check Prompt (Issue 13) */}
+      <PriceCheckBanner subscriptions={activeSubs} />
+
       {/* Top Section: Total Monthly Spend Hero */}
       <TotalSpend subscriptions={activeSubs} />
 
@@ -220,7 +235,11 @@ export default function Dashboard() {
 
       {/* Saved Pot (Defended Subscriptions) Section */}
       {killedSubs.length > 0 && (
-        <section>
+        <section className="space-y-4">
+          {/* This month's defended spend (Issue 8) */}
+          <MonthlyDefenseWidget killedSubscriptions={killedSubs} />
+          {/* Detox level & title (Phase 3) */}
+          <DetoxLevelBadge annualSavings={stats.totalSaved} killCount={stats.killedCount} />
           <SavingsPot killedSubscriptions={killedSubs} />
         </section>
       )}
@@ -324,6 +343,14 @@ export default function Dashboard() {
 
       {/* Auto Import Hub Modal */}
       <AutoImportModal isOpen={isAutoImportOpen} onClose={() => setIsAutoImportOpen(false)} />
+
+      {/* Cancel Guide Modal (Issue 14) */}
+      <CancelGuideModal
+        subscription={guideTarget}
+        isOpen={!!guideTarget}
+        onClose={() => setGuideTarget(null)}
+        onConfirmKilled={handleConfirmKilled}
+      />
 
       {/* Kill Confirmation Modal */}
       {killTarget && (

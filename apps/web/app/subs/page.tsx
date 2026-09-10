@@ -15,6 +15,7 @@ import { SubCard } from "../../components/subscription/SubCard";
 import { SubForm } from "../../components/subscription/SubForm";
 import { QuickPresetRecommender } from "../../components/subscription/QuickPresetRecommender";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
+import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
 import {
   Dialog,
@@ -86,6 +87,7 @@ export default function SubscriptionsPage() {
     type: "kill" | "revive" | "delete";
     sub: Subscription;
   } | null>(null);
+  const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -133,7 +135,14 @@ export default function SubscriptionsPage() {
     }
   };
 
+  // 해지 버튼은 완료 처리로 바로 가지 않는다. 실제 해지는 서비스 쪽에서
+  // 해야 하므로 가이드를 먼저 열고, 사용자가 마쳤다고 알려줄 때 확인을 받는다.
   const handleKill = (id: string) => {
+    const sub = subscriptions.find((s) => s.id === id);
+    if (sub) setGuideTarget(sub);
+  };
+
+  const handleConfirmKilled = (id: string) => {
     const sub = subscriptions.find((s) => s.id === id);
     if (sub) setConfirmAction({ type: "kill", sub });
   };
@@ -410,6 +419,14 @@ export default function SubscriptionsPage() {
 
       {/* Auto Import Hub Modal */}
       <AutoImportModal isOpen={isAutoImportOpen} onClose={() => setIsAutoImportOpen(false)} />
+
+      {/* Cancel Guide Modal (Issue 14) */}
+      <CancelGuideModal
+        subscription={guideTarget}
+        isOpen={!!guideTarget}
+        onClose={() => setGuideTarget(null)}
+        onConfirmKilled={handleConfirmKilled}
+      />
 
       {/* Confirmation Modal */}
       {confirmAction && (
