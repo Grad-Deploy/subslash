@@ -6,6 +6,7 @@ import {
   CheckInResponse,
   PAYMENT_METHOD_OPTIONS,
   getCancelUrlKind,
+  getMyMonthlyShareAmount,
 } from "@subslash/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
 import { Button } from "../ui/button";
@@ -151,7 +152,7 @@ export function CheckInModal({
             <div className="w-full p-4 bg-muted/70 rounded-2xl border">
               <CostPerUseBar
                 costPerUse={result.costPerUse}
-                originalAmount={subscription.amount}
+                monthlyAmount={getMyMonthlyShareAmount(subscription)}
                 currency={subscription.currency}
                 usageCount={count}
               />

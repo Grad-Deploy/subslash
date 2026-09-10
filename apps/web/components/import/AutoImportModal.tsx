@@ -6,8 +6,11 @@ import {
   SubscriptionFormData,
   parsePaymentSms,
   formatCurrency,
+  formatKRW,
+  sumMonthlyKRW,
 } from "@subslash/shared";
 import { useStore } from "../../lib/store";
+import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { SHOW_INBOX_PREVIEW } from "../../lib/flags";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
@@ -55,6 +58,7 @@ export function AutoImportModal({
 }: AutoImportModalProps) {
   const { accounts, addAccount, addBatchSubscriptions, subscriptions, clearSubscriptions } =
     useStore();
+  const rate = useExchangeRate();
   const [activeTab, setActiveTab] = useState<"email" | "sms">("sms");
 
   // SMS parse state
@@ -217,13 +221,10 @@ export function AutoImportModal({
     });
   };
 
-  const selectedCount = discoveredItems.filter((i) => i.selected).length;
-  const totalSelectedMonthly = discoveredItems
-    .filter((i) => i.selected && i.currency === "KRW")
-    .reduce((sum, i) => sum + i.amount, 0);
-  const totalSelectedMonthlyUSD = discoveredItems
-    .filter((i) => i.selected && i.currency === "USD")
-    .reduce((sum, i) => sum + i.amount, 0);
+  const selectedItems = discoveredItems.filter((i) => i.selected);
+  const selectedCount = selectedItems.length;
+  // 연간 영수증도 섞여 들어오므로 금액을 그대로 더하면 '/월' 합계가 부풀려진다.
+  const selectedMonthlyKRW = sumMonthlyKRW(selectedItems, rate);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -648,19 +649,8 @@ export function AutoImportModal({
                     ? `이전 기록 삭제 후 ${selectedCount}개 새로 등록`
                     : `${selectedCount}개 구독 일괄 등록`}
                 </span>
-                {(totalSelectedMonthly > 0 || totalSelectedMonthlyUSD > 0) && (
-                  <span className="text-xs opacity-90">
-                    (
-                    {[
-                      totalSelectedMonthly > 0
-                        ? `${totalSelectedMonthly.toLocaleString()}원`
-                        : null,
-                      totalSelectedMonthlyUSD > 0 ? `$${totalSelectedMonthlyUSD.toFixed(0)}` : null,
-                    ]
-                      .filter(Boolean)
-                      .join(" + ")}
-                    /월)
-                  </span>
+                {selectedMonthlyKRW > 0 && (
+                  <span className="text-xs opacity-90">(월 {formatKRW(selectedMonthlyKRW)})</span>
                 )}
               </Button>
             </div>

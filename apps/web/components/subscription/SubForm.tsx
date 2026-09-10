@@ -252,7 +252,10 @@ export function SubForm({
       {/* Amount & Currency */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-foreground">월 결제 금액</label>
+          {/* 연간 구독에 '월 결제 금액'이라고 물으면 월 환산액을 적게 되고, 앱이 그걸 다시 12로 나눈다. */}
+          <label className="text-xs font-bold text-foreground">
+            {formData.billingCycle === "yearly" ? "연 결제 금액" : "월 결제 금액"}
+          </label>
           <Input
             type="number"
             name="amount"

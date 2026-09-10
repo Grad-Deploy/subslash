@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import {
   Subscription,
+  formatKRW,
   getMyAnnualAmountKRW,
   getMyYearDefendedAmountKRW,
   sumMyAnnualKRW,
@@ -29,16 +30,18 @@ export function SavingsBreakdownChart({
   const totalAnnual = sumMyAnnualKRW(killedSubscriptions, exchangeRate);
   const totalYearDefended = sumMyYearDefendedKRW(killedSubscriptions, currentYear, exchangeRate);
 
-  const activeTotal = viewMode === "annual" ? totalAnnual : totalYearDefended;
+  const activeTotal = viewMode === "annual" ? totalAnnual : totalYearDefended.amount;
 
-  // Compute breakdown item for each subscription
+  // Compute breakdown item for each subscription. In the year view a yearly plan
+  // with no billing month has no defended amount to show, only "not set".
   const items = killedSubscriptions
     .map((sub) => {
       const amount =
         viewMode === "annual"
           ? getMyAnnualAmountKRW(sub, exchangeRate)
           : getMyYearDefendedAmountKRW(sub, currentYear, exchangeRate);
-      const percentage = activeTotal > 0 ? Math.round((amount / activeTotal) * 100) : 0;
+      const percentage =
+        amount !== null && activeTotal > 0 ? Math.round((amount / activeTotal) * 100) : 0;
       return {
         id: sub.id,
         name: sub.name,
@@ -48,7 +51,7 @@ export function SavingsBreakdownChart({
         percentage,
       };
     })
-    .sort((a, b) => b.amount - a.amount);
+    .sort((a, b) => (b.amount ?? -1) - (a.amount ?? -1));
 
   const topContributor = items[0];
 
@@ -112,25 +115,40 @@ export function SavingsBreakdownChart({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                  ₩{item.amount.toLocaleString()}
-                </span>
-                <span className="text-[11px] text-muted-foreground w-9 text-right font-medium">
-                  {item.percentage}%
-                </span>
+                {item.amount === null ? (
+                  <span className="font-semibold text-muted-foreground">결제 월 미설정</span>
+                ) : (
+                  <>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      {formatKRW(item.amount)}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground w-9 text-right font-medium">
+                      {item.percentage}%
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Progress bar container */}
             <div className="w-full h-2.5 bg-secondary/70 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
-                style={{ width: `${Math.max(item.percentage, 2)}%` }}
-              />
+              {item.amount !== null && (
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.max(item.percentage, 2)}%` }}
+                />
+              )}
             </div>
           </div>
         ))}
       </div>
+
+      {viewMode === "yearDefended" && totalYearDefended.unknownCount > 0 && (
+        <p className="text-[11px] text-amber-700 dark:text-amber-300">
+          ⚠️ 결제 월을 모르는 연간 구독 {totalYearDefended.unknownCount}건은 올해 결제가 해지
+          전이었는지 알 수 없어 합계에서 빠졌습니다. 구독 상세에서 결제 월을 지정하면 반영됩니다.
+        </p>
+      )}
 
       {/* Highlight note */}
       {topContributor && topContributor.percentage > 0 && (
@@ -142,9 +160,7 @@ export function SavingsBreakdownChart({
             </strong>
             를 차지합니다.
           </span>
-          <span className="font-semibold text-foreground">
-            합계 ₩{activeTotal.toLocaleString()}
-          </span>
+          <span className="font-semibold text-foreground">합계 {formatKRW(activeTotal)}</span>
         </div>
       )}
     </div>

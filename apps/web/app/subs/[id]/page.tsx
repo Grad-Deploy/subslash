@@ -81,6 +81,13 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
   const isKilled = sub.status === "killed";
   const daysLeft = getDaysUntilBillingFor(sub);
   const cancelUrlKind = getCancelUrlKind(sub.cancelUrl);
+  // 연간 구독에 "매월 결제일"이라고 적으면 1년에 한 번인 결제가 매달 있는 것처럼 읽힌다.
+  const billingScheduleLabel =
+    sub.billingCycle !== "yearly"
+      ? `매월 ${sub.billingDay}일 결제`
+      : typeof sub.billingMonth === "number"
+        ? `매년 ${sub.billingMonth}월 ${sub.billingDay}일 결제`
+        : "연간 결제 · 결제 월 미설정";
 
   const handleEditSubmit = (data: SubscriptionFormData) => {
     updateSubscription(sub.id, data);
@@ -169,16 +176,20 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                카테고리: {sub.category} · 결제 주기: {sub.billingCycle}
+                카테고리: {sub.category} · 결제 주기:{" "}
+                {sub.billingCycle === "yearly" ? "매년" : "매월"}
               </p>
             </div>
           </div>
 
           <div className="text-right">
             <div className="text-2xl font-extrabold text-foreground">
+              <span className="text-sm font-semibold text-muted-foreground">
+                {sub.billingCycle === "yearly" ? "연 " : "월 "}
+              </span>
               {formatCurrency(sub.amount, sub.currency)}
             </div>
-            <div className="text-xs text-muted-foreground">매월 결제일: {sub.billingDay}일</div>
+            <div className="text-xs text-muted-foreground">{billingScheduleLabel}</div>
           </div>
         </div>
 
@@ -381,6 +392,11 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                 currency: sub.currency,
                 billingDay: sub.billingDay,
                 billingCycle: sub.billingCycle,
+                // 빠져 있으면 연간 구독의 결제 월이 '선택해주세요'로, 공유 구독이
+                // '나 혼자'로 보여서 저장된 값과 다른 폼을 고치게 된다.
+                billingMonth: sub.billingMonth,
+                sharingCount: sub.sharingCount,
+                myShareAmount: sub.myShareAmount,
                 category: sub.category,
                 cancelUrl: sub.cancelUrl,
                 cancelGuide: sub.cancelGuide,
