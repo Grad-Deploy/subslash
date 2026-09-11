@@ -9,6 +9,7 @@ import {
   validateGender,
   normalizeUsername,
   normalizeEmailAddress,
+  getEmailDomain,
   isGender,
   MIN_AGE,
   MAX_AGE,
@@ -51,6 +52,16 @@ describe("validateSignup", () => {
     const { errors, value } = validateSignup({ ...VALID, passwordConfirm: "different-1234" });
     expect(value).toBeNull();
     expect(errors.passwordConfirm).toBe("비밀번호가 서로 다릅니다.");
+  });
+
+  it(`비밀번호가 ${PASSWORD_MIN}자보다 짧으면 두 칸이 같아도 가입 값을 돌려주지 않는다`, () => {
+    const { errors, value } = validateSignup({
+      ...VALID,
+      password: "short-pw",
+      passwordConfirm: "short-pw",
+    });
+    expect(value).toBeNull();
+    expect(errors.password).toBe(`비밀번호를 2자 더 입력해주세요. (${PASSWORD_MIN}자 이상)`);
   });
 
   it("나이를 문자열로 보내도 숫자로 저장한다", () => {
@@ -100,14 +111,42 @@ describe("validateEmail", () => {
     },
   );
 
+  it.each([
+    ["sean@@example.com", "@가 두 개"],
+    ["sean@example.c", "한 글자 최상위 도메인"],
+    ["sean@example.123", "숫자뿐인 최상위 도메인"],
+    ["sean@example..com", "빈 칸이 낀 도메인"],
+    ["sean@-example.com", "하이픈으로 시작"],
+    ["sean@example-.com", "하이픈으로 끝남"],
+    ["sean@exa_mple.com", "도메인에 밑줄"],
+    ["sean@exam ple.com", "도메인에 공백"],
+  ])("도메인 모양이 틀린 %s 은(는) 거부한다 (%s)", (value) => {
+    expect(validateEmail(value)).toBeDefined();
+  });
+
   it("평범한 주소는 통과시킨다", () => {
     expect(validateEmail("sean.lee+tag@mail.example.co.kr")).toBeUndefined();
+    expect(validateEmail("sean@my-company.io")).toBeUndefined();
+  });
+
+  it("한글 도메인은 퓨니코드 형태로 받는다", () => {
+    expect(validateEmail("sean@xn--3e0b707e.kr")).toBeUndefined();
+  });
+});
+
+describe("getEmailDomain", () => {
+  it("@ 뒤의 도메인을 소문자로 돌려준다", () => {
+    expect(getEmailDomain("sean@Mail.Example.co.kr")).toBe("mail.example.co.kr");
   });
 });
 
 describe("validatePassword", () => {
-  it(`${PASSWORD_MIN}자 미만은 거부한다`, () => {
-    expect(validatePassword("a".repeat(PASSWORD_MIN - 1))).toBeDefined();
+  it(`${PASSWORD_MIN}자 미만은 거부하고, 몇 자가 더 필요한지 알려준다`, () => {
+    expect(validatePassword("ab1")).toBe(
+      `비밀번호를 ${PASSWORD_MIN - 3}자 더 입력해주세요. (${PASSWORD_MIN}자 이상)`,
+    );
+    expect(validatePassword("abcdefgh1")).toContain("1자 더");
+    expect(validatePassword("abcdefgh12")).toBeUndefined();
   });
 
   it("같은 문자만 반복한 비밀번호는 거부한다", () => {
