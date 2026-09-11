@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useStore } from "../../lib/store";
 import {
   formatCurrency,
@@ -92,11 +93,19 @@ export default function SavingsDashboard() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-black tracking-tight">절약 & 방어 자산 현황</h1>
-        <p className="text-sm text-muted-foreground">
-          킬(Kill) 스위치로 차단한 구독료가 실제 방어 자산으로 누적됩니다.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight">절약 & 방어 자산 현황</h1>
+          <p className="text-sm text-muted-foreground">
+            킬(Kill) 스위치로 차단한 구독료가 실제 방어 자산으로 누적됩니다.
+          </p>
+        </div>
+        <Link
+          href="/savings/review"
+          className="text-sm font-semibold text-foreground underline underline-offset-4 hover:text-muted-foreground"
+        >
+          📆 올해 구독 결산 보기 →
+        </Link>
       </div>
 
       {killedSubs.length === 0 ? (
