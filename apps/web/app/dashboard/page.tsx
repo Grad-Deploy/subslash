@@ -50,6 +50,8 @@ export default function Dashboard() {
     usageLogs,
     addSubscription,
     killSubscription,
+    reviveSubscription,
+    confirmKillVerified,
     confirmSubscriptionPrice,
     checkIn,
     getActiveSubscriptions,
@@ -65,6 +67,7 @@ export default function Dashboard() {
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
   const [killTarget, setKillTarget] = useState<Subscription | null>(null);
+  const [chargedTarget, setChargedTarget] = useState<Subscription | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -144,6 +147,19 @@ export default function Dashboard() {
     );
   };
 
+  // 해지 뒤 첫 결제일에 결제가 없었다는 답만이 해지를 확인해 준다.
+  const handleKillNotCharged = (id: string) => {
+    const sub = findSub(id);
+    if (!sub) return;
+    confirmKillVerified(id);
+    showToast(`✅ ${sub.name} 결제가 멈춘 것을 확인했습니다.`);
+  };
+
+  const handleKillCharged = (id: string) => {
+    const sub = findSub(id);
+    if (sub) setChargedTarget(sub);
+  };
+
   const handleAddSubmit = (data: SubscriptionFormData) => {
     addSubscription(data);
     setIsAddOpen(false);
@@ -207,6 +223,8 @@ export default function Dashboard() {
         onCheckIn={handleOpenCheckIn}
         onCancelGuide={handleCancelGuide}
         onConfirmPrice={handleConfirmPrice}
+        onKillNotCharged={handleKillNotCharged}
+        onKillCharged={handleKillCharged}
         onAddFirst={() => setIsAddOpen(true)}
       />
 
@@ -291,6 +309,29 @@ export default function Dashboard() {
           confirmText="해지 완료"
           cancelText="취소"
           variant="destructive"
+        />
+      )}
+
+      {chargedTarget && (
+        <ConfirmDialog
+          isOpen={!!chargedTarget}
+          onClose={() => setChargedTarget(null)}
+          onConfirm={() => {
+            // 결제가 됐다면 지금도 돈이 나가는 구독이다. 해지 기록을 지우고 가이드를
+            // 다시 연다. 해지를 마치고 다시 완료를 누르면 해지일이 오늘로 잡혀,
+            // 이미 나간 달은 절약에서 저절로 빠진다.
+            reviveSubscription(chargedTarget.id);
+            const revived = useStore
+              .getState()
+              .subscriptions.find((s) => s.id === chargedTarget.id);
+            if (revived) setGuideTarget(revived);
+            showToast(`${chargedTarget.name}을(를) 구독 중으로 되돌렸습니다.`);
+            setChargedTarget(null);
+          }}
+          title="해지가 아직 안 됐을 수 있습니다"
+          description={`'${chargedTarget.name}' 해지 후 첫 결제일에 결제가 됐다면, 해지가 끝나지 않았을 수 있습니다.\n구독 중으로 되돌리고 해지 가이드를 엽니다. 해지를 마치고 다시 '해지 완료했어요'를 누르면 그날부터 절약으로 셉니다.`}
+          confirmText="되돌리고 가이드 열기"
+          cancelText="취소"
         />
       )}
     </div>

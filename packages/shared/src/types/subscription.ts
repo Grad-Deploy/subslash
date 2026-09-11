@@ -50,6 +50,15 @@ export interface Subscription {
   lastPriceCheckedAt?: string;
 
   /**
+   * 해지 뒤 첫 결제일에 결제가 없었다고 사용자가 확인해 준 시각.
+   *
+   * 없으면 해지가 실제로 결제를 멈췄는지 아직 모른다는 뜻이다. 앱은 이 값을
+   * 추측해서 채우지 않는다 — 사용자가 "결제 안 됐어요"를 누른 순간에만
+   * 기록되고, 다시 해지하거나 되살리면 지워진다.
+   */
+  killVerifiedAt?: string;
+
+  /**
    * How many people split this plan, the payer included. Absent or 1 means the
    * user carries the whole bill.
    */
@@ -69,7 +78,7 @@ export interface Subscription {
 
 export type SubscriptionFormData = Omit<
   Subscription,
-  "id" | "status" | "createdAt" | "killedAt" | "lastPriceCheckedAt"
+  "id" | "status" | "createdAt" | "killedAt" | "lastPriceCheckedAt" | "killVerifiedAt"
 >;
 
 export type EmailType = "payment" | "cancellation" | "refund" | "onetime";
