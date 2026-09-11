@@ -176,7 +176,7 @@ export function CancelGuideModal({
           {/* 4. 완료 처리 */}
           <section className="pt-2 border-t space-y-2">
             <p className="text-[11px] text-muted-foreground">
-              해지를 마치셨나요? 아래를 눌러야 방어 자산으로 기록됩니다. 앱이 해지 여부를 직접
+              해지를 마치셨나요? 아래를 눌러야 해지한 구독으로 기록됩니다. 앱이 해지 여부를 직접
               확인할 수는 없습니다.
             </p>
             <div className="flex gap-2">

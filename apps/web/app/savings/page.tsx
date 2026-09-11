@@ -11,14 +11,17 @@ import {
   getMyMonthlyAmountKRW,
   getSavingsEquivalent,
   getSavingsEquivalents,
-  sumMyAnnualKRW,
+  getSavingsTiers,
   getDetoxLevel,
 } from "@subslash/shared";
 import { SavingsPot } from "../../components/dashboard/SavingsPot";
 import { SavingsBreakdownChart } from "../../components/savings/SavingsBreakdownChart";
 import { DetoxLevelBadge } from "../../components/savings/DetoxLevelBadge";
+import { LevelBasisNotice } from "../../components/savings/LevelBasisNotice";
+import { buildShareSearchParams } from "../../lib/share-savings";
 import { MonthlyDefenseWidget } from "../../components/dashboard/MonthlyDefenseWidget";
 import { MonthlyDefenseChart } from "../../components/savings/MonthlyDefenseChart";
+import { KillCheckLabel } from "../../components/savings/KillCheckLabel";
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
@@ -45,10 +48,13 @@ export default function SavingsDashboard() {
   }
 
   const killedSubs = getKilledSubscriptions();
-  const annualSavings = sumMyAnnualKRW(killedSubs, rate);
+  const now = new Date();
+  const tiers = getSavingsTiers(killedSubs, now, rate);
+  const annualSavings = tiers.annualRunRate;
   const equivalents = getSavingsEquivalents(annualSavings);
   const headlineEquivalent = getSavingsEquivalent(annualSavings)[0] ?? "";
-  const detoxLevel = getDetoxLevel(annualSavings, killedSubs.length);
+  // 레벨은 지킨 돈으로 매긴다. 1년치 요금으로 매기면 해지 버튼 한 번에 오른다.
+  const detoxLevel = getDetoxLevel(tiers.confirmed, killedSubs.length);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -60,21 +66,25 @@ export default function SavingsDashboard() {
     }
   };
 
-  // 환산 문구는 싣지 않는다. 공유 페이지가 금액에서 다시 계산하므로, 링크를
-  // 고쳐 금액과 다른 말을 인증서에 올릴 수 없다. 이름은 하나씩 따로 실어야
-  // 쉼표가 든 이름이 둘로 쪼개지지 않는다.
   const getShareUrl = () => {
-    const params = new URLSearchParams({
-      saved: String(Math.round(annualSavings)),
-      count: String(killedSubs.length),
+    const params = buildShareSearchParams({
+      confirmed: tiers.confirmed,
+      annual: annualSavings,
+      count: killedSubs.length,
+      verifiedCount: tiers.verifiedCount,
+      names: killedSubs.map((sub) => sub.name),
     });
-    killedSubs.forEach((sub) => params.append("name", sub.name));
     return `${window.location.origin}/savings/share?${params.toString()}`;
   };
 
   const handleShare = async () => {
     const shareUrl = getShareUrl();
-    const text = `✂️ SubSlash 구독 디톡스 ${detoxLevel.levelLabel} ${detoxLevel.title} ${detoxLevel.emoji}\n불필요한 구독을 해지하여 연간 ${formatKRW(annualSavings)}을 방어했습니다! ${headlineEquivalent}\n👉 결과 보기: ${shareUrl}`;
+    // 남에게 보이는 문장이라 지킨 돈이 없으면 1년치 요금을 '아낄 예정'으로만 적는다.
+    const savingsLine =
+      tiers.confirmed > 0
+        ? `구독을 해지해 ${formatKRW(tiers.confirmed)}을 지켰고, 해지를 유지하면 1년에 ${formatKRW(annualSavings)}을 아낍니다!`
+        : `구독을 해지해 1년에 ${formatKRW(annualSavings)}을 아낄 예정입니다!`;
+    const text = `✂️ SubSlash 구독 디톡스 ${detoxLevel.levelLabel} ${detoxLevel.title} ${detoxLevel.emoji}\n${savingsLine} ${headlineEquivalent}\n👉 결과 보기: ${shareUrl}`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -97,7 +107,7 @@ export default function SavingsDashboard() {
         <div>
           <h1 className="text-2xl font-black tracking-tight">절약 & 방어 자산 현황</h1>
           <p className="text-sm text-muted-foreground">
-            킬(Kill) 스위치로 차단한 구독료가 실제 방어 자산으로 누적됩니다.
+            해지한 구독으로 1년에 아끼는 돈과, 해지 뒤 결제일이 지나 실제로 지킨 돈을 보여줍니다.
           </p>
         </div>
         <Link
@@ -122,8 +132,18 @@ export default function SavingsDashboard() {
         </div>
       ) : (
         <div className="space-y-6">
+          {/* 머리 숫자: 지킨 돈 / 확인 대기 / 앞으로 */}
+          <SavingsPot killedSubscriptions={killedSubs} />
+
+          {/* 레벨 기준이 1년치 요금에서 지킨 돈으로 바뀌어 내려간 사람에게만 한 번 알린다 */}
+          <LevelBasisNotice
+            annualRunRate={annualSavings}
+            confirmed={tiers.confirmed}
+            killCount={killedSubs.length}
+          />
+
           {/* Detox level & title (Phase 3) */}
-          <DetoxLevelBadge annualSavings={annualSavings} killCount={killedSubs.length} />
+          <DetoxLevelBadge savings={tiers.confirmed} killCount={killedSubs.length} />
 
           {/* This month's defended spend (Issue 8) */}
           <MonthlyDefenseWidget killedSubscriptions={killedSubs} />
@@ -131,15 +151,12 @@ export default function SavingsDashboard() {
           {/* 올해 달별 방어액 — 지킨 달과 예정인 달을 나눠 보여준다 */}
           <MonthlyDefenseChart killedSubscriptions={killedSubs} exchangeRate={rate} />
 
-          {/* Main Savings Pot Widget */}
-          <SavingsPot killedSubscriptions={killedSubs} />
-
           {/* Breakdown by Cancelled Service (Issue 7) */}
           <SavingsBreakdownChart killedSubscriptions={killedSubs} exchangeRate={rate} />
 
           {/* Reward Equivalent Cards — only the tiers the savings actually cover */}
           <div className="space-y-3">
-            <h3 className="font-bold text-base">🎁 절약한 돈으로 누릴 수 있는 현실적 보상</h3>
+            <h3 className="font-bold text-base">🎁 1년 동안 아끼면 누릴 수 있는 보상</h3>
             {equivalents.length === 0 ? (
               <div className="p-4 border border-dashed rounded-2xl text-sm text-muted-foreground">
                 아직 환산할 만큼 모이지 않았습니다. 연간 ₩5,000부터 여기에 표시됩니다.
@@ -162,7 +179,7 @@ export default function SavingsDashboard() {
           {/* Defended Subscriptions List with Actions */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-base">차단에 성공한 구독 목록 ({killedSubs.length})</h3>
+              <h3 className="font-bold text-base">해지한 구독 목록 ({killedSubs.length})</h3>
               <Button size="sm" variant="outline" onClick={handleShare}>
                 {copied ? "클립보드에 복사됨! 📋" : "결과 공유하기 📤"}
               </Button>
@@ -181,8 +198,9 @@ export default function SavingsDashboard() {
                         {sub.name}
                       </h4>
                       <p className="text-xs text-emerald-600 font-medium">
-                        연간 {formatKRW(getMyAnnualAmountKRW(sub, rate))} 방어 성공
+                        연 {formatKRW(getMyAnnualAmountKRW(sub, rate))} 아끼는 중
                       </p>
+                      <KillCheckLabel subscription={sub} now={now} />
                     </div>
                   </div>
 

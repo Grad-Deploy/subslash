@@ -7,6 +7,7 @@ import {
   CATEGORY_LABELS,
   buildYearInReview,
   formatKRW,
+  getSavingsTiers,
   type CheckInStanding,
 } from "@subslash/shared";
 import { useStore } from "../../../lib/store";
@@ -68,6 +69,11 @@ function YearInReviewContent() {
   const review = buildYearInReview(subscriptions, usageLogs, year, rate, now);
   const { defended, checkIns } = review;
   const scope = review.isComplete ? `${year}년` : `${year}년 지금까지`;
+  // 막은 결제 가운데, 그 해 결제일에 결제가 멈춘 것을 확인한 금액.
+  const yearTiers = getSavingsTiers(subscriptions, now, rate, {
+    from: new Date(year, 0, 1),
+    to: new Date(year + 1, 0, 1),
+  });
 
   const cheapest = checkIns[0];
   const priciest = checkIns.length > 1 ? checkIns[checkIns.length - 1] : undefined;
@@ -116,9 +122,15 @@ function YearInReviewContent() {
         className="p-6 border rounded-2xl bg-card shadow-sm space-y-2"
       >
         <h2 id="review-defended" className="text-xs font-semibold text-muted-foreground">
-          {scope} 해지로 지킨 돈
+          {scope} 해지로 막은 결제
         </h2>
         <p className="text-4xl font-black text-foreground">{formatKRW(defended.pastAmount)}</p>
+        <p className="text-xs text-muted-foreground">
+          이 중 결제가 멈춘 것을 확인한 지킨 돈은{" "}
+          <strong className="text-foreground">{formatKRW(yearTiers.confirmed)}</strong>입니다.
+          {yearTiers.pending > 0 &&
+            ` 확인 대기 ${formatKRW(yearTiers.pending)}은 대시보드에서 결제가 멈췄는지 답하면 지킨 돈이 됩니다.`}
+        </p>
         {!review.isComplete && defended.scheduledAmount > 0 && (
           <p className="text-xs text-muted-foreground">
             연말까지 {formatKRW(defended.scheduledAmount)}을 더 지킬 예정입니다. 해지하지 않았다면

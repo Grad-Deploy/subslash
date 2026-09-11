@@ -41,6 +41,15 @@ type PersistedState = Pick<
 >;
 
 /**
+ * 백업 파일에 담는 데이터. 알림 설정(`notify`)은 뺀다 — 거기 든 동기화
+ * 토큰은 이 기기의 자격증명이라 파일로 돌아다니면 안 된다.
+ */
+export type BackupData = Pick<
+  SubSlashStore,
+  "subscriptions" | "usageLogs" | "accounts" | "exchangeRate"
+>;
+
+/**
  * Strips the seeded demo accounts out of a store that already has them, and
  * unlinks every subscription that pointed at one.
  *
@@ -177,6 +186,11 @@ interface SubSlashStore {
   ) => Subscription[];
   clearSubscriptions: () => void;
   clearAllData: () => void;
+  /**
+   * 백업에서 복원한다. 병합하지 않고 통째로 바꾼다. 알림 설정은 이 기기의
+   * 것을 그대로 둔다.
+   */
+  replaceAllData: (data: BackupData) => void;
   updateSubscription: (id: string, data: Partial<SubscriptionFormData>) => void;
   /**
    * 사용자가 요금을 확인해 준 사실을 기록한다. `newAmount`를 주면 금액도
@@ -186,6 +200,11 @@ interface SubSlashStore {
   confirmSubscriptionPrice: (id: string, newAmount?: number) => void;
   killSubscription: (id: string) => void;
   reviveSubscription: (id: string) => void;
+  /**
+   * 해지 뒤 첫 결제일에 결제가 없었다고 사용자가 확인해 준 사실을 기록한다.
+   * 해지한 구독에만 기록되고, 확인 시각은 이 액션을 통해서만 생긴다.
+   */
+  confirmKillVerified: (id: string) => void;
   deleteSubscription: (id: string) => void;
   checkIn: (subscriptionId: string, usageCount: number) => CheckInResponse;
   getActiveSubscriptions: () => Subscription[];
@@ -258,6 +277,19 @@ export const useStore = create<SubSlashStore>()(
         // too, so silently forgetting the token here would orphan that record.
         set({ subscriptions: [], usageLogs: [], accounts: [] });
       },
+      replaceAllData: (data) => {
+        // 불러올 때와 같은 교정을 거친다. 옛 백업에 든 폐기된 해지 링크가
+        // 복원 뒤에도 404로 남지 않게.
+        const { subscriptions = [] } = migrateLegacyCancelUrls({
+          subscriptions: data.subscriptions,
+        });
+        set({
+          subscriptions,
+          usageLogs: data.usageLogs,
+          accounts: data.accounts,
+          exchangeRate: data.exchangeRate,
+        });
+      },
       updateSubscription: (id, data) => {
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
@@ -282,17 +314,36 @@ export const useStore = create<SubSlashStore>()(
           ),
         }));
       },
+      // 해지 확인은 해지 한 번에 딸린 기록이다. 다시 해지하거나 되살리면
+      // 이전 해지에 대한 확인이 새 해지를 확인한 것처럼 남지 않게 지운다.
       killSubscription: (id) => {
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
-            sub.id === id ? { ...sub, status: "killed", killedAt: new Date().toISOString() } : sub,
+            sub.id === id
+              ? {
+                  ...sub,
+                  status: "killed",
+                  killedAt: new Date().toISOString(),
+                  killVerifiedAt: undefined,
+                }
+              : sub,
           ),
         }));
       },
       reviveSubscription: (id) => {
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
-            sub.id === id ? { ...sub, status: "active", killedAt: undefined } : sub,
+            sub.id === id
+              ? { ...sub, status: "active", killedAt: undefined, killVerifiedAt: undefined }
+              : sub,
+          ),
+        }));
+      },
+      confirmKillVerified: (id) => {
+        const verifiedAt = new Date().toISOString();
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            sub.id === id && sub.status === "killed" ? { ...sub, killVerifiedAt: verifiedAt } : sub,
           ),
         }));
       },

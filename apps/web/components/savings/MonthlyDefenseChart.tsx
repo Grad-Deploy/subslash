@@ -12,7 +12,7 @@ interface MonthlyDefenseChartProps {
 /**
  * 막대 색. 같은 에메랄드의 두 단계로, 표면색 대비와 단계 차이를 dataviz 검증기로
  * 확인했다(밝은 모드 700/500, 어두운 모드 400/600). 색만으로 구분하지 않도록
- * 읽기 칸·표·범례에 '지킴'과 '예정'을 글자로 함께 적는다.
+ * 읽기 칸·표·범례에 '막음'과 '예정'을 글자로 함께 적는다.
  */
 const DEFENDED = "bg-emerald-700 dark:bg-emerald-400";
 const SCHEDULED = "bg-emerald-500 dark:bg-emerald-600";
@@ -30,9 +30,12 @@ function niceCeil(value: number): number {
 /**
  * 올해 달마다 해지 덕분에 빠져나가지 않은 금액.
  *
- * 이번 달까지는 이미 지킨 돈이고, 남은 달은 "해지하지 않았다면 나갔을 예정"이다.
- * 둘을 같은 막대로 그리면 연말까지의 예정액을 이미 아낀 돈처럼 읽게 되므로
- * 색의 단계와 글자로 나눈다.
+ * 이번 달까지는 결제일 기준으로 막은 결제이고, 남은 달은 "해지하지 않았다면
+ * 나갔을 예정"이다. 둘을 같은 막대로 그리면 연말까지의 예정액을 이미 아낀 돈처럼
+ * 읽게 되므로 색의 단계와 글자로 나눈다.
+ *
+ * 결제가 실제로 멈췄는지는 따지지 않으므로 '지킨 돈'이라고 부르지 않는다. 확인된
+ * 금액은 절약 현황 맨 위 칸(`getSavingsTiers`)이 보여준다.
  */
 export function MonthlyDefenseChart({
   killedSubscriptions,
@@ -48,7 +51,7 @@ export function MonthlyDefenseChart({
   const series = getYearDefendedSeries(killedSubscriptions, year, exchangeRate, now);
   const scaleMax = niceCeil(Math.max(...series.months.map((m) => m.amount)));
   const active = series.months[activeMonth - 1];
-  const pastLabel = currentMonth === 1 ? "1월에 지킨 돈" : `1~${currentMonth}월에 지킨 돈`;
+  const pastLabel = currentMonth === 1 ? "1월에 막은 결제" : `1~${currentMonth}월에 막은 결제`;
 
   return (
     <section
@@ -60,7 +63,8 @@ export function MonthlyDefenseChart({
           <span aria-hidden>📅</span> {year}년 월별 방어액
         </h3>
         <p className="text-xs text-muted-foreground">
-          해지 덕분에 달마다 통장에서 빠져나가지 않은 금액입니다.
+          해지 뒤 결제일마다 빠져나가지 않았을 금액입니다. 결제가 실제로 멈췄는지 확인하기 전 금액도
+          들어 있고, 확인된 금액은 맨 위 &lsquo;지킨 돈&rsquo;에 있습니다.
         </p>
       </div>
 
@@ -87,7 +91,7 @@ export function MonthlyDefenseChart({
           <div className="flex items-center gap-4 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className={cn("w-3 h-3 rounded-[3px]", DEFENDED)} aria-hidden />
-              지킨 달
+              막은 결제
             </span>
             <span className="flex items-center gap-1.5">
               <span className={cn("w-3 h-3 rounded-[3px]", SCHEDULED)} aria-hidden />
@@ -119,7 +123,7 @@ export function MonthlyDefenseChart({
                       onMouseEnter={() => setActiveMonth(m.month)}
                       onFocus={() => setActiveMonth(m.month)}
                       onClick={() => setActiveMonth(m.month)}
-                      aria-label={`${m.month}월 ${formatKRW(m.amount)} ${m.isFuture ? "예정" : "지킴"}`}
+                      aria-label={`${m.month}월 ${formatKRW(m.amount)} ${m.isFuture ? "예정" : "막음"}`}
                       aria-pressed={m.month === activeMonth}
                     >
                       {m.amount > 0 && (
@@ -159,8 +163,8 @@ export function MonthlyDefenseChart({
             {active.isFuture
               ? "예정 — 해지하지 않았다면 나갔을 금액"
               : active.month === currentMonth
-                ? "이번 달에 지킨 돈"
-                : "지킨 돈"}
+                ? "이번 달 막은 결제"
+                : "막은 결제"}
           </p>
 
           <details className="text-xs">
@@ -181,7 +185,7 @@ export function MonthlyDefenseChart({
                     <td className="py-1">{m.month}월</td>
                     <td className="py-1 text-right">{formatKRW(m.amount)}</td>
                     <td className="py-1 text-right text-muted-foreground">
-                      {m.isFuture ? "예정" : "지킴"}
+                      {m.isFuture ? "예정" : "막음"}
                     </td>
                   </tr>
                 ))}

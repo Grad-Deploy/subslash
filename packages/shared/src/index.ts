@@ -7,6 +7,8 @@ export * from "./utils/sharing";
 export * from "./utils/yearInReview";
 export * from "./utils/detoxLevel";
 export * from "./utils/priceCheck";
+export * from "./utils/killCheck";
+export * from "./utils/savingsTiers";
 export * from "./utils/actionQueue";
 export * from "./utils/authValidation";
 export * from "./constants/thresholds";

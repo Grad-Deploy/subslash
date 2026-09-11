@@ -4,6 +4,7 @@ import { formatAmount, formatKRW } from "./currency";
 import { getDaysUntilBillingFor } from "./date";
 import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
+import { formatKillCheckDate, getKillCheckStatus } from "./killCheck";
 
 /**
  * 대시보드의 행동 큐.
@@ -26,6 +27,8 @@ export type ActionKind =
   | "billing-soon-risky"
   /** 결제가 코앞이다. */
   | "billing-soon"
+  /** 해지 뒤 첫 결제일이 지났다. 결제가 정말 멈췄는지 물어야 한다. */
+  | "verify-kill"
   /** 결제일과 무관하게 1회 단가가 위험 수준이다. */
   | "risky"
   /** 한 번도 체크인하지 않아 끊을지 판단할 근거가 없다. */
@@ -38,7 +41,8 @@ export type ActionKind =
   | "missing-billing-month";
 
 /** 그 줄에서 사용자가 할 수 있는 일. */
-export type ActionVerb = "cancel-guide" | "check-in" | "confirm-price" | "set-billing-month";
+export type ActionVerb =
+  "cancel-guide" | "check-in" | "confirm-price" | "set-billing-month" | "verify-kill";
 
 export interface ActionItem {
   subscriptionId: string;
@@ -73,19 +77,23 @@ export interface ActionItem {
   priority: number;
 }
 
+// 해지 확인은 결제 임박 다음이다. 해지가 안 됐다면 돈이 계속 나가고 있지만,
+// 다음 결제까지는 보통 한 달 가까이 남아 있다.
 const PRIORITY: Record<ActionKind, number> = {
   "billing-soon-risky": 1,
   "billing-soon": 2,
-  risky: 3,
-  "never-checked-in": 4,
-  "stale-check-in": 5,
-  "price-check": 6,
-  "missing-billing-month": 7,
+  "verify-kill": 3,
+  risky: 4,
+  "never-checked-in": 5,
+  "stale-check-in": 6,
+  "price-check": 7,
+  "missing-billing-month": 8,
 };
 
 const VERB: Record<ActionKind, ActionVerb> = {
   "billing-soon-risky": "cancel-guide",
   "billing-soon": "check-in",
+  "verify-kill": "verify-kill",
   risky: "cancel-guide",
   "never-checked-in": "check-in",
   "stale-check-in": "check-in",
@@ -121,7 +129,8 @@ function chargeAtStakeKRW(sub: Subscription, rate: number): number {
 }
 
 /**
- * 활성 구독과 체크인 기록에서 오늘의 행동 큐를 만든다.
+ * 활성 구독과 체크인 기록에서 오늘의 행동 큐를 만든다. 해지한 구독은 해지 뒤
+ * 첫 결제가 정말 멈췄는지 물을 때만 올라온다.
  *
  * 한 구독은 한 줄만 만든다. 같은 구독이 여러 이유로 걸리면 가장 급한 이유
  * 하나만 남긴다 — 큐가 길어지면 "지금 할 것"이라는 성격 자체가 사라진다.
@@ -203,6 +212,29 @@ export function getActionQueue(
       currency: sub.currency,
       presetAmount: kind === "price-check" ? (priceChecks.get(sub.id) ?? null) : null,
       priority: PRIORITY[kind],
+    });
+  }
+
+  // 해지한 구독에게는 한 가지만 묻는다 — 해지 뒤 첫 결제가 정말 멈췄는지.
+  // 카드에 찍히는 것은 전체 금액이므로 내 몫이 아니라 `amount`를 보여준다.
+  for (const sub of subscriptions) {
+    const check = getKillCheckStatus(sub, now);
+    if (!check || check.state !== "due") continue;
+
+    items.push({
+      subscriptionId: sub.id,
+      name: sub.name,
+      iconEmoji: sub.iconUrl || "📦",
+      kind: "verify-kill",
+      reason:
+        `해지 후 첫 결제일 ${formatKillCheckDate(check.billingDate, now)}이 지났습니다. ` +
+        `그날 ${formatAmount(sub.amount, sub.currency)}이 결제됐나요? 결제 문자나 카드 내역에서 확인해 주세요.`,
+      verb: "verify-kill",
+      daysUntilBilling: null,
+      amountAtStake: null,
+      currency: sub.currency,
+      presetAmount: null,
+      priority: PRIORITY["verify-kill"],
     });
   }
 
