@@ -19,6 +19,7 @@ import { SavingsBreakdownChart } from "../../components/savings/SavingsBreakdown
 import { DetoxLevelBadge } from "../../components/savings/DetoxLevelBadge";
 import { MonthlyDefenseWidget } from "../../components/dashboard/MonthlyDefenseWidget";
 import { MonthlyDefenseChart } from "../../components/savings/MonthlyDefenseChart";
+import { KillCheckLabel } from "../../components/savings/KillCheckLabel";
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
@@ -45,6 +46,7 @@ export default function SavingsDashboard() {
   }
 
   const killedSubs = getKilledSubscriptions();
+  const now = new Date();
   const annualSavings = sumMyAnnualKRW(killedSubs, rate);
   const equivalents = getSavingsEquivalents(annualSavings);
   const headlineEquivalent = getSavingsEquivalent(annualSavings)[0] ?? "";
@@ -183,6 +185,7 @@ export default function SavingsDashboard() {
                       <p className="text-xs text-emerald-600 font-medium">
                         연간 {formatKRW(getMyAnnualAmountKRW(sub, rate))} 방어 성공
                       </p>
+                      <KillCheckLabel subscription={sub} now={now} />
                     </div>
                   </div>
 

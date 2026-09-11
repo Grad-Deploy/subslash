@@ -186,6 +186,11 @@ interface SubSlashStore {
   confirmSubscriptionPrice: (id: string, newAmount?: number) => void;
   killSubscription: (id: string) => void;
   reviveSubscription: (id: string) => void;
+  /**
+   * 해지 뒤 첫 결제일에 결제가 없었다고 사용자가 확인해 준 사실을 기록한다.
+   * 해지한 구독에만 기록되고, 확인 시각은 이 액션을 통해서만 생긴다.
+   */
+  confirmKillVerified: (id: string) => void;
   deleteSubscription: (id: string) => void;
   checkIn: (subscriptionId: string, usageCount: number) => CheckInResponse;
   getActiveSubscriptions: () => Subscription[];
@@ -282,17 +287,36 @@ export const useStore = create<SubSlashStore>()(
           ),
         }));
       },
+      // 해지 확인은 해지 한 번에 딸린 기록이다. 다시 해지하거나 되살리면
+      // 이전 해지에 대한 확인이 새 해지를 확인한 것처럼 남지 않게 지운다.
       killSubscription: (id) => {
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
-            sub.id === id ? { ...sub, status: "killed", killedAt: new Date().toISOString() } : sub,
+            sub.id === id
+              ? {
+                  ...sub,
+                  status: "killed",
+                  killedAt: new Date().toISOString(),
+                  killVerifiedAt: undefined,
+                }
+              : sub,
           ),
         }));
       },
       reviveSubscription: (id) => {
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
-            sub.id === id ? { ...sub, status: "active", killedAt: undefined } : sub,
+            sub.id === id
+              ? { ...sub, status: "active", killedAt: undefined, killVerifiedAt: undefined }
+              : sub,
+          ),
+        }));
+      },
+      confirmKillVerified: (id) => {
+        const verifiedAt = new Date().toISOString();
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            sub.id === id && sub.status === "killed" ? { ...sub, killVerifiedAt: verifiedAt } : sub,
           ),
         }));
       },
