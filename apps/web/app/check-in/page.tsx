@@ -5,7 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { CheckInResponse, Subscription } from "@subslash/shared";
 import { useStore } from "../../lib/store";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
+import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
+import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { Button } from "../../components/ui/button";
+
+type Stage = "check-in" | "guide" | "confirm";
 
 /**
  * Target of the one-tap buttons in the reminder email.
@@ -26,7 +30,11 @@ function CheckInReceiver() {
   const [mounted, setMounted] = useState(false);
   const [result, setResult] = useState<CheckInResponse | undefined>();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [stage, setStage] = useState<Stage>("check-in");
   const recorded = useRef(false);
+  // 세 모달 모두 다음으로 넘어가는 콜백 바로 뒤에 onClose를 부른다. 그 onClose가
+  // 대시보드로 떠나 버리면 다음 단계가 열리지 않으므로, 한 번은 건너뛴다.
+  const skipNextClose = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -73,16 +81,56 @@ function CheckInReceiver() {
     );
   }
 
+  const goTo = (next: Stage) => {
+    skipNextClose.current = true;
+    setStage(next);
+  };
+
+  const leave = () => {
+    if (skipNextClose.current) {
+      skipNextClose.current = false;
+      return;
+    }
+    router.replace("/dashboard");
+  };
+
   return (
-    <CheckInModal
-      subscription={subscription}
-      isOpen
-      onClose={() => router.replace("/dashboard")}
-      onSubmit={(next) => setResult(checkIn(subscription.id, next))}
-      onKill={(id) => killSubscription(id)}
-      result={result}
-      initialCount={count}
-    />
+    <>
+      {/*
+        '해지 가이드 열기'는 가이드를 연다. 예전에는 여기서 곧바로 해지 완료로
+        기록해서, 서비스에서 실제로 해지하기도 전에 방어액이 쌓였다. 다른
+        화면과 같이 가이드 → '해지 완료했어요' → 확인을 거쳐야 기록된다.
+      */}
+      <CheckInModal
+        subscription={subscription}
+        isOpen={stage === "check-in"}
+        onClose={() => leave()}
+        onSubmit={(next) => setResult(checkIn(subscription.id, next))}
+        onKill={() => goTo("guide")}
+        result={result}
+        initialCount={count}
+      />
+      <CancelGuideModal
+        subscription={subscription}
+        isOpen={stage === "guide"}
+        onClose={() => leave()}
+        onConfirmKilled={() => goTo("confirm")}
+      />
+      <ConfirmDialog
+        isOpen={stage === "confirm"}
+        onClose={() => leave()}
+        onConfirm={() => {
+          killSubscription(subscription.id);
+          skipNextClose.current = true;
+          router.replace("/savings");
+        }}
+        title="구독 해지 완료 처리"
+        description={`'${subscription.name}' 구독을 해지(방어) 완료 상태로 전환하시겠습니까?\n방어 성공 자산으로 기록되며 대시보드와 절약 현황에 반영됩니다.`}
+        confirmText="해지 완료"
+        cancelText="취소"
+        variant="destructive"
+      />
+    </>
   );
 }
 

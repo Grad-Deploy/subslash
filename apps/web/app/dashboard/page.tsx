@@ -9,6 +9,8 @@ import {
   CheckInResponse,
   DEMO_SUBSCRIPTIONS,
   POPULAR_SERVICES,
+  formatCurrency,
+  formatKRW,
   getActionQueue,
   getDetoxLevel,
   getNextBillingHint,
@@ -137,7 +139,7 @@ export default function Dashboard() {
     confirmSubscriptionPrice(id, newAmount);
     showToast(
       newAmount !== undefined
-        ? `${sub.name} 요금을 ₩${newAmount.toLocaleString()}으로 갱신했습니다.`
+        ? `${sub.name} 요금을 ${formatCurrency(newAmount, sub.currency)}으로 갱신했습니다.`
         : `${sub.name} 요금을 확인한 것으로 기록했습니다.`,
     );
   };
@@ -227,11 +229,11 @@ export default function Dashboard() {
               {now.getMonth() + 1}월 지출 방어 성공
             </p>
             <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-              ₩{monthDefended.amount.toLocaleString()}
+              {formatKRW(monthDefended.amount)}
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {detoxLevel.emoji} {detoxLevel.levelLabel} {detoxLevel.title} · 누적 ₩
-              {stats.totalSaved.toLocaleString()}
+              {detoxLevel.emoji} {detoxLevel.levelLabel} {detoxLevel.title} · 누적{" "}
+              {formatKRW(stats.totalSaved)}
               {monthDefended.unknownCount > 0 &&
                 ` · 결제 월 미설정 ${monthDefended.unknownCount}건 제외`}
             </p>

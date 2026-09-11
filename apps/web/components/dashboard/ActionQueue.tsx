@@ -145,7 +145,7 @@ export function ActionQueue({
                     onConfirmPrice(item.subscriptionId, item.presetAmount ?? undefined)
                   }
                 >
-                  🔄 {formatCurrency(item.presetAmount, "KRW")}으로 갱신
+                  🔄 {formatCurrency(item.presetAmount, item.currency)}으로 갱신
                 </Button>
               )}
               {item.verb === "confirm-price" && (

@@ -98,15 +98,6 @@ export function getDaysUntilBilling(billingDay: number, now: Date = new Date()):
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
-export function isPaymentImminent(
-  billingDay: number,
-  thresholdDays: number,
-  now: Date = new Date(),
-): boolean {
-  const daysLeft = getDaysUntilBilling(billingDay, now);
-  return daysLeft >= 0 && daysLeft <= thresholdDays;
-}
-
 export function formatDday(daysLeft: number): string {
   if (daysLeft === 0) return "D-Day";
   if (daysLeft > 0) return `D-${daysLeft}`;
