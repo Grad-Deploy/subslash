@@ -220,7 +220,7 @@ describe("점검 대상 수집", () => {
 
   it("같은 주소는 한 번만 확인하고, 쓰는 곳을 모두 적는다", () => {
     const apple = links.filter(
-      (link) => link.url === "https://apps.apple.com/account/subscriptions",
+      (link) => link.url === "https://account.apple.com/account/manage/section/subscriptions",
     );
 
     expect(apple).toHaveLength(1);

@@ -309,7 +309,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
                     {cancelUrlKind !== "direct" && (
                       <p className="text-[11px] text-muted-foreground text-center">
                         {cancelUrlKind === "entry"
-                          ? "이 링크는 해지 화면이 아니라 서비스 첫 화면으로 갑니다. 아래 안내를 따라 해지 메뉴까지 이동하세요."
+                          ? "이 링크는 해지 화면이 아니라 서비스 첫 화면이나 계정 화면으로 갑니다. 아래 안내를 따라 해지 메뉴까지 이동하세요."
                           : "직접 입력한 주소입니다. 어디로 연결되는지는 확인되지 않았습니다."}
                       </p>
                     )}
