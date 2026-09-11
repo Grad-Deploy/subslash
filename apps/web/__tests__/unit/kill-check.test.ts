@@ -196,11 +196,23 @@ describe("스토어의 해지 확인 기록", () => {
     expect(useStore.getState().subscriptions[0].killVerifiedAt).toBeUndefined();
   });
 
-  it("다시 해지하면 이전 확인을 지운다", () => {
+  it("이미 해지한 구독을 다시 해지해도 해지일과 확인을 덮어쓰지 않는다", () => {
+    // 덮어쓰면 해지일이 오늘로 바뀌고 확인이 지워져, 쌓인 지킨 돈이 사라진다.
     const verified = killedSub({ killVerifiedAt: at(2026, 9, 16).toISOString() });
     useStore.setState({ subscriptions: [verified] });
     useStore.getState().killSubscription("netflix");
-    expect(useStore.getState().subscriptions[0].killVerifiedAt).toBeUndefined();
+    expect(useStore.getState().subscriptions[0]).toEqual(verified);
+  });
+
+  it("되살렸다가 다시 해지하면 이전 확인이 남지 않는다", () => {
+    const verified = killedSub({ killVerifiedAt: at(2026, 9, 16).toISOString() });
+    useStore.setState({ subscriptions: [verified] });
+    useStore.getState().reviveSubscription("netflix");
+    useStore.getState().killSubscription("netflix");
+    const [sub] = useStore.getState().subscriptions;
+    expect(sub.status).toBe("killed");
+    expect(sub.killedAt).toBeDefined();
+    expect(sub.killVerifiedAt).toBeUndefined();
   });
 
   it("되살리면 확인도 지운다", () => {
