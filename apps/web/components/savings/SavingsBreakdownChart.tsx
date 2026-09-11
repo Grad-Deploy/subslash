@@ -6,6 +6,7 @@ import {
   formatKRW,
   getMyAnnualAmountKRW,
   getMyYearDefendedAmountKRW,
+  getSavingsTiers,
   sumMyAnnualKRW,
   sumMyYearDefendedKRW,
 } from "@subslash/shared";
@@ -29,6 +30,7 @@ export function SavingsBreakdownChart({
 
   const totalAnnual = sumMyAnnualKRW(killedSubscriptions, exchangeRate);
   const totalYearDefended = sumMyYearDefendedKRW(killedSubscriptions, currentYear, exchangeRate);
+  const { confirmed } = getSavingsTiers(killedSubscriptions, new Date(), exchangeRate);
 
   const activeTotal = viewMode === "annual" ? totalAnnual : totalYearDefended.amount;
 
@@ -63,9 +65,9 @@ export function SavingsBreakdownChart({
             <h3 className="font-bold text-base flex items-center gap-1.5">
               <span>📊</span> 서비스별 절약 기여도
             </h3>
-            {/* 레벨은 연간 환산 절약액 기준이라 보기 모드와 무관하게 같다. */}
+            {/* 레벨은 지킨 돈 기준이라 보기 모드와 무관하게 같다. */}
             <DetoxLevelBadge
-              annualSavings={totalAnnual}
+              savings={confirmed}
               killCount={killedSubscriptions.length}
               variant="inline"
             />

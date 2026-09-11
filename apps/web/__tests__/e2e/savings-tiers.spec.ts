@@ -66,6 +66,25 @@ test.describe("절약 세 칸 (E2E)", () => {
     await expect(page).toHaveURL(/\/dashboard/);
   });
 
+  test("레벨은 지킨 돈으로 매기고, 내려간 사람에게 이유를 한 번 알린다", async ({ page }) => {
+    await seedOnce(page);
+    await page.goto("/savings");
+
+    // 지킨 돈 ₩17,000 → Lv.1. 1년치 요금 ₩334,800으로 매기던 예전 기준은 Lv.4였다.
+    const notice = page.getByRole("region", { name: "레벨 기준이 바뀌었습니다" });
+    await expect(notice).toBeVisible({ timeout: 30_000 });
+    await expect(notice).toContainText("예전 기준: Lv.4 지출 방어 사령관 → 지금: Lv.1 구독 새싹");
+    await expect(page.getByText("Lv.1", { exact: true })).toBeVisible();
+
+    await notice.getByRole("button", { name: /닫기/ }).click();
+    await expect(notice).toBeHidden();
+    await page.reload();
+    await expect(page.getByRole("region", { name: "✅ 지킨 돈" })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByRole("region", { name: "레벨 기준이 바뀌었습니다" })).toBeHidden();
+  });
+
   test("멜론의 결제가 멈췄다고 답하면 지킨 돈에 더해진다", async ({ page }) => {
     await seedOnce(page);
     await page.goto("/dashboard");

@@ -105,6 +105,7 @@ describe("getSavingsTiers", () => {
 
     const tiers = getSavingsTiers(subs, NOW);
     expect(tiers.confirmed).toBe(17000 * 3);
+    expect(tiers.verifiedCount).toBe(1);
     expect(tiers.pending).toBe(10900 * 3);
     expect(tiers.pendingCount).toBe(1);
     expect(tiers.unknownCount).toBe(1);
