@@ -17,6 +17,7 @@ import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
+import { ResendVerificationButton } from "./ResendVerificationButton";
 import {
   confirmStatusOf,
   emailStatusFor,
@@ -27,6 +28,13 @@ import {
   type EmailCheck,
   type LiveStatus,
 } from "@lib/signup-status";
+
+interface VerificationNotice {
+  email: string;
+  /** 확인 메일이 실제로 나갔는지. 못 보냈으면 안내를 오류 색으로 보인다. */
+  sent: boolean;
+  message: string;
+}
 
 const EMPTY = {
   username: "",
@@ -67,6 +75,10 @@ export function SignupForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [emailCheck, setEmailCheck] = useState<EmailCheck>(null);
+  // 확인 전인 계정이 쥐고 있어 가입이 막힌 주소. 주소를 고치면 치운다.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  // 가입을 마친 뒤 보여줄 확인 메일 안내.
+  const [done, setDone] = useState<VerificationNotice | null>(null);
 
   const normalizedEmail = normalizeEmailAddress(form.email);
 
@@ -106,6 +118,7 @@ export function SignupForm() {
   const update = (field: TextField) => (value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     touch(field);
+    if (field === "email") setPendingEmail(null);
     // 고치는 중인 필드의 제출 오류는 즉시 치운다. 계속 붉게 남아있으면 고쳐도 고친 것 같지 않다.
     setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
   };
@@ -152,19 +165,63 @@ export function SignupForm() {
       if (!res.ok) {
         setErrors(data?.fieldErrors ?? {});
         setFormError(data?.error ?? "가입을 처리하지 못했습니다.");
+        setPendingEmail(data?.emailPending ? normalizedEmail : null);
         return;
       }
 
-      // 헤더가 곧바로 로그인 상태로 바뀌도록, 이동하기 전에 공유 상태를 갱신한다.
+      // 헤더가 곧바로 로그인 상태로 바뀌도록 공유 상태를 먼저 갱신한다. 예전에는
+      // 곧장 대시보드로 보냈지만, 그러면 확인 메일을 보냈는지(또는 못 보냈는지)를
+      // 알릴 곳이 없다.
       await refreshAuth();
-      router.push("/dashboard");
-      router.refresh();
+      setDone({
+        email: data?.account?.email ?? normalizedEmail,
+        sent: data?.emailVerification?.status === "sent",
+        message: data?.emailVerification?.message ?? "확인 메일을 보냈는지 알 수 없습니다.",
+      });
     } catch {
       setFormError("네트워크에 문제가 있어 가입하지 못했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (done) {
+    return (
+      <div className="space-y-4 text-center" role="status">
+        <p className="text-lg font-black">가입했습니다 🎉</p>
+        <p
+          className={cn(
+            "text-sm leading-relaxed",
+            done.sent ? "text-foreground" : "text-destructive",
+          )}
+        >
+          {done.message}
+        </p>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          이메일 확인은 나중에 해도 됩니다. 확인 전에도 모든 기능을 그대로 쓸 수 있고, &lsquo;내
+          정보&rsquo;에서 확인 메일을 다시 받을 수 있습니다.
+        </p>
+        <div className="flex flex-col gap-2">
+          <Button
+            type="button"
+            className="w-full h-11 font-bold rounded-xl"
+            onClick={() => {
+              router.push("/dashboard");
+              router.refresh();
+            }}
+          >
+            대시보드로 가기
+          </Button>
+          <Link
+            href="/me"
+            className="text-xs font-semibold text-primary underline underline-offset-4"
+          >
+            내 정보 보기
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -197,6 +254,22 @@ export function SignupForm() {
           {...statusProps("email", status.email)}
         />
       </Field>
+
+      {/* 남이 이 주소로 먼저 가입했을 수 있다. 주소의 주인이면 확인 메일에서 그 계정을
+          지울 수 있다. 직접 가입해 두고 잊은 것이라면 로그인하면 된다. */}
+      {pendingEmail && pendingEmail === normalizedEmail && (
+        <div className="space-y-2 rounded-xl border border-dashed p-3 text-[11px] leading-relaxed text-muted-foreground">
+          <p>
+            직접 가입해 두었다면{" "}
+            <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
+              로그인
+            </Link>
+            하면 됩니다. 가입한 적이 없다면, 이 주소로 확인 메일을 받아 &lsquo;제가 가입하지
+            않았어요&rsquo;를 누르세요. 그 계정이 지워지고 이 주소로 가입할 수 있습니다.
+          </p>
+          <ResendVerificationButton email={pendingEmail} label="이 주소로 확인 메일 받기" />
+        </div>
+      )}
 
       <Field label="비밀번호" htmlFor="password" status={status.password}>
         <Input

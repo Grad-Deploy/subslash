@@ -10,6 +10,8 @@ export interface AuthAccount {
   age: number | null;
   /** 선택 항목. 적지 않았으면 null. */
   gender: string | null;
+  /** 확인 메일에서 본인이 맞다고 답했는지. */
+  emailVerified: boolean;
   createdAt: string;
 }
 
@@ -42,10 +44,29 @@ function emit() {
   for (const listener of listeners) listener();
 }
 
+/**
+ * 이메일 확인은 대개 다른 창(메일 앱 안의 브라우저)에서 끝난다. 이 창은 처음 한
+ * 번만 서버에 물어보므로, 확인 전인 계정이면 창으로 돌아올 때 다시 묻는다. 그러지
+ * 않으면 확인을 마치고 돌아와도 '미확인'이 그대로 보인다. 확인된 계정이나 로그인하지
+ * 않은 상태에서는 묻지 않는다 — 창을 오갈 때마다 요청이 나가게 된다.
+ */
+function refreshIfUnverified() {
+  if (document.visibilityState !== "visible") return;
+  if (cache.account && !cache.account.emailVerified) void refreshAuth();
+}
+
 function subscribe(listener: () => void) {
   listeners.add(listener);
+  if (listeners.size === 1) {
+    document.addEventListener("visibilitychange", refreshIfUnverified);
+    window.addEventListener("focus", refreshIfUnverified);
+  }
   return () => {
     listeners.delete(listener);
+    if (listeners.size === 0) {
+      document.removeEventListener("visibilitychange", refreshIfUnverified);
+      window.removeEventListener("focus", refreshIfUnverified);
+    }
   };
 }
 
