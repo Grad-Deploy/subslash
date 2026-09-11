@@ -14,7 +14,7 @@ import {
   getActionQueue,
   getDetoxLevel,
   getNextBillingHint,
-  sumMyMonthDefendedKRW,
+  getSavingsTiers,
 } from "@subslash/shared";
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { OnboardingTourCard } from "../../components/dashboard/OnboardingTourCard";
@@ -94,12 +94,7 @@ export default function Dashboard() {
   const now = new Date();
   const queue = getActionQueue(subscriptions, usageLogs, now, rate);
   const nextBilling = getNextBillingHint(subscriptions, now);
-  const monthDefended = sumMyMonthDefendedKRW(
-    killedSubs,
-    now.getFullYear(),
-    now.getMonth() + 1,
-    rate,
-  );
+  const tiers = getSavingsTiers(killedSubs, now, rate);
   const detoxLevel = getDetoxLevel(stats.totalSaved, stats.killedCount);
 
   const findSub = (id: string) => subscriptions.find((s) => s.id === id);
@@ -243,18 +238,18 @@ export default function Dashboard() {
           className="flex items-center justify-between gap-3 p-4 border rounded-2xl bg-card hover:bg-muted transition-colors"
         >
           <div className="min-w-0">
+            {/* 머리 숫자는 결제가 멈춘 것을 확인한 돈뿐이다. 1년치 요금은 아끼는 속도로 적는다. */}
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              {now.getMonth() + 1}월 지출 방어 성공
+              ✅ 지킨 돈
             </p>
             <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-              {formatKRW(monthDefended.amount)}
+              {formatKRW(tiers.confirmed)}
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {/* totalSaved는 해지한 구독의 1년치 요금이다. 쌓인 돈이 아니라 앞으로 아끼는 속도. */}
-              {detoxLevel.emoji} {detoxLevel.levelLabel} {detoxLevel.title} · 연{" "}
-              {formatKRW(stats.totalSaved)} 아끼는 중
-              {monthDefended.unknownCount > 0 &&
-                ` · 결제 월 미설정 ${monthDefended.unknownCount}건 제외`}
+              {tiers.pending > 0 && `⏳ 확인 대기 ${formatKRW(tiers.pending)} · `}연{" "}
+              {formatKRW(tiers.annualRunRate)} 아끼는 중 · {detoxLevel.emoji}{" "}
+              {detoxLevel.levelLabel} {detoxLevel.title}
+              {tiers.unknownCount > 0 && ` · 결제 월 미설정 ${tiers.unknownCount}건 제외`}
             </p>
           </div>
           <span className="text-sm font-semibold text-muted-foreground shrink-0">절약 현황 →</span>

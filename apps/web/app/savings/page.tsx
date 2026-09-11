@@ -124,6 +124,9 @@ export default function SavingsDashboard() {
         </div>
       ) : (
         <div className="space-y-6">
+          {/* 머리 숫자: 지킨 돈 / 확인 대기 / 앞으로 */}
+          <SavingsPot killedSubscriptions={killedSubs} />
+
           {/* Detox level & title (Phase 3) */}
           <DetoxLevelBadge annualSavings={annualSavings} killCount={killedSubs.length} />
 
@@ -132,9 +135,6 @@ export default function SavingsDashboard() {
 
           {/* 올해 달별 방어액 — 지킨 달과 예정인 달을 나눠 보여준다 */}
           <MonthlyDefenseChart killedSubscriptions={killedSubs} exchangeRate={rate} />
-
-          {/* Main Savings Pot Widget */}
-          <SavingsPot killedSubscriptions={killedSubs} />
 
           {/* Breakdown by Cancelled Service (Issue 7) */}
           <SavingsBreakdownChart killedSubscriptions={killedSubs} exchangeRate={rate} />
