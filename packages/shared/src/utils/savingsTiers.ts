@@ -24,6 +24,8 @@ import {
 export interface SavingsTiers {
   /** 결제가 멈춘 것을 확인한 해지에서, 이미 지나간 결제일에 안 나간 내 몫. 머리 숫자. */
   confirmed: number;
+  /** 결제가 멈춘 것을 확인한 해지 수. */
+  verifiedCount: number;
   /** 첫 결제일이 지났지만 결제가 멈췄는지 아직 답하지 않은 해지의 같은 금액. */
   pending: number;
   /** 확인 대기인 해지 수. */
@@ -97,6 +99,7 @@ export function getSavingsTiers(
   const to = range && range.to.getTime() < today.getTime() ? range.to : today;
 
   let confirmed = 0;
+  let verifiedCount = 0;
   let pending = 0;
   let pendingCount = 0;
   let unknownCount = 0;
@@ -110,6 +113,7 @@ export function getSavingsTiers(
     }
     if (check.state === "verified") {
       confirmed += amount;
+      verifiedCount += 1;
     } else if (check.state === "due") {
       pending += amount;
       if (amount > 0) pendingCount += 1;
@@ -119,6 +123,7 @@ export function getSavingsTiers(
 
   return {
     confirmed,
+    verifiedCount,
     pending,
     pendingCount,
     annualRunRate: sumMyAnnualKRW(killed, rate),

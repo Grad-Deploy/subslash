@@ -95,7 +95,8 @@ export default function Dashboard() {
   const queue = getActionQueue(subscriptions, usageLogs, now, rate);
   const nextBilling = getNextBillingHint(subscriptions, now);
   const tiers = getSavingsTiers(killedSubs, now, rate);
-  const detoxLevel = getDetoxLevel(stats.totalSaved, stats.killedCount);
+  // 레벨은 1년치 요금이 아니라 결제가 멈춘 것을 확인한 지킨 돈으로 매긴다.
+  const detoxLevel = getDetoxLevel(tiers.confirmed, stats.killedCount);
 
   const findSub = (id: string) => subscriptions.find((s) => s.id === id);
 
