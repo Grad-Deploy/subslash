@@ -51,7 +51,7 @@ test.describe("절약 현황 월별 방어액 (E2E)", () => {
     const chart = page.locator("section", { hasText: "월별 방어액" });
     await expect(chart).toBeVisible({ timeout: 30_000 });
 
-    // 이번 달까지는 지킨 돈, 남은 달은 예정이다. 연말까지 더한 금액을 지킨 돈으로 보이지 않는다.
+    // 이번 달까지는 막은 결제, 남은 달은 예정이다. 연말까지 더한 금액을 이미 막은 것으로 보이지 않는다.
     await expect(chart.locator("dd").nth(0)).toHaveText(won(17000 * month));
     await expect(chart.locator("dd").nth(1)).toHaveText(won(17000 * (12 - month)));
 
@@ -60,7 +60,7 @@ test.describe("절약 현황 월별 방어액 (E2E)", () => {
     // 막대 색만으로 구분하지 않도록 표로도 볼 수 있다.
     await chart.getByText("표로 보기").click();
     await expect(chart.locator("tbody tr")).toHaveCount(12);
-    await expect(chart.locator("tbody tr").nth(month - 1)).toContainText("지킴");
+    await expect(chart.locator("tbody tr").nth(month - 1)).toContainText("막음");
     if (month < 12) {
       await expect(chart.locator("tbody tr").nth(month)).toContainText("예정");
     }

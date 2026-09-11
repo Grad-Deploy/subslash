@@ -125,7 +125,7 @@ function CheckInReceiver() {
           router.replace("/savings");
         }}
         title="구독 해지 완료 처리"
-        description={`'${subscription.name}' 구독을 해지(방어) 완료 상태로 전환하시겠습니까?\n방어 성공 자산으로 기록되며 대시보드와 절약 현황에 반영됩니다.`}
+        description={`'${subscription.name}' 구독을 해지 완료로 기록하시겠습니까?\n해지 뒤 결제일이 지나면 그만큼이 지킨 돈으로 쌓입니다.`}
         confirmText="해지 완료"
         cancelText="취소"
         variant="destructive"

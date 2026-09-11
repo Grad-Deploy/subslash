@@ -80,7 +80,8 @@ test.describe("올해 구독 결산 (E2E)", () => {
       timeout: 30_000,
     });
 
-    const defended = page.getByRole("region", { name: /해지로 지킨 돈/ });
+    // 결제일 기준으로 막은 결제다. 결제가 멈춘 것을 확인한 '지킨 돈'은 그 안의 한 줄이다.
+    const defended = page.getByRole("region", { name: /해지로 막은 결제/ });
     await expect(defended.getByText(won(17000 * month), { exact: true })).toBeVisible();
 
     const killed = page.getByRole("region", { name: /해지한 구독 1개/ });

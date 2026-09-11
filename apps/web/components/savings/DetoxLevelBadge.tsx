@@ -4,8 +4,8 @@ import React from "react";
 import { formatKRW, getDetoxLevel } from "@subslash/shared";
 
 interface DetoxLevelBadgeProps {
-  /** 누적 연간 방어액(KRW). */
-  annualSavings: number;
+  /** 결제가 멈춘 것을 확인한 지킨 돈(KRW). 1년치 요금이 아니다. */
+  savings: number;
   /** 해지 완료한 구독 수. */
   killCount: number;
   /** 진행률 바와 다음 레벨 안내를 함께 보여줄지. */
@@ -15,13 +15,13 @@ interface DetoxLevelBadgeProps {
 }
 
 export function DetoxLevelBadge({
-  annualSavings,
+  savings,
   killCount,
   showProgress = true,
   variant = "card",
   className = "",
 }: DetoxLevelBadgeProps) {
-  const level = getDetoxLevel(annualSavings, killCount);
+  const level = getDetoxLevel(savings, killCount);
 
   if (variant === "inline") {
     return (
@@ -52,8 +52,8 @@ export function DetoxLevelBadge({
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-[11px] text-muted-foreground">누적 방어</p>
-          <p className="text-sm font-bold font-mono">{formatKRW(annualSavings)}</p>
+          <p className="text-[11px] text-muted-foreground">지킨 돈</p>
+          <p className="text-sm font-bold font-mono">{formatKRW(savings)}</p>
         </div>
       </div>
 
@@ -72,7 +72,7 @@ export function DetoxLevelBadge({
             </div>
             <p className="text-[11px] text-muted-foreground">
               <strong className="text-foreground">{formatKRW(level.remainingToNext ?? 0)}</strong>을
-              더 방어하면 <strong className="text-foreground">{level.nextTitle}</strong>
+              더 지키면 <strong className="text-foreground">{level.nextTitle}</strong>
               (Lv.{level.level + 1})로 올라갑니다.
             </p>
           </div>

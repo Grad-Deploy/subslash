@@ -96,8 +96,8 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
             <span>사용 계정 연동 및 관리 허브</span>
           </DialogTitle>
           <DialogDescription>
-            구독 서비스에 로그인할 때 사용하는 계정을 등록하면, 해지 시 올바른 계정으로 즉시
-            로그인하여 손쉽게 해지할 수 있습니다.
+            구독 서비스에 로그인할 때 사용하는 계정을 등록해 두면, 해지할 때 어느 계정으로
+            로그인해야 하는지 바로 확인할 수 있습니다.
           </DialogDescription>
         </DialogHeader>
 

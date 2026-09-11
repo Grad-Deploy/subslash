@@ -29,6 +29,7 @@ import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
+import { DataBackupCard } from "../../components/settings/DataBackupCard";
 
 /** Feedback for the redirect targets of the reminder emails' links. */
 const NOTIFY_MESSAGES: Record<string, string> = {
@@ -358,6 +359,9 @@ export default function SubscriptionsPage() {
         </div>
       )}
 
+      {/* 이 브라우저에만 있는 데이터를 파일로 지키는 곳 */}
+      <DataBackupCard onMessage={showToast} />
+
       {/* Floating Action Button for Mobile */}
       <button
         onClick={() => setIsAddOpen(true)}
@@ -444,7 +448,7 @@ export default function SubscriptionsPage() {
           }
           description={
             confirmAction.type === "kill"
-              ? `'${confirmAction.sub.name}' 구독을 해지(방어) 완료 상태로 전환하시겠습니까?\n방어 성공 자산으로 기록되며 대시보드와 절약 현황에 반영됩니다.`
+              ? `'${confirmAction.sub.name}' 구독을 해지 완료로 기록하시겠습니까?\n해지 뒤 결제일이 지나면 그만큼이 지킨 돈으로 쌓입니다.`
               : confirmAction.type === "revive"
                 ? `'${confirmAction.sub.name}' 구독을 다시 활성화하시겠습니까?\n활성 구독 목록으로 복원되며, 절약 방어 자산에서 제외됩니다.`
                 : `'${confirmAction.sub.name}' 구독을 영구 삭제하시겠습니까?\n삭제된 구독 데이터는 복구할 수 없습니다.`

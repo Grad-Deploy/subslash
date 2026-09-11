@@ -225,15 +225,14 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
         )}
       </div>
 
-      {/* Direct Cancellation Deep-Link & Dark Pattern Breaker */}
+      {/* 해지 경로 안내 — 계정, 결제 수단, 링크, 단계 안내를 한곳에 */}
       <div className="p-6 border-2 border-primary/20 bg-muted/30 rounded-2xl space-y-5">
         <div className="flex items-center gap-2">
           <span className="text-xl">⚡</span>
-          <h2 className="text-lg font-bold">1초 해지 직통 내비게이터 (Kill-Switch Hub)</h2>
+          <h2 className="text-lg font-bold">해지 경로 안내</h2>
         </div>
         <p className="text-xs text-muted-foreground">
-          어떤 계정으로 가입했는지, 어떤 수단으로 결제했는지 바로 확인하고 해지 페이지로 즉시
-          이동합니다.
+          어떤 계정으로 가입했는지, 어떤 수단으로 결제했는지 확인하고 해지하러 갈 링크를 엽니다.
         </p>
 
         {/* Linked Account Card */}
@@ -333,7 +332,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
 
         {sub.cancelGuide && (
           <div className="p-4 bg-background border rounded-xl space-y-2 text-xs">
-            <div className="font-bold text-foreground">💡 30초 다크 패턴 탈출 가이드:</div>
+            <div className="font-bold text-foreground">💡 저장해 둔 해지 단계:</div>
             <p className="whitespace-pre-line text-muted-foreground leading-relaxed">
               {sub.cancelGuide}
             </p>
@@ -450,8 +449,8 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
           }
           description={
             confirmType === "kill"
-              ? `'${sub.name}' 구독을 해지(방어) 완료 상태로 전환하시겠습니까?
-방어 성공 자산으로 기록되며 대시보드와 절약 현황에 반영됩니다.`
+              ? `'${sub.name}' 구독을 해지 완료로 기록하시겠습니까?
+해지 뒤 결제일이 지나면 그만큼이 지킨 돈으로 쌓입니다.`
               : confirmType === "revive"
                 ? `'${sub.name}' 구독을 다시 활성화하시겠습니까?
 활성 구독 목록으로 복원되며, 절약 방어 자산에서 제외됩니다.`
