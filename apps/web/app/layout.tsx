@@ -10,7 +10,7 @@ const geist = Geist({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "SubSlash - 구독, 끊을 용기",
-  description: "구독 가성비 분석 및 1초 해지 매니저",
+  description: "구독 1회 사용 단가 분석과 해지 도우미",
   manifest: "/manifest.json",
   applicationName: "SubSlash",
   appleWebApp: {

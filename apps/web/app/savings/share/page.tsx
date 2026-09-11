@@ -133,7 +133,7 @@ function SharedSavingsContent() {
         <div className="space-y-1">
           <h3 className="text-lg font-black">나도 모르게 새어나가는 구독료가 있다면?</h3>
           <p className="text-xs text-muted-foreground">
-            SubSlash에서 1회당 실제 사용 단가를 계산하고, 가성비 낮은 구독을 1초 만에 차단하세요.
+            SubSlash에서 1회당 실제 사용 단가를 계산하고, 가성비 낮은 구독을 찾아 해지해 보세요.
           </p>
         </div>
 

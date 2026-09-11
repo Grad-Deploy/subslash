@@ -86,8 +86,8 @@ export default function Home() {
         <p className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
           매달 자동 결제되는 고정지출, 정말 그만한 가치가 있나요?
           <br />
-          <strong>1회당 실제 사용 단가</strong>를 계산하고, 불필요한 결제를 1초 만에 킬(Kill)
-          스위치로 차단하세요.
+          <strong>1회당 실제 사용 단가</strong>를 계산하고, 돈값을 못 하는 구독은 해지 방법까지
+          안내받아 끊으세요.
         </p>
       </div>
 
@@ -162,18 +162,18 @@ export default function Home() {
         </div>
         <div className="p-5 border rounded-2xl bg-card shadow-sm space-y-2">
           <div className="text-2xl">⚡</div>
-          <h3 className="font-bold text-base">해지 직통 링크 + 단계별 안내</h3>
+          <h3 className="font-bold text-base">해지 링크 + 단계별 안내</h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            해지 메뉴를 꼭꼭 숨겨둔 다크패턴을 파쇄합니다. 대부분의 서비스는 해지 화면으로 바로
-            연결되고, 그럴 수 없는 곳은 어디서 몇 단계를 더 가야 하는지 알려드립니다.
+            해지 메뉴가 깊숙이 숨어 있어도 찾아갈 수 있게 돕습니다. 해지 화면으로 바로 가는 링크가
+            있는 서비스는 그리로, 없는 곳은 어디서 몇 단계를 더 가야 하는지 알려드립니다.
           </p>
         </div>
         <div className="p-5 border rounded-2xl bg-card shadow-sm space-y-2">
           <div className="text-2xl">💰</div>
           <h3 className="font-bold text-base">방어 성공 자산 시각화</h3>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            해지 버튼을 누르면 연간 절약 금액으로 환산되어 &ldquo;치킨 5마리&rdquo;, &ldquo;제주도
-            항공권&rdquo; 등의 실물 보상으로 치환됩니다.
+            해지를 마치고 기록하면 연간 절약 금액으로 환산되어 &ldquo;치킨 5마리&rdquo;,
+            &ldquo;제주도 항공권&rdquo; 등의 실물 보상으로 치환됩니다.
           </p>
         </div>
       </div>
