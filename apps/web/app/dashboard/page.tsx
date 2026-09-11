@@ -250,8 +250,9 @@ export default function Dashboard() {
               {formatKRW(monthDefended.amount)}
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {detoxLevel.emoji} {detoxLevel.levelLabel} {detoxLevel.title} · 누적{" "}
-              {formatKRW(stats.totalSaved)}
+              {/* totalSaved는 해지한 구독의 1년치 요금이다. 쌓인 돈이 아니라 앞으로 아끼는 속도. */}
+              {detoxLevel.emoji} {detoxLevel.levelLabel} {detoxLevel.title} · 연{" "}
+              {formatKRW(stats.totalSaved)} 아끼는 중
               {monthDefended.unknownCount > 0 &&
                 ` · 결제 월 미설정 ${monthDefended.unknownCount}건 제외`}
             </p>
@@ -300,12 +301,12 @@ export default function Dashboard() {
           onConfirm={() => {
             if (killTarget) {
               killSubscription(killTarget.id);
-              showToast(`🔪 ${killTarget.name}을(를) 성공적으로 차단했습니다!`);
+              showToast(`🔪 ${killTarget.name}을(를) 해지한 구독으로 기록했습니다.`);
               setKillTarget(null);
             }
           }}
           title="구독 해지 완료 처리"
-          description={`'${killTarget.name}' 구독을 해지(방어) 완료 상태로 전환하시겠습니까?\n방어 성공 자산으로 기록되며 대시보드와 절약 현황에 반영됩니다.`}
+          description={`'${killTarget.name}' 구독을 해지 완료로 기록하시겠습니까?\n해지 뒤 결제일이 지나면 그만큼이 지킨 돈으로 쌓입니다.`}
           confirmText="해지 완료"
           cancelText="취소"
           variant="destructive"

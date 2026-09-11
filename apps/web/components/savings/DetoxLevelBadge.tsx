@@ -4,7 +4,7 @@ import React from "react";
 import { formatKRW, getDetoxLevel } from "@subslash/shared";
 
 interface DetoxLevelBadgeProps {
-  /** 누적 연간 방어액(KRW). */
+  /** 해지한 구독의 연간 환산 절약액(KRW). 쌓인 돈이 아니라 1년치 요금이다. */
   annualSavings: number;
   /** 해지 완료한 구독 수. */
   killCount: number;
@@ -52,7 +52,7 @@ export function DetoxLevelBadge({
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-[11px] text-muted-foreground">누적 방어</p>
+          <p className="text-[11px] text-muted-foreground">연간 환산 절약</p>
           <p className="text-sm font-bold font-mono">{formatKRW(annualSavings)}</p>
         </div>
       </div>

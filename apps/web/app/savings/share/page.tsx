@@ -69,14 +69,14 @@ function SharedSavingsContent() {
             불필요한 구독을 성공적으로 차단했습니다!
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            매달 자동 결제되던 잠든 구독을 찾아내 소중한 자산을 지켜냈습니다.
+            매달 자동 결제되던 잠든 구독을 찾아내 해지했습니다.
           </p>
         </div>
 
         {/* Savings Amount Box */}
         <div className="py-6 px-4 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 rounded-2xl space-y-1">
           <div className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
-            연간 방어 성공 금액
+            해지를 유지하면 1년에 아끼는 금액
           </div>
           <div className="text-4xl sm:text-5xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
             {formatKRW(annualSavings)}
@@ -112,7 +112,7 @@ function SharedSavingsContent() {
         {equivalents.length > 0 && (
           <div className="space-y-2.5 text-left pt-2">
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              🎁 방어한 자산으로 누릴 수 있는 보상
+              🎁 1년 동안 아끼면 누릴 수 있는 보상
             </h3>
             <div className="grid grid-cols-2 gap-2.5">
               {equivalents.slice(0, 4).map((item) => (

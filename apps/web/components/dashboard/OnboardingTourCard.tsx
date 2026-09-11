@@ -112,7 +112,7 @@ export function OnboardingTourCard({ onStartAdd, activeCount }: OnboardingTourCa
             링크가 없는 곳은 메뉴까지 가는 단계를 안내합니다.
           </p>
           <div className="pt-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded-md text-center">
-            아낀 돈은 방어 자산으로 누적 💰
+            결제일이 지나면 지킨 돈으로 쌓여요 💰
           </div>
         </div>
       </div>
