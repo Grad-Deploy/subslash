@@ -31,10 +31,11 @@ export function SavingsPot({ killedSubscriptions }: { killedSubscriptions: Subsc
         <h3 className="text-lg font-bold text-green-800 dark:text-green-300 mb-2">방어 성공! 💰</h3>
         <div className="flex flex-wrap items-baseline gap-2 mb-2">
           <div className="text-3xl font-black text-green-600 dark:text-green-400">
-            연 {formatKRW(annualSavings)} 절약
+            연 {formatKRW(annualSavings)} 아끼는 중
           </div>
+          {/* 올해 방어액은 12월까지 남은 결제일도 더한 값이다. 이미 지킨 돈이 아니다. */}
           <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-200/80 dark:bg-emerald-800/60 text-emerald-900 dark:text-emerald-100">
-            {currentYear}년 실질 방어 {formatKRW(yearDefended.amount)}
+            {currentYear}년 연말까지 {formatKRW(yearDefended.amount)} (예정 포함)
             {yearDefended.unknownCount > 0 &&
               ` · 결제 월 미설정 ${yearDefended.unknownCount}건 제외`}
           </span>

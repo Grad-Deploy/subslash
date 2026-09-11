@@ -63,7 +63,7 @@ export function SavingsBreakdownChart({
             <h3 className="font-bold text-base flex items-center gap-1.5">
               <span>📊</span> 서비스별 절약 기여도
             </h3>
-            {/* 레벨은 연간 환산 누적 방어액 기준이라 보기 모드와 무관하게 같다. */}
+            {/* 레벨은 연간 환산 절약액 기준이라 보기 모드와 무관하게 같다. */}
             <DetoxLevelBadge
               annualSavings={totalAnnual}
               killCount={killedSubscriptions.length}
@@ -97,7 +97,7 @@ export function SavingsBreakdownChart({
             }`}
             onClick={() => setViewMode("yearDefended")}
           >
-            {currentYear}년 방어액
+            {currentYear}년 연말까지
           </button>
         </div>
       </div>

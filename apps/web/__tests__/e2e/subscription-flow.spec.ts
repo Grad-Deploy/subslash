@@ -132,7 +132,10 @@ test.describe("Subscription Flow (E2E)", () => {
     await confirmDialog.getByRole("button", { name: "해지 완료" }).click();
 
     await expect(page).toHaveURL(/\/savings/);
-    await expect(page.getByText("연 ₩204,000 절약")).toBeVisible({ timeout: 30_000 });
+    // 적립 위젯과 해지 목록이 같은 문구를 쓴다.
+    await expect(page.getByText("연 ₩204,000 아끼는 중").first()).toBeVisible({
+      timeout: 30_000,
+    });
   });
 
   test("메일 체크인: 가이드에서 '나중에 하기'를 누르면 해지하지 않고 대시보드로 간다", async ({
@@ -209,7 +212,7 @@ test.describe("Subscription Flow (E2E)", () => {
     await seed(page, [{ ...netflix, status: "killed", killedAt: new Date().toISOString() }]);
     await page.goto("/savings");
 
-    // 17,000 x 12 months of defended spend.
-    await expect(page.getByText("연 ₩204,000 절약")).toBeVisible();
+    // 17,000 x 12개월. 쌓인 돈이 아니라 해지를 유지하면 1년에 아끼는 금액이다.
+    await expect(page.getByText("연 ₩204,000 아끼는 중").first()).toBeVisible();
   });
 });
