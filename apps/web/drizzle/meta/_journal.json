@@ -29,6 +29,13 @@
       "when": 1789021030439,
       "tag": "0003_remarkable_talkback",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1789050430598,
+      "tag": "0004_last_shard",
+      "breakpoints": true
     }
   ]
 }

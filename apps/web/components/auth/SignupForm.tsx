@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, Info, Loader2, X } from "lucide-react";
 import {
-  GENDER_OPTIONS,
   MIN_AGE,
-  MAX_AGE,
   PASSWORD_MIN,
   USERNAME_MAX,
   USERNAME_MIN,
@@ -18,7 +16,6 @@ import {
   type FieldErrors,
 } from "@subslash/shared";
 import { Input } from "@components/ui/input";
-import { Select } from "@components/ui/select";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
@@ -28,8 +25,6 @@ const EMPTY = {
   email: "",
   password: "",
   passwordConfirm: "",
-  age: "",
-  gender: "",
 };
 
 /** 이메일 입력이 이만큼 멈추면 확인한다. 글자마다 물으면 입력 중인 주소마다 DNS를 두드린다. */
@@ -44,6 +39,7 @@ const EMAIL_CHECK_DELAY_MS = 500;
 export function SignupForm() {
   const router = useRouter();
   const [form, setForm] = useState(EMPTY);
+  const [isOver14, setIsOver14] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -107,7 +103,7 @@ export function SignupForm() {
     event.preventDefault();
     setFormError(null);
 
-    const { errors: localErrors, value } = validateSignup(form);
+    const { errors: localErrors, value } = validateSignup({ ...form, isOver14 });
     if (!value) {
       setErrors(localErrors);
       return;
@@ -132,8 +128,7 @@ export function SignupForm() {
           email: form.email,
           password: form.password,
           passwordConfirm: form.passwordConfirm,
-          age: form.age,
-          gender: form.gender,
+          isOver14,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -231,38 +226,37 @@ export function SignupForm() {
         <StatusMessage id="passwordConfirm-status" status={confirmStatus} />
       </Field>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="나이" htmlFor="age" error={errors.age}>
-          <Input
-            id="age"
-            name="age"
-            type="number"
-            inputMode="numeric"
-            min={MIN_AGE}
-            max={MAX_AGE}
-            placeholder="만 나이"
-            value={form.age}
-            onChange={(e) => update("age")(e.target.value)}
-            aria-invalid={Boolean(errors.age)}
+      {/* 나이·성별은 가입 때 묻지 않는다. 칸이 늘수록 가입을 포기하는 사람이 늘어서,
+          가입 뒤 '내 정보'에서 원할 때만 적는다. 만 14세 확인만은 법정대리인
+          동의 문제 때문에 필수로 남긴다. */}
+      <div className="space-y-1.5">
+        <label htmlFor="isOver14" className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            id="isOver14"
+            name="isOver14"
+            type="checkbox"
+            className="h-4 w-4 accent-primary"
+            checked={isOver14}
+            onChange={(e) => {
+              setIsOver14(e.target.checked);
+              setErrors((prev) => (prev.isOver14 ? { ...prev, isOver14: undefined } : prev));
+            }}
+            aria-invalid={Boolean(errors.isOver14)}
           />
-        </Field>
-
-        <Field label="성별" htmlFor="gender" error={errors.gender}>
-          <Select
-            id="gender"
-            name="gender"
-            value={form.gender}
-            onChange={(e) => update("gender")(e.target.value)}
-            aria-invalid={Boolean(errors.gender)}
-          >
-            <option value="">선택해주세요</option>
-            {GENDER_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </Field>
+          <span>
+            <strong>만 {MIN_AGE}세 이상입니다.</strong>{" "}
+            <span className="text-muted-foreground">(필수)</span>
+          </span>
+        </label>
+        {errors.isOver14 && (
+          <p className="text-[11px] font-medium text-destructive" role="alert">
+            {errors.isOver14}
+          </p>
+        )}
+        <p className="text-[11px] text-muted-foreground">
+          나이·성별은 가입 때 묻지 않습니다. 가입 후 &lsquo;내 정보&rsquo;에서 원할 때만 적을 수
+          있습니다.
+        </p>
       </div>
 
       {formError && (

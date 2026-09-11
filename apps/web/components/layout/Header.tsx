@@ -106,12 +106,14 @@ export function Header() {
             {!authLoading &&
               (account ? (
                 <div className="flex items-center gap-1.5">
-                  <span
-                    className="hidden sm:inline-block max-w-[9rem] truncate text-xs font-semibold text-foreground bg-secondary px-2.5 py-1 rounded-full"
-                    title={account.email}
+                  {/* 나이·성별을 가입에서 뺐으므로, 적고 싶은 사람이 찾아갈 곳이 필요하다. */}
+                  <Link
+                    href="/me"
+                    className="inline-block max-w-[5rem] sm:max-w-[9rem] truncate text-xs font-semibold text-foreground bg-secondary hover:bg-muted px-2.5 py-1 rounded-full transition-colors"
+                    title={`내 정보 (${account.email})`}
                   >
                     {account.username}
-                  </span>
+                  </Link>
                   <button
                     onClick={logout}
                     className="px-2.5 py-1.5 rounded-xl border bg-card hover:bg-muted text-xs font-semibold transition-all shadow-sm active:scale-95"
