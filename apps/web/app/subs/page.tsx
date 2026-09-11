@@ -29,6 +29,7 @@ import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
+import { DataBackupCard } from "../../components/settings/DataBackupCard";
 
 /** Feedback for the redirect targets of the reminder emails' links. */
 const NOTIFY_MESSAGES: Record<string, string> = {
@@ -357,6 +358,9 @@ export default function SubscriptionsPage() {
           )}
         </div>
       )}
+
+      {/* 이 브라우저에만 있는 데이터를 파일로 지키는 곳 */}
+      <DataBackupCard onMessage={showToast} />
 
       {/* Floating Action Button for Mobile */}
       <button
