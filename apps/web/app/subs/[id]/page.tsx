@@ -15,6 +15,7 @@ import {
 import { SubForm } from "../../../components/subscription/SubForm";
 import { CheckInModal } from "../../../components/subscription/CheckInModal";
 import { CancelGuideModal } from "../../../components/subscription/CancelGuideModal";
+import { CheckInEvidence } from "../../../components/subscription/CheckInEvidence";
 import { RiskBadge } from "../../../components/dashboard/RiskBadge";
 import {
   Dialog,
@@ -348,6 +349,8 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
             + 체크인 하기
           </Button>
         </div>
+
+        <CheckInEvidence logs={subLogs} currency={sub.currency} />
 
         {subLogs.length === 0 ? (
           <div className="text-center py-10 border border-dashed rounded-xl text-xs text-muted-foreground">

@@ -1,5 +1,6 @@
 export * from "./types";
 export * from "./utils/cost-per-use";
+export * from "./utils/checkInEvidence";
 export * from "./utils/date";
 export * from "./utils/currency";
 export * from "./utils/sharing";
