@@ -38,8 +38,8 @@ const USERNAME_PATTERN = /^[a-z0-9_]+$/;
  * 틀린 것만 거르고, 도메인은 실제 DNS 이름이 될 수 있는 모양인지까지 본다 —
  * 예전에는 `a@b.c`나 `a@exa_mple.123`도 통과했다.
  *
- * 도메인이 실제로 있는지는 여기서 알 수 없어 서버가 DNS로 따로 확인하고
- * (apps/web/lib/email-domain.ts), 주소가 그 사람 것인지는 확인 메일만이 답할 수 있다.
+ * 가입에서는 여기에 더해 자주 쓰는 메일 서비스인지 본다(`validateSignupEmail`).
+ * 주소가 그 사람 것인지는 확인 메일만이 답할 수 있다.
  */
 const EMAIL_LOCAL_PATTERN = /^[^\s@]{1,64}$/;
 /** 영문·숫자·하이픈, 하이픈으로 시작하거나 끝나지 않고 63자 이하 (RFC 1035). */
@@ -113,6 +113,83 @@ export function validateEmail(value: string): string | undefined {
   return undefined;
 }
 
+/**
+ * 가입에 쓸 수 있는 이메일 도메인 — 사람들이 많이 쓰는 메일 서비스.
+ *
+ * 예전에는 형식을 본 뒤 DNS로 "메일을 받을 수 있는 도메인"인지만 확인했다.
+ * 그러면 `exampl.com`처럼 오타인데 우연히 실제로 있는 도메인이 그대로
+ * 통과했다. 이제 이 목록에 있는 곳만 받는다. 대신 회사·학교 메일로는 가입할
+ * 수 없으므로, 받아야 할 곳이 생기면 이 목록에 더한다.
+ */
+export const SIGNUP_EMAIL_DOMAINS: readonly string[] = [
+  "naver.com",
+  "gmail.com",
+  "daum.net",
+  "hanmail.net",
+  "kakao.com",
+  "nate.com",
+  "icloud.com",
+  "me.com",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "yahoo.com",
+];
+
+/**
+ * 가입용 이메일 검사: 형식, 그리고 자주 쓰는 메일 서비스인지.
+ *
+ * 목록에 없는 도메인을 "없는 도메인"이라고 부르지 않는다 — `exampl.com`은
+ * 실제로 있다. 받지 않는다는 사실만 말한다. 목록의 도메인과 한두 글자만
+ * 다르면 오타일 가능성이 높으니 그 도메인을 짚어 준다.
+ */
+export function validateSignupEmail(value: string): string | undefined {
+  const formatError = validateEmail(value);
+  if (formatError) return formatError;
+
+  const domain = getEmailDomain(value);
+  if (SIGNUP_EMAIL_DOMAINS.includes(domain)) return undefined;
+
+  const suggestion = closestSignupDomain(domain);
+  if (suggestion) return `잘못된 이메일 주소입니다. 혹시 ${suggestion} 아닌가요?`;
+  return "가입할 수 없는 이메일입니다. naver.com, gmail.com, daum.net 등 자주 쓰는 메일 주소를 입력해주세요.";
+}
+
+/**
+ * 오타로 보이는 도메인이면 맞는 도메인. `gmial.com` → `gmail.com`
+ *
+ * 짧은 도메인은 한 글자 차이까지만 본다. 두 글자까지 보면 `gmx.com` 같은 다른
+ * 서비스를 `me.com`의 오타라고 짚게 된다.
+ */
+function closestSignupDomain(domain: string): string | undefined {
+  let best: { domain: string; distance: number } | undefined;
+  for (const candidate of SIGNUP_EMAIL_DOMAINS) {
+    const limit = candidate.length <= 7 ? 1 : 2;
+    const distance = editDistance(domain, candidate);
+    if (distance <= limit && (!best || distance < best.distance)) {
+      best = { domain: candidate, distance };
+    }
+  }
+  return best?.domain;
+}
+
+/** 레벤슈타인 거리 — 글자를 넣고, 빼고, 바꾸는 최소 횟수. */
+function editDistance(a: string, b: string): number {
+  let previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j++) {
+      current[j] = Math.min(
+        previous[j] + 1,
+        current[j - 1] + 1,
+        previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    previous = current;
+  }
+  return previous[b.length];
+}
+
 export function validatePassword(value: string): string | undefined {
   if (!value) return "비밀번호를 입력해주세요.";
   // 규칙만 말하면 몇 자를 더 써야 하는지 사용자가 세어야 한다. 남은 수를 알려준다.
@@ -163,7 +240,7 @@ export function validateSignup(input: Partial<SignupInput>): {
   const usernameError = validateUsername(username);
   if (usernameError) errors.username = usernameError;
 
-  const emailError = validateEmail(email);
+  const emailError = validateSignupEmail(email);
   if (emailError) errors.email = emailError;
 
   const passwordError = validatePassword(password);

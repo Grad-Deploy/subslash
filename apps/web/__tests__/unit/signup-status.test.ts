@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   confirmStatusOf,
-  emailFormatStatus,
+  emailStatusFor,
   emailStatusOf,
   passwordStatusOf,
   shownStatus,
@@ -35,16 +35,21 @@ describe("가입 폼 칸 상태", () => {
   });
 
   it("잘못된 이메일 형식은 형식이 틀렸다고, 도메인 모양이 틀리면 도메인을 짚어 알려준다", () => {
-    expect(emailFormatStatus("sean")?.message).toContain("잘못된 이메일 형식입니다");
-    expect(emailFormatStatus("sean@gmail")?.message).toContain("@ 뒤의 도메인");
-    expect(emailFormatStatus("sean@gmail.com")).toBeNull();
+    expect(emailStatusFor("sean")?.message).toContain("잘못된 이메일 형식입니다");
+    expect(emailStatusFor("sean@gmail")?.message).toContain("@ 뒤의 도메인");
   });
 
-  it("이메일 확인 결과는 지금 칸에 있는 주소에 대한 것일 때만 보인다", () => {
-    const check = {
-      email: "sean@gmial.com",
-      status: { tone: "error" as const, message: "존재하지 않는 도메인" },
-    };
+  it("자주 쓰는 메일 서비스만 초록이고, 그 밖의 도메인은 받지 않는다고 알려준다", () => {
+    expect(emailStatusFor("sean@gmail.com")?.tone).toBe("ok");
+    expect(emailStatusFor("sean@exampl.com")).toEqual({
+      tone: "error",
+      message: expect.stringContaining("가입할 수 없는 이메일"),
+    });
+    expect(emailStatusFor("sean@gmial.com")?.message).toContain("gmail.com");
+  });
+
+  it("이메일 판정은 지금 칸에 있는 주소에 대한 것일 때만 보인다", () => {
+    const check = { email: "sean@gmial.com", status: emailStatusFor("sean@gmial.com") };
 
     expect(emailStatusOf("sean@gmial.com", check)).toBe(check.status);
     expect(emailStatusOf("sean@gmail.com", check)).toBeNull();
