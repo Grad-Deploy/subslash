@@ -314,12 +314,16 @@ export const useStore = create<SubSlashStore>()(
           ),
         }));
       },
-      // 해지 확인은 해지 한 번에 딸린 기록이다. 다시 해지하거나 되살리면
-      // 이전 해지에 대한 확인이 새 해지를 확인한 것처럼 남지 않게 지운다.
+      // 해지 확인은 해지 한 번에 딸린 기록이다. 되살리면 확인을 지워, 되살렸다가
+      // 다시 해지했을 때 이전 확인이 새 해지를 확인한 것처럼 남지 않게 한다.
+      //
+      // 이미 해지한 구독은 다시 해지로 기록하지 않는다. 예전에는 상세 화면의
+      // 해지 가이드나 해지 전에 받은 체크인 메일에서 '해지 완료'를 한 번 더
+      // 누르면 해지일이 오늘로 바뀌고 확인이 지워져, 쌓인 지킨 돈이 사라졌다.
       killSubscription: (id) => {
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
-            sub.id === id
+            sub.id === id && sub.status !== "killed"
               ? {
                   ...sub,
                   status: "killed",
