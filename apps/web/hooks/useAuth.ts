@@ -6,8 +6,10 @@ export interface AuthAccount {
   id: string;
   username: string;
   email: string;
-  age: number;
-  gender: string;
+  /** 선택 항목. 적지 않았으면 null. */
+  age: number | null;
+  /** 선택 항목. 적지 않았으면 null. */
+  gender: string | null;
   createdAt: string;
 }
 

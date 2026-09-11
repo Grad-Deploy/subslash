@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
     // 평문 비밀번호는 여기서 해시로 바뀌고, 그 뒤로는 어디에도 남지 않는다.
     const passwordHash = await hashPassword(value.password);
 
+    // 나이·성별은 가입 때 받지 않는다. 가입 뒤 '내 정보'에서 원할 때만 적는다.
     const db = getDb();
     const inserted = await db
       .insert(accounts)
@@ -89,8 +90,6 @@ export async function POST(request: NextRequest) {
         username: value.username,
         email: value.email,
         passwordHash,
-        age: value.age,
-        gender: value.gender,
       })
       .returning();
 
