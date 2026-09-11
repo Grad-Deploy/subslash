@@ -17,6 +17,7 @@ import { SavingsPot } from "../../components/dashboard/SavingsPot";
 import { SavingsBreakdownChart } from "../../components/savings/SavingsBreakdownChart";
 import { DetoxLevelBadge } from "../../components/savings/DetoxLevelBadge";
 import { MonthlyDefenseWidget } from "../../components/dashboard/MonthlyDefenseWidget";
+import { MonthlyDefenseChart } from "../../components/savings/MonthlyDefenseChart";
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
@@ -117,6 +118,9 @@ export default function SavingsDashboard() {
 
           {/* This month's defended spend (Issue 8) */}
           <MonthlyDefenseWidget killedSubscriptions={killedSubs} />
+
+          {/* 올해 달별 방어액 — 지킨 달과 예정인 달을 나눠 보여준다 */}
+          <MonthlyDefenseChart killedSubscriptions={killedSubs} exchangeRate={rate} />
 
           {/* Main Savings Pot Widget */}
           <SavingsPot killedSubscriptions={killedSubs} />
