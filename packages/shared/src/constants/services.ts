@@ -10,14 +10,23 @@ export interface ServicePreset {
   cancelUrl: string;
   /**
    * Whether `cancelUrl` lands on the screen that holds the cancel button
-   * ("direct"), or merely on the service's front door, leaving the user to
-   * follow `cancelGuide` from there ("entry").
+   * ("direct"), or on a page on the way there — the service's front door or
+   * its account page — leaving the user to follow `cancelGuide` from there
+   * ("entry").
    *
    * The app calls these links a one-second direct route to cancellation. For
    * the entry ones that claim is false, so the UI has to say which it is
    * rather than promising the same thing for every service.
    */
   cancelUrlKind: "direct" | "entry";
+  /**
+   * 예전에 이 프리셋이 쓰던 해지 주소. 서비스가 주소를 바꾸면 옛 주소를 여기로 옮긴다.
+   *
+   * 구독은 등록할 때의 해지 주소를 그대로 저장한다. 프리셋만 고치면 이미 등록된
+   * 구독은 옛 주소(404일 수도 있다)를 계속 열므로, 저장소를 불러올 때
+   * `currentCancelUrl`로 지금 주소로 바꾼다.
+   */
+  legacyCancelUrls?: string[];
   cancelGuide: string;
   iconEmoji: string;
 }
@@ -46,7 +55,7 @@ export const PAYMENT_METHOD_OPTIONS: PaymentMethodOption[] = [
   {
     value: "apple_iap",
     label: "Apple App Store 인앱결제",
-    directCancelUrl: "https://apps.apple.com/account/subscriptions",
+    directCancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
     guide: "설정 > 본인 이름(Apple ID) > 구독 > 해당 구독 선택 > 구독 취소",
   },
   {
@@ -175,8 +184,11 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     category: "ott",
     defaultAmount: 13900,
     currency: "KRW",
-    cancelUrl: "https://www.disneyplus.com/account/cancel-subscription",
-    cancelUrlKind: "direct",
+    // 옛 해지 주소는 디즈니플러스가 스스로 계정 화면으로 돌려보낸다. 해지 버튼은
+    // 계정 화면에서 구독을 고른 뒤에 나오므로 direct가 아니다.
+    cancelUrl: "https://www.disneyplus.com/commerce/account",
+    cancelUrlKind: "entry",
+    legacyCancelUrls: ["https://www.disneyplus.com/account/cancel-subscription"],
     cancelGuide:
       "1. 디즈니플러스 계정 설정 접속\n2. [멤버십] 섹션에서 구독 중인 플랜 선택\n3. 하단의 [멤버십 취소] 클릭\n4. 취소 사유 선택 후 [취소 완료] 클릭",
     iconEmoji: "✨",
@@ -240,10 +252,13 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     category: "music",
     defaultAmount: 10900,
     currency: "KRW",
-    cancelUrl: "https://member.melon.com/pay/charge/payCancel.htm",
-    cancelUrlKind: "direct",
+    // 옛 해지 주소는 404다. 멜론 고객센터 FAQ는 메뉴 경로만 안내하고 해지 화면
+    // 주소를 밝히지 않아, 확인된 첫 화면으로 보내고 공식 경로를 안내한다.
+    cancelUrl: "https://www.melon.com/",
+    cancelUrlKind: "entry",
+    legacyCancelUrls: ["https://member.melon.com/pay/charge/payCancel.htm"],
     cancelGuide:
-      "1. 멜론 로그인 후 [내 정보] 진입\n2. [이용권 해지신청] 메뉴 클릭\n3. 비밀번호 재확인\n4. [혜택 포기하고 해지] 버튼 클릭",
+      "1. 멜론 PC웹(melon.com) 로그인 후 [내정보] 진입\n2. [멜론이용권/결제정보] > [멜론이용권] 선택\n3. [이용권 해지신청] 클릭\n4. 모바일 앱은 내정보 > 이용권/쿠폰/캐시 > 변경/해지 > 결제방법 변경/해지 > 해지",
     iconEmoji: "🍈",
   },
   {
@@ -318,8 +333,9 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     category: "cloud",
     defaultAmount: 0.99,
     currency: "USD",
-    cancelUrl: "https://apps.apple.com/account/subscriptions",
+    cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
     cancelUrlKind: "direct",
+    legacyCancelUrls: ["https://apps.apple.com/account/subscriptions"],
     cancelGuide:
       "1. 아이폰 설정 > 상단 내 이름 클릭\n2. [iCloud] - [계정 저장 공간 관리] 선택\n3. [저장 공간 요금제 변경] 클릭\n4. [다운그레이드 옵션]에서 무료 요금제(5GB) 선택 후 완료",
     iconEmoji: "☁️",
@@ -357,8 +373,11 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     category: "other",
     defaultAmount: 10,
     currency: "USD",
-    cancelUrl: "https://www.notion.so/my-account",
-    cancelUrlKind: "direct",
+    // 노션의 청구 설정은 앱 안의 설정 창에만 있고 고정 주소가 없다. 옛 주소
+    // (/my-account)는 계정 화면이 아니라 그 이름의 페이지를 찾으러 갔다.
+    cancelUrl: "https://www.notion.com/",
+    cancelUrlKind: "entry",
+    legacyCancelUrls: ["https://www.notion.so/my-account"],
     cancelGuide:
       "1. 노션 좌측 사이드바에서 [설정과 멤버] 클릭\n2. [청구] 메뉴 탭으로 이동\n3. 요금제 정보에서 [플랜 변경] 클릭\n4. [다운그레이드] 메뉴를 통해 무료(Free) 플랜으로 변경",
     iconEmoji: "📝",
@@ -370,8 +389,9 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     category: "ai",
     defaultAmount: 20,
     currency: "USD",
-    cancelUrl: "https://chat.openai.com/",
+    cancelUrl: "https://chatgpt.com/",
     cancelUrlKind: "entry",
+    legacyCancelUrls: ["https://chat.openai.com/"],
     cancelGuide:
       "1. 챗GPT 웹사이트 좌측 하단 프로필 클릭\n2. [My plan] 클릭\n3. [Manage my subscription] 클릭\n4. [Cancel plan] 버튼 클릭하여 해지 완료",
     iconEmoji: "🤖",
@@ -461,8 +481,9 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     category: "other",
     defaultAmount: 0,
     currency: "KRW",
-    cancelUrl: "https://apps.apple.com/account/subscriptions",
+    cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
     cancelUrlKind: "direct",
+    legacyCancelUrls: ["https://apps.apple.com/account/subscriptions"],
     cancelGuide:
       "1. 아이폰/아이패드 설정 > 최상단 프로필 이름 클릭\n2. [구독] 메뉴 선택\n3. 해지할 구독 항목 선택\n4. 하단의 [구독 취소] 클릭하여 확인",
     iconEmoji: "🍏",
@@ -531,6 +552,17 @@ export function getCancelUrlKind(cancelUrl?: string): "direct" | "entry" | "unkn
   if (!cancelUrl) return "unknown";
   const preset = POPULAR_SERVICES.find((service) => service.cancelUrl === cancelUrl);
   return preset?.cancelUrlKind ?? "unknown";
+}
+
+/**
+ * 예전 프리셋 해지 주소를 지금 주소로 바꾼다. 해당하지 않으면 그대로 돌려준다.
+ *
+ * 프리셋이 쓰던 주소와 정확히 같을 때만 바꾼다. 사용자가 직접 적은 주소는
+ * 비슷해 보여도 건드리지 않는다.
+ */
+export function currentCancelUrl(url: string): string {
+  const preset = POPULAR_SERVICES.find((service) => service.legacyCancelUrls?.includes(url));
+  return preset?.cancelUrl ?? url;
 }
 
 /**

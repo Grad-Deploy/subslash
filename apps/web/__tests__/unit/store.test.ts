@@ -2,6 +2,8 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   useStore,
   migrateSeededAccounts,
+  migrateLegacyCancelUrls,
+  mergePersistedState,
   isValidExchangeRate,
   DEFAULT_EXCHANGE_RATE_SETTING,
 } from "../../lib/store";
@@ -447,6 +449,50 @@ describe("migrateSeededAccounts", () => {
     const migrated = migrateSeededAccounts({ accounts: [seededAccount, mine], subscriptions: [] });
 
     expect(migrated.accounts).toEqual([mine]);
+  });
+});
+
+describe("migrateLegacyCancelUrls", () => {
+  const subWith = (id: string, cancelUrl?: string) => ({
+    id,
+    name: "멜론",
+    amount: 10900,
+    currency: "KRW" as const,
+    billingDay: 12,
+    billingCycle: "monthly" as const,
+    category: "music" as const,
+    status: "active" as const,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    cancelUrl,
+  });
+
+  it("예전 프리셋 주소로 저장된 구독의 해지 링크를 지금 주소로 바꾼다", () => {
+    // 멜론의 옛 해지 주소는 404다. 프리셋만 고치면 이미 등록한 구독은 계속 404를 연다.
+    const migrated = migrateLegacyCancelUrls({
+      subscriptions: [subWith("sub-1", "https://member.melon.com/pay/charge/payCancel.htm")],
+    });
+
+    expect(migrated.subscriptions?.[0].cancelUrl).toBe("https://www.melon.com/");
+  });
+
+  it("사용자가 적은 주소와 링크가 없는 구독은 그대로 둔다", () => {
+    const typed = subWith("sub-2", "https://my.melon.example/cancel");
+    const none = subWith("sub-3");
+
+    const migrated = migrateLegacyCancelUrls({ subscriptions: [typed, none] });
+
+    expect(migrated.subscriptions).toEqual([typed, none]);
+  });
+
+  it("저장소를 불러올 때마다 적용된다", () => {
+    // 버전을 올려야만 도는 migrate가 아니라 merge에 걸어 두었다. 앞으로 옛 주소를
+    // 프리셋에 더하기만 하면 기존 구독도 따라 바뀐다.
+    const merged = mergePersistedState(
+      { subscriptions: [subWith("sub-4", "https://chat.openai.com/")] },
+      useStore.getState(),
+    );
+
+    expect(merged.subscriptions[0].cancelUrl).toBe("https://chatgpt.com/");
   });
 });
 
