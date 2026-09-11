@@ -15,8 +15,13 @@ test.describe("Dashboard (E2E)", () => {
     await page.goto("/");
     await page.getByRole("button", { name: /지금 바로 시작하기/ }).click();
 
+    // 새 등록은 서비스부터 고른다. 이름·금액 칸은 고른 다음에 나온다.
     const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
+    await expect(dialog.getByPlaceholder(/서비스 이름 검색/)).toBeVisible();
+    await expect(dialog.getByRole("button", { name: /넷플릭스/ })).toBeVisible();
+    await expect(dialog.locator('input[name="name"]')).toHaveCount(0);
+
+    await dialog.getByRole("button", { name: /목록에 없는 서비스 직접 입력/ }).click();
     await expect(dialog.locator('input[name="name"]')).toBeVisible();
   });
 
