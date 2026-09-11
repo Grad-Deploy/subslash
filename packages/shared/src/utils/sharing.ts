@@ -246,3 +246,65 @@ export function sumMyYearDefendedKRW(
 ): DefendedSummary {
   return summarizeDefended(subs, (sub) => getMyYearDefendedAmountKRW(sub, targetYear, rate));
 }
+
+export interface MonthDefended {
+  month: number;
+  amount: number;
+  /**
+   * 아직 오지 않은 달. 이 달의 금액은 "해지하지 않았다면 나갔을 예정"이지
+   * 이미 지킨 돈이 아니다.
+   */
+  isFuture: boolean;
+}
+
+export interface YearDefendedSeries {
+  months: MonthDefended[];
+  /** 지난 달과 이번 달에 지킨 금액. */
+  pastAmount: number;
+  /** 남은 달에 지킬 예정인 금액. `pastAmount`와 더하면 `sumMyYearDefendedKRW`와 같다. */
+  scheduledAmount: number;
+  /** 결제 월이나 해지 시각을 몰라 어느 달에도 넣지 못한 구독 수. */
+  unknownCount: number;
+}
+
+/**
+ * 한 해의 방어액을 달별로 나눈다.
+ *
+ * 올해 방어액(`sumMyYearDefendedKRW`)은 남은 달의 결제일까지 더한 값이다. 달별로
+ * 펼쳐야 그중 얼마를 이미 지켰고 얼마가 아직 예정인지 구분된다 — 12월까지 더한
+ * 금액을 "지금까지 아낀 돈"으로 보여주면 사실이 아니다.
+ *
+ * 이번 달은 지난 달로 센다. 이번 달 방어액은 결제일 전에 해지했다는 사실로 이미
+ * 정해지기 때문이다(대시보드의 '이번 달 방어' 위젯과 같은 기준).
+ *
+ * 한 달이라도 판단할 수 없는 구독은 열두 달 모두 판단할 수 없다(결제 월 미설정,
+ * 깨진 해지 시각). 그런 구독은 어느 달에도 0으로 넣지 않고 `unknownCount`로 센다.
+ */
+export function getYearDefendedSeries(
+  subs: DefendedSubscription[],
+  targetYear: number,
+  rate: number = DEFAULT_EXCHANGE_RATE,
+  now: Date = new Date(),
+): YearDefendedSeries {
+  const known = subs.filter((sub) => getMyYearDefendedAmountKRW(sub, targetYear, rate) !== null);
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  const months = Array.from({ length: 12 }, (_, index): MonthDefended => {
+    const month = index + 1;
+    return {
+      month,
+      amount: sumMyMonthDefendedKRW(known, targetYear, month, rate).amount,
+      isFuture: targetYear > currentYear || (targetYear === currentYear && month > currentMonth),
+    };
+  });
+
+  let pastAmount = 0;
+  let scheduledAmount = 0;
+  for (const { amount, isFuture } of months) {
+    if (isFuture) scheduledAmount += amount;
+    else pastAmount += amount;
+  }
+
+  return { months, pastAmount, scheduledAmount, unknownCount: subs.length - known.length };
+}
