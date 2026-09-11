@@ -10,8 +10,6 @@ import {
   USERNAME_MAX,
   USERNAME_MIN,
   normalizeEmailAddress,
-  validateEmail,
-  validatePassword,
   validateSignup,
   type FieldErrors,
 } from "@subslash/shared";
@@ -19,12 +17,31 @@ import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
+import {
+  confirmStatusOf,
+  emailFormatStatus,
+  emailStatusOf,
+  passwordStatusOf,
+  shownStatus,
+  usernameStatusOf,
+  type EmailCheck,
+  type LiveStatus,
+} from "@lib/signup-status";
 
 const EMPTY = {
   username: "",
   email: "",
   password: "",
   passwordConfirm: "",
+};
+
+type TextField = keyof typeof EMPTY;
+
+const ALL_TOUCHED: Record<TextField, boolean> = {
+  username: true,
+  email: true,
+  password: true,
+  passwordConfirm: true,
 };
 
 /** 이메일 입력이 이만큼 멈추면 확인한다. 글자마다 물으면 입력 중인 주소마다 DNS를 두드린다. */
@@ -40,31 +57,47 @@ export function SignupForm() {
   const router = useRouter();
   const [form, setForm] = useState(EMPTY);
   const [isOver14, setIsOver14] = useState(false);
+  // 입력했거나 거쳐 간 칸. 이 칸들만 입력하는 동안 판정한다.
+  const [touched, setTouched] = useState<Partial<Record<TextField, boolean>>>({});
+  // 제출 때 받은 칸별 오류(이미 쓰는 아이디 등). 그 칸을 고치면 치운다.
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [emailCheck, setEmailCheck] = useState<{ email: string; status: LiveStatus } | null>(null);
+  const [emailCheck, setEmailCheck] = useState<EmailCheck>(null);
 
-  // 두 비밀번호 칸은 제출을 기다리지 않고 매 글자마다 상태를 보여준다.
-  const passwordStatus = passwordStatusOf(form.password);
-  const confirmStatus = confirmStatusOf(form.password, form.passwordConfirm);
-
-  // 이메일은 지금 칸에 있는 주소에 대한 결과만 보여준다. 고치는 순간 예전 결과는 사라진다.
   const normalizedEmail = normalizeEmailAddress(form.email);
-  const emailStatus = emailCheck?.email === normalizedEmail ? emailCheck.status : null;
-  // 제출 때 받은 오류(이미 가입된 이메일 등)는 도메인 확인과 다른 이야기라 그쪽을 우선한다.
-  const emailShown = errors.email ? null : emailStatus;
 
-  // 예전에는 도메인 확인이 가입 요청 안에서만 돌아서, 다른 칸을 전부 맞게 채우고
-  // 제출해야만 "존재하지 않는 도메인"을 볼 수 있었다. 이제 입력이 멈추면 바로 묻는다.
+  // 예전에는 아이디·빈 칸 오류가 회원가입 버튼을 누른 뒤에야 보였다. 이제 손댄
+  // 칸은 입력하는 대로 판정하고, 제출 때 받은 오류가 있으면 그것을 먼저 보인다.
+  const status: Record<TextField, LiveStatus> = {
+    username: shownStatus(
+      errors.username,
+      touched.username ? usernameStatusOf(form.username) : null,
+    ),
+    email: shownStatus(
+      errors.email,
+      touched.email ? emailStatusOf(normalizedEmail, emailCheck) : null,
+    ),
+    password: shownStatus(
+      errors.password,
+      touched.password ? passwordStatusOf(form.password) : null,
+    ),
+    passwordConfirm: shownStatus(
+      errors.passwordConfirm,
+      touched.passwordConfirm ? confirmStatusOf(form.password, form.passwordConfirm) : null,
+    ),
+  };
+
+  // 도메인 확인은 입력이 멈추면 바로 묻는다. 예전에는 가입 요청 안에서만 돌아서,
+  // 다른 칸을 전부 맞게 채우고 제출해야만 "존재하지 않는 도메인"을 볼 수 있었다.
   useEffect(() => {
     if (!normalizedEmail) return;
-    const formatError = validateEmail(normalizedEmail);
+    const formatStatus = emailFormatStatus(normalizedEmail);
     const controller = new AbortController();
 
     const timer = setTimeout(() => {
-      if (formatError) {
-        setEmailCheck({ email: normalizedEmail, status: { tone: "error", message: formatError } });
+      if (formatStatus) {
+        setEmailCheck({ email: normalizedEmail, status: formatStatus });
         return;
       }
       setEmailCheck({
@@ -72,7 +105,7 @@ export function SignupForm() {
         status: { tone: "neutral", pending: true, message: "도메인을 확인하는 중..." },
       });
       fetchDomainStatus(normalizedEmail, controller.signal)
-        .then((status) => setEmailCheck({ email: normalizedEmail, status }))
+        .then((result) => setEmailCheck({ email: normalizedEmail, status: result }))
         .catch(() => {
           // 미리 확인에 실패했을 뿐이다. 가입 요청이 다시 확인하므로 여기서는 단정하지 않는다.
           if (!controller.signal.aborted) setEmailCheck(null);
@@ -85,18 +118,21 @@ export function SignupForm() {
     };
   }, [normalizedEmail]);
 
-  const update = (field: keyof typeof EMPTY) => (value: string) => {
+  const touch = (field: TextField) => {
+    setTouched((prev) => (prev[field] ? prev : { ...prev, [field]: true }));
+  };
+
+  const update = (field: TextField) => (value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    // 고치는 중인 필드의 오류는 즉시 치운다. 계속 붉게 남아있으면 고쳐도 고친 것 같지 않다.
+    touch(field);
+    // 고치는 중인 필드의 제출 오류는 즉시 치운다. 계속 붉게 남아있으면 고쳐도 고친 것 같지 않다.
     setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
   };
 
-  const handleEmailBlur = () => {
-    // 칸을 벗어나면 기다리지 않고 형식 오류를 보여준다. 형식이 맞으면 도메인 확인은 이미 진행 중이다.
-    const formatError = normalizedEmail ? validateEmail(normalizedEmail) : undefined;
-    if (formatError) {
-      setEmailCheck({ email: normalizedEmail, status: { tone: "error", message: formatError } });
-    }
+  /** 형식 오류는 입력이 멈추기를 기다리지 않고 보여준다 — 칸을 벗어날 때와 제출할 때. */
+  const showEmailFormatNow = () => {
+    const formatStatus = normalizedEmail ? emailFormatStatus(normalizedEmail) : null;
+    if (formatStatus) setEmailCheck({ email: normalizedEmail, status: formatStatus });
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -105,15 +141,16 @@ export function SignupForm() {
 
     const { errors: localErrors, value } = validateSignup({ ...form, isOver14 });
     if (!value) {
-      setErrors(localErrors);
+      // 칸별 문구는 입력 중 판정이 그대로 보여준다(같은 검증 함수를 쓴다). 모든
+      // 칸을 손댄 것으로 치고, 글자를 치지 않는 체크박스 오류만 따로 둔다.
+      setTouched(ALL_TOUCHED);
+      showEmailFormatNow();
+      setErrors((prev) => ({ ...prev, isOver14: localErrors.isOver14 }));
       return;
     }
 
-    // 미리 확인에서 이미 틀렸다고 나온 도메인은 서버까지 보내지 않는다.
-    if (emailStatus?.tone === "error") {
-      setErrors({ email: emailStatus.message });
-      return;
-    }
+    // 미리 확인에서 이미 틀렸다고 나온 도메인은 서버까지 보내지 않는다. 문구는 칸 아래에 떠 있다.
+    if (status.email?.tone === "error") return;
 
     setSubmitting(true);
     try {
@@ -152,7 +189,7 @@ export function SignupForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
-      <Field label="아이디" htmlFor="username" error={errors.username}>
+      <Field label="아이디" htmlFor="username" status={status.username}>
         <Input
           id="username"
           name="username"
@@ -160,11 +197,12 @@ export function SignupForm() {
           placeholder={`영문 소문자·숫자·밑줄 ${USERNAME_MIN}~${USERNAME_MAX}자`}
           value={form.username}
           onChange={(e) => update("username")(e.target.value)}
-          aria-invalid={Boolean(errors.username)}
+          onBlur={() => touch("username")}
+          {...statusProps("username", status.username)}
         />
       </Field>
 
-      <Field label="이메일" htmlFor="email" error={errors.email}>
+      <Field label="이메일" htmlFor="email" status={status.email}>
         <Input
           id="email"
           name="email"
@@ -173,22 +211,15 @@ export function SignupForm() {
           placeholder="you@example.com"
           value={form.email}
           onChange={(e) => update("email")(e.target.value)}
-          onBlur={handleEmailBlur}
-          aria-invalid={Boolean(errors.email) || emailShown?.tone === "error"}
-          aria-describedby="email-status"
-          className={statusBorder(errors.email ? ERROR_BORDER_ONLY : emailShown)}
+          onBlur={() => {
+            touch("email");
+            showEmailFormatNow();
+          }}
+          {...statusProps("email", status.email)}
         />
-        <StatusMessage id="email-status" status={emailShown} />
       </Field>
 
-      {/* 두 비밀번호 칸은 입력이 있는 동안 제출 시 오류 대신 실시간 상태를 보여준다.
-          둘 다 띄우면 고쳐서 조건을 맞춘 뒤에도 제출 때의 빨간 오류가 초록 문구
-          옆에 남는다. 칸이 비어 있을 때만 제출 시 오류("입력해주세요")가 나온다. */}
-      <Field
-        label="비밀번호"
-        htmlFor="password"
-        error={passwordStatus ? undefined : errors.password}
-      >
+      <Field label="비밀번호" htmlFor="password" status={status.password}>
         <Input
           id="password"
           name="password"
@@ -197,18 +228,12 @@ export function SignupForm() {
           placeholder={`${PASSWORD_MIN}자 이상`}
           value={form.password}
           onChange={(e) => update("password")(e.target.value)}
-          aria-invalid={passwordStatus ? passwordStatus.tone === "error" : Boolean(errors.password)}
-          aria-describedby="password-status"
-          className={statusBorder(passwordStatus)}
+          onBlur={() => touch("password")}
+          {...statusProps("password", status.password)}
         />
-        <StatusMessage id="password-status" status={passwordStatus} />
       </Field>
 
-      <Field
-        label="비밀번호 확인"
-        htmlFor="passwordConfirm"
-        error={confirmStatus ? undefined : errors.passwordConfirm}
-      >
+      <Field label="비밀번호 확인" htmlFor="passwordConfirm" status={status.passwordConfirm}>
         <Input
           id="passwordConfirm"
           name="passwordConfirm"
@@ -217,20 +242,22 @@ export function SignupForm() {
           placeholder="위와 같은 비밀번호를 한 번 더"
           value={form.passwordConfirm}
           onChange={(e) => update("passwordConfirm")(e.target.value)}
-          aria-invalid={
-            confirmStatus ? confirmStatus.tone === "error" : Boolean(errors.passwordConfirm)
-          }
-          aria-describedby="passwordConfirm-status"
-          className={statusBorder(confirmStatus)}
+          onBlur={() => touch("passwordConfirm")}
+          {...statusProps("passwordConfirm", status.passwordConfirm)}
         />
-        <StatusMessage id="passwordConfirm-status" status={confirmStatus} />
       </Field>
 
       {/* 나이·성별은 가입 때 묻지 않는다. 칸이 늘수록 가입을 포기하는 사람이 늘어서,
           가입 뒤 '내 정보'에서 원할 때만 적는다. 만 14세 확인만은 법정대리인
           동의 문제 때문에 필수로 남긴다. */}
       <div className="space-y-1.5">
-        <label htmlFor="isOver14" className="flex items-center gap-2 text-sm cursor-pointer">
+        <label
+          htmlFor="isOver14"
+          className={cn(
+            "flex items-center gap-2 rounded-xl border bg-card px-3.5 py-2.5 text-sm cursor-pointer transition-colors",
+            errors.isOver14 ? "border-destructive" : "border-border",
+          )}
+        >
           <input
             id="isOver14"
             name="isOver14"
@@ -249,7 +276,11 @@ export function SignupForm() {
           </span>
         </label>
         {errors.isOver14 && (
-          <p className="text-[11px] font-medium text-destructive" role="alert">
+          <p
+            className="flex items-center gap-1 text-[11px] font-medium text-destructive"
+            role="alert"
+          >
+            <X className="w-3.5 h-3.5 shrink-0" aria-hidden />
             {errors.isOver14}
           </p>
         )}
@@ -282,12 +313,12 @@ export function SignupForm() {
 function Field({
   label,
   htmlFor,
-  error,
+  status,
   children,
 }: {
   label: string;
   htmlFor: string;
-  error?: string;
+  status: LiveStatus;
   children: React.ReactNode;
 }) {
   return (
@@ -296,43 +327,18 @@ function Field({
         {label}
       </label>
       {children}
-      {error && (
-        <p className="text-[11px] font-medium text-destructive" role="alert">
-          {error}
-        </p>
-      )}
+      <StatusMessage id={`${htmlFor}-status`} status={status} />
     </div>
   );
 }
 
-/**
- * 입력 중인 칸의 상태. 칸이 비어 있으면 아직 판단할 게 없어 null이다.
- * `neutral`은 맞다 틀리다를 말할 수 없는 상태(확인 중, 조회 실패)다 — 조회가
- * 실패한 것을 빨간색으로 칠하면 도메인이 틀렸다고 말하는 셈이 된다.
- */
-type LiveStatus = {
-  tone: "ok" | "error" | "neutral";
-  message: string;
-  pending?: boolean;
-} | null;
-
-/** 제출 오류가 따로 문구를 띄울 때, 테두리만 빨갛게 맞추기 위한 값. */
-const ERROR_BORDER_ONLY: LiveStatus = { tone: "error", message: "" };
-
-/** 문구는 서버와 같은 validatePassword에서 온다. 여기서 초록이면 서버도 통과시킨다. */
-function passwordStatusOf(password: string): LiveStatus {
-  if (!password) return null;
-  const issue = validatePassword(password);
-  return issue
-    ? { tone: "error", message: issue }
-    : { tone: "ok", message: "사용할 수 있는 비밀번호입니다." };
-}
-
-function confirmStatusOf(password: string, confirm: string): LiveStatus {
-  if (!confirm) return null;
-  return password === confirm
-    ? { tone: "ok", message: "비밀번호가 일치합니다." }
-    : { tone: "error", message: "비밀번호가 일치하지 않습니다." };
+/** 칸의 테두리 색과 화면 낭독기용 속성. 문구는 Field가 칸 아래에 붙인다. */
+function statusProps(id: string, status: LiveStatus) {
+  return {
+    "aria-invalid": status?.tone === "error",
+    "aria-describedby": `${id}-status`,
+    className: statusBorder(status),
+  };
 }
 
 /**
