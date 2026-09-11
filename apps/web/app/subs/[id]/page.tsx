@@ -225,15 +225,14 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
         )}
       </div>
 
-      {/* Direct Cancellation Deep-Link & Dark Pattern Breaker */}
+      {/* 해지 경로 안내 — 계정, 결제 수단, 링크, 단계 안내를 한곳에 */}
       <div className="p-6 border-2 border-primary/20 bg-muted/30 rounded-2xl space-y-5">
         <div className="flex items-center gap-2">
           <span className="text-xl">⚡</span>
-          <h2 className="text-lg font-bold">1초 해지 직통 내비게이터 (Kill-Switch Hub)</h2>
+          <h2 className="text-lg font-bold">해지 경로 안내</h2>
         </div>
         <p className="text-xs text-muted-foreground">
-          어떤 계정으로 가입했는지, 어떤 수단으로 결제했는지 바로 확인하고 해지 페이지로 즉시
-          이동합니다.
+          어떤 계정으로 가입했는지, 어떤 수단으로 결제했는지 확인하고 해지하러 갈 링크를 엽니다.
         </p>
 
         {/* Linked Account Card */}
@@ -333,7 +332,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
 
         {sub.cancelGuide && (
           <div className="p-4 bg-background border rounded-xl space-y-2 text-xs">
-            <div className="font-bold text-foreground">💡 30초 다크 패턴 탈출 가이드:</div>
+            <div className="font-bold text-foreground">💡 저장해 둔 해지 단계:</div>
             <p className="whitespace-pre-line text-muted-foreground leading-relaxed">
               {sub.cancelGuide}
             </p>
