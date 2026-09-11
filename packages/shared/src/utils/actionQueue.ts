@@ -1,5 +1,6 @@
-import { Subscription, UsageLog } from "../types";
+import { Currency, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
+import { formatAmount, formatKRW } from "./currency";
 import { getDaysUntilBillingFor } from "./date";
 import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
@@ -56,7 +57,12 @@ export interface ActionItem {
    */
   amountAtStake: number | null;
   /**
-   * 'price-check' 항목에서, 앱에 실린 프리셋 기준 요금(KRW).
+   * 구독 자체의 통화. `presetAmount`는 이 통화로 적혀 있다 — 원화로 환산된
+   * `amountAtStake`와 달리, 달러 구독의 프리셋 요금을 ₩로 찍으면 안 된다.
+   */
+  currency: Currency;
+  /**
+   * 'price-check' 항목에서, 앱에 실린 프리셋 기준 요금(`currency` 통화).
    *
    * 비교할 프리셋이 없거나 통화·주기가 달라 비교할 수 없으면 null이고,
    * 이때 화면은 '최신 요금으로 갱신' 버튼을 내밀지 않는다 — 갱신할 기준값을
@@ -114,10 +120,6 @@ function chargeAtStakeKRW(sub: Subscription, rate: number): number {
     : getMyMonthlyAmountKRW(sub, rate);
 }
 
-function won(amount: number): string {
-  return `₩${Math.round(amount).toLocaleString("ko-KR")}`;
-}
-
 /**
  * 활성 구독과 체크인 기록에서 오늘의 행동 큐를 만든다.
  *
@@ -149,6 +151,9 @@ export function getActionQueue(
     const isRisky = log?.riskLevel === "red";
     const billingSoon = days !== null && days >= 0 && days <= BILLING_SOON_DAYS;
     const stake = days === null ? null : chargeAtStakeKRW(sub, rate);
+    // 체크인의 1회당 단가는 구독 자체의 통화로 기록된다. 달러 구독에 ₩를
+    // 붙이면 $10이 "₩10"으로 읽힌다.
+    const perUse = log ? formatAmount(log.costPerUse, sub.currency) : "";
 
     let kind: ActionKind;
     let reason: string;
@@ -156,16 +161,16 @@ export function getActionQueue(
     if (billingSoon && isRisky) {
       kind = "billing-soon-risky";
       reason =
-        `D-${days} · 마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${won(log!.costPerUse)})` +
-        (stake !== null ? `. 결제 전에 끊으면 ${won(stake)}을 지킵니다.` : ".");
+        `D-${days} · 마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${perUse})` +
+        (stake !== null ? `. 결제 전에 끊으면 ${formatKRW(stake)}을 지킵니다.` : ".");
     } else if (billingSoon) {
       kind = "billing-soon";
       reason = log
-        ? `D-${days} · ${stake !== null ? `${won(stake)}이 곧 빠져나갑니다.` : "곧 결제됩니다."}`
+        ? `D-${days} · ${stake !== null ? `${formatKRW(stake)}이 곧 빠져나갑니다.` : "곧 결제됩니다."}`
         : `D-${days} · 아직 체크인한 적이 없어, 끊을지 판단할 근거가 없습니다.`;
     } else if (isRisky) {
       kind = "risky";
-      reason = `마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${won(log!.costPerUse)}). 돈값을 못 하고 있습니다.`;
+      reason = `마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${perUse}). 돈값을 못 하고 있습니다.`;
     } else if (sub.billingCycle === "yearly" && typeof sub.billingMonth !== "number") {
       kind = "missing-billing-month";
       reason = "연간 결제인데 결제 월이 없어 D-day도, 지킨 금액도 계산할 수 없습니다.";
@@ -179,7 +184,7 @@ export function getActionQueue(
         reason = `마지막 체크인이 ${since}일 전입니다. 그 사이 사용 습관이 달라졌을 수 있습니다.`;
       } else if (priceChecks.has(sub.id)) {
         kind = "price-check";
-        reason = `등록된 금액이 ${won(sub.amount)}입니다. 지금도 맞는지 확인해주세요.`;
+        reason = `등록된 금액이 ${formatAmount(sub.amount, sub.currency)}입니다. 지금도 맞는지 확인해주세요.`;
       } else {
         // 급한 일이 없는 구독은 큐에 올리지 않는다.
         continue;
@@ -195,6 +200,7 @@ export function getActionQueue(
       verb: VERB[kind],
       daysUntilBilling: days,
       amountAtStake: stake,
+      currency: sub.currency,
       presetAmount: kind === "price-check" ? (priceChecks.get(sub.id) ?? null) : null,
       priority: PRIORITY[kind],
     });

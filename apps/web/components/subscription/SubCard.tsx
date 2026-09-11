@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Subscription,
   formatCurrency,
+  formatKRW,
   formatSettlementMessage,
   getMonthlyAmountKRW,
   getMyMonthlyAmountKRW,
@@ -79,14 +80,14 @@ export function SubCard({ subscription, onCheckIn, onKill, onRevive, onDelete }:
                 {(subscription.currency !== "KRW" || subscription.billingCycle === "yearly") && (
                   <span className="text-xs opacity-80">
                     {" "}
-                    (월 ₩{getMonthlyAmountKRW(subscription, rate).toLocaleString()})
+                    (월 {formatKRW(getMonthlyAmountKRW(subscription, rate))})
                   </span>
                 )}
               </p>
               {shared && (
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  👥 {getSharingCount(subscription)}명이서 나눔 · 내 몫 월 ₩
-                  {getMyMonthlyAmountKRW(subscription, rate).toLocaleString()}
+                  👥 {getSharingCount(subscription)}명이서 나눔 · 내 몫 월{" "}
+                  {formatKRW(getMyMonthlyAmountKRW(subscription, rate))}
                 </p>
               )}
             </div>

@@ -90,10 +90,35 @@ describe("공유 구독 분담", () => {
     // 남은 ₩8,000을 두 명이 나눠 1인 ₩4,000.
     expect(message).toContain("₩4,000");
   });
+
+  it("연간 구독의 정산 문구는 매월이 아니라 매년 결제라고 말한다", () => {
+    const message = formatSettlementMessage({
+      ...netflix,
+      amount: 120000,
+      billingCycle: "yearly",
+      billingMonth: 3,
+      sharingCount: 4,
+    });
+
+    expect(message).toContain("매년 3월 15일");
+    expect(message).not.toContain("매월");
+  });
+
+  it("결제 월을 모르는 연간 구독에는 날짜를 지어 붙이지 않는다", () => {
+    const message = formatSettlementMessage({
+      ...netflix,
+      amount: 120000,
+      billingCycle: "yearly",
+      sharingCount: 4,
+    });
+
+    expect(message).toContain("매년 1회");
+    expect(message).not.toContain("15일");
+  });
 });
 
 describe("해지 시점 기준 당해년도 실제 방어액 계산", () => {
-  it("월간 구독을 9월에 해지하면 9~12월 4개월치가 올해 방어액으로 계산된다", () => {
+  it("월간 구독을 9월 결제일 전에 해지하면 9~12월 4개월치가 올해 방어액으로 계산된다", () => {
     const sub = {
       ...netflix,
       killedAt: "2026-09-10T10:00:00.000Z",
@@ -101,6 +126,28 @@ describe("해지 시점 기준 당해년도 실제 방어액 계산", () => {
     // 9, 10, 11, 12월 4회 x 17,000 = 68,000
     const defended = getMyYearDefendedAmountKRW(sub, 2026);
     expect(defended).toBe(68000);
+  });
+
+  it("그 달 결제일이 지난 뒤 해지했다면 그 달은 올해 방어액에 넣지 않는다", () => {
+    // 9월 15일 결제가 이미 나간 뒤인 9월 20일 해지 — 10~12월 3개월치만 지켰다.
+    const sub = { ...netflix, killedAt: "2026-09-20T12:00:00.000Z" };
+    expect(getMyYearDefendedAmountKRW(sub, 2026)).toBe(17000 * 3);
+  });
+
+  it("결제 월을 모르는 연간 구독은 남은 달로 나눠 채우지 않고 null이다", () => {
+    const yearlySub = {
+      name: "어도비 CC",
+      amount: 600000,
+      currency: "KRW" as const,
+      billingCycle: "yearly" as const,
+      billingDay: 1,
+      killedAt: "2026-08-15T10:00:00.000Z",
+    };
+    expect(getMyYearDefendedAmountKRW(yearlySub, 2026)).toBeNull();
+  });
+
+  it("해지 시각이 깨졌으면 방어액을 지어내지 않고 null이다", () => {
+    expect(getMyYearDefendedAmountKRW({ ...netflix, killedAt: "언젠가" }, 2026)).toBeNull();
   });
 
   it("전년도에 해지된 구독은 올해 12개월 전체가 방어된 것으로 계산된다", () => {
@@ -127,6 +174,7 @@ describe("해지 시점 기준 당해년도 실제 방어액 계산", () => {
       amount: 600000,
       currency: "KRW" as const,
       billingCycle: "yearly" as const,
+      billingDay: 1,
       billingMonth: 11, // 11월 결제 예정
       killedAt: "2026-08-15T10:00:00.000Z", // 8월에 해지
     };
@@ -140,6 +188,7 @@ describe("해지 시점 기준 당해년도 실제 방어액 계산", () => {
       amount: 600000,
       currency: "KRW" as const,
       billingCycle: "yearly" as const,
+      billingDay: 1,
       billingMonth: 3, // 3월 결제 완료
       killedAt: "2026-08-15T10:00:00.000Z", // 8월에 해지
     };
@@ -155,10 +204,25 @@ describe("해지 시점 기준 당해년도 실제 방어액 계산", () => {
         amount: 14900,
         currency: "KRW" as const,
         billingCycle: "monthly" as const,
-        killedAt: "2026-10-01T10:00:00.000Z", // 3 x 14,900 = 44,700
+        billingDay: 1,
+        killedAt: "2026-10-01T10:00:00.000Z", // 결제일 당일 해지 — 3 x 14,900 = 44,700
       },
     ];
-    const total = sumMyYearDefendedKRW(subs, 2026);
-    expect(total).toBe(68000 + 44700);
+    expect(sumMyYearDefendedKRW(subs, 2026)).toEqual({ amount: 68000 + 44700, unknownCount: 0 });
+  });
+
+  it("판단할 수 없는 구독은 합계에 0으로 섞지 않고 따로 센다", () => {
+    const subs = [
+      { ...netflix, killedAt: "2026-09-10T10:00:00.000Z" },
+      {
+        name: "어도비 CC",
+        amount: 600000,
+        currency: "KRW" as const,
+        billingCycle: "yearly" as const,
+        billingDay: 1,
+        killedAt: "2026-08-15T10:00:00.000Z",
+      },
+    ];
+    expect(sumMyYearDefendedKRW(subs, 2026)).toEqual({ amount: 68000, unknownCount: 1 });
   });
 });

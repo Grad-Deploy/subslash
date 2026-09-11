@@ -4,7 +4,7 @@ import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { users } from "@lib/schema";
 import { generateSyncToken, hashSyncToken, signLink } from "@lib/tokens";
 import { appUrl, sendEmail, verificationEmail } from "@lib/email";
-import { normalizeEmail } from "@lib/notify-server";
+import { deleteUserCompletely, normalizeEmail } from "@lib/notify-server";
 
 const VERIFY_TTL_SECONDS = 60 * 60 * 24 * 3;
 
@@ -30,35 +30,33 @@ export async function POST(request: NextRequest) {
 
     const db = getDb();
     const syncToken = generateSyncToken();
-    const syncTokenHash = hashSyncToken(syncToken);
 
-    const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
-
-    let userId: string;
+    // 이미 있는 주소로 다시 신청하면 처음부터 다시 시작한다. 예전에는 토큰만
+    // 새로 주고 확인 상태와 서버 사본을 그대로 넘겨서, 남의 주소만 알면 그
+    // 사람의 구독 사본을 캘린더 피드로 읽거나, 사본을 바꿔 그 사람에게 가는
+    // 알림 메일의 내용을 정할 수 있었다. 주소의 주인임을 다시 확인하기
+    // 전에는 이전 기록을 아무것도 넘겨받지 않는다.
+    const existing = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
     if (existing[0]) {
-      // Re-opting in from a new browser: rotate the token so only the newest
-      // device can sync, but keep any existing verification.
-      userId = existing[0].id;
-      await db.update(users).set({ syncTokenHash, reminderDays }).where(eq(users.id, userId));
-    } else {
-      const inserted = await db
-        .insert(users)
-        .values({ email, syncTokenHash, reminderDays })
-        .returning({ id: users.id });
-      userId = inserted[0].id;
+      await deleteUserCompletely(existing[0].id);
     }
 
-    const alreadyVerified = Boolean(existing[0]?.verifiedAt);
+    const inserted = await db
+      .insert(users)
+      .values({ email, syncTokenHash: hashSyncToken(syncToken), reminderDays })
+      .returning({ id: users.id });
 
-    if (!alreadyVerified) {
-      const token = signLink({ uid: userId, act: "verify" }, VERIFY_TTL_SECONDS);
-      const { subject, html, text } = verificationEmail(
-        `${appUrl()}/api/notify/verify?token=${encodeURIComponent(token)}`,
-      );
-      await sendEmail({ to: email, subject, html, text });
-    }
+    const token = signLink({ uid: inserted[0].id, act: "verify" }, VERIFY_TTL_SECONDS);
+    const { subject, html, text } = verificationEmail(
+      `${appUrl()}/api/notify/verify?token=${encodeURIComponent(token)}`,
+    );
+    await sendEmail({ to: email, subject, html, text });
 
-    return NextResponse.json({ syncToken, email, reminderDays, verified: alreadyVerified });
+    return NextResponse.json({ syncToken, email, reminderDays, verified: false });
   } catch (error) {
     console.error("[api/notify/subscribe]", error);
     return NextResponse.json({ error: "알림 신청을 처리하지 못했습니다." }, { status: 500 });

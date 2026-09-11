@@ -212,6 +212,40 @@ describe("알림 옵트인", () => {
     expect(response.status).toBe(400);
     expect(await getDb().select().from(users)).toHaveLength(0);
   });
+
+  it("확인된 주소로 다시 신청하면 확인 상태와 서버 사본을 넘겨주지 않고 처음부터 시작한다", async () => {
+    const ownerToken = await optIn("owner@example.com");
+    const [owner] = await getDb().select().from(users);
+    await markVerified(owner.id);
+    await putMirror(ownerToken, [
+      {
+        id: "sub-1",
+        name: "넷플릭스",
+        amount: 17000,
+        currency: "KRW",
+        billingDay: 10,
+        billingCycle: "monthly",
+      },
+    ]);
+
+    // 주소만 아는 다른 사람이 같은 주소로 신청한다.
+    const response = await subscribeRoute(
+      request("http://localhost:3000/api/notify/subscribe", {
+        method: "POST",
+        body: JSON.stringify({ email: "owner@example.com" }),
+      }),
+    );
+    expect((await response.json()).verified).toBe(false);
+
+    const rows = await getDb().select().from(users);
+    expect(rows).toHaveLength(1);
+    // 주인이 메일로 다시 확인하기 전에는 알림이 나가지 않는다.
+    expect(rows[0].verifiedAt).toBeNull();
+    // 새 토큰으로는 원래 주인의 구독 사본에 닿을 수 없다(캘린더 피드로도).
+    expect(await getDb().select().from(mirroredSubscriptions)).toHaveLength(0);
+    // 원래 기기의 토큰은 더 이상 통하지 않는다.
+    expect((await putMirror(ownerToken, [])).status).toBe(401);
+  });
 });
 
 describe("미러 동기화", () => {

@@ -39,10 +39,6 @@ export function formatShockMessage(
   return `이번 달 ${serviceName} 1회당 ${costPerUseFormatted}을 지출하셨습니다.`;
 }
 
-export function calculateAnnualSavings(monthlyAmount: number): number {
-  return monthlyAmount * 12;
-}
-
 export interface SavingsEquivalent {
   emoji: string;
   /** Reward name, e.g. "맛있는 치킨". */
