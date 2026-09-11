@@ -28,11 +28,35 @@ async function seed(page: Page, subscriptions: Record<string, unknown>[]) {
 }
 
 test.describe("Subscription Flow (E2E)", () => {
-  test("구독 등록 플로우", async ({ page }) => {
+  test("구독 등록 플로우: 목록에서 고르면 요금이 채워지고 결제일만 적으면 된다", async ({
+    page,
+  }) => {
     await page.goto("/");
     await page.getByRole("button", { name: /지금 바로 시작하기/ }).click();
 
     const dialog = page.getByRole("dialog");
+    await dialog.getByPlaceholder(/서비스 이름 검색/).fill("넷플");
+    await dialog.getByRole("button", { name: /넷플릭스/ }).click();
+
+    await expect(dialog.locator('input[name="amount"]')).toHaveValue("17000");
+    // 결제일은 미리 채우지 않는다 — 채워 두면 손대지 않은 사람의 D-day가 지어낸 날짜가 된다.
+    await expect(dialog.locator('input[name="billingDay"]')).toHaveValue("");
+    // 이름·해지 링크는 프리셋이 알고 있어 묻지 않는다.
+    await expect(dialog.locator('input[name="name"]')).toHaveCount(0);
+
+    await dialog.locator('input[name="billingDay"]').fill("15");
+    await dialog.locator('button[type="submit"]').click();
+
+    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page.getByText("넷플릭스").first()).toBeVisible({ timeout: 30_000 });
+  });
+
+  test("구독 등록 플로우: 목록에 없는 서비스 직접 입력", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /지금 바로 시작하기/ }).click();
+
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: /목록에 없는 서비스 직접 입력/ }).click();
     await dialog.locator('input[name="name"]').fill("Netflix");
     await dialog.locator('input[name="amount"]').fill("17000");
     await dialog.locator('input[name="billingDay"]').fill("15");
