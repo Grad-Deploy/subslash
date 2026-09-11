@@ -58,6 +58,9 @@ export function AutoImportModal({
 }: AutoImportModalProps) {
   const { accounts, addAccount, addBatchSubscriptions, subscriptions, clearSubscriptions } =
     useStore();
+  // '모두 지우고'는 해지한 구독과 그 절약 기록까지 지운다. 활성 목록만 보고 온
+  // 사람이 모르고 지우지 않게 따로 적는다.
+  const killedCount = subscriptions.filter((sub) => sub.status === "killed").length;
   const rate = useExchangeRate();
   const [activeTab, setActiveTab] = useState<"email" | "sms">("sms");
 
@@ -558,6 +561,7 @@ export function AutoImportModal({
                     <span className="text-rose-600 dark:text-rose-400 font-bold">
                       {subscriptions.length}건
                     </span>
+                    {killedCount > 0 && `, 해지한 구독 ${killedCount}건 포함`}
                     )을 모두 지우고 이번 결과로 새로 등록
                   </>
                 ) : (
@@ -582,7 +586,10 @@ export function AutoImportModal({
                   onClick={() => {
                     if (
                       confirm(
-                        `현재 등록된 모든 구독(${subscriptions.length}건)을 초기화하시겠습니까?`,
+                        `현재 등록된 모든 구독(${subscriptions.length}건)을 초기화하시겠습니까?` +
+                          (killedCount > 0
+                            ? `\n해지한 구독 ${killedCount}건의 절약 기록도 함께 지워집니다.`
+                            : ""),
                       )
                     ) {
                       clearSubscriptions();

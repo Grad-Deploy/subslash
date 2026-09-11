@@ -27,6 +27,8 @@ export default function Home() {
     undefined,
   );
   const [mounted, setMounted] = useState(false);
+  const activeCount = subscriptions.filter((sub) => sub.status === "active").length;
+  const killedCount = subscriptions.filter((sub) => sub.status === "killed").length;
 
   useEffect(() => {
     setMounted(true);
@@ -91,18 +93,42 @@ export default function Home() {
         </p>
       </div>
 
-      {/* Existing Subscriptions Banner */}
+      {/*
+        구독 중인 것과 해지한 것을 따로 센다. 예전에는 해지한 구독까지 합쳐
+        "N개의 구독이 등록되어 있습니다"라고 하고 대시보드로 보냈는데, 대시보드와
+        내 구독의 활성 탭에는 하나도 없었다.
+      */}
       {mounted && subscriptions.length > 0 && (
         <div className="w-full bg-secondary/80 border rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="text-left">
-            <p className="font-bold text-sm">
-              현재 {subscriptions.length}개의 구독이 등록되어 있습니다.
-            </p>
-            <p className="text-xs text-muted-foreground">대시보드에서 가성비 상태를 점검하세요.</p>
+            {activeCount > 0 ? (
+              <>
+                <p className="font-bold text-sm">
+                  현재 구독 중인 서비스가 {activeCount}개 있습니다.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  대시보드에서 가성비 상태를 점검하세요.
+                  {killedCount > 0 && ` 해지한 구독 ${killedCount}개는 절약 현황에 있습니다.`}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-bold text-sm">지금 구독 중인 서비스는 없습니다.</p>
+                <p className="text-xs text-muted-foreground">
+                  해지한 구독 {killedCount}개는 절약 현황에서 볼 수 있습니다.
+                </p>
+              </>
+            )}
           </div>
-          <Button onClick={() => router.push("/dashboard")} variant="default">
-            대시보드로 가기 →
-          </Button>
+          {activeCount > 0 ? (
+            <Button onClick={() => router.push("/dashboard")} variant="default">
+              대시보드로 가기 →
+            </Button>
+          ) : (
+            <Button onClick={() => router.push("/savings")} variant="default">
+              절약 현황 보기 →
+            </Button>
+          )}
         </div>
       )}
 
