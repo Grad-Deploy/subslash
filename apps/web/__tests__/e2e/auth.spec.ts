@@ -49,11 +49,29 @@ test.describe("계정 (E2E)", () => {
     await expect(username).not.toHaveCSS("border-top-color", DEFAULT_BORDER);
     await expect(username).not.toHaveCSS("border-top-color", ERROR_BORDER);
 
-    // 형식이 틀린 이메일은 서버에 묻지 않고 입력이 멈추면 바로 알려준다.
+    // 이메일은 입력이 멈추면 형식과 도메인을 바로 알려준다.
     const email = page.locator("#email");
     await email.fill("sean@");
     await expect(page.getByText(/잘못된 이메일 형식입니다/)).toBeVisible();
     await expect(email).toHaveCSS("border-top-color", ERROR_BORDER);
+
+    // 실제로 있는 도메인이어도 자주 쓰는 메일 서비스가 아니면 받지 않는다.
+    await email.fill("sean@exampl.com");
+    await expect(page.getByText(/가입할 수 없는 이메일입니다/)).toBeVisible();
+    await expect(email).toHaveCSS("border-top-color", ERROR_BORDER);
+
+    await email.fill("sean@gmial.com");
+    await expect(page.getByText(/혹시 gmail\.com 아닌가요\?/)).toBeVisible();
+
+    await email.fill("sean@naver.com");
+    await expect(page.getByText(/쓸 수 있는 이메일입니다/)).toBeVisible();
+    await expect(email).not.toHaveCSS("border-top-color", ERROR_BORDER);
+
+    // 다른 칸으로 넘어가도 틀린 칸의 붉은 테두리는 남는다.
+    await expect(username).not.toHaveCSS("border-top-color", ERROR_BORDER);
+    await username.fill("ab");
+    await email.focus();
+    await expect(username).toHaveCSS("border-top-color", ERROR_BORDER);
 
     const password = page.locator("#password");
     await password.fill("short");

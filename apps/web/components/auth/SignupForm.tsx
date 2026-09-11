@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Check, Info, Loader2, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import {
   MIN_AGE,
   PASSWORD_MIN,
@@ -19,7 +19,7 @@ import { refreshAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
 import {
   confirmStatusOf,
-  emailFormatStatus,
+  emailStatusFor,
   emailStatusOf,
   passwordStatusOf,
   shownStatus,
@@ -44,7 +44,10 @@ const ALL_TOUCHED: Record<TextField, boolean> = {
   passwordConfirm: true,
 };
 
-/** 이메일 입력이 이만큼 멈추면 확인한다. 글자마다 물으면 입력 중인 주소마다 DNS를 두드린다. */
+/**
+ * 이메일은 입력이 이만큼 멈추면 판정한다. `sean@g`처럼 치는 도중의 주소마다
+ * "가입할 수 없는 이메일"을 띄우지 않기 위해서다. 칸을 벗어나면 기다리지 않는다.
+ */
 const EMAIL_CHECK_DELAY_MS = 500;
 
 /**
@@ -88,34 +91,12 @@ export function SignupForm() {
     ),
   };
 
-  // 도메인 확인은 입력이 멈추면 바로 묻는다. 예전에는 가입 요청 안에서만 돌아서,
-  // 다른 칸을 전부 맞게 채우고 제출해야만 "존재하지 않는 도메인"을 볼 수 있었다.
   useEffect(() => {
     if (!normalizedEmail) return;
-    const formatStatus = emailFormatStatus(normalizedEmail);
-    const controller = new AbortController();
-
     const timer = setTimeout(() => {
-      if (formatStatus) {
-        setEmailCheck({ email: normalizedEmail, status: formatStatus });
-        return;
-      }
-      setEmailCheck({
-        email: normalizedEmail,
-        status: { tone: "neutral", pending: true, message: "도메인을 확인하는 중..." },
-      });
-      fetchDomainStatus(normalizedEmail, controller.signal)
-        .then((result) => setEmailCheck({ email: normalizedEmail, status: result }))
-        .catch(() => {
-          // 미리 확인에 실패했을 뿐이다. 가입 요청이 다시 확인하므로 여기서는 단정하지 않는다.
-          if (!controller.signal.aborted) setEmailCheck(null);
-        });
+      setEmailCheck({ email: normalizedEmail, status: emailStatusFor(normalizedEmail) });
     }, EMAIL_CHECK_DELAY_MS);
-
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
+    return () => clearTimeout(timer);
   }, [normalizedEmail]);
 
   const touch = (field: TextField) => {
@@ -129,10 +110,11 @@ export function SignupForm() {
     setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
   };
 
-  /** 형식 오류는 입력이 멈추기를 기다리지 않고 보여준다 — 칸을 벗어날 때와 제출할 때. */
-  const showEmailFormatNow = () => {
-    const formatStatus = normalizedEmail ? emailFormatStatus(normalizedEmail) : null;
-    if (formatStatus) setEmailCheck({ email: normalizedEmail, status: formatStatus });
+  /** 입력이 멈추기를 기다리지 않고 이메일을 판정한다 — 칸을 벗어날 때와 제출할 때. */
+  const checkEmailNow = () => {
+    if (normalizedEmail) {
+      setEmailCheck({ email: normalizedEmail, status: emailStatusFor(normalizedEmail) });
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -144,13 +126,10 @@ export function SignupForm() {
       // 칸별 문구는 입력 중 판정이 그대로 보여준다(같은 검증 함수를 쓴다). 모든
       // 칸을 손댄 것으로 치고, 글자를 치지 않는 체크박스 오류만 따로 둔다.
       setTouched(ALL_TOUCHED);
-      showEmailFormatNow();
+      checkEmailNow();
       setErrors((prev) => ({ ...prev, isOver14: localErrors.isOver14 }));
       return;
     }
-
-    // 미리 확인에서 이미 틀렸다고 나온 도메인은 서버까지 보내지 않는다. 문구는 칸 아래에 떠 있다.
-    if (status.email?.tone === "error") return;
 
     setSubmitting(true);
     try {
@@ -208,12 +187,12 @@ export function SignupForm() {
           name="email"
           type="email"
           autoComplete="email"
-          placeholder="you@example.com"
+          placeholder="you@naver.com"
           value={form.email}
           onChange={(e) => update("email")(e.target.value)}
           onBlur={() => {
             touch("email");
-            showEmailFormatNow();
+            checkEmailNow();
           }}
           {...statusProps("email", status.email)}
         />
@@ -341,27 +320,8 @@ function statusProps(id: string, status: LiveStatus) {
   };
 }
 
-/**
- * 서버에 도메인이 메일을 받을 수 있는지 묻는다. 초록 문구는 "도메인"에 대한
- * 것이다 — 그 주소가 실제로 있는지까지는 확인 메일 없이 알 수 없다.
- */
-async function fetchDomainStatus(email: string, signal: AbortSignal): Promise<LiveStatus> {
-  const res = await fetch("/api/auth/check-email", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({ email }),
-    signal,
-  });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { ok?: boolean; reason?: string; message?: string };
-  if (data.ok) return { tone: "ok", message: "메일을 받을 수 있는 도메인입니다." };
-  if (!data.message) return null;
-  return { tone: data.reason === "unverifiable" ? "neutral" : "error", message: data.message };
-}
-
 function statusBorder(status: LiveStatus): string | undefined {
-  if (!status || status.tone === "neutral") return undefined;
+  if (!status) return undefined;
   return status.tone === "ok"
     ? "border-emerald-500 focus-visible:ring-emerald-500"
     : "border-destructive focus-visible:ring-destructive";
@@ -370,7 +330,6 @@ function statusBorder(status: LiveStatus): string | undefined {
 const TONE_TEXT = {
   ok: "text-emerald-600 dark:text-emerald-400",
   error: "text-destructive",
-  neutral: "text-muted-foreground",
 } as const;
 
 /** 색만으로 구분하지 않도록 아이콘을 함께 붙이고, 화면 낭독기가 바뀐 상태를 읽게 한다. */
@@ -380,14 +339,11 @@ function StatusMessage({ id, status }: { id: string; status: LiveStatus }) {
     <p id={id} aria-live="polite" className="text-[11px] font-medium">
       {status && status.message && (
         <span className={cn("flex items-center gap-1", TONE_TEXT[status.tone])}>
-          {status.tone === "ok" && <Check className={iconClass} aria-hidden />}
-          {status.tone === "error" && <X className={iconClass} aria-hidden />}
-          {status.tone === "neutral" &&
-            (status.pending ? (
-              <Loader2 className={cn(iconClass, "animate-spin")} aria-hidden />
-            ) : (
-              <Info className={iconClass} aria-hidden />
-            ))}
+          {status.tone === "ok" ? (
+            <Check className={iconClass} aria-hidden />
+          ) : (
+            <X className={iconClass} aria-hidden />
+          )}
           {status.message}
         </span>
       )}

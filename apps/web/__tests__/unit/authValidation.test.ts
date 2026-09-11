@@ -4,6 +4,8 @@ import {
   validateLogin,
   validateUsername,
   validateEmail,
+  validateSignupEmail,
+  SIGNUP_EMAIL_DOMAINS,
   validatePassword,
   validateAge,
   validateGender,
@@ -19,7 +21,7 @@ import {
 
 const VALID = {
   username: "sean_lee",
-  email: "sean@example.com",
+  email: "sean@gmail.com",
   password: "hunter2-hunter2",
   passwordConfirm: "hunter2-hunter2",
   isOver14: true,
@@ -31,7 +33,7 @@ describe("validateSignup", () => {
     expect(errors).toEqual({});
     expect(value).toEqual({
       username: "sean_lee",
-      email: "sean@example.com",
+      email: "sean@gmail.com",
       password: "hunter2-hunter2",
     });
   });
@@ -55,10 +57,16 @@ describe("validateSignup", () => {
     const { value } = validateSignup({
       ...VALID,
       username: "  SEAN_LEE  ",
-      email: "  Sean@Example.COM ",
+      email: "  Sean@Gmail.COM ",
     });
     expect(value?.username).toBe("sean_lee");
-    expect(value?.email).toBe("sean@example.com");
+    expect(value?.email).toBe("sean@gmail.com");
+  });
+
+  it("자주 쓰는 메일 서비스가 아닌 이메일로는 가입 값을 돌려주지 않는다", () => {
+    const { errors, value } = validateSignup({ ...VALID, email: "sean@exampl.com" });
+    expect(value).toBeNull();
+    expect(errors.email).toContain("가입할 수 없는 이메일");
   });
 
   it("비밀번호가 서로 다르면 확인 필드에 오류를 준다", () => {
@@ -165,6 +173,39 @@ describe("validateEmail", () => {
 
   it("한글 도메인은 퓨니코드 형태로 받는다", () => {
     expect(validateEmail("sean@xn--3e0b707e.kr")).toBeUndefined();
+  });
+});
+
+describe("validateSignupEmail", () => {
+  it.each(SIGNUP_EMAIL_DOMAINS)("%s 은(는) 받는다", (domain) => {
+    expect(validateSignupEmail(`sean@${domain}`)).toBeUndefined();
+  });
+
+  it.each(["sean@exampl.com", "sean@example.com", "sean@my-company.io"])(
+    "%s 은(는) 받지 않되, 없는 도메인이라고 하지 않는다",
+    (email) => {
+      // exampl.com은 실제로 있는 도메인이다. "존재하지 않는다"고 하면 사실이 아니다.
+      const message = validateSignupEmail(email);
+      expect(message).toContain("가입할 수 없는 이메일");
+      expect(message).not.toContain("존재하지 않");
+    },
+  );
+
+  it.each([
+    ["sean@gmial.com", "gmail.com"],
+    ["sean@naver.co", "naver.com"],
+    ["sean@hanmial.net", "hanmail.net"],
+  ])("한두 글자 틀린 %s 은(는) %s 을(를) 짚어 준다", (email, suggestion) => {
+    expect(validateSignupEmail(email)).toContain(`혹시 ${suggestion} 아닌가요?`);
+  });
+
+  it("짧은 도메인은 한 글자 차이까지만 오타로 본다", () => {
+    // gmx.com은 me.com과 두 글자 다르지만 다른 서비스다.
+    expect(validateSignupEmail("sean@gmx.com")).not.toContain("me.com");
+  });
+
+  it("형식부터 틀리면 형식 오류가 먼저다", () => {
+    expect(validateSignupEmail("sean@gmail")).toContain("잘못된 이메일 형식");
   });
 });
 
