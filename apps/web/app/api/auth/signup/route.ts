@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateSignup } from "@subslash/shared";
+import { getEmailDomain, validateSignup } from "@subslash/shared";
 import { databaseUnavailableResponse, getDb } from "@lib/db";
+import { checkEmailDomain, emailDomainMessage } from "@lib/email-domain";
 import { accounts } from "@lib/schema";
 import { hashPassword } from "@lib/password";
 import {
@@ -36,6 +37,30 @@ export async function POST(request: NextRequest) {
     if (!value) {
       return NextResponse.json(
         { error: "입력값을 확인해주세요.", fieldErrors: errors },
+        { status: 400 },
+      );
+    }
+
+    // 형식만 맞으면 없는 도메인으로도 가입이 됐다. 오타 난 주소로 가입하면 그
+    // 주소로는 아무것도 받을 수 없는데, 사용자는 그 사실을 알 방법이 없다.
+    const domain = getEmailDomain(value.email);
+    const domainCheck = await checkEmailDomain(domain);
+    if (!domainCheck.ok) {
+      const message = emailDomainMessage(domain, domainCheck.reason);
+      if (domainCheck.reason === "unverifiable") {
+        // 도메인이 틀렸다는 증거가 아니라 조회가 안 된 것이다. 입력 오류(400)가
+        // 아니라 503으로 답하고, 원인은 로그에 남긴다.
+        console.warn(`[api/auth/signup] 이메일 도메인 조회 실패 (${domainCheck.detail})`);
+        return NextResponse.json(
+          {
+            error: "이메일 도메인을 확인하지 못해 가입을 멈췄습니다.",
+            fieldErrors: { email: message },
+          },
+          { status: 503 },
+        );
+      }
+      return NextResponse.json(
+        { error: "입력값을 확인해주세요.", fieldErrors: { email: message } },
         { status: 400 },
       );
     }
