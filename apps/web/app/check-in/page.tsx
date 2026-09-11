@@ -48,6 +48,9 @@ function CheckInReceiver() {
 
     recorded.current = true;
     setSubscription(found);
+    // 해지하기 전에 받은 메일의 버튼일 수 있다. 해지한 구독에는 체크인을 남기지
+    // 않고, 해지 가이드를 다시 열어 해지일을 덮어쓰지도 않는다.
+    if (found.status === "killed") return;
     try {
       setResult(checkIn(found.id, count));
     } catch (error) {
@@ -77,6 +80,15 @@ function CheckInReceiver() {
       <Fallback
         title="이 기기에서 해당 구독을 찾을 수 없습니다"
         body="구독 정보는 기기의 브라우저에만 저장됩니다. 구독을 등록한 기기·브라우저에서 링크를 열어주세요."
+      />
+    );
+  }
+
+  if (subscription.status === "killed") {
+    return (
+      <Fallback
+        title="이미 해지한 구독입니다"
+        body={`'${subscription.name}'은(는) 해지한 구독으로 기록되어 있어 체크인을 남기지 않았습니다. 해지하기 전에 받은 메일일 수 있습니다.`}
       />
     );
   }

@@ -119,7 +119,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
   const executeConfirm = () => {
     if (confirmType === "kill") {
       killSubscription(sub.id);
-      showToast(`🔪 ${sub.name} 해지가 완료되었습니다.`);
+      showToast(`🔪 ${sub.name}을(를) 해지한 구독으로 기록했습니다.`);
     } else if (confirmType === "revive") {
       reviveSubscription(sub.id);
       showToast(`✨ ${sub.name} 구독을 다시 활성화했습니다.`);
@@ -217,7 +217,7 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
           </div>
         ) : (
           <div className="pt-2 flex items-center justify-between border-t text-sm">
-            <span className="text-muted-foreground">차단된 구독입니다.</span>
+            <span className="text-muted-foreground">해지한 구독입니다.</span>
             <Button size="sm" variant="outline" onClick={() => setConfirmType("revive")}>
               다시 구독 중으로 변경
             </Button>
@@ -344,9 +344,12 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-bold">체크인 기록 ({subLogs.length}건)</h3>
-          <Button size="sm" variant="outline" onClick={handleOpenCheckIn}>
-            + 체크인 하기
-          </Button>
+          {/* 체크인은 지금 돈을 내는 구독의 1회 단가를 묻는다. 해지한 구독에는 묻지 않는다. */}
+          {!isKilled && (
+            <Button size="sm" variant="outline" onClick={handleOpenCheckIn}>
+              + 체크인 하기
+            </Button>
+          )}
         </div>
 
         <CheckInEvidence logs={subLogs} currency={sub.currency} />
