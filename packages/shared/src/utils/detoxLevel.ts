@@ -1,9 +1,10 @@
 /**
  * 구독 디톡스 레벨.
  *
- * 레벨은 사용자가 실제로 방어한 금액과 해지 건수에서만 나온다. 아직
- * 해지한 구독이 없으면 Lv.0("아직 시작 전")이고, 없는 성취를 만들어
- * 보여주지 않는다.
+ * 레벨은 결제가 멈춘 것을 확인한 지킨 돈(`getSavingsTiers().confirmed`)과
+ * 해지 건수에서만 나온다. 해지한 구독의 1년치 요금으로 매기면 해지 버튼 한
+ * 번에 Lv.3이 되므로 쓰지 않는다. 아직 해지한 구독이 없으면 Lv.0("아직 시작
+ * 전")이고, 없는 성취를 만들어 보여주지 않는다.
  */
 
 export interface DetoxLevel {
@@ -52,14 +53,15 @@ export const DETOX_LEVEL_TIERS: readonly LevelTier[] = [
 const MAX_LEVEL = DETOX_LEVEL_TIERS[DETOX_LEVEL_TIERS.length - 1].level;
 
 /**
- * 누적 방어액과 해지 건수로 디톡스 레벨을 계산한다.
+ * 지킨 돈과 해지 건수로 디톡스 레벨을 계산한다.
  *
- * @param annualSavings 누적 연간 방어액(KRW). 음수나 NaN은 0으로 본다.
+ * @param confirmedSavings 결제가 멈춘 것을 확인한 지킨 돈(KRW). 1년치 요금이
+ *   아니다. 음수나 NaN은 0으로 본다.
  * @param killCount 해지 완료한 구독 수. 1건 이상이면 금액이 문턱에
  *   못 미쳐도 Lv.1로 올린다("첫 해지"라는 성취는 실제로 있었기 때문).
  */
-export function getDetoxLevel(annualSavings: number, killCount: number = 0): DetoxLevel {
-  const savings = Number.isFinite(annualSavings) && annualSavings > 0 ? annualSavings : 0;
+export function getDetoxLevel(confirmedSavings: number, killCount: number = 0): DetoxLevel {
+  const savings = Number.isFinite(confirmedSavings) && confirmedSavings > 0 ? confirmedSavings : 0;
   const kills = Number.isFinite(killCount) && killCount > 0 ? Math.floor(killCount) : 0;
 
   let tier = DETOX_LEVEL_TIERS[0];

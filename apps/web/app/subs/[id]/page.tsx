@@ -449,8 +449,8 @@ export default function SubscriptionDetailPage({ params }: { params: Promise<{ i
           }
           description={
             confirmType === "kill"
-              ? `'${sub.name}' 구독을 해지(방어) 완료 상태로 전환하시겠습니까?
-방어 성공 자산으로 기록되며 대시보드와 절약 현황에 반영됩니다.`
+              ? `'${sub.name}' 구독을 해지 완료로 기록하시겠습니까?
+해지 뒤 결제일이 지나면 그만큼이 지킨 돈으로 쌓입니다.`
               : confirmType === "revive"
                 ? `'${sub.name}' 구독을 다시 활성화하시겠습니까?
 활성 구독 목록으로 복원되며, 절약 방어 자산에서 제외됩니다.`
