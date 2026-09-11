@@ -173,28 +173,43 @@ export function CancelGuideModal({
             )}
           </section>
 
-          {/* 4. 완료 처리 */}
-          <section className="pt-2 border-t space-y-2">
-            <p className="text-[11px] text-muted-foreground">
-              해지를 마치셨나요? 아래를 눌러야 해지한 구독으로 기록됩니다. 앱이 해지 여부를 직접
-              확인할 수는 없습니다.
-            </p>
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 rounded-xl" onClick={onClose}>
-                나중에 하기
+          {/*
+            4. 완료 처리. 이미 해지한 구독에는 내밀지 않는다 — 한 번 더 누르면
+            해지일이 오늘로 바뀌어 쌓인 지킨 돈이 사라지던 자리다.
+          */}
+          {sub.status === "killed" ? (
+            <section className="pt-2 border-t space-y-2">
+              <p className="text-[11px] text-muted-foreground">
+                이미 해지한 구독으로 기록되어 있습니다. 해지가 안 된 것 같다면 구독 상세에서
+                &lsquo;다시 구독 중으로 변경&rsquo;한 뒤 해지를 마치고 다시 기록해 주세요.
+              </p>
+              <Button variant="outline" className="w-full rounded-xl" onClick={onClose}>
+                닫기
               </Button>
-              <Button
-                variant="destructive"
-                className="flex-1 font-bold rounded-xl"
-                onClick={() => {
-                  onConfirmKilled(sub.id);
-                  onClose();
-                }}
-              >
-                해지 완료했어요
-              </Button>
-            </div>
-          </section>
+            </section>
+          ) : (
+            <section className="pt-2 border-t space-y-2">
+              <p className="text-[11px] text-muted-foreground">
+                해지를 마치셨나요? 아래를 눌러야 해지한 구독으로 기록됩니다. 앱이 해지 여부를 직접
+                확인할 수는 없습니다.
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1 rounded-xl" onClick={onClose}>
+                  나중에 하기
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1 font-bold rounded-xl"
+                  onClick={() => {
+                    onConfirmKilled(sub.id);
+                    onClose();
+                  }}
+                >
+                  해지 완료했어요
+                </Button>
+              </div>
+            </section>
+          )}
         </div>
       </DialogContent>
     </Dialog>
