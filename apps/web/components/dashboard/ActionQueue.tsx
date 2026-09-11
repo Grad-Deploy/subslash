@@ -2,7 +2,12 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { formatCurrency, type ActionItem, type ActionVerb } from "@subslash/shared";
+import {
+  formatCurrency,
+  type ActionItem,
+  type ActionKind,
+  type ActionVerb,
+} from "@subslash/shared";
 import { Button } from "../ui/button";
 
 interface ActionQueueProps {
@@ -14,6 +19,10 @@ interface ActionQueueProps {
   onCancelGuide: (subscriptionId: string) => void;
   /** `newAmount`를 주면 그 금액으로 갱신하고, 없으면 현재 금액을 확인만 한다. */
   onConfirmPrice: (subscriptionId: string, newAmount?: number) => void;
+  /** 해지 뒤 첫 결제일에 결제가 없었다고 답했을 때. */
+  onKillNotCharged: (subscriptionId: string) => void;
+  /** 해지 뒤 첫 결제일에 결제가 됐다고 답했을 때. */
+  onKillCharged: (subscriptionId: string) => void;
   onAddFirst: () => void;
 }
 
@@ -22,13 +31,15 @@ const VERB_LABEL: Record<ActionVerb, string> = {
   "check-in": "체크인하기",
   "confirm-price": "✅ 요금 유지",
   "set-billing-month": "결제 월 입력",
+  "verify-kill": "결제 안 됐어요",
 };
 
 /** 급한 정도를 색으로만 구분한다. 문구는 이유가 이미 말해준다. */
-const TONE: Record<number, string> = {
-  1: "border-destructive/40 bg-destructive/5",
-  2: "border-amber-500/40 bg-amber-500/5",
-  3: "border-destructive/30 bg-destructive/5",
+const TONE: Partial<Record<ActionKind, string>> = {
+  "billing-soon-risky": "border-destructive/40 bg-destructive/5",
+  "billing-soon": "border-amber-500/40 bg-amber-500/5",
+  "verify-kill": "border-primary/30 bg-primary/5",
+  risky: "border-destructive/30 bg-destructive/5",
 };
 
 /**
@@ -44,6 +55,8 @@ export function ActionQueue({
   onCheckIn,
   onCancelGuide,
   onConfirmPrice,
+  onKillNotCharged,
+  onKillCharged,
   onAddFirst,
 }: ActionQueueProps) {
   const router = useRouter();
@@ -58,10 +71,14 @@ export function ActionQueue({
         return onConfirmPrice(item.subscriptionId);
       case "set-billing-month":
         return router.push(`/subs/${item.subscriptionId}`);
+      case "verify-kill":
+        return onKillNotCharged(item.subscriptionId);
     }
   };
 
-  if (activeCount === 0) {
+  // 구독을 전부 해지했어도, 해지가 정말 결제를 멈췄는지 물을 것이 남아 있으면
+  // 빈 화면 대신 그 질문을 보여준다.
+  if (activeCount === 0 && items.length === 0) {
     return (
       <section className="text-center py-14 border border-dashed rounded-2xl space-y-4">
         <div className="text-4xl">✂️</div>
@@ -102,7 +119,7 @@ export function ActionQueue({
           <li
             key={item.subscriptionId}
             className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 border rounded-2xl ${
-              TONE[item.priority] ?? "bg-card"
+              TONE[item.kind] ?? "bg-card"
             }`}
           >
             <span className="text-2xl leading-none shrink-0">{item.iconEmoji}</span>
@@ -110,6 +127,10 @@ export function ActionQueue({
             <div className="flex-1 min-w-0 space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-sm">{item.name}</span>
+                {/* 해지한 구독이 활성 구독 사이에 섞여 보이므로 무엇을 묻는지 붙인다. */}
+                {item.kind === "verify-kill" && (
+                  <span className="text-[11px] font-semibold text-primary">해지 확인</span>
+                )}
                 {item.daysUntilBilling !== null && item.daysUntilBilling <= 7 && (
                   <span className="text-[11px] font-black text-destructive">
                     D-{item.daysUntilBilling}
@@ -156,6 +177,17 @@ export function ActionQueue({
                   onClick={() => router.push(`/subs/${item.subscriptionId}`)}
                 >
                   ✏️ 수정
+                </Button>
+              )}
+
+              {item.verb === "verify-kill" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs"
+                  onClick={() => onKillCharged(item.subscriptionId)}
+                >
+                  결제됐어요
                 </Button>
               )}
 
