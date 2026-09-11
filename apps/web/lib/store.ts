@@ -17,6 +17,7 @@ import {
   sumMyMonthlyKRW,
   sumMyAnnualKRW,
   DEFAULT_EXCHANGE_RATE,
+  currentCancelUrl,
 } from "@subslash/shared";
 
 /**
@@ -68,6 +69,39 @@ export function migrateSeededAccounts(state: Partial<PersistedState>): Partial<P
         ? { ...sub, linkedAccountId: undefined, linkedAccountName: undefined }
         : sub,
     ),
+  };
+}
+
+/**
+ * Rewrites cancel links that still point at an address a preset has retired.
+ *
+ * A subscription keeps the cancel URL it was created with, so fixing a preset
+ * alone would leave existing subscriptions opening the old address — Melon's
+ * old one is a 404. Only exact matches of a retired preset URL change; a URL
+ * the user typed stays as it is.
+ */
+export function migrateLegacyCancelUrls(state: Partial<PersistedState>): Partial<PersistedState> {
+  if (!state.subscriptions) return state;
+  return {
+    ...state,
+    subscriptions: state.subscriptions.map((sub) =>
+      sub.cancelUrl ? { ...sub, cancelUrl: currentCancelUrl(sub.cancelUrl) } : sub,
+    ),
+  };
+}
+
+/**
+ * How a saved store is laid over the fresh one on load.
+ *
+ * Retired cancel links are rewritten here, on every load, rather than in
+ * `migrate` behind a version bump — adding an old URL to a preset's
+ * `legacyCancelUrls` is then all a link fix takes, with no version number to
+ * remember.
+ */
+export function mergePersistedState(persisted: unknown, current: SubSlashStore): SubSlashStore {
+  return {
+    ...current,
+    ...migrateLegacyCancelUrls((persisted ?? {}) as Partial<PersistedState>),
   };
 }
 
@@ -402,6 +436,7 @@ export const useStore = create<SubSlashStore>()(
         version >= 1
           ? (persisted as Partial<PersistedState>)
           : migrateSeededAccounts(persisted as Partial<PersistedState>),
+      merge: mergePersistedState,
       partialize: (state) => ({
         subscriptions: state.subscriptions,
         usageLogs: state.usageLogs,
