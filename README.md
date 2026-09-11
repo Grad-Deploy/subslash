@@ -194,10 +194,57 @@ curl -H "Authorization: Bearer <CRON_SECRET>" http://localhost:3000/api/cron/not
 - 만 14세 미만은 법정대리인 동의가 필요해 지금은 받지 않습니다. 나이를 묻지 않는
   대신 가입 때 "만 14세 이상입니다" 확인을 필수로 받습니다.
 
+### 가입 이메일 확인
+
+형식·도메인 검사는 주소가 그 사람 것인지 말해주지 않습니다. 가입은 곧바로 끝나지만
+계정은 '미확인'으로 시작하고, 주소로 간 메일의 링크에서 '맞아요'를 누르면 확인됩니다.
+메일은 어떤 아이디가 이 주소를 썼는지 보여주고, 모르는 가입이면 '제가 가입하지
+않았어요'로 그 계정을 지울 수 있게 합니다. 남의 주소로 먼저 가입해 주소를 점유하는
+것을 이것으로 막습니다.
+
+- **링크를 여는 것만으로는 아무것도 바뀌지 않습니다.** 메일 검사기가 링크를 사람보다
+  먼저 열어보기 때문입니다. `/verify-email`은 계정을 보여주기만 하고, 확인·삭제는
+  버튼이 보내는 POST로만 합니다.
+- **시간이 지났다고 미확인 계정을 지우지 않습니다.** 확인 메일이 스팸함에 있어 누르지
+  못한 진짜 주인의 계정이, 같은 주소로 가입하려는 다른 사람 때문에 지워지게 됩니다.
+  주소의 주인은 가입 폼에서 "이 주소로 확인 메일 받기"를 눌러 정리할 수 있습니다.
+- **주소마다 1분에 1통, 24시간에 5통까지만 보냅니다**(`verification_mail_log`). 계정이
+  아니라 주소에 묶어서, 지운 계정을 다시 만들어도 제한이 풀리지 않습니다.
+- **보내지 못했으면 보냈다고 하지 않습니다.** `RESEND_API_KEY`나 서명 키
+  (`EMAIL_LINK_SECRET`/`CRON_SECRET`)가 없거나 Resend가 거절하면, 가입은 되고 화면에
+  "확인 메일을 보내지 못했습니다"가 뜹니다. `pnpm dev`에서는 메일 본문(확인 링크
+  포함)을 서버 로그에 찍으므로 링크를 직접 열어볼 수 있습니다.
+- 이 기능 전에 가입한 계정은 '미확인'으로 남습니다. '내 정보'에서 확인 메일을 받을 수 있습니다.
+
+### 메일을 보내는 엔드포인트의 IP 제한 (Vercel WAF)
+
+가입, 확인 메일 재발송, 알림 신청은 모르는 사람에게 메일을 보낼 수 있는 입구입니다.
+주소마다 세는 제한은 주소를 바꿔 가며 보내는 요청을 막지 못하므로, IP 단위 제한을
+Vercel WAF 사용자 정의 규칙으로 겁니다. **코드가 아니라 Vercel 프로젝트 설정에 있습니다.**
+
+| 항목 | 값                                                                                                       |
+| ---- | -------------------------------------------------------------------------------------------------------- |
+| 이름 | `Mail-sending endpoints per-IP limit`                                                                    |
+| 조건 | `POST` 그리고 경로가 `/api/auth/signup`, `/api/auth/verification-email`, `/api/notify/subscribe` 중 하나 |
+| 기준 | IP당 600초에 20회 (고정 창, 리전별로 따로 셈)                                                            |
+| 동작 | 처음에는 `log`(기록만). 트래픽을 확인한 뒤 `rate_limit`(429)으로 바꿉니다                                |
+
+한도를 넉넉히 잡은 이유는 휴대폰 통신사망처럼 많은 사람이 IP 하나를 나눠 쓰는 경우가
+흔해서입니다. 규칙 변경은 초안으로 쌓이고 `publish` 해야 적용됩니다.
+
+```bash
+vercel firewall rules inspect "Mail-sending endpoints per-IP limit"
+# log로 며칠 지켜본 뒤, 넘치면 429를 돌려주도록 바꾼다
+vercel firewall rules edit "Mail-sending endpoints per-IP limit" --rate-limit-action rate_limit --yes
+vercel firewall diff
+vercel firewall publish --yes
+```
+
 > [!IMPORTANT]
-> 계정 테이블(`accounts`, `sessions`)은 마이그레이션 `0003`에서 생깁니다. CI는
+> 계정 테이블(`accounts`, `sessions`)은 마이그레이션 `0003`에서, 이메일 확인에 쓰는
+> `accounts.email_verified_at`·`verification_mail_log`는 `0005`에서 생깁니다. CI는
 > 마이그레이션을 적용하지 않으므로, **배포 전에 대상 DB에 직접 적용해야 합니다.**
-> 적용하지 않으면 가입 요청이 `no such table: accounts`로 500을 냅니다.
+> 적용하지 않으면 가입 요청이 `no such table`/`no such column`으로 500을 냅니다.
 >
 > ```bash
 > cd apps/web

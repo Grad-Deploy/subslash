@@ -10,6 +10,11 @@ import {
   sessionCookieOptions,
   toPublicAccount,
 } from "@lib/auth-server";
+import {
+  describeSendOutcome,
+  sendAccountVerification,
+  verificationWaitSeconds,
+} from "@lib/account-verification";
 
 /**
  * 회원가입.
@@ -51,10 +56,34 @@ export async function POST(request: NextRequest) {
           error: "이미 사용 중인 정보가 있습니다.",
           fieldErrors: {
             ...(conflicts.username ? { username: "이미 사용 중인 아이디입니다." } : {}),
-            ...(conflicts.email ? { email: "이미 가입된 이메일입니다." } : {}),
+            ...(conflicts.email
+              ? {
+                  email: conflicts.emailPending
+                    ? "확인을 기다리는 계정이 있는 이메일입니다."
+                    : "이미 가입된 이메일입니다.",
+                }
+              : {}),
           },
+          // 확인 전인 계정이 이 주소를 쥐고 있다. 주소의 주인이라면 확인 메일을 받아
+          // '제가 가입하지 않았어요'로 그 계정을 지우고 가입할 수 있다.
+          emailPending: conflicts.emailPending,
         },
         { status: 409 },
+      );
+    }
+
+    // 이 주소로 확인 메일이 방금 나갔다면 가입부터 멈춘다. '제가 가입하지
+    // 않았어요'로 지워진 계정을 곧바로 다시 만들어, 주소의 주인에게 확인 메일을
+    // 거듭 보내는 일을 막는다.
+    const wait = await verificationWaitSeconds(value.email);
+    if (wait > 0) {
+      const message = describeSendOutcome(
+        { status: "rate_limited", retryAfterSeconds: wait },
+        value.email,
+      );
+      return NextResponse.json(
+        { error: message, fieldErrors: { email: message } },
+        { status: 429 },
       );
     }
 
@@ -75,7 +104,20 @@ export async function POST(request: NextRequest) {
     const account = inserted[0];
     const session = await createSession(account.id);
 
-    const response = NextResponse.json({ account: toPublicAccount(account) }, { status: 201 });
+    // 확인 메일은 가입이 끝난 뒤에 보낸다. 보내지 못해도 가입은 되돌리지 않고,
+    // 보냈는지를 그대로 알린다 — 오지 않을 메일을 기다리게 하지 않기 위해서다.
+    const outcome = await sendAccountVerification(account);
+
+    const response = NextResponse.json(
+      {
+        account: toPublicAccount(account),
+        emailVerification: {
+          status: outcome.status,
+          message: describeSendOutcome(outcome, account.email),
+        },
+      },
+      { status: 201 },
+    );
     response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
     return response;
   } catch (error) {
