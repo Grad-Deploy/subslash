@@ -100,14 +100,16 @@ export function validateEmail(value: string): string | undefined {
   if (value.length > 254) return "이메일이 너무 깁니다.";
   const parts = value.split("@");
   if (parts.length !== 2 || !EMAIL_LOCAL_PATTERN.test(parts[0])) {
-    return "이메일 형식을 확인해주세요.";
+    return "잘못된 이메일 형식입니다. (예: you@example.com)";
   }
   const labels = parts[1].toLowerCase().split(".");
   const domainOk =
     labels.length >= 2 &&
     labels.every((label) => DOMAIN_LABEL_PATTERN.test(label)) &&
     TLD_PATTERN.test(labels[labels.length - 1]);
-  if (!domainOk) return "@ 뒤의 도메인을 확인해주세요. (예: gmail.com, naver.com)";
+  if (!domainOk) {
+    return "잘못된 이메일 형식입니다. @ 뒤의 도메인을 확인해주세요. (예: gmail.com, naver.com)";
+  }
   return undefined;
 }
 
