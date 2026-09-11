@@ -72,8 +72,13 @@ body {
   color: var(--foreground);
 }
 
-* {
-  border-color: var(--border);
+/* 기본 테두리 색은 base 레이어에 둔다. 레이어 밖에 두면 Tailwind v4의 유틸리티
+   (@layer utilities)보다 항상 이겨서, border-destructive 같은 색 클래스가 전부
+   무시된다 — 가입 폼 오류 칸이 붉어지지 않던 원인이다. */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
 }
 
 /* Fix native form controls (select dropdown, options, input) across all browsers in dark mode */
