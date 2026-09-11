@@ -97,7 +97,7 @@ export function SavingsBreakdownChart({
             }`}
             onClick={() => setViewMode("yearDefended")}
           >
-            {currentYear}년 실질 방어액
+            {currentYear}년 방어액
           </button>
         </div>
       </div>
@@ -142,6 +142,13 @@ export function SavingsBreakdownChart({
           </div>
         ))}
       </div>
+
+      {viewMode === "yearDefended" && (
+        <p className="text-[11px] text-muted-foreground">
+          남은 달의 결제일까지 더한 금액입니다. 지금까지 지킨 금액과 남은 예정은 월별 방어액
+          그래프에서 나눠 볼 수 있습니다.
+        </p>
+      )}
 
       {viewMode === "yearDefended" && totalYearDefended.unknownCount > 0 && (
         <p className="text-[11px] text-amber-700 dark:text-amber-300">
