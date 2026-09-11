@@ -218,9 +218,13 @@ export default function SubscriptionsPage() {
               variant="outline"
               size="sm"
               onClick={() => {
+                // 활성 탭이 비어 있어도 해지한 구독이 남아 있을 수 있다. 무엇이
+                // 지워지는지 나눠 적는다.
                 if (
                   confirm(
-                    `현재 등록된 전체 구독 ${subscriptions.length}건을 모두 삭제하시겠습니까?`,
+                    killedSubs.length > 0
+                      ? `현재 등록된 전체 구독 ${subscriptions.length}건(구독 중 ${activeSubs.length}건, 해지한 구독 ${killedSubs.length}건)을 모두 삭제하시겠습니까?\n해지한 구독의 절약 기록도 함께 지워집니다.`
+                      : `현재 등록된 전체 구독 ${subscriptions.length}건을 모두 삭제하시겠습니까?`,
                   )
                 ) {
                   clearSubscriptions();
@@ -339,9 +343,10 @@ export default function SubscriptionsPage() {
           ) : (
             <div className="space-y-3">
               <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300">
-                🎉 축하합니다! {filteredKilled.length}개의 불필요한 구독을 차단하여 매달 총{" "}
-                <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 방어하고
-                계십니다!
+                {/* 해지를 유지하면 아낄 금액이다. 이미 지킨 돈은 절약 현황이 따로 센다. */}
+                해지한 구독 {filteredKilled.length}개 · 해지를 유지하면 매달{" "}
+                <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 아낍니다.
+                실제로 지킨 돈은 절약 현황에서 확인하세요.
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
