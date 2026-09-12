@@ -43,6 +43,13 @@
       "when": 1789113830990,
       "tag": "0005_curved_brother_voodoo",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1789186950977,
+      "tag": "0006_rename_notification_subscribers",
+      "breakpoints": true
     }
   ]
 }

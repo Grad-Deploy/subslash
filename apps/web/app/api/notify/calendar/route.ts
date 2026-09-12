@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { databaseUnavailableResponse, getDb } from "@lib/db";
-import { users } from "@lib/schema";
+import { notificationSubscribers } from "@lib/schema";
 import { generateSyncToken, hashSyncToken } from "@lib/tokens";
 import { userFromRequest } from "@lib/notify-server";
 import { appUrl } from "@lib/email";
@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
 
     const token = generateSyncToken();
     await getDb()
-      .update(users)
+      .update(notificationSubscribers)
       .set({ calendarTokenHash: hashSyncToken(token) })
-      .where(eq(users.id, user.id));
+      .where(eq(notificationSubscribers.id, user.id));
 
     return NextResponse.json({ url: feedUrl(token), reminderDays: user.reminderDays });
   } catch (error) {
@@ -49,7 +49,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await getDb().update(users).set({ calendarTokenHash: null }).where(eq(users.id, user.id));
+    await getDb()
+      .update(notificationSubscribers)
+      .set({ calendarTokenHash: null })
+      .where(eq(notificationSubscribers.id, user.id));
 
     return NextResponse.json({ success: true });
   } catch (error) {
