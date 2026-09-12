@@ -6,12 +6,15 @@ import { useSearchParams } from "next/navigation";
 import {
   CATEGORY_LABELS,
   buildYearInReview,
+  describeSpendingType,
   formatKRW,
   getSavingsTiers,
   type CheckInStanding,
 } from "@subslash/shared";
 import { useStore } from "../../../lib/store";
 import { useExchangeRate } from "../../../hooks/useExchangeRate";
+import { buildReviewShareSearchParams } from "../../../lib/share-review";
+import { Button } from "../../../components/ui/button";
 
 /** 이보다 이른 해는 이 앱에 기록이 있을 수 없다. */
 const EARLIEST_YEAR = 2020;
@@ -56,6 +59,7 @@ function YearInReviewContent() {
   const { subscriptions, usageLogs } = useStore();
   const rate = useExchangeRate();
   const [mounted, setMounted] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -74,6 +78,9 @@ function YearInReviewContent() {
     from: new Date(year, 0, 1),
     to: new Date(year + 1, 0, 1),
   });
+  const spendingType = review.spendingType ? describeSpendingType(review.spendingType) : null;
+  // 해지도 막은 결제도 없으면 공유할 결산이 없다. ₩0짜리 카드를 퍼뜨리지 않는다.
+  const canShare = review.killedThisYear.length > 0 || defended.pastAmount > 0;
 
   const cheapest = checkIns[0];
   const priciest = checkIns.length > 1 ? checkIns[checkIns.length - 1] : undefined;
@@ -81,6 +88,40 @@ function YearInReviewContent() {
     checkIns.length > 1
       ? checkIns.reduce((best, item) => (item.usageCount > best.usageCount ? item : best))
       : undefined;
+
+  const handleShare = async () => {
+    const params = buildReviewShareSearchParams({
+      year,
+      isComplete: review.isComplete,
+      blocked: defended.pastAmount,
+      confirmed: yearTiers.confirmed,
+      killedCount: review.killedThisYear.length,
+      names: review.killedThisYear.map((sub) => sub.name),
+      spendingType: review.spendingType,
+    });
+    const url = `${window.location.origin}/savings/review/share?${params.toString()}`;
+    // 남에게 보이는 문장이라 지킨 돈이 없으면 막은 결제만 적는다.
+    const confirmedLine =
+      yearTiers.confirmed > 0 ? ` · 그중 지킨 돈 ${formatKRW(yearTiers.confirmed)}` : "";
+    const text = `📆 SubSlash ${scope} 구독 결산\n해지한 구독 ${review.killedThisYear.length}개 · 해지로 막은 결제 ${formatKRW(defended.pastAmount)}${confirmedLine}${spendingType ? `\n소비 유형: ${spendingType.title}` : ""}\n👉 결산 보기: ${url}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `SubSlash ${year}년 구독 결산`, text, url });
+        return;
+      } catch (error) {
+        // 공유 창을 닫은 것이면 그대로 둔다. 공유를 못 하는 환경이면 복사로 넘어간다.
+        if ((error as DOMException)?.name === "AbortError") return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch (error) {
+      console.error("Failed to copy review share text:", error);
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -108,13 +149,20 @@ function YearInReviewContent() {
         </div>
       </nav>
 
-      <header className="space-y-1">
-        <h1 className="text-2xl font-black tracking-tight">📆 {year}년 구독 결산</h1>
-        <p className="text-sm text-muted-foreground">
-          {review.isComplete
-            ? `${year}년 한 해 동안의 기록입니다.`
-            : `${now.getMonth() + 1}월 ${now.getDate()}일까지의 기록입니다. 연말이 지나면 한 해 결산이 됩니다.`}
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-black tracking-tight">📆 {year}년 구독 결산</h1>
+          <p className="text-sm text-muted-foreground">
+            {review.isComplete
+              ? `${year}년 한 해 동안의 기록입니다.`
+              : `${now.getMonth() + 1}월 ${now.getDate()}일까지의 기록입니다. 연말이 지나면 한 해 결산이 됩니다.`}
+          </p>
+        </div>
+        {canShare && (
+          <Button size="sm" variant="outline" onClick={handleShare}>
+            {copied ? "클립보드에 복사됨! 📋" : "결산 공유하기 📤"}
+          </Button>
+        )}
       </header>
 
       <section
@@ -192,6 +240,15 @@ function YearInReviewContent() {
           <p className="text-xs text-muted-foreground">지금 구독 중인 서비스가 없습니다.</p>
         ) : (
           <>
+            {spendingType && (
+              <div className="p-3 rounded-xl bg-muted/60 space-y-0.5">
+                <p className="text-[11px] text-muted-foreground">소비 유형</p>
+                <p className="text-sm font-black text-foreground">
+                  {spendingType.emoji} {spendingType.title}
+                </p>
+                <p className="text-[11px] text-muted-foreground">{spendingType.detail}</p>
+              </div>
+            )}
             <ul className="space-y-3">
               {review.categorySpend.map((item) => {
                 const percent = Math.round(item.share * 100);
