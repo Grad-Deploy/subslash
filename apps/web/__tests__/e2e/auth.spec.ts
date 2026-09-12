@@ -81,6 +81,17 @@ test.describe("계정 (E2E)", () => {
     await expect(page).toHaveURL(/\/signup/);
   });
 
+  test("확인 링크가 틀리면 아무것도 바꾸지 않고, 다시 받는 방법을 안내한다", async ({ page }) => {
+    await page.goto("/verify-email?token=forged.signature");
+
+    await expect(page.getByText("링크가 만료됐거나 올바르지 않습니다")).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByRole("link", { name: "내 정보로 가기" })).toBeVisible();
+    // 확인·삭제 버튼은 올바른 링크에서만 보인다.
+    await expect(page.getByRole("button", { name: /제가 가입/ })).toHaveCount(0);
+  });
+
   test("로그인하지 않고 내 정보에 오면, 로그인 없이도 쓸 수 있다고 안내한다", async ({ page }) => {
     await page.goto("/me");
 
