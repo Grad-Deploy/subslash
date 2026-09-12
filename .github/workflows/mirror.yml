@@ -1,0 +1,80 @@
+name: Mirror to Grad-Deploy
+
+# leesean2/subslash에 올라온 브랜치·태그를 Grad-Deploy/subslash로 옮긴다.
+#
+# 옮기기 전에 히스토리에서 빼는 것:
+#   - apps/web/local.db: 25b4851에 실수로 커밋됐다가 b934b17에서 지운 개발용 DB.
+#     다른 사람의 실제 이메일이 들어 있어서, 새 레포에는 처음부터 없게 한다.
+#   - *.pdf, *.txt: 작업 메모. .gitignore로도 막지만, 실수로 커밋돼도 새 레포로는
+#     가지 않게 한 번 더 거른다.
+#
+# git-filter-repo 버전을 고정해 두면 같은 히스토리에서 늘 같은 커밋 해시가 나온다.
+# 그래서 새 레포는 매번 이어서 쌓이고, --force는 origin에서 브랜치를 다시 쓴 경우에만
+# 실제로 무언가를 덮는다.
+#
+# 로컬 git에 push 주소를 두 개 거는 방식은 쓰지 않는다. 거르지 않은 히스토리가
+# 새 레포로 곧장 올라간다.
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["**"]
+  delete:
+  workflow_dispatch:
+
+# 동기화가 겹치면 늦게 시작한 쪽이 먼저 끝나 앞선 상태로 되돌릴 수 있다. 차례로 돈다.
+concurrency:
+  group: mirror-grad-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    # 이 파일도 새 레포로 옮겨지므로, 거기서는 돌지 않게 한다.
+    if: github.repository == 'leesean2/subslash'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      FILTER_REPO_VERSION: v2.47.0
+      TARGET: git@github.com:Grad-Deploy/subslash.git
+
+    steps:
+      - name: Install git-filter-repo
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -fsSL "https://raw.githubusercontent.com/newren/git-filter-repo/${FILTER_REPO_VERSION}/git-filter-repo" \
+            -o "$RUNNER_TEMP/bin/git-filter-repo"
+          chmod +x "$RUNNER_TEMP/bin/git-filter-repo"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Clone every branch and tag
+        # --mirror는 refs/pull/*까지 받아 오는데, 그건 GitHub가 받지 않는 숨은 참조다.
+        run: git clone --bare "https://github.com/${{ github.repository }}.git" source.git
+
+      - name: Remove files that must not reach Grad-Deploy
+        working-directory: source.git
+        # 방금 받은 일회용 복제본이라 --force로 '새 복제본인지' 검사를 건너뛴다.
+        run: |
+          git filter-repo --force --invert-paths \
+            --path apps/web/local.db \
+            --path-glob '*.pdf' \
+            --path-glob '*.txt'
+
+      - name: Push to Grad-Deploy
+        working-directory: source.git
+        env:
+          MIRROR_DEPLOY_KEY: ${{ secrets.MIRROR_DEPLOY_KEY }}
+        run: |
+          if [ -z "$MIRROR_DEPLOY_KEY" ]; then
+            echo "::error::MIRROR_DEPLOY_KEY secret이 없습니다. Grad-Deploy/subslash에 쓰기 권한으로 등록한 deploy key의 개인키를 넣어 주세요."
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$MIRROR_DEPLOY_KEY" > ~/.ssh/mirror_key
+          chmod 600 ~/.ssh/mirror_key
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
+          # --prune: origin에서 지운 브랜치·태그는 새 레포에서도 지운다.
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/mirror_key -o IdentitiesOnly=yes" \
+            git push --force --prune "$TARGET" 'refs/heads/*:refs/heads/*' 'refs/tags/*:refs/tags/*'
