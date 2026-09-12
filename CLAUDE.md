@@ -88,6 +88,11 @@ pnpm build
   대화형으로 묻는다. 마이그레이션 SQL과 스냅샷을 직접 쓰고, 생성 뒤
   `pnpm db:generate`가 "No schema changes"를 내는지로 스냅샷을 확인한다. 배포 DB에는
   push가 아니라 그 SQL로 적용한다 — push에서 '만들기'를 고르면 기존 테이블이 지워진다.
+- 배포 DB는 두 개이고 데이터를 섞지 않는다. `subslash`는 leesean2/subslash(Vercel
+  `subslash-web-qki1`), `subslash-grad`는 Grad-Deploy/subslash 미러(Vercel `subslash-web`)가
+  쓴다. 미러가 병합 즉시 새 레포로 옮겨 곧바로 배포되므로, 스키마를 바꾸는 PR은 병합
+  전에 **두 DB 모두** 마이그레이션 SQL을 적용한다. 한쪽만 적용하면 다른 쪽 배포에서 새
+  테이블을 쓰는 화면이 500을 낸다.
 - E2E는 CI와 같게 `--workers=1`로 돌린다. 기본 병렬로는 샘플 데이터 테스트가
   30초 테스트 타임아웃에 걸리는 기존 flake가 있다.
 - 커밋 메시지는 한국어로, "무엇을 왜"를 쓴다. 무엇이 잘못돼 있었고 사용자에게
