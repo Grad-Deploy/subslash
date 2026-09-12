@@ -12,7 +12,7 @@ export default function SignupPage() {
       <div className="space-y-1.5 text-center">
         <h1 className="text-2xl font-black tracking-tight">회원가입</h1>
         <p className="text-sm text-muted-foreground">
-          계정에는 아이디·이메일과 선택 정보만 저장됩니다. 구독 기록은 이 브라우저에 남습니다.
+          구독 기록은 이 브라우저에 저장되고, 원할 때만 계정에 저장할 수 있습니다.
         </p>
       </div>
 
@@ -27,10 +27,11 @@ export default function SignupPage() {
         </p>
         <p>
           <strong className="text-foreground">
-            로그인해도 다른 기기에서 구독 목록이 보이지는 않습니다.
+            로그인만으로 구독 목록이 다른 기기에 옮겨지지는 않습니다.
           </strong>{" "}
-          계정에는 아직 구독 기록이 저장되지 않아요. 기기를 옮기려면 &lsquo;데이터 백업&rsquo;
-          파일로 옮겨 주세요.
+          &lsquo;데이터 백업&rsquo;에서 &lsquo;계정에 저장&rsquo;을 누르면 계정에 저장되고, 다른
+          기기에서 &lsquo;계정에서 불러오기&rsquo;로 받을 수 있어요. 자동으로 맞춰지지 않으니 고친
+          뒤에는 다시 저장해 주세요.
         </p>
         <p>
           비밀번호는 되돌릴 수 없는 형태(솔트 + scrypt 해시)로만 저장됩니다. 저희도 여러분의

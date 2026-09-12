@@ -1,10 +1,12 @@
 import type { LinkedAccount, Subscription, UsageLog } from "@subslash/shared";
+// 스토어 모듈에서는 타입만 가져온다. 이 파일은 서버(계정에 저장한 기록의 검증)도
+// 쓰는데, 스토어 모듈을 실제로 불러오면 브라우저 전용 zustand 스토어가 함께 만들어진다.
+import type { BackupData } from "./store";
 import {
   DEFAULT_EXCHANGE_RATE_SETTING,
   isValidExchangeRate,
-  type BackupData,
   type ExchangeRateSetting,
-} from "./store";
+} from "./exchange-rate";
 
 /**
  * 이 브라우저의 데이터를 파일로 내보내고 되돌려 넣는다.

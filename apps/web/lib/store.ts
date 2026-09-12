@@ -19,6 +19,12 @@ import {
   DEFAULT_EXCHANGE_RATE,
   currentCancelUrl,
 } from "@subslash/shared";
+import {
+  DEFAULT_EXCHANGE_RATE_SETTING,
+  isValidExchangeRate,
+  type ExchangeRateSetting,
+  type ExchangeRateSource,
+} from "./exchange-rate";
 
 /**
  * Accounts that early builds seeded into every new browser.
@@ -141,35 +147,10 @@ export const DEFAULT_NOTIFY: NotifySettings = {
   calendarUrl: null,
 };
 
-/** Where the USD → KRW rate in use came from. */
-export type ExchangeRateSource = "default" | "manual" | "ecb";
-
-/**
- * The rate every USD subscription is converted with.
- *
- * A single hardcoded constant put every won total slightly off whenever the
- * market moved, with nothing on screen to say so. The rate is now part of the
- * user's data: they can type the one their card statement implies, or pull the
- * latest published reference rate, and the app shows which one it used.
- */
-export interface ExchangeRateSetting {
-  /** Null while nobody has chosen one; reads fall back to DEFAULT_EXCHANGE_RATE. */
-  rate: number | null;
-  source: ExchangeRateSource;
-  /** ISO timestamp of when this rate was set or published. */
-  updatedAt: string | null;
-}
-
-export const DEFAULT_EXCHANGE_RATE_SETTING: ExchangeRateSetting = {
-  rate: null,
-  source: "default",
-  updatedAt: null,
-};
-
-/** Rejects rates that would silently corrupt every total. */
-export function isValidExchangeRate(rate: number): boolean {
-  return Number.isFinite(rate) && rate > 0 && rate <= 100000;
-}
+// 환율 설정은 서버(계정에 저장한 기록의 검증)도 쓰므로 스토어 밖에 둔다. 이 모듈에서
+// 가져다 쓰던 곳이 그대로 동작하도록 다시 내보낸다.
+export { DEFAULT_EXCHANGE_RATE_SETTING, isValidExchangeRate };
+export type { ExchangeRateSetting, ExchangeRateSource };
 
 interface SubSlashStore {
   subscriptions: Subscription[];

@@ -219,6 +219,28 @@ export const sessions = sqliteTable(
   }),
 );
 
+/**
+ * 계정에 저장한 기록 한 벌. 계정마다 한 줄이고, 저장할 때마다 통째로 바뀐다.
+ *
+ * 로그인한 사람이 '계정에 저장'을 직접 눌렀을 때만 생긴다. 기본 경험은 여전히
+ * 브라우저 안에서 끝나고, 서버가 이 기록을 브라우저로 알아서 되쓰지도 않는다 —
+ * 다른 기기에서 '계정에서 불러오기'를 눌러야 받는다. 내용은 백업 파일과 같다
+ * (구독·체크인·연동 계정·환율). 결제 알림의 동기화 토큰은 넣지 않는다.
+ */
+export const accountSnapshots = sqliteTable("account_snapshots", {
+  accountId: text("account_id")
+    .primaryKey()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  /** 백업 파일과 같은 형식의 JSON(`createBackup`). 서버가 다시 검사한 뒤 저장한 값. */
+  payload: text("payload").notNull(),
+  /** 목록 화면에서 payload를 풀지 않고 보여줄 수 있게 따로 적는다. */
+  subscriptionCount: integer("subscription_count").notNull(),
+  /** ISO 8601. 서버 시계로 적은 저장 시각. */
+  savedAt: text("saved_at").notNull(),
+});
+
+export type AccountSnapshot = typeof accountSnapshots.$inferSelect;
+
 export const notificationSubscribersRelations = relations(notificationSubscribers, ({ many }) => ({
   subscriptions: many(mirroredSubscriptions),
   notifications: many(notificationLog),

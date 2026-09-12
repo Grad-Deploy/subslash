@@ -12,7 +12,7 @@ export default function LoginPage() {
       <div className="space-y-1.5 text-center">
         <h1 className="text-2xl font-black tracking-tight">로그인</h1>
         <p className="text-sm text-muted-foreground">
-          구독 기록은 로그인과 상관없이 이 브라우저에 저장됩니다.
+          구독 기록은 이 브라우저에 저장됩니다. 로그인하면 원할 때 계정에 저장해 둘 수 있습니다.
         </p>
       </div>
 
