@@ -308,3 +308,56 @@ export function getYearDefendedSeries(
 
   return { months, pastAmount, scheduledAmount, unknownCount: subs.length - known.length };
 }
+
+export interface MonthDefendedAt {
+  year: number;
+  month: number;
+  amount: number;
+}
+
+export interface MonthOverMonthDefended {
+  current: MonthDefendedAt;
+  previous: MonthDefendedAt;
+  /** `current.amount - previous.amount`. */
+  change: number;
+  /** 결제 월이나 해지 시각을 몰라 두 달 모두에서 뺀 구독 수. */
+  unknownCount: number;
+}
+
+/**
+ * 이번 달과 지난달에 해지로 막은 결제를 비교한다.
+ *
+ * 두 달 모두 `getMyMonthDefendedAmountKRW`로 센다 — 월별 차트, '이번 달' 위젯과 같은
+ * 기준이다. 이번 달이 끝나지 않았어도 이번 달 금액은 이미 정해져 있다. 결제일 전에
+ * 해지했는지로 갈리기 때문이다. 결제가 실제로 멈췄는지는 따지지 않으므로 '지킨 돈'의
+ * 비교가 아니다.
+ *
+ * 한 달이라도 판단할 수 없는 구독은 두 달 모두에서 뺀다. 한쪽에만 넣으면 그 구독
+ * 하나 때문에 생긴 차이를 절약이 늘거나 준 것처럼 보여주게 된다.
+ */
+export function getMonthOverMonthDefended(
+  subs: DefendedSubscription[],
+  rate: number = DEFAULT_EXCHANGE_RATE,
+  now: Date = new Date(),
+): MonthOverMonthDefended {
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  // 1월의 지난달은 작년 12월이다.
+  const previousYear = month === 1 ? year - 1 : year;
+  const previousMonth = month === 1 ? 12 : month - 1;
+
+  const known = subs.filter(
+    (sub) =>
+      getMyMonthDefendedAmountKRW(sub, year, month, rate) !== null &&
+      getMyMonthDefendedAmountKRW(sub, previousYear, previousMonth, rate) !== null,
+  );
+  const currentAmount = sumMyMonthDefendedKRW(known, year, month, rate).amount;
+  const previousAmount = sumMyMonthDefendedKRW(known, previousYear, previousMonth, rate).amount;
+
+  return {
+    current: { year, month, amount: currentAmount },
+    previous: { year: previousYear, month: previousMonth, amount: previousAmount },
+    change: currentAmount - previousAmount,
+    unknownCount: subs.length - known.length,
+  };
+}
