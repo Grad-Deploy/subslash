@@ -88,8 +88,12 @@ test.describe("올해 구독 결산 (E2E)", () => {
     await expect(killed.getByText(/넷플릭스/)).toBeVisible();
 
     const spend = page.getByRole("region", { name: "지금 구독 중인 서비스의 지출 구성" });
-    await expect(spend.getByText("OTT")).toBeVisible();
-    await expect(spend.getByText("음악")).toBeVisible();
+    // 소비 유형 카드도 "OTT 집중형"처럼 분야 이름을 쓴다. 카테고리 줄은 목록 항목이고
+    // 소비 유형 카드는 목록 밖이므로, 목록 항목 가운데에서 찾는다.
+    const categoryRows = spend.getByRole("listitem");
+    await expect(categoryRows.filter({ hasText: "OTT" })).toBeVisible();
+    await expect(categoryRows.filter({ hasText: "음악" })).toBeVisible();
+    await expect(spend.getByText("소비 유형", { exact: true })).toBeVisible();
 
     const checkIns = page.getByRole("region", { name: /체크인으로 본 가성비/ });
     await expect(checkIns.getByText("1회당 가장 싸게 쓴 서비스")).toBeVisible();
