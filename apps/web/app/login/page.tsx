@@ -11,7 +11,9 @@ export default function LoginPage() {
     <div className="max-w-md mx-auto py-6 space-y-6">
       <div className="space-y-1.5 text-center">
         <h1 className="text-2xl font-black tracking-tight">로그인</h1>
-        <p className="text-sm text-muted-foreground">SubSlash 계정으로 이어서 사용하세요.</p>
+        <p className="text-sm text-muted-foreground">
+          구독 기록은 로그인과 상관없이 이 브라우저에 저장됩니다.
+        </p>
       </div>
 
       <div className="p-5 sm:p-6 border rounded-2xl bg-card shadow-sm">
