@@ -20,9 +20,15 @@ import { VERIFY_ACCOUNT_TTL_DAYS } from "./verification-config";
 
 const VERIFY_ACCOUNT_TTL_SECONDS = VERIFY_ACCOUNT_TTL_DAYS * 24 * 60 * 60;
 
-/** 한 주소로 확인 메일을 다시 보내기까지 기다리는 시간. */
+/**
+ * 한 주소로 계정 메일을 다시 보내기까지 기다리는 시간.
+ *
+ * 가입 확인 메일과 비밀번호 재설정 메일이 이 한도를 함께 쓴다. 어느 쪽이든 한 사람의
+ * 받은편지함에 쌓이고 같은 Resend 한도를 쓴다 — 따로 세면 둘을 번갈아 요청해 두 배로
+ * 보낼 수 있다.
+ */
 export const RESEND_COOLDOWN_SECONDS = 60;
-/** 한 주소로 24시간 동안 보낼 수 있는 확인 메일 수. */
+/** 한 주소로 24시간 동안 보낼 수 있는 계정 메일 수(확인·재설정 합산). */
 export const DAILY_SEND_LIMIT = 5;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -35,7 +41,7 @@ export type SendOutcome =
   | { status: "rate_limited"; retryAfterSeconds: number };
 
 /**
- * 이 주소로 지금 확인 메일을 보낼 수 있으면 0, 아니면 기다려야 하는 초.
+ * 이 주소로 지금 계정 메일을 보낼 수 있으면 0, 아니면 기다려야 하는 초.
  *
  * 실제로 발송된 메일만 센다. 설정이 없어 보내지 못한 시도까지 세면, 설정을
  * 고친 뒤에도 한동안 보낼 수 없게 된다.
@@ -61,6 +67,20 @@ export async function verificationWaitSeconds(email: string, now = new Date()): 
 
   const wait = Math.max(...waits);
   return wait > 0 ? Math.ceil(wait / 1000) : 0;
+}
+
+/** 계정 메일을 실제로 보낸 뒤 부른다. 한도 계산에 쓰고, 24시간이 지난 기록은 지운다. */
+export async function recordAccountMailSent(email: string, now = new Date()): Promise<void> {
+  const db = getDb();
+  await db.insert(verificationMailLog).values({ email, sentAt: now.toISOString() });
+  await db
+    .delete(verificationMailLog)
+    .where(
+      and(
+        eq(verificationMailLog.email, email),
+        lt(verificationMailLog.sentAt, new Date(now.getTime() - DAY_MS).toISOString()),
+      ),
+    );
 }
 
 /** 계정의 주소로 확인 메일을 보낸다. 예외를 던지지 않는다 — 가입을 실패로 만들지 않기 위해서다. */
@@ -89,19 +109,7 @@ export async function sendAccountVerification(account: Account): Promise<SendOut
     if (result.simulated) return { status: "not_sent", reason: "not_configured" };
     if (!result.delivered) return { status: "not_sent", reason: "failed" };
 
-    const now = new Date();
-    const db = getDb();
-    await db
-      .insert(verificationMailLog)
-      .values({ email: account.email, sentAt: now.toISOString() });
-    await db
-      .delete(verificationMailLog)
-      .where(
-        and(
-          eq(verificationMailLog.email, account.email),
-          lt(verificationMailLog.sentAt, new Date(now.getTime() - DAY_MS).toISOString()),
-        ),
-      );
+    await recordAccountMailSent(account.email);
     return { status: "sent" };
   } catch (error) {
     console.error("[account-verification] send failed:", error);
@@ -109,7 +117,7 @@ export async function sendAccountVerification(account: Account): Promise<SendOut
   }
 }
 
-function formatWait(seconds: number): string {
+export function formatWait(seconds: number): string {
   if (seconds < 60) return `${seconds}초`;
   if (seconds < 60 * 60) return `${Math.ceil(seconds / 60)}분`;
   return `${Math.ceil(seconds / (60 * 60))}시간`;
@@ -121,7 +129,7 @@ export function describeSendOutcome(outcome: SendOutcome, email: string): string
     case "sent":
       return `${email}로 확인 메일을 보냈습니다. 받은편지함에 없으면 스팸함도 확인해주세요.`;
     case "rate_limited":
-      return `이 주소로 확인 메일을 너무 자주 보냈습니다. ${formatWait(outcome.retryAfterSeconds)} 뒤에 다시 보낼 수 있습니다.`;
+      return `이 주소로 메일을 너무 자주 보냈습니다. ${formatWait(outcome.retryAfterSeconds)} 뒤에 다시 보낼 수 있습니다.`;
     case "not_sent":
       return outcome.reason === "not_configured"
         ? "이 서버에는 메일 발송이 설정돼 있지 않아 확인 메일을 보내지 못했습니다."
@@ -143,7 +151,8 @@ export async function resolveVerificationLink(
   if (!token || !canSignLinks()) return { kind: "invalid" };
 
   const payload = verifyLink(token);
-  // 알림용 `verify` 링크는 users의 id를 담는다. 같은 id의 계정이 있더라도 받지 않는다.
+  // 알림용 `verify` 링크는 notification_subscribers의 id를 담는다. 같은 id의 계정이
+  // 있더라도 받지 않는다. 재설정 링크(`reset-password`)도 받지 않는다.
   if (!payload || payload.act !== "verify-account" || !payload.em) return { kind: "invalid" };
 
   const rows = await getDb().select().from(accounts).where(eq(accounts.id, payload.uid)).limit(1);
