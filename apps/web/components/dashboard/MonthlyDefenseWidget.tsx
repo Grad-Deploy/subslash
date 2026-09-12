@@ -5,6 +5,7 @@ import {
   Subscription,
   formatKRW,
   getKillCheckStatus,
+  getMonthOverMonthDefended,
   splitThisMonthDefendedKRW,
 } from "@subslash/shared";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
@@ -33,6 +34,7 @@ export function MonthlyDefenseWidget({ killedSubscriptions }: MonthlyDefenseWidg
     now,
     rate,
   );
+  const comparison = getMonthOverMonthDefended(killedSubscriptions, rate, now);
   const hasUnverified = killedSubscriptions.some(
     (sub) => getKillCheckStatus(sub, now)?.state === "due",
   );
@@ -63,6 +65,16 @@ export function MonthlyDefenseWidget({ killedSubscriptions }: MonthlyDefenseWidg
         </p>
       )}
 
+      {(comparison.current.amount > 0 || comparison.previous.amount > 0) && (
+        <MonthOverMonthLine
+          currentMonth={comparison.current.month}
+          previousMonth={comparison.previous.month}
+          current={comparison.current.amount}
+          previous={comparison.previous.amount}
+          change={comparison.change}
+        />
+      )}
+
       {hasUnverified && (
         <p className="text-[11px] text-muted-foreground">
           결제가 멈췄는지 아직 확인하지 않은 해지도 들어 있습니다. 확인된 금액은 위 &lsquo;지킨
@@ -77,5 +89,47 @@ export function MonthlyDefenseWidget({ killedSubscriptions }: MonthlyDefenseWidg
         </p>
       )}
     </section>
+  );
+}
+
+/**
+ * 지난달과 비교한 한 줄. 두 달 모두 '해지로 막는 결제'의 합이다 — 이번 달은 남은
+ * 결제일까지 포함한다(해지를 유지하면 나가지 않을 돈). 연간 구독은 결제 월에만
+ * 잡혀서, 달마다 크게 오르내리는 것이 정상이다.
+ */
+function MonthOverMonthLine({
+  currentMonth,
+  previousMonth,
+  current,
+  previous,
+  change,
+}: {
+  currentMonth: number;
+  previousMonth: number;
+  current: number;
+  previous: number;
+  change: number;
+}) {
+  const verdict =
+    change > 0
+      ? `지난달보다 ${formatKRW(change)} 더 막습니다`
+      : change < 0
+        ? `지난달보다 ${formatKRW(-change)} 적습니다`
+        : "지난달과 같습니다";
+
+  return (
+    <p className="text-xs text-muted-foreground">
+      해지로 막는 결제: {currentMonth}월 {formatKRW(current)} · {previousMonth}월{" "}
+      {formatKRW(previous)} —{" "}
+      <span
+        className={
+          change > 0
+            ? "font-semibold text-emerald-600 dark:text-emerald-400"
+            : "font-semibold text-foreground"
+        }
+      >
+        {verdict}
+      </span>
+    </p>
   );
 }
