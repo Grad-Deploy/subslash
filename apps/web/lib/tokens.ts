@@ -31,7 +31,7 @@ export interface LinkPayload {
   /**
    * What the link is allowed to do.
    *
-   * `verify`는 알림 미러(users)용이고 `verify-account`는 로그인 계정용이다. 둘은
+   * `verify`는 알림 미러(notification_subscribers)용이고 `verify-account`는 로그인 계정용이다. 둘은
    * 서로 다른 테이블의 id를 담는다. 하나로 쓰면 알림 확인 링크가 같은 id를 가진
    * 계정을 인증하는 길이 열린다.
    */
