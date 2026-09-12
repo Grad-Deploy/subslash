@@ -26,21 +26,28 @@ function linkSecret(): string {
 }
 
 export interface LinkPayload {
-  /** User id — `verify-account`이면 로그인 계정(accounts)의 id. */
+  /** User id — `verify-account`·`reset-password`이면 로그인 계정(accounts)의 id. */
   uid: string;
   /**
    * What the link is allowed to do.
    *
    * `verify`는 알림 미러(notification_subscribers)용이고 `verify-account`는 로그인 계정용이다. 둘은
    * 서로 다른 테이블의 id를 담는다. 하나로 쓰면 알림 확인 링크가 같은 id를 가진
-   * 계정을 인증하는 길이 열린다.
+   * 계정을 인증하는 길이 열린다. `reset-password`도 따로 둔다 — 가입 확인 링크로
+   * 비밀번호를 바꿀 수 있으면, 3일짜리 링크가 계정을 넘겨받는 열쇠가 된다.
    */
-  act: "verify" | "unsubscribe" | "verify-account";
+  act: "verify" | "unsubscribe" | "verify-account" | "reset-password";
   /**
    * 링크가 가리키는 이메일의 지문(`emailFingerprint`). 주소가 바뀌면 옛 주소로
    * 보낸 링크가 새 주소를 인증하지 못하게 한다.
    */
   em?: string;
+  /**
+   * 링크를 보낼 때의 비밀번호 해시 지문(`passwordFingerprint`). 재설정 링크에만 담는다.
+   * 비밀번호가 한 번 바뀌면 해시가 달라지므로, 쓴 링크와 그 전에 보낸 링크가 함께
+   * 쓸모없어진다. 링크를 DB에 따로 적어두지 않고도 한 번만 쓰이게 하는 방법이다.
+   */
+  pw?: string;
   /** Expiry, epoch seconds. */
   exp: number;
 }
@@ -57,6 +64,17 @@ export function canSignLinks(): boolean {
 export function emailFingerprint(email: string): string {
   return createHmac("sha256", linkSecret())
     .update(`email:${email}`)
+    .digest("base64url")
+    .slice(0, 22);
+}
+
+/**
+ * 링크에 담는 비밀번호 해시의 지문. 해시 자체를 링크에 싣지 않는다 — 링크가 새면
+ * 해시를 두고 오프라인으로 비밀번호를 대입해볼 수 있게 된다.
+ */
+export function passwordFingerprint(passwordHash: string): string {
+  return createHmac("sha256", linkSecret())
+    .update(`password:${passwordHash}`)
     .digest("base64url")
     .slice(0, 22);
 }
