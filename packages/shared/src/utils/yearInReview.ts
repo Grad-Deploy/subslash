@@ -1,5 +1,6 @@
 import type { Subscription, SubscriptionCategory, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
+import { CATEGORY_LABELS } from "../constants/categories";
 import { toKRW } from "./currency";
 import { getYearDefendedSeries, sumMyAnnualKRW, type YearDefendedSeries } from "./sharing";
 
@@ -24,6 +25,20 @@ export interface CheckInStanding {
   checkedAt: string;
 }
 
+/** 이 비율 이상을 한 카테고리가 차지하면 그 카테고리 '집중형'이다. */
+export const FOCUSED_SHARE = 0.5;
+
+/**
+ * 지금 구독 구성으로 본 소비 유형.
+ *
+ * 지출 구성에서 그대로 읽히는 것만 말한다 — 가장 큰 카테고리가 절반 이상이면
+ * 그 카테고리에 모인 것이고, 아니면 여러 곳에 나눠 쓴 것이다. 이용 습관이나
+ * 성향처럼 앱이 모르는 것은 유형 이름에 담지 않는다.
+ */
+export type SpendingType =
+  | { kind: "focused"; category: SubscriptionCategory; share: number }
+  | { kind: "spread"; categoryCount: number };
+
 export interface YearInReview {
   year: number;
   /** 그 해가 이미 끝났는가. 끝나지 않았으면 모든 수치는 "지금까지"다. */
@@ -39,6 +54,11 @@ export interface YearInReview {
    */
   categorySpend: CategorySpend[];
   activeAnnualKRW: number;
+  /**
+   * 지금 구독 구성으로 본 소비 유형. 지난 해 결산이면 null이다 — 그 해의 구독
+   * 구성은 기록으로 남아 있지 않아, 지금 구성으로 지난 해를 말하게 된다.
+   */
+  spendingType: SpendingType | null;
   /** 그 해에 체크인한 서비스마다 마지막 체크인 기준 1회당 비용, 싼 순서로. */
   checkIns: CheckInStanding[];
 }
@@ -61,6 +81,42 @@ function latestLog(logs: UsageLog[]): UsageLog | undefined {
     }
   }
   return latest;
+}
+
+/**
+ * 지출 구성에서 소비 유형을 정한다. 구독 중인 서비스가 없거나 금액이 모두 0이면
+ * 유형도 없다 — 없는 지출로 유형을 지어내지 않는다.
+ */
+export function getSpendingType(spend: CategorySpend[]): SpendingType | null {
+  const paying = spend.filter((item) => item.annualKRW > 0);
+  if (paying.length === 0) return null;
+
+  const top = paying.reduce((best, item) => (item.share > best.share ? item : best));
+  if (top.share >= FOCUSED_SHARE) {
+    return { kind: "focused", category: top.category, share: top.share };
+  }
+  return { kind: "spread", categoryCount: paying.length };
+}
+
+/** 소비 유형을 화면·공유 카드에 적을 말. 둘이 같은 문장을 쓴다. */
+export function describeSpendingType(type: SpendingType): {
+  emoji: string;
+  title: string;
+  detail: string;
+} {
+  if (type.kind === "focused") {
+    const label = CATEGORY_LABELS[type.category];
+    return {
+      emoji: "🎯",
+      title: `${label} 집중형`,
+      detail: `구독 지출의 ${Math.round(type.share * 100)}%가 ${label}에 모여 있습니다.`,
+    };
+  }
+  return {
+    emoji: "🧩",
+    title: "고루 쓰는 분산형",
+    detail: `${type.categoryCount}개 분야에 나눠 쓰고, 가장 큰 분야도 절반이 되지 않습니다.`,
+  };
 }
 
 /**
@@ -124,14 +180,17 @@ export function buildYearInReview(
     })
     .sort((a, b) => a.costPerUseKRW - b.costPerUseKRW);
 
+  const isComplete = year < now.getFullYear();
+
   return {
     year,
-    isComplete: year < now.getFullYear(),
+    isComplete,
     defended: getYearDefendedSeries(killed, year, rate, now),
     killedThisYear,
     killedAtUnknown,
     categorySpend,
     activeAnnualKRW,
+    spendingType: isComplete ? null : getSpendingType(categorySpend),
     checkIns,
   };
 }
