@@ -119,6 +119,15 @@ export function LoginForm() {
       </Button>
 
       <p className="text-xs text-center text-muted-foreground">
+        <Link
+          href="/forgot-password"
+          className="font-semibold text-primary underline underline-offset-4"
+        >
+          비밀번호를 잊으셨나요?
+        </Link>
+      </p>
+
+      <p className="text-xs text-center text-muted-foreground">
         아직 계정이 없으신가요?{" "}
         <Link href="/signup" className="font-semibold text-primary underline underline-offset-4">
           회원가입

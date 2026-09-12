@@ -144,6 +144,40 @@ export function accountVerificationEmail(params: {
   };
 }
 
+/**
+ * 비밀번호 재설정 메일.
+ *
+ * 요청한 사람이 이 주소의 주인이 아닐 수 있다 — 남의 주소를 적어 요청할 수 있다.
+ * 그래서 요청하지 않았다면 무시하면 되고 비밀번호는 그대로라고 먼저 알린다.
+ */
+export function passwordResetEmail(params: {
+  username: string;
+  resetUrl: string;
+  validMinutes: number;
+}) {
+  const { username, resetUrl, validMinutes } = params;
+  return {
+    subject: "[SubSlash] 비밀번호 재설정 링크입니다",
+    html: shell(`
+<h1 style="margin:0 0 12px;font-size:20px;color:#18181b;">새 비밀번호를 정하세요</h1>
+<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#52525b;">
+아이디 <strong>${escapeHtml(username)}</strong> 계정의 비밀번호 재설정을 요청하셨다면
+아래 버튼을 눌러 새 비밀번호를 정하세요.
+</p>
+<a href="${resetUrl}" style="display:inline-block;background:#18181b;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:700;font-size:14px;">새 비밀번호 정하기</a>
+<p style="margin:20px 0 0;font-size:12px;line-height:1.6;color:#71717a;">
+요청하지 않았다면 이 메일을 무시하세요. 비밀번호는 바뀌지 않습니다.
+링크는 ${validMinutes}분 동안, 한 번만 쓸 수 있습니다.
+</p>`),
+    text:
+      `SubSlash 비밀번호 재설정\n\n` +
+      `아이디 ${oneLine(username)} 계정의 비밀번호 재설정을 요청하셨다면 아래 링크에서 새 비밀번호를 정하세요.\n` +
+      `${resetUrl}\n\n` +
+      `요청하지 않았다면 이 메일을 무시하세요. 비밀번호는 바뀌지 않습니다. ` +
+      `링크는 ${validMinutes}분 동안, 한 번만 쓸 수 있습니다.`,
+  };
+}
+
 export interface ReminderItem {
   clientId: string;
   name: string;
