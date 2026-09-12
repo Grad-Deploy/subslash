@@ -45,3 +45,10 @@ local.db-*
 # .env.example은 문서라서 예외로 둔다.
 .env*
 !.env.example
+
+# 작업 메모(피드백 정리, 계획서)는 어느 레포에도 올리지 않는다.
+# Grad-Deploy 미러는 히스토리에서도 *.pdf·*.txt를 한 번 더 거른다(.github/workflows/mirror.yml).
+*.pdf
+*.txt
+/implementation_plan*.md
+/subslash_analysis.md
