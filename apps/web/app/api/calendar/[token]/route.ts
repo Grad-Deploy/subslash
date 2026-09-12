@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb, isDatabaseConfigured } from "@lib/db";
-import { mirroredSubscriptions, users } from "@lib/schema";
+import { mirroredSubscriptions, notificationSubscribers } from "@lib/schema";
 import { hashSyncToken } from "@lib/tokens";
 import { buildBillingCalendar } from "@lib/ics";
 import { appUrl } from "@lib/email";
@@ -33,8 +33,8 @@ export async function GET(_request: Request, context: { params: Promise<{ token:
   try {
     const rows = await getDb()
       .select()
-      .from(users)
-      .where(eq(users.calendarTokenHash, hashSyncToken(token)))
+      .from(notificationSubscribers)
+      .where(eq(notificationSubscribers.calendarTokenHash, hashSyncToken(token)))
       .limit(1);
 
     const user = rows[0];

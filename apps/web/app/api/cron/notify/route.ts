@@ -7,7 +7,7 @@ import {
   type Currency,
 } from "@subslash/shared";
 import { databaseUnavailableResponse, getDb } from "@lib/db";
-import { mirroredSubscriptions, notificationLog, users } from "@lib/schema";
+import { mirroredSubscriptions, notificationLog, notificationSubscribers } from "@lib/schema";
 import { signLink } from "@lib/tokens";
 import { appUrl, reminderEmail, sendEmail, type ReminderItem } from "@lib/email";
 
@@ -56,7 +56,10 @@ export async function GET(request: NextRequest) {
   const failures: string[] = [];
 
   try {
-    const recipients = await db.select().from(users).where(isNotNull(users.verifiedAt));
+    const recipients = await db
+      .select()
+      .from(notificationSubscribers)
+      .where(isNotNull(notificationSubscribers.verifiedAt));
 
     for (const user of recipients) {
       const subs = await db

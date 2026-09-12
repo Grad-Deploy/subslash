@@ -1,10 +1,15 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { mirroredSubscriptions, notificationLog, users, type User } from "./schema";
+import {
+  mirroredSubscriptions,
+  notificationLog,
+  notificationSubscribers,
+  type NotificationSubscriber,
+} from "./schema";
 import { hashSyncToken } from "./tokens";
 
 /** Resolves the caller from the `Authorization: Bearer <syncToken>` header. */
-export async function userFromRequest(request: Request): Promise<User | null> {
+export async function userFromRequest(request: Request): Promise<NotificationSubscriber | null> {
   const header = request.headers.get("authorization");
   if (!header?.startsWith("Bearer ")) return null;
 
@@ -13,8 +18,8 @@ export async function userFromRequest(request: Request): Promise<User | null> {
 
   const rows = await getDb()
     .select()
-    .from(users)
-    .where(eq(users.syncTokenHash, hashSyncToken(token)))
+    .from(notificationSubscribers)
+    .where(eq(notificationSubscribers.syncTokenHash, hashSyncToken(token)))
     .limit(1);
 
   return rows[0] ?? null;
@@ -41,5 +46,5 @@ export async function deleteUserCompletely(userId: string): Promise<void> {
   const db = getDb();
   await db.delete(mirroredSubscriptions).where(eq(mirroredSubscriptions.userId, userId));
   await db.delete(notificationLog).where(eq(notificationLog.userId, userId));
-  await db.delete(users).where(eq(users.id, userId));
+  await db.delete(notificationSubscribers).where(eq(notificationSubscribers.id, userId));
 }

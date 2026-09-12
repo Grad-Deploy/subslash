@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { databaseUnavailableResponse, getDb } from "@lib/db";
-import { users } from "@lib/schema";
+import { notificationSubscribers } from "@lib/schema";
 import { verifyLink } from "@lib/tokens";
 import { appUrl } from "@lib/email";
 
@@ -18,9 +18,9 @@ export async function GET(request: NextRequest) {
 
   try {
     await getDb()
-      .update(users)
+      .update(notificationSubscribers)
       .set({ verifiedAt: new Date().toISOString() })
-      .where(eq(users.id, payload.uid));
+      .where(eq(notificationSubscribers.id, payload.uid));
 
     return NextResponse.redirect(`${appUrl()}/subs?notify=verified`);
   } catch (error) {
