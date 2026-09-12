@@ -18,7 +18,8 @@ delete process.env.RESEND_API_KEY;
 delete process.env.TURSO_AUTH_TOKEN;
 
 const { getDb, closeDb } = await import("../../lib/db");
-const { users, mirroredSubscriptions, notificationLog } = await import("../../lib/schema");
+const { notificationSubscribers, mirroredSubscriptions, notificationLog } =
+  await import("../../lib/schema");
 const { signLink, verifyLink, hashSyncToken } = await import("../../lib/tokens");
 const { deleteUserCompletely } = await import("../../lib/notify-server");
 
@@ -194,7 +195,7 @@ describe("알림 옵트인", () => {
     expect(body.email).toBe("reader@example.com");
     expect(body.verified).toBe(false);
 
-    const rows = await getDb().select().from(users);
+    const rows = await getDb().select().from(notificationSubscribers);
     expect(rows).toHaveLength(1);
     // Only the hash is persisted, never the raw token.
     expect(rows[0].syncTokenHash).toBe(hashSyncToken(body.syncToken));
@@ -210,12 +211,12 @@ describe("알림 옵트인", () => {
       }),
     );
     expect(response.status).toBe(400);
-    expect(await getDb().select().from(users)).toHaveLength(0);
+    expect(await getDb().select().from(notificationSubscribers)).toHaveLength(0);
   });
 
   it("확인된 주소로 다시 신청하면 확인 상태와 서버 사본을 넘겨주지 않고 처음부터 시작한다", async () => {
     const ownerToken = await optIn("owner@example.com");
-    const [owner] = await getDb().select().from(users);
+    const [owner] = await getDb().select().from(notificationSubscribers);
     await markVerified(owner.id);
     await putMirror(ownerToken, [
       {
@@ -237,7 +238,7 @@ describe("알림 옵트인", () => {
     );
     expect((await response.json()).verified).toBe(false);
 
-    const rows = await getDb().select().from(users);
+    const rows = await getDb().select().from(notificationSubscribers);
     expect(rows).toHaveLength(1);
     // 주인이 메일로 다시 확인하기 전에는 알림이 나가지 않는다.
     expect(rows[0].verifiedAt).toBeNull();
@@ -326,17 +327,17 @@ describe("미러 동기화", () => {
 describe("확인 링크", () => {
   it("서명된 링크로만 인증 상태가 된다", async () => {
     await optIn();
-    const userId = (await getDb().select().from(users))[0].id;
+    const userId = (await getDb().select().from(notificationSubscribers))[0].id;
 
     const tampered = await verifyRoute(
       request("http://localhost:3000/api/notify/verify?token=forged.signature"),
     );
     expect(tampered.headers.get("location")).toContain("notify=invalid");
-    expect((await getDb().select().from(users))[0].verifiedAt).toBeNull();
+    expect((await getDb().select().from(notificationSubscribers))[0].verifiedAt).toBeNull();
 
     const ok = await markVerified(userId);
     expect(ok.headers.get("location")).toContain("notify=verified");
-    expect((await getDb().select().from(users))[0].verifiedAt).not.toBeNull();
+    expect((await getDb().select().from(notificationSubscribers))[0].verifiedAt).not.toBeNull();
   });
 
   it("만료된 링크와 용도가 다른 링크는 거부한다", async () => {
@@ -364,7 +365,7 @@ describe("크론 알림 발송", () => {
         ...overrides,
       },
     ]);
-    const userId = (await getDb().select().from(users))[0].id;
+    const userId = (await getDb().select().from(notificationSubscribers))[0].id;
     await markVerified(userId);
     return { token, userId };
   }
@@ -489,14 +490,14 @@ describe("캘린더 피드", () => {
     const response = await fetchFeed(feedTokenOf(await enableFeed(token)));
 
     expect(response.status).toBe(200);
-    expect((await getDb().select().from(users))[0].verifiedAt).toBeNull();
+    expect((await getDb().select().from(notificationSubscribers))[0].verifiedAt).toBeNull();
   });
 
   it("원본 토큰이 아니라 해시만 저장한다", async () => {
     const token = await optIn();
     const feedToken = feedTokenOf(await enableFeed(token));
 
-    const row = (await getDb().select().from(users))[0];
+    const row = (await getDb().select().from(notificationSubscribers))[0];
     expect(row.calendarTokenHash).toBe(hashSyncToken(feedToken));
     expect(row.calendarTokenHash).not.toBe(feedToken);
   });
@@ -546,14 +547,14 @@ describe("수신 거부", () => {
     const token = await optIn();
     await putMirror(token, [{ id: "s", name: "넷플릭스", amount: 17000, billingDay: 10 }]);
 
-    const userId = (await getDb().select().from(users))[0].id;
+    const userId = (await getDb().select().from(notificationSubscribers))[0].id;
     await getDb()
       .insert(notificationLog)
       .values({ userId, clientId: "s", billingDate: "2026-01-10" });
 
     await deleteUserCompletely(userId);
 
-    expect(await getDb().select().from(users)).toHaveLength(0);
+    expect(await getDb().select().from(notificationSubscribers)).toHaveLength(0);
     expect(await getDb().select().from(mirroredSubscriptions)).toHaveLength(0);
     expect(await getDb().select().from(notificationLog)).toHaveLength(0);
   });

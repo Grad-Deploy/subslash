@@ -10,8 +10,16 @@ import { sql, relations } from "drizzle-orm";
  * the savings pot never leave the browser.
  */
 
-export const users = sqliteTable(
-  "users",
+/**
+ * 결제 알림을 켠 브라우저. 로그인 계정(`accounts`)이 아니다.
+ *
+ * 로그인 없이 알림만 켜도 생기고, 이메일 하나와 그 브라우저가 쥔 sync 토큰으로
+ * 식별된다. 예전 이름이 `users`여서 로그인 계정 테이블처럼 읽혔다(0006에서 바꿈).
+ * 두 테이블을 합치면 "알림에는 로그인이 필요 없다"와 "계정마다 비밀번호가 있다"
+ * 중 하나가 거짓이 된다.
+ */
+export const notificationSubscribers = sqliteTable(
+  "notification_subscribers",
   {
     id: text("id")
       .primaryKey()
@@ -19,7 +27,7 @@ export const users = sqliteTable(
     email: text("email").notNull(),
     /** SHA-256 of the bearer token held by the browser. The raw token is never stored. */
     syncTokenHash: text("sync_token_hash").notNull(),
-    /** Null until the confirmation link is clicked; the cron skips unverified users. */
+    /** Null until the confirmation link is clicked; the cron skips unverified subscribers. */
     verifiedAt: text("verified_at"),
     /** How many days before a billing date the reminder goes out. */
     reminderDays: integer("reminder_days").notNull().default(3),
@@ -38,9 +46,11 @@ export const users = sqliteTable(
     lastSyncedAt: text("last_synced_at"),
   },
   (table) => ({
-    emailIdx: uniqueIndex("users_email_idx").on(table.email),
-    syncTokenIdx: uniqueIndex("users_sync_token_idx").on(table.syncTokenHash),
-    calendarTokenIdx: uniqueIndex("users_calendar_token_idx").on(table.calendarTokenHash),
+    emailIdx: uniqueIndex("notification_subscribers_email_idx").on(table.email),
+    syncTokenIdx: uniqueIndex("notification_subscribers_sync_token_idx").on(table.syncTokenHash),
+    calendarTokenIdx: uniqueIndex("notification_subscribers_calendar_token_idx").on(
+      table.calendarTokenHash,
+    ),
   }),
 );
 
@@ -54,9 +64,10 @@ export const mirroredSubscriptions = sqliteTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
+    /** notification_subscribers.id. 컬럼 이름은 테이블 이름을 바꾸기 전 그대로다. */
     userId: text("user_id")
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => notificationSubscribers.id, { onDelete: "cascade" }),
     /** The browser-side subscription id, used to build the one-tap check-in link. */
     clientId: text("client_id").notNull(),
     name: text("name").notNull(),
@@ -90,9 +101,10 @@ export const notificationLog = sqliteTable(
     id: text("id")
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
+    /** notification_subscribers.id. */
     userId: text("user_id")
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => notificationSubscribers.id, { onDelete: "cascade" }),
     clientId: text("client_id").notNull(),
     /** The billing date the reminder was about, as YYYY-MM-DD. */
     billingDate: text("billing_date").notNull(),
@@ -112,9 +124,9 @@ export const notificationLog = sqliteTable(
 /**
  * 로그인 계정.
  *
- * 알림 미러의 `users`와 일부러 분리했다. 저쪽은 "알림을 켠 브라우저"를
- * 가리키고 이메일 하나로 식별되며, 계정 없이도 존재한다. 로그인은 그와
- * 다른 개념이라 한 테이블에 밀어 넣으면 둘 중 하나의 규칙이 반드시 거짓이
+ * 알림 미러의 `notification_subscribers`와 일부러 분리했다. 저쪽은 "알림을 켠
+ * 브라우저"를 가리키고 이메일 하나로 식별되며, 계정 없이도 존재한다. 로그인은
+ * 그와 다른 개념이라 한 테이블에 밀어 넣으면 둘 중 하나의 규칙이 반드시 거짓이
  * 된다. 로그인은 선택 기능이므로, 계정이 없어도 앱은 그대로 동작한다.
  */
 export const accounts = sqliteTable(
@@ -205,27 +217,27 @@ export const sessions = sqliteTable(
   }),
 );
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const notificationSubscribersRelations = relations(notificationSubscribers, ({ many }) => ({
   subscriptions: many(mirroredSubscriptions),
   notifications: many(notificationLog),
 }));
 
 export const mirroredSubscriptionsRelations = relations(mirroredSubscriptions, ({ one }) => ({
-  user: one(users, {
+  subscriber: one(notificationSubscribers, {
     fields: [mirroredSubscriptions.userId],
-    references: [users.id],
+    references: [notificationSubscribers.id],
   }),
 }));
 
 export const notificationLogRelations = relations(notificationLog, ({ one }) => ({
-  user: one(users, {
+  subscriber: one(notificationSubscribers, {
     fields: [notificationLog.userId],
-    references: [users.id],
+    references: [notificationSubscribers.id],
   }),
 }));
 
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
+export type NotificationSubscriber = typeof notificationSubscribers.$inferSelect;
+export type NewNotificationSubscriber = typeof notificationSubscribers.$inferInsert;
 export type MirroredSubscription = typeof mirroredSubscriptions.$inferSelect;
 export type NewMirroredSubscription = typeof mirroredSubscriptions.$inferInsert;
 export type NotificationLogEntry = typeof notificationLog.$inferSelect;

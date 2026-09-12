@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { databaseUnavailableResponse, getDb } from "@lib/db";
-import { mirroredSubscriptions, users } from "@lib/schema";
+import { mirroredSubscriptions, notificationSubscribers } from "@lib/schema";
 import { deleteUserCompletely, userFromRequest } from "@lib/notify-server";
 
 /** Only the fields the reminder needs — no cancel guides, categories or icons. */
@@ -87,7 +87,10 @@ export async function PUT(request: NextRequest) {
         .insert(mirroredSubscriptions)
         .values(items.map((item) => ({ ...item, userId: user.id, updatedAt: now })));
     }
-    await db.update(users).set({ lastSyncedAt: now }).where(eq(users.id, user.id));
+    await db
+      .update(notificationSubscribers)
+      .set({ lastSyncedAt: now })
+      .where(eq(notificationSubscribers.id, user.id));
 
     return NextResponse.json({
       synced: items.length,

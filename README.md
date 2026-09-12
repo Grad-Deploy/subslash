@@ -251,6 +251,23 @@ vercel firewall publish --yes
 > TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... pnpm db:push
 > ```
 
+> [!WARNING]
+> `0006`은 알림 테이블 `users`의 이름을 `notification_subscribers`로 바꿉니다. 로그인 계정
+> 테이블 `accounts`와 이름만 보고는 구분되지 않았기 때문입니다. **이 파일은 `db:push`가
+> 아니라 SQL을 그대로 실행해 적용하세요.** `db:push`는 이름 변경을 "새 테이블을 만들지,
+> 이름을 바꿀지" 묻는데, 만들기를 고르면 기존 `users`가 지워져 알림을 켠 사람들의 기록이
+> 사라집니다.
+>
+> 이름이 바뀐 뒤 새 코드가 배포되기 전까지(반대 순서라도) 알림 API가 실패합니다. 병합한
+> 배포가 끝나면 곧바로 적용하고, 크론 시각(매일 00:00 UTC = 09:00 KST)은 피합니다.
+>
+> ```bash
+> turso db shell <DB 이름> < apps/web/drizzle/0006_rename_notification_subscribers.sql
+> ```
+>
+> Turso 대시보드의 SQL 콘솔에 파일 내용을 붙여 넣어도 됩니다. 적용한 뒤에 `db:push`를
+> 돌리면 바꿀 것이 없다고 나옵니다.
+
 ## 📱 모바일 / PWA
 
 - 웹 매니페스트 + 서비스 워커(`public/sw.js`)로 설치형 PWA로 동작합니다. 홈 화면에

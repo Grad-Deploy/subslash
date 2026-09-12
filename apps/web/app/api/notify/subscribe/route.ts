@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { databaseUnavailableResponse, getDb } from "@lib/db";
-import { users } from "@lib/schema";
+import { notificationSubscribers } from "@lib/schema";
 import { generateSyncToken, hashSyncToken, signLink } from "@lib/tokens";
 import { appUrl, sendEmail, verificationEmail } from "@lib/email";
 import { deleteUserCompletely, normalizeEmail } from "@lib/notify-server";
@@ -37,18 +37,18 @@ export async function POST(request: NextRequest) {
     // 알림 메일의 내용을 정할 수 있었다. 주소의 주인임을 다시 확인하기
     // 전에는 이전 기록을 아무것도 넘겨받지 않는다.
     const existing = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.email, email))
+      .select({ id: notificationSubscribers.id })
+      .from(notificationSubscribers)
+      .where(eq(notificationSubscribers.email, email))
       .limit(1);
     if (existing[0]) {
       await deleteUserCompletely(existing[0].id);
     }
 
     const inserted = await db
-      .insert(users)
+      .insert(notificationSubscribers)
       .values({ email, syncTokenHash: hashSyncToken(syncToken), reminderDays })
-      .returning({ id: users.id });
+      .returning({ id: notificationSubscribers.id });
 
     const token = signLink({ uid: inserted[0].id, act: "verify" }, VERIFY_TTL_SECONDS);
     const { subject, html, text } = verificationEmail(
