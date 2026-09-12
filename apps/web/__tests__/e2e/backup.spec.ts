@@ -152,4 +152,17 @@ test.describe("데이터 백업 (E2E)", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(subCard(page, "넷플릭스")).toBeVisible();
   });
+
+  test("로그인하지 않았으면 계정에 저장하는 버튼 대신 로그인 안내를 보여준다", async ({ page }) => {
+    await seedOnce(page);
+    await page.goto("/subs");
+
+    const card = page.getByRole("region", { name: "💾 데이터 백업" });
+    await expect(card).toBeVisible({ timeout: 30_000 });
+
+    await expect(card.getByText(/로그인하면 이 기록을 계정에 저장하고/)).toBeVisible();
+    await expect(card.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/login");
+    await expect(card.getByRole("button", { name: "계정에 저장" })).toHaveCount(0);
+    await expect(card.getByRole("button", { name: "계정에서 불러오기" })).toHaveCount(0);
+  });
 });

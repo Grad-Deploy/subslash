@@ -59,9 +59,16 @@ USD 환산 환율은 상수가 아니라 사용자 설정값이다. 컴포넌트
 
 서버 테이블은 두 갈래이고 합치지 않는다. `notification_subscribers`(와
 `mirrored_subscriptions`, `notification_log`)는 "알림을 켠 브라우저"라 로그인
-없이도 생기고, `accounts`(와 `sessions`)는 선택 로그인 계정이다. 합치면 알림에
-로그인이 필요해진다. 앞쪽의 예전 이름이 `users`여서 로그인 계정 테이블로 오해를
-샀다(0006에서 바꿈).
+없이도 생기고, `accounts`(와 `sessions`, `account_snapshots`)는 선택 로그인 계정이다.
+합치면 알림에 로그인이 필요해진다. 앞쪽의 예전 이름이 `users`여서 로그인 계정 테이블로
+오해를 샀다(0006에서 바꿈).
+
+`account_snapshots`는 로그인한 사람이 '계정에 저장'을 직접 눌렀을 때만 생기는 백업
+파일 한 벌이다. 알림 미러와 같은 규칙을 따른다 — 전체 교체, 병합 없음, 서버가 알아서
+브라우저로 되쓰지 않음('계정에서 불러오기'를 눌러야 받는다). 서버는 받은 기록을
+`parseBackup`으로 다시 검사하고, 동기화 토큰(`notify`)은 넣지 않는다. 계정을 지우는
+경로를 새로 만들면 `sessions`처럼 이 표도 직접 지운다 — `ON DELETE CASCADE`는
+`PRAGMA foreign_keys`가 켜져 있을 때만 동작한다.
 
 ## 파일 경계
 
