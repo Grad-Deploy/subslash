@@ -13,6 +13,7 @@ import { Input } from "@components/ui/input";
 import { Select } from "@components/ui/select";
 import { Button } from "@components/ui/button";
 import { refreshAuth, useAuth } from "@hooks/useAuth";
+import { ResendVerificationButton } from "./ResendVerificationButton";
 
 type SaveStatus = { tone: "ok" | "error"; message: string } | null;
 
@@ -104,8 +105,31 @@ export function ProfileForm() {
         <dt className="text-muted-foreground">아이디</dt>
         <dd className="font-semibold">{account.username}</dd>
         <dt className="text-muted-foreground">이메일</dt>
-        <dd className="font-semibold break-all">{account.email}</dd>
+        <dd className="font-semibold break-all">
+          {account.email}{" "}
+          {account.emailVerified ? (
+            <span className="ml-1 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+              확인됨
+            </span>
+          ) : (
+            <span className="ml-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+              미확인
+            </span>
+          )}
+        </dd>
       </dl>
+
+      {/* 확인 전이라도 쓰는 데 막히는 것은 없다. 다만 주소가 본인 것인지는 아직
+          모르는 상태라, 그렇게 표시하고 확인할 방법을 둔다. */}
+      {!account.emailVerified && (
+        <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
+          <p className="text-[11px] leading-relaxed text-amber-900 dark:text-amber-200">
+            이 이메일이 본인 것인지 아직 확인하지 않았습니다. 확인 메일의 링크에서
+            &lsquo;맞아요&rsquo;를 누르면 확인됩니다. 확인 전에도 모든 기능을 그대로 쓸 수 있습니다.
+          </p>
+          <ResendVerificationButton label="확인 메일 보내기" />
+        </div>
+      )}
 
       <div className="space-y-3 pt-4 border-t">
         <div className="space-y-1">

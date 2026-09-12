@@ -138,6 +138,12 @@ export const accounts = sqliteTable(
     age: integer("age"),
     /** male | female | other | undisclosed. 선택 항목이라 적지 않았으면 null. */
     gender: text("gender"),
+    /**
+     * 가입한 이메일이 그 사람 것인지 확인된 시각. 확인 메일에서 '맞아요'를 누르기
+     * 전까지 null이다. 이 기능이 생기기 전에 가입한 계정도 null로 남는다 — 확인한
+     * 적 없는 주소를 확인된 것으로 채우지 않는다.
+     */
+    emailVerifiedAt: text("email_verified_at"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(datetime('now'))`),
@@ -146,6 +152,28 @@ export const accounts = sqliteTable(
   (table) => ({
     usernameIdx: uniqueIndex("accounts_username_idx").on(table.username),
     emailIdx: uniqueIndex("accounts_email_idx").on(table.email),
+  }),
+);
+
+/**
+ * 계정 확인 메일을 보낸 기록. 주소마다 보내는 횟수를 제한하는 데만 쓴다.
+ *
+ * 계정이 아니라 주소에 묶는다. 계정은 '제가 가입하지 않았어요'로 지워졌다가 같은
+ * 주소로 다시 만들어질 수 있어서, 계정에 적어두면 지울 때마다 제한이 풀린다 —
+ * 모르는 사람의 받은편지함에 확인 메일을 계속 보내는 길이 된다.
+ */
+export const verificationMailLog = sqliteTable(
+  "verification_mail_log",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    email: text("email").notNull(),
+    /** ISO 8601. 세션 만료 시각처럼 문자열 비교로 시간 순서를 가린다. */
+    sentAt: text("sent_at").notNull(),
+  },
+  (table) => ({
+    emailSentIdx: index("verification_mail_log_email_idx").on(table.email, table.sentAt),
   }),
 );
 

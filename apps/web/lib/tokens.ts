@@ -26,12 +26,39 @@ function linkSecret(): string {
 }
 
 export interface LinkPayload {
-  /** User id. */
+  /** User id — `verify-account`이면 로그인 계정(accounts)의 id. */
   uid: string;
-  /** What the link is allowed to do. */
-  act: "verify" | "unsubscribe";
+  /**
+   * What the link is allowed to do.
+   *
+   * `verify`는 알림 미러(users)용이고 `verify-account`는 로그인 계정용이다. 둘은
+   * 서로 다른 테이블의 id를 담는다. 하나로 쓰면 알림 확인 링크가 같은 id를 가진
+   * 계정을 인증하는 길이 열린다.
+   */
+  act: "verify" | "unsubscribe" | "verify-account";
+  /**
+   * 링크가 가리키는 이메일의 지문(`emailFingerprint`). 주소가 바뀌면 옛 주소로
+   * 보낸 링크가 새 주소를 인증하지 못하게 한다.
+   */
+  em?: string;
   /** Expiry, epoch seconds. */
   exp: number;
+}
+
+/** 서명 키가 있어 메일 링크를 만들 수 있는지. 없으면 `signLink`·`verifyLink`가 예외를 던진다. */
+export function canSignLinks(): boolean {
+  return Boolean(process.env.EMAIL_LINK_SECRET || process.env.CRON_SECRET);
+}
+
+/**
+ * 링크에 담는 이메일 지문. 링크는 주소창·기록에 남으므로 주소 자체는 넣지 않는다.
+ * 서명 키로 만든 HMAC이라, 흔한 주소를 대입해 지문을 맞춰볼 수도 없다.
+ */
+export function emailFingerprint(email: string): string {
+  return createHmac("sha256", linkSecret())
+    .update(`email:${email}`)
+    .digest("base64url")
+    .slice(0, 22);
 }
 
 function base64url(input: Buffer | string): string {

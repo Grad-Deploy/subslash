@@ -34,6 +34,9 @@ export async function sendEmail(params: {
     console.warn(
       `[email] RESEND_API_KEY not set — not sending. to=${params.to} subject=${params.subject}`,
     );
+    // `pnpm dev`에서 확인 링크를 직접 눌러볼 수 있게 본문을 찍는다. 링크는
+    // 자격증명이라, 배포 로그와 테스트 출력에는 남기지 않는다.
+    if (process.env.NODE_ENV === "development") console.warn(params.text);
     return { delivered: false, simulated: true };
   }
 
@@ -102,6 +105,42 @@ export function verificationEmail(verifyUrl: string) {
 </p>
 <a href="${verifyUrl}" style="display:inline-block;background:#18181b;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:700;font-size:14px;">알림 수신 확인하기</a>`),
     text: `SubSlash 결제 알림 수신 확인\n\n아래 링크를 열면 결제일 알림이 시작됩니다.\n${verifyUrl}\n\n본인이 신청하지 않았다면 이 메일을 무시하세요.`,
+  };
+}
+
+/**
+ * 가입한 이메일이 본인 것인지 묻는 메일.
+ *
+ * 받는 사람이 가입한 본인이 아닐 수 있다 — 남의 주소로 가입하는 것은 막을 수
+ * 없다. 그래서 어떤 아이디가 이 주소를 썼는지 보여주고, 모르는 가입이면 지울 수
+ * 있다고 알린다. 링크는 선택지를 보여주는 페이지로 갈 뿐, 여는 것만으로는 아무것도
+ * 바뀌지 않는다. 메일 검사기가 링크를 미리 열어보기 때문이다.
+ */
+export function accountVerificationEmail(params: {
+  username: string;
+  confirmUrl: string;
+  validDays: number;
+}) {
+  const { username, confirmUrl, validDays } = params;
+  return {
+    subject: "[SubSlash] 가입한 이메일이 맞는지 확인해주세요",
+    html: shell(`
+<h1 style="margin:0 0 12px;font-size:20px;color:#18181b;">SubSlash에 가입하셨나요?</h1>
+<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#52525b;">
+아이디 <strong>${escapeHtml(username)}</strong> 계정이 이 이메일 주소로 가입했습니다.
+아래 버튼을 눌러 본인이 맞는지 알려주세요.
+</p>
+<a href="${confirmUrl}" style="display:inline-block;background:#18181b;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:700;font-size:14px;">확인하러 가기</a>
+<p style="margin:20px 0 0;font-size:12px;line-height:1.6;color:#71717a;">
+가입한 적이 없다면 같은 버튼을 누른 뒤 '제가 가입하지 않았어요'를 고르세요. 그 계정은 지워지고,
+이 주소로 다시 가입할 수 있게 됩니다. 링크는 ${validDays}일 동안 쓸 수 있습니다.
+</p>`),
+    text:
+      `SubSlash 가입 이메일 확인\n\n` +
+      `아이디 ${oneLine(username)} 계정이 이 이메일 주소로 가입했습니다.\n` +
+      `아래 링크를 열어 본인이 맞는지 알려주세요.\n${confirmUrl}\n\n` +
+      `가입한 적이 없다면 링크를 연 뒤 '제가 가입하지 않았어요'를 고르세요. ` +
+      `그 계정은 지워지고, 이 주소로 다시 가입할 수 있게 됩니다. 링크는 ${validDays}일 동안 쓸 수 있습니다.`,
   };
 }
 

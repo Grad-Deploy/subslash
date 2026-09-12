@@ -32,6 +32,8 @@ export interface PublicAccount {
   age: number | null;
   /** 선택 항목. 적지 않았으면 null. */
   gender: string | null;
+  /** 확인 메일에서 본인이 맞다고 답했는지. 이 기능 전에 가입한 계정은 false다. */
+  emailVerified: boolean;
   createdAt: string;
 }
 
@@ -42,6 +44,7 @@ export function toPublicAccount(account: Account): PublicAccount {
     email: account.email,
     age: account.age,
     gender: account.gender,
+    emailVerified: account.emailVerifiedAt !== null,
     createdAt: account.createdAt,
   };
 }
@@ -133,21 +136,32 @@ export async function updateAccountProfile(
   return rows[0] ?? null;
 }
 
-/** 이미 쓰이고 있는 아이디·이메일인지. 어느 쪽이 겹쳤는지까지 돌려준다. */
+/**
+ * 이미 쓰이고 있는 아이디·이메일인지. 어느 쪽이 겹쳤는지까지 돌려준다.
+ *
+ * 이메일이 겹친 계정이 아직 확인 전이면 `emailPending`이다. 그 주소의 주인이
+ * 가입한 적이 없다면, 확인 메일을 받아 그 계정을 지우고 가입할 수 있다.
+ */
 export async function findConflicts(
   username: string,
   email: string,
-): Promise<{ username: boolean; email: boolean }> {
+): Promise<{ username: boolean; email: boolean; emailPending: boolean }> {
   const db = getDb();
   const rows = await db
-    .select({ username: accounts.username, email: accounts.email })
+    .select({
+      username: accounts.username,
+      email: accounts.email,
+      emailVerifiedAt: accounts.emailVerifiedAt,
+    })
     .from(accounts)
     .where(or(eq(accounts.username, username), eq(accounts.email, email)))
     .limit(2);
 
+  const emailRow = rows.find((row) => row.email === email);
   return {
     username: rows.some((row) => row.username === username),
-    email: rows.some((row) => row.email === email),
+    email: Boolean(emailRow),
+    emailPending: Boolean(emailRow) && emailRow?.emailVerifiedAt === null,
   };
 }
 
