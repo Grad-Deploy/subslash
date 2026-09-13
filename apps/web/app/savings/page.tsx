@@ -145,35 +145,44 @@ export default function SavingsDashboard() {
           {/* Detox level & title (Phase 3) */}
           <DetoxLevelBadge savings={tiers.confirmed} killCount={killedSubs.length} />
 
-          {/* This month's defended spend (Issue 8) */}
-          <MonthlyDefenseWidget killedSubscriptions={killedSubs} />
+          {/*
+            넓은 화면에서는 두 칸으로 놓는다. 키가 큰 달별 그래프가 오른쪽 두 줄을 차지하고,
+            왼쪽에 이번 달과 서비스별이 쌓이며, 보상은 맨 아래 한 줄 전체다. DOM 순서는
+            좁은 화면에서 쌓이는 순서 그대로다(이번 달 → 달별 → 서비스별 → 보상).
+          */}
+          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+            {/* This month's defended spend (Issue 8) */}
+            <MonthlyDefenseWidget killedSubscriptions={killedSubs} />
 
-          {/* 올해 달별 방어액 — 지킨 달과 예정인 달을 나눠 보여준다 */}
-          <MonthlyDefenseChart killedSubscriptions={killedSubs} exchangeRate={rate} />
+            {/* 올해 달별 방어액 — 지킨 달과 예정인 달을 나눠 보여준다 */}
+            <div className="min-w-0 lg:row-span-2">
+              <MonthlyDefenseChart killedSubscriptions={killedSubs} exchangeRate={rate} />
+            </div>
 
-          {/* Breakdown by Cancelled Service (Issue 7) */}
-          <SavingsBreakdownChart killedSubscriptions={killedSubs} exchangeRate={rate} />
+            {/* Breakdown by Cancelled Service (Issue 7) */}
+            <SavingsBreakdownChart killedSubscriptions={killedSubs} exchangeRate={rate} />
 
-          {/* Reward Equivalent Cards — only the tiers the savings actually cover */}
-          <div className="space-y-3">
-            <h3 className="font-bold text-base">🎁 1년 동안 아끼면 누릴 수 있는 보상</h3>
-            {equivalents.length === 0 ? (
-              <div className="p-4 border border-dashed rounded-2xl text-sm text-muted-foreground">
-                아직 환산할 만큼 모이지 않았습니다. 연간 ₩5,000부터 여기에 표시됩니다.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {equivalents.map((item) => (
-                  <div key={item.label} className="p-4 border rounded-2xl bg-card space-y-1">
-                    <p className="text-xs text-muted-foreground">{item.label} 환산</p>
-                    <p className="text-lg font-bold text-foreground">
-                      {item.emoji} {item.label} {item.count.toLocaleString()}
-                      {item.unit}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Reward Equivalent Cards — only the tiers the savings actually cover */}
+            <div className="min-w-0 space-y-3 lg:col-span-2">
+              <h3 className="font-bold text-base">🎁 1년 동안 아끼면 누릴 수 있는 보상</h3>
+              {equivalents.length === 0 ? (
+                <div className="p-4 border border-dashed rounded-2xl text-sm text-muted-foreground">
+                  아직 환산할 만큼 모이지 않았습니다. 연간 ₩5,000부터 여기에 표시됩니다.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-3">
+                  {equivalents.map((item) => (
+                    <div key={item.label} className="p-4 border rounded-2xl bg-card space-y-1">
+                      <p className="text-xs text-muted-foreground">{item.label} 환산</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {item.emoji} {item.label} {item.count.toLocaleString()}
+                        {item.unit}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Defended Subscriptions List with Actions */}

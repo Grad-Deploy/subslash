@@ -19,6 +19,7 @@ import {
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { OnboardingTourCard } from "../../components/dashboard/OnboardingTourCard";
 import { ActionQueue } from "../../components/dashboard/ActionQueue";
+import { UpcomingBilling } from "../../components/dashboard/UpcomingBilling";
 import { SubForm } from "../../components/subscription/SubForm";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
@@ -209,53 +210,70 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <OnboardingTourCard onStartAdd={() => setIsAddOpen(true)} activeCount={activeSubs.length} />
-
-      {/* 지금 결정할 것 — 이 화면의 본체 */}
-      <ActionQueue
-        items={queue}
-        nextBilling={nextBilling}
-        activeCount={activeSubs.length}
-        onCheckIn={handleOpenCheckIn}
-        onCancelGuide={handleCancelGuide}
-        onConfirmPrice={handleConfirmPrice}
-        onKillNotCharged={handleKillNotCharged}
-        onKillCharged={handleKillCharged}
-        onAddFirst={() => setIsAddOpen(true)}
-      />
-
-      {/* 지출 한 줄 */}
-      <TotalSpend subscriptions={activeSubs} />
-      <ExchangeRateNote />
-
       {/*
-        절약 성과는 /savings가 전담한다. 여기서는 이번 달 실제로 막은 금액과
-        레벨만 한 줄로 보여주고 넘긴다 — 같은 위젯을 두 화면에 두면 어느 쪽이
-        본체인지 알 수 없게 된다.
+        넓은 화면에서는 왼쪽에 할 일, 오른쪽에 요약을 둔다. 좁은 화면에서는 같은 순서로
+        아래로 쌓인다(할 일 → 월 고정지출 → 다가오는 결제 → 지킨 돈).
       */}
-      {killedSubs.length > 0 && (
-        <Link
-          href="/savings"
-          className="flex items-center justify-between gap-3 p-4 border rounded-2xl bg-card hover:bg-muted transition-colors"
-        >
-          <div className="min-w-0">
-            {/* 머리 숫자는 결제가 멈춘 것을 확인한 돈뿐이다. 1년치 요금은 아끼는 속도로 적는다. */}
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              ✅ 지킨 돈
-            </p>
-            <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-              {formatKRW(tiers.confirmed)}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              {tiers.pending > 0 && `⏳ 확인 대기 ${formatKRW(tiers.pending)} · `}연{" "}
-              {formatKRW(tiers.annualRunRate)} 아끼는 중 · {detoxLevel.emoji}{" "}
-              {detoxLevel.levelLabel} {detoxLevel.title}
-              {tiers.unknownCount > 0 && ` · 결제 월 미설정 ${tiers.unknownCount}건 제외`}
-            </p>
-          </div>
-          <span className="text-sm font-semibold text-muted-foreground shrink-0">절약 현황 →</span>
-        </Link>
-      )}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+        <div className="min-w-0 space-y-6">
+          <OnboardingTourCard
+            onStartAdd={() => setIsAddOpen(true)}
+            activeCount={activeSubs.length}
+          />
+
+          {/* 지금 결정할 것 — 이 화면의 본체 */}
+          <ActionQueue
+            items={queue}
+            nextBilling={nextBilling}
+            activeCount={activeSubs.length}
+            onCheckIn={handleOpenCheckIn}
+            onCancelGuide={handleCancelGuide}
+            onConfirmPrice={handleConfirmPrice}
+            onKillNotCharged={handleKillNotCharged}
+            onKillCharged={handleKillCharged}
+            onAddFirst={() => setIsAddOpen(true)}
+          />
+        </div>
+
+        <aside className="space-y-4 lg:sticky lg:top-20" aria-label="이번 달 요약">
+          {/* 지출 한 줄 */}
+          <TotalSpend subscriptions={activeSubs} />
+          <ExchangeRateNote />
+
+          <UpcomingBilling subscriptions={activeSubs} now={now} />
+
+          {/*
+            절약 성과는 /savings가 전담한다. 여기서는 이번 달 실제로 막은 금액과
+            레벨만 한 줄로 보여주고 넘긴다 — 같은 위젯을 두 화면에 두면 어느 쪽이
+            본체인지 알 수 없게 된다.
+          */}
+          {killedSubs.length > 0 && (
+            <Link
+              href="/savings"
+              className="flex items-center justify-between gap-3 p-4 border rounded-2xl bg-card hover:bg-muted transition-colors"
+            >
+              <div className="min-w-0">
+                {/* 머리 숫자는 결제가 멈춘 것을 확인한 돈뿐이다. 1년치 요금은 아끼는 속도로 적는다. */}
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  ✅ 지킨 돈
+                </p>
+                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                  {formatKRW(tiers.confirmed)}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {tiers.pending > 0 && `⏳ 확인 대기 ${formatKRW(tiers.pending)} · `}연{" "}
+                  {formatKRW(tiers.annualRunRate)} 아끼는 중 · {detoxLevel.emoji}{" "}
+                  {detoxLevel.levelLabel} {detoxLevel.title}
+                  {tiers.unknownCount > 0 && ` · 결제 월 미설정 ${tiers.unknownCount}건 제외`}
+                </p>
+              </div>
+              <span className="text-sm font-semibold text-muted-foreground shrink-0">
+                절약 현황 →
+              </span>
+            </Link>
+          )}
+        </aside>
+      </div>
 
       {/* SubForm Modal for Adding */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
