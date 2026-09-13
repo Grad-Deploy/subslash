@@ -250,7 +250,9 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Melon",
     nameKo: "멜론",
     category: "music",
-    defaultAmount: 10900,
+    // melon.com 이용권 안내의 '스트리밍 플러스 정기결제'(무제한 듣기 + 오프라인 재생).
+    // 무제한 듣기만인 스트리밍클럽은 8,690원이라, 다른 이용권이면 등록할 때 고친다.
+    defaultAmount: 11990,
     currency: "KRW",
     // 옛 해지 주소는 404다. 멜론 고객센터 FAQ는 메뉴 경로만 안내하고 해지 화면
     // 주소를 밝히지 않아, 확인된 첫 화면으로 보내고 공식 경로를 안내한다.
@@ -363,8 +365,10 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Apple iCloud+",
     nameKo: "아이클라우드",
     category: "cloud",
-    defaultAmount: 0.99,
-    currency: "USD",
+    // Apple 지원 문서의 대한민국 50GB 요금. 한국에서는 달러가 아니라 원화로 청구된다.
+    // 예전 프리셋($0.99)으로 등록한 구독은 통화가 달라 가격 확인에서 비교하지 않는다.
+    defaultAmount: 1100,
+    currency: "KRW",
     cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
     cancelUrlKind: "direct",
     legacyCancelUrls: ["https://apps.apple.com/account/subscriptions"],
