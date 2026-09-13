@@ -8,12 +8,12 @@ test.describe("Dashboard (E2E)", () => {
 
   test("온보딩 표시", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("button", { name: /지금 바로 시작하기/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /내 구독 모두 계산하기/ })).toBeVisible();
   });
 
   test("구독 등록 폼 표시", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /지금 바로 시작하기/ }).click();
+    await page.getByRole("button", { name: /내 구독 모두 계산하기/ }).click();
 
     // 새 등록은 서비스부터 고른다. 이름·금액 칸은 고른 다음에 나온다.
     const dialog = page.getByRole("dialog");
@@ -27,7 +27,7 @@ test.describe("Dashboard (E2E)", () => {
 
   test("Escape 키로 모달 닫기", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /지금 바로 시작하기/ }).click();
+    await page.getByRole("button", { name: /내 구독 모두 계산하기/ }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
     await page.keyboard.press("Escape");
