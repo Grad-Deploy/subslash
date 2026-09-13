@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   POPULAR_SERVICES,
   currentCancelUrl,
+  findPresetForSubscription,
   getAccountFallbackUrl,
   getCancelUrlKind,
   getServiceHomeUrl,
@@ -54,6 +55,24 @@ describe("해지 링크 분류", () => {
     expect(bareHomepages.map((service) => service.id)).toEqual([]);
   });
 
+  it("같은 해지 주소를 쓰는 프리셋끼리는 링크 성격이 같다", () => {
+    // 애플·구글 구독 관리 화면은 여러 서비스가 함께 쓴다. 성격이 갈리면 그 주소를
+    // '해지 화면 바로가기'라고 부를지 정할 수 없다.
+    const kinds = new Map<string, Set<string>>();
+    for (const service of POPULAR_SERVICES) {
+      kinds.set(
+        service.cancelUrl,
+        (kinds.get(service.cancelUrl) ?? new Set()).add(service.cancelUrlKind),
+      );
+    }
+    expect([...kinds].filter(([, found]) => found.size > 1).map(([url]) => url)).toEqual([]);
+  });
+
+  it("프리셋 id가 겹치지 않는다", () => {
+    const ids = POPULAR_SERVICES.map((service) => service.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it("모든 프리셋이 링크 성격을 밝히고 안내 문구를 갖는다", () => {
     for (const service of POPULAR_SERVICES) {
       expect(["direct", "entry"]).toContain(service.cancelUrlKind);
@@ -75,6 +94,35 @@ describe("해지 링크 분류", () => {
 
   it("넷플릭스처럼 해지 화면이 고정 URL인 곳은 direct다", () => {
     expect(getCancelUrlKind("https://www.netflix.com/cancelplan")).toBe("direct");
+  });
+});
+
+describe("해지 주소로 프리셋 되찾기", () => {
+  const appleSubscriptions = "https://account.apple.com/account/manage/section/subscriptions";
+
+  it("여러 프리셋이 같은 주소를 쓰면 이름으로 고른다", () => {
+    expect(
+      findPresetForSubscription({ name: "애플 뮤직", cancelUrl: appleSubscriptions })?.id,
+    ).toBe("apple-music");
+    expect(
+      findPresetForSubscription({ name: "애플 앱스토어 구독", cancelUrl: appleSubscriptions })?.id,
+    ).toBe("apple-app-store");
+  });
+
+  it("주소가 겹치고 이름도 맞지 않으면 남의 요금표를 고르지 않는다", () => {
+    // 예전에는 앞에 있는 아이클라우드를 골라 $0.99를 기준 요금으로 보여줬다.
+    expect(
+      findPresetForSubscription({ name: "내가 적은 이름", cancelUrl: appleSubscriptions }),
+    ).toBeUndefined();
+  });
+
+  it("그 주소를 쓰는 프리셋이 하나뿐이면 이름이 달라도 그 프리셋이다", () => {
+    expect(
+      findPresetForSubscription({
+        name: "넷플 가족",
+        cancelUrl: "https://www.netflix.com/cancelplan",
+      })?.id,
+    ).toBe("netflix");
   });
 });
 
