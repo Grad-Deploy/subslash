@@ -250,7 +250,9 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Melon",
     nameKo: "멜론",
     category: "music",
-    defaultAmount: 10900,
+    // melon.com 이용권 안내의 '스트리밍 플러스 정기결제'(무제한 듣기 + 오프라인 재생).
+    // 무제한 듣기만인 스트리밍클럽은 8,690원이라, 다른 이용권이면 등록할 때 고친다.
+    defaultAmount: 11990,
     currency: "KRW",
     // 옛 해지 주소는 404다. 멜론 고객센터 FAQ는 메뉴 경로만 안내하고 해지 화면
     // 주소를 밝히지 않아, 확인된 첫 화면으로 보내고 공식 경로를 안내한다.
@@ -260,6 +262,22 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "1. 멜론 PC웹(melon.com) 로그인 후 [내정보] 진입\n2. [멜론이용권/결제정보] > [멜론이용권] 선택\n3. [이용권 해지신청] 클릭\n4. 모바일 앱은 내정보 > 이용권/쿠폰/캐시 > 변경/해지 > 결제방법 변경/해지 > 해지",
     iconEmoji: "🍈",
+  },
+  {
+    id: "apple-music",
+    name: "Apple Music",
+    nameKo: "애플 뮤직",
+    category: "music",
+    // apple.com/kr 개인 요금제
+    defaultAmount: 8900,
+    currency: "KRW",
+    // 아이클라우드·앱스토어 구독과 같은 Apple 구독 관리 화면이다. 주소가 겹치므로
+    // 프리셋은 이름으로 되찾는다(findPresetForSubscription).
+    cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
+    cancelUrlKind: "direct",
+    cancelGuide:
+      "1. 아이폰 [설정] 앱 > 맨 위 내 이름\n2. [구독] > [Apple Music] 선택\n3. [구독 취소] 클릭\n4. 웹에서는 Apple 계정의 구독 관리 화면에서 Apple Music을 골라 취소",
+    iconEmoji: "🎶",
   },
   {
     id: "naver-plus",
@@ -273,6 +291,22 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "1. 네이버플러스 멤버십 마이페이지 접속\n2. 우측 상단 설정(톱니바퀴) 아이콘 클릭\n3. [네이버플러스 멤버십 관리] 클릭\n4. 하단의 [네이버플러스 멤버십 해지하기] 클릭",
     iconEmoji: "N",
+  },
+  {
+    id: "baemin-club",
+    name: "Baemin Club",
+    nameKo: "배민클럽",
+    category: "shopping",
+    // 2024년 9월 유료 전환 때 발표한 정가. 할인가로 가입했다면 등록할 때 고친다.
+    defaultAmount: 3990,
+    currency: "KRW",
+    // 해지 경로는 배달의민족 앱의 마이배민 메뉴로 안내돼 있다. 웹 첫 화면으로 보내고
+    // 앱 경로를 안내한다.
+    cancelUrl: "https://www.baemin.com/",
+    cancelUrlKind: "entry",
+    cancelGuide:
+      "1. 배달의민족 앱 로그인 후 아래 [마이배민]\n2. [배민클럽] 화면으로 이동\n3. 화면 아래쪽 [해지하기] > 해지 사유 선택 후 한 번 더 [해지하기]",
+    iconEmoji: "🛵",
   },
   {
     id: "naver-mybox",
@@ -331,8 +365,10 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Apple iCloud+",
     nameKo: "아이클라우드",
     category: "cloud",
-    defaultAmount: 0.99,
-    currency: "USD",
+    // Apple 지원 문서의 대한민국 50GB 요금. 한국에서는 달러가 아니라 원화로 청구된다.
+    // 예전 프리셋($0.99)으로 등록한 구독은 통화가 달라 가격 확인에서 비교하지 않는다.
+    defaultAmount: 1100,
+    currency: "KRW",
     cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
     cancelUrlKind: "direct",
     legacyCancelUrls: ["https://apps.apple.com/account/subscriptions"],
@@ -408,6 +444,49 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "1. claude.ai 접속 후 좌측 하단 프로필/계정 클릭\n2. [Settings] > [Billing] 메뉴 선택\n3. [Cancel Plan] 또는 구독 취소 클릭하여 완료",
     iconEmoji: "🧠",
+  },
+  {
+    id: "github-copilot-pro",
+    name: "GitHub Copilot Pro",
+    nameKo: "GitHub Copilot Pro",
+    category: "ai",
+    // GitHub 문서의 개인 요금(월 $10). Pro+는 $39라 다르면 등록할 때 고친다.
+    defaultAmount: 10,
+    currency: "USD",
+    // GitHub 문서는 설정 메뉴 경로만 안내하고 해지 화면의 고정 주소를 밝히지 않는다.
+    cancelUrl: "https://github.com/settings/billing",
+    cancelUrlKind: "entry",
+    cancelGuide:
+      "1. GitHub 로그인 후 오른쪽 위 프로필 사진 > [Settings]\n2. 왼쪽 'Access'의 [Billing and licensing] > [Licensing] (예전 화면은 [Plans and usage])\n3. 'GitHub Copilot' 칸의 [Manage subscription] > [Cancel subscription]\n4. [Cancel Copilot Pro]로 확인 — 이번 결제 주기가 끝나면 Copilot Free로 바뀝니다",
+    iconEmoji: "🐙",
+  },
+  {
+    id: "cursor-pro",
+    name: "Cursor Pro",
+    nameKo: "Cursor Pro",
+    category: "ai",
+    defaultAmount: 20,
+    currency: "USD",
+    // 결제 대시보드에서 Stripe 결제 화면을 한 번 더 열어야 해지 버튼이 나온다.
+    cancelUrl: "https://cursor.com/dashboard/billing",
+    cancelUrlKind: "entry",
+    cancelGuide:
+      "1. cursor.com 로그인 후 대시보드의 [Billing] 화면\n2. [Manage Subscription]을 누르면 Stripe 결제 화면이 열림\n3. [Cancel subscription]으로 확인 — 이번 결제 주기가 끝나면 무료 Hobby 플랜으로 바뀝니다",
+    iconEmoji: "⌨️",
+  },
+  {
+    id: "perplexity-pro",
+    name: "Perplexity Pro",
+    nameKo: "Perplexity Pro",
+    category: "ai",
+    defaultAmount: 20,
+    currency: "USD",
+    // 도움말은 설정 메뉴 경로만 안내한다. 첫 화면으로 보내고 경로를 안내한다.
+    cancelUrl: "https://www.perplexity.ai/",
+    cancelUrlKind: "entry",
+    cancelGuide:
+      "1. 웹에서 로그인 후 왼쪽 아래 프로필 > [Settings]\n2. [Subscription] 탭 > [Manage Subscription]\n3. 열린 결제 화면에서 구독 취소\n4. 앱에서 가입했다면 App Store·Google Play의 구독 관리에서 해지",
+    iconEmoji: "🔍",
   },
   {
     id: "adobe-cc",
@@ -550,8 +629,14 @@ export const DEMO_SUBSCRIPTIONS: Array<{
  */
 export function getCancelUrlKind(cancelUrl?: string): "direct" | "entry" | "unknown" {
   if (!cancelUrl) return "unknown";
-  const preset = POPULAR_SERVICES.find((service) => service.cancelUrl === cancelUrl);
-  return preset?.cancelUrlKind ?? "unknown";
+  // 애플·구글 구독 관리 화면처럼 여러 프리셋이 같은 주소를 쓴다. 그 프리셋들의
+  // 성격이 하나로 모일 때만 말한다.
+  const kinds = new Set(
+    POPULAR_SERVICES.filter((service) => service.cancelUrl === cancelUrl).map(
+      (service) => service.cancelUrlKind,
+    ),
+  );
+  return kinds.size === 1 ? [...kinds][0] : "unknown";
 }
 
 /**
@@ -665,15 +750,20 @@ export function findPresetForSubscription(sub: {
   name: string;
   cancelUrl?: string;
 }): ServicePreset | undefined {
-  if (sub.cancelUrl) {
-    const byUrl = POPULAR_SERVICES.find((service) => service.cancelUrl === sub.cancelUrl);
-    if (byUrl) return byUrl;
-  }
   const normalized = sub.name.trim().toLowerCase();
+  const sameName = (service: ServicePreset) =>
+    normalized !== "" &&
+    (service.nameKo.trim().toLowerCase() === normalized ||
+      service.name.trim().toLowerCase() === normalized);
+
+  if (sub.cancelUrl) {
+    const byUrl = POPULAR_SERVICES.filter((service) => service.cancelUrl === sub.cancelUrl);
+    if (byUrl.length === 1) return byUrl[0];
+    // 애플·구글 구독 관리 화면처럼 여러 프리셋이 같은 주소를 쓰면 주소만으로는 어느
+    // 서비스인지 모른다. 예전에는 앞의 것을 골라, 앱스토어 구독에 아이클라우드의
+    // $0.99를 기준 요금으로 보여줬다. 이름이 맞는 쪽만 고르고, 없으면 고르지 않는다.
+    if (byUrl.length > 1) return byUrl.find(sameName);
+  }
   if (!normalized) return undefined;
-  return POPULAR_SERVICES.find(
-    (service) =>
-      service.nameKo.trim().toLowerCase() === normalized ||
-      service.name.trim().toLowerCase() === normalized,
-  );
+  return POPULAR_SERVICES.find(sameName);
 }
