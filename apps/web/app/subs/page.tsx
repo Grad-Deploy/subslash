@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense, useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "../../lib/store";
 import {
   Subscription,
@@ -31,6 +31,8 @@ import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { DataBackupCard } from "../../components/settings/DataBackupCard";
+import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
+import { isWideScreen } from "@lib/wide-screen";
 
 /** 카드/표 중 고른 보기. 이 브라우저의 취향일 뿐이라 백업·동기화에 넣지 않는다. */
 const VIEW_KEY = "subslash-subs-view";
@@ -66,6 +68,27 @@ function NotifyBanner({ onMessage }: { onMessage: (message: string) => void }) {
   return null;
 }
 
+/**
+ * 주소의 `?sub=`를 옆 칸에 열 구독으로 쓴다. 주소에 두면 새로고침·링크 공유·뒤로
+ * 가기가 그대로 동작한다. useSearchParams는 Suspense 안에서만 쓸 수 있어 따로 뺐다.
+ */
+function SelectedSubSync({ onChange }: { onChange: (id: string | null) => void }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const selected = searchParams.get("sub");
+
+  useEffect(() => {
+    // 옆 칸은 넓은 화면에만 있다. 좁은 화면에서 이 주소로 오면 상세 페이지로 보낸다.
+    if (selected && !isWideScreen()) {
+      router.replace(`/subs/${encodeURIComponent(selected)}`);
+      return;
+    }
+    onChange(selected);
+  }, [selected, onChange, router]);
+
+  return null;
+}
+
 export default function SubscriptionsPage() {
   const {
     subscriptions,
@@ -80,6 +103,7 @@ export default function SubscriptionsPage() {
     getKilledSubscriptions,
   } = useStore();
   const rate = useExchangeRate();
+  const router = useRouter();
 
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"active" | "killed">("active");
@@ -108,18 +132,15 @@ export default function SubscriptionsPage() {
     localStorage.setItem(VIEW_KEY, next);
   };
 
+  // 넓은 화면에서 목록 옆 칸에 연 구독. 주소의 ?sub=가 원본이다(SelectedSubSync).
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // 표 보기일 때 표에 보이는 정렬 순서. ↑↓가 그 순서를 따른다.
+  const [tableOrder, setTableOrder] = useState<string[]>([]);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
-
-  if (!mounted) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin text-3xl">✂️</div>
-      </div>
-    );
-  }
 
   const activeSubs = getActiveSubscriptions();
   const killedSubs = getKilledSubscriptions();
@@ -129,6 +150,58 @@ export default function SubscriptionsPage() {
 
   const filteredKilled =
     filterCategory === "all" ? killedSubs : killedSubs.filter((s) => s.category === filterCategory);
+
+  const visibleIds = (tab === "active" ? filteredActive : filteredKilled).map((s) => s.id);
+  const visibleOrder = view === "table" && tableOrder.length > 0 ? tableOrder : visibleIds;
+  const orderKey = visibleOrder.join("|");
+
+  // 구독을 하나 고른 뒤에만 ↑↓로 넘긴다. 아무것도 고르지 않았을 때는 평소처럼 스크롤한다.
+  // 넘길 때는 기록을 쌓지 않는다(replace) — 뒤로 가기는 눌러서 고른 구독으로 돌아간다.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+      if (!selectedId || !isWideScreen() || e.altKey || e.ctrlKey || e.metaKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true'], [role='menu']"))
+        return;
+      if (document.querySelector("[role='dialog']")) return;
+      const ids = orderKey ? orderKey.split("|") : [];
+      if (ids.length === 0) return;
+      e.preventDefault();
+      const current = ids.indexOf(selectedId);
+      const nextIndex =
+        current < 0
+          ? 0
+          : e.key === "ArrowDown"
+            ? Math.min(current + 1, ids.length - 1)
+            : Math.max(current - 1, 0);
+      const next = ids[nextIndex];
+      if (next && next !== selectedId) {
+        router.replace(`/subs?sub=${encodeURIComponent(next)}`, { scroll: false });
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [orderKey, selectedId, router]);
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin text-3xl">✂️</div>
+      </div>
+    );
+  }
+
+  const selectSub = (id: string) =>
+    router.push(`/subs?sub=${encodeURIComponent(id)}`, { scroll: false });
+  const clearSelection = () => router.push("/subs", { scroll: false });
+  // 옆 칸의 구독을 지웠을 때: 목록에서 그다음(없으면 앞) 구독으로 넘어가고, 없으면 비운다.
+  const leaveSelection = () => {
+    const index = selectedId ? visibleOrder.indexOf(selectedId) : -1;
+    const next = index < 0 ? undefined : (visibleOrder[index + 1] ?? visibleOrder[index - 1]);
+    router.replace(next ? `/subs?sub=${encodeURIComponent(next)}` : "/subs", { scroll: false });
+  };
+  const selectedExists = selectedId !== null && subscriptions.some((s) => s.id === selectedId);
 
   const handleOpenCheckIn = (id: string) => {
     const sub = subscriptions.find((s) => s.id === id);
@@ -208,6 +281,7 @@ export default function SubscriptionsPage() {
     <div className="space-y-6">
       <Suspense fallback={null}>
         <NotifyBanner onMessage={showToast} />
+        <SelectedSubSync onChange={setSelectedId} />
       </Suspense>
 
       {/* Toast */}
@@ -264,174 +338,224 @@ export default function SubscriptionsPage() {
 
       <ExchangeRateNote />
 
-      {/* Tabs */}
-      <div className="flex border-b">
-        <button
-          className={`flex-1 py-3 font-bold text-sm transition-colors border-b-2 ${
-            tab === "active"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setTab("active")}
-        >
-          활성 구독 ({activeSubs.length})
-        </button>
-        <button
-          className={`flex-1 py-3 font-bold text-sm transition-colors border-b-2 ${
-            tab === "killed"
-              ? "border-destructive text-destructive"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setTab("killed")}
-        >
-          해지 완료 ({killedSubs.length})
-        </button>
-      </div>
-
-      {/* Category Pills + 보기 방식 */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-2 text-xs">
-          {categories.map((c) => (
+      {/* 넓은 화면(xl)에서는 목록 오른쪽에 고른 구독의 상세 칸을 둔다. */}
+      <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_26rem] xl:items-start xl:gap-6 xl:space-y-0">
+        <div className="min-w-0 space-y-6">
+          {/* Tabs */}
+          <div className="flex border-b">
             <button
-              key={c.value}
-              onClick={() => setFilterCategory(c.value)}
-              className={`px-3 py-1.5 rounded-full font-medium transition-all whitespace-nowrap ${
-                filterCategory === c.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-muted"
+              className={`flex-1 py-3 font-bold text-sm transition-colors border-b-2 ${
+                tab === "active"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
+              onClick={() => setTab("active")}
             >
-              {c.label}
+              활성 구독 ({activeSubs.length})
             </button>
-          ))}
-        </div>
-        <div
-          role="group"
-          aria-label="보기 방식"
-          className="hidden shrink-0 items-center rounded-lg border p-0.5 text-xs md:inline-flex"
-        >
-          {(
-            [
-              { value: "cards", label: "카드" },
-              { value: "table", label: "표" },
-            ] as const
-          ).map((option) => (
             <button
-              key={option.value}
-              type="button"
-              aria-pressed={view === option.value}
-              onClick={() => changeView(option.value)}
-              className={`rounded-md px-3 py-1 font-medium transition-colors ${
-                view === option.value
-                  ? "bg-secondary text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+              className={`flex-1 py-3 font-bold text-sm transition-colors border-b-2 ${
+                tab === "killed"
+                  ? "border-destructive text-destructive"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
+              onClick={() => setTab("killed")}
             >
-              {option.label}
+              해지 완료 ({killedSubs.length})
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* Active Tab */}
-      {tab === "active" ? (
-        <div className="space-y-4">
-          {filteredActive.length === 0 ? (
-            <div className="text-center py-16 border border-dashed rounded-2xl space-y-3">
-              <div className="text-3xl">📭</div>
-              <p className="font-bold">등록된 활성 구독이 없습니다.</p>
-              <p className="text-xs text-muted-foreground">
-                새 구독을 추가하여 고정비 관리를 시작하세요.
-              </p>
-              <Button size="sm" onClick={() => setIsAddOpen(true)}>
-                + 지금 추가하기
-              </Button>
+          {/* Category Pills + 보기 방식 */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-2 text-xs">
+              {categories.map((c) => (
+                <button
+                  key={c.value}
+                  onClick={() => setFilterCategory(c.value)}
+                  className={`px-3 py-1.5 rounded-full font-medium transition-all whitespace-nowrap ${
+                    filterCategory === c.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-secondary-foreground hover:bg-muted"
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+            <div
+              role="group"
+              aria-label="보기 방식"
+              className="hidden shrink-0 items-center rounded-lg border p-0.5 text-xs md:inline-flex"
+            >
+              {(
+                [
+                  { value: "cards", label: "카드" },
+                  { value: "table", label: "표" },
+                ] as const
+              ).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={view === option.value}
+                  onClick={() => changeView(option.value)}
+                  className={`rounded-md px-3 py-1 font-medium transition-colors ${
+                    view === option.value
+                      ? "bg-secondary text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Active Tab */}
+          {tab === "active" ? (
+            <div className="space-y-4">
+              {filteredActive.length === 0 ? (
+                <div className="text-center py-16 border border-dashed rounded-2xl space-y-3">
+                  <div className="text-3xl">📭</div>
+                  <p className="font-bold">등록된 활성 구독이 없습니다.</p>
+                  <p className="text-xs text-muted-foreground">
+                    새 구독을 추가하여 고정비 관리를 시작하세요.
+                  </p>
+                  <Button size="sm" onClick={() => setIsAddOpen(true)}>
+                    + 지금 추가하기
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {view === "table" && (
+                    <div className="hidden md:block">
+                      <SubTable
+                        subscriptions={filteredActive}
+                        usageLogs={usageLogs}
+                        mode="active"
+                        onCheckIn={handleOpenCheckIn}
+                        onKill={handleKill}
+                        selectedId={selectedId}
+                        onSelect={selectSub}
+                        onOrderChange={setTableOrder}
+                        sidePanel
+                      />
+                    </div>
+                  )}
+                  <div
+                    className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4${view === "table" ? " md:hidden" : ""}`}
+                  >
+                    {filteredActive.map((sub) => (
+                      <SubCard
+                        key={sub.id}
+                        subscription={sub}
+                        onCheckIn={handleOpenCheckIn}
+                        onKill={handleKill}
+                        selected={selectedId === sub.id}
+                        onSelect={selectSub}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Quick Preset Recommender (Issue 19) */}
+              <QuickPresetRecommender
+                subscriptions={subscriptions}
+                onSelectPreset={(preset) => {
+                  setSelectedPreset(preset);
+                  setIsAddOpen(true);
+                }}
+              />
             </div>
           ) : (
-            <>
-              {view === "table" && (
-                <div className="hidden md:block">
-                  <SubTable
-                    subscriptions={filteredActive}
-                    usageLogs={usageLogs}
-                    mode="active"
-                    onCheckIn={handleOpenCheckIn}
-                    onKill={handleKill}
-                  />
+            /* Killed Tab */
+            <div className="space-y-4">
+              {filteredKilled.length === 0 ? (
+                <div className="text-center py-16 border border-dashed rounded-2xl space-y-3">
+                  <div className="text-3xl">🛡️</div>
+                  <p className="font-bold">아직 해지(방어)한 구독이 없습니다.</p>
+                  <p className="text-xs text-muted-foreground">
+                    활성 구독에서 불필요한 결제에 대해 &lsquo;해지하기&rsquo;를 누르면 이곳에 방어
+                    자산으로 기록됩니다.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300">
+                    {/* 해지를 유지하면 아낄 금액이다. 이미 지킨 돈은 절약 현황이 따로 센다. */}
+                    해지한 구독 {filteredKilled.length}개 · 해지를 유지하면 매달{" "}
+                    <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 아낍니다.
+                    실제로 지킨 돈은 절약 현황에서 확인하세요.
+                  </div>
+
+                  {view === "table" && (
+                    <div className="hidden md:block">
+                      <SubTable
+                        subscriptions={filteredKilled}
+                        usageLogs={usageLogs}
+                        mode="killed"
+                        onRevive={handleRevive}
+                        onDelete={handleDelete}
+                        selectedId={selectedId}
+                        onSelect={selectSub}
+                        onOrderChange={setTableOrder}
+                        sidePanel
+                      />
+                    </div>
+                  )}
+                  <div
+                    className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4${view === "table" ? " md:hidden" : ""}`}
+                  >
+                    {filteredKilled.map((sub) => (
+                      <SubCard
+                        key={sub.id}
+                        subscription={sub}
+                        onRevive={handleRevive}
+                        onDelete={handleDelete}
+                        selected={selectedId === sub.id}
+                        onSelect={selectSub}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
-              <div
-                className={`grid grid-cols-1 md:grid-cols-2 gap-4${view === "table" ? " md:hidden" : ""}`}
-              >
-                {filteredActive.map((sub) => (
-                  <SubCard
-                    key={sub.id}
-                    subscription={sub}
-                    onCheckIn={handleOpenCheckIn}
-                    onKill={handleKill}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Quick Preset Recommender (Issue 19) */}
-          <QuickPresetRecommender
-            subscriptions={subscriptions}
-            onSelectPreset={(preset) => {
-              setSelectedPreset(preset);
-              setIsAddOpen(true);
-            }}
-          />
-        </div>
-      ) : (
-        /* Killed Tab */
-        <div className="space-y-4">
-          {filteredKilled.length === 0 ? (
-            <div className="text-center py-16 border border-dashed rounded-2xl space-y-3">
-              <div className="text-3xl">🛡️</div>
-              <p className="font-bold">아직 해지(방어)한 구독이 없습니다.</p>
-              <p className="text-xs text-muted-foreground">
-                활성 구독에서 불필요한 결제에 대해 &lsquo;해지하기&rsquo;를 누르면 이곳에 방어
-                자산으로 기록됩니다.
-              </p>
             </div>
-          ) : (
+          )}
+        </div>
+
+        <aside
+          aria-label="구독 상세"
+          className="hidden xl:block xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:pr-1"
+        >
+          {selectedId ? (
             <div className="space-y-3">
-              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300">
-                {/* 해지를 유지하면 아낄 금액이다. 이미 지킨 돈은 절약 현황이 따로 센다. */}
-                해지한 구독 {filteredKilled.length}개 · 해지를 유지하면 매달{" "}
-                <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 아낍니다.
-                실제로 지킨 돈은 절약 현황에서 확인하세요.
-              </div>
-
-              {view === "table" && (
-                <div className="hidden md:block">
-                  <SubTable
-                    subscriptions={filteredKilled}
-                    usageLogs={usageLogs}
-                    mode="killed"
-                    onRevive={handleRevive}
-                    onDelete={handleDelete}
-                  />
-                </div>
+              {selectedExists && !visibleIds.includes(selectedId) && (
+                <p className="rounded-xl border border-dashed p-3 text-xs text-muted-foreground">
+                  지금 탭·분류에서는 목록에 보이지 않는 구독입니다.
+                </p>
               )}
-              <div
-                className={`grid grid-cols-1 md:grid-cols-2 gap-4${view === "table" ? " md:hidden" : ""}`}
-              >
-                {filteredKilled.map((sub) => (
-                  <SubCard
-                    key={sub.id}
-                    subscription={sub}
-                    onRevive={handleRevive}
-                    onDelete={handleDelete}
-                  />
-                ))}
-              </div>
+              <SubscriptionDetail
+                key={selectedId}
+                id={selectedId}
+                headingLevel="h2"
+                closeLabel="✕ 닫기"
+                onClose={clearSelection}
+                onLeave={leaveSelection}
+                className="space-y-6"
+              />
+            </div>
+          ) : (
+            <div className="space-y-2 rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">
+                구독을 고르면 여기에 자세히 보여줍니다
+              </p>
+              <p className="text-xs">
+                목록에서 이름을 누르세요. 고른 뒤에는 ↑↓ 키로 다음 구독으로 넘어갑니다.
+              </p>
             </div>
           )}
-        </div>
-      )}
+        </aside>
+      </div>
 
       {/* 이 브라우저에만 있는 데이터를 파일로 지키는 곳 */}
       <DataBackupCard onMessage={showToast} />
