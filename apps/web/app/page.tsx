@@ -10,6 +10,7 @@ import {
   SubscriptionFormData,
 } from "@subslash/shared";
 import { SubForm } from "../components/subscription/SubForm";
+import { UnitCostHero } from "../components/home/UnitCostHero";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,33 @@ import {
   DialogDescription,
 } from "../components/ui/dialog";
 import { Button } from "../components/ui/button";
+
+/**
+ * 처음 온 사람이 "여기가 뭐 하는 곳인지" 알 수 있게, 앱이 실제로 하는 일을
+ * 순서대로 적는다. 앱이 대신 해주지 않는 일(해지 자체)은 대신 해준다고 쓰지 않는다.
+ */
+const HOW_IT_WORKS = [
+  {
+    icon: "📝",
+    title: "구독 등록",
+    body: "목록에서 서비스를 고르면 요금과 해지 방법이 채워집니다. 결제 문자·영수증을 붙여 넣어 한 번에 불러올 수도 있어요.",
+  },
+  {
+    icon: "🔢",
+    title: "한 달에 한 번 체크인",
+    body: "“지난 30일 동안 몇 번 썼나요?”에 답하면 1회당 실제 단가와 초록·노랑·빨강 신호가 나옵니다.",
+  },
+  {
+    icon: "✂️",
+    title: "해지 방법 안내",
+    body: "해지는 각 서비스에서 직접 합니다. 해지 화면으로 바로 가는 링크가 있으면 그리로, 없으면 어느 메뉴로 가야 하는지 단계별로 알려드려요.",
+  },
+  {
+    icon: "💰",
+    title: "지킨 돈 기록",
+    body: "해지 후 첫 결제일이 지나 결제가 정말 멈췄는지 확인하면, 그 금액이 절약 현황에 ‘지킨 돈’으로 쌓입니다.",
+  },
+] as const;
 
 export default function Home() {
   const router = useRouter();
@@ -72,26 +100,8 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center space-y-12 py-8 max-w-2xl mx-auto text-center">
-      {/* Hero Section */}
-      <div className="space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
-          ⚡ 능동형 디지털 구독 디톡스
-        </div>
-        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
-          구독은 자산이 아니라 <br />
-          <span className="text-destructive underline decoration-wavy underline-offset-8">
-            부채
-          </span>
-          입니다.
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-lg mx-auto leading-relaxed">
-          매달 자동 결제되는 고정지출, 정말 그만한 가치가 있나요?
-          <br />
-          <strong>1회당 실제 사용 단가</strong>를 계산하고, 돈값을 못 하는 구독은 해지 방법까지
-          안내받아 끊으세요.
-        </p>
-      </div>
+    <div className="mx-auto flex w-full max-w-4xl flex-col items-center space-y-10 py-4">
+      <UnitCostHero onStart={handleStart} onDemo={handleLoadDemo} />
 
       {/*
         구독 중인 것과 해지한 것을 따로 센다. 예전에는 해지한 구독까지 합쳐
@@ -132,34 +142,42 @@ export default function Home() {
         </div>
       )}
 
-      {/* Primary CTA Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-        <Button
-          size="lg"
-          className="h-14 px-8 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
-          onClick={handleStart}
-        >
-          ✂️ 지금 바로 시작하기
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          className="h-14 px-6 text-base font-medium rounded-xl border-2"
-          onClick={handleLoadDemo}
-        >
-          ✨ 샘플 데이터로 1초 체험
-        </Button>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        🔒 별도 회원가입 없이 브라우저에 저장됩니다. 결제 알림을 켤 때만 이메일을 받습니다.
-      </p>
-
-      {/* Quick Add Presets Carousel / Grid */}
-      <div className="w-full space-y-3 pt-4">
-        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          자주 이용하는 서비스 빠른 등록
+      {/* SubSlash가 하는 일 */}
+      <section className="w-full space-y-4" aria-labelledby="how-it-works">
+        <div className="space-y-1">
+          <h2 id="how-it-works" className="text-xl font-bold tracking-tight">
+            SubSlash는 이렇게 도와드려요
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            매달 빠져나가는 구독을 모아 두고, 실제로 쓴 만큼 값을 하는지 확인해 돈값을 못 하는
+            구독을 끊도록 돕는 가계부입니다.
+          </p>
         </div>
-        <div className="flex flex-wrap justify-center gap-2">
+        <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {HOW_IT_WORKS.map((step, i) => (
+            <li key={step.title} className="space-y-2 rounded-2xl border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-xl" aria-hidden="true">
+                  {step.icon}
+                </span>
+                <span className="text-xs font-semibold text-muted-foreground">{i + 1}단계</span>
+              </div>
+              <h3 className="text-base font-bold">{step.title}</h3>
+              <p className="text-xs leading-relaxed text-muted-foreground">{step.body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* Quick Add Presets */}
+      <section className="w-full space-y-3" aria-labelledby="quick-add">
+        <h2
+          id="quick-add"
+          className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+        >
+          자주 이용하는 서비스 빠른 등록
+        </h2>
+        <div className="flex flex-wrap gap-2">
           {POPULAR_SERVICES.slice(0, 8).map((preset) => (
             <button
               key={preset.id}
@@ -174,35 +192,7 @@ export default function Home() {
             </button>
           ))}
         </div>
-      </div>
-
-      {/* 3 Core Mechanisms */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full pt-8 text-left">
-        <div className="p-5 border rounded-2xl bg-card shadow-sm space-y-2">
-          <div className="text-2xl">🚨</div>
-          <h3 className="font-bold text-base">충격 요법 CPU 연산</h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            월 17,000원 OTT를 지난달 1회 시청했다면? &ldquo;이번 달 영화 1편을 17,000원에
-            보셨네요.&rdquo; 현실을 직시하게 만듭니다.
-          </p>
-        </div>
-        <div className="p-5 border rounded-2xl bg-card shadow-sm space-y-2">
-          <div className="text-2xl">⚡</div>
-          <h3 className="font-bold text-base">해지 링크 + 단계별 안내</h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            해지 메뉴가 깊숙이 숨어 있어도 찾아갈 수 있게 돕습니다. 해지 화면으로 바로 가는 링크가
-            있는 서비스는 그리로, 없는 곳은 어디서 몇 단계를 더 가야 하는지 알려드립니다.
-          </p>
-        </div>
-        <div className="p-5 border rounded-2xl bg-card shadow-sm space-y-2">
-          <div className="text-2xl">💰</div>
-          <h3 className="font-bold text-base">방어 성공 자산 시각화</h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            해지를 마치고 기록하면 연간 절약 금액으로 환산되어 &ldquo;치킨 5마리&rdquo;,
-            &ldquo;제주도 항공권&rdquo; 등의 실물 보상으로 치환됩니다.
-          </p>
-        </div>
-      </div>
+      </section>
 
       {/* Subscription Form Modal */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
