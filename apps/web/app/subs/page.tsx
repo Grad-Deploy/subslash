@@ -13,6 +13,7 @@ import {
   sumMyMonthlyKRW,
 } from "@subslash/shared";
 import { SubCard } from "../../components/subscription/SubCard";
+import { SubTable } from "../../components/subscription/SubTable";
 import { SubForm } from "../../components/subscription/SubForm";
 import { QuickPresetRecommender } from "../../components/subscription/QuickPresetRecommender";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
@@ -30,6 +31,9 @@ import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { DataBackupCard } from "../../components/settings/DataBackupCard";
+
+/** 카드/표 중 고른 보기. 이 브라우저의 취향일 뿐이라 백업·동기화에 넣지 않는다. */
+const VIEW_KEY = "subslash-subs-view";
 
 /** Feedback for the redirect targets of the reminder emails' links. */
 const NOTIFY_MESSAGES: Record<string, string> = {
@@ -65,6 +69,7 @@ function NotifyBanner({ onMessage }: { onMessage: (message: string) => void }) {
 export default function SubscriptionsPage() {
   const {
     subscriptions,
+    usageLogs,
     addSubscription,
     killSubscription,
     reviveSubscription,
@@ -90,10 +95,18 @@ export default function SubscriptionsPage() {
     sub: Subscription;
   } | null>(null);
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
+  // 표는 넓은 화면(md 이상)에서만 고를 수 있다. 좁은 화면은 늘 카드다.
+  const [view, setView] = useState<"cards" | "table">("cards");
 
   useEffect(() => {
     setMounted(true);
+    if (localStorage.getItem(VIEW_KEY) === "table") setView("table");
   }, []);
+
+  const changeView = (next: "cards" | "table") => {
+    setView(next);
+    localStorage.setItem(VIEW_KEY, next);
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -275,21 +288,49 @@ export default function SubscriptionsPage() {
         </button>
       </div>
 
-      {/* Category Pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 text-xs">
-        {categories.map((c) => (
-          <button
-            key={c.value}
-            onClick={() => setFilterCategory(c.value)}
-            className={`px-3 py-1.5 rounded-full font-medium transition-all whitespace-nowrap ${
-              filterCategory === c.value
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-secondary-foreground hover:bg-muted"
-            }`}
-          >
-            {c.label}
-          </button>
-        ))}
+      {/* Category Pills + 보기 방식 */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-2 text-xs">
+          {categories.map((c) => (
+            <button
+              key={c.value}
+              onClick={() => setFilterCategory(c.value)}
+              className={`px-3 py-1.5 rounded-full font-medium transition-all whitespace-nowrap ${
+                filterCategory === c.value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-secondary-foreground hover:bg-muted"
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+        <div
+          role="group"
+          aria-label="보기 방식"
+          className="hidden shrink-0 items-center rounded-lg border p-0.5 text-xs md:inline-flex"
+        >
+          {(
+            [
+              { value: "cards", label: "카드" },
+              { value: "table", label: "표" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={view === option.value}
+              onClick={() => changeView(option.value)}
+              className={`rounded-md px-3 py-1 font-medium transition-colors ${
+                view === option.value
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Active Tab */}
@@ -307,16 +348,31 @@ export default function SubscriptionsPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredActive.map((sub) => (
-                <SubCard
-                  key={sub.id}
-                  subscription={sub}
-                  onCheckIn={handleOpenCheckIn}
-                  onKill={handleKill}
-                />
-              ))}
-            </div>
+            <>
+              {view === "table" && (
+                <div className="hidden md:block">
+                  <SubTable
+                    subscriptions={filteredActive}
+                    usageLogs={usageLogs}
+                    mode="active"
+                    onCheckIn={handleOpenCheckIn}
+                    onKill={handleKill}
+                  />
+                </div>
+              )}
+              <div
+                className={`grid grid-cols-1 md:grid-cols-2 gap-4${view === "table" ? " md:hidden" : ""}`}
+              >
+                {filteredActive.map((sub) => (
+                  <SubCard
+                    key={sub.id}
+                    subscription={sub}
+                    onCheckIn={handleOpenCheckIn}
+                    onKill={handleKill}
+                  />
+                ))}
+              </div>
+            </>
           )}
 
           {/* Quick Preset Recommender (Issue 19) */}
@@ -349,7 +405,20 @@ export default function SubscriptionsPage() {
                 실제로 지킨 돈은 절약 현황에서 확인하세요.
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {view === "table" && (
+                <div className="hidden md:block">
+                  <SubTable
+                    subscriptions={filteredKilled}
+                    usageLogs={usageLogs}
+                    mode="killed"
+                    onRevive={handleRevive}
+                    onDelete={handleDelete}
+                  />
+                </div>
+              )}
+              <div
+                className={`grid grid-cols-1 md:grid-cols-2 gap-4${view === "table" ? " md:hidden" : ""}`}
+              >
                 {filteredKilled.map((sub) => (
                   <SubCard
                     key={sub.id}
