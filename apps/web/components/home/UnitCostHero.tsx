@@ -87,7 +87,8 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
           </div>
 
           <p className="mt-3 text-xs text-neutral-500">
-            🔒 회원가입 없이 이 브라우저에 저장됩니다. 결제 알림을 켤 때만 이메일을 받습니다.
+            🔒 회원가입 없이 이 브라우저에 저장됩니다. 결제 알림은 로그인한 뒤 켤 수 있고, 켤 때만
+            이메일을 받습니다.
           </p>
         </div>
 
