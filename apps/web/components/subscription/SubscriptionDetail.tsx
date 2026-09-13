@@ -168,16 +168,20 @@ export function SubscriptionDetail({
       </div>
 
       {/* Subscription Hero Card */}
-      <div className="p-6 border rounded-2xl bg-card shadow-sm space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center text-3xl">
+      {/*
+        목록 옆 칸처럼 좁게 그려질 때는 가격을 이름 아래로 내린다. 화면 폭이 아니라
+        이 카드의 폭을 본다(@container) — 넓은 화면의 옆 칸도 좁기 때문이다.
+      */}
+      <div className="@container p-6 border rounded-2xl bg-card shadow-sm space-y-4">
+        <div className="flex flex-col gap-3 @md:flex-row @md:items-start @md:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className="w-16 h-16 shrink-0 rounded-2xl bg-secondary flex items-center justify-center text-3xl">
               {sub.iconUrl || "📦"}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <Title className="text-2xl font-black">{sub.name}</Title>
-                <Badge variant={isKilled ? "secondary" : "default"}>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <Title className="text-2xl font-black break-keep">{sub.name}</Title>
+                <Badge variant={isKilled ? "secondary" : "default"} className="whitespace-nowrap">
                   {isKilled ? "해지 완료" : "구독 중"}
                 </Badge>
               </div>
@@ -188,7 +192,7 @@ export function SubscriptionDetail({
             </div>
           </div>
 
-          <div className="text-right">
+          <div className="@md:text-right">
             <div className="text-2xl font-extrabold text-foreground">
               <span className="text-sm font-semibold text-muted-foreground">
                 {sub.billingCycle === "yearly" ? "연 " : "월 "}

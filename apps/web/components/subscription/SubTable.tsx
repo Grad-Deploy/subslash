@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   CATEGORY_LABELS,
@@ -21,6 +21,7 @@ import {
 } from "@subslash/shared";
 import { Button } from "../ui/button";
 import { cn } from "@lib/utils";
+import { isWideScreen } from "@lib/wide-screen";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -73,6 +74,17 @@ interface SubTableProps {
   onKill?: (id: string) => void;
   onRevive?: (id: string) => void;
   onDelete?: (id: string) => void;
+  /** 넓은 화면에서 옆 칸에 열려 있는 구독. */
+  selectedId?: string | null;
+  /** 넓은 화면에서는 이름을 누르면 페이지를 옮기지 않고 옆 칸에 연다. */
+  onSelect?: (id: string) => void;
+  /** 지금 정렬된 순서. 옆 칸의 ↑↓가 표에 보이는 순서대로 넘기게 알린다. */
+  onOrderChange?: (ids: string[]) => void;
+  /**
+   * 넓은 화면(xl)에 옆 칸이 있다. 그 폭에서는 요금·동작 열을 숨긴다 — 버튼은
+   * 옆 칸에 있고, 여섯 열이 다 들어가지 않는다.
+   */
+  sidePanel?: boolean;
 }
 
 /**
@@ -90,7 +102,12 @@ export function SubTable({
   onKill,
   onRevive,
   onDelete,
+  selectedId = null,
+  onSelect,
+  onOrderChange,
+  sidePanel = false,
 }: SubTableProps) {
+  const wideHidden = sidePanel ? "xl:hidden" : "";
   const rate = useExchangeRate();
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>(
     mode === "active" ? { key: "nextBilling", dir: "asc" } : { key: "killedAt", dir: "desc" },
@@ -127,6 +144,11 @@ export function SubTable({
         : Number(left) - Number(right);
     return sort.dir === "asc" ? cmp : -cmp;
   });
+
+  const orderKey = sorted.map((row) => row.sub.id).join("|");
+  useEffect(() => {
+    onOrderChange?.(orderKey ? orderKey.split("|") : []);
+  }, [orderKey, onOrderChange]);
 
   const toggleSort = (key: SortKey) =>
     setSort((prev) =>
@@ -166,7 +188,7 @@ export function SubTable({
         <thead className="bg-muted/50 text-xs text-muted-foreground">
           <tr>
             {sortHeader("name", "서비스", "left")}
-            <th scope="col" className="px-4 py-2.5 text-right font-medium">
+            <th scope="col" className={cn("px-4 py-2.5 text-right font-medium", wideHidden)}>
               요금
             </th>
             {sortHeader("myMonthly", "내 몫(월)")}
@@ -178,14 +200,20 @@ export function SubTable({
             ) : (
               sortHeader("killedAt", "해지일")
             )}
-            <th scope="col" className="px-4 py-2.5 text-right font-medium">
+            <th scope="col" className={cn("px-4 py-2.5 text-right font-medium", wideHidden)}>
               <span className="sr-only">동작</span>
             </th>
           </tr>
         </thead>
         <tbody>
           {sorted.map(({ sub, myMonthly, days, latest, checkedDaysAgo, killedAtMs }) => (
-            <tr key={sub.id} className="border-t align-middle hover:bg-muted/30">
+            <tr
+              key={sub.id}
+              className={cn(
+                "border-t align-middle hover:bg-muted/30",
+                selectedId === sub.id && "bg-primary/5",
+              )}
+            >
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
                   <span className="text-xl" aria-hidden="true">
@@ -194,6 +222,13 @@ export function SubTable({
                   <div className="min-w-0">
                     <Link
                       href={`/subs/${sub.id}`}
+                      aria-current={selectedId === sub.id ? "true" : undefined}
+                      onClick={(e) => {
+                        if (onSelect && isWideScreen()) {
+                          e.preventDefault();
+                          onSelect(sub.id);
+                        }
+                      }}
                       className={cn(
                         "font-semibold hover:underline",
                         mode === "killed" && "line-through text-muted-foreground",
@@ -207,7 +242,7 @@ export function SubTable({
                   </div>
                 </div>
               </td>
-              <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap">
+              <td className={cn("px-4 py-3 text-right tabular-nums whitespace-nowrap", wideHidden)}>
                 {sub.billingCycle === "yearly" ? "연 " : "월 "}
                 {formatCurrency(sub.amount, sub.currency)}
                 {isShared(sub) && (
@@ -270,7 +305,7 @@ export function SubTable({
                       })}
                 </td>
               )}
-              <td className="px-4 py-3">
+              <td className={cn("px-4 py-3", wideHidden)}>
                 <div className="flex justify-end gap-2">
                   {mode === "active" ? (
                     <>

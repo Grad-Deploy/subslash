@@ -17,6 +17,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { DdayCountdown } from "../dashboard/DdayCountdown";
 import { cn } from "@lib/utils";
+import { isWideScreen } from "@lib/wide-screen";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 interface SubCardProps {
@@ -25,9 +26,21 @@ interface SubCardProps {
   onKill?: (id: string) => void;
   onRevive?: (id: string) => void;
   onDelete?: (id: string) => void;
+  /** 넓은 화면에서 옆 칸에 열려 있는 구독인가. */
+  selected?: boolean;
+  /** 넓은 화면에서는 이름을 누르면 페이지를 옮기지 않고 옆 칸에 연다. */
+  onSelect?: (id: string) => void;
 }
 
-export function SubCard({ subscription, onCheckIn, onKill, onRevive, onDelete }: SubCardProps) {
+export function SubCard({
+  subscription,
+  onCheckIn,
+  onKill,
+  onRevive,
+  onDelete,
+  selected = false,
+  onSelect,
+}: SubCardProps) {
   const isKilled = subscription.status === "killed";
   const rate = useExchangeRate();
   const [copied, setCopied] = useState(false);
@@ -51,6 +64,7 @@ export function SubCard({ subscription, onCheckIn, onKill, onRevive, onDelete }:
       className={cn(
         "overflow-hidden transition-all",
         isKilled ? "opacity-60 bg-gray-50 dark:bg-gray-900 grayscale" : "hover:shadow-md",
+        selected && "ring-2 ring-primary",
       )}
     >
       <CardContent className="p-5 flex flex-col gap-4">
@@ -63,6 +77,13 @@ export function SubCard({ subscription, onCheckIn, onKill, onRevive, onDelete }:
               <div className="flex items-center gap-2">
                 <Link
                   href={`/subs/${subscription.id}`}
+                  aria-current={selected ? "true" : undefined}
+                  onClick={(e) => {
+                    if (onSelect && isWideScreen()) {
+                      e.preventDefault();
+                      onSelect(subscription.id);
+                    }
+                  }}
                   className="font-bold text-lg leading-none hover:underline hover:text-primary transition-colors flex items-center gap-1.5"
                 >
                   <span>{subscription.name}</span>
