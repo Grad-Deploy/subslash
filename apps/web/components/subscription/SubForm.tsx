@@ -13,6 +13,7 @@ import {
   parseServiceUrl,
 } from "@subslash/shared";
 import { useStore } from "../../lib/store";
+import { useAuth } from "@hooks/useAuth";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
@@ -68,6 +69,10 @@ export function SubForm({
 }) {
   const isEdit = mode === "edit";
   const { accounts, addAccount } = useStore();
+  // 연동 계정(구독에 쓴 이메일·아이디 목록)은 로그인한 사람에게만 묻는다. 로그인 계정과는
+  // 다른 것이다 — 연동 계정 기록은 여전히 이 브라우저에만 있다.
+  const { account: loginAccount } = useAuth();
+  const isLoggedIn = !!loginAccount;
   const fieldId = useId();
 
   // 프리셋을 누르고 연 경우(이름이 이미 채워짐)에는 고르는 단계를 건너뛴다.
@@ -223,7 +228,9 @@ export function SubForm({
     let finalAccountId = formData.linkedAccountId;
     let finalAccountName = formData.linkedAccountName;
 
-    if (isCustomAccount && customEmail.trim()) {
+    // 로그아웃 상태에서는 연동 계정 칸이 보이지 않는다. 예전에 적어 둔 이메일이 남아 있어도
+    // 보이지 않는 칸으로 연동 계정을 새로 만들지 않고, 적어 둔 값은 그대로 둔다.
+    if (isLoggedIn && isCustomAccount && customEmail.trim()) {
       finalAccountName = customEmail.trim();
       const found = accounts.find(
         (a) => a.emailOrId.toLowerCase() === customEmail.trim().toLowerCase(),
@@ -525,9 +532,12 @@ export function SubForm({
       >
         <span>
           자세히 입력 (선택) ·{" "}
-          {showServiceFields
-            ? "공유 인원, 결제 수단, 계정, 웹사이트, 해지 방법"
-            : "공유 인원, 결제 수단, 계정"}
+          {[
+            "공유 인원",
+            "결제 수단",
+            ...(isLoggedIn ? ["계정"] : []),
+            ...(showServiceFields ? ["웹사이트", "해지 방법"] : []),
+          ].join(", ")}
         </span>
         <span aria-hidden>{showMore ? "▲" : "▼"}</span>
       </button>
@@ -603,26 +613,28 @@ export function SubForm({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Linked Account Selector */}
-            <div className="space-y-1.5">
-              <label htmlFor={`${fieldId}-account`} className={LABEL}>
-                사용/로그인 계정
-              </label>
-              <Select
-                id={`${fieldId}-account`}
-                name="linkedAccountId"
-                value={isCustomAccount ? "__custom__" : formData.linkedAccountId || ""}
-                onChange={handleAccountChange}
-              >
-                <option value="">계정 지정 안 함 (직접 관리)</option>
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.name} - {acc.emailOrId}
-                  </option>
-                ))}
-                <option value="__custom__">✏️ 새 이메일 직접 입력 매핑</option>
-              </Select>
-            </div>
+            {/* Linked Account Selector — 로그인한 사람에게만 묻는다 */}
+            {isLoggedIn && (
+              <div className="space-y-1.5">
+                <label htmlFor={`${fieldId}-account`} className={LABEL}>
+                  사용/로그인 계정
+                </label>
+                <Select
+                  id={`${fieldId}-account`}
+                  name="linkedAccountId"
+                  value={isCustomAccount ? "__custom__" : formData.linkedAccountId || ""}
+                  onChange={handleAccountChange}
+                >
+                  <option value="">계정 지정 안 함 (직접 관리)</option>
+                  {accounts.map((acc) => (
+                    <option key={acc.id} value={acc.id}>
+                      {acc.name} - {acc.emailOrId}
+                    </option>
+                  ))}
+                  <option value="__custom__">✏️ 새 이메일 직접 입력 매핑</option>
+                </Select>
+              </div>
+            )}
 
             {/* Payment Method Selector */}
             <div className="space-y-1.5">
@@ -645,7 +657,7 @@ export function SubForm({
           </div>
 
           {/* Custom Email Input with Domain Selector */}
-          {isCustomAccount && (
+          {isLoggedIn && isCustomAccount && (
             <div className="p-3 rounded-xl bg-muted/40 border border-border/80 space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className={LABEL}>매핑할 이메일 계정 (아이디 입력 @ 도메인 선택)</span>
