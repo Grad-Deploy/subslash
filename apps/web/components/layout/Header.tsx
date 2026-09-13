@@ -3,60 +3,70 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTheme } from "./ThemeProvider";
+import { Bell } from "lucide-react";
 import { AccountHubModal } from "../account/AccountHubModal";
-import { AutoImportModal } from "../import/AutoImportModal";
 import { NotifySettingsModal } from "../notify/NotifySettingsModal";
+import { AccountMenu } from "./AccountMenu";
 import { useStore } from "@lib/store";
 import { useMirrorSync } from "@hooks/useMirrorSync";
-import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
 
+const navLinks = [
+  { name: "대시보드", href: "/dashboard" },
+  { name: "내 구독", href: "/subs" },
+  { name: "절약 현황", href: "/savings" },
+] as const;
+
+/**
+ * 상단 바는 탐색과 계정만 맡는다. 자동 불러오기처럼 무언가를 만드는 버튼은
+ * 그 일을 하는 화면(대시보드·내 구독) 본문에 있다.
+ *
+ * 역할마다 모양을 다르게 한다 — 탭은 글자와 밑줄, 설정은 아이콘, 계정은
+ * 아바타 하나. 모두 같은 알약 버튼이면 무엇이 자주 쓰는 메뉴인지 구분되지 않는다.
+ */
 export function Header() {
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme();
   const [isAccountsOpen, setIsAccountsOpen] = useState(false);
-  const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   const [isNotifyOpen, setIsNotifyOpen] = useState(false);
-  // Only the badge flag, so sync timestamps do not re-render the root layout.
+  // Only the flags the dot needs, so sync timestamps do not re-render the root layout.
   const remindersOn = useStore((state) => state.notify.verified);
-  const { account, loading: authLoading, logout } = useAuth();
+  const remindersPending = useStore((state) => !state.notify.verified && !!state.notify.email);
 
   // The header is mounted on every route, so the mirror stays in step wherever
   // the user edits their subscriptions.
   useMirrorSync();
 
-  const navLinks = [
-    { name: "대시보드", href: "/dashboard" },
-    { name: "내 구독", href: "/subs" },
-    { name: "절약 현황", href: "/savings" },
-  ] as const;
+  // 점은 '새 알림'이 아니라 알림 설정 상태다 — 읽지 않은 알림이라는 개념은 없다.
+  const notifyLabel = remindersOn ? "켜짐" : remindersPending ? "확인 대기" : "꺼짐";
 
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-4xl mx-auto flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-6">
+        <div className="container mx-auto flex h-16 max-w-4xl items-center justify-between gap-4 px-4">
+          <div className="flex h-full items-center gap-8">
             <Link
               href="/"
-              className="flex items-center gap-2 font-bold text-lg tracking-tight hover:opacity-80 transition-opacity"
+              className="flex items-center gap-2 text-lg font-bold tracking-tight transition-opacity hover:opacity-80"
             >
               <span className="text-2xl">✂️</span>
               <span>SubSlash</span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-1">
+            {/* 좁은 화면에서는 하단 탭(BottomNav)이 같은 역할을 한다. */}
+            <nav className="hidden h-full items-center gap-6 md:flex" aria-label="주요 메뉴">
               {navLinks.map((link) => {
-                const isActive = pathname === link.href;
+                const isActive = pathname?.startsWith(link.href);
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
+                    aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+                      "relative flex h-full items-center text-sm transition-colors",
+                      "after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:transition-colors",
                       isActive
-                        ? "bg-secondary text-foreground font-semibold"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                        ? "font-semibold text-foreground after:bg-foreground"
+                        : "font-medium text-muted-foreground after:bg-transparent hover:text-foreground",
                     )}
                   >
                     {link.name}
@@ -66,87 +76,47 @@ export function Header() {
             </nav>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsAutoImportOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-all shadow-sm active:scale-95"
-              title="결제 문자·영수증을 붙여넣어 구독 자동 등록"
-            >
-              <span>⚡</span>
-              <span className="hidden sm:inline">자동 불러오기</span>
-            </button>
-
-            <button
-              onClick={() => setIsNotifyOpen(true)}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-sm active:scale-95",
-                remindersOn
-                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
-                  : "bg-card hover:bg-muted",
-              )}
-              title="결제 임박 이메일 알림 설정"
-            >
-              <span>{remindersOn ? "🔔" : "🔕"}</span>
-              <span className="hidden sm:inline">결제 알림</span>
-            </button>
-
-            <button
-              onClick={() => setIsAccountsOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border bg-card hover:bg-muted text-xs font-semibold transition-all shadow-sm active:scale-95"
-              title="사용하는 구독 계정 관리 허브"
-            >
-              <span>👤</span>
-              <span className="hidden sm:inline">연동 계정</span>
-            </button>
-
-            {/*
-              로그인은 선택 기능이다. 불러오는 중에는 아무것도 그리지 않아,
-              "로그인" 버튼이 잠깐 보였다가 사라지는 일이 없게 한다.
-            */}
-            {!authLoading &&
-              (account ? (
-                <div className="flex items-center gap-1.5">
-                  {/* 나이·성별을 가입에서 뺐으므로, 적고 싶은 사람이 찾아갈 곳이 필요하다. */}
-                  <Link
-                    href="/me"
-                    className="inline-block max-w-[5rem] sm:max-w-[9rem] truncate text-xs font-semibold text-foreground bg-secondary hover:bg-muted px-2.5 py-1 rounded-full transition-colors"
-                    title={`내 정보 (${account.email})`}
-                  >
-                    {account.username}
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="px-2.5 py-1.5 rounded-xl border bg-card hover:bg-muted text-xs font-semibold transition-all shadow-sm active:scale-95"
-                    title="로그아웃"
-                  >
-                    로그아웃
-                  </button>
-                </div>
-              ) : (
-                <Link
-                  href="/login"
-                  className="px-3 py-1.5 rounded-xl border bg-card hover:bg-muted text-xs font-semibold transition-all shadow-sm active:scale-95"
-                  title="로그인 또는 회원가입"
+          <div className="flex items-center gap-3">
+            {/* 좁은 화면에서는 이 아이콘이 계정 메뉴 안으로 접힌다. */}
+            <div className="hidden items-center sm:flex">
+              <button
+                type="button"
+                onClick={() => setIsNotifyOpen(true)}
+                aria-label={`결제 알림 (${notifyLabel})`}
+                className="group relative flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Bell className="h-5 w-5" aria-hidden="true" />
+                {(remindersOn || remindersPending) && (
+                  <span
+                    className={cn(
+                      "absolute right-2 top-2 h-2 w-2 rounded-full ring-2 ring-background",
+                      remindersOn ? "bg-emerald-500" : "bg-amber-500",
+                    )}
+                    aria-hidden="true"
+                  />
+                )}
+                <span
+                  className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs font-medium text-background opacity-0 shadow transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                  aria-hidden="true"
                 >
-                  로그인
-                </Link>
-              ))}
+                  결제 알림 · {notifyLabel}
+                </span>
+              </button>
+            </div>
 
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl border hover:bg-muted transition-colors text-base"
-              title={theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"}
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? "☀️" : "🌙"}
-            </button>
+            <div className="hidden h-5 w-px bg-border sm:block" aria-hidden="true" />
+
+            <AccountMenu
+              onOpenLinkedAccounts={() => setIsAccountsOpen(true)}
+              onOpenNotify={() => setIsNotifyOpen(true)}
+              notifyLabel={notifyLabel}
+            />
           </div>
         </div>
       </header>
 
       <NotifySettingsModal isOpen={isNotifyOpen} onClose={() => setIsNotifyOpen(false)} />
       <AccountHubModal isOpen={isAccountsOpen} onClose={() => setIsAccountsOpen(false)} />
-      <AutoImportModal isOpen={isAutoImportOpen} onClose={() => setIsAutoImportOpen(false)} />
     </>
   );
 }
