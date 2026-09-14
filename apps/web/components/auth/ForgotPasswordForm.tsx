@@ -5,6 +5,7 @@ import Link from "next/link";
 import { normalizeEmailAddress, validateEmail } from "@subslash/shared";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
+import { apiUrl } from "@lib/api";
 
 type Result = { tone: "ok" | "error"; message: string } | null;
 
@@ -34,7 +35,7 @@ export function ForgotPasswordForm() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/auth/password-reset", {
+      const res = await fetch(apiUrl("/api/auth/password-reset"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",

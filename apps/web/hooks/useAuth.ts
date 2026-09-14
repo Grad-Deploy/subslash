@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { apiUrl } from "@lib/api";
 
 export interface AuthAccount {
   id: string;
@@ -89,7 +90,7 @@ export async function refreshAuth(): Promise<void> {
 
   inflight = (async () => {
     try {
-      const res = await fetch("/api/auth/me", { credentials: "same-origin" });
+      const res = await fetch(apiUrl("/api/auth/me"), { credentials: "same-origin" });
       const data = await res.json();
       cache = { account: data?.account ?? null, loading: false };
     } catch {
@@ -106,7 +107,7 @@ export async function refreshAuth(): Promise<void> {
 /** 로그아웃하고 공유 상태를 즉시 비운다. */
 export async function logoutAuth(): Promise<void> {
   try {
-    await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
+    await fetch(apiUrl("/api/auth/logout"), { method: "POST", credentials: "same-origin" });
   } finally {
     cache = { account: null, loading: false };
     emit();

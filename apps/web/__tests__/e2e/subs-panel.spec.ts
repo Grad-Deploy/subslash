@@ -102,6 +102,6 @@ test.describe("내 구독 옆 칸 상세 (E2E)", () => {
     await seedOnce(page);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/subs?sub=netflix");
-    await expect(page).toHaveURL(/\/subs\/netflix$/, { timeout: 30_000 });
+    await expect(page).toHaveURL(/\/subs\/detail\?id=netflix$/, { timeout: 30_000 });
   });
 });

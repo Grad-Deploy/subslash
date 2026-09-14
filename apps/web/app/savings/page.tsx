@@ -22,6 +22,7 @@ import { buildShareSearchParams } from "../../lib/share-savings";
 import { MonthlyDefenseWidget } from "../../components/dashboard/MonthlyDefenseWidget";
 import { MonthlyDefenseChart } from "../../components/savings/MonthlyDefenseChart";
 import { KillCheckLabel } from "../../components/savings/KillCheckLabel";
+import { webUrl } from "@lib/api";
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
@@ -74,7 +75,7 @@ export default function SavingsDashboard() {
       verifiedCount: tiers.verifiedCount,
       names: killedSubs.map((sub) => sub.name),
     });
-    return `${window.location.origin}/savings/share?${params.toString()}`;
+    return webUrl(`/savings/share?${params.toString()}`);
   };
 
   const handleShare = async () => {

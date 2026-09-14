@@ -10,6 +10,7 @@ import {
   type ActionVerb,
 } from "@subslash/shared";
 import { Button } from "../ui/button";
+import { subscriptionDetailHref } from "@lib/routes";
 
 interface ActionQueueProps {
   items: ActionItem[];
@@ -71,7 +72,7 @@ export function ActionQueue({
       case "confirm-price":
         return onConfirmPrice(item.subscriptionId);
       case "set-billing-month":
-        return router.push(`/subs/${item.subscriptionId}`);
+        return router.push(subscriptionDetailHref(item.subscriptionId));
       case "verify-kill":
         return onKillNotCharged(item.subscriptionId);
     }
@@ -175,7 +176,7 @@ export function ActionQueue({
                   size="sm"
                   variant="outline"
                   className="text-xs"
-                  onClick={() => router.push(`/subs/${item.subscriptionId}`)}
+                  onClick={() => router.push(subscriptionDetailHref(item.subscriptionId))}
                 >
                   ✏️ 수정
                 </Button>

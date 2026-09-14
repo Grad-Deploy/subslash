@@ -38,7 +38,7 @@ test.describe("구독 상세 체크인 근거 (E2E)", () => {
     ]);
     await page.addInitScript((value) => localStorage.setItem("subslash-storage", value), state);
 
-    await page.goto("/subs/netflix");
+    await page.goto("/subs/detail?id=netflix");
     const evidence = page.getByRole("region", { name: "체크인 근거" });
     await expect(evidence).toBeVisible({ timeout: 30_000 });
 
@@ -55,7 +55,7 @@ test.describe("구독 상세 체크인 근거 (E2E)", () => {
     ]);
     await page.addInitScript((value) => localStorage.setItem("subslash-storage", value), state);
 
-    await page.goto("/subs/netflix");
+    await page.goto("/subs/detail?id=netflix");
     const evidence = page.getByRole("region", { name: "체크인 근거" });
     await expect(evidence).toBeVisible({ timeout: 30_000 });
     await expect(evidence.getByText("비교할 기록 부족")).toBeVisible();
