@@ -63,7 +63,7 @@ USD 환산 환율은 상수가 아니라 사용자 설정값이다. 컴포넌트
 로그인 세션 토큰은 웹에서는 httpOnly 쿠키에만 있다. 앱(Capacitor)은 화면이 다른 출처에서
 돌아 쿠키가 실리지 않으므로 `Authorization: Bearer` 헤더로 보낸다(`readSessionToken`).
 로그인·가입·재설정 응답 본문의 토큰은 앱 출처(`lib/app-origins`)에만 주고
-(`sessionTokenForApp`), CORS도 앱 출처에만 연다(`middleware.ts`). 웹 요청에 본문 토큰을
+(`sessionTokenForApp`), CORS도 앱 출처에만 연다(`proxy.ts`, Next.js 16의 middleware). 웹 요청에 본문 토큰을
 주면 쿠키를 httpOnly로 둔 의미가 없어진다.
 
 서버 테이블은 두 갈래이고 합치지 않는다. `notification_subscribers`(와

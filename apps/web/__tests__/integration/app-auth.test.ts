@@ -22,7 +22,7 @@ const { POST: signupRoute } = await import("../../app/api/auth/signup/route");
 const { POST: loginRoute } = await import("../../app/api/auth/login/route");
 const { POST: logoutRoute } = await import("../../app/api/auth/logout/route");
 const { GET: meRoute } = await import("../../app/api/auth/me/route");
-const { middleware } = await import("../../middleware");
+const { proxy } = await import("../../proxy");
 
 const migrationsDir = join(process.cwd(), "drizzle");
 const migrations = readdirSync(migrationsDir)
@@ -144,10 +144,10 @@ describe("앱 로그인 (헤더 토큰)", () => {
   });
 });
 
-describe("CORS (middleware)", () => {
+describe("CORS (proxy)", () => {
   it("앱 출처의 사전 요청에는 그 출처와 Authorization 헤더를 허용한다", () => {
     for (const origin of [IOS_APP, ANDROID_APP]) {
-      const res = middleware(
+      const res = proxy(
         new NextRequest("http://localhost/api/auth/me", {
           method: "OPTIONS",
           headers: { origin, "access-control-request-headers": "authorization" },
@@ -162,13 +162,13 @@ describe("CORS (middleware)", () => {
   });
 
   it("앱 출처의 실제 요청 응답에도 허용 출처를 붙인다", () => {
-    const res = middleware(get("http://localhost/api/auth/me", { origin: ANDROID_APP }));
+    const res = proxy(get("http://localhost/api/auth/me", { origin: ANDROID_APP }));
     expect(res.headers.get("access-control-allow-origin")).toBe(ANDROID_APP);
   });
 
   it("다른 출처에는 CORS를 열지 않는다", () => {
     for (const origin of [WEB, "https://evil.example", "http://localhost"]) {
-      const res = middleware(
+      const res = proxy(
         new NextRequest("http://localhost/api/auth/me", { method: "OPTIONS", headers: { origin } }),
       );
       expect(res.status).not.toBe(204);
