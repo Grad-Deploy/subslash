@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateProfile } from "@subslash/shared";
 import { databaseUnavailableResponse } from "@lib/db";
 import {
-  SESSION_COOKIE,
   getAccountBySessionToken,
+  readSessionToken,
   toPublicAccount,
   updateAccountProfile,
 } from "@lib/auth-server";
@@ -12,14 +12,14 @@ import {
  * '내 정보' 저장. 나이·성별 두 값을 통째로 바꾼다 — 비워서 보내면 지운다.
  *
  * 둘 다 선택 항목이라, 가입 때 묻지 않는 대신 여기서 원할 때만 적는다.
- * 바꿀 계정은 요청 본문이 아니라 세션 쿠키로만 정한다. 본문에 다른 계정의
+ * 바꿀 계정은 요청 본문이 아니라 로그인 세션으로만 정한다. 본문에 다른 계정의
  * id를 넣어도 그 계정에는 닿지 않는다.
  */
 export async function PUT(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await getAccountBySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+    const account = await getAccountBySessionToken(readSessionToken(request));
     if (!account) {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
     }
