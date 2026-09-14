@@ -8,6 +8,8 @@ import {
   POPULAR_SERVICES,
   ServicePreset,
   SubscriptionFormData,
+  describePresetPrice,
+  presetFormData,
 } from "@subslash/shared";
 import { SubForm } from "../components/subscription/SubForm";
 import { UnitCostHero } from "../components/home/UnitCostHero";
@@ -68,18 +70,7 @@ export default function Home() {
   };
 
   const handlePresetClick = (preset: ServicePreset) => {
-    setSelectedPreset({
-      name: preset.nameKo,
-      amount: preset.defaultAmount,
-      currency: preset.currency,
-      category: preset.category,
-      cancelUrl: preset.cancelUrl,
-      cancelGuide: preset.cancelGuide,
-      iconUrl: preset.iconEmoji,
-      // 결제일은 채우지 않는다. 15일로 채워 두면 손대지 않은 사람의 D-day가
-      // 지어낸 날짜로 계산된다.
-      billingCycle: "monthly",
-    });
+    setSelectedPreset(presetFormData(preset));
     setIsFormOpen(true);
   };
 
@@ -186,9 +177,7 @@ export default function Home() {
             >
               <span>{preset.iconEmoji}</span>
               <span>{preset.nameKo}</span>
-              <span className="text-xs text-muted-foreground">
-                ₩{(preset.defaultAmount / 1000).toFixed(0)}k
-              </span>
+              <span className="text-xs text-muted-foreground">{describePresetPrice(preset)}</span>
             </button>
           ))}
         </div>

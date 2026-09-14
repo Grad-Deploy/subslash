@@ -1,11 +1,34 @@
-import { SubscriptionCategory, Currency } from "../types";
+import { BillingCycle, SubscriptionCategory, SubscriptionFormData, Currency } from "../types";
+import { formatCurrency } from "../utils/cost-per-use";
+
+/** 한 서비스 안의 요금제 하나. */
+export interface ServicePlan {
+  /** 구독에 저장하는 값(planId). 한 서비스 안에서만 겹치지 않으면 된다. */
+  id: string;
+  name: string;
+  /** billingCycle이 yearly면 1년치 금액이다. */
+  amount: number;
+  /** 적지 않으면 서비스의 통화. */
+  currency?: Currency;
+  /** 적지 않으면 월 결제. */
+  billingCycle?: BillingCycle;
+}
 
 export interface ServicePreset {
   id: string;
   name: string;
   nameKo: string;
   category: SubscriptionCategory;
-  defaultAmount: number;
+  /**
+   * 요금이 하나뿐인 서비스의 월 요금. 요금제가 여럿이면(plans) null이고, 요금을 확인하지
+   * 못했거나 사람마다 다르면(자동충전 금액·앱스토어 묶음 등) 역시 null이다 — 그럴듯한 값을
+   * 채워 두면 등록하는 사람이 그대로 믿고 저장한다. null이면 등록할 때 직접 적는다.
+   */
+  defaultAmount: number | null;
+  /** 요금제가 여럿인 서비스. 등록할 때 사용자가 하나를 고른다 — 미리 골라 두지 않는다. */
+  plans?: ServicePlan[];
+  /** 결제 경로·조건에 따라 요금이 달라지는 점을 알리는 한 줄. */
+  priceNote?: string;
   currency: Currency;
   cancelUrl: string;
   /**
@@ -98,13 +121,24 @@ export const ACCOUNT_PROVIDERS = [
   },
 ] as const;
 
+/**
+ * 서비스 목록과 요금. 요금은 2026년 9월에 확인했다 — 공식 요금표를 먼저 보고, 공식 페이지가
+ * 나라마다 달리 보이거나 막혀 있으면 여러 보도·안내가 같은 값을 말할 때만 적었다. 확인하지
+ * 못한 곳은 defaultAmount를 null로 두어 등록할 때 직접 적게 한다. 요금이 바뀌면 여기를
+ * 고친다 — 이미 등록된 구독은 가격 확인(priceCheck)이 고른 요금제의 새 요금으로 물어본다.
+ */
 export const POPULAR_SERVICES: ServicePreset[] = [
   {
     id: "netflix",
     name: "Netflix Korea",
     nameKo: "넷플릭스",
     category: "ott",
-    defaultAmount: 17000,
+    defaultAmount: null,
+    plans: [
+      { id: "ads", name: "광고형 스탠다드", amount: 7000 },
+      { id: "standard", name: "스탠다드", amount: 13500 },
+      { id: "premium", name: "프리미엄", amount: 17000 },
+    ],
     currency: "KRW",
     cancelUrl: "https://www.netflix.com/cancelplan",
     cancelUrlKind: "direct",
@@ -117,7 +151,14 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "TVING",
     nameKo: "티빙",
     category: "ott",
-    defaultAmount: 13900,
+    defaultAmount: null,
+    plans: [
+      { id: "ads", name: "광고형 스탠다드", amount: 5500 },
+      { id: "basic", name: "베이직", amount: 9500 },
+      { id: "standard", name: "스탠다드", amount: 13500 },
+      { id: "premium", name: "프리미엄", amount: 17000 },
+    ],
+    priceNote: "웹에서 결제한 요금이에요. 앱에서 결제했다면 더 비쌀 수 있어요.",
     currency: "KRW",
     cancelUrl: "https://www.tving.com/my/subscribe",
     cancelUrlKind: "direct",
@@ -143,7 +184,14 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Wavve",
     nameKo: "웨이브",
     category: "ott",
-    defaultAmount: 13900,
+    defaultAmount: null,
+    plans: [
+      { id: "ads", name: "광고형 스탠다드", amount: 5500 },
+      { id: "basic", name: "베이직", amount: 7900 },
+      { id: "standard", name: "스탠다드", amount: 10900 },
+      { id: "premium", name: "프리미엄", amount: 13900 },
+    ],
+    priceNote: "웹에서 결제한 요금이에요. 앱에서 결제했다면 더 비쌀 수 있어요.",
     currency: "KRW",
     cancelUrl: "https://www.wavve.com/my/membership",
     cancelUrlKind: "direct",
@@ -156,7 +204,11 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "WATCHA",
     nameKo: "왓챠",
     category: "ott",
-    defaultAmount: 7900,
+    defaultAmount: null,
+    plans: [
+      { id: "basic", name: "베이직", amount: 7900 },
+      { id: "premium", name: "프리미엄", amount: 12900 },
+    ],
     currency: "KRW",
     cancelUrl: "https://watcha.com/settings",
     cancelUrlKind: "direct",
@@ -169,7 +221,12 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "YouTube Premium",
     nameKo: "유튜브 프리미엄",
     category: "ott",
-    defaultAmount: 14900,
+    defaultAmount: null,
+    plans: [
+      { id: "premium", name: "프리미엄", amount: 14900 },
+      { id: "lite", name: "프리미엄 라이트", amount: 8500 },
+    ],
+    priceNote: "안드로이드·웹에서 결제한 요금이에요. iPhone 앱에서 결제했다면 더 비싸요.",
     currency: "KRW",
     cancelUrl: "https://www.youtube.com/paid_memberships",
     cancelUrlKind: "direct",
@@ -182,7 +239,11 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Disney+",
     nameKo: "디즈니플러스",
     category: "ott",
-    defaultAmount: 13900,
+    defaultAmount: null,
+    plans: [
+      { id: "standard", name: "스탠다드", amount: 9900 },
+      { id: "premium", name: "프리미엄", amount: 13900 },
+    ],
     currency: "KRW",
     // 옛 해지 주소는 디즈니플러스가 스스로 계정 화면으로 돌려보낸다. 해지 버튼은
     // 계정 화면에서 구독을 고른 뒤에 나오므로 direct가 아니다.
@@ -198,7 +259,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Apple TV+",
     nameKo: "애플 TV+ (Apple TV+)",
     category: "ott",
-    defaultAmount: 6500,
+    // 미국 요금은 올랐지만 한국은 월 9,900원 그대로라는 보도(2025) 기준.
+    defaultAmount: 9900,
     currency: "KRW",
     cancelUrl: "https://tv.apple.com/",
     cancelUrlKind: "entry",
@@ -211,7 +273,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Amazon Prime Video",
     nameKo: "아마존 프라임 비디오",
     category: "ott",
-    defaultAmount: 5.99,
+    defaultAmount: null,
+    priceNote: "한국 요금을 확인하지 못했어요. 결제 내역의 금액을 적어주세요.",
     currency: "USD",
     cancelUrl: "https://www.primevideo.com/settings",
     cancelUrlKind: "direct",
@@ -224,7 +287,12 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Laftel",
     nameKo: "라프텔 (Laftel)",
     category: "ott",
-    defaultAmount: 9900,
+    defaultAmount: null,
+    plans: [
+      { id: "basic", name: "베이직", amount: 9900 },
+      { id: "premium", name: "프리미엄", amount: 14900 },
+    ],
+    priceNote: "웹에서 결제한 요금이에요. 앱에서 결제했다면 더 비쌀 수 있어요.",
     currency: "KRW",
     cancelUrl: "https://laftel.net/setting",
     cancelUrlKind: "direct",
@@ -237,7 +305,13 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Spotify",
     nameKo: "스포티파이",
     category: "music",
-    defaultAmount: 10900,
+    defaultAmount: null,
+    plans: [
+      { id: "individual", name: "개인", amount: 11990 },
+      { id: "basic", name: "베이직", amount: 8690 },
+      { id: "student", name: "학생", amount: 6600 },
+      { id: "duo", name: "듀오", amount: 17985 },
+    ],
     currency: "KRW",
     cancelUrl: "https://www.spotify.com/account/plan/manage",
     cancelUrlKind: "direct",
@@ -250,9 +324,14 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Melon",
     nameKo: "멜론",
     category: "music",
-    // melon.com 이용권 안내의 '스트리밍 플러스 정기결제'(무제한 듣기 + 오프라인 재생).
-    // 무제한 듣기만인 스트리밍클럽은 8,690원이라, 다른 이용권이면 등록할 때 고친다.
-    defaultAmount: 11990,
+    // melon.com 이용권 안내의 정기결제 요금.
+    defaultAmount: null,
+    plans: [
+      { id: "streaming-club", name: "스트리밍클럽", amount: 8690 },
+      { id: "streaming-plus", name: "스트리밍 플러스", amount: 11990 },
+      { id: "hifi", name: "Hi-Fi 스트리밍클럽", amount: 13200 },
+      { id: "mobile", name: "모바일 스트리밍클럽", amount: 7590 },
+    ],
     currency: "KRW",
     // 옛 해지 주소는 404다. 멜론 고객센터 FAQ는 메뉴 경로만 안내하고 해지 화면
     // 주소를 밝히지 않아, 확인된 첫 화면으로 보내고 공식 경로를 안내한다.
@@ -268,8 +347,12 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Apple Music",
     nameKo: "애플 뮤직",
     category: "music",
-    // apple.com/kr 개인 요금제
-    defaultAmount: 8900,
+    // apple.com/kr 요금제
+    defaultAmount: null,
+    plans: [
+      { id: "individual", name: "개인", amount: 8900 },
+      { id: "family", name: "가족", amount: 13500 },
+    ],
     currency: "KRW",
     // 아이클라우드·앱스토어 구독과 같은 Apple 구독 관리 화면이다. 주소가 겹치므로
     // 프리셋은 이름으로 되찾는다(findPresetForSubscription).
@@ -313,7 +396,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Naver MYBOX",
     nameKo: "네이버 MYBOX",
     category: "cloud",
-    defaultAmount: 1650,
+    defaultAmount: null,
+    priceNote: "용량마다 요금이 달라요. 결제 내역의 금액을 적어주세요.",
     currency: "KRW",
     cancelUrl: "https://mybox.naver.com/",
     cancelUrlKind: "entry",
@@ -326,7 +410,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Naver VIBE",
     nameKo: "네이버 바이브 (VIBE)",
     category: "music",
-    defaultAmount: 8500,
+    defaultAmount: null,
+    priceNote: "지금 요금을 확인하지 못했어요. 결제 내역의 금액을 적어주세요.",
     currency: "KRW",
     cancelUrl: "https://vibe.naver.com/membership",
     cancelUrlKind: "direct",
@@ -339,7 +424,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Naver Webtoon Cookie",
     nameKo: "네이버 웹툰 쿠키 자동충전",
     category: "other",
-    defaultAmount: 10000,
+    defaultAmount: null,
+    priceNote: "자동충전 금액은 직접 정한 금액이에요. 그 금액을 적어주세요.",
     currency: "KRW",
     cancelUrl: "https://m.comic.naver.com/",
     cancelUrlKind: "entry",
@@ -352,7 +438,13 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Kakao Emoticon Plus",
     nameKo: "카카오 이모티콘 플러스",
     category: "other",
-    defaultAmount: 4900,
+    defaultAmount: null,
+    plans: [
+      { id: "web", name: "웹 결제", amount: 3900 },
+      { id: "google-play", name: "구글플레이 결제", amount: 5700 },
+      { id: "app-store", name: "앱스토어 결제", amount: 6900 },
+    ],
+    priceNote: "어디서 결제했는지에 따라 요금이 달라요.",
     currency: "KRW",
     cancelUrl: "https://my.kakao.com/",
     cancelUrlKind: "entry",
@@ -365,9 +457,15 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Apple iCloud+",
     nameKo: "아이클라우드",
     category: "cloud",
-    // Apple 지원 문서의 대한민국 50GB 요금. 한국에서는 달러가 아니라 원화로 청구된다.
-    // 예전 프리셋($0.99)으로 등록한 구독은 통화가 달라 가격 확인에서 비교하지 않는다.
-    defaultAmount: 1100,
+    // Apple 지원 문서의 대한민국 요금. 한국에서는 달러가 아니라 원화로 청구된다.
+    defaultAmount: null,
+    plans: [
+      { id: "50gb", name: "50GB", amount: 1100 },
+      { id: "200gb", name: "200GB", amount: 4400 },
+      { id: "2tb", name: "2TB", amount: 14000 },
+      { id: "6tb", name: "6TB", amount: 44000 },
+      { id: "12tb", name: "12TB", amount: 88000 },
+    ],
     currency: "KRW",
     cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
     cancelUrlKind: "direct",
@@ -381,7 +479,13 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Google One",
     nameKo: "구글 원",
     category: "cloud",
-    defaultAmount: 2400,
+    // one.google.com 요금제(한국).
+    defaultAmount: null,
+    plans: [
+      { id: "basic", name: "베이직 100GB", amount: 2400 },
+      { id: "ai-plus", name: "Google AI Plus 2TB", amount: 11900 },
+      { id: "ai-pro", name: "Google AI Pro 5TB", amount: 29000 },
+    ],
     currency: "KRW",
     cancelUrl: "https://one.google.com/about/plans",
     cancelUrlKind: "entry",
@@ -394,7 +498,11 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Google AI Pro",
     nameKo: "Google AI Pro (Gemini Advanced)",
     category: "ai",
-    defaultAmount: 29000,
+    defaultAmount: null,
+    plans: [
+      { id: "ai-plus", name: "Google AI Plus", amount: 11900 },
+      { id: "ai-pro", name: "Google AI Pro", amount: 29000 },
+    ],
     currency: "KRW",
     cancelUrl: "https://play.google.com/store/account/subscriptions",
     cancelUrlKind: "direct",
@@ -407,8 +515,13 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Notion",
     nameKo: "노션",
     category: "other",
-    defaultAmount: 10,
-    currency: "USD",
+    // 멤버 1명 기준. 요금 페이지가 한국에서는 원화로 보인다.
+    defaultAmount: null,
+    plans: [
+      { id: "plus-monthly", name: "플러스 (월 결제)", amount: 16800 },
+      { id: "plus-yearly", name: "플러스 (연 결제)", amount: 168000, billingCycle: "yearly" },
+    ],
+    currency: "KRW",
     // 노션의 청구 설정은 앱 안의 설정 창에만 있고 고정 주소가 없다. 옛 주소
     // (/my-account)는 계정 화면이 아니라 그 이름의 페이지를 찾으러 갔다.
     cancelUrl: "https://www.notion.com/",
@@ -420,10 +533,17 @@ export const POPULAR_SERVICES: ServicePreset[] = [
   },
   {
     id: "chatgpt-plus",
-    name: "ChatGPT Plus",
-    nameKo: "챗GPT 플러스",
+    name: "ChatGPT",
+    // '챗GPT 플러스'로 등록된 구독도 같은 서비스로 알아보도록(추천 목록의 이름 비교) 짧게 둔다.
+    nameKo: "챗GPT",
     category: "ai",
-    defaultAmount: 20,
+    // 공식 요금 페이지는 막혀 있어, 여러 안내가 같은 값을 말하는 요금만 적었다.
+    defaultAmount: null,
+    plans: [
+      { id: "plus", name: "Plus", amount: 20 },
+      { id: "pro-100", name: "Pro ($100)", amount: 100 },
+      { id: "pro-200", name: "Pro ($200)", amount: 200 },
+    ],
     currency: "USD",
     cancelUrl: "https://chatgpt.com/",
     cancelUrlKind: "entry",
@@ -434,10 +554,16 @@ export const POPULAR_SERVICES: ServicePreset[] = [
   },
   {
     id: "claude-pro",
-    name: "Claude Pro",
-    nameKo: "클로드 프로 (Claude Pro)",
+    name: "Claude",
+    // '클로드 프로 (Claude Pro)'로 등록된 구독도 같은 서비스로 알아보도록 짧게 둔다.
+    nameKo: "Claude",
     category: "ai",
-    defaultAmount: 20,
+    // claude.com/pricing의 월 결제 요금.
+    defaultAmount: null,
+    plans: [
+      { id: "pro", name: "Pro", amount: 20 },
+      { id: "max-5x", name: "Max 5x", amount: 100 },
+    ],
     currency: "USD",
     cancelUrl: "https://claude.ai/settings/billing",
     cancelUrlKind: "direct",
@@ -447,11 +573,15 @@ export const POPULAR_SERVICES: ServicePreset[] = [
   },
   {
     id: "github-copilot-pro",
-    name: "GitHub Copilot Pro",
-    nameKo: "GitHub Copilot Pro",
+    name: "GitHub Copilot",
+    nameKo: "GitHub Copilot",
     category: "ai",
-    // GitHub 문서의 개인 요금(월 $10). Pro+는 $39라 다르면 등록할 때 고친다.
-    defaultAmount: 10,
+    // GitHub 문서의 개인 요금.
+    defaultAmount: null,
+    plans: [
+      { id: "pro", name: "Pro", amount: 10 },
+      { id: "pro-plus", name: "Pro+", amount: 39 },
+    ],
     currency: "USD",
     // GitHub 문서는 설정 메뉴 경로만 안내하고 해지 화면의 고정 주소를 밝히지 않는다.
     cancelUrl: "https://github.com/settings/billing",
@@ -476,10 +606,14 @@ export const POPULAR_SERVICES: ServicePreset[] = [
   },
   {
     id: "perplexity-pro",
-    name: "Perplexity Pro",
-    nameKo: "Perplexity Pro",
+    name: "Perplexity",
+    nameKo: "Perplexity",
     category: "ai",
-    defaultAmount: 20,
+    defaultAmount: null,
+    plans: [
+      { id: "pro", name: "Pro", amount: 20 },
+      { id: "max", name: "Max", amount: 200 },
+    ],
     currency: "USD",
     // 도움말은 설정 메뉴 경로만 안내한다. 첫 화면으로 보내고 경로를 안내한다.
     cancelUrl: "https://www.perplexity.ai/",
@@ -493,7 +627,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Adobe Creative Cloud",
     nameKo: "어도비",
     category: "other",
-    defaultAmount: 30800,
+    defaultAmount: null,
+    priceNote: "플랜과 약정마다 요금이 달라요. 결제 내역의 금액을 적어주세요.",
     currency: "KRW",
     cancelUrl: "https://account.adobe.com/plans",
     cancelUrlKind: "direct",
@@ -506,7 +641,14 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Microsoft 365",
     nameKo: "마이크로소프트 365",
     category: "other",
-    defaultAmount: 8900,
+    // Microsoft Store 한국 요금.
+    defaultAmount: null,
+    plans: [
+      { id: "personal", name: "퍼스널 (월 결제)", amount: 12500 },
+      { id: "family", name: "패밀리 (월 결제)", amount: 15500 },
+      { id: "personal-yearly", name: "퍼스널 (연 결제)", amount: 125000, billingCycle: "yearly" },
+      { id: "family-yearly", name: "패밀리 (연 결제)", amount: 155000, billingCycle: "yearly" },
+    ],
     currency: "KRW",
     cancelUrl: "https://account.microsoft.com/services",
     cancelUrlKind: "direct",
@@ -519,7 +661,11 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Millie",
     nameKo: "밀리의 서재",
     category: "other",
-    defaultAmount: 9900,
+    defaultAmount: null,
+    plans: [
+      { id: "ebook", name: "전자책", amount: 9900 },
+      { id: "with-paper", name: "종이책 정기구독", amount: 19800 },
+    ],
     currency: "KRW",
     cancelUrl: "https://www.millie.co.kr/v3/customer/my-subscription",
     cancelUrlKind: "direct",
@@ -532,7 +678,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "RIDI Select",
     nameKo: "리디셀렉트",
     category: "other",
-    defaultAmount: 9900,
+    defaultAmount: 4900,
     currency: "KRW",
     cancelUrl: "https://ridibooks.com/",
     cancelUrlKind: "entry",
@@ -545,7 +691,9 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Apple Play Store subscriptions",
     nameKo: "구글 플레이스토어 정기결제",
     category: "other",
-    defaultAmount: 0,
+    // 여러 앱의 정기결제를 한데 모은 항목이라 정해진 요금이 없다(예전에는 0원으로 채웠다).
+    defaultAmount: null,
+    priceNote: "해지하려는 앱의 요금을 적어주세요.",
     currency: "KRW",
     cancelUrl: "https://play.google.com/store/account/subscriptions",
     cancelUrlKind: "direct",
@@ -558,7 +706,9 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Apple App Store subscriptions",
     nameKo: "애플 앱스토어 구독",
     category: "other",
-    defaultAmount: 0,
+    // 여러 앱의 구독을 한데 모은 항목이라 정해진 요금이 없다(예전에는 0원으로 채웠다).
+    defaultAmount: null,
+    priceNote: "해지하려는 앱의 요금을 적어주세요.",
     currency: "KRW",
     cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
     cancelUrlKind: "direct",
@@ -583,10 +733,14 @@ export const DEMO_SUBSCRIPTIONS: Array<{
   cancelUrl: string;
   cancelGuide: string;
   iconUrl: string;
+  planId?: string;
+  planName?: string;
 }> = [
   {
     name: "넷플릭스",
     amount: 17000,
+    planId: "premium",
+    planName: "프리미엄",
     currency: "KRW",
     billingDay: 3,
     billingCycle: "monthly",
@@ -598,6 +752,8 @@ export const DEMO_SUBSCRIPTIONS: Array<{
   {
     name: "유튜브 프리미엄",
     amount: 14900,
+    planId: "premium",
+    planName: "프리미엄",
     currency: "KRW",
     billingDay: 12,
     billingCycle: "monthly",
@@ -766,4 +922,91 @@ export function findPresetForSubscription(sub: {
   }
   if (!normalized) return undefined;
   return POPULAR_SERVICES.find(sameName);
+}
+
+/** 요금제의 통화. 적지 않았으면 서비스의 통화다. */
+export function planCurrency(preset: ServicePreset, plan: ServicePlan): Currency {
+  return plan.currency ?? preset.currency;
+}
+
+/**
+ * 서비스를 골랐을 때 등록 폼에 채울 값. 요금은 요금이 하나뿐인 서비스만 채운다 — 요금제가
+ * 여럿이면 사용자가 요금제를 고를 때(planFormData) 채우고, 요금을 모르면 비워 둔다.
+ * 결제일은 채우지 않는다. 15일로 채워 두면 손대지 않은 사람의 D-day가 지어낸 날짜로
+ * 계산된다. 요금·요금제 칸은 undefined로라도 적어서, 앞서 고른 서비스의 값을 지운다.
+ */
+export function presetFormData(preset: ServicePreset): Partial<SubscriptionFormData> {
+  return {
+    name: preset.nameKo || preset.name,
+    amount: preset.defaultAmount ?? undefined,
+    currency: preset.currency,
+    billingCycle: "monthly",
+    category: preset.category,
+    cancelUrl: preset.cancelUrl,
+    cancelGuide: preset.cancelGuide,
+    iconUrl: preset.iconEmoji,
+    planId: undefined,
+    planName: undefined,
+  };
+}
+
+/** 요금제를 골랐을 때 폼에 채울 값. 요금·통화·결제 주기가 그 요금제를 따른다. */
+export function planFormData(
+  preset: ServicePreset,
+  plan: ServicePlan,
+): Partial<SubscriptionFormData> {
+  return {
+    planId: plan.id,
+    planName: plan.name,
+    amount: plan.amount,
+    currency: planCurrency(preset, plan),
+    billingCycle: plan.billingCycle ?? "monthly",
+  };
+}
+
+/**
+ * 목록에 보여줄 요금 한 줄. 요금제가 여럿이면 가장 싼 월 요금에 '부터'를 붙이고, 요금을
+ * 모르면 '요금 직접 입력'이다. 반올림하지 않는다 — ₩7,890을 '₩8k'로 적지 않는다.
+ */
+export function describePresetPrice(preset: ServicePreset): string {
+  if (preset.plans && preset.plans.length > 0) {
+    const monthly = preset.plans.filter((plan) => (plan.billingCycle ?? "monthly") === "monthly");
+    const pool = monthly.length > 0 ? monthly : preset.plans;
+    const cheapest = pool.reduce((min, plan) => (plan.amount < min.amount ? plan : min));
+    const cycle = (cheapest.billingCycle ?? "monthly") === "yearly" ? "연" : "월";
+    return `${cycle} ${formatCurrency(cheapest.amount, planCurrency(preset, cheapest))}부터`;
+  }
+  if (preset.defaultAmount === null) return "요금 직접 입력";
+  return `월 ${formatCurrency(preset.defaultAmount, preset.currency)}`;
+}
+
+export interface ReferencePrice {
+  amount: number;
+  currency: Currency;
+  billingCycle: BillingCycle;
+}
+
+/**
+ * 가격 확인에 쓸 기준 요금. 요금제가 여럿인 서비스는 그 구독이 고른 요금제의 요금이고, 고른
+ * 요금제를 모르면(요금제가 생기기 전에 등록한 구독 등) null이다 — 여러 요금 중 하나를 골라
+ * '기준 요금'이라고 부르지 않는다. 요금을 모르는 서비스도 null이다.
+ */
+export function referencePriceFor(sub: {
+  name: string;
+  cancelUrl?: string;
+  planId?: string;
+}): ReferencePrice | null {
+  const preset = findPresetForSubscription(sub);
+  if (!preset) return null;
+  if (preset.plans && preset.plans.length > 0) {
+    const plan = preset.plans.find((candidate) => candidate.id === sub.planId);
+    if (!plan) return null;
+    return {
+      amount: plan.amount,
+      currency: planCurrency(preset, plan),
+      billingCycle: plan.billingCycle ?? "monthly",
+    };
+  }
+  if (preset.defaultAmount === null) return null;
+  return { amount: preset.defaultAmount, currency: preset.currency, billingCycle: "monthly" };
 }

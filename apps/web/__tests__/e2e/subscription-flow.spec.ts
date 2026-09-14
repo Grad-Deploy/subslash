@@ -28,7 +28,7 @@ async function seed(page: Page, subscriptions: Record<string, unknown>[]) {
 }
 
 test.describe("Subscription Flow (E2E)", () => {
-  test("구독 등록 플로우: 목록에서 고르면 요금이 채워지고 결제일만 적으면 된다", async ({
+  test("구독 등록 플로우: 서비스와 요금제를 고르면 요금이 채워지고 결제일만 적으면 된다", async ({
     page,
   }) => {
     await page.goto("/");
@@ -38,6 +38,10 @@ test.describe("Subscription Flow (E2E)", () => {
     await dialog.getByPlaceholder(/서비스 이름 검색/).fill("넷플");
     await dialog.getByRole("button", { name: /넷플릭스/ }).click();
 
+    // 요금제가 여럿이라 하나를 미리 고르지 않는다. 고르기 전에는 요금도 비어 있다.
+    await expect(dialog.locator('input[name="planId"]:checked')).toHaveCount(0);
+    await expect(dialog.locator('input[name="amount"]')).toHaveValue("");
+    await dialog.getByText("프리미엄", { exact: true }).click();
     await expect(dialog.locator('input[name="amount"]')).toHaveValue("17000");
     // 결제일은 미리 채우지 않는다 — 채워 두면 손대지 않은 사람의 D-day가 지어낸 날짜가 된다.
     await expect(dialog.locator('input[name="billingDay"]')).toHaveValue("");

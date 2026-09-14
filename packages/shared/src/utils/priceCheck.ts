@@ -1,5 +1,5 @@
 import { Currency, BillingCycle } from "../types";
-import { findPresetForSubscription } from "../constants/services";
+import { referencePriceFor } from "../constants/services";
 
 /** 요금을 다시 물어보기까지 두는 기간. */
 export const PRICE_CHECK_INTERVAL_DAYS = 90;
@@ -11,6 +11,8 @@ export interface PriceCheckSubscription {
   currency: Currency;
   billingCycle?: BillingCycle;
   cancelUrl?: string;
+  /** 요금제가 여럿인 서비스에서 고른 요금제. 없으면 그런 서비스의 요금과는 비교하지 않는다. */
+  planId?: string;
   createdAt: string;
   lastPriceCheckedAt?: string;
 }
@@ -28,8 +30,9 @@ export interface PriceCheckCandidate {
   currency: Currency;
   reason: PriceCheckReason;
   /**
-   * 프리셋에 적힌 월 기준 요금. 맞는 프리셋이 없거나 비교할 수 없으면 `null`
-   * 이고, 이때 화면은 '최신 요금으로 갱신' 버튼을 내밀지 않는다.
+   * 프리셋에 적힌 기준 요금 — 요금제가 여럿인 서비스면 그 구독이 고른 요금제의 요금이다.
+   * 맞는 프리셋이 없거나, 요금제를 고르지 않았거나, 비교할 수 없으면 `null`이고, 이때
+   * 화면은 '최신 요금으로 갱신' 버튼을 내밀지 않는다.
    */
   presetAmount: number | null;
   /** 마지막 확인(없으면 등록)으로부터 지난 날짜 수. */
@@ -66,12 +69,14 @@ export function getPriceCheckCandidates(
     const daysSinceChecked = Math.max(0, daysBetween(checkedDate, now));
     const isStale = daysSinceChecked >= PRICE_CHECK_INTERVAL_DAYS;
 
-    const preset = findPresetForSubscription(sub);
-    // 프리셋 기본 요금은 월 결제 기준이라 연간 플랜과는 비교할 수 없고,
+    const reference = referencePriceFor(sub);
+    // 기준 요금의 결제 주기가 구독과 다르면(월 요금 대 연간 구독) 비교할 수 없고,
     // 통화가 다르면 환율을 끼워 비교하는 순간 근거 없는 숫자가 된다.
     const comparable =
-      preset && sub.currency === preset.currency && (sub.billingCycle ?? "monthly") === "monthly";
-    const presetAmount = comparable ? preset.defaultAmount : null;
+      reference !== null &&
+      sub.currency === reference.currency &&
+      (sub.billingCycle ?? "monthly") === reference.billingCycle;
+    const presetAmount = comparable ? reference.amount : null;
     const mismatched = presetAmount !== null && presetAmount !== sub.amount;
 
     // 사용자가 '요금 유지'를 눌렀다면 그 판단을 존중해서 다음 주기까지 조용히 둔다.

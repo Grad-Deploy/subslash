@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useStore } from "../../lib/store";
 import {
+  CATEGORY_LABELS,
   SubscriptionFormData,
   CheckInResponse,
   POPULAR_SERVICES,
@@ -186,7 +187,8 @@ export function SubscriptionDetail({
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                카테고리: {sub.category} · 결제 주기:{" "}
+                카테고리: {CATEGORY_LABELS[sub.category] ?? sub.category}
+                {sub.planName ? ` · 요금제: ${sub.planName}` : ""} · 결제 주기:{" "}
                 {sub.billingCycle === "yearly" ? "매년" : "매월"}
               </p>
             </div>
@@ -416,6 +418,8 @@ export function SubscriptionDetail({
                 cancelUrl: sub.cancelUrl,
                 cancelGuide: sub.cancelGuide,
                 iconUrl: sub.iconUrl,
+                planId: sub.planId,
+                planName: sub.planName,
                 paymentMethod: sub.paymentMethod,
                 linkedAccountId: sub.linkedAccountId,
                 linkedAccountName: sub.linkedAccountName,
