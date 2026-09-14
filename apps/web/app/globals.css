@@ -81,6 +81,17 @@ body {
   }
 }
 
+/* 노치·홈 표시줄 영역. viewportFit: "cover"라 화면 끝까지 그리므로, 가장자리에 붙는
+   요소는 이만큼 비켜야 한다. 일반 브라우저 탭에서는 0이다. 예전에는 하단 탭이
+   pb-safe를 썼지만 정의가 없어 아무 여백도 생기지 않았다. */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
 /* Fix native form controls (select dropdown, options, input) across all browsers in dark mode */
 select,
 input,

@@ -66,8 +66,11 @@ export default function RootLayout({
             바깥 폭은 넓게 둔다. 읽거나 입력하는 화면은 각 페이지가 스스로 좁힌다(max-w-md 등).
           */}
           <main className="flex-1 container max-w-6xl mx-auto px-4 py-6">{children}</main>
-          {/* 모바일 하단 탭에 가려지지 않게, 본문 대신 푸터가 아래 여백을 갖는다. */}
-          <footer className="container max-w-6xl mx-auto px-4 pt-2 pb-24 md:pb-8 text-xs text-muted-foreground">
+          {/*
+            모바일 하단 탭에 가려지지 않게, 본문 대신 푸터가 아래 여백을 갖는다. 하단 탭이
+            홈 표시줄만큼 높아지므로 그 높이도 더한다.
+          */}
+          <footer className="container max-w-6xl mx-auto px-4 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 text-xs text-muted-foreground">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-4">
               <span>SubSlash</span>
               <Link

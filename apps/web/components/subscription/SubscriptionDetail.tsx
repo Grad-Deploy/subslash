@@ -9,6 +9,7 @@ import {
   POPULAR_SERVICES,
   PAYMENT_METHOD_OPTIONS,
   formatCurrency,
+  formatDday,
   getCancelUrlKind,
   getDaysUntilBillingFor,
 } from "@subslash/shared";
@@ -214,7 +215,7 @@ export function SubscriptionDetail({
                   연간 결제 월이 등록되지 않았습니다
                 </span>
               ) : (
-                <span className="font-bold text-destructive">D-{daysLeft}일</span>
+                <span className="font-bold text-destructive">{formatDday(daysLeft)}</span>
               )}
             </div>
             <div className="flex gap-2">

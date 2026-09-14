@@ -115,6 +115,7 @@ export default function SubscriptionsPage() {
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     type: "kill" | "revive" | "delete";
     sub: Subscription;
@@ -308,20 +309,7 @@ export default function SubscriptionsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                // 활성 탭이 비어 있어도 해지한 구독이 남아 있을 수 있다. 무엇이
-                // 지워지는지 나눠 적는다.
-                if (
-                  confirm(
-                    killedSubs.length > 0
-                      ? `현재 등록된 전체 구독 ${subscriptions.length}건(구독 중 ${activeSubs.length}건, 해지한 구독 ${killedSubs.length}건)을 모두 삭제하시겠습니까?\n해지한 구독의 절약 기록도 함께 지워집니다.`
-                      : `현재 등록된 전체 구독 ${subscriptions.length}건을 모두 삭제하시겠습니까?`,
-                  )
-                ) {
-                  clearSubscriptions();
-                  showToast("이전 구독 기록이 모두 삭제되었습니다.");
-                }
-              }}
+              onClick={() => setConfirmClearAll(true)}
               className="font-medium text-xs text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10 gap-1"
             >
               <span>🗑️</span> 전체 초기화
@@ -567,7 +555,7 @@ export default function SubscriptionsPage() {
       {/* Floating Action Button for Mobile */}
       <button
         onClick={() => setIsAddOpen(true)}
-        className="md:hidden fixed bottom-20 right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-2xl text-2xl font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-30"
+        className="md:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-2xl text-2xl font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-30"
         aria-label="Add Subscription"
       >
         +
@@ -624,6 +612,24 @@ export default function SubscriptionsPage() {
       />
 
       {/* Confirmation Modal */}
+      {/* 활성 탭이 비어 있어도 해지한 구독이 남아 있을 수 있다. 무엇이 지워지는지 나눠 적는다. */}
+      <ConfirmDialog
+        isOpen={confirmClearAll}
+        onClose={() => setConfirmClearAll(false)}
+        onConfirm={() => {
+          clearSubscriptions();
+          showToast("이전 구독 기록이 모두 삭제되었습니다.");
+        }}
+        title="전체 초기화"
+        description={
+          killedSubs.length > 0
+            ? `현재 등록된 전체 구독 ${subscriptions.length}건(구독 중 ${activeSubs.length}건, 해지한 구독 ${killedSubs.length}건)을 모두 삭제하시겠습니까?\n해지한 구독의 절약 기록도 함께 지워집니다.`
+            : `현재 등록된 전체 구독 ${subscriptions.length}건을 모두 삭제하시겠습니까?`
+        }
+        confirmText="모두 삭제"
+        variant="destructive"
+      />
+
       {confirmAction && (
         <ConfirmDialog
           isOpen={!!confirmAction}
