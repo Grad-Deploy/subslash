@@ -8,6 +8,7 @@ import {
   createSession,
   findConflicts,
   sessionCookieOptions,
+  sessionTokenForApp,
   toPublicAccount,
 } from "@lib/auth-server";
 import {
@@ -115,6 +116,8 @@ export async function POST(request: NextRequest) {
           status: outcome.status,
           message: describeSendOutcome(outcome, account.email),
         },
+        // 앱에서 온 요청이면 본문에도 토큰을 싣는다(sessionTokenForApp). 웹은 쿠키만 받는다.
+        ...sessionTokenForApp(request, session),
       },
       { status: 201 },
     );
