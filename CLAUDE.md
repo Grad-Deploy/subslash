@@ -60,6 +60,12 @@ USD 환산 환율은 상수가 아니라 사용자 설정값이다. 컴포넌트
 토큰은 용도별로 분리한다. sync 토큰은 Authorization 헤더 전용이고 URL에 넣지
 않는다. 캘린더 피드는 URL 자체가 자격증명이므로 읽기 전용 토큰을 따로 쓴다.
 
+로그인 세션 토큰은 웹에서는 httpOnly 쿠키에만 있다. 앱(Capacitor)은 화면이 다른 출처에서
+돌아 쿠키가 실리지 않으므로 `Authorization: Bearer` 헤더로 보낸다(`readSessionToken`).
+로그인·가입·재설정 응답 본문의 토큰은 앱 출처(`lib/app-origins`)에만 주고
+(`sessionTokenForApp`), CORS도 앱 출처에만 연다(`middleware.ts`). 웹 요청에 본문 토큰을
+주면 쿠키를 httpOnly로 둔 의미가 없어진다.
+
 서버 테이블은 두 갈래이고 합치지 않는다. `notification_subscribers`(와
 `mirrored_subscriptions`, `notification_log`)는 "알림을 켠 브라우저"라 로그인
 없이도 생기고, `accounts`(와 `sessions`, `account_snapshots`)는 선택 로그인 계정이다.

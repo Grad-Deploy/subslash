@@ -2,6 +2,8 @@ import { createHash, randomBytes } from "crypto";
 import { and, eq, gt, lt, or } from "drizzle-orm";
 import { getDb } from "./db";
 import { accountSnapshots, accounts, sessions, type Account } from "./schema";
+import type { NextRequest } from "next/server";
+import { isAppOrigin } from "./app-origins";
 
 /**
  * 로그인 세션.
@@ -182,6 +184,32 @@ export async function findConflicts(
     email: Boolean(emailRow),
     emailPending: Boolean(emailRow) && emailRow?.emailVerifiedAt === null,
   };
+}
+
+/**
+ * 요청에 실린 세션 토큰. 웹은 httpOnly 쿠키로, 앱(Capacitor)은 `Authorization: Bearer` 헤더로
+ * 보낸다 — 앱의 화면은 다른 출처(capacitor://localhost)에서 돌아 쿠키가 실리지 않는다. 둘 다
+ * 있으면 쿠키를 쓴다.
+ */
+export function readSessionToken(request: NextRequest): string | undefined {
+  const cookie = request.cookies.get(SESSION_COOKIE)?.value;
+  if (cookie) return cookie;
+  const header = request.headers.get("authorization");
+  if (!header?.startsWith("Bearer ")) return undefined;
+  return header.slice("Bearer ".length).trim() || undefined;
+}
+
+/**
+ * 앱에서 온 요청이면 응답 본문에 실을 세션 토큰. 웹 요청에는 빈 객체다 — 웹의 토큰은
+ * 자바스크립트가 읽을 수 없는 쿠키에만 둔다. 출처(Origin) 헤더는 페이지의 스크립트가 바꿀 수
+ * 없으므로, 웹 페이지가 앱인 척 토큰을 받아 갈 수 없다.
+ */
+export function sessionTokenForApp(
+  request: NextRequest,
+  session: IssuedSession,
+): { sessionToken?: string; sessionExpiresAt?: string } {
+  if (!isAppOrigin(request.headers.get("origin"))) return {};
+  return { sessionToken: session.token, sessionExpiresAt: session.expiresAt.toISOString() };
 }
 
 /** 세션 쿠키의 공통 속성. 자바스크립트가 읽지 못하게 하고 교차 사이트 전송을 막는다. */

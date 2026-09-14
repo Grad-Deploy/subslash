@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isDatabaseConfigured } from "@lib/db";
-import { SESSION_COOKIE, getAccountBySessionToken, toPublicAccount } from "@lib/auth-server";
+import { getAccountBySessionToken, readSessionToken, toPublicAccount } from "@lib/auth-server";
 
 /**
  * 지금 로그인된 계정.
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   if (!isDatabaseConfigured()) return NextResponse.json({ account: null });
 
   try {
-    const token = request.cookies.get(SESSION_COOKIE)?.value;
+    const token = readSessionToken(request);
     const account = await getAccountBySessionToken(token);
     return NextResponse.json({ account: account ? toPublicAccount(account) : null });
   } catch (error) {

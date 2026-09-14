@@ -10,6 +10,7 @@ import {
   findAccountByIdentifier,
   pruneExpiredSessions,
   sessionCookieOptions,
+  sessionTokenForApp,
   toPublicAccount,
 } from "@lib/auth-server";
 
@@ -73,7 +74,11 @@ export async function POST(request: NextRequest) {
     });
 
     const session = await createSession(account.id);
-    const response = NextResponse.json({ account: toPublicAccount(account) });
+    // 앱에서 온 요청이면 본문에도 토큰을 싣는다(sessionTokenForApp). 웹은 쿠키만 받는다.
+    const response = NextResponse.json({
+      account: toPublicAccount(account),
+      ...sessionTokenForApp(request, session),
+    });
     response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
     return response;
   } catch (error) {
