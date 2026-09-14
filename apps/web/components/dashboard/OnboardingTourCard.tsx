@@ -80,7 +80,7 @@ export function OnboardingTourCard({ onStartAdd, activeCount }: OnboardingTourCa
           <p className="text-[11px] text-muted-foreground leading-relaxed">
             지난 30일 동안 몇 번 썼는지 고르면 1회 사용 단가가 나옵니다.
           </p>
-          <div className="pt-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-1 rounded-md text-center">
+          <div className="pt-1 text-[11px] font-medium text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-1 rounded-md text-center">
             &ldquo;영화 1편을 ₩17,000에 보셨네요&rdquo;
           </div>
         </div>
@@ -97,7 +97,7 @@ export function OnboardingTourCard({ onStartAdd, activeCount }: OnboardingTourCa
             돈값을 못 하는 구독은 해지 가이드를 따라 서비스에서 해지하세요. 해지 화면으로 바로 가는
             링크가 없는 곳은 메뉴까지 가는 단계를 안내합니다.
           </p>
-          <div className="pt-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded-md text-center">
+          <div className="pt-1 text-[11px] font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded-md text-center">
             결제일이 지나면 지킨 돈으로 쌓여요 💰
           </div>
         </div>
