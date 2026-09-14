@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isAppOrigin } from "./lib/app-origins";
 
 /**
- * 앱(Capacitor)에서 오는 API 요청의 CORS.
+ * 앱(Capacitor)에서 오는 API 요청의 CORS. Next.js 16부터 middleware는 proxy라는 이름을 쓴다.
  *
  * 앱의 화면은 capacitor://localhost 같은 다른 출처에서 돌므로, 브라우저(WebView)가 API 응답을
  * 화면에 넘겨주려면 이 출처를 허용한다는 헤더가 있어야 한다. 앱 출처만 허용하고 나머지는 손대지
@@ -18,7 +18,7 @@ const CORS_HEADERS = {
   Vary: "Origin",
 };
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const origin = request.headers.get("origin");
   if (!origin || !isAppOrigin(origin)) return NextResponse.next();
 
