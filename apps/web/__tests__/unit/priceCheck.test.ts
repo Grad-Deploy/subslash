@@ -17,12 +17,14 @@ function daysAgo(days: number): string {
 }
 
 const netflix = POPULAR_SERVICES.find((s) => s.id === "netflix")!;
+const netflixPremium = netflix.plans!.find((p) => p.id === "premium")!;
 
 function makeSub(overrides: Partial<PriceCheckSubscription> = {}): PriceCheckSubscription {
   return {
     id: "sub-1",
     name: netflix.nameKo,
-    amount: netflix.defaultAmount,
+    amount: netflixPremium.amount,
+    planId: netflixPremium.id,
     currency: "KRW",
     billingCycle: "monthly",
     cancelUrl: netflix.cancelUrl,
@@ -42,7 +44,7 @@ describe("getPriceCheckCandidates", () => {
     const subs = [makeSub({ createdAt: daysAgo(3), amount: 13500 })];
     const [candidate] = getPriceCheckCandidates(subs, NOW);
     expect(candidate.reason).toBe("preset-mismatch");
-    expect(candidate.presetAmount).toBe(netflix.defaultAmount);
+    expect(candidate.presetAmount).toBe(netflixPremium.amount);
   });
 
   it("'요금 유지'를 누른 뒤에는 프리셋과 달라도 90일 동안 조용하다", () => {
@@ -74,7 +76,7 @@ describe("getPriceCheckCandidates", () => {
     const subs = [makeSub({ amount: 13500 })];
     const [candidate] = getPriceCheckCandidates(subs, NOW);
     expect(candidate.reason).toBe("preset-mismatch");
-    expect(candidate.presetAmount).toBe(netflix.defaultAmount);
+    expect(candidate.presetAmount).toBe(netflixPremium.amount);
     expect(candidate.currentAmount).toBe(13500);
   });
 
@@ -97,6 +99,34 @@ describe("getPriceCheckCandidates", () => {
     const [candidate] = getPriceCheckCandidates(subs, NOW);
     expect(candidate.reason).toBe("stale");
     expect(candidate.presetAmount).toBeNull();
+  });
+
+  it("요금제를 고르지 않은 구독은 요금제가 여럿인 서비스의 요금과 비교하지 않는다", () => {
+    // 요금제가 생기기 전에 등록한 넷플릭스. 세 요금 중 하나를 골라 어긋났다고 하지 않는다.
+    const subs = [makeSub({ planId: undefined, amount: 13500, createdAt: daysAgo(3) })];
+    expect(getPriceCheckCandidates(subs, NOW)).toEqual([]);
+  });
+
+  it("고른 요금제의 요금과 같으면 묻지 않는다", () => {
+    const subs = [makeSub({ planId: "standard", amount: 13500, createdAt: daysAgo(3) })];
+    expect(getPriceCheckCandidates(subs, NOW)).toEqual([]);
+  });
+
+  it("연 결제 요금제는 연간 구독의 금액과 비교한다", () => {
+    const notion = POPULAR_SERVICES.find((s) => s.id === "notion")!;
+    const subs = [
+      makeSub({
+        name: notion.nameKo,
+        cancelUrl: notion.cancelUrl,
+        planId: "plus-yearly",
+        billingCycle: "yearly",
+        amount: 150000,
+        createdAt: daysAgo(3),
+      }),
+    ];
+    const [candidate] = getPriceCheckCandidates(subs, NOW);
+    expect(candidate.reason).toBe("preset-mismatch");
+    expect(candidate.presetAmount).toBe(168000);
   });
 
   it("프리셋과 어긋난 구독을 오래된 구독보다 먼저 보여준다", () => {

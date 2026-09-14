@@ -38,6 +38,13 @@ export interface Subscription {
   cancelUrl?: string;
   cancelGuide?: string;
   iconUrl?: string;
+  /**
+   * 요금제가 여럿인 서비스에서 고른 요금제(ServicePlan.id). 가격 확인이 이 요금제의 요금과
+   * 비교한다. 요금제를 고르지 않았거나 요금제가 없는 서비스면 없다.
+   */
+  planId?: string;
+  /** 고른 요금제 이름. 서비스 목록이 바뀌어도 남도록 함께 저장한다. */
+  planName?: string;
   createdAt: string;
   killedAt?: string;
 
