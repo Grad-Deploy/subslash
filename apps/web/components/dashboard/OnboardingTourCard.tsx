@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Button } from "../ui/button";
+import { useStoredFlag } from "@hooks/useStoredFlag";
 
 interface OnboardingTourCardProps {
   onStartAdd: () => void;
@@ -11,23 +12,8 @@ interface OnboardingTourCardProps {
 const STORAGE_KEY = "subslash_onboarding_dismissed";
 
 export function OnboardingTourCard({ onStartAdd, activeCount }: OnboardingTourCardProps) {
-  const [dismissed, setDismissed] = useState<boolean>(true); // default true until client checks storage
-
-  useEffect(() => {
-    try {
-      const isDismissed = localStorage.getItem(STORAGE_KEY) === "true";
-      setDismissed(isDismissed);
-    } catch {
-      setDismissed(false);
-    }
-  }, []);
-
-  const handleDismiss = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, "true");
-    } catch {}
-    setDismissed(true);
-  };
+  // 서버와 하이드레이션 동안은 숨겨 둔다. 닫은 사람에게 한 번 번쩍이지 않게.
+  const [dismissed, handleDismiss] = useStoredFlag(STORAGE_KEY, true);
 
   // If dismissed or if user already has 5+ subscriptions, hide automatically
   if (dismissed || activeCount >= 5) {

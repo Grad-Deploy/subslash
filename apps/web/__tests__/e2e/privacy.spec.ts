@@ -5,11 +5,18 @@ test.describe("개인정보처리방침 (E2E)", () => {
     page,
   }) => {
     await page.goto("/dashboard");
+    // 대시보드는 로딩 표시를 그렸다가 본문으로 바뀌며 푸터가 아래로 밀린다. 그 사이에 누르면
+    // 클릭이 엉뚱한 곳에 떨어지므로(WebKit에서 재현), 본문이 뜬 뒤에 누른다.
+    await expect(page.getByRole("heading", { name: "오늘의 구독 점검" })).toBeVisible({
+      timeout: 30_000,
+    });
     await page.getByRole("contentinfo").getByRole("link", { name: "개인정보처리방침" }).click({
       timeout: 30_000,
     });
 
-    await expect(page).toHaveURL(/\/privacy$/);
+    // 하이드레이션 전에 누른 클릭은 React가 붙은 뒤에 처리된다. 느린 기기(WebKit)에서는 기본 5초가
+    // 모자랄 수 있다.
+    await expect(page).toHaveURL(/\/privacy$/, { timeout: 30_000 });
     await expect(page.getByRole("heading", { level: 1, name: "개인정보처리방침" })).toBeVisible({
       timeout: 30_000,
     });

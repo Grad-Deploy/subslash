@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   GENDER_OPTIONS,
@@ -15,6 +15,7 @@ import { Button } from "@components/ui/button";
 import { refreshAuth, useAuth } from "@hooks/useAuth";
 import { ResendVerificationButton } from "./ResendVerificationButton";
 import { apiUrl } from "@lib/api";
+import { HydratedForm } from "@components/ui/hydrated-form";
 
 type SaveStatus = { tone: "ok" | "error"; message: string } | null;
 
@@ -32,12 +33,14 @@ export function ProfileForm() {
   const [status, setStatus] = useState<SaveStatus>(null);
   const [saving, setSaving] = useState(false);
 
-  // 계정 정보가 오면 저장된 값으로 채운다. 적지 않은 항목은 빈 칸으로 둔다.
-  useEffect(() => {
-    if (!account) return;
+  // 계정 정보가 오면 저장된 값으로 채운다. 적지 않은 항목은 빈 칸으로 둔다. 새 계정 정보가
+  // 왔을 때만 채우도록 렌더링 중에 맞춘다(effect로 하면 렌더링이 한 번 더 일어난다).
+  const [filledFrom, setFilledFrom] = useState<typeof account>(null);
+  if (account && account !== filledFrom) {
+    setFilledFrom(account);
     setAge(account.age === null ? "" : String(account.age));
     setGender(account.gender ?? "");
-  }, [account]);
+  }
 
   if (loading) {
     return (
@@ -101,7 +104,7 @@ export function ProfileForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5">
+    <HydratedForm onSubmit={handleSubmit} noValidate className="space-y-5">
       <dl className="grid grid-cols-[4.5rem_1fr] gap-y-1.5 text-sm">
         <dt className="text-muted-foreground">아이디</dt>
         <dd className="font-semibold">{account.username}</dd>
@@ -215,6 +218,6 @@ export function ProfileForm() {
       <Button type="submit" className="w-full h-11 font-bold rounded-xl" disabled={saving}>
         {saving ? "저장하는 중..." : "저장하기"}
       </Button>
-    </form>
+    </HydratedForm>
   );
 }

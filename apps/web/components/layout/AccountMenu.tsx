@@ -38,8 +38,12 @@ export function AccountMenu({
   const { theme, toggleTheme } = useTheme();
   const { account, loading, logout } = useAuth();
 
-  // 다른 화면으로 가면 닫는다.
-  useEffect(() => setOpen(false), [pathname]);
+  // 다른 화면으로 가면 닫는다. effect로 닫으면 렌더링이 한 번 더 일어나 렌더링 중에 맞춘다.
+  const [menuPath, setMenuPath] = useState(pathname);
+  if (menuPath !== pathname) {
+    setMenuPath(pathname);
+    setOpen(false);
+  }
 
   useEffect(() => {
     if (!open) return;

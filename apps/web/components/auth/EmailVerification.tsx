@@ -27,14 +27,12 @@ type View =
  */
 export function EmailVerification() {
   const token = useSearchParams().get("token");
-  const [view, setView] = useState<View>({ kind: "loading" });
+  // 토큰이 없는 링크는 물어볼 것도 없이 올바르지 않은 링크다.
+  const [view, setView] = useState<View>(() => (token ? { kind: "loading" } : { kind: "invalid" }));
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setView({ kind: "invalid" });
-      return;
-    }
+    if (!token) return;
     let cancelled = false;
     (async () => {
       try {

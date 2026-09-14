@@ -1,6 +1,7 @@
 "use client";
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
+import { useIsClient } from "@hooks/useIsClient";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CheckInResponse, Subscription } from "@subslash/shared";
 import { useStore } from "../../lib/store";
@@ -27,7 +28,7 @@ function CheckInReceiver() {
   const rawCount = Number(searchParams.get("count"));
   const count = Number.isInteger(rawCount) && rawCount >= 0 ? rawCount : null;
 
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const [result, setResult] = useState<CheckInResponse | undefined>();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [stage, setStage] = useState<Stage>("check-in");
@@ -36,10 +37,8 @@ function CheckInReceiver() {
   // 대시보드로 떠나 버리면 다음 단계가 열리지 않으므로, 한 번은 건너뛴다.
   const skipNextClose = useRef(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
+  // 메일 링크를 연 순간 한 번 기록하는 곳이라 effect가 맞는 자리다. 기록한 구독과 결과는
+  // 저장소에서 다시 끌어낼 수 없어(기록 뒤에는 목록이 바뀐다) 상태로 담는다.
   useEffect(() => {
     if (!mounted || recorded.current || !subId || count === null) return;
 
@@ -47,6 +46,7 @@ function CheckInReceiver() {
     if (!found) return;
 
     recorded.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 위 설명 참고. 한 번만 돈다.
     setSubscription(found);
     // 해지하기 전에 받은 메일의 버튼일 수 있다. 해지한 구독에는 체크인을 남기지
     // 않고, 해지 가이드를 다시 열어 해지일을 덮어쓰지도 않는다.
