@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Input } from "./input";
 import { Select } from "./select";
 import { cn } from "../../lib/utils";
@@ -84,42 +84,43 @@ export function EmailDomainInput({
     return "";
   });
 
-  const userSelectedDomainRef = React.useRef(false);
+  // 사용자가 도메인을 직접 골랐는지. 골랐으면 계정 종류(provider)가 바뀌어도 덮어쓰지 않는다.
+  // 처음부터 값에 도메인이 있으면 고른 것으로 친다 — 예전 effect도 첫 렌더 뒤 그렇게 표시했다.
+  const [userSelectedDomain, setUserSelectedDomain] = useState(parsed.hasDomain && !!parsed.domain);
 
-  // Sync state if provider changes externally AND user hasn't explicitly chosen a domain
-  useEffect(() => {
-    if (provider && !userSelectedDomainRef.current) {
-      const dom = getDomainForProvider(provider);
-      if (dom === "custom") {
-        setSelectedPreset("custom");
-      } else {
-        setSelectedPreset(dom);
-        setCustomDomain("");
-      }
-    }
-  }, [provider]);
+  // 부모가 바꾼 value·provider를 따라간다. effect로 맞추면 렌더링이 한 번 더 일어나므로, 바뀐
+  // 것을 렌더링 중에 알아차려 바로 맞춘다(React 문서의 'prop이 바뀌면 state 조정하기').
+  const [prevValue, setPrevValue] = useState(value);
+  const [prevProvider, setPrevProvider] = useState(provider);
+  let domainChosen = userSelectedDomain;
 
-  // Sync state if value changes externally
-  useEffect(() => {
+  if (value !== prevValue) {
+    setPrevValue(value);
     if (!value) {
       // User erased the input — clear local part but strictly KEEP selectedPreset and customDomain!
       setLocalPart("");
-      return;
-    }
-    const { local, domain, hasDomain } = parseEmailValue(value);
-    setLocalPart(local);
-    if (hasDomain && domain) {
-      const matched = COMMON_EMAIL_DOMAINS.find((d) => d.value === domain);
-      if (matched) {
-        setSelectedPreset(matched.value);
-        setCustomDomain("");
-      } else {
-        setSelectedPreset("custom");
-        setCustomDomain(domain);
+    } else {
+      const next = parseEmailValue(value);
+      setLocalPart(next.local);
+      if (next.hasDomain && next.domain) {
+        const matched = COMMON_EMAIL_DOMAINS.find((d) => d.value === next.domain);
+        setSelectedPreset(matched ? matched.value : "custom");
+        setCustomDomain(matched ? "" : next.domain);
+        setUserSelectedDomain(true);
+        domainChosen = true;
       }
-      userSelectedDomainRef.current = true;
     }
-  }, [value]);
+  }
+
+  // Follow the provider only while the user hasn't explicitly chosen a domain.
+  if (provider !== prevProvider) {
+    setPrevProvider(provider);
+    if (provider && !domainChosen) {
+      const dom = getDomainForProvider(provider);
+      setSelectedPreset(dom);
+      if (dom !== "custom") setCustomDomain("");
+    }
+  }
 
   const emitChange = (newLocal: string, preset: string, custom: string) => {
     const finalDomain = preset === "custom" ? custom.trim() : preset;
@@ -155,7 +156,7 @@ export function EmailDomainInput({
       setLocalPart(newLocal);
 
       if (pastedDomain) {
-        userSelectedDomainRef.current = true;
+        setUserSelectedDomain(true);
         const matched = COMMON_EMAIL_DOMAINS.find((d) => d.value === pastedDomain);
         if (matched) {
           setSelectedPreset(matched.value);
@@ -178,14 +179,14 @@ export function EmailDomainInput({
 
   const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const preset = e.target.value;
-    userSelectedDomainRef.current = true;
+    setUserSelectedDomain(true);
     setSelectedPreset(preset);
     emitChange(localPart, preset, customDomain);
   };
 
   const handleCustomDomainChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const dom = e.target.value;
-    userSelectedDomainRef.current = true;
+    setUserSelectedDomain(true);
     setCustomDomain(dom);
     emitChange(localPart, "custom", dom);
   };

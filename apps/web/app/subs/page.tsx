@@ -35,6 +35,7 @@ import { DataBackupCard } from "../../components/settings/DataBackupCard";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { isWideScreen } from "@lib/wide-screen";
 import { subscriptionDetailHref } from "@lib/routes";
+import { useIsClient } from "@hooks/useIsClient";
 
 /** 카드/표 중 고른 보기. 이 브라우저의 취향일 뿐이라 백업·동기화에 넣지 않는다. */
 const VIEW_KEY = "subslash-subs-view";
@@ -107,7 +108,7 @@ export default function SubscriptionsPage() {
   const rate = useExchangeRate();
   const router = useRouter();
 
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const [tab, setTab] = useState<"active" | "killed">("active");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<ServicePreset | null>(null);
@@ -123,12 +124,16 @@ export default function SubscriptionsPage() {
   } | null>(null);
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
   // 표는 넓은 화면(md 이상)에서만 고를 수 있다. 좁은 화면은 늘 카드다.
-  const [view, setView] = useState<"cards" | "table">("cards");
-
-  useEffect(() => {
-    setMounted(true);
-    if (localStorage.getItem(VIEW_KEY) === "table") setView("table");
-  }, []);
+  // 서버에는 저장소가 없어 카드로 시작한다. 하이드레이션 동안은 mounted가 false라 스피너만
+  // 그리므로, 브라우저에서 처음부터 저장된 보기로 시작해도 서버 화면과 어긋나지 않는다.
+  const [view, setView] = useState<"cards" | "table">(() => {
+    if (typeof window === "undefined") return "cards";
+    try {
+      return localStorage.getItem(VIEW_KEY) === "table" ? "table" : "cards";
+    } catch {
+      return "cards";
+    }
+  });
 
   const changeView = (next: "cards" | "table") => {
     setView(next);

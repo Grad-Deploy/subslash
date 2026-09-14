@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useIsClient } from "@hooks/useIsClient";
 import Link from "next/link";
 import { useStore } from "../../lib/store";
 import {
@@ -61,7 +62,7 @@ export default function Dashboard() {
   } = useStore();
   const rate = useExchangeRate();
 
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   const [checkInSub, setCheckInSub] = useState<Subscription | null>(null);
@@ -70,10 +71,6 @@ export default function Dashboard() {
   const [killTarget, setKillTarget] = useState<Subscription | null>(null);
   const [chargedTarget, setChargedTarget] = useState<Subscription | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

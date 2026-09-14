@@ -13,10 +13,6 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-explicit-any": "warn",
       "prefer-const": "error",
       "no-console": ["warn", { allow: ["warn", "error"] }],
-      // Next.js 16의 권장 설정에 새로 들어온 React 규칙. 걸리는 곳(20곳)은 대부분 브라우저
-      // 저장소를 읽은 뒤에 그리려고 effect 안에서 setMounted(true)를 부르는 기존 패턴이다.
-      // 업그레이드와 섞어 고치면 동작이 바뀔 수 있어, 따로 고칠 때까지 경고로 둔다.
-      "react-hooks/set-state-in-effect": "warn",
     },
   },
   globalIgnores([

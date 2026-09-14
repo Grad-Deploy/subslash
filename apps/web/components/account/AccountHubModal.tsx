@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useStore } from "../../lib/store";
 import { SHOW_INBOX_PREVIEW } from "../../lib/flags";
 import { AccountProvider, ACCOUNT_PROVIDERS, formatKRW, sumMonthlyKRW } from "@subslash/shared";
@@ -28,14 +28,17 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
   const [name, setName] = useState("");
   const [emailOrId, setEmailOrId] = useState("");
 
-  useEffect(() => {
+  // 창을 닫으면 적던 내용을 비운다. effect로 비우면 렌더링이 한 번 더 일어나 렌더링 중에 맞춘다.
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
     if (!isOpen) {
       setIsAdding(false);
       setName("");
       setEmailOrId("");
       setProvider("google");
     }
-  }, [isOpen]);
+  }
 
   const handleProviderSelectChange = (newProvider: AccountProvider) => {
     setProvider(newProvider);

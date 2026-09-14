@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Subscription,
   CheckInResponse,
@@ -39,13 +39,17 @@ export function CheckInModal({
   const [copied, setCopied] = useState(false);
 
   // The modal stays mounted on the detail page, so reset the counter whenever
-  // it is reopened or pointed at a different subscription.
-  useEffect(() => {
-    if (isOpen) {
+  // it is reopened or pointed at a different subscription. 렌더링 중에 맞춘다 — effect로
+  // 되돌리면 렌더링이 한 번 더 일어난다.
+  const openKey = isOpen ? `${subscription.id}:${initialCount}` : null;
+  const [prevOpenKey, setPrevOpenKey] = useState(openKey);
+  if (prevOpenKey !== openKey) {
+    setPrevOpenKey(openKey);
+    if (openKey !== null) {
       setCount(initialCount);
       setCopied(false);
     }
-  }, [isOpen, subscription.id, initialCount]);
+  }
 
   const presets = [0, 1, 3, 5, 10, 20, 30];
   const isRed = result?.riskLevel === "red";

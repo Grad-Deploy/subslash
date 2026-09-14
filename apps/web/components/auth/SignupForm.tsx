@@ -29,6 +29,7 @@ import {
   type LiveStatus,
 } from "@lib/signup-status";
 import { apiUrl } from "@lib/api";
+import { HydratedForm } from "@components/ui/hydrated-form";
 
 interface VerificationNotice {
   email: string;
@@ -225,7 +226,7 @@ export function SignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+    <HydratedForm onSubmit={handleSubmit} noValidate className="space-y-4">
       <Field label="아이디" htmlFor="username" status={status.username}>
         <Input
           id="username"
@@ -368,7 +369,7 @@ export function SignupForm() {
           로그인
         </Link>
       </p>
-    </form>
+    </HydratedForm>
   );
 }
 

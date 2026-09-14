@@ -8,6 +8,7 @@ import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { apiUrl } from "@lib/api";
+import { HydratedForm } from "@components/ui/hydrated-form";
 
 /**
  * 로그인 폼.
@@ -68,7 +69,7 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+    <HydratedForm onSubmit={handleSubmit} noValidate className="space-y-4">
       <div className="space-y-1.5">
         <label htmlFor="identifier" className="text-xs font-bold text-foreground">
           아이디 또는 이메일
@@ -134,6 +135,6 @@ export function LoginForm() {
           회원가입
         </Link>
       </p>
-    </form>
+    </HydratedForm>
   );
 }

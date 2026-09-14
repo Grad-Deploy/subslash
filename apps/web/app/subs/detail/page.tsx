@@ -1,6 +1,7 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect } from "react";
+import { useIsClient } from "@hooks/useIsClient";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SubscriptionDetail } from "../../../components/subscription/SubscriptionDetail";
 
@@ -19,11 +20,7 @@ function Spinner() {
 function DetailFromQuery() {
   const router = useRouter();
   const id = useSearchParams().get("id");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsClient();
 
   useEffect(() => {
     if (!id) router.replace("/subs");
