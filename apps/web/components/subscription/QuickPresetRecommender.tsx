@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { POPULAR_SERVICES, ServicePreset, formatCurrency } from "@subslash/shared";
+import { POPULAR_SERVICES, ServicePreset, describePresetPrice } from "@subslash/shared";
 import { Subscription } from "@subslash/shared";
 
 interface QuickPresetRecommenderProps {
@@ -64,9 +64,7 @@ export function QuickPresetRecommender({
                 <p className="font-bold text-xs sm:text-sm text-foreground truncate">
                   {preset.nameKo}
                 </p>
-                <p className="text-[11px] text-muted-foreground">
-                  월 {formatCurrency(preset.defaultAmount, preset.currency)}
-                </p>
+                <p className="text-[11px] text-muted-foreground">{describePresetPrice(preset)}</p>
               </div>
             </div>
             <span className="text-xs font-bold text-primary opacity-80 group-hover:opacity-100 ml-1">

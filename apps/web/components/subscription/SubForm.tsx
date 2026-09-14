@@ -5,12 +5,18 @@ import {
   CATEGORY_LABELS,
   SubscriptionFormData,
   ServicePreset,
+  type ServicePlan,
   type SubscriptionCategory,
   PAYMENT_METHOD_OPTIONS,
+  describePresetPrice,
+  findPresetForSubscription,
   formatAmount,
   getMyShareAmount,
   getSharingCount,
   parseServiceUrl,
+  planCurrency,
+  planFormData,
+  presetFormData,
 } from "@subslash/shared";
 import { useStore } from "../../lib/store";
 import { useAuth } from "@hooks/useAuth";
@@ -82,6 +88,13 @@ export function SubForm({
   // 프리셋은 이름·카테고리·해지 링크를 이미 안다. 목록에 없는 서비스일 때만 묻는다.
   const [isCustom, setIsCustom] = useState(
     () => !popularServices.some((preset) => preset.cancelUrl === initialData?.cancelUrl),
+  );
+  // 고른 서비스. 요금제 칸을 그리는 데 쓴다. 프리셋을 누르고 열었거나 수정할 때는
+  // 이름·주소로 되찾는다.
+  const [preset, setPreset] = useState<ServicePreset | undefined>(() =>
+    initialData?.name
+      ? findPresetForSubscription({ name: initialData.name, cancelUrl: initialData.cancelUrl })
+      : undefined,
   );
   const [query, setQuery] = useState("");
   const [pickCategory, setPickCategory] = useState<SubscriptionCategory | "all">("all");
@@ -172,18 +185,15 @@ export function SubForm({
   };
 
   const pickPreset = (service: ServicePreset) => {
-    setFormData((prev) => ({
-      ...prev,
-      name: service.nameKo || service.name,
-      amount: service.defaultAmount,
-      currency: service.currency,
-      cancelUrl: service.cancelUrl,
-      cancelGuide: service.cancelGuide,
-      category: service.category,
-      iconUrl: service.iconEmoji,
-    }));
+    setFormData((prev) => ({ ...prev, ...presetFormData(service) }));
+    setPreset(service);
     setIsCustom(false);
     setStep("details");
+  };
+
+  const pickPlan = (plan: ServicePlan) => {
+    if (!preset) return;
+    setFormData((prev) => ({ ...prev, ...planFormData(preset, plan) }));
   };
 
   const startCustom = () => {
@@ -195,8 +205,11 @@ export function SubForm({
       cancelUrl: undefined,
       cancelGuide: undefined,
       iconUrl: undefined,
+      planId: undefined,
+      planName: undefined,
       category: "other",
     }));
+    setPreset(undefined);
     setServiceUrl("");
     setServiceUrlError(null);
     setIsCustom(true);
@@ -339,7 +352,7 @@ export function SubForm({
                 <span className="min-w-0">
                   <span className="block text-xs font-bold truncate">{service.nameKo}</span>
                   <span className="block text-[11px] text-muted-foreground">
-                    월 {formatAmount(service.defaultAmount, service.currency)}
+                    {describePresetPrice(service)}
                   </span>
                 </span>
               </button>
@@ -364,6 +377,7 @@ export function SubForm({
   }
 
   const sharing = (formData.sharingCount ?? 1) > 1;
+  const plans = preset?.plans ?? [];
 
   return (
     <form className="space-y-4 text-left" onSubmit={handleSubmit}>
@@ -373,10 +387,14 @@ export function SubForm({
             <span className="text-2xl shrink-0">{isCustom ? "✏️" : formData.iconUrl || "📦"}</span>
             <div className="min-w-0">
               <p className="text-sm font-bold truncate">{isCustom ? "직접 입력" : formData.name}</p>
-              <p className="text-[11px] text-muted-foreground">
+              <p className="text-[11px] text-muted-foreground break-keep">
                 {isCustom
                   ? "목록에 없는 서비스"
-                  : "기본 요금을 채웠습니다. 요금제가 다르면 고쳐주세요."}
+                  : plans.length > 0
+                    ? "요금제를 고르면 요금이 채워집니다."
+                    : typeof preset?.defaultAmount === "number"
+                      ? "기본 요금을 채웠습니다. 요금이 다르면 고쳐주세요."
+                      : "요금을 직접 적어주세요."}
               </p>
             </div>
           </div>
@@ -426,6 +444,52 @@ export function SubForm({
             </Select>
           </div>
         </div>
+      )}
+
+      {/*
+        요금제가 여럿인 서비스는 등록할 때 요금제를 반드시 고른다. 하나를 미리 골라 두면
+        손대지 않은 사람의 요금이 그 요금제로 저장된다. 고른 요금제는 가격 확인의 기준이 된다.
+      */}
+      {preset && plans.length > 0 && (
+        <fieldset className="space-y-1.5">
+          <legend className={`${LABEL} mb-1.5`}>요금제</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {plans.map((plan) => {
+              const checked = formData.planId === plan.id;
+              return (
+                <label
+                  key={plan.id}
+                  className={`relative cursor-pointer rounded-xl border p-2.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring ${
+                    checked
+                      ? "border-primary bg-primary/5"
+                      : "bg-card hover:border-primary/40 hover:bg-muted"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="planId"
+                    value={plan.id}
+                    checked={checked}
+                    onChange={() => pickPlan(plan)}
+                    required={!isEdit}
+                    className="sr-only"
+                  />
+                  <span className="block text-xs font-bold">{plan.name}</span>
+                  <span className="block text-[11px] text-muted-foreground">
+                    {(plan.billingCycle ?? "monthly") === "yearly" ? "연" : "월"}{" "}
+                    {formatAmount(plan.amount, planCurrency(preset, plan))}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          {preset.priceNote && (
+            <p className="text-[11px] text-muted-foreground">{preset.priceNote}</p>
+          )}
+        </fieldset>
+      )}
+      {!isEdit && preset && plans.length === 0 && preset.priceNote && (
+        <p className="text-[11px] text-muted-foreground">{preset.priceNote}</p>
       )}
 
       {/* Amount & Currency */}

@@ -198,7 +198,8 @@ describe("Payment SMS & Receipt Parser", () => {
     const results = parsePaymentSms(sms);
 
     expect(results).toHaveLength(1);
-    expect(results[0].name).toContain("Claude Pro");
+    // 문자만으로는 Pro인지 Max인지 알 수 없어 요금제 이름을 붙이지 않는다.
+    expect(results[0].name).toBe("Claude");
     expect(results[0].amount).toBe(20);
     expect(results[0].currency).toBe("USD");
     expect(results[0].category).toBe("ai");
