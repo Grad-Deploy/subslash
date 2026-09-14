@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useIsClient } from "@hooks/useIsClient";
 import { useRouter } from "next/navigation";
 import { useStore } from "../lib/store";
 import {
@@ -56,13 +57,9 @@ export default function Home() {
   const [selectedPreset, setSelectedPreset] = useState<Partial<SubscriptionFormData> | undefined>(
     undefined,
   );
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const activeCount = subscriptions.filter((sub) => sub.status === "active").length;
   const killedCount = subscriptions.filter((sub) => sub.status === "killed").length;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleStart = () => {
     setSelectedPreset(undefined);

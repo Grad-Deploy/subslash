@@ -7,6 +7,7 @@ import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { ConfirmDialog } from "@components/ui/confirm-dialog";
 import { apiUrl } from "@lib/api";
+import { HydratedForm } from "@components/ui/hydrated-form";
 
 /**
  * 회원 탈퇴. 비밀번호를 한 번 더 받고, 확인 창을 거쳐 지운다.
@@ -95,7 +96,7 @@ export function DeleteAccountSection() {
         </li>
       </ul>
 
-      <form
+      <HydratedForm
         noValidate
         className="space-y-2"
         onSubmit={(event) => {
@@ -129,7 +130,7 @@ export function DeleteAccountSection() {
         <Button type="submit" variant="destructive" className="w-full" disabled={deleting}>
           {deleting ? "지우는 중..." : "회원 탈퇴"}
         </Button>
-      </form>
+      </HydratedForm>
 
       <ConfirmDialog
         isOpen={confirmOpen}

@@ -20,6 +20,12 @@ export default defineConfig({
       name: "Mobile Chrome",
       use: { ...devices["Pixel 7"] },
     },
+    // iOS의 Safari와 앱(Capacitor iOS)은 WebKit으로 그린다. Mac 없이도 같은 엔진으로 iPhone
+    // 화면을 돌려, WebKit에서만 깨지는 레이아웃을 잡는다.
+    {
+      name: "Mobile Safari",
+      use: { ...devices["iPhone 15"] },
+    },
   ],
   webServer: {
     command: "pnpm dev",

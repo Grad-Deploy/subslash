@@ -6,6 +6,7 @@ import { normalizeEmailAddress, validateEmail } from "@subslash/shared";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { apiUrl } from "@lib/api";
+import { HydratedForm } from "@components/ui/hydrated-form";
 
 type Result = { tone: "ok" | "error"; message: string } | null;
 
@@ -60,7 +61,7 @@ export function ForgotPasswordForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+    <HydratedForm onSubmit={handleSubmit} noValidate className="space-y-4">
       <div className="space-y-1.5">
         <label htmlFor="email" className="text-xs font-bold text-foreground">
           가입한 이메일
@@ -107,6 +108,6 @@ export function ForgotPasswordForm() {
           로그인으로 돌아가기
         </Link>
       </p>
-    </form>
+    </HydratedForm>
   );
 }
