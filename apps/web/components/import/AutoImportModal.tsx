@@ -19,6 +19,7 @@ import { Badge } from "../ui/badge";
 import { Select } from "../ui/select";
 import { EmailDomainInput } from "../ui/email-domain-input";
 import { InboxPreviewPanel } from "./InboxPreviewPanel";
+import { InlineConfirm } from "../ui/inline-confirm";
 
 interface AutoImportModalProps {
   isOpen: boolean;
@@ -82,6 +83,7 @@ export function AutoImportModal({
   const [scanCustomEmail, setScanCustomEmail] = useState<string>("");
   /** Qualifier the preview attaches to its result count, e.g. the 30-day filter. */
   const [resultsNote, setResultsNote] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
   const [, startTransition] = useTransition();
 
   const sharedTextParsed = useRef(false);
@@ -584,18 +586,7 @@ export function AutoImportModal({
               {subscriptions.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => {
-                    if (
-                      confirm(
-                        `현재 등록된 모든 구독(${subscriptions.length}건)을 초기화하시겠습니까?` +
-                          (killedCount > 0
-                            ? `\n해지한 구독 ${killedCount}건의 절약 기록도 함께 지워집니다.`
-                            : ""),
-                      )
-                    ) {
-                      clearSubscriptions();
-                    }
-                  }}
+                  onClick={() => setConfirmClear(true)}
                   className="text-xs text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-0.5 font-medium"
                 >
                   <span>🗑️</span> 이전 기록 전체 삭제
@@ -603,6 +594,24 @@ export function AutoImportModal({
               )}
             </div>
           </div>
+
+          {/* 이 창 위에 확인창을 겹치지 않고 창 안에서 묻는다(InlineConfirm 참고). */}
+          {confirmClear && subscriptions.length > 0 && (
+            <InlineConfirm
+              message={
+                `현재 등록된 모든 구독(${subscriptions.length}건)을 초기화하시겠습니까?` +
+                (killedCount > 0
+                  ? `\n해지한 구독 ${killedCount}건의 절약 기록도 함께 지워집니다.`
+                  : "")
+              }
+              confirmText="모두 삭제"
+              onCancel={() => setConfirmClear(false)}
+              onConfirm={() => {
+                clearSubscriptions();
+                setConfirmClear(false);
+              }}
+            />
+          )}
 
           {targetAccountId === "__custom__" && (
             <div className="p-2.5 rounded-xl bg-muted/40 border border-border/80 flex flex-col sm:flex-row sm:items-center gap-2">

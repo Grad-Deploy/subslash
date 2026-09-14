@@ -52,7 +52,7 @@ export function OnboardingTourCard({ onStartAdd, activeCount }: OnboardingTourCa
         <button
           type="button"
           onClick={handleDismiss}
-          className="text-xs text-muted-foreground hover:text-foreground font-medium p-1 rounded-lg hover:bg-muted transition-colors"
+          className="shrink-0 whitespace-nowrap text-xs text-muted-foreground hover:text-foreground font-medium p-1 rounded-lg hover:bg-muted transition-colors"
           title="가이드 닫기"
         >
           ✕ 닫기
