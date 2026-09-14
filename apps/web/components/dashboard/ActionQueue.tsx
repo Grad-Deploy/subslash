@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import {
   formatCurrency,
+  formatDday,
   type ActionItem,
   type ActionKind,
   type ActionVerb,
@@ -100,7 +101,7 @@ export function ActionQueue({
         <h2 className="font-bold">지금 결정할 것이 없습니다</h2>
         <p className="text-sm text-muted-foreground">
           {nextBilling
-            ? `다음 결제는 ${nextBilling.name} D-${nextBilling.daysUntilBilling}입니다.`
+            ? `다음 결제는 ${nextBilling.name} ${formatDday(nextBilling.daysUntilBilling)}입니다.`
             : "결제일을 아는 구독이 아직 없습니다. 구독 상세에서 결제일을 채워주세요."}
         </p>
       </section>
@@ -133,7 +134,7 @@ export function ActionQueue({
                 )}
                 {item.daysUntilBilling !== null && item.daysUntilBilling <= 7 && (
                   <span className="text-[11px] font-black text-destructive">
-                    D-{item.daysUntilBilling}
+                    {formatDday(item.daysUntilBilling)}
                   </span>
                 )}
               </div>

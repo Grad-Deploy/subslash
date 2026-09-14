@@ -14,6 +14,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
 import { EmailDomainInput } from "../ui/email-domain-input";
+import { InlineConfirm } from "../ui/inline-confirm";
+
+/** 되돌리기 어려워 한 번 더 묻는 동작. */
+type PendingConfirm = "rotate" | "calendar-off" | "disable";
+
+const CONFIRM_COPY: Record<PendingConfirm, { message: string; action: string }> = {
+  rotate: {
+    message: "새 주소를 만들면 기존 주소로 구독한 캘린더는 끊깁니다.",
+    action: "새 주소 만들기",
+  },
+  "calendar-off": {
+    message: "캘린더 구독을 끊을까요? 이미 등록한 캘린더에서 결제일이 사라집니다.",
+    action: "구독 끊기",
+  },
+  disable: {
+    message: "알림을 끄고 서버에 저장된 구독 사본을 삭제할까요?",
+    action: "알림 끄기",
+  },
+};
 
 interface NotifySettingsModalProps {
   isOpen: boolean;
@@ -29,6 +48,9 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
   const [error, setError] = useState<string | null>(null);
   const [justSent, setJustSent] = useState(false);
   const [copiedFeed, setCopiedFeed] = useState(false);
+  const [copyFeedFailed, setCopyFeedFailed] = useState(false);
+  // 이 창 안에서 한 번 더 묻는다. 브라우저 기본 확인창은 앱 WebView마다 달라 쓰지 않는다.
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
 
   const isOptedIn = Boolean(notify.syncToken);
   const activeCount = subscriptions.filter((sub) => sub.status === "active").length;
@@ -73,11 +95,10 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
     }
   };
 
-  const handleCalendar = async (mode: "create" | "rotate") => {
+  // 처음 만들기와 새로 만들기가 같은 요청이다. 새로 만들 때 기존 주소가 끊긴다는 확인은
+  // 버튼 쪽(pendingConfirm)에서 받는다.
+  const handleCalendar = async () => {
     if (!notify.syncToken) return;
-    if (mode === "rotate" && !confirm("새 주소를 만들면 기존 주소로 구독한 캘린더는 끊깁니다.")) {
-      return;
-    }
     setBusy(true);
     setError(null);
     try {
@@ -92,7 +113,6 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
 
   const handleCalendarOff = async () => {
     if (!notify.syncToken) return;
-    if (!confirm("캘린더 구독을 끊을까요? 이미 등록한 캘린더에서 결제일이 사라집니다.")) return;
     setBusy(true);
     setError(null);
     try {
@@ -109,18 +129,18 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
     if (!notify.calendarUrl) return;
     try {
       await navigator.clipboard.writeText(notify.calendarUrl);
+      setCopyFeedFailed(false);
       setCopiedFeed(true);
       setTimeout(() => setCopiedFeed(false), 2000);
     } catch {
       // Clipboard access can be refused; the URL is on screen either way, but
       // a button that silently does nothing would look broken.
-      window.prompt("아래 주소를 복사해 캘린더 앱에 등록하세요", notify.calendarUrl);
+      setCopyFeedFailed(true);
     }
   };
 
   const handleDisable = async () => {
     if (!notify.syncToken) return;
-    if (!confirm("알림을 끄고 서버에 저장된 구독 사본을 삭제할까요?")) return;
     setBusy(true);
     setError(null);
     try {
@@ -134,6 +154,25 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
       setBusy(false);
     }
   };
+
+  const runPendingConfirm = () => {
+    const kind = pendingConfirm;
+    setPendingConfirm(null);
+    if (kind === "rotate") void handleCalendar();
+    else if (kind === "calendar-off") void handleCalendarOff();
+    else if (kind === "disable") void handleDisable();
+  };
+
+  const confirmFor = (kinds: PendingConfirm[]) =>
+    pendingConfirm && kinds.includes(pendingConfirm) ? (
+      <InlineConfirm
+        message={CONFIRM_COPY[pendingConfirm].message}
+        confirmText={CONFIRM_COPY[pendingConfirm].action}
+        disabled={busy}
+        onCancel={() => setPendingConfirm(null)}
+        onConfirm={runPendingConfirm}
+      />
+    ) : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -249,7 +288,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                         size="sm"
                         variant="ghost"
                         disabled={busy}
-                        onClick={() => handleCalendar("rotate")}
+                        onClick={() => setPendingConfirm("rotate")}
                       >
                         새 주소 만들기
                       </Button>
@@ -258,11 +297,17 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                         variant="ghost"
                         className="text-destructive hover:bg-destructive/10"
                         disabled={busy}
-                        onClick={handleCalendarOff}
+                        onClick={() => setPendingConfirm("calendar-off")}
                       >
                         구독 끊기
                       </Button>
                     </div>
+                    {copyFeedFailed && (
+                      <p className="text-amber-700 dark:text-amber-300" role="status">
+                        자동으로 복사하지 못했습니다. 위 주소를 길게 눌러 복사해주세요.
+                      </p>
+                    )}
+                    {confirmFor(["rotate", "calendar-off"])}
                   </>
                 ) : (
                   <>
@@ -275,7 +320,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                       size="sm"
                       variant="outline"
                       disabled={busy}
-                      onClick={() => handleCalendar("create")}
+                      onClick={() => handleCalendar()}
                     >
                       캘린더 주소 만들기
                     </Button>
@@ -296,11 +341,12 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                   variant="outline"
                   className="flex-1 text-destructive border-destructive/40 hover:bg-destructive/10"
                   disabled={busy}
-                  onClick={handleDisable}
+                  onClick={() => setPendingConfirm("disable")}
                 >
                   알림 끄기
                 </Button>
               </div>
+              {confirmFor(["disable"])}
             </>
           )}
 
