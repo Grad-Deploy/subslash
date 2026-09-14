@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Link from "next/link";
+import { useStoredFlag } from "@hooks/useStoredFlag";
 import { getDetoxLevel } from "@subslash/shared";
 
 const STORAGE_KEY = "subslash_level_basis_notice_dismissed";
@@ -23,27 +24,12 @@ interface LevelBasisNoticeProps {
  * 한 번 알린다.
  */
 export function LevelBasisNotice({ annualRunRate, confirmed, killCount }: LevelBasisNoticeProps) {
-  // 저장소를 읽기 전에는 숨겨 둔다. 닫은 사람에게 한 번 번쩍이지 않게.
-  const [dismissed, setDismissed] = useState(true);
-
-  useEffect(() => {
-    try {
-      setDismissed(localStorage.getItem(STORAGE_KEY) === "true");
-    } catch {
-      setDismissed(false);
-    }
-  }, []);
+  // 서버와 하이드레이션 동안은 숨겨 둔다. 닫은 사람에게 한 번 번쩍이지 않게.
+  const [dismissed, dismiss] = useStoredFlag(STORAGE_KEY, true);
 
   const before = getDetoxLevel(annualRunRate, killCount);
   const now = getDetoxLevel(confirmed, killCount);
   if (dismissed || now.level >= before.level) return null;
-
-  const dismiss = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, "true");
-    } catch {}
-    setDismissed(true);
-  };
 
   return (
     <section

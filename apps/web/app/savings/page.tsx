@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useIsClient } from "@hooks/useIsClient";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useStore } from "../../lib/store";
@@ -32,13 +33,9 @@ export default function SavingsDashboard() {
   const router = useRouter();
   const { getKilledSubscriptions, reviveSubscription } = useStore();
   const rate = useExchangeRate();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const [copied, setCopied] = useState(false);
   const [reviveTarget, setReviveTarget] = useState<Subscription | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!mounted) {
     return (

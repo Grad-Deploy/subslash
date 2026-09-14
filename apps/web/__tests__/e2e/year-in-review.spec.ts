@@ -75,7 +75,9 @@ test.describe("올해 구독 결산 (E2E)", () => {
     // 절약 현황에서 결산으로 들어간다.
     await page.goto("/savings");
     await page.getByRole("link", { name: /올해 구독 결산 보기/ }).click();
-    await expect(page).toHaveURL(/\/savings\/review/);
+    // 하이드레이션 전에 누른 클릭은 React가 붙은 뒤에 처리된다. 느린 기기(WebKit)에서는 기본 5초가
+    // 모자랄 수 있다.
+    await expect(page).toHaveURL(/\/savings\/review/, { timeout: 30_000 });
     await expect(page.getByRole("heading", { name: `📆 ${year}년 구독 결산` })).toBeVisible({
       timeout: 30_000,
     });

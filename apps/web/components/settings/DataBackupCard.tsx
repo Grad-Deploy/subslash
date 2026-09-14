@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useStore } from "../../lib/store";
 import {
@@ -55,6 +55,26 @@ async function readError(res: Response, fallback: string): Promise<string> {
   return typeof data?.error === "string" ? data.error : fallback;
 }
 
+/** 계정에 저장된 기록의 요약. 화면 상태는 바꾸지 않고 보여줄 결과만 돌려준다. */
+async function fetchSnapshotSummary(): Promise<AccountSnapshotState> {
+  try {
+    const res = await fetch(apiUrl("/api/account/snapshot?summary=1"), {
+      credentials: "same-origin",
+    });
+    if (res.status === 404) return { kind: "none" };
+    if (!res.ok) {
+      return {
+        kind: "error",
+        message: await readError(res, "계정에 저장된 기록을 확인하지 못했습니다."),
+      };
+    }
+    const data = await res.json();
+    return { kind: "saved", summary: data.summary };
+  } catch {
+    return { kind: "error", message: "네트워크에 문제가 있어 확인하지 못했습니다." };
+  }
+}
+
 /**
  * 이 브라우저의 데이터를 파일로 저장하고 되돌려 넣는 카드. 로그인했다면 같은 내용을
  * 계정에 저장하고 다른 기기에서 불러올 수도 있다.
@@ -77,33 +97,26 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
   const [confirmOverwrite, setConfirmOverwrite] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const loadSummary = useCallback(async () => {
+  // 로그인한 계정이 바뀌면(로그아웃·다른 계정) 이전 계정의 요약을 보여주지 않고 다시 확인한다.
+  // 렌더링 중에 맞춘다 — effect 안에서 바로 상태를 바꾸면 렌더링이 한 번 더 일어난다.
+  const accountId = account?.id ?? null;
+  const [summaryFor, setSummaryFor] = useState(accountId);
+  if (summaryFor !== accountId) {
+    setSummaryFor(accountId);
     setSnapshot({ kind: "loading" });
-    try {
-      const res = await fetch(apiUrl("/api/account/snapshot?summary=1"), {
-        credentials: "same-origin",
-      });
-      if (res.status === 404) {
-        setSnapshot({ kind: "none" });
-        return;
-      }
-      if (!res.ok) {
-        setSnapshot({
-          kind: "error",
-          message: await readError(res, "계정에 저장된 기록을 확인하지 못했습니다."),
-        });
-        return;
-      }
-      const data = await res.json();
-      setSnapshot({ kind: "saved", summary: data.summary });
-    } catch {
-      setSnapshot({ kind: "error", message: "네트워크에 문제가 있어 확인하지 못했습니다." });
-    }
-  }, []);
+  }
 
+  // 응답이 오기 전에 계정이 바뀌면(로그아웃 등) 늦게 온 이전 계정의 요약은 버린다.
   useEffect(() => {
-    if (account) void loadSummary();
-  }, [account, loadSummary]);
+    if (!account) return;
+    let cancelled = false;
+    void fetchSnapshotSummary().then((next) => {
+      if (!cancelled) setSnapshot(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [account]);
 
   const currentBackup = () =>
     createBackup({ subscriptions, usageLogs, accounts, exchangeRate }, new Date());

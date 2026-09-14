@@ -10,6 +10,7 @@ import { refreshAuth } from "@hooks/useAuth";
 import { confirmStatusOf, passwordStatusOf, type LiveStatus } from "@lib/signup-status";
 import { RESET_PASSWORD_TTL_MINUTES } from "@lib/verification-config";
 import { apiUrl } from "@lib/api";
+import { HydratedForm } from "@components/ui/hydrated-form";
 
 type View =
   | { kind: "loading" }
@@ -29,7 +30,8 @@ type FieldErrors = { password?: string; passwordConfirm?: string };
  */
 export function ResetPassword() {
   const token = useSearchParams().get("token");
-  const [view, setView] = useState<View>({ kind: "loading" });
+  // 토큰이 없는 링크는 물어볼 것도 없이 올바르지 않은 링크다.
+  const [view, setView] = useState<View>(() => (token ? { kind: "loading" } : { kind: "invalid" }));
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [touched, setTouched] = useState({ password: false, confirm: false });
@@ -37,15 +39,12 @@ export function ResetPassword() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setView({ kind: "invalid" });
-      return;
-    }
+    if (!token) return;
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch(
-          `/api/auth/password-reset/confirm?token=${encodeURIComponent(token)}`,
+          apiUrl(`/api/auth/password-reset/confirm?token=${encodeURIComponent(token)}`),
         );
         const data = await res.json().catch(() => ({}));
         if (cancelled) return;
@@ -141,7 +140,7 @@ export function ResetPassword() {
 
     case "form":
       return (
-        <form onSubmit={submit} noValidate className="space-y-4">
+        <HydratedForm onSubmit={submit} noValidate className="space-y-4">
           <dl className="grid grid-cols-[4.5rem_1fr] gap-y-1.5 rounded-xl bg-muted/50 p-3 text-sm">
             <dt className="text-muted-foreground">아이디</dt>
             <dd className="font-semibold">{view.username}</dd>
@@ -202,7 +201,7 @@ export function ResetPassword() {
           <Button type="submit" className="w-full h-11 font-bold rounded-xl" disabled={busy}>
             {busy ? "바꾸는 중..." : "비밀번호 바꾸기"}
           </Button>
-        </form>
+        </HydratedForm>
       );
 
     case "done":

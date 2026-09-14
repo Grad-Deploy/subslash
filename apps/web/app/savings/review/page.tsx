@@ -1,6 +1,7 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useState } from "react";
+import { useIsClient } from "@hooks/useIsClient";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -59,12 +60,8 @@ function YearInReviewContent() {
   const searchParams = useSearchParams();
   const { subscriptions, usageLogs } = useStore();
   const rate = useExchangeRate();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!mounted) return <Spinner />;
 
