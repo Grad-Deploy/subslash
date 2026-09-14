@@ -14,6 +14,7 @@ import {
 import { useStore } from "../../../lib/store";
 import { useExchangeRate } from "../../../hooks/useExchangeRate";
 import { buildReviewShareSearchParams } from "../../../lib/share-review";
+import { webUrl } from "../../../lib/api";
 import { Button } from "../../../components/ui/button";
 
 /** 이보다 이른 해는 이 앱에 기록이 있을 수 없다. */
@@ -99,7 +100,7 @@ function YearInReviewContent() {
       names: review.killedThisYear.map((sub) => sub.name),
       spendingType: review.spendingType,
     });
-    const url = `${window.location.origin}/savings/review/share?${params.toString()}`;
+    const url = webUrl(`/savings/review/share?${params.toString()}`);
     // 남에게 보이는 문장이라 지킨 돈이 없으면 막은 결제만 적는다.
     const confirmedLine =
       yearTiers.confirmed > 0 ? ` · 그중 지킨 돈 ${formatKRW(yearTiers.confirmed)}` : "";

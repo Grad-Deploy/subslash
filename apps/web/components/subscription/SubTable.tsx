@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { subscriptionDetailHref } from "@lib/routes";
 import {
   CATEGORY_LABELS,
   STALE_CHECK_IN_DAYS,
@@ -221,7 +222,7 @@ export function SubTable({
                   </span>
                   <div className="min-w-0">
                     <Link
-                      href={`/subs/${sub.id}`}
+                      href={subscriptionDetailHref(sub.id)}
                       aria-current={selectedId === sub.id ? "true" : undefined}
                       onClick={(e) => {
                         if (onSelect && isWideScreen()) {

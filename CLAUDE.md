@@ -93,6 +93,18 @@ Gmail/네이버 연동이 생기면 아래 오른쪽 열을 통째로 지운다.
 | `utils/parser.ts`     | `utils/inbox-simulation.ts`                           |
 | `AutoImportModal.tsx` | `InboxPreviewPanel.tsx`                               |
 
+## 앱(Capacitor)에 담을 화면
+
+모바일 앱은 이 웹 화면을 정적으로 내보내 앱 안에 담고, API만 배포된 Vercel을 부른다.
+그래서 화면 코드는 다음을 지킨다.
+
+- 서버 API는 `apiUrl("/api/...")`(`lib/api`)로 부른다. 앱 안의 상대 주소는 앱 자신을 가리킨다.
+- 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은 `capacitor://`다.
+- 페이지에 동적 경로(`[id]`)를 새로 만들지 않는다. 브라우저에서 만든 ID로는 페이지를 미리
+  만들 수 없다. 구독 상세는 `subscriptionDetailHref()`(`/subs/detail?id=`)를 쓴다.
+- 브라우저 기본 `confirm`·`prompt`·`alert`를 쓰지 않는다. 창 밖에서는 `ConfirmDialog`, 이미
+  열린 창 안에서는 `InlineConfirm`을 쓴다(창을 겹치면 같은 Esc에 함께 닫힌다).
+
 ## 작업 절차
 
 ```bash

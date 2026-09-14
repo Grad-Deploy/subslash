@@ -28,6 +28,7 @@ import {
   type EmailCheck,
   type LiveStatus,
 } from "@lib/signup-status";
+import { apiUrl } from "@lib/api";
 
 interface VerificationNotice {
   email: string;
@@ -146,7 +147,7 @@ export function SignupForm() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/auth/signup", {
+      const res = await fetch(apiUrl("/api/auth/signup"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",

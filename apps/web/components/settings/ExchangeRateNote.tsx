@@ -5,6 +5,7 @@ import { DEFAULT_EXCHANGE_RATE } from "@subslash/shared";
 import { useStore, isValidExchangeRate, type ExchangeRateSource } from "@lib/store";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { apiUrl } from "@lib/api";
 
 const SOURCE_LABEL: Record<ExchangeRateSource, string> = {
   default: "기본값",
@@ -63,7 +64,7 @@ export function ExchangeRateNote() {
     setIsFetching(true);
     setError(null);
     try {
-      const response = await fetch("/api/fx");
+      const response = await fetch(apiUrl("/api/fx"));
       if (!response.ok) throw new Error(`status ${response.status}`);
       const body = (await response.json()) as { rate?: number };
       if (typeof body.rate !== "number" || !isValidExchangeRate(body.rate)) {

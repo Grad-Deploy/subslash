@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@components/ui/button";
+import { apiUrl } from "@lib/api";
 
 type SendStatus = { tone: "ok" | "error"; message: string } | null;
 
@@ -20,7 +21,7 @@ export function ResendVerificationButton({ email, label }: { email?: string; lab
     setSending(true);
     setStatus(null);
     try {
-      const res = await fetch("/api/auth/verification-email", {
+      const res = await fetch(apiUrl("/api/auth/verification-email"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",

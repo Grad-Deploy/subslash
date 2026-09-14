@@ -9,6 +9,7 @@ import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { confirmStatusOf, passwordStatusOf, type LiveStatus } from "@lib/signup-status";
 import { RESET_PASSWORD_TTL_MINUTES } from "@lib/verification-config";
+import { apiUrl } from "@lib/api";
 
 type View =
   | { kind: "loading" }
@@ -98,7 +99,7 @@ export function ResetPassword() {
     setBusy(true);
     setSubmitErrors({});
     try {
-      const res = await fetch("/api/auth/password-reset/confirm", {
+      const res = await fetch(apiUrl("/api/auth/password-reset/confirm"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
