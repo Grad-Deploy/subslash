@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "crypto";
 import { and, eq, gt, lt, or } from "drizzle-orm";
 import { getDb } from "./db";
-import { accounts, sessions, type Account } from "./schema";
+import { accountSnapshots, accounts, sessions, type Account } from "./schema";
 
 /**
  * 로그인 세션.
@@ -95,6 +95,25 @@ export async function destroySession(token: string | undefined): Promise<void> {
   if (!token) return;
   const db = getDb();
   await db.delete(sessions).where(eq(sessions.tokenHash, hashSessionToken(token)));
+}
+
+/**
+ * 회원 탈퇴. 계정과 거기 딸린 세션·계정에 저장한 기록을 지운다. 계정이 없었으면 `false`.
+ *
+ * 스키마의 ON DELETE CASCADE는 PRAGMA foreign_keys가 켜져 있을 때만 동작하므로 딸린 행을
+ * 직접 지운다. 결제 알림(notification_subscribers)은 계정과 따로라 여기서 건드리지 않는다.
+ * 계정 메일 발송 기록(verification_mail_log)은 주소별 발송 한도라 남긴다 — 지우면 탈퇴와
+ * 재가입을 되풀이해 한도를 풀 수 있다. 그 기록은 24시간이 지나면 다음 발송 때 지워진다.
+ */
+export async function deleteAccount(accountId: string): Promise<boolean> {
+  const db = getDb();
+  await db.delete(sessions).where(eq(sessions.accountId, accountId));
+  await db.delete(accountSnapshots).where(eq(accountSnapshots.accountId, accountId));
+  const deleted = await db
+    .delete(accounts)
+    .where(eq(accounts.id, accountId))
+    .returning({ id: accounts.id });
+  return deleted.length > 0;
 }
 
 /** 만료된 세션 정리. 실패해도 로그인 자체를 막지는 않는다. */

@@ -1,5 +1,6 @@
 import React from "react";
 import { ProfileForm } from "@components/auth/ProfileForm";
+import { DeleteAccountSection } from "@components/auth/DeleteAccountSection";
 
 export const metadata = {
   title: "내 정보 · SubSlash",
@@ -16,6 +17,8 @@ export default function ProfilePage() {
       <div className="p-5 sm:p-6 border rounded-2xl bg-card shadow-sm">
         <ProfileForm />
       </div>
+
+      <DeleteAccountSection />
     </div>
   );
 }
