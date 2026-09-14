@@ -34,6 +34,7 @@ import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { DataBackupCard } from "../../components/settings/DataBackupCard";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { isWideScreen } from "@lib/wide-screen";
+import { subscriptionDetailHref } from "@lib/routes";
 
 /** 카드/표 중 고른 보기. 이 브라우저의 취향일 뿐이라 백업·동기화에 넣지 않는다. */
 const VIEW_KEY = "subslash-subs-view";
@@ -81,7 +82,7 @@ function SelectedSubSync({ onChange }: { onChange: (id: string | null) => void }
   useEffect(() => {
     // 옆 칸은 넓은 화면에만 있다. 좁은 화면에서 이 주소로 오면 상세 페이지로 보낸다.
     if (selected && !isWideScreen()) {
-      router.replace(`/subs/${encodeURIComponent(selected)}`);
+      router.replace(subscriptionDetailHref(selected));
       return;
     }
     onChange(selected);

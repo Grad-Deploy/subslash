@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { VERIFY_ACCOUNT_TTL_DAYS } from "@lib/verification-config";
+import { apiUrl } from "@lib/api";
 
 type View =
   | { kind: "loading" }
@@ -37,7 +38,9 @@ export function EmailVerification() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
+        const res = await fetch(
+          apiUrl(`/api/auth/verify-email?token=${encodeURIComponent(token)}`),
+        );
         const data = await res.json().catch(() => ({}));
         if (!cancelled) setView(viewFrom(res.ok, data));
       } catch {
@@ -52,7 +55,7 @@ export function EmailVerification() {
   const decide = async (decision: "confirm" | "decline") => {
     setBusy(true);
     try {
-      const res = await fetch("/api/auth/verify-email", {
+      const res = await fetch(apiUrl("/api/auth/verify-email"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",

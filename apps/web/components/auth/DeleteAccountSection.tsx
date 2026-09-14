@@ -6,6 +6,7 @@ import { refreshAuth, useAuth } from "@hooks/useAuth";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { ConfirmDialog } from "@components/ui/confirm-dialog";
+import { apiUrl } from "@lib/api";
 
 /**
  * 회원 탈퇴. 비밀번호를 한 번 더 받고, 확인 창을 거쳐 지운다.
@@ -48,7 +49,7 @@ export function DeleteAccountSection() {
     setDeleting(true);
     setError(null);
     try {
-      const res = await fetch("/api/auth/account", {
+      const res = await fetch(apiUrl("/api/auth/account"), {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
