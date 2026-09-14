@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 import { Header } from "../components/layout/Header";
 import { BottomNav } from "../components/layout/BottomNav";
@@ -64,9 +65,19 @@ export default function RootLayout({
             숫자를 보는 화면(대시보드·내 구독·절약 현황)이 넓은 화면에서 칸을 나눌 수 있게
             바깥 폭은 넓게 둔다. 읽거나 입력하는 화면은 각 페이지가 스스로 좁힌다(max-w-md 등).
           */}
-          <main className="flex-1 container max-w-6xl mx-auto px-4 py-6 pb-24 md:pb-8">
-            {children}
-          </main>
+          <main className="flex-1 container max-w-6xl mx-auto px-4 py-6">{children}</main>
+          {/* 모바일 하단 탭에 가려지지 않게, 본문 대신 푸터가 아래 여백을 갖는다. */}
+          <footer className="container max-w-6xl mx-auto px-4 pt-2 pb-24 md:pb-8 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-4">
+              <span>SubSlash</span>
+              <Link
+                href="/privacy"
+                className="underline-offset-4 hover:text-foreground hover:underline"
+              >
+                개인정보처리방침
+              </Link>
+            </div>
+          </footer>
           <BottomNav />
         </ThemeProvider>
       </body>
