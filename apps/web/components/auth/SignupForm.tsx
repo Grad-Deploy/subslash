@@ -348,6 +348,15 @@ export function SignupForm() {
         </p>
       )}
 
+      <p className="text-[11px] leading-relaxed text-muted-foreground">
+        가입하면 아이디·이메일과 비밀번호의 해시를 저장합니다. 무엇을 얼마나 보관하고 어떻게
+        지우는지는{" "}
+        <Link href="/privacy" className="font-semibold text-primary underline underline-offset-4">
+          개인정보처리방침
+        </Link>
+        에 있습니다.
+      </p>
+
       <Button type="submit" className="w-full h-11 font-bold rounded-xl" disabled={submitting}>
         {submitting ? "가입하는 중..." : "회원가입"}
       </Button>
