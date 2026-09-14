@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { SESSION_COOKIE, getAccountBySessionToken } from "@lib/auth-server";
+import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
 import {
   MAX_SNAPSHOT_BYTES,
   deleteSnapshot,
@@ -11,12 +11,12 @@ import {
 /**
  * 계정에 저장한 기록 — 저장(PUT), 불러오기(GET), 지우기(DELETE).
  *
- * 어느 계정의 기록인지는 요청 본문이나 주소가 아니라 세션 쿠키로만 정한다. 다른
+ * 어느 계정의 기록인지는 요청 본문이나 주소가 아니라 로그인 세션으로만 정한다. 다른
  * 계정의 id를 어디에 적어 보내도 그 계정의 기록에는 닿지 않는다.
  */
 
 async function currentAccount(request: NextRequest) {
-  return getAccountBySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+  return getAccountBySessionToken(readSessionToken(request));
 }
 
 const LOGIN_REQUIRED = () => NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });

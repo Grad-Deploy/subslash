@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isDatabaseConfigured } from "@lib/db";
-import { SESSION_COOKIE, destroySession } from "@lib/auth-server";
+import { SESSION_COOKIE, destroySession, readSessionToken } from "@lib/auth-server";
 
 /**
  * 로그아웃.
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     // DB가 없으면 지울 서버 세션도 없다. 쿠키만 지우면 로그아웃은 완결된다.
     if (isDatabaseConfigured()) {
-      const token = request.cookies.get(SESSION_COOKIE)?.value;
+      const token = readSessionToken(request);
       await destroySession(token);
     }
   } catch (error) {

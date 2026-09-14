@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { validatePassword } from "@subslash/shared";
 import { databaseUnavailableResponse } from "@lib/db";
 import { hashPassword } from "@lib/password";
-import { SESSION_COOKIE, createSession, sessionCookieOptions } from "@lib/auth-server";
+import {
+  SESSION_COOKIE,
+  createSession,
+  sessionCookieOptions,
+  sessionTokenForApp,
+} from "@lib/auth-server";
 import { applyPasswordReset, resolveResetLink } from "@lib/password-reset";
 
 /**
@@ -65,7 +70,12 @@ export async function POST(request: NextRequest) {
     if (!changed) return NextResponse.json({ status: "invalid" }, { status: 400 });
 
     const session = await createSession(state.account.id);
-    const response = NextResponse.json({ status: "reset", username: state.account.username });
+    // 앱에서 온 요청이면 본문에도 토큰을 싣는다(sessionTokenForApp). 웹은 쿠키만 받는다.
+    const response = NextResponse.json({
+      status: "reset",
+      username: state.account.username,
+      ...sessionTokenForApp(request, session),
+    });
     response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
     return response;
   } catch (error) {

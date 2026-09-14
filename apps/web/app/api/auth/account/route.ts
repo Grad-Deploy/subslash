@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { SESSION_COOKIE, deleteAccount, getAccountBySessionToken } from "@lib/auth-server";
+import {
+  SESSION_COOKIE,
+  deleteAccount,
+  getAccountBySessionToken,
+  readSessionToken,
+} from "@lib/auth-server";
 import { verifyPassword } from "@lib/password";
 
 /**
  * 회원 탈퇴.
  *
- * 지울 계정은 요청 본문이 아니라 세션 쿠키로만 정하고, 비밀번호를 한 번 더 받는다.
+ * 지울 계정은 요청 본문이 아니라 로그인 세션으로만 정하고, 비밀번호를 한 번 더 받는다.
  * 로그인한 채 자리를 비운 사이 다른 사람이 누르는 것을 막기 위해서다.
  *
  * 브라우저에 있는 구독 기록은 서버가 지울 수 없다 — 화면이 그렇다고 알린다.
@@ -15,7 +20,7 @@ export async function DELETE(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await getAccountBySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+    const account = await getAccountBySessionToken(readSessionToken(request));
     if (!account) {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
     }
