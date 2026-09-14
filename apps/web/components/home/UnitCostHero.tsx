@@ -6,17 +6,45 @@ import {
   calculateCostPerUse,
   formatCurrency,
   getRiskLevel,
+  planCurrency,
+  type Currency,
   type RiskLevel,
   type ServicePreset,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 
-/** 체험용으로 고를 수 있는 서비스. 요금은 여기 적지 않고 서비스 목록에서 읽는다. */
-const SAMPLE_IDS = ["netflix", "coupang-wow", "youtube-premium"] as const;
+/**
+ * 체험용으로 고를 수 있는 서비스. 요금은 여기 적지 않고 서비스 목록에서 읽는다. 요금제가
+ * 여럿인 서비스는 어느 요금제인지 정해 두고 화면에도 적는다 — '넷플릭스 월 ₩17,000'이라고만
+ * 쓰면 넷플릭스 요금이 그 값 하나인 것처럼 읽힌다.
+ */
+const SAMPLE_PICKS: ReadonlyArray<{ id: string; planId?: string }> = [
+  { id: "netflix", planId: "premium" },
+  { id: "coupang-wow" },
+  { id: "youtube-premium", planId: "premium" },
+];
 
-const SAMPLES = SAMPLE_IDS.map((id) => POPULAR_SERVICES.find((s) => s.id === id)).filter(
-  (s): s is ServicePreset => !!s,
-);
+interface Sample {
+  preset: ServicePreset;
+  planName: string | null;
+  amount: number;
+  currency: Currency;
+}
+
+// 서비스 목록에서 요금을 찾지 못한 견본은 뺀다. 요금 없이는 1회 단가를 계산할 수 없다.
+const SAMPLES: Sample[] = SAMPLE_PICKS.flatMap(({ id, planId }): Sample[] => {
+  const preset = POPULAR_SERVICES.find((s) => s.id === id);
+  if (!preset) return [];
+  if (planId) {
+    const plan = preset.plans?.find((p) => p.id === planId);
+    if (!plan) return [];
+    return [
+      { preset, planName: plan.name, amount: plan.amount, currency: planCurrency(preset, plan) },
+    ];
+  }
+  if (preset.defaultAmount === null) return [];
+  return [{ preset, planName: null, amount: preset.defaultAmount, currency: preset.currency }];
+});
 
 /** 탭에는 괄호 속 부연("쿠팡 와우 (쿠팡플레이)")을 빼고 짧게 쓴다. */
 const shortName = (preset: ServicePreset) => preset.nameKo.replace(/\s*\(.*\)$/, "");
@@ -44,10 +72,10 @@ interface UnitCostHeroProps {
 }
 
 export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
-  const [selectedId, setSelectedId] = useState<string>(SAMPLES[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState<string>(SAMPLES[0]?.preset.id ?? "");
   const [uses, setUses] = useState(4);
 
-  const selected = SAMPLES.find((s) => s.id === selectedId) ?? SAMPLES[0];
+  const selected = SAMPLES.find((s) => s.preset.id === selectedId) ?? SAMPLES[0];
 
   return (
     <section className="w-full rounded-2xl bg-neutral-900 px-5 py-7 text-left dark:border dark:border-neutral-800 sm:px-10 sm:py-10">
@@ -96,13 +124,13 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
         {selected && (
           <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-4 sm:p-5">
             <div className="flex flex-wrap gap-2" role="group" aria-label="체험할 서비스">
-              {SAMPLES.map((sub) => {
-                const active = sub.id === selected.id;
+              {SAMPLES.map((sample) => {
+                const active = sample.preset.id === selected.preset.id;
                 return (
                   <button
-                    key={sub.id}
+                    key={sample.preset.id}
                     type="button"
-                    onClick={() => setSelectedId(sub.id)}
+                    onClick={() => setSelectedId(sample.preset.id)}
                     aria-pressed={active}
                     className={cn(
                       "flex-auto whitespace-nowrap rounded-lg border px-3 py-2 text-xs transition",
@@ -111,13 +139,13 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
                         : "border-neutral-800 bg-transparent text-neutral-400 hover:border-neutral-600",
                     )}
                   >
-                    {sub.iconEmoji} {shortName(sub)}
+                    {sample.preset.iconEmoji} {shortName(sample.preset)}
                   </button>
                 );
               })}
             </div>
 
-            <HeroResult preset={selected} uses={uses} onUsesChange={setUses} />
+            <HeroResult sample={selected} uses={uses} onUsesChange={setUses} />
           </div>
         )}
       </div>
@@ -126,27 +154,28 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
 }
 
 function HeroResult({
-  preset,
+  sample,
   uses,
   onUsesChange,
 }: {
-  preset: ServicePreset;
+  sample: Sample;
   uses: number;
   onUsesChange: (n: number) => void;
 }) {
-  const amount = preset.defaultAmount;
+  const { preset, planName, amount, currency } = sample;
   const costPerUse = calculateCostPerUse(amount, uses);
   const risk = getRiskLevel(costPerUse, amount, uses);
-  const amountText = formatCurrency(amount, preset.currency);
+  const amountText = formatCurrency(amount, currency);
 
   return (
     <>
       <p className="mt-4 text-sm text-neutral-300">
-        {preset.iconEmoji} {shortName(preset)} · 월 {amountText}
+        {preset.iconEmoji} {shortName(preset)}
+        {planName ? ` ${planName}` : ""} · 월 {amountText}
       </p>
       <p className="mt-1 text-xs leading-relaxed text-neutral-500">
-        SubSlash 서비스 목록의 기준 요금이에요. 요금제마다 다를 수 있고, 등록할 때 내 요금으로 고칠
-        수 있어요.
+        SubSlash 서비스 목록에 적힌 요금이에요. 등록할 때 내 요금제를 고르거나 요금을 고칠 수
+        있어요.
       </p>
 
       <div className="mt-4 flex items-center gap-3">
@@ -172,7 +201,7 @@ function HeroResult({
           {uses === 0 ? "쓰지 않고 낸 돈" : "1회당 실제 단가"}
         </p>
         <p className={cn("mt-1 text-2xl font-medium", riskColor[risk])}>
-          {formatCurrency(costPerUse, preset.currency)}
+          {formatCurrency(costPerUse, currency)}
         </p>
         <p className="mt-1.5 text-xs text-neutral-500">{verdict(uses, risk, amountText)}</p>
       </div>

@@ -142,12 +142,16 @@ describe("getActionQueue", () => {
 
   it("요금 확인이 필요하면 큐에 올린다", () => {
     // 확인해 준 적이 없고 등록한 지 오래됐다.
-    const sub = subDueIn(20, { lastPriceCheckedAt: undefined, createdAt: daysAgo(200) });
+    const sub = subDueIn(20, {
+      planId: "premium",
+      lastPriceCheckedAt: undefined,
+      createdAt: daysAgo(200),
+    });
     const logs = [log(sub.id, { riskLevel: "green", usageCount: 12, checkedAt: daysAgo(1) })];
     const [item] = getActionQueue([sub], logs, NOW);
     expect(item.kind).toBe("price-check");
     expect(item.verb).toBe("confirm-price");
-    // 넷플릭스 프리셋 기준 요금이 함께 실려, '최신 요금으로 갱신'을 그릴 수 있다.
+    // 고른 요금제(넷플릭스 프리미엄)의 요금이 함께 실려, '최신 요금으로 갱신'을 그릴 수 있다.
     expect(item.presetAmount).toBe(17000);
   });
 

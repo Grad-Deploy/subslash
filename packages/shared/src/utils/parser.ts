@@ -398,7 +398,8 @@ function parseSingleMessageBlock(
 
   // If no amount found and not a recognized cancellation notice for a known service, skip
   if (amount === 0) {
-    if (isCanceled && matchedPreset) {
+    // 요금제가 여럿이거나 요금을 모르는 서비스는 금액을 채울 근거가 없어 건너뛴다.
+    if (isCanceled && matchedPreset && matchedPreset.defaultAmount !== null) {
       amount = matchedPreset.defaultAmount;
       currency = matchedPreset.currency;
     } else {
