@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useTransition } from "react";
 import {
+  CATEGORY_LABELS,
   DiscoveredSubscription,
   SubscriptionFormData,
   parsePaymentSms,
@@ -482,7 +483,7 @@ export function AutoImportModal({
                                   variant="outline"
                                   className="text-[10px] py-0 px-1.5 shrink-0"
                                 >
-                                  {item.category.toUpperCase()}
+                                  {CATEGORY_LABELS[item.category] ?? item.category}
                                 </Badge>
                                 {item.isCanceled ? (
                                   <Badge className="bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[10px] py-0 border-0 font-semibold">

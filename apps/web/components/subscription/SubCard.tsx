@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
+  CATEGORY_LABELS,
   Subscription,
   formatCurrency,
   formatKRW,
@@ -123,7 +124,9 @@ export function SubCard({
 
         <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t">
           <div className="flex flex-wrap items-center gap-1.5">
-            <Badge variant="outline">{subscription.category}</Badge>
+            <Badge variant="outline">
+              {CATEGORY_LABELS[subscription.category] ?? subscription.category}
+            </Badge>
             {subscription.linkedAccountName && (
               <Badge variant="secondary" className="text-[11px]">
                 👤 {subscription.linkedAccountName}

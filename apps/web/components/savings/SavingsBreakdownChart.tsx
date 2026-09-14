@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import {
+  CATEGORY_LABELS,
   Subscription,
   formatKRW,
   getMyAnnualAmountKRW,
@@ -113,7 +114,7 @@ export function SavingsBreakdownChart({
                 <span className="text-base">{item.iconUrl}</span>
                 <span className="font-semibold text-foreground">{item.name}</span>
                 <span className="text-[10px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
-                  {item.category}
+                  {CATEGORY_LABELS[item.category] ?? item.category}
                 </span>
               </div>
               <div className="flex items-center gap-2">
