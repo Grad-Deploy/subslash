@@ -111,6 +111,10 @@ Gmail/네이버 연동이 생기면 아래 오른쪽 열을 통째로 지운다.
 - 브라우저 기본 `confirm`·`prompt`·`alert`를 쓰지 않는다. 창 밖에서는 `ConfirmDialog`, 이미
   열린 창 안에서는 `InlineConfirm`을 쓴다(창을 겹치면 같은 Esc에 함께 닫힌다).
 
+`tools/ipad-preview`는 Mac 없이 iPad의 Expo Go로 화면을 iPhone 크기 그대로 보는 도구다(사용법은
+그 폴더의 README). pnpm 워크스페이스 밖이라 npm으로 따로 설치하고, CI·웹 빌드에 들어가지 않는다.
+출시할 앱이 아니므로 네이티브 기능은 여기서 확인할 수 없다.
+
 ## 작업 절차
 
 ```bash
