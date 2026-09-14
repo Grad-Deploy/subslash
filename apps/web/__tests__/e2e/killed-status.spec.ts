@@ -76,7 +76,7 @@ test.describe("해지한 구독의 상태 (E2E)", () => {
 
   test("해지한 구독의 상세에서는 다시 해지로 기록하거나 체크인할 수 없다", async ({ page }) => {
     await seedOnce(page, [killedNetflix]);
-    await page.goto("/subs/netflix");
+    await page.goto("/subs/detail?id=netflix");
 
     await expect(page.getByText("해지한 구독입니다.")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole("button", { name: /체크인 하기/ })).toHaveCount(0);

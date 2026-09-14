@@ -7,6 +7,7 @@ import { validateLogin } from "@subslash/shared";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
+import { apiUrl } from "@lib/api";
 
 /**
  * 로그인 폼.
@@ -39,7 +40,7 @@ export function LoginForm() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",

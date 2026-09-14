@@ -12,6 +12,7 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../ui/button";
 import { ConfirmDialog } from "../ui/confirm-dialog";
+import { apiUrl } from "@lib/api";
 
 type ParsedBackup = Extract<BackupParseResult, { ok: true }>;
 /** 어디서 가져온 기록인지에 따라 확인 창의 말이 달라진다. */
@@ -79,7 +80,9 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
   const loadSummary = useCallback(async () => {
     setSnapshot({ kind: "loading" });
     try {
-      const res = await fetch("/api/account/snapshot?summary=1", { credentials: "same-origin" });
+      const res = await fetch(apiUrl("/api/account/snapshot?summary=1"), {
+        credentials: "same-origin",
+      });
       if (res.status === 404) {
         setSnapshot({ kind: "none" });
         return;
@@ -138,7 +141,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     setBusy(true);
     setAccountError(null);
     try {
-      const res = await fetch("/api/account/snapshot", {
+      const res = await fetch(apiUrl("/api/account/snapshot"), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
@@ -168,7 +171,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     setBusy(true);
     setAccountError(null);
     try {
-      const res = await fetch("/api/account/snapshot", { credentials: "same-origin" });
+      const res = await fetch(apiUrl("/api/account/snapshot"), { credentials: "same-origin" });
       if (!res.ok) {
         setAccountError(await readError(res, "계정에 저장된 기록을 불러오지 못했습니다."));
         if (res.status === 404) setSnapshot({ kind: "none" });
@@ -193,7 +196,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     setBusy(true);
     setAccountError(null);
     try {
-      const res = await fetch("/api/account/snapshot", {
+      const res = await fetch(apiUrl("/api/account/snapshot"), {
         method: "DELETE",
         credentials: "same-origin",
       });

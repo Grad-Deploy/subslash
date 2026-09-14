@@ -20,6 +20,7 @@ import { CopyFallbackDialog } from "../ui/copy-fallback-dialog";
 import { DdayCountdown } from "../dashboard/DdayCountdown";
 import { cn } from "@lib/utils";
 import { isWideScreen } from "@lib/wide-screen";
+import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 interface SubCardProps {
@@ -85,7 +86,7 @@ export function SubCard({
               <div>
                 <div className="flex items-center gap-2">
                   <Link
-                    href={`/subs/${subscription.id}`}
+                    href={subscriptionDetailHref(subscription.id)}
                     aria-current={selected ? "true" : undefined}
                     onClick={(e) => {
                       if (onSelect && isWideScreen()) {

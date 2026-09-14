@@ -14,6 +14,7 @@ import { Select } from "@components/ui/select";
 import { Button } from "@components/ui/button";
 import { refreshAuth, useAuth } from "@hooks/useAuth";
 import { ResendVerificationButton } from "./ResendVerificationButton";
+import { apiUrl } from "@lib/api";
 
 type SaveStatus = { tone: "ok" | "error"; message: string } | null;
 
@@ -75,7 +76,7 @@ export function ProfileForm() {
 
     setSaving(true);
     try {
-      const res = await fetch("/api/auth/profile", {
+      const res = await fetch(apiUrl("/api/auth/profile"), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",

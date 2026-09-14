@@ -1,4 +1,5 @@
 import type { Subscription } from "@subslash/shared";
+import { apiUrl } from "./api";
 
 /**
  * Browser side of the reminder mirror.
@@ -38,7 +39,7 @@ async function readError(response: Response, fallback: string): Promise<string> 
 }
 
 export async function requestReminders(email: string, reminderDays: number) {
-  const response = await fetch("/api/notify/subscribe", {
+  const response = await fetch(apiUrl("/api/notify/subscribe"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, reminderDays }),
@@ -57,7 +58,7 @@ export async function requestReminders(email: string, reminderDays: number) {
 }
 
 export async function pushMirror(syncToken: string, subscriptions: Subscription[]) {
-  const response = await fetch("/api/notify/sync", {
+  const response = await fetch(apiUrl("/api/notify/sync"), {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -74,7 +75,7 @@ export async function pushMirror(syncToken: string, subscriptions: Subscription[
 }
 
 export async function fetchNotifyStatus(syncToken: string): Promise<NotifyStatus | null> {
-  const response = await fetch("/api/notify/sync", {
+  const response = await fetch(apiUrl("/api/notify/sync"), {
     headers: { Authorization: `Bearer ${syncToken}` },
   });
   if (response.status === 401) return null;
@@ -89,7 +90,7 @@ export async function fetchNotifyStatus(syncToken: string): Promise<NotifyStatus
  * inside it, so a lost URL is replaced rather than looked up.
  */
 export async function enableCalendarFeed(syncToken: string): Promise<string> {
-  const response = await fetch("/api/notify/calendar", {
+  const response = await fetch(apiUrl("/api/notify/calendar"), {
     method: "POST",
     headers: { Authorization: `Bearer ${syncToken}` },
   });
@@ -104,7 +105,7 @@ export async function enableCalendarFeed(syncToken: string): Promise<string> {
 
 /** Switches the feed off; calendars subscribed to the old URL stop resolving. */
 export async function disableCalendarFeed(syncToken: string) {
-  const response = await fetch("/api/notify/calendar", {
+  const response = await fetch(apiUrl("/api/notify/calendar"), {
     method: "DELETE",
     headers: { Authorization: `Bearer ${syncToken}` },
   });
@@ -114,7 +115,7 @@ export async function disableCalendarFeed(syncToken: string) {
 }
 
 export async function stopReminders(syncToken: string) {
-  const response = await fetch("/api/notify/sync", {
+  const response = await fetch(apiUrl("/api/notify/sync"), {
     method: "DELETE",
     headers: { Authorization: `Bearer ${syncToken}` },
   });
