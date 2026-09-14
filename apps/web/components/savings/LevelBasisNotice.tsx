@@ -60,7 +60,7 @@ export function LevelBasisNotice({ annualRunRate, confirmed, killCount }: LevelB
         <button
           type="button"
           onClick={dismiss}
-          className="text-xs text-muted-foreground hover:text-foreground font-medium p-1 rounded-lg hover:bg-muted transition-colors shrink-0"
+          className="whitespace-nowrap text-xs text-muted-foreground hover:text-foreground font-medium p-1 rounded-lg hover:bg-muted transition-colors shrink-0"
         >
           ✕ 닫기
         </button>

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import {
+  formatDday,
   getDaysUntilBillingFor,
   getNextBillingDateFor,
   type BillingSchedule,
@@ -79,7 +80,7 @@ export function DdayCountdown({
               : "text-green-500",
         )}
       >
-        {dDay === 0 ? "D-Day" : `D-${dDay}`}
+        {formatDday(dDay)}
       </div>
       {isDanger && <div className="text-xs font-mono text-red-500 mt-1">{timeLeft}</div>}
     </div>

@@ -1,7 +1,7 @@
 import { Currency, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { formatAmount, formatKRW } from "./currency";
-import { getDaysUntilBillingFor } from "./date";
+import { formatDday, getDaysUntilBillingFor } from "./date";
 import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
 import { formatKillCheckDate, getKillCheckStatus } from "./killCheck";
@@ -170,13 +170,13 @@ export function getActionQueue(
     if (billingSoon && isRisky) {
       kind = "billing-soon-risky";
       reason =
-        `D-${days} · 마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${perUse})` +
+        `${formatDday(days!)} · 마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${perUse})` +
         (stake !== null ? `. 결제 전에 끊으면 ${formatKRW(stake)}을 지킵니다.` : ".");
     } else if (billingSoon) {
       kind = "billing-soon";
       reason = log
-        ? `D-${days} · ${stake !== null ? `${formatKRW(stake)}이 곧 빠져나갑니다.` : "곧 결제됩니다."}`
-        : `D-${days} · 아직 체크인한 적이 없어, 끊을지 판단할 근거가 없습니다.`;
+        ? `${formatDday(days!)} · ${stake !== null ? `${formatKRW(stake)}이 곧 빠져나갑니다.` : "곧 결제됩니다."}`
+        : `${formatDday(days!)} · 아직 체크인한 적이 없어, 끊을지 판단할 근거가 없습니다.`;
     } else if (isRisky) {
       kind = "risky";
       reason = `마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${perUse}). 돈값을 못 하고 있습니다.`;

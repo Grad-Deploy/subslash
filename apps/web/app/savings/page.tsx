@@ -196,13 +196,15 @@ export default function SavingsDashboard() {
 
             <div className="space-y-2">
               {killedSubs.map((sub) => (
+                // 좁은 화면에서는 금액·버튼을 아랫줄로 내린다. 한 줄에 몰아 두면 금액과 문구가
+                // 글자 단위로 꺾였다.
                 <div
                   key={sub.id}
-                  className="flex items-center justify-between p-4 border rounded-2xl bg-card hover:shadow-sm transition-all"
+                  className="flex flex-col gap-3 p-4 border rounded-2xl bg-card hover:shadow-sm transition-all sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <span className="text-2xl">{sub.iconUrl || "📦"}</span>
-                    <div>
+                    <div className="min-w-0">
                       <h4 className="font-bold text-sm line-through text-muted-foreground">
                         {sub.name}
                       </h4>
@@ -213,8 +215,8 @@ export default function SavingsDashboard() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold">
+                  <div className="flex items-center justify-between gap-2 sm:justify-end">
+                    <span className="text-sm font-bold whitespace-nowrap">
                       {sub.billingCycle === "yearly" || sub.currency === "USD" ? (
                         <>
                           {formatCurrency(sub.amount, sub.currency)}
