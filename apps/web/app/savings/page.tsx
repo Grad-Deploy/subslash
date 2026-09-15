@@ -25,6 +25,7 @@ import { MonthlyDefenseWidget } from "../../components/dashboard/MonthlyDefenseW
 import { MonthlyDefenseChart } from "../../components/savings/MonthlyDefenseChart";
 import { KillCheckLabel } from "../../components/savings/KillCheckLabel";
 import { webUrl } from "@lib/api";
+import { shareText } from "@lib/native";
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
@@ -84,19 +85,8 @@ export default function SavingsDashboard() {
         ? `구독을 해지해 ${formatKRW(tiers.confirmed)}을 지켰고, 해지를 유지하면 1년에 ${formatKRW(annualSavings)}을 아낍니다!`
         : `구독을 해지해 1년에 ${formatKRW(annualSavings)}을 아낄 예정입니다!`;
     const text = `✂️ SubSlash 구독 디톡스 ${detoxLevel.levelLabel} ${detoxLevel.title} ${detoxLevel.emoji}\n${savingsLine} ${headlineEquivalent}\n👉 결과 보기: ${shareUrl}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "SubSlash 구독 디톡스 결과",
-          text,
-          url: shareUrl,
-        });
-        return;
-      } catch (error) {
-        // User dismissed the share sheet, or sharing is unavailable — fall back to copying.
-        if ((error as DOMException)?.name === "AbortError") return;
-      }
-    }
+    // 공유 창을 열었거나 사용자가 닫았으면 끝이다. 공유할 수 없는 환경이면 복사로 넘어간다.
+    if (await shareText({ title: "SubSlash 구독 디톡스 결과", text, url: shareUrl })) return;
     await copyToClipboard(text);
   };
 

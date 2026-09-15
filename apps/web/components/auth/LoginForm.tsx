@@ -7,7 +7,7 @@ import { validateLogin } from "@subslash/shared";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
-import { apiUrl } from "@lib/api";
+import { apiFetch } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
 
 /**
@@ -41,10 +41,9 @@ export function LoginForm() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(apiUrl("/api/auth/login"), {
+      const res = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
         // 비밀번호는 본문으로만 보낸다. 주소창에 실으면 브라우저 기록과
         // 서버 접근 로그에 그대로 남는다.
         body: JSON.stringify({ identifier: form.identifier, password: form.password }),
