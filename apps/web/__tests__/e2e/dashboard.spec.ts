@@ -42,23 +42,76 @@ test.describe("Dashboard (E2E)", () => {
     await expect(page.getByRole("link", { name: /절약 현황/ })).toBeVisible();
   });
 
-  test("샘플 데이터를 두 번 불러와도 중복 등록되지 않는다", async ({ page }) => {
-    // These assertions follow a client-side navigation rather than a page load,
-    // so on the first hit they also wait for the dev server to compile
-    // /dashboard — which comfortably exceeds the default 5s expect timeout.
-    // 샘플 3건은 모두 체크인 기록이 없으므로 행동 큐에 3줄로 올라온다.
-    // 두 번 불러와도 6줄이 되지 않아야 한다.
-    const dashboardHeading = page.getByRole("heading", { name: /지금 결정할 것 \(3\)/ });
+  test("샘플 체험은 내 구독과 섞이지 않고, 끝내면 내 구독으로 돌아온다", async ({ page }) => {
+    await page.addInitScript(() => {
+      if (localStorage.getItem("subslash-storage")) return;
+      localStorage.setItem(
+        "subslash-storage",
+        JSON.stringify({
+          state: {
+            subscriptions: [
+              {
+                id: "real-notion",
+                name: "내 노션",
+                amount: 16800,
+                currency: "KRW",
+                billingDay: 5,
+                billingCycle: "monthly",
+                category: "other",
+                status: "active",
+                createdAt: "2026-01-01T00:00:00.000Z",
+              },
+            ],
+            usageLogs: [],
+            accounts: [],
+          },
+          version: 1,
+        }),
+      );
+    });
 
-    // The landing page's demo button stays available once subscriptions exist,
-    // so it is the path where a repeat load could duplicate the sample set.
     await page.goto("/");
     await page.getByRole("button", { name: /샘플 데이터로 1초 체험/ }).click();
-    await expect(dashboardHeading).toBeVisible({ timeout: 30_000 });
+    const banner = page.getByRole("status").filter({ hasText: "샘플로 체험하는 중입니다." });
+    await expect(banner).toBeVisible({ timeout: 30_000 });
+    // 샘플 3건만 행동 큐에 오른다(체크인 기록이 없다). 내 노션은 섞이지 않는다.
+    await expect(page.getByRole("heading", { name: /지금 결정할 것 \(3\)/ })).toBeVisible({
+      timeout: 30_000,
+    });
+    // 저장소에는 체험 중에도 실제 기록만 있다.
+    const stored = await page.evaluate(() => localStorage.getItem("subslash-storage") ?? "");
+    expect(stored).toContain("내 노션");
+    expect(stored).not.toContain("쿠팡 와우 멤버십");
 
+    // 새로고침하면 체험이 끝나므로 화면 안의 링크로 옮긴다.
+    await page.locator('a[href="/subs"]:visible').first().click();
+    await expect(page.getByRole("link", { name: /쿠팡 와우 멤버십/ })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByRole("link", { name: /내 노션/ })).toHaveCount(0);
+
+    await banner.getByRole("button", { name: "체험 끝내기" }).click();
+    await expect(banner).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /내 노션/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /쿠팡 와우 멤버십/ })).toHaveCount(0);
+  });
+
+  test("체험 중에 새로고침하면 샘플이 사라진다", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("현재 구독 중인 서비스가 3개 있습니다.")).toBeVisible();
     await page.getByRole("button", { name: /샘플 데이터로 1초 체험/ }).click();
-    await expect(dashboardHeading).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("샘플로 체험하는 중입니다.")).toBeVisible({ timeout: 30_000 });
+    // 배너는 홈에서 먼저 뜨고 대시보드로 옮기는 것은 그 뒤다. 옮기기 전에 새로고침하면 홈을
+    // 다시 여는 것이라, 대시보드가 뜬 것을 보고 새로고침한다.
+    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "오늘의 구독 점검" })).toBeVisible({
+      timeout: 30_000,
+    });
+
+    await page.reload();
+    // 구독이 하나도 없을 때만 보이는 버튼이 다시 나온다 — 샘플이 저장되지 않았다.
+    await expect(page.getByRole("button", { name: /샘플 불러오기/ })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByText("샘플로 체험하는 중입니다.")).toHaveCount(0);
   });
 });
