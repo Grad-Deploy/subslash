@@ -52,18 +52,20 @@ export function TotalSpend({ subscriptions }: { subscriptions: Subscription[] })
   }, [total]);
 
   return (
-    <Card className="bg-gradient-to-br from-slate-900 to-slate-800 text-white border-0">
+    // 테마 색 변수로 칠한다. 예전에는 라이트 모드에서도 이 카드만 남색으로 칠해져 대시보드에서 따로 놀았다.
+    // 금액을 강조하는 옅은 그라데이션은 라이트·다크 모두 테마 색 안에서 둔다.
+    <Card className="bg-gradient-to-br from-secondary to-card">
       <CardContent className="pt-6">
-        <div className="text-sm font-medium text-slate-300 mb-2">월 고정지출</div>
-        <div className="text-4xl font-bold">{formatKRW(displayTotal)}</div>
+        <div className="text-sm font-medium text-muted-foreground mb-2">월 고정지출</div>
+        <div className="text-4xl font-bold text-foreground">{formatKRW(displayTotal)}</div>
         {sharedCount > 0 && (
-          <div className="mt-1.5 text-xs text-slate-300">
+          <div className="mt-1.5 text-xs text-muted-foreground">
             공유 구독 {sharedCount}건 반영 · 카드 청구액은 월 {formatKRW(billed)}
           </div>
         )}
         {breakdown.length > 0 && (
           <ul
-            className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-300"
+            className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground"
             aria-label="분류별 월 지출"
           >
             {breakdown.slice(0, BREAKDOWN_LIMIT).map(({ category, amount }) => (
