@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { useStore } from "../../lib/store";
+import { realRecords, useStore } from "../../lib/store";
 import {
+  SyncTokenRejectedError,
   fetchNotifyStatus,
   requestReminders,
   pushMirror,
@@ -40,7 +41,10 @@ interface NotifySettingsModalProps {
 }
 
 export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProps) {
-  const { notify, subscriptions, setNotify, clearNotify } = useStore();
+  const { notify, setNotify, clearNotify, markNotifyRejected } = useStore();
+  // 샘플 체험 중이면 화면의 목록은 샘플이다. 서버로 보내는 목록과 그 개수는 실제 기록으로 한다 —
+  // 샘플을 보내면 가짜 구독의 결제 알림이 간다.
+  const subscriptions = useStore((state) => realRecords(state).subscriptions);
 
   const [email, setEmail] = useState(notify.email ?? "");
   const [reminderDays, setReminderDays] = useState(notify.reminderDays);
@@ -65,6 +69,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
         syncToken: result.syncToken,
         verified: result.verified,
         reminderDays: result.reminderDays,
+        rejectedAt: undefined,
       });
       // Seed the mirror immediately so the first reminder can already fire.
       await pushMirror(result.syncToken, subscriptions);
@@ -84,7 +89,8 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
     try {
       const status = await fetchNotifyStatus(notify.syncToken);
       if (!status) {
-        clearNotify();
+        // 사용자가 끈 것이 아니다. 조용히 비우지 않고 끊겼다는 것을 알린다.
+        markNotifyRejected(notify.syncToken);
         return;
       }
       setNotify({ verified: status.verified, reminderDays: status.reminderDays });
@@ -105,6 +111,10 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
       const url = await enableCalendarFeed(notify.syncToken);
       setNotify({ calendarUrl: url });
     } catch (e) {
+      if (e instanceof SyncTokenRejectedError) {
+        markNotifyRejected(notify.syncToken);
+        return;
+      }
       setError(e instanceof Error ? e.message : "캘린더 주소를 만들지 못했습니다.");
     } finally {
       setBusy(false);
@@ -202,6 +212,18 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
 
           {!isOptedIn ? (
             <>
+              {notify.rejectedAt && (
+                <div
+                  role="status"
+                  className="p-3 rounded-xl border border-rose-500/40 bg-rose-500/10 text-xs text-rose-900 dark:text-rose-200 leading-relaxed"
+                >
+                  <strong>이 브라우저의 결제 알림이 꺼졌습니다.</strong> 서버에 알림 기록이 없어
+                  구독 목록을 보내지 못했습니다. 메일의 &lsquo;수신 거부&rsquo;를 눌렀거나, 같은
+                  주소로 다른 기기·브라우저에서 다시 신청하면 이렇게 됩니다. 계속 받으려면 다시
+                  신청해주세요.
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-foreground">알림 받을 이메일</label>
                 <EmailDomainInput value={email} onChange={(full) => setEmail(full)} />
@@ -312,9 +334,9 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                 ) : (
                   <>
                     <p className="text-muted-foreground leading-relaxed">
-                      매월 결제되는 구독의 결제일을 캘린더 앱에 반복 일정으로 띄웁니다. 확인 메일을
-                      누르지 않아도 동작합니다. 연간 결제 구독은 결제 &lsquo;월&rsquo; 정보를 앱이
-                      아직 저장하지 않아 제외됩니다.
+                      구독의 결제일을 캘린더 앱에 반복 일정으로 띄웁니다. 확인 메일을 누르지 않아도
+                      동작합니다. 결제 &lsquo;월&rsquo;을 적지 않은 연간 결제 구독은 날짜를 알 수
+                      없어 넣지 않습니다.
                     </p>
                     <Button
                       size="sm"

@@ -32,19 +32,30 @@ export function Header() {
   // Only the flags the dot needs, so sync timestamps do not re-render the root layout.
   const remindersOn = useStore((state) => state.notify.verified);
   const remindersPending = useStore((state) => !state.notify.verified && !!state.notify.email);
+  // 서버가 이 브라우저의 토큰을 거절해 꺼졌다. 사용자가 끈 것과 달리 알려야 한다.
+  const remindersRejected = useStore(
+    (state) => !state.notify.syncToken && !!state.notify.rejectedAt,
+  );
 
   // The header is mounted on every route, so the mirror stays in step wherever
   // the user edits their subscriptions.
   useMirrorSync();
 
   // 점은 '새 알림'이 아니라 알림 설정 상태다 — 읽지 않은 알림이라는 개념은 없다.
-  const notifyLabel = remindersOn ? "켜짐" : remindersPending ? "확인 대기" : "꺼짐";
+  const notifyLabel = remindersOn
+    ? "켜짐"
+    : remindersPending
+      ? "확인 대기"
+      : remindersRejected
+        ? "끊김"
+        : "꺼짐";
 
   // 결제 알림은 로그인한 사람에게만 보인다. 다만 로그인 없이 이미 켰거나 확인 메일을
-  // 기다리는 브라우저에서는 계속 보인다 — 숨기면 끄거나 바꿀 곳이 사라진다.
+  // 기다리는 브라우저에서는 계속 보인다 — 숨기면 끄거나 바꿀 곳이 사라진다. 알림이 끊긴
+  // 브라우저도 마찬가지다 — 숨기면 왜 꺼졌는지 알 곳이 없다.
   // 화면 규칙일 뿐이라 서버의 알림은 여전히 로그인과 무관하다(CLAUDE.md '데이터 위치').
   const { account } = useAuth();
-  const showNotify = !!account || remindersOn || remindersPending;
+  const showNotify = !!account || remindersOn || remindersPending || remindersRejected;
 
   return (
     <>
@@ -94,11 +105,15 @@ export function Header() {
                   className="group relative flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Bell className="h-5 w-5" aria-hidden="true" />
-                  {(remindersOn || remindersPending) && (
+                  {(remindersOn || remindersPending || remindersRejected) && (
                     <span
                       className={cn(
                         "absolute right-2 top-2 h-2 w-2 rounded-full ring-2 ring-background",
-                        remindersOn ? "bg-emerald-500" : "bg-amber-500",
+                        remindersOn
+                          ? "bg-emerald-500"
+                          : remindersPending
+                            ? "bg-amber-500"
+                            : "bg-rose-500",
                       )}
                       aria-hidden="true"
                     />
