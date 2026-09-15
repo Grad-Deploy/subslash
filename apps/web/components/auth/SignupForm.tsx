@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Check, X } from "lucide-react";
+import { X } from "lucide-react";
 import {
   MIN_AGE,
   PASSWORD_MIN,
@@ -18,6 +18,7 @@ import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
 import { ResendVerificationButton } from "./ResendVerificationButton";
+import { StatusMessage, statusBorder } from "./LiveStatusMessage";
 import {
   confirmStatusOf,
   emailStatusFor,
@@ -402,35 +403,4 @@ function statusProps(id: string, status: LiveStatus) {
     "aria-describedby": `${id}-status`,
     className: statusBorder(status),
   };
-}
-
-function statusBorder(status: LiveStatus): string | undefined {
-  if (!status) return undefined;
-  return status.tone === "ok"
-    ? "border-emerald-500 focus-visible:ring-emerald-500"
-    : "border-destructive focus-visible:ring-destructive";
-}
-
-const TONE_TEXT = {
-  ok: "text-emerald-600 dark:text-emerald-400",
-  error: "text-destructive",
-} as const;
-
-/** 색만으로 구분하지 않도록 아이콘을 함께 붙이고, 화면 낭독기가 바뀐 상태를 읽게 한다. */
-function StatusMessage({ id, status }: { id: string; status: LiveStatus }) {
-  const iconClass = "w-3.5 h-3.5 shrink-0";
-  return (
-    <p id={id} aria-live="polite" className="text-[11px] font-medium">
-      {status && status.message && (
-        <span className={cn("flex items-center gap-1", TONE_TEXT[status.tone])}>
-          {status.tone === "ok" ? (
-            <Check className={iconClass} aria-hidden />
-          ) : (
-            <X className={iconClass} aria-hidden />
-          )}
-          {status.message}
-        </span>
-      )}
-    </p>
-  );
 }
