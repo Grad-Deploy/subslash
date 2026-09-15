@@ -31,6 +31,18 @@ export function toMirrorPayload(subscriptions: Subscription[]) {
     }));
 }
 
+/**
+ * 서버가 이 브라우저의 동기화 토큰을 모른다(401). 메일의 '수신 거부'를 눌렀거나, 같은 주소로
+ * 다른 곳에서 다시 신청해 서버의 기록이 지워진 경우다. 다시 보내도 통하지 않으므로, 네트워크
+ * 오류처럼 다음 변경 때 다시 보낼 실패와 구분한다.
+ */
+export class SyncTokenRejectedError extends Error {
+  constructor() {
+    super("서버에 이 브라우저의 알림 기록이 없습니다. 알림을 다시 신청해주세요.");
+    this.name = "SyncTokenRejectedError";
+  }
+}
+
 async function readError(response: Response, fallback: string): Promise<string> {
   try {
     const body = await response.json();
@@ -69,6 +81,7 @@ export async function pushMirror(syncToken: string, subscriptions: Subscription[
     body: JSON.stringify({ subscriptions: toMirrorPayload(subscriptions) }),
   });
 
+  if (response.status === 401) throw new SyncTokenRejectedError();
   if (!response.ok) {
     throw new Error(await readError(response, "동기화에 실패했습니다."));
   }
@@ -97,6 +110,7 @@ export async function enableCalendarFeed(syncToken: string): Promise<string> {
     headers: { Authorization: `Bearer ${syncToken}` },
   });
 
+  if (response.status === 401) throw new SyncTokenRejectedError();
   if (!response.ok) {
     throw new Error(await readError(response, "캘린더 주소를 만들지 못했습니다."));
   }
