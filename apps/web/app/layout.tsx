@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { Header } from "../components/layout/Header";
+import { DemoBanner } from "../components/layout/DemoBanner";
 import { BottomNav } from "../components/layout/BottomNav";
 import { ThemeProvider } from "../components/layout/ThemeProvider";
 import { ServiceWorkerRegistrar } from "../components/layout/ServiceWorkerRegistrar";
@@ -61,6 +62,7 @@ export default function RootLayout({
         <ThemeProvider>
           <ServiceWorkerRegistrar />
           <Header />
+          <DemoBanner />
           {/*
             숫자를 보는 화면(대시보드·내 구독·절약 현황)이 넓은 화면에서 칸을 나눌 수 있게
             바깥 폭은 넓게 둔다. 읽거나 입력하는 화면은 각 페이지가 스스로 좁힌다(max-w-md 등).

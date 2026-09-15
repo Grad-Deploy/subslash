@@ -5,7 +5,6 @@ import { useIsClient } from "@hooks/useIsClient";
 import { useRouter } from "next/navigation";
 import { useStore } from "../lib/store";
 import {
-  DEMO_SUBSCRIPTIONS,
   POPULAR_SERVICES,
   ServicePreset,
   SubscriptionFormData,
@@ -52,7 +51,7 @@ const HOW_IT_WORKS = [
 
 export default function Home() {
   const router = useRouter();
-  const { subscriptions, addSubscription } = useStore();
+  const { subscriptions, addSubscription, startDemo } = useStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<Partial<SubscriptionFormData> | undefined>(
     undefined,
@@ -77,13 +76,9 @@ export default function Home() {
     router.push("/dashboard");
   };
 
-  // Demo sample loader — skips anything already registered so repeat clicks
-  // do not pile up duplicates.
+  // 샘플은 내 구독에 더하지 않고 잠시 동안만 보여준다(store의 DemoSession).
   const handleLoadDemo = () => {
-    const existingNames = new Set(useStore.getState().subscriptions.map((sub) => sub.name));
-    DEMO_SUBSCRIPTIONS.filter((item) => !existingNames.has(item.name)).forEach((item) =>
-      addSubscription(item),
-    );
+    startDemo();
     router.push("/dashboard");
   };
 

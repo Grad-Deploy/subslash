@@ -104,6 +104,7 @@ export default function SubscriptionsPage() {
     checkIn,
     getActiveSubscriptions,
     getKilledSubscriptions,
+    demo,
   } = useStore();
   const rate = useExchangeRate();
   const router = useRouter();
@@ -623,14 +624,22 @@ export default function SubscriptionsPage() {
         isOpen={confirmClearAll}
         onClose={() => setConfirmClearAll(false)}
         onConfirm={() => {
+          // 체험 중이면 샘플만 치우고 체험을 끝낸다(store의 clearSubscriptions).
+          const wasDemo = Boolean(demo);
           clearSubscriptions();
-          showToast("이전 구독 기록이 모두 삭제되었습니다.");
+          showToast(
+            wasDemo
+              ? "샘플 체험을 끝냈습니다. 내 구독은 그대로입니다."
+              : "이전 구독 기록이 모두 삭제되었습니다.",
+          );
         }}
         title="전체 초기화"
         description={
-          killedSubs.length > 0
-            ? `현재 등록된 전체 구독 ${subscriptions.length}건(구독 중 ${activeSubs.length}건, 해지한 구독 ${killedSubs.length}건)을 모두 삭제하시겠습니까?\n해지한 구독의 절약 기록도 함께 지워집니다.`
-            : `현재 등록된 전체 구독 ${subscriptions.length}건을 모두 삭제하시겠습니까?`
+          demo
+            ? `샘플 구독 ${subscriptions.length}건을 치우고 체험을 끝냅니다.\n내 구독 기록은 그대로 남습니다.`
+            : killedSubs.length > 0
+              ? `현재 등록된 전체 구독 ${subscriptions.length}건(구독 중 ${activeSubs.length}건, 해지한 구독 ${killedSubs.length}건)을 모두 삭제하시겠습니까?\n해지한 구독의 절약 기록도 함께 지워집니다.`
+              : `현재 등록된 전체 구독 ${subscriptions.length}건을 모두 삭제하시겠습니까?`
         }
         confirmText="모두 삭제"
         variant="destructive"
