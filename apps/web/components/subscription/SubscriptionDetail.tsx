@@ -19,7 +19,7 @@ import { CancelGuideModal } from "./CancelGuideModal";
 import { CheckInEvidence } from "./CheckInEvidence";
 import { RiskBadge } from "../dashboard/RiskBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
-import { Button } from "../ui/button";
+import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { cn } from "@lib/utils";
@@ -182,7 +182,9 @@ export function SubscriptionDetail({
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <Title className="text-2xl font-black break-keep">{sub.name}</Title>
+                <Title className="min-w-0 text-2xl font-black break-keep [overflow-wrap:anywhere]">
+                  {sub.name}
+                </Title>
                 <Badge variant={isKilled ? "secondary" : "default"} className="whitespace-nowrap">
                   {isKilled ? "해지 완료" : "구독 중"}
                 </Badge>
@@ -267,7 +269,7 @@ export function SubscriptionDetail({
             )}
           </div>
           {sub.linkedAccountName ? (
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground [overflow-wrap:anywhere]">
               이 구독은 <strong className="text-foreground">{sub.linkedAccountName}</strong> 계정에
               연결되어 있습니다. 해지 페이지 진입 시 해당 계정으로 로그인되어 있어야 구독 취소
               버튼이 나타납니다.
@@ -301,7 +303,7 @@ export function SubscriptionDetail({
                 {pm?.directCancelUrl && (
                   <Button
                     size="lg"
-                    className="w-full bg-primary text-primary-foreground hover:opacity-90 font-bold h-12 rounded-xl shadow-md"
+                    className={`${WRAPPING_BUTTON} min-h-12 bg-primary text-primary-foreground hover:opacity-90 font-bold rounded-xl shadow-md`}
                     onClick={() => window.open(pm.directCancelUrl, "_blank")}
                   >
                     💳 {pm.label} 전용 정기결제 관리 열기 (새 창)
@@ -311,7 +313,7 @@ export function SubscriptionDetail({
                   <>
                     <Button
                       size="lg"
-                      className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold h-12 rounded-xl shadow-md"
+                      className={`${WRAPPING_BUTTON} min-h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold rounded-xl shadow-md`}
                       onClick={() => window.open(sub.cancelUrl, "_blank")}
                     >
                       {cancelUrlKind === "direct"
@@ -336,7 +338,7 @@ export function SubscriptionDetail({
         <Button
           variant="outline"
           size="lg"
-          className="w-full h-11 rounded-xl font-semibold"
+          className={`${WRAPPING_BUTTON} min-h-11 rounded-xl font-semibold`}
           onClick={() => setIsGuideOpen(true)}
         >
           📖 해지 방법 보기 (단계별 안내 · 폴백 링크)
