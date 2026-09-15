@@ -1,4 +1,4 @@
-import type { Subscription } from "@subslash/shared";
+import { getBilledAmount, type Subscription } from "@subslash/shared";
 import { apiUrl } from "./api";
 
 /**
@@ -21,7 +21,9 @@ export function toMirrorPayload(subscriptions: Subscription[]) {
     .map((sub) => ({
       id: sub.id,
       name: sub.name,
-      amount: sub.amount,
+      // 알림 메일·캘린더에는 카드에 찍힐 금액을 적는다. 세금은 여기서 더해 보내므로 서버의
+      // 미러 표는 칸이 늘지 않는다.
+      amount: getBilledAmount(sub),
       currency: sub.currency,
       billingDay: sub.billingDay,
       billingCycle: sub.billingCycle,

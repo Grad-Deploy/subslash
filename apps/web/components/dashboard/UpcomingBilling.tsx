@@ -2,14 +2,21 @@
 
 import React from "react";
 import Link from "next/link";
-import { Subscription, formatCurrency, formatDday, getDaysUntilBillingFor } from "@subslash/shared";
+import {
+  Subscription,
+  formatCurrency,
+  formatDday,
+  getBilledAmount,
+  getDaysUntilBillingFor,
+} from "@subslash/shared";
 
 const LIMIT = 5;
 
 /**
  * 곧 카드에 청구될 결제를 가까운 순으로 보여준다.
  *
- * 금액은 카드에 실제로 청구되는 값(공유 구독이면 나누기 전 전체, 연간이면 1년치)이다.
+ * 금액은 카드에 실제로 청구되는 값(공유 구독이면 나누기 전 전체, 연간이면 1년치, 세금이 따로
+ * 붙으면 그것까지)이다.
  * 결제 월을 모르는 연간 구독은 날짜를 지어내지 않고 '미설정'으로 따로 센다.
  */
 export function UpcomingBilling({
@@ -66,7 +73,7 @@ export function UpcomingBilling({
                   {formatDday(days)}
                 </span>{" "}
                 <span className="text-xs text-muted-foreground">
-                  {formatCurrency(sub.amount, sub.currency)}
+                  {formatCurrency(getBilledAmount(sub), sub.currency)}
                 </span>
               </span>
             </li>
