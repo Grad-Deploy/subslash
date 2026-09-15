@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useStore } from "../lib/store";
+import { realRecords, useStore } from "../lib/store";
 import { pushMirror, toMirrorPayload } from "../lib/notify-client";
 
 const DEBOUNCE_MS = 1500;
@@ -26,7 +26,8 @@ export function useMirrorSync() {
         return;
       }
 
-      const subscriptions = state.subscriptions;
+      // 샘플 체험 중에도 서버에는 실제 기록만 보낸다. 샘플을 보내면 가짜 구독의 결제 알림이 간다.
+      const subscriptions = realRecords(state).subscriptions;
       const payload = JSON.stringify(toMirrorPayload(subscriptions));
       if (payload === lastPayload.current) return;
 
