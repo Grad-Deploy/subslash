@@ -339,6 +339,25 @@ pnpm --filter @subslash/mobile open
 - 해지 페이지 같은 외부 링크는 인앱 브라우저로, 공유는 기기의 공유 창으로 엽니다. 상태 표시줄 색은
   앱 테마를 따릅니다.
 
+#### EAS로 클라우드 빌드
+
+로컬 SDK 없이 빌드하거나 스토어용 파일을 만들 때는 EAS Build를 씁니다(Expo 프로젝트
+`@leesean2/subslash-mobile`). 앱은 Capacitor라 `expo` 패키지는 쓰지 않고, EAS가 읽는 `app.json`·`eas.json`만
+둡니다. EAS CLI(`npm i -g eas-cli`)로 로그인한 뒤 `apps/mobile`에서 돌립니다.
+
+```bash
+cd apps/mobile
+eas build --platform android --profile preview      # 기기에 바로 설치하는 APK
+eas build --platform android --profile production   # 스토어에 올리는 AAB (versionCode를 EAS가 올림)
+```
+
+- 작업 서버에서 설치가 끝나면 `scripts/eas-build-post-install.sh`가 돕니다. EAS의 Android 이미지에는
+  JDK 17뿐이라 Capacitor 8이 컴파일되지 않아서 JDK 21을 받고, 웹 화면을 만들어(`build:app`) `cap sync`합니다.
+  앱이 부를 주소는 `eas.json`의 `NEXT_PUBLIC_WEB_ORIGIN`입니다.
+- 서명 키는 EAS 서버에 둡니다(`credentialsSource: remote`). 키 확인·교체는 `eas credentials`로 합니다.
+- EAS는 작업 폴더를 `.gitignore` 기준으로 올립니다(커밋하지 않은 파일도 올라감). `.easignore`를 만들면
+  `.gitignore`를 통째로 대신하므로, `.env` 같은 규칙을 모두 옮겨 적을 게 아니라면 만들지 않습니다.
+
 ## 📄 라이선스
 
 MIT
