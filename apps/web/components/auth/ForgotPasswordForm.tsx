@@ -5,7 +5,7 @@ import Link from "next/link";
 import { normalizeEmailAddress, validateEmail } from "@subslash/shared";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
-import { apiUrl } from "@lib/api";
+import { apiFetch } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
 
 type Result = { tone: "ok" | "error"; message: string } | null;
@@ -36,10 +36,9 @@ export function ForgotPasswordForm() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(apiUrl("/api/auth/password-reset"), {
+      const res = await apiFetch("/api/auth/password-reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
         body: JSON.stringify({ email: normalized }),
       });
       const data = await res.json().catch(() => ({}));

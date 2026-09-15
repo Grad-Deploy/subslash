@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 화면이 뜨기 전 막대 뒤 창 배경. 웹의 라이트 테마 배경(layout의 themeColor)과 같다.
+         화면이 뜬 뒤에는 앱 테마에 따라 AppWindowPlugin이 바꾼다. -->
+    <color name="subslash_window_background">#FFFFFF</color>
+</resources>

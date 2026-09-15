@@ -12,7 +12,7 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../ui/button";
 import { ConfirmDialog } from "../ui/confirm-dialog";
-import { apiUrl } from "@lib/api";
+import { apiFetch } from "@lib/api";
 
 type ParsedBackup = Extract<BackupParseResult, { ok: true }>;
 /** 어디서 가져온 기록인지에 따라 확인 창의 말이 달라진다. */
@@ -58,9 +58,7 @@ async function readError(res: Response, fallback: string): Promise<string> {
 /** 계정에 저장된 기록의 요약. 화면 상태는 바꾸지 않고 보여줄 결과만 돌려준다. */
 async function fetchSnapshotSummary(): Promise<AccountSnapshotState> {
   try {
-    const res = await fetch(apiUrl("/api/account/snapshot?summary=1"), {
-      credentials: "same-origin",
-    });
+    const res = await apiFetch("/api/account/snapshot?summary=1", {});
     if (res.status === 404) return { kind: "none" };
     if (!res.ok) {
       return {
@@ -157,10 +155,9 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     setBusy(true);
     setAccountError(null);
     try {
-      const res = await fetch(apiUrl("/api/account/snapshot"), {
+      const res = await apiFetch("/api/account/snapshot", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
         body: JSON.stringify(currentBackup()),
       });
       if (!res.ok) {
@@ -187,7 +184,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     setBusy(true);
     setAccountError(null);
     try {
-      const res = await fetch(apiUrl("/api/account/snapshot"), { credentials: "same-origin" });
+      const res = await apiFetch("/api/account/snapshot");
       if (!res.ok) {
         setAccountError(await readError(res, "계정에 저장된 기록을 불러오지 못했습니다."));
         if (res.status === 404) setSnapshot({ kind: "none" });
@@ -212,9 +209,8 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     setBusy(true);
     setAccountError(null);
     try {
-      const res = await fetch(apiUrl("/api/account/snapshot"), {
+      const res = await apiFetch("/api/account/snapshot", {
         method: "DELETE",
-        credentials: "same-origin",
       });
       if (!res.ok) {
         setAccountError(await readError(res, "계정에 저장된 기록을 지우지 못했습니다."));
