@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Check, X } from "lucide-react";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
@@ -11,6 +10,7 @@ import { confirmStatusOf, passwordStatusOf, type LiveStatus } from "@lib/signup-
 import { RESET_PASSWORD_TTL_MINUTES } from "@lib/verification-config";
 import { apiUrl } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
+import { StatusMessage, statusBorder } from "./LiveStatusMessage";
 
 type View =
   | { kind: "loading" }
@@ -166,7 +166,7 @@ export function ResetPassword() {
               onBlur={() => setTouched((prev) => ({ ...prev, password: true }))}
               aria-invalid={passwordStatus?.tone === "error"}
               aria-describedby="new-password-status"
-              className={borderFor(passwordStatus)}
+              className={statusBorder(passwordStatus)}
             />
             <StatusMessage id="new-password-status" status={passwordStatus} />
           </div>
@@ -189,7 +189,7 @@ export function ResetPassword() {
               onBlur={() => setTouched((prev) => ({ ...prev, confirm: true }))}
               aria-invalid={confirmStatus?.tone === "error"}
               aria-describedby="new-password-confirm-status"
-              className={borderFor(confirmStatus)}
+              className={statusBorder(confirmStatus)}
             />
             <StatusMessage id="new-password-confirm-status" status={confirmStatus} />
           </div>
@@ -237,36 +237,6 @@ const NETWORK_ERROR: View = {
   kind: "error",
   message: "네트워크에 문제가 있어 처리하지 못했습니다. 잠시 후 다시 시도해주세요.",
 };
-
-function borderFor(status: LiveStatus): string | undefined {
-  if (!status) return undefined;
-  return status.tone === "ok"
-    ? "border-emerald-500 focus-visible:ring-emerald-500"
-    : "border-destructive focus-visible:ring-destructive";
-}
-
-/** 가입 폼과 같은 모양. 색만으로 구분하지 않도록 아이콘을 붙이고 바뀐 상태를 낭독한다. */
-function StatusMessage({ id, status }: { id: string; status: LiveStatus }) {
-  const iconClass = "w-3.5 h-3.5 shrink-0";
-  return (
-    <p id={id} aria-live="polite" className="text-[11px] font-medium">
-      {status && status.message && (
-        <span
-          className={`flex items-center gap-1 ${
-            status.tone === "ok" ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"
-          }`}
-        >
-          {status.tone === "ok" ? (
-            <Check className={iconClass} aria-hidden />
-          ) : (
-            <X className={iconClass} aria-hidden />
-          )}
-          {status.message}
-        </span>
-      )}
-    </p>
-  );
-}
 
 function Outcome({
   title,
