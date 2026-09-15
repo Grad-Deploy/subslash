@@ -133,13 +133,18 @@ export function SubCard({
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t">
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
               <Badge variant="outline">
                 {CATEGORY_LABELS[subscription.category] ?? subscription.category}
               </Badge>
+              {/* 계정 이름에는 띄어쓰기 없는 긴 이메일이 들어온다. 카드에서는 말줄임하고, 전체는 상세에 있다. */}
               {subscription.linkedAccountName && (
-                <Badge variant="secondary" className="text-[11px]">
-                  👤 {subscription.linkedAccountName}
+                <Badge
+                  variant="secondary"
+                  className="min-w-0 max-w-full text-[11px]"
+                  title={subscription.linkedAccountName}
+                >
+                  <span className="truncate">👤 {subscription.linkedAccountName}</span>
                 </Badge>
               )}
               {shared && !isKilled && (

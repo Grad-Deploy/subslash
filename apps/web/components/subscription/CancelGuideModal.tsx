@@ -10,7 +10,7 @@ import {
   parseCancelGuideSteps,
 } from "@subslash/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
-import { Button } from "../ui/button";
+import { Button, WRAPPING_BUTTON } from "../ui/button";
 
 interface CancelGuideModalProps {
   subscription: Subscription | null;
@@ -53,7 +53,7 @@ export function CancelGuideModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span>{sub.iconUrl || "📦"}</span>
-            <span>{sub.name} 해지 가이드</span>
+            <span className="min-w-0 [overflow-wrap:anywhere]">{sub.name} 해지 가이드</span>
           </DialogTitle>
           <DialogDescription>
             링크가 안 열리거나 로그인 화면으로 튕기면 아래 단계 안내를 따라가세요.
@@ -70,7 +70,7 @@ export function CancelGuideModal({
             {sub.cancelUrl ? (
               <>
                 <Button
-                  className="w-full h-11 font-bold rounded-xl"
+                  className={`${WRAPPING_BUTTON} min-h-11 font-bold rounded-xl`}
                   onClick={() => openExternal(sub.cancelUrl)}
                 >
                   {cancelUrlKind === "direct"
@@ -104,7 +104,7 @@ export function CancelGuideModal({
                   <div className="space-y-1">
                     <Button
                       variant="outline"
-                      className="w-full h-10 text-sm rounded-xl"
+                      className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
                       onClick={() => openExternal(paymentMethod.directCancelUrl)}
                     >
                       💳 {paymentMethod.label} 정기결제 관리 열기
@@ -118,7 +118,7 @@ export function CancelGuideModal({
                   <div className="space-y-1">
                     <Button
                       variant="outline"
-                      className="w-full h-10 text-sm rounded-xl"
+                      className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
                       onClick={() => openExternal(accountUrl)}
                     >
                       👤 계정 관리 페이지로 이동 시도
@@ -134,7 +134,7 @@ export function CancelGuideModal({
                   <div className="space-y-1">
                     <Button
                       variant="outline"
-                      className="w-full h-10 text-sm rounded-xl"
+                      className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
                       onClick={() => openExternal(homeUrl)}
                     >
                       🏠 {new URL(homeUrl).hostname} 첫 화면 열기
