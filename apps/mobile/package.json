@@ -12,8 +12,7 @@
     "@capacitor/browser": "^8.0.4",
     "@capacitor/core": "^8.5.2",
     "@capacitor/preferences": "^8.0.1",
-    "@capacitor/share": "^8.0.1",
-    "expo": "^57.0.22"
+    "@capacitor/share": "^8.0.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.2"
