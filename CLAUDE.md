@@ -94,12 +94,20 @@ USD 환산 환율은 상수가 아니라 사용자 설정값이다. 컴포넌트
 보관 기간, 삭제 경로, 쓰는 외부 서비스(Vercel·Turso·Resend)나 그 지역을 바꾸면 방침도 같은
 PR에서 고친다. 보호책임자 연락처는 `lib/privacy.ts` 한 곳에만 있고, 정해지기 전에는 비워 둔다.
 
-`account_snapshots`는 로그인한 사람이 '계정에 저장'을 직접 눌렀을 때만 생기는 백업
-파일 한 벌이다. 알림 미러와 같은 규칙을 따른다 — 전체 교체, 병합 없음, 서버가 알아서
-브라우저로 되쓰지 않음('계정에서 불러오기'를 눌러야 받는다). 서버는 받은 기록을
-`parseBackup`으로 다시 검사하고, 동기화 토큰(`notify`)은 넣지 않는다. 계정을 지우는
-경로를 새로 만들면 `sessions`처럼 이 표도 직접 지운다 — `ON DELETE CASCADE`는
-`PRAGMA foreign_keys`가 켜져 있을 때만 동작한다.
+`account_snapshots`는 로그인한 계정의 기록 한 벌(백업 파일과 같은 형식)이다. 로그인한 기기는
+자동 동기화로 이 표와 기록을 맞춘다(`lib/account-sync`가 판단, `hooks/useAccountSync`가 실행) — 기록이
+바뀌면 올리고, 다른 기기가 올린 것은 화면으로 돌아올 때 받아 온다. 기기마다 끌 수 있고, 끈 기기는
+'계정에 저장'·'계정에서 불러오기'를 눌러야 옮긴다. 규칙은 이렇다.
+
+- 병합하지 않는다. 저장 시각(`savedAt`)을 판 번호로 쓰고, 올릴 때 마지막으로 본 판을
+  `If-Match`로(처음이면 `If-None-Match: *`) 건다. 그사이 다른 기기가 올렸으면 서버가 409로
+  거절한다. 서버만 바뀌었으면 받아 오고, 양쪽이 따로 바뀌었으면 어느 쪽을 쓸지 사용자에게 묻는다.
+- 서버가 기기에 먼저 보내지 않는다. 기기가 물어 가져간다.
+- 다른 기기에서 '계정에서 지우기'로 지웠으면 그 기록을 다시 올리지 않고 동기화를 멈춘다.
+- 기기마다 다른 것(동기화 상태 `accountSync`, 결제 알림 `notify`, 로컬 알림 설정)은 넣지 않는다.
+- 서버는 받은 기록을 `parseBackup`으로 다시 검사한다. 계정을 지우는 경로를 새로 만들면
+  `sessions`처럼 이 표도 직접 지운다 — `ON DELETE CASCADE`는 `PRAGMA foreign_keys`가 켜져 있을
+  때만 동작한다.
 
 ## 파일 경계
 
@@ -117,11 +125,40 @@ Gmail/네이버 연동이 생기면 아래 오른쪽 열을 통째로 지운다.
 그래서 화면 코드는 다음을 지킨다.
 
 - 서버 API는 `apiUrl("/api/...")`(`lib/api`)로 부른다. 앱 안의 상대 주소는 앱 자신을 가리킨다.
-- 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은 `capacitor://`다.
+  로그인이 필요한 요청(`/api/auth`·`/api/account`)은 `apiFetch()`로 보낸다. 앱에는 쿠키가 실리지
+  않아서, `apiFetch`가 기기에 둔 세션 토큰(`lib/session-token`)을 헤더로 싣고 로그인·가입·비밀번호
+  변경 응답의 새 토큰을 받아 둔다.
+- 외부 사이트는 `openExternal()`, 공유는 `shareText()`(`lib/native`)로 연다. 앱에서는 인앱 브라우저와
+  네이티브 공유 창이 된다. `window.open`·`navigator.share`를 직접 부르지 않는다.
+- 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은
+  `capacitor://localhost`(iOS)나 `https://localhost`(안드로이드)다.
 - 페이지에 동적 경로(`[id]`)를 새로 만들지 않는다. 브라우저에서 만든 ID로는 페이지를 미리
   만들 수 없다. 구독 상세는 `subscriptionDetailHref()`(`/subs/detail?id=`)를 쓴다.
 - 브라우저 기본 `confirm`·`prompt`·`alert`를 쓰지 않는다. 창 밖에서는 `ConfirmDialog`, 이미
   열린 창 안에서는 `InlineConfirm`을 쓴다(창을 겹치면 같은 Esc에 함께 닫힌다).
+- 페이지를 통째로 다시 부르는 이동(`window.location.href =`, `location.reload()`, next/link가
+  아닌 `<a href="/...">`)을 쓰지 않는다. 앱은 확장자 없는 주소(`/dashboard`)를 모두 `index.html`로
+  열어서, 다시 부른 페이지는 홈 화면이 된다. 화면 이동은 next/link와 `useRouter`로만 한다.
+- 페이지·레이아웃 파일은 `.tsx`로 만든다. 앱 빌드는 `.tsx`만 경로로 읽어 `route.ts`·`proxy.ts`를
+  뺀다(`next.config.ts`).
+
+앱 화면은 `pnpm --filter @subslash/web build:app`(정적 내보내기 → `apps/web/out`)으로 만들고,
+`apps/mobile`(Capacitor 8, appId `com.subslash.app`)이 그 폴더를 담는다. 빌드에는 앱이 부를 배포
+주소(`NEXT_PUBLIC_WEB_ORIGIN`)가 꼭 있어야 하고, 없으면 빌드를 멈춘다. 앱에서만 달라지는 동작은
+`IS_APP_BUILD`(`lib/platform`)로 가른다. CI가 이 빌드를 돌려 정적 내보내기를 깨는 코드를 막는다.
+안드로이드 빌드·실행은 README의 '모바일 앱'에 있다.
+
+앱의 구독 기록은 웹처럼 localStorage가 원본이고, 쓸 때마다 기기 저장소(Preferences)에 사본을
+적는다(`lib/mirrored-storage`). 앱을 열 때 localStorage가 비어 있었으면 사본으로 되살린다 — 운영체제가
+웹뷰 저장소를 비워도 기록이 남게 하려는 것이다. 저장소를 통째로 Preferences로 옮기지 않는 이유는 그
+파일에 있다. 상태 표시줄 색은 테마를 따라 `syncSystemBars`(`lib/native`)가 맞춘다.
+
+클라우드 빌드는 EAS Build를 쓴다(`apps/mobile/eas.json`, Expo 프로젝트 `@leesean2/subslash-mobile`). 앱은
+Expo가 아니라 Capacitor이므로 `expo` 패키지를 넣지 않는다 — EAS는 `app.json`·`eas.json`만 읽는다. EAS의
+Android 이미지에는 JDK 17뿐인데 Capacitor 8은 Java 21로 컴파일해서, 설치 뒤 훅
+(`scripts/eas-build-post-install.sh`)이 JDK 21을 받고 웹 화면을 만들어 `cap sync`한다. EAS는 작업 폴더를
+`.gitignore` 기준으로 올린다. `.easignore`를 만들면 `.gitignore`를 통째로 대신해서 `.env`까지 올라갈 수
+있으니 만들지 않는다.
 
 `tools/ipad-preview`는 Mac 없이 iPad의 Expo Go로 화면을 iPhone 크기 그대로 보는 도구다(사용법은
 그 폴더의 README). pnpm 워크스페이스 밖이라 npm으로 따로 설치하고, CI·웹 빌드에 들어가지 않는다.

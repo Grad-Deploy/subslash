@@ -239,3 +239,74 @@ describe("계정에 저장한 기록", () => {
     expect(await getDb().select().from(accountSnapshots)).toHaveLength(0);
   });
 });
+
+/** 자동 동기화의 조건부 저장. 두 기기가 서로의 기록을 모르고 덮어쓰지 않게 한다. */
+describe("조건부 저장 (자동 동기화)", () => {
+  function putWith(body: string, cookie: string, headers: Record<string, string>) {
+    return PUT(request(URL_BASE, { method: "PUT", body, cookie, headers }));
+  }
+
+  async function savedAt(cookie: string): Promise<string> {
+    return (await (await get(cookie, true)).json()).summary.savedAt;
+  }
+
+  it("If-None-Match: *는 기록이 없을 때만 저장한다", async () => {
+    const { cookie } = await loggedIn("sean");
+
+    const first = await putWith(backupText(["a"]), cookie, { "If-None-Match": "*" });
+    expect(first.status).toBe(200);
+
+    const second = await putWith(backupText(["b", "c"]), cookie, { "If-None-Match": "*" });
+    expect(second.status).toBe(409);
+    const body = await second.json();
+    expect(body.status).toBe("conflict");
+    expect(body.summary.subscriptionCount).toBe(1);
+  });
+
+  it("If-Match가 지금 판이면 저장하고, 새 판은 이전 판과 다른 값이다", async () => {
+    const { cookie } = await loggedIn("sean");
+    await put(backupText(["a"]), cookie);
+    const before = await savedAt(cookie);
+
+    const res = await putWith(backupText(["a", "b"]), cookie, { "If-Match": `"${before}"` });
+    expect(res.status).toBe(200);
+    const after = (await res.json()).summary.savedAt;
+    expect(after).not.toBe(before);
+    expect(await savedAt(cookie)).toBe(after);
+  });
+
+  it("If-Match가 옛 판이면 거절하고 계정의 기록은 그대로 둔다", async () => {
+    const { cookie } = await loggedIn("sean");
+    await put(backupText(["a"]), cookie);
+    const stale = await savedAt(cookie);
+    // 다른 기기가 먼저 올렸다.
+    await putWith(backupText(["other-device"]), cookie, { "If-Match": stale });
+
+    const res = await putWith(backupText(["this-device"]), cookie, { "If-Match": stale });
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.summary.savedAt).not.toBe(stale);
+
+    const stored = await (await get(cookie)).json();
+    expect(stored.backup.data.subscriptions.map((s: { id: string }) => s.id)).toEqual([
+      "other-device",
+    ]);
+  });
+
+  it("계정에 기록이 없는데 If-Match를 보내면 거절하고 요약은 null이다", async () => {
+    const { cookie } = await loggedIn("sean");
+    const res = await putWith(backupText(["a"]), cookie, {
+      "If-Match": "2026-09-15T00:00:00.000Z",
+    });
+    expect(res.status).toBe(409);
+    expect((await res.json()).summary).toBeNull();
+    expect((await get(cookie)).status).toBe(404);
+  });
+
+  it("조건이 없으면 지금처럼 덮어쓴다('계정에 저장')", async () => {
+    const { cookie } = await loggedIn("sean");
+    await put(backupText(["a"]), cookie);
+    expect((await put(backupText(["b", "c"]), cookie)).status).toBe(200);
+    expect((await (await get(cookie, true)).json()).summary.subscriptionCount).toBe(2);
+  });
+});
