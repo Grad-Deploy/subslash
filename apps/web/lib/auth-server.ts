@@ -100,6 +100,26 @@ export async function destroySession(token: string | undefined): Promise<void> {
 }
 
 /**
+ * 비밀번호를 바꾸고, 이 계정으로 들어와 있던 기기를 모두 내보낸다. 확인할 때 본 해시가
+ * 그사이 바뀌었으면(다른 창에서 먼저 바꿈) 아무것도 하지 않고 `false`.
+ *
+ * 해시가 그대로일 때만 바꾸므로 두 창에서 동시에 제출해도 한 번만 바뀐다. 세션을 모두
+ * 지우는 이유는 비밀번호를 바꾸는 이유가 잊어서만은 아니기 때문이다 — 누가 알아냈을까
+ * 봐 바꾸는 경우도 있다. 바꾼 사람의 기기는 부르는 쪽이 새 세션으로 이어 준다.
+ */
+export async function replacePassword(account: Account, newHash: string): Promise<boolean> {
+  const db = getDb();
+  const updated = await db
+    .update(accounts)
+    .set({ passwordHash: newHash })
+    .where(and(eq(accounts.id, account.id), eq(accounts.passwordHash, account.passwordHash)))
+    .returning({ id: accounts.id });
+  if (updated.length === 0) return false;
+  await db.delete(sessions).where(eq(sessions.accountId, account.id));
+  return true;
+}
+
+/**
  * 회원 탈퇴. 계정과 거기 딸린 세션·계정에 저장한 기록을 지운다. 계정이 없었으면 `false`.
  *
  * 스키마의 ON DELETE CASCADE는 PRAGMA foreign_keys가 켜져 있을 때만 동작하므로 딸린 행을
