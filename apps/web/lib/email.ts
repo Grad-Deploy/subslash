@@ -10,6 +10,12 @@ import { formatCurrency, type Currency } from "@subslash/shared";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
+/**
+ * Resend에서 인증한 발신 도메인(subslash.me)의 주소. 인증하지 않은 도메인으로는 Resend가
+ * 거절하고, onboarding@resend.dev는 Resend 계정 주인에게만 보낸다.
+ */
+const DEFAULT_FROM = "SubSlash <noreply@subslash.me>";
+
 export interface SendResult {
   delivered: boolean;
   /** Set when the message was logged instead of sent. */
@@ -28,7 +34,7 @@ export async function sendEmail(params: {
   text: string;
 }): Promise<SendResult> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL || "SubSlash <noreply@subslash.app>";
+  const from = process.env.RESEND_FROM_EMAIL || DEFAULT_FROM;
 
   if (!apiKey) {
     console.warn(
