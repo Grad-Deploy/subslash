@@ -35,4 +35,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 Button.displayName = "Button";
 
-export { Button };
+/**
+ * 칸을 꽉 채우고, 서비스 이름처럼 길이를 모르는 글자가 들어가는 버튼. 기본 버튼은 한 줄로만
+ * 그려서 긴 이름("Google AI Pro (Gemini Advanced) 해지 페이지 바로가기")이 칸 밖으로 넘어간다.
+ * 이 버튼들은 줄을 바꾸고 그만큼 높아진다 — 높이는 `h-*` 대신 `min-h-*`로 준다. 띄어쓰기 없이
+ * 직접 적은 긴 이름도 칸 안에서 끊는다.
+ */
+const WRAPPING_BUTTON =
+  "w-full h-auto whitespace-normal break-keep [overflow-wrap:anywhere] px-4 py-2.5 text-center leading-snug";
+
+export { Button, WRAPPING_BUTTON };

@@ -9,7 +9,7 @@ import {
   getMyMonthlyShareAmount,
 } from "@subslash/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
-import { Button } from "../ui/button";
+import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { Input } from "../ui/input";
 import { RiskBadge } from "../dashboard/RiskBadge";
 import { CostPerUseBar } from "./CostPerUseBar";
@@ -86,12 +86,14 @@ export function CheckInModal({
         )}
       >
         <DialogHeader>
-          <DialogTitle>{subscription.name} 이용량 체크인</DialogTitle>
+          <DialogTitle className="[overflow-wrap:anywhere]">
+            {subscription.name} 이용량 체크인
+          </DialogTitle>
         </DialogHeader>
 
         {!result ? (
           <div className="py-4 space-y-6">
-            <h3 className="text-base text-center font-medium leading-relaxed">
+            <h3 className="text-base text-center font-medium leading-relaxed [overflow-wrap:anywhere]">
               지난 30일 동안 <strong className="text-primary">{subscription.name}</strong>을(를)
               <br />몇 번이나 실제로 이용하셨나요?
             </h3>
@@ -182,7 +184,7 @@ export function CheckInModal({
               </div>
 
               {subscription.linkedAccountName ? (
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground [overflow-wrap:anywhere]">
                   이 구독은{" "}
                   <strong className="text-foreground">{subscription.linkedAccountName}</strong>{" "}
                   계정으로 등록되어 있습니다. 해당 계정으로 접속하셔야 해지 메뉴가 표시됩니다.
@@ -208,7 +210,7 @@ export function CheckInModal({
               {directUrl && (
                 <Button
                   variant="destructive"
-                  className="w-full h-12 text-sm font-bold rounded-xl shadow-lg"
+                  className={`${WRAPPING_BUTTON} min-h-12 text-sm font-bold rounded-xl shadow-lg`}
                   onClick={() => window.open(directUrl, "_blank")}
                 >
                   {cancelButtonLabel}
