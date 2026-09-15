@@ -58,6 +58,7 @@ apps/mobile/android/capacitor-cordova-android-plugins/
 apps/mobile/android/app/src/main/assets/public/
 apps/mobile/android/app/src/main/assets/capacitor.config.json
 apps/mobile/android/app/src/main/assets/capacitor.plugins.json
+apps/mobile/android/app/src/main/res/xml/config.xml
 
 # 작업 메모(피드백 정리, 계획서)는 어느 레포에도 올리지 않는다.
 # Grad-Deploy 미러는 히스토리에서도 *.pdf·*.txt를 한 번 더 거른다(.github/workflows/mirror.yml).
