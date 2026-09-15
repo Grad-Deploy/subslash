@@ -24,6 +24,7 @@ import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { cn } from "@lib/utils";
+import { openExternal } from "@lib/native";
 
 interface SubscriptionDetailProps {
   id: string;
@@ -316,7 +317,7 @@ export function SubscriptionDetail({
                   <Button
                     size="lg"
                     className={`${WRAPPING_BUTTON} min-h-12 bg-primary text-primary-foreground hover:opacity-90 font-bold rounded-xl shadow-md`}
-                    onClick={() => window.open(pm.directCancelUrl, "_blank")}
+                    onClick={() => openExternal(pm.directCancelUrl)}
                   >
                     💳 {pm.label} 전용 정기결제 관리 열기 (새 창)
                   </Button>
@@ -326,7 +327,7 @@ export function SubscriptionDetail({
                     <Button
                       size="lg"
                       className={`${WRAPPING_BUTTON} min-h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold rounded-xl shadow-md`}
-                      onClick={() => window.open(sub.cancelUrl, "_blank")}
+                      onClick={() => openExternal(sub.cancelUrl)}
                     >
                       {cancelUrlKind === "direct"
                         ? `🚀 ${sub.name} 해지 페이지 바로가기 (새 창)`
