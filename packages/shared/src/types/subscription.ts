@@ -45,6 +45,13 @@ export interface Subscription {
   planId?: string;
   /** 고른 요금제 이름. 서비스 목록이 바뀌어도 남도록 함께 저장한다. */
   planName?: string;
+  /**
+   * 요금 외에 결제할 때 따로 붙는 세금의 비율(%). 해외 서비스 중에는 요금표 가격에 세금이
+   * 빠져 있어, 한국에서 결제하면 부가세 10%가 더해져 청구되는 곳이 있다. 이때 `amount`는
+   * 요금표 가격이고 카드에 찍히는 금액은 `getBilledAmount`로 계산한다. 없으면 `amount`가 곧
+   * 청구액이다(세금 포함이거나 붙지 않음).
+   */
+  taxRate?: number;
   createdAt: string;
   killedAt?: string;
 

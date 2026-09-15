@@ -117,6 +117,10 @@ function checkSubscription(v: unknown): string | null {
   if (!optional(v.iconUrl, isString)) return "아이콘";
   if (!optional(v.planId, isString)) return "요금제";
   if (!optional(v.planName, isString)) return "요금제 이름";
+  if (
+    !optional(v.taxRate, (r) => typeof r === "number" && Number.isFinite(r) && r >= 0 && r <= 100)
+  )
+    return "세금";
   if (!optional(v.linkedAccountId, isString)) return "연동 계정";
   if (!optional(v.linkedAccountName, isString)) return "연동 계정 이름";
   if (!optional(v.accountMemo, isString)) return "메모";

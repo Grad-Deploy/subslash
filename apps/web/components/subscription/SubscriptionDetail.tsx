@@ -10,6 +10,7 @@ import {
   PAYMENT_METHOD_OPTIONS,
   formatCurrency,
   formatDday,
+  getBilledAmount,
   getCancelUrlKind,
   getDaysUntilBillingFor,
 } from "@subslash/shared";
@@ -200,8 +201,19 @@ export function SubscriptionDetail({
               <span className="text-sm font-semibold text-muted-foreground">
                 {sub.billingCycle === "yearly" ? "연 " : "월 "}
               </span>
-              {formatCurrency(sub.amount, sub.currency)}
+              {formatCurrency(getBilledAmount(sub), sub.currency)}
             </div>
+            {/* 카드에 찍히는 금액이 등록한 요금과 다른 이유를 적는다. */}
+            {sub.taxRate ? (
+              <div className="text-xs text-muted-foreground">
+                요금 {formatCurrency(sub.amount, sub.currency)} + 부가세 {sub.taxRate}%
+              </div>
+            ) : null}
+            {sub.billingCycle === "yearly" && (
+              <div className="text-xs text-muted-foreground">
+                월 {formatCurrency(getBilledAmount(sub) / 12, sub.currency)}꼴
+              </div>
+            )}
             <div className="text-xs text-muted-foreground">{billingScheduleLabel}</div>
           </div>
         </div>
@@ -421,6 +433,7 @@ export function SubscriptionDetail({
                 iconUrl: sub.iconUrl,
                 planId: sub.planId,
                 planName: sub.planName,
+                taxRate: sub.taxRate,
                 paymentMethod: sub.paymentMethod,
                 linkedAccountId: sub.linkedAccountId,
                 linkedAccountName: sub.linkedAccountName,
