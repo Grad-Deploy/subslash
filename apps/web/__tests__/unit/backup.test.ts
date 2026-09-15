@@ -131,6 +131,14 @@ describe("parseBackup — 앱이 만든 것은 모두 통과한다", () => {
     });
   });
 
+  it("세금 비율이 있는 구독도 그대로 되돌아온다", () => {
+    const file = withData((data) => {
+      (data.subscriptions as Record<string, unknown>[])[1].taxRate = 10;
+    });
+    const result = roundTrip(file);
+    expect(result.ok && result.data.subscriptions[1]).toMatchObject({ taxRate: 10 });
+  });
+
   it("환율 설정이 없는 백업은 기본값으로 둔다", () => {
     const file = withData((data) => {
       delete data.exchangeRate;
@@ -177,6 +185,7 @@ describe("parseBackup — 틀린 파일은 아무것도 넘기지 않고 이유�
     ["없는 결제 월", (s: Record<string, unknown>) => (s.billingMonth = 13), "결제 월"],
     ["모르는 상태", (s: Record<string, unknown>) => (s.status = "paused"), "상태"],
     ["깨진 해지일", (s: Record<string, unknown>) => (s.killedAt = "어제"), "해지일"],
+    ["세금 비율이 글자", (s: Record<string, unknown>) => (s.taxRate = "10%"), "세금"],
   ])("구독 칸이 틀렸다: %s", (_, breakIt, field) => {
     const file = withData((data) => breakIt((data.subscriptions as Record<string, unknown>[])[0]));
     expect(errorOf(file)).toBe(`구독 1번째 항목의 '${field}' 칸이 올바르지 않습니다.`);

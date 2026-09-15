@@ -1,12 +1,20 @@
 import { BillingCycle, Currency } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
-import { formatAmount, formatKRW, getAnnualAmountKRW, getMonthlyAmountKRW } from "./currency";
+import {
+  formatAmount,
+  formatKRW,
+  getAnnualAmountKRW,
+  getBilledAmount,
+  getMonthlyAmountKRW,
+} from "./currency";
 
 /** The fields that describe how a plan is split. */
 export interface SharedPlan {
   amount: number;
   sharingCount?: number;
   myShareAmount?: number;
+  /** 요금표 가격에 따로 붙는 세금(%). 나누는 것은 세금까지 더한 청구액이다. */
+  taxRate?: number;
 }
 
 /** A plan is only "shared" once more than one person is on it. */
@@ -24,14 +32,15 @@ export function getSharingCount(sub: SharedPlan): number {
  * The slice of the bill the user carries, in the subscription's own currency.
  *
  * An explicit `myShareAmount` wins because real splits are often uneven — the
- * person holding the card frequently pays a bit more. Without one the bill is
- * divided evenly.
+ * person holding the card frequently pays a bit more. It is what the user
+ * actually hands over, so no tax is added to it. Without one the bill — tax
+ * included — is divided evenly.
  */
 export function getMyShareAmount(sub: SharedPlan): number {
   if (typeof sub.myShareAmount === "number" && Number.isFinite(sub.myShareAmount)) {
     return Math.max(0, sub.myShareAmount);
   }
-  return sub.amount / getSharingCount(sub);
+  return getBilledAmount(sub) / getSharingCount(sub);
 }
 
 /**
@@ -49,7 +58,7 @@ export function getMyMonthlyShareAmount(sub: SharedPlan & { billingCycle?: Billi
 
 /** What the other members owe the payer each billing date, in their currency. */
 export function getOthersShareAmount(sub: SharedPlan): number {
-  return Math.max(0, sub.amount - getMyShareAmount(sub));
+  return Math.max(0, getBilledAmount(sub) - getMyShareAmount(sub));
 }
 
 type SharedSubscription = SharedPlan & { currency: Currency; billingCycle?: BillingCycle };
@@ -59,7 +68,8 @@ type SharedSubscription = SharedPlan & { currency: Currency; billingCycle?: Bill
  * helpers can be reused instead of a second conversion path.
  */
 function asMyShare<T extends SharedSubscription>(sub: T): T {
-  return { ...sub, amount: getMyShareAmount(sub) };
+  // 내 몫은 이미 세금을 더한 금액이다. 세율을 남기면 환산할 때 세금이 한 번 더 붙는다.
+  return { ...sub, amount: getMyShareAmount(sub), taxRate: undefined };
 }
 
 /** The user's own monthly cost in KRW, after splitting. */
@@ -129,10 +139,12 @@ export function formatSettlementMessage(sub: {
   billingMonth?: number;
   sharingCount?: number;
   myShareAmount?: number;
+  taxRate?: number;
 }): string {
   const count = getSharingCount(sub);
   const perPerson = count > 1 ? getOthersShareAmount(sub) / (count - 1) : 0;
-  const total = formatAmount(sub.amount, sub.currency);
+  // 함께 쓰는 사람에게 알리는 것은 카드에 찍힌 금액이다 — 세금이 따로 붙으면 그것까지.
+  const total = formatAmount(getBilledAmount(sub), sub.currency);
   const each =
     sub.currency === "KRW" ? formatKRW(perPerson) : formatAmount(perPerson, sub.currency);
 

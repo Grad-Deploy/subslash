@@ -8,6 +8,7 @@ import { useStore } from "../../lib/store";
 import {
   formatCurrency,
   formatKRW,
+  getBilledAmount,
   getMyAnnualAmountKRW,
   getMyMonthlyAmountKRW,
   getSavingsEquivalent,
@@ -217,14 +218,14 @@ export default function SavingsDashboard() {
                     <span className="text-sm font-bold whitespace-nowrap">
                       {sub.billingCycle === "yearly" || sub.currency === "USD" ? (
                         <>
-                          {formatCurrency(sub.amount, sub.currency)}
+                          {formatCurrency(getBilledAmount(sub), sub.currency)}
                           <span className="text-xs font-normal text-muted-foreground">
                             {" "}
                             (월 {formatKRW(getMyMonthlyAmountKRW(sub, rate))})
                           </span>
                         </>
                       ) : (
-                        <>월 {formatCurrency(sub.amount, sub.currency)}</>
+                        <>월 {formatCurrency(getBilledAmount(sub), sub.currency)}</>
                       )}
                     </span>
                     <Button

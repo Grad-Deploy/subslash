@@ -1,6 +1,6 @@
 import { Currency, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
-import { formatAmount, formatKRW } from "./currency";
+import { formatAmount, formatKRW, getBilledAmount } from "./currency";
 import { formatDday, getDaysUntilBillingFor } from "./date";
 import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
@@ -193,7 +193,8 @@ export function getActionQueue(
         reason = `마지막 체크인이 ${since}일 전입니다. 그 사이 사용 습관이 달라졌을 수 있습니다.`;
       } else if (priceChecks.has(sub.id)) {
         kind = "price-check";
-        reason = `등록된 금액이 ${formatAmount(sub.amount, sub.currency)}입니다. 지금도 맞는지 확인해주세요.`;
+        // 가격 확인은 요금표 가격끼리 비교한다. 세금이 따로 붙는 구독이면 그렇다고 적는다.
+        reason = `등록된 금액이 ${formatAmount(sub.amount, sub.currency)}${sub.taxRate ? "(세금 별도)" : ""}입니다. 지금도 맞는지 확인해주세요.`;
       } else {
         // 급한 일이 없는 구독은 큐에 올리지 않는다.
         continue;
@@ -216,7 +217,7 @@ export function getActionQueue(
   }
 
   // 해지한 구독에게는 한 가지만 묻는다 — 해지 뒤 첫 결제가 정말 멈췄는지.
-  // 카드에 찍히는 것은 전체 금액이므로 내 몫이 아니라 `amount`를 보여준다.
+  // 카드에 찍히는 것은 전체 금액이므로 내 몫이 아니라 청구액(세금 포함)을 보여준다.
   for (const sub of subscriptions) {
     const check = getKillCheckStatus(sub, now);
     if (!check || check.state !== "due") continue;
@@ -228,7 +229,7 @@ export function getActionQueue(
       kind: "verify-kill",
       reason:
         `해지 후 첫 결제일 ${formatKillCheckDate(check.billingDate, now)}이 지났습니다. ` +
-        `그날 ${formatAmount(sub.amount, sub.currency)}이 결제됐나요? 결제 문자나 카드 내역에서 확인해 주세요.`,
+        `그날 ${formatAmount(getBilledAmount(sub), sub.currency)}이 결제됐나요? 결제 문자나 카드 내역에서 확인해 주세요.`,
       verb: "verify-kill",
       daysUntilBilling: null,
       amountAtStake: null,

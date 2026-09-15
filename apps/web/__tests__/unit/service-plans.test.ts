@@ -1,10 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   POPULAR_SERVICES,
+  counterpartPlan,
   describePresetPrice,
   planFormData,
   presetFormData,
   referencePriceFor,
+  yearlyDiscountOf,
 } from "@subslash/shared";
 
 function byId(id: string) {
@@ -99,5 +101,64 @@ describe("referencePriceFor", () => {
 
   it("요금을 모르는 서비스는 기준 요금이 없다", () => {
     expect(referencePriceFor({ name: unknownPrice[0].nameKo })).toBeNull();
+  });
+
+  it("연 결제 요금제를 고른 구독은 연 요금과 비교한다", () => {
+    expect(referencePriceFor({ name: "Claude", planId: "pro-yearly" })).toEqual({
+      amount: 200,
+      currency: "USD",
+      billingCycle: "yearly",
+    });
+  });
+});
+
+describe("연 결제 요금제", () => {
+  it("연 결제 요금제는 같은 서비스의 월 결제 요금제와 짝을 이룬다", () => {
+    for (const preset of POPULAR_SERVICES) {
+      for (const plan of preset.plans ?? []) {
+        if (!plan.yearlyOf) continue;
+        const where = `${preset.id}/${plan.id}`;
+        expect(plan.billingCycle, where).toBe("yearly");
+        const monthly = counterpartPlan(preset, plan);
+        expect(monthly, where).toBeDefined();
+        expect(monthly?.billingCycle ?? "monthly", where).toBe("monthly");
+        expect(counterpartPlan(preset, monthly!), where).toBe(plan);
+      }
+    }
+  });
+
+  it("연 결제로 1년에 덜 내는 금액과 할인율을 계산한다", () => {
+    const claude = byId("claude-pro");
+    const claudeYearly = claude.plans!.find((p) => p.id === "pro-yearly")!;
+    expect(yearlyDiscountOf(claude, claudeYearly)).toEqual({
+      monthlyTotal: 240,
+      saved: 40,
+      percent: 17,
+    });
+
+    const notion = byId("notion");
+    const notionYearly = notion.plans!.find((p) => p.id === "plus-yearly")!;
+    expect(yearlyDiscountOf(notion, notionYearly)).toEqual({
+      monthlyTotal: 201600,
+      saved: 33600,
+      percent: 17,
+    });
+  });
+
+  it("월 결제 요금제나 짝을 모르는 연 결제에는 할인율을 지어내지 않는다", () => {
+    const claude = byId("claude-pro");
+    expect(
+      yearlyDiscountOf(
+        claude,
+        claude.plans!.find((p) => p.id === "pro")!,
+      ),
+    ).toBeNull();
+    expect(
+      yearlyDiscountOf(claude, { id: "x", name: "x", amount: 100, billingCycle: "yearly" }),
+    ).toBeNull();
+  });
+
+  it("서비스를 다시 고르면 앞서 고른 세금 선택이 남지 않는다", () => {
+    expect(presetFormData(byId("claude-pro"))).toHaveProperty("taxRate", undefined);
   });
 });

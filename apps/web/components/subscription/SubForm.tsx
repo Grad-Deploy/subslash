@@ -5,18 +5,22 @@ import {
   CATEGORY_LABELS,
   SubscriptionFormData,
   ServicePreset,
+  type BillingCycle,
   type ServicePlan,
   type SubscriptionCategory,
   PAYMENT_METHOD_OPTIONS,
+  counterpartPlan,
   describePresetPrice,
   findPresetForSubscription,
   formatAmount,
+  getBilledAmount,
   getMyShareAmount,
   getSharingCount,
   parseServiceUrl,
   planCurrency,
   planFormData,
   presetFormData,
+  yearlyDiscountOf,
 } from "@subslash/shared";
 import { useStore } from "../../lib/store";
 import { useAuth } from "@hooks/useAuth";
@@ -96,6 +100,9 @@ export function SubForm({
       ? findPresetForSubscription({ name: initialData.name, cancelUrl: initialData.cancelUrl })
       : undefined,
   );
+  // 요금표에 세금이 빠져 있다고 밝힌 서비스는 새로 등록할 때 세금을 반드시 고르게 한다. 미리
+  // 골라 두지 않는다 — 부가세가 실제로 붙는지는 결제 수단·계정(사업자 등)마다 다르다.
+  const [taxChosen, setTaxChosen] = useState(isEdit);
   const [query, setQuery] = useState("");
   const [pickCategory, setPickCategory] = useState<SubscriptionCategory | "all">("all");
   const [showMore, setShowMore] = useState(isEdit);
@@ -126,6 +133,10 @@ export function SubForm({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    if (name === "billingCycle") {
+      changeCycle(value as BillingCycle);
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       // 비운 숫자 칸은 0이 아니라 '적지 않음'이다. 0원은 무료 구독, 결제 월 0은
@@ -137,6 +148,34 @@ export function SubForm({
             : Number(value)
           : value,
     }));
+  };
+
+  /**
+   * 결제 주기를 바꾼다. 요금제를 골라 둔 상태면 같은 요금제의 다른 주기(월↔연)로 옮기고, 목록에
+   * 그 주기의 요금이 없으면 요금제와 금액을 비운다. 월 요금이 채워진 채 '매년'으로 바뀌면 한
+   * 달치가 1년치로 저장된다 — 연 결제는 할인되기도 해서 월 요금 × 12로 채우지도 않는다.
+   */
+  const changeCycle = (cycle: BillingCycle) => {
+    setFormData((prev) => {
+      if ((prev.billingCycle ?? "monthly") === cycle) return prev;
+      const next: Partial<SubscriptionFormData> = { ...prev, billingCycle: cycle };
+      const plan = preset?.plans?.find((candidate) => candidate.id === prev.planId);
+      if (preset && plan) {
+        const other = counterpartPlan(preset, plan);
+        if (other && (other.billingCycle ?? "monthly") === cycle) {
+          return { ...next, ...planFormData(preset, other) };
+        }
+        return { ...next, planId: undefined, planName: undefined, amount: undefined };
+      }
+      if (
+        cycle === "yearly" &&
+        preset?.defaultAmount != null &&
+        prev.amount === preset.defaultAmount
+      ) {
+        return { ...next, amount: undefined };
+      }
+      return next;
+    });
   };
 
   /**
@@ -186,6 +225,7 @@ export function SubForm({
 
   const pickPreset = (service: ServicePreset) => {
     setFormData((prev) => ({ ...prev, ...presetFormData(service) }));
+    setTaxChosen(false);
     setPreset(service);
     setIsCustom(false);
     setStep("details");
@@ -207,6 +247,7 @@ export function SubForm({
       iconUrl: undefined,
       planId: undefined,
       planName: undefined,
+      taxRate: undefined,
       category: "other",
     }));
     setPreset(undefined);
@@ -378,6 +419,18 @@ export function SubForm({
 
   const sharing = (formData.sharingCount ?? 1) > 1;
   const plans = preset?.plans ?? [];
+  const cycle = formData.billingCycle ?? "monthly";
+  // 고른 주기의 요금제가 목록에 없으면(연 결제 요금을 모르는 서비스 등) 요금제를 고르라고 막지
+  // 않는다. 그때는 금액을 직접 적는다.
+  const plansRequired = !isEdit && plans.some((plan) => (plan.billingCycle ?? "monthly") === cycle);
+  const taxRequired = !isEdit && !isCustom && Boolean(preset?.priceExcludesTax);
+  const showTax =
+    formData.currency === "USD" || Boolean(preset?.priceExcludesTax) || Boolean(formData.taxRate);
+  const formCurrency = formData.currency || "KRW";
+  const billed =
+    typeof formData.amount === "number"
+      ? getBilledAmount({ amount: formData.amount, taxRate: formData.taxRate })
+      : undefined;
 
   return (
     <form className="space-y-4 text-left" onSubmit={handleSubmit}>
@@ -456,6 +509,8 @@ export function SubForm({
           <div className="grid grid-cols-2 gap-2">
             {plans.map((plan) => {
               const checked = formData.planId === plan.id;
+              const currency = planCurrency(preset, plan);
+              const discount = yearlyDiscountOf(preset, plan);
               return (
                 <label
                   key={plan.id}
@@ -471,14 +526,20 @@ export function SubForm({
                     value={plan.id}
                     checked={checked}
                     onChange={() => pickPlan(plan)}
-                    required={!isEdit}
+                    required={plansRequired}
                     className="sr-only"
                   />
                   <span className="block text-xs font-bold">{plan.name}</span>
                   <span className="block text-[11px] text-muted-foreground">
                     {(plan.billingCycle ?? "monthly") === "yearly" ? "연" : "월"}{" "}
-                    {formatAmount(plan.amount, planCurrency(preset, plan))}
+                    {formatAmount(plan.amount, currency)}
                   </span>
+                  {discount && (
+                    <span className="block text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                      월 {formatAmount(plan.amount / 12, currency)}꼴 · 월 결제보다 연{" "}
+                      {formatAmount(discount.saved, currency)} 적게 ({discount.percent}%)
+                    </span>
+                  )}
                 </label>
               );
             })}
@@ -497,7 +558,13 @@ export function SubForm({
         <div className="space-y-1.5">
           {/* 연간 구독에 '월 결제 금액'이라고 물으면 월 환산액을 적게 되고, 앱이 그걸 다시 12로 나눈다. */}
           <label htmlFor={`${fieldId}-amount`} className={LABEL}>
-            {formData.billingCycle === "yearly" ? "연 결제 금액" : "월 결제 금액"}
+            {formData.taxRate
+              ? cycle === "yearly"
+                ? "연 요금 (세금 제외)"
+                : "월 요금 (세금 제외)"
+              : cycle === "yearly"
+                ? "연 결제 금액"
+                : "월 결제 금액"}
           </label>
           {/* step="any": 없으면 브라우저가 $9.99 같은 소수 금액을 입력 오류로 막는다. */}
           <Input
@@ -527,6 +594,53 @@ export function SubForm({
           </Select>
         </div>
       </div>
+
+      {/*
+        해외 서비스는 요금표 가격에 부가세가 더해져 청구되기도 한다. 금액 칸에는 요금표 가격을 두고
+        세금은 따로 고르게 해, 카드에 찍히는 금액과 가격 확인(요금표 가격끼리 비교)이 둘 다 맞게 한다.
+      */}
+      {showTax && (
+        <div className="space-y-1.5">
+          <label htmlFor={`${fieldId}-tax`} className={LABEL}>
+            세금
+          </label>
+          <Select
+            id={`${fieldId}-tax`}
+            name="taxRate"
+            value={
+              taxRequired && !taxChosen ? "" : formData.taxRate ? String(formData.taxRate) : "none"
+            }
+            onChange={(e) => {
+              const { value } = e.target;
+              setTaxChosen(value !== "");
+              setFormData((prev) => ({
+                ...prev,
+                taxRate: value === "" || value === "none" ? undefined : Number(value),
+              }));
+            }}
+            required={taxRequired}
+          >
+            {taxRequired && !taxChosen && <option value="">선택해주세요</option>}
+            <option value="none">금액에 포함 · 따로 붙지 않음</option>
+            <option value="10">부가세 10% 별도</option>
+            {/* 백업 등으로 들어온 다른 세율도 고친 적 없이 사라지지 않게 보여준다. */}
+            {formData.taxRate && formData.taxRate !== 10 ? (
+              <option value={String(formData.taxRate)}>세금 {formData.taxRate}% 별도</option>
+            ) : null}
+          </Select>
+          <p className="text-[11px] text-muted-foreground break-keep">
+            {preset?.priceExcludesTax
+              ? `${preset.nameKo} 요금표는 세금을 뺀 가격이라고 적혀 있습니다. 국내에서 결제하면 부가세 10%가 더해져 청구될 수 있으니 카드 명세서 금액과 맞는 쪽을 고르세요.`
+              : "해외 서비스는 요금표 가격에 부가세 10%가 더해져 청구되기도 합니다. 카드 명세서 금액과 비교해 고르세요."}
+          </p>
+          {formData.taxRate && billed !== undefined && typeof formData.amount === "number" ? (
+            <p className="text-[11px] font-semibold text-foreground">
+              카드에 청구되는 금액: {formatAmount(billed, formCurrency)} (요금{" "}
+              {formatAmount(formData.amount, formCurrency)} + 부가세 {formData.taxRate}%)
+            </p>
+          ) : null}
+        </div>
+      )}
 
       {/* Billing Day & Cycle */}
       <div className="grid grid-cols-2 gap-3">
@@ -588,6 +702,14 @@ export function SubForm({
         </div>
       )}
 
+      {cycle === "yearly" && preset && !formData.planId && (
+        <p className="text-[11px] text-muted-foreground break-keep">
+          {plans.length > 0 ? `${preset.nameKo}의 연 결제 요금은 목록에 없습니다. ` : ""}
+          결제한 1년치 금액을 적어주세요. 연 결제는 할인되는 경우가 있어 월 요금 × 12와 다를 수
+          있습니다.
+        </p>
+      )}
+
       <button
         type="button"
         onClick={() => setShowMore((open) => !open)}
@@ -643,7 +765,7 @@ export function SubForm({
                     step="any"
                     placeholder={String(
                       Math.round(
-                        (formData.amount ?? 0) /
+                        (billed ?? 0) /
                           getSharingCount({
                             amount: formData.amount ?? 0,
                             sharingCount: formData.sharingCount,
@@ -666,6 +788,7 @@ export function SubForm({
                       amount: formData.amount ?? 0,
                       sharingCount: formData.sharingCount,
                       myShareAmount: formData.myShareAmount,
+                      taxRate: formData.taxRate,
                     }),
                     formData.currency || "KRW",
                   )}
