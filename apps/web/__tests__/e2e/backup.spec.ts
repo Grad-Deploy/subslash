@@ -160,7 +160,7 @@ test.describe("데이터 백업 (E2E)", () => {
     const card = page.getByRole("region", { name: "💾 데이터 백업" });
     await expect(card).toBeVisible({ timeout: 30_000 });
 
-    await expect(card.getByText(/로그인하면 이 기록을 계정에 저장하고/)).toBeVisible();
+    await expect(card.getByText(/로그인하면 이 기록이 계정에 저장되고/)).toBeVisible();
     await expect(card.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/login");
     await expect(card.getByRole("button", { name: "계정에 저장" })).toHaveCount(0);
     await expect(card.getByRole("button", { name: "계정에서 불러오기" })).toHaveCount(0);
