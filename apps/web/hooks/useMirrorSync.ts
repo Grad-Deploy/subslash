@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { realRecords, useStore } from "../lib/store";
-import { pushMirror, toMirrorPayload } from "../lib/notify-client";
+import { SyncTokenRejectedError, pushMirror, toMirrorPayload } from "../lib/notify-client";
 
 const DEBOUNCE_MS = 1500;
 
@@ -43,6 +43,12 @@ export function useMirrorSync() {
             lastSyncedAt: new Date().toISOString(),
           });
         } catch (error) {
+          // 서버에 이 브라우저의 기록이 없다. 예전에는 콘솔에만 남겨, 알림이 끊긴 뒤에도 화면은
+          // '알림 켜짐'이었다. 다시 보내도 통하지 않으니 꺼진 상태로 돌리고 화면이 이유를 알린다.
+          if (error instanceof SyncTokenRejectedError) {
+            useStore.getState().markNotifyRejected(token);
+            return;
+          }
           // Left for the next change to retry; a reminder is not time-critical
           // enough to justify a backoff loop here.
           console.error("Mirror sync failed:", error);

@@ -137,6 +137,11 @@ export interface NotifySettings {
    * it means rotating rather than recovering.
    */
   calendarUrl: string | null;
+  /**
+   * 서버가 이 브라우저의 동기화 토큰을 거절한 시각(`markNotifyRejected`). 알림 설정은 꺼진 상태로
+   * 돌아가고, 화면은 사용자가 끄지 않았는데 꺼졌다는 것과 그 이유를 알린다. 다시 신청하면 지운다.
+   */
+  rejectedAt?: string;
 }
 
 export const DEFAULT_NOTIFY: NotifySettings = {
@@ -248,6 +253,11 @@ interface SubSlashStore {
   // Email reminder actions
   setNotify: (settings: Partial<NotifySettings>) => void;
   clearNotify: () => void;
+  /**
+   * 서버가 `syncToken`을 모른다고 답했을 때. 그 토큰이 아직 이 브라우저의 토큰일 때만 알림을
+   * 꺼진 상태로 돌린다 — 응답을 기다리는 사이 다시 신청했다면 새 신청을 건드리지 않는다.
+   */
+  markNotifyRejected: (syncToken: string) => void;
 
   // Exchange rate actions
   setExchangeRate: (rate: number, source: Exclude<ExchangeRateSource, "default">) => void;
@@ -520,6 +530,18 @@ export const useStore = create<SubSlashStore>()(
       },
       clearNotify: () => {
         set({ notify: DEFAULT_NOTIFY });
+      },
+      markNotifyRejected: (syncToken) => {
+        if (get().notify.syncToken !== syncToken) return;
+        // 서버에 이 브라우저의 기록이 없다. '켜짐'으로 남겨 두면 오지 않을 알림을 기다리게 된다.
+        // 알림 시점만 남겨 다시 신청할 때 그대로 쓴다.
+        set((state) => ({
+          notify: {
+            ...DEFAULT_NOTIFY,
+            reminderDays: state.notify.reminderDays,
+            rejectedAt: new Date().toISOString(),
+          },
+        }));
       },
 
       setExchangeRate: (rate, source) => {
