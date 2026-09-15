@@ -100,6 +100,12 @@ test.describe("Dashboard (E2E)", () => {
     await page.goto("/");
     await page.getByRole("button", { name: /샘플 데이터로 1초 체험/ }).click();
     await expect(page.getByText("샘플로 체험하는 중입니다.")).toBeVisible({ timeout: 30_000 });
+    // 배너는 홈에서 먼저 뜨고 대시보드로 옮기는 것은 그 뒤다. 옮기기 전에 새로고침하면 홈을
+    // 다시 여는 것이라, 대시보드가 뜬 것을 보고 새로고침한다.
+    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "오늘의 구독 점검" })).toBeVisible({
+      timeout: 30_000,
+    });
 
     await page.reload();
     // 구독이 하나도 없을 때만 보이는 버튼이 다시 나온다 — 샘플이 저장되지 않았다.
