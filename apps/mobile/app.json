@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "SubSlash",
+    "slug": "subslash-mobile",
+    "owner": "leesean2",
+    "version": "1.0",
+    "platforms": ["android"],
+    "android": {
+      "package": "com.subslash.app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "207c076d-d837-456e-9f53-8f111e106d8e"
+      }
+    }
+  }
+}
