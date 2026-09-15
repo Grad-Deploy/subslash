@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   formatSettlementMessage,
+  getAnnualAmountKRW,
+  getBilledAmount,
+  getMonthlyAmountKRW,
   getMyShareAmount,
   getMyMonthlyAmountKRW,
   getMyYearDefendedAmountKRW,
@@ -114,6 +117,54 @@ describe("공유 구독 분담", () => {
 
     expect(message).toContain("매년 1회");
     expect(message).not.toContain("15일");
+  });
+});
+
+describe("세금이 따로 붙는 구독", () => {
+  const claude = {
+    name: "Claude",
+    amount: 20,
+    currency: "USD" as const,
+    billingDay: 3,
+    billingCycle: "monthly" as const,
+    taxRate: 10,
+  };
+
+  it("카드 청구액은 요금표 가격에 세금을 더한 값이다", () => {
+    expect(getBilledAmount(claude)).toBe(22);
+    expect(getBilledAmount({ amount: 16800, taxRate: 10 })).toBe(18480);
+    // 결제 대행사처럼 센트에서 반올림한다.
+    expect(getBilledAmount({ amount: 9.99, taxRate: 10 })).toBe(10.99);
+    expect(getBilledAmount({ amount: 20 })).toBe(20);
+    expect(getBilledAmount({ amount: 20, taxRate: -5 })).toBe(20);
+  });
+
+  it("월·연 환산과 합계에 세금이 들어간다", () => {
+    expect(getMonthlyAmountKRW(claude, 1400)).toBe(30800);
+    expect(
+      getAnnualAmountKRW({ ...claude, amount: 200, billingCycle: "yearly" as const }, 1400),
+    ).toBe(308000);
+    expect(sumMyMonthlyKRW([claude], 1400)).toBe(30800);
+  });
+
+  it("나눠 내는 몫에는 세금이 한 번만 들어간다", () => {
+    const shared = { ...claude, sharingCount: 2 };
+    expect(getMyShareAmount(shared)).toBe(11);
+    expect(getOthersShareAmount(shared)).toBe(11);
+    // 세금을 두 번 붙이면 ₩16,940이 된다.
+    expect(getMyMonthlyAmountKRW(shared, 1400)).toBe(15400);
+  });
+
+  it("직접 정한 내 몫은 실제로 내는 돈이라 세금을 더하지 않는다", () => {
+    expect(getMyMonthlyAmountKRW({ ...claude, sharingCount: 2, myShareAmount: 12 }, 1400)).toBe(
+      16800,
+    );
+  });
+
+  it("정산 문구는 세금까지 더한 카드 청구액을 말한다", () => {
+    const message = formatSettlementMessage({ ...claude, sharingCount: 2 });
+    expect(message).toContain("$22.00");
+    expect(message).toContain("$11.00");
   });
 });
 

@@ -11,6 +11,7 @@ import {
   formatCurrency,
   formatDday,
   formatKRW,
+  getBilledAmount,
   getCheckInEvidence,
   getDaysUntilBillingFor,
   getMyMonthlyAmountKRW,
@@ -245,7 +246,7 @@ export function SubTable({
               </td>
               <td className={cn("px-4 py-3 text-right tabular-nums whitespace-nowrap", wideHidden)}>
                 {sub.billingCycle === "yearly" ? "연 " : "월 "}
-                {formatCurrency(sub.amount, sub.currency)}
+                {formatCurrency(getBilledAmount(sub), sub.currency)}
                 {isShared(sub) && (
                   <p className="text-[11px] text-muted-foreground">
                     👥 {getSharingCount(sub)}명이서 나눔

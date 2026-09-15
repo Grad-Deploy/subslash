@@ -8,6 +8,7 @@ import {
   formatCurrency,
   formatKRW,
   formatSettlementMessage,
+  getBilledAmount,
   getMonthlyAmountKRW,
   getMyMonthlyAmountKRW,
   getSharingCount,
@@ -107,7 +108,7 @@ export function SubCard({
                 </div>
                 <p className="text-muted-foreground text-sm mt-1">
                   {subscription.billingCycle === "yearly" ? "연 " : "월 "}
-                  {formatCurrency(subscription.amount, subscription.currency)}
+                  {formatCurrency(getBilledAmount(subscription), subscription.currency)}
                   {(subscription.currency !== "KRW" || subscription.billingCycle === "yearly") && (
                     <span className="text-xs opacity-80">
                       {" "}

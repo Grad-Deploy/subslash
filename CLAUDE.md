@@ -32,6 +32,12 @@ Next.js 15 App Router + Zustand(localStorage) + Drizzle/Turso.
 | 사용자에게 보이는 지출·절약 | `sumMyMonthlyKRW` / `sumMyAnnualKRW` |
 | 카드에 청구되는 금액        | `sumMonthlyKRW` / `sumAnnualKRW`     |
 
+해외 서비스 중 요금표에 세금이 빠진 곳은 `taxRate`(%)로 기록한다. `amount`는 요금표 가격이고,
+한 번의 결제액(카드에 찍히는 값)을 보여줄 때는 `getBilledAmount`를 쓴다. 위 합산 헬퍼와 내 몫
+계산은 세금을 이미 더한다. 가격 확인(`referencePriceFor`)은 요금표 가격끼리 비교하므로 `amount`
+그대로다. 세금이 붙는지는 서비스가 요금표에 밝힌 곳(`priceExcludesTax`)이라도 미리 고르지 않고
+등록할 때 사용자가 고른다.
+
 공유 구독은 `sharingCount`·`myShareAmount`로 나뉜다. 4명이 나누는 구독을
 해지해도 실제로 아끼는 돈은 4분의 1이므로, 지출·절약 수치는 전자를 쓴다.
 

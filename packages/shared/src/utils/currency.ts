@@ -31,29 +31,50 @@ export function toKRW(
 }
 
 /**
+ * 카드에 실제로 청구되는 한 번의 결제액(구독의 통화 그대로).
+ *
+ * 요금표 가격에 세금이 빠진 해외 서비스는 `taxRate`(%)만큼 더한다. 결제 대행사처럼 센트(원은
+ * 소수점 둘째 자리)에서 반올림한다 — $9.99에 10%면 $10.99다. 세율이 없거나 이상한 값이면
+ * 등록한 금액 그대로다.
+ */
+export function getBilledAmount(sub: { amount: number; taxRate?: number }): number {
+  const taxRate = sub.taxRate;
+  if (typeof taxRate !== "number" || !Number.isFinite(taxRate) || taxRate <= 0) return sub.amount;
+  return Math.round(sub.amount * (100 + taxRate)) / 100;
+}
+
+type BilledSubscription = {
+  amount: number;
+  currency: Currency;
+  billingCycle?: BillingCycle;
+  taxRate?: number;
+};
+
+/**
  * A subscription's cost expressed as monthly KRW — yearly plans are divided by
  * 12 and USD plans converted, so totals across a mixed list are comparable.
+ * Tax charged on top of the list price is included (`getBilledAmount`).
  */
 export function getMonthlyAmountKRW(
-  sub: { amount: number; currency: Currency; billingCycle?: BillingCycle },
+  sub: BilledSubscription,
   rate: number = DEFAULT_EXCHANGE_RATE,
 ): number {
-  const krw = toKRW(sub.amount, sub.currency, rate);
+  const krw = toKRW(getBilledAmount(sub), sub.currency, rate);
   return sub.billingCycle === "yearly" ? Math.round(krw / 12) : krw;
 }
 
-/** Annual KRW cost of a subscription, whatever its currency or billing cycle. */
+/** Annual KRW cost of a subscription, whatever its currency, billing cycle or tax. */
 export function getAnnualAmountKRW(
-  sub: { amount: number; currency: Currency; billingCycle?: BillingCycle },
+  sub: BilledSubscription,
   rate: number = DEFAULT_EXCHANGE_RATE,
 ): number {
-  const krw = toKRW(sub.amount, sub.currency, rate);
+  const krw = toKRW(getBilledAmount(sub), sub.currency, rate);
   return sub.billingCycle === "yearly" ? krw : krw * 12;
 }
 
 /** Sum of a list of subscriptions as monthly KRW. */
 export function sumMonthlyKRW(
-  subs: Array<{ amount: number; currency: Currency; billingCycle?: BillingCycle }>,
+  subs: BilledSubscription[],
   rate: number = DEFAULT_EXCHANGE_RATE,
 ): number {
   return subs.reduce((total, sub) => total + getMonthlyAmountKRW(sub, rate), 0);
@@ -61,7 +82,7 @@ export function sumMonthlyKRW(
 
 /** Sum of a list of subscriptions as annual KRW. */
 export function sumAnnualKRW(
-  subs: Array<{ amount: number; currency: Currency; billingCycle?: BillingCycle }>,
+  subs: BilledSubscription[],
   rate: number = DEFAULT_EXCHANGE_RATE,
 ): number {
   return subs.reduce((total, sub) => total + getAnnualAmountKRW(sub, rate), 0);

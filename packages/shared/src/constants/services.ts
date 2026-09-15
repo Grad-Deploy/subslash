@@ -12,6 +12,11 @@ export interface ServicePlan {
   currency?: Currency;
   /** 적지 않으면 월 결제. */
   billingCycle?: BillingCycle;
+  /**
+   * 연 결제 요금제가 어느 월 결제 요금제의 연간판인지(그 요금제의 id). 적어 두면 연 결제로 1년에
+   * 얼마를 덜 내는지 계산해 보여주고, 등록 폼에서 결제 주기를 바꿀 때 짝 요금제로 옮긴다.
+   */
+  yearlyOf?: string;
 }
 
 export interface ServicePreset {
@@ -29,6 +34,12 @@ export interface ServicePreset {
   plans?: ServicePlan[];
   /** 결제 경로·조건에 따라 요금이 달라지는 점을 알리는 한 줄. */
   priceNote?: string;
+  /**
+   * 요금표 가격에 세금이 빠져 있다고 서비스가 스스로 밝힌 경우(요금표의 문구로 확인한 곳만).
+   * 등록할 때 세금이 붙는지를 반드시 고르게 한다. 미리 골라 두지는 않는다 — 한국 부가세가 실제로
+   * 더해지는지는 결제 수단·계정(사업자 등)에 따라 달라, 그럴듯한 기본값이 사실로 읽힌다.
+   */
+  priceExcludesTax?: boolean;
   currency: Currency;
   cancelUrl: string;
   /**
@@ -519,7 +530,13 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     defaultAmount: null,
     plans: [
       { id: "plus-monthly", name: "플러스 (월 결제)", amount: 16800 },
-      { id: "plus-yearly", name: "플러스 (연 결제)", amount: 168000, billingCycle: "yearly" },
+      {
+        id: "plus-yearly",
+        name: "플러스 (연 결제)",
+        amount: 168000,
+        billingCycle: "yearly",
+        yearlyOf: "plus-monthly",
+      },
     ],
     currency: "KRW",
     // 노션의 청구 설정은 앱 안의 설정 창에만 있고 고정 주소가 없다. 옛 주소
@@ -558,12 +575,21 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // '클로드 프로 (Claude Pro)'로 등록된 구독도 같은 서비스로 알아보도록 짧게 둔다.
     nameKo: "Claude",
     category: "ai",
-    // claude.com/pricing의 월 결제 요금.
+    // claude.com/pricing: Pro는 월 결제 $20, 연 결제 $200(한 번에 청구). 요금표에
+    // "Prices shown don't include applicable tax."라고 적혀 있다.
     defaultAmount: null,
     plans: [
       { id: "pro", name: "Pro", amount: 20 },
+      {
+        id: "pro-yearly",
+        name: "Pro (연 결제)",
+        amount: 200,
+        billingCycle: "yearly",
+        yearlyOf: "pro",
+      },
       { id: "max-5x", name: "Max 5x", amount: 100 },
     ],
+    priceExcludesTax: true,
     currency: "USD",
     cancelUrl: "https://claude.ai/settings/billing",
     cancelUrlKind: "direct",
@@ -595,7 +621,10 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Cursor Pro",
     nameKo: "Cursor Pro",
     category: "ai",
+    // cursor.com/pricing: "All prices are exclusive of any applicable taxes." 연 결제는
+    // "Save 20%"라고만 적혀 있고 금액이 없어 연 결제 요금제는 넣지 않는다.
     defaultAmount: 20,
+    priceExcludesTax: true,
     currency: "USD",
     // 결제 대시보드에서 Stripe 결제 화면을 한 번 더 열어야 해지 버튼이 나온다.
     cancelUrl: "https://cursor.com/dashboard/billing",
@@ -646,8 +675,20 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     plans: [
       { id: "personal", name: "퍼스널 (월 결제)", amount: 12500 },
       { id: "family", name: "패밀리 (월 결제)", amount: 15500 },
-      { id: "personal-yearly", name: "퍼스널 (연 결제)", amount: 125000, billingCycle: "yearly" },
-      { id: "family-yearly", name: "패밀리 (연 결제)", amount: 155000, billingCycle: "yearly" },
+      {
+        id: "personal-yearly",
+        name: "퍼스널 (연 결제)",
+        amount: 125000,
+        billingCycle: "yearly",
+        yearlyOf: "personal",
+      },
+      {
+        id: "family-yearly",
+        name: "패밀리 (연 결제)",
+        amount: 155000,
+        billingCycle: "yearly",
+        yearlyOf: "family",
+      },
     ],
     currency: "KRW",
     cancelUrl: "https://account.microsoft.com/services",
@@ -947,6 +988,7 @@ export function presetFormData(preset: ServicePreset): Partial<SubscriptionFormD
     iconUrl: preset.iconEmoji,
     planId: undefined,
     planName: undefined,
+    taxRate: undefined,
   };
 }
 
@@ -962,6 +1004,37 @@ export function planFormData(
     currency: planCurrency(preset, plan),
     billingCycle: plan.billingCycle ?? "monthly",
   };
+}
+
+/** 같은 요금제의 다른 결제 주기(월↔연) 요금제. 목록에 없으면 undefined. */
+export function counterpartPlan(preset: ServicePreset, plan: ServicePlan): ServicePlan | undefined {
+  const plans = preset.plans ?? [];
+  if (plan.yearlyOf) return plans.find((candidate) => candidate.id === plan.yearlyOf);
+  return plans.find((candidate) => candidate.yearlyOf === plan.id);
+}
+
+export interface YearlyDiscount {
+  /** 같은 요금제를 월 결제로 1년 낼 때의 금액. */
+  monthlyTotal: number;
+  /** 연 결제로 1년에 덜 내는 금액. */
+  saved: number;
+  /** 할인율(%). 반올림한다. */
+  percent: number;
+}
+
+/**
+ * 연 결제 요금제가 같은 요금제의 월 결제보다 1년에 얼마나 싼지. 짝이 되는 월 결제 요금제
+ * (`yearlyOf`)가 목록에 있고 통화가 같을 때만 계산한다 — 짝을 모르면 할인율을 짐작해 적지 않는다.
+ */
+export function yearlyDiscountOf(preset: ServicePreset, plan: ServicePlan): YearlyDiscount | null {
+  if ((plan.billingCycle ?? "monthly") !== "yearly" || !plan.yearlyOf) return null;
+  const monthly = preset.plans?.find((candidate) => candidate.id === plan.yearlyOf);
+  if (!monthly || (monthly.billingCycle ?? "monthly") !== "monthly") return null;
+  if (planCurrency(preset, monthly) !== planCurrency(preset, plan)) return null;
+  const monthlyTotal = monthly.amount * 12;
+  const saved = monthlyTotal - plan.amount;
+  if (saved <= 0) return null;
+  return { monthlyTotal, saved, percent: Math.round((saved / monthlyTotal) * 100) };
 }
 
 /**
