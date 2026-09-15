@@ -1,6 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getDb } from "./db";
-import { accounts, sessions, type Account } from "./schema";
+import { accounts, type Account } from "./schema";
+import { replacePassword } from "./auth-server";
 import {
   canSignLinks,
   emailFingerprint,
@@ -104,23 +105,11 @@ export async function resolveResetLink(token: string | null | undefined): Promis
 }
 
 /**
- * 비밀번호를 바꾼다. 링크를 확인한 사이 다른 창에서 먼저 바꿨으면 `false`.
- *
- * 링크를 확인할 때 본 해시가 그대로일 때만 바꾼다. 같은 링크를 두 창에서 동시에
- * 제출해도 한 번만 바뀐다.
+ * 비밀번호를 바꾸고 모든 기기의 로그인을 끊는다(`replacePassword`). 링크를 확인한 사이
+ * 다른 창에서 먼저 바꿨으면 `false` — 같은 링크를 두 창에서 동시에 제출해도 한 번만 바뀐다.
  */
 export async function applyPasswordReset(account: Account, newHash: string): Promise<boolean> {
-  const db = getDb();
-  const updated = await db
-    .update(accounts)
-    .set({ passwordHash: newHash })
-    .where(and(eq(accounts.id, account.id), eq(accounts.passwordHash, account.passwordHash)))
-    .returning({ id: accounts.id });
-  if (updated.length === 0) return false;
-
-  // 옛 비밀번호로 들어와 있던 기기를 모두 내보낸다. 비밀번호를 바꾸는 이유가
-  // 잊어서만은 아니다 — 누가 알아냈을까 봐 바꾸는 경우도 있다.
-  await db.delete(sessions).where(eq(sessions.accountId, account.id));
+  if (!(await replacePassword(account, newHash))) return false;
   // 재설정 링크는 이 주소로만 갔다. 링크를 열어 여기까지 왔다면 주소의 주인이다.
   await markEmailVerified(account.id);
   return true;

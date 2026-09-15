@@ -1,5 +1,6 @@
 import React from "react";
 import { ProfileForm } from "@components/auth/ProfileForm";
+import { ChangePasswordSection } from "@components/auth/ChangePasswordSection";
 import { DeleteAccountSection } from "@components/auth/DeleteAccountSection";
 
 export const metadata = {
@@ -17,6 +18,8 @@ export default function ProfilePage() {
       <div className="p-5 sm:p-6 border rounded-2xl bg-card shadow-sm">
         <ProfileForm />
       </div>
+
+      <ChangePasswordSection />
 
       <DeleteAccountSection />
     </div>
