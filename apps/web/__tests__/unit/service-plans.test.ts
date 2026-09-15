@@ -143,6 +143,15 @@ describe("연 결제 요금제", () => {
       saved: 33600,
       percent: 17,
     });
+
+    // 결제 화면의 "US$16.00/월 · US$48 절약"과 같다.
+    const cursor = byId("cursor-pro");
+    const cursorYearly = cursor.plans!.find((p) => p.id === "pro-yearly")!;
+    expect(yearlyDiscountOf(cursor, cursorYearly)).toEqual({
+      monthlyTotal: 240,
+      saved: 48,
+      percent: 20,
+    });
   });
 
   it("월 결제 요금제나 짝을 모르는 연 결제에는 할인율을 지어내지 않는다", () => {
@@ -158,7 +167,9 @@ describe("연 결제 요금제", () => {
     ).toBeNull();
   });
 
-  it("서비스를 다시 고르면 앞서 고른 세금 선택이 남지 않는다", () => {
-    expect(presetFormData(byId("claude-pro"))).toHaveProperty("taxRate", undefined);
+  it("결제 화면에서 부가세를 확인한 서비스는 고르면 부가세가 채워지고, 다른 서비스는 앞서 고른 세금이 남지 않는다", () => {
+    expect(presetFormData(byId("claude-pro")).taxRate).toBe(10);
+    expect(presetFormData(byId("cursor-pro")).taxRate).toBe(10);
+    expect(presetFormData(byId("netflix"))).toHaveProperty("taxRate", undefined);
   });
 });
