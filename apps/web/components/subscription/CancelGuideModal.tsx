@@ -11,6 +11,7 @@ import {
 } from "@subslash/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button, WRAPPING_BUTTON } from "../ui/button";
+import { openExternal } from "@lib/native";
 
 interface CancelGuideModalProps {
   subscription: Subscription | null;
@@ -41,11 +42,6 @@ export function CancelGuideModal({
   const accountUrl = getAccountFallbackUrl(sub.cancelUrl);
   const steps = parseCancelGuideSteps(sub.cancelGuide);
   const paymentMethod = PAYMENT_METHOD_OPTIONS.find((p) => p.value === sub.paymentMethod);
-
-  const openExternal = (url?: string) => {
-    if (!url) return;
-    window.open(url, "_blank", "noopener,noreferrer");
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

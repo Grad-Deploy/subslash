@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useSyncExternalStore } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useSyncExternalStore,
+} from "react";
+import { syncSystemBars } from "@lib/native";
 
 type Theme = "dark" | "light";
 
@@ -33,6 +40,11 @@ function readTheme(): Theme {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const theme = useSyncExternalStore<Theme>(subscribe, readTheme, () => "light");
+
+  // 앱에서는 상태 표시줄도 같은 테마로 맞춘다. 웹에서는 아무것도 하지 않는다.
+  useEffect(() => {
+    syncSystemBars(theme);
+  }, [theme]);
 
   const toggleTheme = useCallback(() => {
     const next: Theme = readTheme() === "light" ? "dark" : "light";
