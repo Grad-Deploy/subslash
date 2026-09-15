@@ -100,9 +100,6 @@ export function SubForm({
       ? findPresetForSubscription({ name: initialData.name, cancelUrl: initialData.cancelUrl })
       : undefined,
   );
-  // 요금표에 세금이 빠져 있다고 밝힌 서비스는 새로 등록할 때 세금을 반드시 고르게 한다. 미리
-  // 골라 두지 않는다 — 부가세가 실제로 붙는지는 결제 수단·계정(사업자 등)마다 다르다.
-  const [taxChosen, setTaxChosen] = useState(isEdit);
   const [query, setQuery] = useState("");
   const [pickCategory, setPickCategory] = useState<SubscriptionCategory | "all">("all");
   const [showMore, setShowMore] = useState(isEdit);
@@ -225,7 +222,6 @@ export function SubForm({
 
   const pickPreset = (service: ServicePreset) => {
     setFormData((prev) => ({ ...prev, ...presetFormData(service) }));
-    setTaxChosen(false);
     setPreset(service);
     setIsCustom(false);
     setStep("details");
@@ -423,9 +419,8 @@ export function SubForm({
   // 고른 주기의 요금제가 목록에 없으면(연 결제 요금을 모르는 서비스 등) 요금제를 고르라고 막지
   // 않는다. 그때는 금액을 직접 적는다.
   const plansRequired = !isEdit && plans.some((plan) => (plan.billingCycle ?? "monthly") === cycle);
-  const taxRequired = !isEdit && !isCustom && Boolean(preset?.priceExcludesTax);
   const showTax =
-    formData.currency === "USD" || Boolean(preset?.priceExcludesTax) || Boolean(formData.taxRate);
+    formData.currency === "USD" || Boolean(preset?.taxRate) || Boolean(formData.taxRate);
   const formCurrency = formData.currency || "KRW";
   const billed =
     typeof formData.amount === "number"
@@ -607,20 +602,15 @@ export function SubForm({
           <Select
             id={`${fieldId}-tax`}
             name="taxRate"
-            value={
-              taxRequired && !taxChosen ? "" : formData.taxRate ? String(formData.taxRate) : "none"
-            }
+            value={formData.taxRate ? String(formData.taxRate) : "none"}
             onChange={(e) => {
               const { value } = e.target;
-              setTaxChosen(value !== "");
               setFormData((prev) => ({
                 ...prev,
-                taxRate: value === "" || value === "none" ? undefined : Number(value),
+                taxRate: value === "none" ? undefined : Number(value),
               }));
             }}
-            required={taxRequired}
           >
-            {taxRequired && !taxChosen && <option value="">선택해주세요</option>}
             <option value="none">금액에 포함 · 따로 붙지 않음</option>
             <option value="10">부가세 10% 별도</option>
             {/* 백업 등으로 들어온 다른 세율도 고친 적 없이 사라지지 않게 보여준다. */}
@@ -629,8 +619,8 @@ export function SubForm({
             ) : null}
           </Select>
           <p className="text-[11px] text-muted-foreground break-keep">
-            {preset?.priceExcludesTax
-              ? `${preset.nameKo} 요금표는 세금을 뺀 가격이라고 적혀 있습니다. 국내에서 결제하면 부가세 10%가 더해져 청구될 수 있으니 카드 명세서 금액과 맞는 쪽을 고르세요.`
+            {preset?.taxRate
+              ? `한국에서 결제하면 ${preset.nameKo} 요금에 부가세 ${preset.taxRate}%가 더해집니다(결제 화면에서 확인). 그래서 부가세를 넣은 금액으로 채웠습니다. 사업자 결제처럼 부가세가 붙지 않으면 '금액에 포함 · 따로 붙지 않음'으로 바꾸세요.`
               : "해외 서비스는 요금표 가격에 부가세 10%가 더해져 청구되기도 합니다. 카드 명세서 금액과 비교해 고르세요."}
           </p>
           {formData.taxRate && billed !== undefined && typeof formData.amount === "number" ? (

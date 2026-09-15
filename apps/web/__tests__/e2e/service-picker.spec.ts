@@ -26,7 +26,7 @@ test.describe("새 구독 등록 — 서비스 고르기 (E2E)", () => {
     await expect(tabs.getByRole("button", { name: /AI/ })).toHaveAttribute("aria-pressed", "false");
   });
 
-  test("세금이 따로 붙는 서비스는 세금을 고르게 하고, 결제 주기를 바꾸면 연 결제 요금제로 옮긴다", async ({
+  test("부가세가 붙는 서비스는 부가세를 넣은 금액으로 채우고, 결제 주기를 바꾸면 연 결제 요금제로 옮긴다", async ({
     page,
   }) => {
     await page.goto("/");
@@ -42,17 +42,25 @@ test.describe("새 구독 등록 — 서비스 고르기 (E2E)", () => {
     // 연 결제 요금제에는 월 결제보다 얼마나 덜 내는지 적는다.
     await expect(dialog.getByText("월 $16.67꼴 · 월 결제보다 연 $40.00 적게 (17%)")).toBeVisible();
 
-    // 세금은 미리 골라 두지 않는다.
-    const tax = dialog.getByLabel("세금");
-    await expect(tax).toHaveValue("");
-    await expect(dialog.getByText(/Claude 요금표는 세금을 뺀 가격이라고/)).toBeVisible();
+    // 결제 화면에서 확인한 부가세 10%가 고르지 않아도 채워져 있다. 금액 칸 이름("월 요금 (세금
+    // 제외)")에도 '세금'이 들어가므로 정확한 이름으로 찾는다.
+    const tax = dialog.getByLabel("세금", { exact: true });
+    await expect(tax).toHaveValue("10");
+    await expect(
+      dialog.getByText(/한국에서 결제하면 Claude 요금에 부가세 10%가 더해집니다/),
+    ).toBeVisible();
 
     await dialog.locator('input[name="planId"][value="pro"]').check({ force: true });
-    await tax.selectOption("10");
     await expect(dialog.getByLabel("월 요금 (세금 제외)")).toHaveValue("20");
     await expect(
       dialog.getByText("카드에 청구되는 금액: $22.00 (요금 $20.00 + 부가세 10%)"),
     ).toBeVisible();
+
+    // 사업자 결제처럼 부가세가 붙지 않으면 바꿀 수 있다.
+    await tax.selectOption("none");
+    await expect(dialog.getByLabel("월 결제 금액")).toHaveValue("20");
+    await expect(dialog.getByText(/카드에 청구되는 금액/)).toHaveCount(0);
+    await tax.selectOption("10");
 
     // 매년으로 바꾸면 같은 요금제의 연 결제로 옮긴다.
     await dialog.getByLabel("주기").selectOption("yearly");
