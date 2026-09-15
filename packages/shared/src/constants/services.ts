@@ -36,10 +36,12 @@ export interface ServicePreset {
   priceNote?: string;
   /**
    * 요금표 가격에 세금이 빠져 있다고 서비스가 스스로 밝힌 경우(요금표의 문구로 확인한 곳만).
-   * 등록할 때 세금이 붙는지를 반드시 고르게 한다. 미리 골라 두지는 않는다 — 한국 부가세가 실제로
-   * 더해지는지는 결제 수단·계정(사업자 등)에 따라 달라, 그럴듯한 기본값이 사실로 읽힌다.
+   * 한국에서 결제할 때 요금표 가격에 더해져 청구되는 세금(%). 결제 화면에서 세금이 따로 붙는 것을
+   * 확인한 서비스만 적는다. 서비스를 고르면 이 세율이 채워진 채 등록되고, 사업자 결제처럼 세금이
+   * 붙지 않는 사람은 등록할 때 바꾼다. 확인하지 못한 서비스는 적지 않는다 — 그럴듯한 세율을 채우면
+   * 카드에 찍히지 않는 금액이 사실처럼 저장된다.
    */
-  priceExcludesTax?: boolean;
+  taxRate?: number;
   currency: Currency;
   cancelUrl: string;
   /**
@@ -576,7 +578,9 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     nameKo: "Claude",
     category: "ai",
     // claude.com/pricing: Pro는 월 결제 $20, 연 결제 $200(한 번에 청구). 요금표에
-    // "Prices shown don't include applicable tax."라고 적혀 있다.
+    // "Prices shown don't include applicable tax."라고 적혀 있고, 한국 계정의 업그레이드 화면은
+    // Pro 연 결제를 "$220 연간 청구 (부가세 포함)", Max를 "$110부터 (부가세 포함)"로 보인다
+    // (2026-09-15 확인) — 부가세 10%가 더해진다.
     defaultAmount: null,
     plans: [
       { id: "pro", name: "Pro", amount: 20 },
@@ -589,7 +593,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
       },
       { id: "max-5x", name: "Max 5x", amount: 100 },
     ],
-    priceExcludesTax: true,
+    taxRate: 10,
     currency: "USD",
     cancelUrl: "https://claude.ai/settings/billing",
     cancelUrlKind: "direct",
@@ -621,10 +625,21 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Cursor Pro",
     nameKo: "Cursor Pro",
     category: "ai",
-    // cursor.com/pricing: "All prices are exclusive of any applicable taxes." 연 결제는
-    // "Save 20%"라고만 적혀 있고 금액이 없어 연 결제 요금제는 넣지 않는다.
-    defaultAmount: 20,
-    priceExcludesTax: true,
+    // cursor.com/pricing: "All prices are exclusive of any applicable taxes." 한국 주소의 결제
+    // 화면(Stripe)은 Pro를 소계 US$20.00 + 부가가치세(10%) US$2.00 = US$22.00으로 청구하고, 연간
+    // 결제는 "US$16.00/월 · US$48 절약"이다(2026-09-15 확인) — 연 $192.
+    defaultAmount: null,
+    plans: [
+      { id: "pro", name: "Pro", amount: 20 },
+      {
+        id: "pro-yearly",
+        name: "Pro (연 결제)",
+        amount: 192,
+        billingCycle: "yearly",
+        yearlyOf: "pro",
+      },
+    ],
+    taxRate: 10,
     currency: "USD",
     // 결제 대시보드에서 Stripe 결제 화면을 한 번 더 열어야 해지 버튼이 나온다.
     cancelUrl: "https://cursor.com/dashboard/billing",
@@ -988,7 +1003,9 @@ export function presetFormData(preset: ServicePreset): Partial<SubscriptionFormD
     iconUrl: preset.iconEmoji,
     planId: undefined,
     planName: undefined,
-    taxRate: undefined,
+    // 결제 화면에서 확인한 세율이 있으면 채운다. 없으면 undefined로 적어 앞서 고른 서비스의
+    // 세금이 남지 않게 한다.
+    taxRate: preset.taxRate,
   };
 }
 
