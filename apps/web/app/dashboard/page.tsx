@@ -8,7 +8,6 @@ import {
   Subscription,
   SubscriptionFormData,
   CheckInResponse,
-  DEMO_SUBSCRIPTIONS,
   POPULAR_SERVICES,
   formatCurrency,
   formatKRW,
@@ -59,6 +58,7 @@ export default function Dashboard() {
     getActiveSubscriptions,
     getKilledSubscriptions,
     getDashboardStats,
+    startDemo,
   } = useStore();
   const rate = useExchangeRate();
 
@@ -160,15 +160,10 @@ export default function Dashboard() {
     showToast(`✅ ${data.name} 구독이 등록되었습니다.`);
   };
 
+  // 샘플은 내 구독에 더하지 않고 잠시 동안만 보여준다(store의 DemoSession).
   const handleLoadDemo = () => {
-    const existingNames = new Set(useStore.getState().subscriptions.map((sub) => sub.name));
-    const added = DEMO_SUBSCRIPTIONS.filter((item) => !existingNames.has(item.name));
-    added.forEach((item) => addSubscription(item));
-    showToast(
-      added.length > 0
-        ? `샘플 구독 ${added.length}개가 등록되었습니다.`
-        : "샘플 구독이 이미 모두 등록되어 있습니다.",
-    );
+    startDemo();
+    showToast("샘플로 체험을 시작했습니다. 내 구독과 섞이지 않고, 끝내면 사라집니다.");
   };
 
   return (

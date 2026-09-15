@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useStore } from "../../lib/store";
+import { realRecords, useStore } from "../../lib/store";
 import {
   backupFileName,
   createBackup,
@@ -85,7 +85,10 @@ async function fetchSnapshotSummary(): Promise<AccountSnapshotState> {
  * 무엇으로 바뀌는지 개수를 보여준다.
  */
 export function DataBackupCard({ onMessage }: DataBackupCardProps) {
-  const { subscriptions, usageLogs, accounts, exchangeRate, notify, replaceAllData } = useStore();
+  const store = useStore();
+  const { accounts, exchangeRate, notify, replaceAllData } = store;
+  // 샘플 체험 중이면 화면의 목록은 샘플이다. 백업·계정 저장과 개수 안내는 실제 기록으로 한다.
+  const { subscriptions, usageLogs } = realRecords(store);
   const { account, loading: authLoading } = useAuth();
   const fileInput = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState<PendingRestore | null>(null);

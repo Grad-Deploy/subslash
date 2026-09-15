@@ -5,9 +5,18 @@ import {
   migrateLegacyCancelUrls,
   mergePersistedState,
   isValidExchangeRate,
+  isDemoExpired,
+  realRecords,
+  toPersistedState,
   DEFAULT_EXCHANGE_RATE_SETTING,
 } from "../../lib/store";
-import { DEFAULT_EXCHANGE_RATE, type SubscriptionFormData } from "@subslash/shared";
+import {
+  DEFAULT_EXCHANGE_RATE,
+  DEMO_SUBSCRIPTIONS,
+  type Subscription,
+  type SubscriptionFormData,
+  type UsageLog,
+} from "@subslash/shared";
 
 describe("Zustand Store", () => {
   beforeEach(() => {
@@ -593,5 +602,117 @@ describe("Store addBatchSubscriptions", () => {
     const storeSubs = useStore.getState().subscriptions;
     expect(storeSubs).toHaveLength(2);
     expect(useStore.getState().getDashboardStats().totalMonthlySpend).toBe(30000);
+  });
+});
+
+describe("샘플 체험", () => {
+  const real: Subscription = {
+    id: "real-1",
+    name: "내 노션",
+    amount: 16800,
+    currency: "KRW",
+    billingDay: 5,
+    billingCycle: "monthly",
+    category: "other",
+    status: "active",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    linkedAccountId: "acc-1",
+    linkedAccountName: "내 구글 (me@gmail.com)",
+  };
+  const realLog: UsageLog = {
+    id: "log-1",
+    subscriptionId: "real-1",
+    month: "2026-09",
+    usageCount: 3,
+    costPerUse: 5600,
+    riskLevel: "yellow",
+    checkedAt: "2026-09-01T00:00:00.000Z",
+  };
+  /** localStorage에 쓰일 모양(persist의 partialize와 같은 함수). */
+  const persisted = () => toPersistedState(useStore.getState());
+  const sampleNames = DEMO_SUBSCRIPTIONS.map((item) => item.name);
+
+  beforeEach(() => {
+    useStore.setState({ subscriptions: [real], usageLogs: [realLog], accounts: [], demo: null });
+  });
+
+  it("체험을 시작하면 화면에는 샘플만 보이고, 저장소에는 실제 기록만 남는다", () => {
+    useStore.getState().startDemo();
+    const state = useStore.getState();
+    expect(state.subscriptions.map((sub) => sub.name)).toEqual(sampleNames);
+    expect(state.usageLogs).toEqual([]);
+    expect(persisted().subscriptions).toEqual([real]);
+    expect(persisted().usageLogs).toEqual([realLog]);
+  });
+
+  it("체험 중의 체크인·해지는 샘플에만 남고, 끝내면 실제 기록이 그대로 돌아온다", () => {
+    useStore.getState().startDemo();
+    const sample = useStore.getState().subscriptions[0];
+    useStore.getState().checkIn(sample.id, 2);
+    useStore.getState().killSubscription(sample.id);
+    expect(persisted().subscriptions).toEqual([real]);
+    expect(persisted().usageLogs).toEqual([realLog]);
+
+    useStore.getState().endDemo();
+    const state = useStore.getState();
+    expect(state.demo).toBeNull();
+    expect(state.subscriptions).toEqual([real]);
+    expect(state.usageLogs).toEqual([realLog]);
+  });
+
+  it("두 번 눌러도 샘플이 겹치지 않고, 보관한 실제 기록이 샘플로 바뀌지 않는다", () => {
+    useStore.getState().startDemo();
+    useStore.getState().startDemo();
+    expect(useStore.getState().subscriptions).toHaveLength(sampleNames.length);
+    useStore.getState().endDemo();
+    expect(useStore.getState().subscriptions).toEqual([real]);
+  });
+
+  it("체험 중에 등록하면 체험을 끝내고 실제 목록에 더한다", () => {
+    useStore.getState().startDemo();
+    useStore.getState().addSubscription({
+      name: "새 구독",
+      amount: 9900,
+      currency: "KRW",
+      billingDay: 10,
+      billingCycle: "monthly",
+      category: "other",
+    });
+    const state = useStore.getState();
+    expect(state.demo).toBeNull();
+    expect(state.subscriptions.map((sub) => sub.name)).toEqual(["내 노션", "새 구독"]);
+    expect(state.usageLogs).toEqual([realLog]);
+  });
+
+  it("체험 중의 전체 초기화는 체험만 끝내고 실제 기록은 지우지 않는다", () => {
+    useStore.getState().startDemo();
+    useStore.getState().clearSubscriptions();
+    expect(useStore.getState().demo).toBeNull();
+    expect(useStore.getState().subscriptions).toEqual([real]);
+  });
+
+  it("알림 미러·백업이 쓰는 실제 기록은 체험 중에도 실제 기록이다", () => {
+    useStore.getState().startDemo();
+    expect(realRecords(useStore.getState())).toEqual({
+      subscriptions: [real],
+      usageLogs: [realLog],
+    });
+  });
+
+  it("체험 중에 연동 계정을 지우면 보관한 실제 구독에서도 연결을 끊는다", () => {
+    useStore.getState().startDemo();
+    useStore.getState().deleteAccount("acc-1");
+    useStore.getState().endDemo();
+    expect(useStore.getState().subscriptions[0].linkedAccountId).toBeUndefined();
+  });
+
+  it("체험은 30분이 지나면 끝난 것으로 본다", () => {
+    const demo = {
+      startedAt: "2026-09-15T10:00:00.000Z",
+      saved: { subscriptions: [], usageLogs: [] },
+    };
+    expect(isDemoExpired(demo, new Date("2026-09-15T10:29:59.000Z"))).toBe(false);
+    expect(isDemoExpired(demo, new Date("2026-09-15T10:30:00.000Z"))).toBe(true);
+    expect(isDemoExpired({ ...demo, startedAt: "언제" })).toBe(true);
   });
 });
