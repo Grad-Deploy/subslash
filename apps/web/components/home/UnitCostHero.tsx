@@ -49,10 +49,11 @@ const SAMPLES: Sample[] = SAMPLE_PICKS.flatMap(({ id, planId }): Sample[] => {
 /** 탭에는 괄호 속 부연("쿠팡 와우 (쿠팡플레이)")을 빼고 짧게 쓴다. */
 const shortName = (preset: ServicePreset) => preset.nameKo.replace(/\s*\(.*\)$/, "");
 
+// 밝은 배경에서는 진한 색, 어두운 배경에서는 밝은 색이어야 읽힌다.
 const riskColor: Record<RiskLevel, string> = {
-  red: "text-red-400",
-  yellow: "text-amber-300",
-  green: "text-emerald-400",
+  red: "text-red-600 dark:text-red-400",
+  yellow: "text-amber-600 dark:text-amber-300",
+  green: "text-emerald-600 dark:text-emerald-400",
 };
 
 /**
@@ -78,20 +79,21 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
   const selected = SAMPLES.find((s) => s.preset.id === selectedId) ?? SAMPLES[0];
 
   return (
-    <section className="w-full rounded-2xl bg-neutral-900 px-5 py-7 text-left dark:border dark:border-neutral-800 sm:px-10 sm:py-10">
+    // 테마 색 변수로 칠한다. 예전에는 라이트 모드에서도 이 상자만 검게 칠해져 화면에서 따로 놀았다.
+    <section className="w-full rounded-2xl border bg-card px-5 py-7 text-left text-card-foreground shadow-sm sm:px-10 sm:py-10">
       <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2">
         {/* 왼쪽: 카피 + CTA */}
         <div>
-          <span className="inline-block rounded-full border border-neutral-700 px-3 py-1 text-xs text-neutral-400">
+          <span className="inline-block rounded-full border px-3 py-1 text-xs text-muted-foreground">
             ⚡ 능동형 디지털 구독 디톡스
           </span>
 
-          <h1 className="mt-4 text-3xl font-medium leading-snug text-white">
+          <h1 className="mt-4 text-3xl font-medium leading-snug text-foreground">
             그 구독,
             <br />한 달에 몇 번 써요?
           </h1>
 
-          <p className="mt-3 text-sm leading-relaxed text-neutral-400">
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             가격만 보지 말고, 1회당 실제 사용 단가로 판단하세요. 서비스를 고르고 한 달에 쓴 횟수를
             움직여 보세요.
           </p>
@@ -101,20 +103,20 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
             <button
               type="button"
               onClick={onStart}
-              className="whitespace-nowrap rounded-lg bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-neutral-200"
+              className="whitespace-nowrap rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
             >
               내 구독 모두 계산하기 →
             </button>
             <button
               type="button"
               onClick={onDemo}
-              className="whitespace-nowrap rounded-lg border border-neutral-700 px-5 py-2.5 text-sm font-medium text-neutral-200 transition hover:border-neutral-500 hover:bg-neutral-800"
+              className="whitespace-nowrap rounded-lg border px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
             >
               ✨ 샘플 데이터로 1초 체험
             </button>
           </div>
 
-          <p className="mt-3 text-xs text-neutral-500">
+          <p className="mt-3 text-xs text-muted-foreground">
             🔒 회원가입 없이 이 브라우저에 저장됩니다. 결제 알림은 로그인한 뒤 켤 수 있고, 켤 때만
             이메일을 받습니다.
           </p>
@@ -122,7 +124,7 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
 
         {/* 오른쪽: 인터랙티브 계산기 */}
         {selected && (
-          <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-4 sm:p-5">
+          <div className="rounded-xl border bg-secondary/60 p-4 sm:p-5 dark:bg-background">
             <div className="flex flex-wrap gap-2" role="group" aria-label="체험할 서비스">
               {SAMPLES.map((sample) => {
                 const active = sample.preset.id === selected.preset.id;
@@ -135,8 +137,8 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
                     className={cn(
                       "flex-auto whitespace-nowrap rounded-lg border px-3 py-2 text-xs transition",
                       active
-                        ? "border-neutral-500 bg-neutral-800 text-white"
-                        : "border-neutral-800 bg-transparent text-neutral-400 hover:border-neutral-600",
+                        ? "border-foreground/40 bg-card text-foreground shadow-sm"
+                        : "border-border bg-transparent text-muted-foreground hover:border-foreground/30 hover:text-foreground",
                     )}
                   >
                     {sample.preset.iconEmoji} {shortName(sample.preset)}
@@ -169,17 +171,17 @@ function HeroResult({
 
   return (
     <>
-      <p className="mt-4 text-sm text-neutral-300">
+      <p className="mt-4 text-sm text-foreground">
         {preset.iconEmoji} {shortName(preset)}
         {planName ? ` ${planName}` : ""} · 월 {amountText}
       </p>
-      <p className="mt-1 text-xs leading-relaxed text-neutral-500">
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
         SubSlash 서비스 목록에 적힌 요금이에요. 등록할 때 내 요금제를 고르거나 요금을 고칠 수
         있어요.
       </p>
 
       <div className="mt-4 flex items-center gap-3">
-        <label htmlFor="hero-uses" className="w-20 shrink-0 text-xs text-neutral-400">
+        <label htmlFor="hero-uses" className="w-20 shrink-0 text-xs text-muted-foreground">
           월 이용 횟수
         </label>
         <input
@@ -191,19 +193,21 @@ function HeroResult({
           value={uses}
           onChange={(e) => onUsesChange(Number(e.target.value))}
           aria-valuetext={`${uses}회`}
-          className="flex-1 accent-white"
+          className="flex-1 accent-primary"
         />
-        <span className="w-10 shrink-0 text-right text-sm font-medium text-white">{uses}회</span>
+        <span className="w-10 shrink-0 text-right text-sm font-medium text-foreground">
+          {uses}회
+        </span>
       </div>
 
-      <div className="mt-5 border-t border-neutral-800 pt-4 text-center" aria-live="polite">
-        <p className="text-xs text-neutral-400">
+      <div className="mt-5 border-t pt-4 text-center" aria-live="polite">
+        <p className="text-xs text-muted-foreground">
           {uses === 0 ? "쓰지 않고 낸 돈" : "1회당 실제 단가"}
         </p>
         <p className={cn("mt-1 text-2xl font-medium", riskColor[risk])}>
           {formatCurrency(costPerUse, currency)}
         </p>
-        <p className="mt-1.5 text-xs text-neutral-500">{verdict(uses, risk, amountText)}</p>
+        <p className="mt-1.5 text-xs text-muted-foreground">{verdict(uses, risk, amountText)}</p>
       </div>
     </>
   );
