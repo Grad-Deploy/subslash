@@ -12,7 +12,10 @@ import {
   decodeGmailImport,
   gmailAppsScript,
 } from "@lib/gmail-import";
+import { isGmailAutoImportOpen } from "@lib/privacy";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
+import { CopyBlock } from "../../components/gmail/CopyBlock";
+import { GmailAutoImportSetup } from "../../components/gmail/GmailAutoImportSetup";
 import { Button } from "../../components/ui/button";
 
 type ImportState =
@@ -25,39 +28,6 @@ function Spinner() {
   return (
     <div className="flex items-center justify-center min-h-[50vh]">
       <div className="animate-spin text-3xl">✂️</div>
-    </div>
-  );
-}
-
-function CopyBlock({ label, code }: { label: string; code: string }) {
-  const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setStatus("copied");
-      setTimeout(() => setStatus("idle"), 2000);
-    } catch {
-      setStatus("failed");
-    }
-  };
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold">{label}</span>
-        <Button size="sm" variant="outline" onClick={copy}>
-          {status === "copied" ? "✅ 복사됨" : `${label} 복사`}
-        </Button>
-      </div>
-      <pre className="max-h-48 overflow-auto rounded-lg bg-muted p-3 text-[11px] leading-snug">
-        {code}
-      </pre>
-      {status === "failed" && (
-        <p className="text-xs text-amber-700 dark:text-amber-300" role="status">
-          자동으로 복사하지 못했습니다. 위 코드를 직접 선택해 복사해주세요.
-        </p>
-      )}
     </div>
   );
 }
@@ -75,6 +45,10 @@ function Guide() {
           목록을 보고 직접 고른 구독만 등록됩니다.
         </p>
       </header>
+
+      {isGmailAutoImportOpen() && <GmailAutoImportSetup />}
+
+      {isGmailAutoImportOpen() && <h2 className="text-base font-bold">직접 실행해서 가져오기</h2>}
 
       <ol className="list-decimal space-y-2 pl-5">
         <li>

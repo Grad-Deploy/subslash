@@ -5,7 +5,10 @@ import {
   GMAIL_APPS_SCRIPT_MANIFEST,
   GmailImportError,
   decodeGmailImport,
+  GMAIL_AUTO_SCRIPT_MANIFEST,
   gmailAppsScript,
+  gmailAutoScript,
+  readReceiptEmails,
 } from "../../lib/gmail-import";
 
 /**
@@ -194,5 +197,138 @@ describe("decodeGmailImport", () => {
     expect(emails).toHaveLength(1);
     expect(emails[0].from).toBe("");
     expect(emails[0].body).toHaveLength(5000);
+  });
+});
+
+describe("자동 가져오기 스크립트", () => {
+  type Fetched = { url: string; options: { headers: Record<string, string>; payload: string } };
+
+  function runAutoScript(options: { status?: number; lastScanAt?: string } = {}) {
+    const triggers: { handler: string; weeks?: number; day?: string; hour?: number }[] = [];
+    const deleted: string[] = [];
+    const properties = new Map<string, string>();
+    if (options.lastScanAt) properties.set("lastScanAt", options.lastScanAt);
+    const fetched: Fetched[] = [];
+    const queries: string[] = [];
+
+    const builder = (handler: string) => {
+      const trigger: (typeof triggers)[number] = { handler };
+      const chain = {
+        timeBased: () => chain,
+        everyWeeks: (n: number) => ((trigger.weeks = n), chain),
+        onWeekDay: (day: string) => ((trigger.day = day), chain),
+        atHour: (hour: number) => ((trigger.hour = hour), chain),
+        create: () => triggers.push(trigger),
+      };
+      return chain;
+    };
+    const ScriptApp = {
+      WeekDay: { MONDAY: "MONDAY" },
+      getProjectTriggers: () => [
+        { getHandlerFunction: () => "scan", id: "old-scan" },
+        { getHandlerFunction: () => "somethingElse", id: "other" },
+      ],
+      deleteTrigger: (trigger: { id: string }) => deleted.push(trigger.id),
+      newTrigger: builder,
+    };
+    const PropertiesService = {
+      getScriptProperties: () => ({
+        getProperty: (key: string) => properties.get(key) ?? null,
+        setProperty: (key: string, value: string) => properties.set(key, value),
+      }),
+    };
+    const UrlFetchApp = {
+      fetch: (url: string, init: Fetched["options"]) => {
+        fetched.push({ url, options: init });
+        return { getResponseCode: () => options.status ?? 200 };
+      },
+    };
+    const Gmail = {
+      Users: {
+        Messages: {
+          list: (_user: string, { q }: { q: string }) => {
+            queries.push(q);
+            return { messages: MESSAGES.map((m) => ({ id: m.id })) };
+          },
+          get: (_user: string, id: string) => MESSAGES.find((m) => m.id === id),
+        },
+      },
+    };
+    const Utilities = {
+      base64DecodeWebSafe: (data: string) => [...Buffer.from(data, "base64url")],
+      newBlob: (data: number[]) => ({
+        getDataAsString: (charset?: string) =>
+          new TextDecoder(charset ?? "utf-8").decode(Buffer.from(data)),
+      }),
+    };
+
+    const script = gmailAutoScript("https://subslash.me/api/gmail/ingest", "secret-token");
+    const api = new Function(
+      "Gmail",
+      "Utilities",
+      "ScriptApp",
+      "PropertiesService",
+      "UrlFetchApp",
+      "Logger",
+      `${script}
+return { setup: setup, scan: scan };`,
+    )(Gmail, Utilities, ScriptApp, PropertiesService, UrlFetchApp, { log: () => undefined }) as {
+      setup: () => void;
+      scan: () => void;
+    };
+    return { api, triggers, deleted, properties, fetched, queries };
+  }
+
+  it("setup은 예전 검사 트리거만 지우고 2주마다 도는 트리거를 건 뒤 바로 한 번 검사한다", () => {
+    const run = runAutoScript();
+    run.api.setup();
+
+    expect(run.deleted).toEqual(["old-scan"]);
+    expect(run.triggers).toEqual([{ handler: "scan", weeks: 2, day: "MONDAY", hour: 9 }]);
+    expect(run.fetched).toHaveLength(1);
+  });
+
+  it("연결 토큰을 헤더로 실어 메일을 보내고, 서버가 같은 규칙으로 읽을 수 있다", () => {
+    const run = runAutoScript();
+    run.api.scan();
+
+    const [request] = run.fetched;
+    expect(request.url).toBe("https://subslash.me/api/gmail/ingest");
+    expect(request.options.headers.Authorization).toBe("Bearer secret-token");
+    const emails = readReceiptEmails(JSON.parse(request.options.payload));
+    expect(emails?.map((e) => e.subject)).toEqual(["넷플릭스 결제 안내", "티빙 정기결제 안내"]);
+  });
+
+  it("처음에는 400일을 보고, 그 뒤로는 지난 검사 이후 메일만 본다", () => {
+    const first = runAutoScript();
+    first.api.scan();
+    expect(first.queries[0]).toContain("newer_than:400d");
+    expect(Number(first.properties.get("lastScanAt"))).toBeGreaterThan(0);
+
+    const later = runAutoScript({ lastScanAt: String(Date.parse("2026-09-01T00:00:00Z")) });
+    later.api.scan();
+    expect(later.queries[0]).toContain(`after:${Date.parse("2026-09-01T00:00:00Z") / 1000}`);
+    expect(later.queries[0]).not.toContain("newer_than");
+  });
+
+  it("보내지 못하면 검사 시각을 남기지 않아 다음 실행이 같은 기간을 다시 본다", () => {
+    const rejected = runAutoScript({ status: 401, lastScanAt: "1000" });
+    expect(() => rejected.api.scan()).toThrow("연결이 끊겼습니다");
+    expect(rejected.properties.get("lastScanAt")).toBe("1000");
+
+    const failed = runAutoScript({ status: 500, lastScanAt: "1000" });
+    expect(() => failed.api.scan()).toThrow("보내지 못했습니다");
+    expect(failed.properties.get("lastScanAt")).toBe("1000");
+  });
+
+  it("매니페스트는 메일 읽기·외부 요청·트리거 권한만 쓰고 웹 앱으로 배포하지 않는다", () => {
+    const manifest = JSON.parse(GMAIL_AUTO_SCRIPT_MANIFEST);
+    expect(manifest.oauthScopes).toEqual([
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/script.external_request",
+      "https://www.googleapis.com/auth/script.scriptapp",
+    ]);
+    expect(manifest.webapp).toBeUndefined();
+    expect(gmailAutoScript("https://x/api/gmail/ingest", "t")).not.toContain("GmailApp");
   });
 });
