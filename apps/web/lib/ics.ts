@@ -5,6 +5,7 @@ import {
   type BillingCycle,
   type Currency,
 } from "@subslash/shared";
+import { subscriptionDetailHref } from "./routes";
 
 /**
  * Builds the iCalendar feed a calendar app subscribes to.
@@ -113,6 +114,26 @@ export function calendarEligible(entries: CalendarEntry[]): CalendarEntry[] {
   );
 }
 
+/**
+ * 일정 본문. 캘린더 앱은 본문의 주소를 눌러 열 수 있게 보여주므로, 결제일 알림에서 바로 구독을
+ * 고치거나 해지하러 갈 수 있다.
+ */
+function eventDescription(entry: CalendarEntry, detailUrl: string | null): string {
+  const parts = [
+    `${entry.name} 결제일입니다. 지난 30일 동안 몇 번 썼는지 돌아보고, 아깝다면 지금 해지하세요.`,
+  ];
+
+  if (detailUrl) {
+    // 구독 기록은 서버가 아니라 기록한 브라우저에 있다. 다른 기기에서 열면 "구독을 찾을 수
+    // 없습니다"가 나오므로 미리 적어 둔다.
+    parts.push(
+      `구독 보기·수정: ${detailUrl}\n(SubSlash에 이 구독을 기록한 브라우저에서 열어야 보입니다)`,
+    );
+  }
+
+  return parts.join("\n\n");
+}
+
 export function buildBillingCalendar(
   entries: CalendarEntry[],
   options: { reminderDays: number; now?: Date; appUrl?: string },
@@ -150,6 +171,10 @@ export function buildBillingCalendar(
     const currency: Currency = entry.currency === "USD" ? "USD" : "KRW";
     const price = formatAmount(entry.amount, currency);
 
+    const detailUrl = options.appUrl
+      ? `${options.appUrl}${subscriptionDetailHref(entry.clientId)}`
+      : null;
+
     lines.push(
       "BEGIN:VEVENT",
       `UID:${escapeText(entry.clientId)}@subslash`,
@@ -158,14 +183,12 @@ export function buildBillingCalendar(
       `DTEND;VALUE=DATE:${toDateValue(end)}`,
       `RRULE:${billingRRule(entry)}`,
       `SUMMARY:💳 ${escapeText(entry.name)} ${escapeText(price)}`,
-      `DESCRIPTION:${escapeText(
-        `${entry.name} 결제일입니다. 지난 30일 동안 몇 번 썼는지 돌아보고, 아깝다면 지금 해지하세요.`,
-      )}`,
+      `DESCRIPTION:${escapeText(eventDescription(entry, detailUrl))}`,
       "TRANSP:TRANSPARENT",
     );
 
-    if (options.appUrl) {
-      lines.push(`URL:${escapeText(options.appUrl)}/subs`);
+    if (detailUrl) {
+      lines.push(`URL:${escapeText(detailUrl)}`);
     }
 
     lines.push(
