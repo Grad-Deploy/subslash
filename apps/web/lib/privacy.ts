@@ -9,14 +9,14 @@
 export const PRIVACY_OFFICER: { name: string; email: string } | null = null;
 
 /** 이 방침이 효력을 갖는 날. 내용을 바꾸면 함께 바꾼다. */
-export const PRIVACY_EFFECTIVE_DATE = "2026년 9월 13일";
+export const PRIVACY_EFFECTIVE_DATE = "2026년 9월 17일";
 
 /**
  * Gmail 자동 가져오기를 시작하는 날(YYYY-MM-DD, 한국 시간 0시). 이 기능은 서버에 저장하는 항목을
  * 늘리고, 방침은 "저장하는 항목이 늘어나는 변경은 시행 전에 알린다"고 약속한다. 그래서 날짜를 정해
  * 알리기 전에는 null로 두고, null이거나 그날 전이면 서버와 화면 모두 이 기능을 열지 않는다.
  */
-export const GMAIL_AUTO_IMPORT_STARTS_ON: string | null = null;
+export const GMAIL_AUTO_IMPORT_STARTS_ON: string | null = "2026-09-17";
 
 /** Gmail 자동 가져오기가 열렸는지. */
 export function isGmailAutoImportOpen(now: Date = new Date()): boolean {
