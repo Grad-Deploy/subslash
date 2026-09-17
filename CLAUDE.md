@@ -113,6 +113,16 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 `NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN`으로 연다. 계정을 지우는 경로는 `deleteGmailImportData`를
 부른다.
 
+연결은 두 갈래다. 복사 방식은 사용자가 자기 계정에 스크립트를 붙여 넣어 Google 심사 대상이 아니다.
+원클릭('Gmail 연결하기')은 **SubSlash 소유** Apps Script 웹 앱(접속한 사용자로 실행)이라 Google 심사 전에는
+'확인되지 않은 앱' 경고와 새 사용자 100명 제한이 있고, 그 이상은 제한 권한 심사·연례 보안 평가가
+필요하다 — 그래서 복사 방식을 없애지 않는다. 원클릭은 연결 토큰을 주소에 싣지 않는다: 주소에는 10분짜리
+서명 코드(`gmail-connect`, 연결 지문 포함 → 한 번만 교환)만 싣고, 웹 앱이 `/api/gmail/connect/exchange`로
+토큰을 받아 사용자별 저장소(UserProperties)에 둔다. 웹 앱 코드는 `lib/gmail-import.ts` 한 곳에만 있고
+`pnpm --filter @subslash/web gmail:web-app -- --origins …`가 파일로 쓴다. 코드를 고치면 운영자가 웹 앱을
+다시 배포해야 반영된다. 허용할 SubSlash 주소(`ALLOWED_ORIGINS`)와 `GMAIL_CONNECT_WEB_APP_URL`(두 Vercel
+프로젝트)이 서로 맞아야 한다.
+
 ## 파일 경계
 
 실제로 동작하는 코드와, 플래그 뒤의 미리보기용 픽스처를 섞지 않는다. 실제

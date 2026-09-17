@@ -36,10 +36,12 @@ export interface GmailDiscovery {
 
 export type GmailLinkState =
   | { open: false }
-  | { open: true; linked: false }
+  | { open: true; linked: false; connectAvailable: boolean }
   | {
       open: true;
       linked: true;
+      /** 운영자가 원클릭 연결 웹 앱을 설정했는지. */
+      connectAvailable: boolean;
       createdAt: string;
       lastIngestAt: string | null;
       lastEmailCount: number | null;
@@ -69,6 +71,19 @@ export async function createGmailLink(): Promise<string> {
   });
   if (!response.ok) throw new Error(await readError(response, "연결 토큰을 만들지 못했습니다."));
   return ((await response.json()) as { token: string }).token;
+}
+
+/**
+ * 원클릭 연결을 시작한다. 돌려받은 주소(SubSlash의 Apps Script 웹 앱)로 가면 Google이 권한을 묻고,
+ * 허용하면 웹 앱이 이 계정의 연결을 새로 발급한다 — 예전 스크립트는 그때부터 거절된다.
+ */
+export async function startGmailConnect(): Promise<string> {
+  const response = await fetch(apiUrl("/api/gmail/connect"), {
+    method: "POST",
+    credentials: "same-origin",
+  });
+  if (!response.ok) throw new Error(await readError(response, "Gmail 연결을 시작하지 못했습니다."));
+  return ((await response.json()) as { url: string }).url;
 }
 
 export async function deleteGmailLink(): Promise<void> {

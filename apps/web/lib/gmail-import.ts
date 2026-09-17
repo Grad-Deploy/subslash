@@ -328,6 +328,185 @@ function scan() {
 
 `;
 
+/**
+ * 원클릭 연결 웹 앱의 매니페스트. SubSlash 운영자가 한 번 배포한다. 접속한 사용자의 권한으로
+ * 실행되므로(USER_ACCESSING) 사람마다 Google이 권한을 묻고, 트리거와 저장값도 사람마다 따로다.
+ */
+export const GMAIL_CONNECT_WEB_APP_MANIFEST = `${JSON.stringify(
+  {
+    timeZone: "Asia/Seoul",
+    runtimeVersion: "V8",
+    exceptionLogging: "STACKDRIVER",
+    oauthScopes: [
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/script.external_request",
+      "https://www.googleapis.com/auth/script.scriptapp",
+    ],
+    dependencies: {
+      enabledAdvancedServices: [{ userSymbol: "Gmail", serviceId: "gmail", version: "v1" }],
+    },
+    webapp: { executeAs: "USER_ACCESSING", access: "ANYONE" },
+  },
+  null,
+  2,
+)}
+`;
+
+const CONNECT_WEB_APP = String.raw`/**
+ * SubSlash — Gmail 연결 웹 앱
+ *
+ * SubSlash 운영자가 한 번 배포합니다(실행: 웹 앱에 액세스하는 사용자, 액세스: Google 계정이 있는
+ * 모든 사용자). 사용자가 SubSlash에서 'Gmail 연결'을 누르면 이 웹 앱으로 오고, Google 권한을
+ * 허용하면 그 사람의 계정에 2주마다 도는 검사를 겁니다. 연결 토큰·검사 시각은 사람마다 따로
+ * (UserProperties) 둡니다. SubSlash는 받은 메일에서 구독 후보만 남기고 제목·본문은 저장하지 않습니다.
+ */
+
+// 연결 코드를 바꾸고 메일을 보낼 SubSlash 주소. 이 목록에 없는 주소로는 보내지 않습니다.
+var ALLOWED_ORIGINS = __ORIGINS__;
+
+var SEARCH_QUERY =
+  "(결제 OR 영수증 OR 청구 OR 구독 OR 멤버십 OR receipt OR invoice OR subscription OR payment)";
+var FIRST_SCAN_DAYS = 400;
+var MAX_MESSAGES = 100;
+var MAX_BODY_CHARS = 1500;
+
+function doGet(e) {
+  var params = (e && e.parameter) || {};
+  var origin = String(params.origin || "");
+  if (ALLOWED_ORIGINS.indexOf(origin) === -1) {
+    return connectPage(
+      "연결할 수 없습니다",
+      "허용되지 않은 주소에서 왔습니다. SubSlash에서 다시 연결해 주세요.",
+      null,
+    );
+  }
+  if (!params.code) {
+    return connectPage("연결할 수 없습니다", "연결 코드가 없습니다. SubSlash에서 다시 연결해 주세요.", origin);
+  }
+
+  var response = UrlFetchApp.fetch(origin + "/api/gmail/connect/exchange", {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({ code: String(params.code) }),
+    muteHttpExceptions: true,
+  });
+  if (response.getResponseCode() !== 200) {
+    return connectPage(
+      "연결하지 못했습니다",
+      responseError(response, "연결 코드가 만료됐거나 이미 쓰였습니다. SubSlash에서 다시 연결해 주세요."),
+      origin,
+    );
+  }
+
+  var properties = PropertiesService.getUserProperties();
+  properties.deleteAllProperties();
+  properties.setProperties({ token: JSON.parse(response.getContentText()).token, origin: origin });
+  removeScanTriggers();
+  ScriptApp.newTrigger("scan")
+    .timeBased()
+    .everyWeeks(2)
+    .onWeekDay(ScriptApp.WeekDay.MONDAY)
+    .atHour(9)
+    .create();
+
+  try {
+    var sent = scan();
+    return connectPage(
+      "Gmail을 연결했습니다",
+      "최근 메일 " + sent + "통을 확인했습니다. SubSlash로 돌아가면 찾은 구독이 등록됩니다. " +
+        "앞으로 2주마다 새 결제 메일을 확인합니다.",
+      origin,
+    );
+  } catch (error) {
+    return connectPage(
+      "Gmail을 연결했습니다",
+      "첫 검사는 하지 못해 2주 뒤 검사 때 다시 합니다(" + error.message + ").",
+      origin,
+    );
+  }
+}
+
+// 2주마다 트리거가 부른다. 보낸 메일 수를 돌려준다.
+function scan() {
+  var properties = PropertiesService.getUserProperties();
+  var token = properties.getProperty("token");
+  var origin = properties.getProperty("origin");
+  if (!token || ALLOWED_ORIGINS.indexOf(origin) === -1) {
+    removeScanTriggers();
+    return 0;
+  }
+
+  var lastScanAt = Number(properties.getProperty("lastScanAt") || 0);
+  var startedAt = Date.now();
+  var query =
+    SEARCH_QUERY +
+    (lastScanAt
+      ? " after:" + Math.floor(lastScanAt / 1000)
+      : " newer_than:" + FIRST_SCAN_DAYS + "d");
+  var emails = collectReceiptEmails(query, MAX_MESSAGES);
+
+  var response = UrlFetchApp.fetch(origin + "/api/gmail/ingest", {
+    method: "post",
+    contentType: "application/json",
+    headers: { Authorization: "Bearer " + token },
+    payload: JSON.stringify({ v: 1, emails: emails }),
+    muteHttpExceptions: true,
+  });
+  var status = response.getResponseCode();
+  if (status === 401) {
+    // SubSlash에서 연결을 끊었다. 이 사람의 검사를 멈추고 저장값을 지운다.
+    removeScanTriggers();
+    properties.deleteAllProperties();
+    return 0;
+  }
+  if (status !== 200) {
+    // 검사 시각을 남기지 않아, 다음 실행 때 같은 기간을 다시 본다.
+    throw new Error("SubSlash에 보내지 못했습니다(" + status + ")");
+  }
+  properties.setProperty("lastScanAt", String(startedAt));
+  return emails.length;
+}
+
+function removeScanTriggers() {
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    if (trigger.getHandlerFunction() === "scan") ScriptApp.deleteTrigger(trigger);
+  });
+}
+
+function responseError(response, fallback) {
+  try {
+    var body = JSON.parse(response.getContentText());
+    return typeof body.error === "string" ? body.error : fallback;
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function connectPage(title, message, origin) {
+  var back = origin
+    ? '<p><a href="' + escapeHtml(origin + "/import") + '" target="_top" ' +
+      'style="display:inline-block;padding:12px 20px;border-radius:10px;background:#18181b;color:#fff;text-decoration:none;font-weight:700">' +
+      "SubSlash로 돌아가기</a></p>"
+    : "";
+  return HtmlService.createHtmlOutput(
+    '<div style="font-family:sans-serif;line-height:1.6;padding:8px">' +
+      "<h2>" + escapeHtml(title) + "</h2><p>" + escapeHtml(message) + "</p>" + back +
+      "</div>",
+  )
+    .setTitle("SubSlash Gmail 연결")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1");
+}
+
+`;
+
+/**
+ * 운영자가 배포할 원클릭 연결 웹 앱 코드. `origins`는 연결을 받아 줄 SubSlash 배포 주소들이다
+ * (끝의 `/` 없이). `pnpm --filter @subslash/web gmail:web-app`이 파일로 써 준다.
+ */
+export function gmailConnectWebApp(origins: string[]): string {
+  return CONNECT_WEB_APP.replace("__ORIGINS__", () => JSON.stringify(origins)) + MAIL_HELPERS;
+}
+
 /** 사용자가 Apps Script 편집기에 붙여 넣을 코드. 가져오기 주소는 지금 보고 있는 SubSlash다. */
 export function gmailAppsScript(importUrl: string): string {
   return MANUAL_SCRIPT.replace("__IMPORT_URL__", () => JSON.stringify(importUrl)) + MAIL_HELPERS;

@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
 import { isGmailAutoImportOpen } from "@lib/privacy";
-import { createImportLink, deleteGmailImportData, readImportLink } from "@lib/gmail-auto-import";
+import {
+  createImportLink,
+  deleteGmailImportData,
+  gmailConnectWebAppUrl,
+  readImportLink,
+} from "@lib/gmail-auto-import";
 
 /**
  * Gmail 자동 가져오기 연결 — 상태(GET), 연결 토큰 발급·재발급(POST), 끊기(DELETE).
@@ -24,8 +29,12 @@ export async function GET(request: NextRequest) {
     const account = await getAccountBySessionToken(readSessionToken(request));
     if (!account) return LOGIN_REQUIRED();
     const link = await readImportLink(account.id);
+    // 운영자가 웹 앱을 배포해 주소를 넣었을 때만 원클릭 연결을 보여준다.
+    const connectAvailable = gmailConnectWebAppUrl() !== null;
     return NextResponse.json(
-      link ? { open: true, linked: true, ...link } : { open: true, linked: false },
+      link
+        ? { open: true, linked: true, connectAvailable, ...link }
+        : { open: true, linked: false, connectAvailable },
     );
   } catch (error) {
     console.error("[api/gmail/link GET]", error);
