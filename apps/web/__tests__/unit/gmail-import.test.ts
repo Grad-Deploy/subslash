@@ -6,7 +6,9 @@ import {
   GmailImportError,
   decodeGmailImport,
   GMAIL_AUTO_SCRIPT_MANIFEST,
+  GMAIL_CONNECT_WEB_APP_MANIFEST,
   gmailAppsScript,
+  gmailConnectWebApp,
   gmailAutoScript,
   readReceiptEmails,
 } from "../../lib/gmail-import";
@@ -330,5 +332,156 @@ return { setup: setup, scan: scan };`,
     ]);
     expect(manifest.webapp).toBeUndefined();
     expect(gmailAutoScript("https://x/api/gmail/ingest", "t")).not.toContain("GmailApp");
+  });
+});
+
+describe("원클릭 연결 웹 앱", () => {
+  const ORIGIN = "https://www.subslash.me";
+
+  function runWebApp(
+    options: {
+      exchangeStatus?: number;
+      ingestStatus?: number;
+      stored?: Record<string, string>;
+    } = {},
+  ) {
+    const html: string[] = [];
+    const fetched: {
+      url: string;
+      options: { headers?: Record<string, string>; payload: string };
+    }[] = [];
+    const triggers: { handler: string; weeks?: number }[] = [];
+    const deleted: string[] = [];
+    const properties = new Map<string, string>(Object.entries(options.stored ?? {}));
+
+    const builder = (handler: string) => {
+      const trigger: (typeof triggers)[number] = { handler };
+      const chain = {
+        timeBased: () => chain,
+        everyWeeks: (n: number) => ((trigger.weeks = n), chain),
+        onWeekDay: () => chain,
+        atHour: () => chain,
+        create: () => triggers.push(trigger),
+      };
+      return chain;
+    };
+    const response = (status: number, body: unknown) => ({
+      getResponseCode: () => status,
+      getContentText: () => JSON.stringify(body),
+    });
+    const globals = {
+      Gmail: {
+        Users: {
+          Messages: {
+            list: () => ({ messages: MESSAGES.map((m) => ({ id: m.id })) }),
+            get: (_user: string, id: string) => MESSAGES.find((m) => m.id === id),
+          },
+        },
+      },
+      Utilities: {
+        base64DecodeWebSafe: (data: string) => [...Buffer.from(data, "base64url")],
+        newBlob: (data: number[]) => ({
+          getDataAsString: (charset?: string) =>
+            new TextDecoder(charset ?? "utf-8").decode(Buffer.from(data)),
+        }),
+      },
+      ScriptApp: {
+        WeekDay: { MONDAY: "MONDAY" },
+        getProjectTriggers: () => [{ getHandlerFunction: () => "scan", id: "old-scan" }],
+        deleteTrigger: (trigger: { id: string }) => deleted.push(trigger.id),
+        newTrigger: builder,
+      },
+      PropertiesService: {
+        getUserProperties: () => ({
+          getProperty: (key: string) => properties.get(key) ?? null,
+          setProperty: (key: string, value: string) => properties.set(key, value),
+          setProperties: (values: Record<string, string>) => {
+            for (const [key, value] of Object.entries(values)) properties.set(key, value);
+          },
+          deleteAllProperties: () => properties.clear(),
+        }),
+      },
+      UrlFetchApp: {
+        fetch: (url: string, init: { headers?: Record<string, string>; payload: string }) => {
+          fetched.push({ url, options: init });
+          if (url.endsWith("/api/gmail/connect/exchange")) {
+            const status = options.exchangeStatus ?? 200;
+            return status === 200
+              ? response(200, { token: "issued-token" })
+              : response(status, { error: "연결 코드가 만료됐거나 이미 쓰였습니다." });
+          }
+          return response(options.ingestStatus ?? 200, { received: 2, candidates: 2 });
+        },
+      },
+      HtmlService: {
+        createHtmlOutput: (content: string) => {
+          html.push(content);
+          const output = { setTitle: () => output, addMetaTag: () => output };
+          return output;
+        },
+      },
+    };
+
+    const api = new Function(
+      ...Object.keys(globals),
+      `${gmailConnectWebApp([ORIGIN])}\nreturn { doGet: doGet, scan: scan };`,
+    )(...Object.values(globals)) as {
+      doGet: (e: { parameter: Record<string, string> }) => unknown;
+      scan: () => number;
+    };
+    return { api, html, fetched, triggers, deleted, properties };
+  }
+
+  it("허용 목록에 없는 주소에서 오면 코드를 어디로도 보내지 않는다", () => {
+    const run = runWebApp();
+    run.api.doGet({ parameter: { code: "c", origin: "https://evil.example" } });
+
+    expect(run.fetched).toEqual([]);
+    expect(run.html.join("")).toContain("허용되지 않은 주소");
+    expect(run.html.join("")).not.toContain("evil.example");
+  });
+
+  it("코드를 토큰으로 바꿔 이 사람의 저장소에 두고, 트리거를 새로 건 뒤 바로 검사한다", () => {
+    const run = runWebApp({ stored: { lastScanAt: "1000", token: "old" } });
+    run.api.doGet({ parameter: { code: "signed-code", origin: ORIGIN } });
+
+    const [exchange, ingest] = run.fetched;
+    expect(exchange.url).toBe(`${ORIGIN}/api/gmail/connect/exchange`);
+    expect(JSON.parse(exchange.options.payload)).toEqual({ code: "signed-code" });
+    // 토큰은 주소가 아니라 헤더로 보낸다.
+    expect(ingest.url).toBe(`${ORIGIN}/api/gmail/ingest`);
+    expect(ingest.options.headers?.Authorization).toBe("Bearer issued-token");
+
+    expect(run.properties.get("token")).toBe("issued-token");
+    expect(run.properties.get("origin")).toBe(ORIGIN);
+    // 다시 연결하면 처음부터(400일) 본다.
+    expect(Number(run.properties.get("lastScanAt"))).toBeGreaterThan(1000);
+    expect(run.deleted).toEqual(["old-scan"]);
+    expect(run.triggers).toEqual([{ handler: "scan", weeks: 2 }]);
+    expect(run.html.join("")).toContain("Gmail을 연결했습니다");
+    expect(run.html.join("")).toContain(`href="${ORIGIN}/import"`);
+  });
+
+  it("코드를 바꾸지 못하면 서버가 알려 준 이유를 보여주고 아무것도 설치하지 않는다", () => {
+    const run = runWebApp({ exchangeStatus: 400 });
+    run.api.doGet({ parameter: { code: "used-code", origin: ORIGIN } });
+
+    expect(run.html.join("")).toContain("연결 코드가 만료됐거나 이미 쓰였습니다.");
+    expect(run.triggers).toEqual([]);
+    expect(run.properties.size).toBe(0);
+  });
+
+  it("SubSlash에서 연결을 끊었으면 다음 검사 때 트리거와 저장값을 스스로 지운다", () => {
+    const run = runWebApp({ ingestStatus: 401, stored: { token: "t", origin: ORIGIN } });
+
+    expect(run.api.scan()).toBe(0);
+    expect(run.deleted).toEqual(["old-scan"]);
+    expect(run.properties.size).toBe(0);
+  });
+
+  it("매니페스트는 접속한 사용자의 권한으로 실행하는 웹 앱이다", () => {
+    const manifest = JSON.parse(GMAIL_CONNECT_WEB_APP_MANIFEST);
+    expect(manifest.webapp).toEqual({ executeAs: "USER_ACCESSING", access: "ANYONE" });
+    expect(manifest.oauthScopes).toEqual(JSON.parse(GMAIL_AUTO_SCRIPT_MANIFEST).oauthScopes);
   });
 });

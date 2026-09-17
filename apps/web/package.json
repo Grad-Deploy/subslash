@@ -14,7 +14,8 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "check:cancel-links": "tsx scripts/cancel-links/run.ts"
+    "check:cancel-links": "tsx scripts/cancel-links/run.ts",
+    "gmail:web-app": "tsx scripts/gmail-web-app/write.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",

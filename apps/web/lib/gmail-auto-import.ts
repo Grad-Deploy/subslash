@@ -1,8 +1,9 @@
+import { createHash } from "crypto";
 import { and, count, eq, inArray, lt, sql } from "drizzle-orm";
 import { parseReceiptEmails, type DiscoveredSubscription } from "@subslash/shared";
 import { getDb } from "./db";
-import { gmailDiscoveries, gmailImportLinks, type GmailDiscovery } from "./schema";
-import { generateSyncToken, hashSyncToken } from "./tokens";
+import { accounts, gmailDiscoveries, gmailImportLinks, type GmailDiscovery } from "./schema";
+import { canSignLinks, generateSyncToken, hashSyncToken, signLink, verifyLink } from "./tokens";
 import { readReceiptEmails } from "./gmail-import";
 
 /**
@@ -259,4 +260,66 @@ export async function acknowledgeDiscoveries(accountId: string, ids: string[]): 
     .where(and(eq(gmailDiscoveries.accountId, accountId), inArray(gmailDiscoveries.id, ids)))
     .returning({ id: gmailDiscoveries.id });
   return deleted.length;
+}
+
+/** 연결 코드가 쓸 수 있는 시간. Google 권한 화면을 읽고 허용하기에 넉넉하다. */
+const CONNECT_CODE_TTL_SECONDS = 10 * 60;
+
+/**
+ * 원클릭 연결에 쓰는 SubSlash의 Apps Script 웹 앱 주소. 운영자가 웹 앱을 배포한 뒤 환경 변수에
+ * 넣는다. 없거나 Apps Script 주소가 아니면 원클릭 연결을 보여주지 않는다(복사 방식은 그대로 된다).
+ */
+export function gmailConnectWebAppUrl(): string | null {
+  const url = process.env.GMAIL_CONNECT_WEB_APP_URL?.trim();
+  if (!url || !url.startsWith("https://script.google.com/macros/s/") || !canSignLinks()) {
+    return null;
+  }
+  return url;
+}
+
+/**
+ * 웹 앱에 넘길 연결 코드. 연결 토큰 자체는 주소에 싣지 않는다 — 주소는 Google의 기록과 브라우저
+ * 방문 기록에 남는다. 코드는 10분 동안만, 그리고 발급 시점의 연결 상태에서만 교환된다.
+ */
+export async function createConnectCode(accountId: string): Promise<string> {
+  return signLink(
+    { uid: accountId, act: "gmail-connect", ln: await linkFingerprint(accountId) },
+    CONNECT_CODE_TTL_SECONDS,
+  );
+}
+
+/**
+ * 지금 연결의 지문. 연결을 새로 발급할 때마다 무작위 토큰이 바뀌므로 지문도 바뀐다 — 한 번 교환한
+ * 코드를 다시 쓸 수 없게 하는 근거다. 코드는 주소에 실리므로 토큰 해시를 그대로 싣지 않는다.
+ */
+async function linkFingerprint(accountId: string): Promise<string> {
+  const [link] = await getDb()
+    .select({ tokenHash: gmailImportLinks.tokenHash })
+    .from(gmailImportLinks)
+    .where(eq(gmailImportLinks.accountId, accountId))
+    .limit(1);
+  return link
+    ? createHash("sha256").update(`link:${link.tokenHash}`).digest("hex").slice(0, 32)
+    : "none";
+}
+
+/**
+ * 웹 앱이 사용자의 권한으로 돌면서 코드를 연결 토큰으로 바꾼다. 교환하면 연결을 새로 발급하므로
+ * 예전 스크립트(복사 방식 포함)는 거절되고, 같은 코드는 다시 쓸 수 없다.
+ */
+export async function exchangeConnectCode(code: string): Promise<string | null> {
+  const payload = verifyLink(code);
+  if (!payload || payload.act !== "gmail-connect" || !payload.ln) return null;
+
+  if ((await linkFingerprint(payload.uid)) !== payload.ln) return null;
+
+  // 코드를 받은 뒤 탈퇴한 계정에 주인 없는 연결을 만들지 않는다.
+  const [account] = await getDb()
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(eq(accounts.id, payload.uid))
+    .limit(1);
+  if (!account) return null;
+
+  return createImportLink(payload.uid);
 }

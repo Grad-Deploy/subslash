@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterAll, afterEach, vi } from "vitest";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 
@@ -11,6 +11,8 @@ import { join } from "path";
 process.env.TURSO_DATABASE_URL = ":memory:";
 delete process.env.TURSO_AUTH_TOKEN;
 process.env.NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN = "true";
+process.env.EMAIL_LINK_SECRET = "gmail-connect-test-secret";
+const WEB_APP_URL = "https://script.google.com/macros/s/TEST_DEPLOYMENT/exec";
 
 const { getDb, closeDb } = await import("../../lib/db");
 const { accounts, gmailDiscoveries, gmailImportLinks } = await import("../../lib/schema");
@@ -19,6 +21,9 @@ const { deleteUnverifiedAccount } = await import("../../lib/account-verification
 const linkRoute = await import("../../app/api/gmail/link/route");
 const ingestRoute = await import("../../app/api/gmail/ingest/route");
 const discoveriesRoute = await import("../../app/api/gmail/discoveries/route");
+const connectRoute = await import("../../app/api/gmail/connect/route");
+const exchangeRoute = await import("../../app/api/gmail/connect/exchange/route");
+const { signLink } = await import("../../lib/tokens");
 
 const migrationsDir = join(process.cwd(), "drizzle");
 const migrations = readdirSync(migrationsDir)
@@ -130,7 +135,12 @@ const CANCELED = {
 
 beforeEach(async () => {
   process.env.NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN = "true";
+  process.env.GMAIL_CONNECT_WEB_APP_URL = WEB_APP_URL;
   await resetDatabase();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 afterAll(() => closeDb());
@@ -235,7 +245,7 @@ describe("Gmail 자동 가져오기", () => {
     expect((await ingest(token, [NETFLIX])).status).toBe(401);
 
     const status = await linkRoute.GET(request(`${BASE}/link`, { cookie }));
-    expect(await status.json()).toEqual({ open: true, linked: false });
+    expect(await status.json()).toEqual({ open: true, linked: false, connectAvailable: true });
     expect(account.id).toBeTruthy();
   });
 
@@ -269,6 +279,9 @@ describe("Gmail 자동 가져오기", () => {
     const { cookie } = await loggedIn("sean");
     const token = await issueToken(cookie);
     delete process.env.NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN;
+    // 시작일(한국 시간 0시) 1분 전.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-16T14:59:00.000Z"));
 
     expect((await linkRoute.POST(request(`${BASE}/link`, { method: "POST", cookie }))).status).toBe(
       403,
@@ -281,5 +294,101 @@ describe("Gmail 자동 가져오기", () => {
       request(`${BASE}/link`, { method: "DELETE", cookie }),
     );
     expect(await disconnect.json()).toEqual({ status: "deleted" });
+
+    // 시작일 0시부터 열린다.
+    vi.setSystemTime(new Date("2026-09-16T15:00:00.000Z"));
+    expect(await (await linkRoute.GET(request(`${BASE}/link`, { cookie }))).json()).toMatchObject({
+      open: true,
+    });
+  });
+});
+
+describe("원클릭 Gmail 연결", () => {
+  async function startConnect(cookie?: string) {
+    return connectRoute.POST(request(`${BASE}/connect`, { method: "POST", cookie }));
+  }
+
+  async function connectCode(cookie: string): Promise<string> {
+    const response = await startConnect(cookie);
+    expect(response.status).toBe(200);
+    const url = new URL(((await response.json()) as { url: string }).url);
+    return url.searchParams.get("code") ?? "";
+  }
+
+  function exchange(code: string) {
+    return exchangeRoute.POST(
+      request(`${BASE}/connect/exchange`, { method: "POST", body: JSON.stringify({ code }) }),
+    );
+  }
+
+  it("로그인해야 시작할 수 있고, 웹 앱 주소가 설정되지 않았으면 원클릭 연결을 알리지 않는다", async () => {
+    expect((await startConnect()).status).toBe(401);
+
+    const { cookie } = await loggedIn("sean");
+    delete process.env.GMAIL_CONNECT_WEB_APP_URL;
+    expect((await startConnect(cookie)).status).toBe(503);
+    const status = await linkRoute.GET(request(`${BASE}/link`, { cookie }));
+    expect(await status.json()).toMatchObject({ connectAvailable: false });
+
+    // Apps Script 주소가 아니면 쓰지 않는다.
+    process.env.GMAIL_CONNECT_WEB_APP_URL = "https://evil.example/exec";
+    expect((await startConnect(cookie)).status).toBe(503);
+  });
+
+  it("웹 앱 주소에는 토큰이 아니라 코드와 SubSlash 주소만 싣고, 코드를 바꾼 토큰으로 메일을 보낼 수 있다", async () => {
+    const { cookie } = await loggedIn("sean");
+    const response = await startConnect(cookie);
+    const url = new URL(((await response.json()) as { url: string }).url);
+
+    expect(`${url.origin}${url.pathname}`).toBe(WEB_APP_URL);
+    expect([...url.searchParams.keys()].sort()).toEqual(["code", "origin"]);
+    expect(url.searchParams.get("origin")).toBe("http://localhost:3000");
+    expect(await getDb().select().from(gmailImportLinks)).toHaveLength(0);
+
+    const exchanged = await exchange(url.searchParams.get("code") ?? "");
+    expect(exchanged.status).toBe(200);
+    const { token } = (await exchanged.json()) as { token: string };
+    expect((await ingest(token, [NETFLIX])).status).toBe(200);
+    expect(await discoveries(cookie)).toHaveLength(1);
+  });
+
+  it("같은 코드는 한 번만 바꿀 수 있고, 다시 연결하면 예전 토큰은 거절된다", async () => {
+    const { cookie } = await loggedIn("sean");
+    const code = await connectCode(cookie);
+    const first = ((await (await exchange(code)).json()) as { token: string }).token;
+
+    expect((await exchange(code)).status).toBe(400);
+
+    const second = ((await (await exchange(await connectCode(cookie))).json()) as { token: string })
+      .token;
+    expect((await ingest(first, [NETFLIX])).status).toBe(401);
+    expect((await ingest(second, [NETFLIX])).status).toBe(200);
+  });
+
+  it("코드를 받은 뒤 스크립트를 직접 새로 받았으면 그 코드는 쓸 수 없다", async () => {
+    const { cookie } = await loggedIn("sean");
+    const code = await connectCode(cookie);
+    await issueToken(cookie);
+
+    expect((await exchange(code)).status).toBe(400);
+  });
+
+  it("10분이 지났거나, 다른 용도의 서명 링크이거나, 탈퇴한 계정의 코드는 바꾸지 않는다", async () => {
+    const { account, cookie } = await loggedIn("sean");
+
+    const code = await connectCode(cookie);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(Date.now() + 11 * 60 * 1000));
+    expect((await exchange(code)).status).toBe(400);
+    vi.useRealTimers();
+
+    const otherPurpose = signLink({ uid: account.id, act: "verify-account", ln: "none" }, 600);
+    expect((await exchange(otherPurpose)).status).toBe(400);
+    expect((await exchange("garbage")).status).toBe(400);
+
+    const orphan = await connectCode(cookie);
+    await deleteAccount(account.id);
+    expect((await exchange(orphan)).status).toBe(400);
+    expect(await getDb().select().from(gmailImportLinks)).toHaveLength(0);
   });
 });
