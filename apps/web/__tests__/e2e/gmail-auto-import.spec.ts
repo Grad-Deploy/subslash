@@ -192,4 +192,34 @@ test.describe("Gmail 자동 가져오기 (E2E)", () => {
     await expect(page.getByText(/이 필요합니다/)).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole("heading", { name: "직접 실행해서 가져오기" })).toBeVisible();
   });
+  test("원클릭 연결이 설정돼 있으면 Gmail 연결하기가 웹 앱으로 보내고, 복사 방식은 접혀 있다", async ({
+    page,
+  }) => {
+    await mockLoggedIn(page);
+    const webApp =
+      "https://script.google.com/macros/s/E2E/exec?code=signed&origin=http%3A%2F%2Flocalhost%3A3000";
+    await page.route("**/api/gmail/link", (route) =>
+      route.fulfill({ json: { open: true, linked: false, connectAvailable: true } }),
+    );
+    await page.route("**/api/gmail/connect", (route) => route.fulfill({ json: { url: webApp } }));
+    // 실제 Google로 나가지 않는다. 이동한 주소만 본다.
+    await page
+      .context()
+      .route("https://script.google.com/**", (route) =>
+        route.fulfill({ contentType: "text/html", body: "<h1>google</h1>" }),
+      );
+
+    await page.goto("/import");
+    await expect(page.getByRole("button", { name: "Gmail 연결하기" })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByRole("button", { name: "자동 가져오기 켜기" })).toHaveCount(0);
+
+    await page.getByRole("button", { name: /경고 없이 직접 설치하기/ }).click();
+    await expect(page.getByRole("button", { name: "자동 가져오기 켜기" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Gmail 연결하기" }).click();
+    await page.waitForURL(/script\.google\.com/);
+    expect(page.url()).toBe(webApp);
+  });
 });

@@ -51,13 +51,14 @@ export default function PrivacyPage() {
           <Item
             title={`Gmail 자동 가져오기 (선택, ${koreanDate(GMAIL_AUTO_IMPORT_STARTS_ON)}부터)`}
           >
-            로그인한 뒤 자동 가져오기를 켜고 내 Google 계정에 Apps Script를 설치하면, 그 스크립트가
-            2주마다 새 결제 메일의 보낸 사람·제목·받은 시각·본문 앞부분을 SubSlash 서버로 보냅니다.
-            서버는 이 메일에서 찾은 구독 후보(서비스 이름·금액·통화·결제일·결제 주기·결제 월·분류·
-            결제수단·메일 받은 날·보낸 사람)만 저장하고, 메일 제목과 본문은 저장하지 않습니다. 연결
-            토큰은 되돌릴 수 없는 해시로만, 마지막 검사 시각과 받은 메일 수와 함께 저장합니다.
-            로그인한 브라우저가 열릴 때 후보를 받아 구독으로 등록하거나 확인을 받습니다. 목적: 결제
-            메일에서 구독을 찾아 등록.
+            로그인한 뒤 &lsquo;Gmail 연결하기&rsquo;에서 Google 권한(메일 읽기·SubSlash로
+            보내기·2주마다 실행)을 허용하거나 내 Google 계정에 스크립트를 직접 설치하면, Apps
+            Script가 2주마다 새 결제 메일의 보낸 사람·제목·받은 시각·본문 앞부분을 SubSlash 서버로
+            보냅니다. 서버는 이 메일에서 찾은 구독 후보(서비스 이름·금액·통화·결제일·결제 주기·결제
+            월·분류· 결제수단·메일 받은 날·보낸 사람)만 저장하고, 메일 제목과 본문은 저장하지
+            않습니다. 연결 토큰은 되돌릴 수 없는 해시로만, 마지막 검사 시각과 받은 메일 수와 함께
+            저장합니다. 로그인한 브라우저가 열릴 때 후보를 받아 구독으로 등록하거나 확인을 받습니다.
+            목적: 결제 메일에서 구독을 찾아 등록.
           </Item>
         )}
         <Item title="회원가입·로그인 (선택)">
@@ -102,7 +103,8 @@ export default function PrivacyPage() {
             <li>
               Gmail 자동 가져오기: 구독 후보는 브라우저가 받아 가면 곧바로 지우고, 받아 가지 않은
               후보도 30일이 지나면 지웁니다. 연결 토큰은 &lsquo;연결 끊기&rsquo;나 회원 탈퇴로 남은
-              후보와 함께 지웁니다.
+              후보와 함께 지웁니다. &lsquo;Gmail 연결하기&rsquo;로 Google에 보관된 연결 토큰과 검사
+              시각은 연결을 끊은 뒤 다음 검사 때(최대 2주) 스크립트가 스스로 지우고 검사를 멈춥니다.
             </li>
           )}
           <li>
@@ -145,6 +147,16 @@ export default function PrivacyPage() {
                 <td className="px-3 py-2">데이터베이스(위 1번의 서버 저장 항목)</td>
                 <td className="px-3 py-2">일본 도쿄(AWS)</td>
               </tr>
+              {GMAIL_AUTO_IMPORT_STARTS_ON && (
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-medium">Google</td>
+                  <td className="px-3 py-2">
+                    &lsquo;Gmail 연결하기&rsquo;를 쓴 경우, SubSlash의 Apps Script를 이용자 권한으로
+                    실행해 결제 메일을 읽고 SubSlash로 보냄 — 연결 토큰과 마지막 검사 시각 보관
+                  </td>
+                  <td className="px-3 py-2">국외(Google 데이터센터)</td>
+                </tr>
+              )}
               <tr className="border-t">
                 <td className="px-3 py-2 font-medium">Resend</td>
                 <td className="px-3 py-2">이메일 발송 — 받는 주소와 메일 내용 전달</td>
