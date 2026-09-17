@@ -241,6 +241,80 @@ export const accountSnapshots = sqliteTable("account_snapshots", {
 
 export type AccountSnapshot = typeof accountSnapshots.$inferSelect;
 
+/**
+ * Gmail 자동 가져오기 연결. 로그인 계정마다 한 줄이다.
+ *
+ * SubSlash는 Gmail에 접근하지 않는다. 사용자가 자기 Google 계정에 만든 Apps Script가 2주마다
+ * 결제 메일을 찾아 `/api/gmail/ingest`로 보내고, 이 표의 토큰으로 어느 계정의 것인지 가린다.
+ * 토큰은 그 스크립트에만 들어가므로 해시만 남긴다. 세션·알림 동기화 토큰과 따로 둔다 — 스크립트
+ * 코드는 사용자가 복사해 두는 글이라, 새더라도 후보를 보내는 것 말고는 할 수 없어야 한다.
+ */
+export const gmailImportLinks = sqliteTable(
+  "gmail_import_links",
+  {
+    accountId: text("account_id")
+      .primaryKey()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    createdAt: text("created_at").notNull(),
+    /** 스크립트가 마지막으로 보낸 시각(ISO 8601). 한 번도 안 왔으면 null — 설치가 안 된 것이다. */
+    lastIngestAt: text("last_ingest_at"),
+    /** 그때 받은 메일 수. 새 메일이 없던 검사도 0으로 적어, 스크립트가 돌고 있다는 걸 보인다. */
+    lastEmailCount: integer("last_email_count"),
+  },
+  (table) => ({
+    tokenIdx: uniqueIndex("gmail_import_links_token_idx").on(table.tokenHash),
+  }),
+);
+
+/**
+ * 결제 메일에서 찾아 브라우저가 받아 가기 전의 구독 후보.
+ *
+ * 메일 제목·본문은 저장하지 않는다. 받은 메일은 요청을 처리하는 동안 파싱하는 데만 쓰고, 여기에는
+ * 파싱 결과만 남긴다. 구독 기록은 여전히 브라우저에 있으므로, 브라우저가 받아 가면 곧바로 지운다
+ * (받지 않은 후보도 30일이 지나면 지운다). 같은 서비스(이름·통화)는 한 줄로 두고 더 최근 메일의
+ * 결과로 바꾼다.
+ */
+export const gmailDiscoveries = sqliteTable(
+  "gmail_discoveries",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** `이름|통화`. 같은 서비스의 다음 영수증이 새 줄을 만들지 않게 한다. */
+    dedupeKey: text("dedupe_key").notNull(),
+    name: text("name").notNull(),
+    amount: real("amount").notNull(),
+    currency: text("currency").notNull(),
+    billingDay: integer("billing_day").notNull(),
+    billingCycle: text("billing_cycle").notNull(),
+    billingMonth: integer("billing_month"),
+    category: text("category").notNull(),
+    /** 알려진 서비스와 맞았을 때만. 해지 링크·안내는 브라우저가 이 id로 서비스 목록에서 찾는다. */
+    presetId: text("preset_id"),
+    paymentMethod: text("payment_method"),
+    /** 결제 메일을 받은 날(YYYY.MM.DD). */
+    receiptDate: text("receipt_date").notNull(),
+    /** 보낸 사람. 사용자가 후보를 알아보는 근거로만 보여준다. */
+    sender: text("sender").notNull(),
+    /** `auto`: 확인 없이 등록해도 되는 후보, `review`: 사용자가 골라야 하는 후보. */
+    tier: text("tier").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => ({
+    accountKeyIdx: uniqueIndex("gmail_discoveries_account_key_idx").on(
+      table.accountId,
+      table.dedupeKey,
+    ),
+  }),
+);
+
+export type GmailImportLink = typeof gmailImportLinks.$inferSelect;
+export type GmailDiscovery = typeof gmailDiscoveries.$inferSelect;
+
 export const notificationSubscribersRelations = relations(notificationSubscribers, ({ many }) => ({
   subscriptions: many(mirroredSubscriptions),
   notifications: many(notificationLog),

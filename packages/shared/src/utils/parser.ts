@@ -260,8 +260,8 @@ interface ReceiptHints {
   cancelText: string;
   /** 서비스·결제수단을 먼저 찾아볼 글. 메일에서는 제목과 보낸 사람이다. */
   serviceText: string;
-  /** 본문에 결제일 칸이 없을 때 쓸 날짜. 메일에서는 받은 날짜다. */
-  receivedAt: Date;
+  /** 본문에 결제일 칸이 없을 때 쓸 날짜. 메일에서는 받은 날(사용자 시간대의 달·일)이다. */
+  received: CalendarDate;
 }
 
 function parseSingleMessageBlock(
@@ -366,7 +366,7 @@ function parseSingleMessageBlock(
   } else if (hints) {
     // 메일 본문의 "1.5GB", "3-5일" 같은 숫자는 날짜가 아니다. 결제일 칸이 없으면 메일을 받은
     // 날을 결제일로 본다 — 결제 메일은 결제한 날 온다.
-    takeDate(String(hints.receivedAt.getMonth() + 1), String(hints.receivedAt.getDate()));
+    takeDate(String(hints.received.month), String(hints.received.day));
   } else {
     // Strip currency amounts so numbers like "$20.00" are not mistaken for MM.DD
     const dateScanText = normalized.replace(/\$\s*[0-9.]+/g, "").replace(/[0-9.]+\s*USD/gi, "");
@@ -386,7 +386,7 @@ function parseSingleMessageBlock(
     billingMonth = undefined;
   } else if (hints && billingMonth === undefined) {
     // "결제일 : 3일"처럼 달이 없는 영수증이라도 메일을 받은 달에 결제된 것이다.
-    billingMonth = hints.receivedAt.getMonth() + 1;
+    billingMonth = hints.received.month;
   }
 
   // 5. Extract Payment Method
@@ -503,6 +503,7 @@ function parseSingleMessageBlock(
     linkedAccountId: options?.linkedAccountId,
     linkedAccountName: options?.linkedAccountName,
     source: "sms",
+    presetId: matchedPreset?.id,
     sourceSnippet: block.length > 80 ? block.slice(0, 80) + "..." : block,
     confidence,
     selected: !isCanceled,
@@ -527,6 +528,30 @@ const STALE_AFTER_DAYS: Record<BillingCycle, number> = { monthly: 35, yearly: 37
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+interface CalendarDate {
+  year: number;
+  month: number;
+  day: number;
+}
+
+/**
+ * 어느 시간대의 달력으로 본 날짜인지. 서버(UTC)에서 한국 시각 오전 8시에 온 메일을 그냥 읽으면
+ * 전날이 되어 결제일이 하루 어긋난다. 시간대를 주지 않으면 실행 환경의 시간대(브라우저)다.
+ */
+function calendarDate(date: Date, timeZone?: string): CalendarDate {
+  if (!timeZone) {
+    return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
+  }
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(date);
+  const part = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  return { year: part("year"), month: part("month"), day: part("day") };
+}
+
 /**
  * Gmail에서 가져온 결제 메일을 구독 후보로 바꾼다.
  *
@@ -536,7 +561,13 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  */
 export function parseReceiptEmails(
   emails: ReceiptEmail[],
-  options?: { linkedAccountId?: string; linkedAccountName?: string; now?: Date },
+  options?: {
+    linkedAccountId?: string;
+    linkedAccountName?: string;
+    now?: Date;
+    /** 받은 날을 읽을 시간대(IANA 이름). 서버에서 부를 때는 사용자의 시간대를 준다. */
+    timeZone?: string;
+  },
 ): DiscoveredSubscription[] {
   const now = options?.now ?? new Date();
   const newestFirst = emails
@@ -550,10 +581,11 @@ export function parseReceiptEmails(
   newestFirst.forEach(({ email, receivedAt }, index) => {
     const block = `${email.subject}
 ${email.body}`;
+    const received = calendarDate(receivedAt, options?.timeZone);
     const parsed = parseSingleMessageBlock(block, index, options, {
       cancelText: email.subject,
       serviceText: `${email.subject} ${email.from}`,
-      receivedAt,
+      received,
     });
     if (!parsed) return;
 
@@ -564,13 +596,14 @@ ${email.body}`;
 
     const daysAgo = Math.max(0, Math.floor((now.getTime() - receivedAt.getTime()) / DAY_MS));
     const stale = daysAgo > STALE_AFTER_DAYS[parsed.billingCycle];
-    const receiptDate = `${receivedAt.getFullYear()}.${String(receivedAt.getMonth() + 1).padStart(2, "0")}.${String(receivedAt.getDate()).padStart(2, "0")}`;
+    const receiptDate = `${received.year}.${String(received.month).padStart(2, "0")}.${String(received.day).padStart(2, "0")}`;
     const snippet = `${receiptDate} · ${email.from} · ${email.subject}`;
 
     results.push({
       ...parsed,
       id: `gmail-${receivedAt.getTime()}-${index}`,
       source: "gmail",
+      sender: email.from,
       emailProvider: "google",
       sourceSnippet: snippet.length > 120 ? `${snippet.slice(0, 120)}...` : snippet,
       receiptDate,

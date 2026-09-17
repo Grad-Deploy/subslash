@@ -30,6 +30,8 @@ export default defineConfig({
   webServer: {
     command: "pnpm dev",
     url: "http://localhost:3000",
+    // Gmail 자동 가져오기는 시작일(lib/privacy.ts) 전이라 꺼져 있다. 테스트 서버에서만 연다.
+    env: { NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN: "true" },
     reuseExistingServer: !process.env.CI,
   },
 });
