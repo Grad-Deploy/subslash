@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import {
   CATEGORY_LABELS,
   DiscoveredSubscription,
@@ -27,6 +28,13 @@ interface AutoImportModalProps {
   defaultAccountId?: string;
   /** Pre-filled receipt/SMS text, e.g. handed over by the PWA share target. */
   initialSmsText?: string;
+  /**
+   * 이미 찾아 둔 후보(예: Gmail에서 가져온 결제 메일). 이때는 '이전 기록을 지우고 등록'을 꺼 둔 채
+   * 연다 — 메일에서 찾은 몇 건을 더하러 온 사람의 기존 목록이 지워지면 안 된다.
+   */
+  initialDiscovered?: DiscoveredSubscription[];
+  /** 후보 개수 옆에 붙일 설명(예: "Gmail 메일 40통에서"). */
+  initialResultsNote?: string;
 }
 
 const SAMPLE_SMS = `[Web발신] 신한카드 승인 17,000원 넷플릭스 09/15 14:30 일시불
@@ -57,6 +65,8 @@ export function AutoImportModal({
   onClose,
   defaultAccountId,
   initialSmsText,
+  initialDiscovered,
+  initialResultsNote,
 }: AutoImportModalProps) {
   const { accounts, addAccount, addBatchSubscriptions, subscriptions, clearSubscriptions } =
     useStore();
@@ -70,19 +80,21 @@ export function AutoImportModal({
   const [smsText, setSmsText] = useState<string>(initialSmsText ?? "");
 
   // Discovered items
-  const [discoveredItems, setDiscoveredItems] = useState<DiscoveredSubscription[]>([]);
+  const [discoveredItems, setDiscoveredItems] = useState<DiscoveredSubscription[]>(
+    initialDiscovered ?? [],
+  );
   const [targetAccountId, setTargetAccountId] = useState<string>(
     defaultAccountId || accounts[0]?.id || "",
   );
   const [customTargetEmail, setCustomTargetEmail] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "ott" | "ai" | "other">("all");
-  const [replaceExisting, setReplaceExisting] = useState<boolean>(true);
+  const [replaceExisting, setReplaceExisting] = useState<boolean>(!initialDiscovered);
   const [scanAccountId, setScanAccountId] = useState<string>(
     defaultAccountId || accounts[0]?.id || "__custom__",
   );
   const [scanCustomEmail, setScanCustomEmail] = useState<string>("");
   /** Qualifier the preview attaches to its result count, e.g. the 30-day filter. */
-  const [resultsNote, setResultsNote] = useState<string | null>(null);
+  const [resultsNote, setResultsNote] = useState<string | null>(initialResultsNote ?? null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -341,6 +353,17 @@ export function AutoImportModal({
                   )}
                 </div>
               </div>
+
+              <p className="text-[11px] text-muted-foreground">
+                Gmail을 쓰신다면{" "}
+                <Link
+                  href="/import"
+                  className="font-medium text-primary underline underline-offset-2"
+                >
+                  결제 메일에서 한 번에 찾기
+                </Link>
+                도 있습니다.
+              </p>
 
               <textarea
                 rows={5}

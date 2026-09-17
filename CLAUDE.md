@@ -111,6 +111,14 @@ Gmail/네이버 연동이 생기면 아래 오른쪽 열을 통째로 지운다.
 | `utils/parser.ts`     | `utils/inbox-simulation.ts`                           |
 | `AutoImportModal.tsx` | `InboxPreviewPanel.tsx`                               |
 
+Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash가 Gmail에 연결하는 것이
+아니다. 사용자가 자기 계정에 만든 Apps Script가 메일을 찾아 `/import#gmail=…`로 넘기고, 브라우저가
+`#` 뒤를 풀어 `parseReceiptEmails`로 후보를 만든다. `#` 뒤는 서버로 가지 않으므로 메일 내용은
+서버를 거치지 않는다 — 이 값을 API로 보내거나 쿼리(`?`)로 옮기지 않는다. 스크립트 권한은
+`gmail.readonly` 하나다(`GmailApp`은 전체 권한을 요구하고, 읽기 전용으로 좁히면 빈 결과를 준다).
+메일 본문에는 광고·약관이 섞이므로, 메일은 해지 여부를 제목으로, 결제일을 받은 날로 판단하고
+알아보지 못한 서비스는 본문 단어가 아니라 '알 수 없는 결제'로 이름 짓는다.
+
 ## 앱(Capacitor)에 담을 화면
 
 모바일 앱은 이 웹 화면을 정적으로 내보내 앱 안에 담고, API만 배포된 Vercel을 부른다.
