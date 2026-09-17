@@ -119,4 +119,40 @@ test.describe("결제 알림 미러 (E2E)", () => {
     expect(notify.syncToken).toBeNull();
     expect(notify.verified).toBe(false);
   });
+
+  test("캘린더 주소가 있으면 Google 캘린더에 그 주소를 구독하는 창을 연다", async ({ page }) => {
+    const feed = "https://subslash.me/api/calendar/feed-token.ics";
+    await page.route("**/api/notify/sync", (route) =>
+      route.fulfill({
+        json: { synced: 1, skipped: 0, verified: true, email: "me@gmail.com", reminderDays: 3 },
+      }),
+    );
+    // 실제 Google로 나가지 않는다. 열린 창의 주소만 본다.
+    await page
+      .context()
+      .route("https://calendar.google.com/**", (route) => route.fulfill({ body: "google" }));
+    await seed(page, {
+      notify: {
+        email: "me@gmail.com",
+        syncToken: "live-token",
+        verified: true,
+        reminderDays: 3,
+        lastSyncedAt: null,
+        calendarUrl: feed,
+      },
+    });
+
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: /^결제 알림 \(/ }).click({ timeout: 30_000 });
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByRole("button", { name: "iPhone·Mac 캘린더에 추가" })).toBeVisible();
+
+    const [popup] = await Promise.all([
+      page.waitForEvent("popup"),
+      dialog.getByRole("button", { name: "Google 캘린더에 추가 (새 창)" }).click(),
+    ]);
+    const opened = new URL(popup.url());
+    expect(opened.origin).toBe("https://calendar.google.com");
+    expect(opened.searchParams.get("cid")).toBe("webcal://subslash.me/api/calendar/feed-token.ics");
+  });
 });

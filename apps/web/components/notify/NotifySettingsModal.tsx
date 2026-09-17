@@ -10,9 +10,10 @@ import {
   stopReminders,
   enableCalendarFeed,
   disableCalendarFeed,
+  calendarSubscribeLinks,
 } from "../../lib/notify-client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
-import { Button } from "../ui/button";
+import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { Select } from "../ui/select";
 import { EmailDomainInput } from "../ui/email-domain-input";
 import { InlineConfirm } from "../ui/inline-confirm";
@@ -58,6 +59,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
 
   const isOptedIn = Boolean(notify.syncToken);
   const activeCount = subscriptions.filter((sub) => sub.status === "active").length;
+  const calendarLinks = notify.calendarUrl ? calendarSubscribeLinks(notify.calendarUrl) : null;
 
   const handleEnable = async () => {
     setError(null);
@@ -288,12 +290,39 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                   <span>캘린더에 결제일 띄우기</span>
                 </div>
 
-                {notify.calendarUrl ? (
+                {calendarLinks ? (
                   <>
                     <p className="text-muted-foreground leading-relaxed">
-                      캘린더 앱의 &lsquo;URL로 구독&rsquo;에 아래 주소를 넣으면 결제{" "}
-                      {notify.reminderDays}일 전에 폰 알림이 울립니다. 앱에서 구독을 고치면 캘린더도
-                      따라 바뀝니다.
+                      아래 버튼으로 캘린더에 바로 추가하거나, 캘린더 앱의 &lsquo;URL로 구독&rsquo;에
+                      주소를 넣으세요. 일정에는 결제 {notify.reminderDays}일 전 알림이 들어 있고,
+                      앱에서 구독을 고치면 캘린더도 따라 바뀝니다.
+                    </p>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Button
+                        size="sm"
+                        className={WRAPPING_BUTTON}
+                        onClick={() => {
+                          // webcal:// 은 새 창이 아니라 운영체제가 캘린더 앱으로 넘긴다.
+                          window.location.href = calendarLinks.webcal;
+                        }}
+                      >
+                        iPhone·Mac 캘린더에 추가
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className={WRAPPING_BUTTON}
+                        onClick={() =>
+                          window.open(calendarLinks.google, "_blank", "noopener,noreferrer")
+                        }
+                      >
+                        Google 캘린더에 추가 (새 창)
+                      </Button>
+                    </div>
+                    <p className="text-muted-foreground leading-relaxed">
+                      Google 캘린더는 바뀐 내용이 늦게 반영될 수 있고, 일정에 든 알림 대신 캘린더
+                      설정의 알림을 따를 수 있습니다. 알림이 오지 않으면 Google 캘린더에서 이
+                      캘린더의 알림을 켜주세요.
                     </p>
                     <code className="block break-all rounded-lg bg-muted px-2.5 py-2 text-[11px] text-foreground">
                       {notify.calendarUrl}
