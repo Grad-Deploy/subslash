@@ -35,6 +35,8 @@ interface AutoImportModalProps {
   initialDiscovered?: DiscoveredSubscription[];
   /** 후보 개수 옆에 붙일 설명(예: "Gmail 메일 40통에서"). */
   initialResultsNote?: string;
+  /** 고른 후보를 등록한 뒤. 창을 닫기만 했을 때는 부르지 않는다. */
+  onRegistered?: () => void;
 }
 
 const SAMPLE_SMS = `[Web발신] 신한카드 승인 17,000원 넷플릭스 09/15 14:30 일시불
@@ -67,6 +69,7 @@ export function AutoImportModal({
   initialSmsText,
   initialDiscovered,
   initialResultsNote,
+  onRegistered,
 }: AutoImportModalProps) {
   const { accounts, addAccount, addBatchSubscriptions, subscriptions, clearSubscriptions } =
     useStore();
@@ -235,6 +238,7 @@ export function AutoImportModal({
 
     startTransition(() => {
       addBatchSubscriptions(dataList, { clearPrevious: replaceExisting });
+      onRegistered?.();
       handleClose();
     });
   };

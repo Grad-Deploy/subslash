@@ -1,6 +1,12 @@
 import React from "react";
 import Link from "next/link";
-import { PRIVACY_EFFECTIVE_DATE, PRIVACY_OFFICER } from "@lib/privacy";
+import { GMAIL_AUTO_IMPORT_STARTS_ON, PRIVACY_EFFECTIVE_DATE, PRIVACY_OFFICER } from "@lib/privacy";
+
+/** "2026-10-01" → "2026년 10월 1일". */
+function koreanDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return `${year}년 ${month}월 ${day}일`;
+}
 
 export const metadata = {
   title: "개인정보처리방침 · SubSlash",
@@ -20,8 +26,9 @@ export default function PrivacyPage() {
         <p className="text-xs text-muted-foreground">시행일: {PRIVACY_EFFECTIVE_DATE}</p>
         <p className="text-muted-foreground">
           SubSlash는 구독 기록을 기본적으로 이 브라우저 안에만 저장합니다. 서버에 개인정보가
-          저장되는 것은 로그인, 계정에 저장, 결제 알림처럼 직접 고른 기능을 쓸 때뿐입니다. 아래에
-          무엇을, 왜, 얼마나 저장하는지 적습니다.
+          저장되는 것은 로그인, 계정에 저장, 결제 알림
+          {GMAIL_AUTO_IMPORT_STARTS_ON && ", Gmail 자동 가져오기"}처럼 직접 고른 기능을 쓸
+          때뿐입니다. 아래에 무엇을, 왜, 얼마나 저장하는지 적습니다.
         </p>
       </header>
 
@@ -36,6 +43,23 @@ export default function PrivacyPage() {
           담겨 브라우저 안에서만 읽히고 SubSlash 서버로 전송되거나 저장되지 않습니다. 등록한 구독은
           위와 같이 브라우저에 저장됩니다.
         </Item>
+        {/*
+          저장 항목이 늘어나는 변경이라 시행 전에 알린다. 시작일을 정하면 이 항목이 먼저 게시되고,
+          그날부터 기능이 열린다(lib/privacy.ts의 GMAIL_AUTO_IMPORT_STARTS_ON).
+        */}
+        {GMAIL_AUTO_IMPORT_STARTS_ON && (
+          <Item
+            title={`Gmail 자동 가져오기 (선택, ${koreanDate(GMAIL_AUTO_IMPORT_STARTS_ON)}부터)`}
+          >
+            로그인한 뒤 자동 가져오기를 켜고 내 Google 계정에 Apps Script를 설치하면, 그 스크립트가
+            2주마다 새 결제 메일의 보낸 사람·제목·받은 시각·본문 앞부분을 SubSlash 서버로 보냅니다.
+            서버는 이 메일에서 찾은 구독 후보(서비스 이름·금액·통화·결제일·결제 주기·결제 월·분류·
+            결제수단·메일 받은 날·보낸 사람)만 저장하고, 메일 제목과 본문은 저장하지 않습니다. 연결
+            토큰은 되돌릴 수 없는 해시로만, 마지막 검사 시각과 받은 메일 수와 함께 저장합니다.
+            로그인한 브라우저가 열릴 때 후보를 받아 구독으로 등록하거나 확인을 받습니다. 목적: 결제
+            메일에서 구독을 찾아 등록.
+          </Item>
+        )}
         <Item title="회원가입·로그인 (선택)">
           아이디, 이메일, 비밀번호(되돌릴 수 없는 해시로만 저장하며 원문은 저장하지 않음), 이메일
           확인 시각, 가입·마지막 로그인 시각을 저장합니다. 나이·성별은 &lsquo;내 정보&rsquo;에서
@@ -74,6 +98,13 @@ export default function PrivacyPage() {
             결제 알림: 알림 설정에서 끄거나 알림 메일의 수신 거부 링크를 누르면, 알림 정보와 서버에
             복사한 구독을 지웁니다.
           </li>
+          {GMAIL_AUTO_IMPORT_STARTS_ON && (
+            <li>
+              Gmail 자동 가져오기: 구독 후보는 브라우저가 받아 가면 곧바로 지우고, 받아 가지 않은
+              후보도 30일이 지나면 지웁니다. 연결 토큰은 &lsquo;연결 끊기&rsquo;나 회원 탈퇴로 남은
+              후보와 함께 지웁니다.
+            </li>
+          )}
           <li>
             계정 메일 발송 기록: 24시간이 지난 기록은 같은 주소로 다음 메일을 보낼 때 지웁니다.
           </li>

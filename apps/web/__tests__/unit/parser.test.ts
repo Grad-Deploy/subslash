@@ -355,4 +355,33 @@ describe("parseReceiptEmails (Gmail 결제 메일)", () => {
     expect(item.billingDay).toBe(20);
     expect(item.selected).toBe(true);
   });
+  it("시간대를 주면 그 시간대의 달력으로 받은 날을 읽는다(서버는 UTC라 한국 오전 메일이 전날이 되지 않게)", () => {
+    // 한국 시각 2026-09-10 08:00 = UTC 2026-09-09 23:00
+    const [item] = parseReceiptEmails(
+      [email("넷플릭스 결제 안내", "결제금액 : 17,000원", "2026-09-09T23:00:00.000Z")],
+      { now: NOW, timeZone: "Asia/Seoul" },
+    );
+
+    expect(item.billingDay).toBe(10);
+    expect(item.receiptDate).toBe("2026.09.10");
+  });
+
+  it("알려진 서비스와 맞으면 그 id와 보낸 사람을 남긴다", () => {
+    const [known, unknown] = parseReceiptEmails(
+      [
+        email(
+          "넷플릭스 결제 안내",
+          "결제금액 : 17,000원",
+          "2026-09-10T03:00:00.000Z",
+          "Netflix <a@b>",
+        ),
+        email("Your receipt", "₩8,900 paid", "2026-09-09T03:00:00.000Z", "Shop <c@d>"),
+      ],
+      { now: NOW },
+    );
+
+    expect(known.presetId).toBe("netflix");
+    expect(known.sender).toBe("Netflix <a@b>");
+    expect(unknown.presetId).toBeUndefined();
+  });
 });
