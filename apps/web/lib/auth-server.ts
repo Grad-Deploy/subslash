@@ -4,6 +4,7 @@ import { getDb } from "./db";
 import { accountSnapshots, accounts, sessions, type Account } from "./schema";
 import type { NextRequest } from "next/server";
 import { isAppOrigin } from "./app-origins";
+import { deleteGmailImportData } from "./gmail-auto-import";
 
 /**
  * 로그인 세션.
@@ -120,7 +121,7 @@ export async function replacePassword(account: Account, newHash: string): Promis
 }
 
 /**
- * 회원 탈퇴. 계정과 거기 딸린 세션·계정에 저장한 기록을 지운다. 계정이 없었으면 `false`.
+ * 회원 탈퇴. 계정과 거기 딸린 세션·계정에 저장한 기록·Gmail 자동 가져오기 연결과 후보를 지운다. 계정이 없었으면 `false`.
  *
  * 스키마의 ON DELETE CASCADE는 PRAGMA foreign_keys가 켜져 있을 때만 동작하므로 딸린 행을
  * 직접 지운다. 결제 알림(notification_subscribers)은 계정과 따로라 여기서 건드리지 않는다.
@@ -131,6 +132,7 @@ export async function deleteAccount(accountId: string): Promise<boolean> {
   const db = getDb();
   await db.delete(sessions).where(eq(sessions.accountId, accountId));
   await db.delete(accountSnapshots).where(eq(accountSnapshots.accountId, accountId));
+  await deleteGmailImportData(accountId);
   const deleted = await db
     .delete(accounts)
     .where(eq(accounts.id, accountId))

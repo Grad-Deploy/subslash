@@ -101,6 +101,18 @@ PR에서 고친다. 보호책임자 연락처는 `lib/privacy.ts` 한 곳에만 
 경로를 새로 만들면 `sessions`처럼 이 표도 직접 지운다 — `ON DELETE CASCADE`는
 `PRAGMA foreign_keys`가 켜져 있을 때만 동작한다.
 
+Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버가 브라우저로 되쓰지
+않는다"의 유일한 예외이고, 그래서 좁게 묶어 둔다. SubSlash는 Google 권한을 받지 않는다 — 사용자
+계정의 Apps Script가 2주마다 메일을 `/api/gmail/ingest`로 보내고(연결 토큰, 해시만 저장), 서버는
+그 자리에서 파싱해 **구독 후보만** 남긴다. 메일 제목·본문을 표나 로그에 남기지 않는다. 브라우저는
+로그인했을 때 후보를 가져가(`GET /api/gmail/discoveries`) 스스로 등록하고 받은 후보를 지운다 —
+서버가 브라우저 기록을 고치는 것이 아니다. 알려진 서비스의 최근 결제만 확인 없이 등록하고, 이미
+구독 중이면 등록하지 않으며, 해지한 서비스는 되살리지 않고 확인을 받는다. 저장 항목이 늘어나는
+기능이라 방침의 사전 고지를 따른다: `lib/privacy.ts`의 `GMAIL_AUTO_IMPORT_STARTS_ON`을 정하면 방침에
+항목이 먼저 게시되고 그날부터 API·화면이 열린다(null이면 닫힘, 끊기는 언제나 된다). 테스트 서버만
+`NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN`으로 연다. 계정을 지우는 경로는 `deleteGmailImportData`를
+부른다.
+
 ## 파일 경계
 
 실제로 동작하는 코드와, 플래그 뒤의 미리보기용 픽스처를 섞지 않는다. 실제
