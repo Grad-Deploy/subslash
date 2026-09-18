@@ -36,6 +36,7 @@ export const CALENDAR_NAME = "SubSlash 결제일";
 
 export interface CalendarPlanEntry extends CalendarEntry {
   billingMonth: number | null;
+  cancelUrl?: string;
 }
 
 export interface CalendarPlan {
@@ -59,6 +60,17 @@ export interface CalendarSyncEvent {
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+/** 메모에 적어도 되는 주소인지. 사용자가 직접 적은 값이라 스킴을 믿지 않는다. */
+function isHttpUrl(value: unknown): boolean {
+  if (typeof value !== "string" || value.length > 500) return false;
+  try {
+    const { protocol } = new URL(value);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -97,6 +109,9 @@ export function parseCalendarPlan(input: unknown): CalendarPlan | null {
       billingDay: day,
       billingCycle: cycle,
       billingMonth: month,
+      // 캘린더 메모에 적을 해지 주소. http(s)만 받는다 — javascript: 같은 주소를 메모에 적어
+      // 다른 사람의 캘린더에 넣을 수 있게 두지 않는다.
+      ...(isHttpUrl(item.cancelUrl) ? { cancelUrl: (item.cancelUrl as string).slice(0, 500) } : {}),
     });
   }
 
