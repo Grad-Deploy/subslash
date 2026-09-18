@@ -189,6 +189,13 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
 웹뷰 저장소를 비워도 기록이 남게 하려는 것이다. 저장소를 통째로 Preferences로 옮기지 않는 이유는 그
 파일에 있다. 상태 표시줄 색은 테마를 따라 `syncSystemBars`(`lib/native`)가 맞춘다.
 
+클라우드 빌드는 EAS Build를 쓴다(`apps/mobile/eas.json`, Expo 프로젝트 `@leesean2/subslash-mobile`). 앱은
+Expo가 아니라 Capacitor이므로 `expo` 패키지를 넣지 않는다 — EAS는 `app.json`·`eas.json`만 읽는다. EAS의
+Android 이미지에는 JDK 17뿐인데 Capacitor 8은 Java 21로 컴파일해서, 설치 뒤 훅
+(`scripts/eas-build-post-install.sh`)이 JDK 21을 받고 웹 화면을 만들어 `cap sync`한다. EAS는 작업 폴더를
+`.gitignore` 기준으로 올린다. `.easignore`를 만들면 `.gitignore`를 통째로 대신해서 `.env`까지 올라갈 수
+있으니 만들지 않는다.
+
 `tools/ipad-preview`는 Mac 없이 iPad의 Expo Go로 화면을 iPhone 크기 그대로 보는 도구다(사용법은
 그 폴더의 README). pnpm 워크스페이스 밖이라 npm으로 따로 설치하고, CI·웹 빌드에 들어가지 않는다.
 출시할 앱이 아니므로 네이티브 기능은 여기서 확인할 수 없다.

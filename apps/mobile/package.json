@@ -5,7 +5,8 @@
   "scripts": {
     "sync": "pnpm --filter @subslash/web build:app && cap sync android",
     "open": "cap open android",
-    "android": "cap run android"
+    "android": "cap run android",
+    "eas-build-post-install": "bash scripts/eas-build-post-install.sh"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
