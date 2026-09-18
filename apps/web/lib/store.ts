@@ -45,7 +45,7 @@ const SEEDED_DEMO_ACCOUNTS: ReadonlyArray<Pick<LinkedAccount, "id" | "name" | "e
 
 type PersistedState = Pick<
   SubSlashStore,
-  "subscriptions" | "usageLogs" | "accounts" | "notify" | "exchangeRate"
+  "subscriptions" | "usageLogs" | "accounts" | "notify" | "exchangeRate" | "accountSync"
 >;
 
 /**
@@ -154,6 +154,33 @@ export const DEFAULT_NOTIFY: NotifySettings = {
   calendarUrl: null,
 };
 
+/**
+ * 계정 기록 자동 동기화에서 이 기기가 기억하는 것(lib/account-sync, hooks/useAccountSync). 기기마다
+ * 다르므로 백업·계정 저장에는 넣지 않는다.
+ */
+export interface AccountSyncState {
+  /** 이 기기가 맞춰 온 계정. 다른 계정으로 로그인하면 처음부터 다시 맞춘다. */
+  accountId: string | null;
+  /** 이 기기에서 자동 동기화를 쓰는지. 로그인하면 켜져 있고, 사용자가 끄면 false다. */
+  enabled: boolean;
+  /** 마지막으로 서버와 맞춘 판(계정 기록의 savedAt). */
+  baseSavedAt: string | null;
+  /** 그때 이 기기 기록의 지문. 지금 지문과 다르면 이 기기에서 바뀐 것이다. */
+  baseHash: string | null;
+  lastSyncedAt: string | null;
+  /** 사용자가 끄지 않았는데 멈춘 이유. 다른 기기에서 계정의 기록을 지웠으면 다시 올리지 않는다. */
+  stoppedReason: "deleted-elsewhere" | null;
+}
+
+export const DEFAULT_ACCOUNT_SYNC: AccountSyncState = {
+  accountId: null,
+  enabled: true,
+  baseSavedAt: null,
+  baseHash: null,
+  lastSyncedAt: null,
+  stoppedReason: null,
+};
+
 // 환율 설정은 서버(계정에 저장한 기록의 검증)도 쓰므로 스토어 밖에 둔다. 이 모듈에서
 // 가져다 쓰던 곳이 그대로 동작하도록 다시 내보낸다.
 export { DEFAULT_EXCHANGE_RATE_SETTING, isValidExchangeRate };
@@ -210,6 +237,7 @@ interface SubSlashStore {
   accounts: LinkedAccount[];
   notify: NotifySettings;
   exchangeRate: ExchangeRateSetting;
+  accountSync: AccountSyncState;
   /** 샘플 체험 중이면 그 상태. 저장소에 저장하지 않는다 — 새로고침하면 체험이 끝난다. */
   demo: DemoSession | null;
   /** 샘플로 체험을 시작한다. 이미 체험 중이면 그대로 둔다. */
@@ -259,6 +287,7 @@ interface SubSlashStore {
    * 꺼진 상태로 돌린다 — 응답을 기다리는 사이 다시 신청했다면 새 신청을 건드리지 않는다.
    */
   markNotifyRejected: (syncToken: string) => void;
+  setAccountSync: (next: Partial<AccountSyncState>) => void;
 
   // Exchange rate actions
   setExchangeRate: (rate: number, source: Exclude<ExchangeRateSource, "default">) => void;
@@ -281,6 +310,7 @@ export function toPersistedState(state: SubSlashStore): PersistedState {
     accounts: state.accounts,
     notify: state.notify,
     exchangeRate: state.exchangeRate,
+    accountSync: state.accountSync,
   };
 }
 
@@ -293,6 +323,7 @@ export const useStore = create<SubSlashStore>()(
       notify: DEFAULT_NOTIFY,
       exchangeRate: DEFAULT_EXCHANGE_RATE_SETTING,
       demo: null,
+      accountSync: DEFAULT_ACCOUNT_SYNC,
 
       addSubscription: (data) => {
         const newSub: Subscription = {
@@ -545,6 +576,9 @@ export const useStore = create<SubSlashStore>()(
         }));
       },
 
+      setAccountSync: (next) => {
+        set((state) => ({ accountSync: { ...state.accountSync, ...next } }));
+      },
       setExchangeRate: (rate, source) => {
         if (!isValidExchangeRate(rate)) return;
         set({ exchangeRate: { rate, source, updatedAt: new Date().toISOString() } });
