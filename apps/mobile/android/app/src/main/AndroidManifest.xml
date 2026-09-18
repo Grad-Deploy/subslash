@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -38,4 +39,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 로컬 알림 플러그인이 넣는 정확한 알람 권한을 뺀다. 결제일 알림은 몇 분 늦어도 되고
+         (apps/web/lib/native-reminders), 이 권한은 안드로이드 14부터 사용자가 따로 켜야 하며
+         스토어에서도 쓰는 이유를 요구한다. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
 </manifest>
