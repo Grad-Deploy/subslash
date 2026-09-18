@@ -4,9 +4,12 @@
     "slug": "subslash-mobile",
     "owner": "leesean2",
     "version": "1.0",
-    "platforms": ["android"],
+    "platforms": ["android", "ios"],
     "android": {
       "package": "com.subslash.app"
+    },
+    "ios": {
+      "bundleIdentifier": "com.subslash.app"
     },
     "extra": {
       "eas": {
