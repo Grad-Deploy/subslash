@@ -82,6 +82,18 @@ describe("buildBillingMonth", () => {
     expect(month.undatedCount).toBe(0);
   });
 
+  it("체험 중인 구독은 찍지 않는다 — 그 달에 청구되지 않는다", () => {
+    // 2026년 9월을 볼 때, 체험이 10월에 끝나면 9월에는 나갈 돈이 없다.
+    const month = buildBillingMonth([sub({ trialEndsAt: "2026-10-05" })], 2026, 8, RATE);
+    expect(month.days.size).toBe(0);
+    expect(month.totalKRW).toBe(0);
+  });
+
+  it("체험이 끝난 달부터는 보통 구독처럼 찍는다", () => {
+    const month = buildBillingMonth([sub({ trialEndsAt: "2026-10-05" })], 2026, 10, RATE);
+    expect([...month.days.keys()]).toEqual([25]);
+  });
+
   it("해지한 구독은 청구되지 않으므로 찍지 않는다", () => {
     const month = buildBillingMonth([sub({ status: "killed" })], 2026, 8, RATE);
     expect(month.days.size).toBe(0);

@@ -9,6 +9,7 @@ import {
   isShared,
   sumMonthlyKRW,
   sumMyMonthlyKRW,
+  isInTrial,
 } from "@subslash/shared";
 import { Card, CardContent } from "../ui/card";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
@@ -21,7 +22,12 @@ export function TotalSpend({ subscriptions }: { subscriptions: Subscription[] })
   const active = subscriptions.filter((sub) => sub.status === "active");
   // The headline is what leaves this user's pocket; the card charge is shown
   // underneath only when a shared plan makes the two differ.
-  const total = sumMyMonthlyKRW(active, rate);
+  // 체험 중인 구독은 카드에서 나가는 돈이 아직 없다. 넣으면 내지도 않은 돈을 '월 고정지출'로
+  // 보여주게 된다. 빼되, 뺐다는 사실과 끝난 뒤 금액을 함께 적는다.
+  const inTrial = active.filter((sub) => isInTrial(sub));
+  const charged = active.filter((sub) => !isInTrial(sub));
+  const total = sumMyMonthlyKRW(charged, rate);
+  const trialTotal = sumMyMonthlyKRW(inTrial, rate);
   const billed = sumMonthlyKRW(active, rate);
   const sharedCount = active.filter(isShared).length;
   const [displayTotal, setDisplayTotal] = useState(0);
@@ -58,6 +64,12 @@ export function TotalSpend({ subscriptions }: { subscriptions: Subscription[] })
       <CardContent className="pt-6">
         <div className="text-sm font-medium text-muted-foreground mb-2">월 고정지출</div>
         <div className="text-4xl font-bold text-foreground">{formatKRW(displayTotal)}</div>
+        {inTrial.length > 0 && (
+          <div className="mt-1.5 text-xs text-muted-foreground">
+            체험 중 {inTrial.length}건은 빼고 셉니다 · 끝나면 월 {formatKRW(trialTotal)}이
+            더해집니다
+          </div>
+        )}
         {sharedCount > 0 && (
           <div className="mt-1.5 text-xs text-muted-foreground">
             공유 구독 {sharedCount}건 반영 · 카드 청구액은 월 {formatKRW(billed)}

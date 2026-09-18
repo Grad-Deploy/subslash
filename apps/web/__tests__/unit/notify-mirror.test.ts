@@ -35,6 +35,11 @@ describe("toMirrorPayload", () => {
     expect(toMirrorPayload([claude])[0].cancelUrl).toBeNull();
   });
 
+  it("체험 중인 구독은 보내지 않는다 — 없는 결제를 알리지 않는다", () => {
+    const future = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    expect(toMirrorPayload([{ ...claude, trialEndsAt: future }])).toEqual([]);
+  });
+
   it("해지한 구독은 보내지 않는다", () => {
     expect(toMirrorPayload([{ ...claude, status: "killed" }])).toEqual([]);
   });
