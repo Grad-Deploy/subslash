@@ -19,7 +19,8 @@ import {
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { OnboardingTourCard } from "../../components/dashboard/OnboardingTourCard";
 import { ActionQueue } from "../../components/dashboard/ActionQueue";
-import { UpcomingBilling } from "../../components/dashboard/UpcomingBilling";
+import { BillingCalendar } from "../../components/dashboard/BillingCalendar";
+import { MonthlyValueReport } from "../../components/dashboard/MonthlyValueReport";
 import { SubForm } from "../../components/subscription/SubForm";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
@@ -225,14 +226,28 @@ export default function Dashboard() {
             onKillCharged={handleKillCharged}
             onAddFirst={() => setIsAddOpen(true)}
           />
+
+          {/*
+            이번 달 어느 날에 무엇이 빠져나가는지. '다가오는 결제' 목록을 대신한다 — 목록은 다음
+            다섯 건만 보여줘서 결제가 몰린 주가 보이지 않았다. 좁은 aside에는 7열 그리드가 들어가지
+            않아 본문에 둔다.
+          */}
+          <BillingCalendar subscriptions={activeSubs} now={now} />
+
+          {/* 월간 구독 가성비 리포트 (손익 영수증) */}
+          <MonthlyValueReport
+            subscriptions={activeSubs}
+            usageLogs={usageLogs}
+            now={now}
+            onCancelGuide={handleCancelGuide}
+            onCheckIn={handleOpenCheckIn}
+          />
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-20" aria-label="이번 달 요약">
           {/* 지출 한 줄 */}
           <TotalSpend subscriptions={activeSubs} />
           <ExchangeRateNote />
-
-          <UpcomingBilling subscriptions={activeSubs} now={now} />
 
           {/*
             절약 성과는 /savings가 전담한다. 여기서는 이번 달 실제로 막은 금액과
