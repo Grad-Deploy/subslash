@@ -7,6 +7,7 @@ import { useAuth } from "@hooks/useAuth";
 import { realRecords, useStore } from "@lib/store";
 import { startCalendarSync, toCalendarPlanEntries } from "@lib/calendar-sync-client";
 import { fetchGmailLink, type GmailLinkState } from "@lib/gmail-auto-client";
+import { leaveForExternal } from "@lib/native";
 import { Button } from "../ui/button";
 
 /**
@@ -53,8 +54,9 @@ export function GoogleCalendarSync() {
     setBusy(true);
     setError(null);
     try {
-      // Google 권한 화면으로 간다. 끝나면 웹 앱의 'SubSlash로 돌아가기'로 이 화면에 돌아온다.
-      window.location.assign(await startCalendarSync(entries, reminderDays));
+      // Google 권한 화면으로 간다. 웹에서는 이 탭이 그대로 가고, 앱에서는 인앱 브라우저로 연다 —
+      // 앱 웹뷰가 통째로 나가면 담아 둔 화면을 잃고 돌아올 길이 없다.
+      leaveForExternal(await startCalendarSync(entries, reminderDays), () => setBusy(false));
     } catch (e) {
       setError(e instanceof Error ? e.message : "캘린더 등록을 시작하지 못했습니다.");
       setBusy(false);

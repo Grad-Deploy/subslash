@@ -162,6 +162,10 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
   변경 응답의 새 토큰을 받아 둔다.
 - 외부 사이트는 `openExternal()`, 공유는 `shareText()`(`lib/native`)로 연다. 앱에서는 인앱 브라우저와
   네이티브 공유 창이 된다. `window.open`·`navigator.share`를 직접 부르지 않는다.
+- 외부 사이트에서 무언가를 마치고 **돌아와야 하는** 흐름(Google 권한 화면 등)은 `leaveForExternal()`을
+  쓴다. 웹에서는 이 탭이 그대로 가고(돌아오면 화면이 다시 그려진다), 앱에서는 인앱 브라우저로 열고
+  닫힐 때 `onReturn`으로 상태를 다시 읽는다. 앱에서 `window.location.assign`으로 나가면 앱 웹뷰가
+  통째로 외부 사이트가 되어, 담아 둔 화면을 잃고 그 사이트의 '돌아가기'는 앱이 아니라 웹사이트를 연다.
 - 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은
   `capacitor://localhost`(iOS)나 `https://localhost`(안드로이드)다.
 - 페이지에 동적 경로(`[id]`)를 새로 만들지 않는다. 브라우저에서 만든 ID로는 페이지를 미리

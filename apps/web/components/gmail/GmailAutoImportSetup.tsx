@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@hooks/useAuth";
 import { webUrl } from "@lib/api";
 import { GMAIL_AUTO_SCRIPT_MANIFEST, gmailAutoScript } from "@lib/gmail-import";
+import { leaveForExternal } from "@lib/native";
 import {
   createGmailLink,
   deleteGmailLink,
@@ -78,8 +79,15 @@ export function GmailAutoImportSetup() {
     setBusy(true);
     setError(null);
     try {
-      // Google 권한 화면으로 간다. 허용하면 웹 앱의 'SubSlash로 돌아가기'로 이 화면에 돌아온다.
-      window.location.assign(await startGmailConnect());
+      // Google 권한 화면으로 간다. 웹에서는 이 탭이 그대로 가고(돌아오면 화면이 다시 그려진다),
+      // 앱에서는 인앱 브라우저로 열고 닫힐 때 연결 상태를 다시 읽는다 — 앱 웹뷰가 통째로 나가면
+      // 담아 둔 화면을 잃는다.
+      leaveForExternal(await startGmailConnect(), () => {
+        setBusy(false);
+        fetchGmailLink()
+          .then(setLink)
+          .catch(() => undefined);
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gmail 연결을 시작하지 못했습니다.");
       setBusy(false);

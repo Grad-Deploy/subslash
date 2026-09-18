@@ -21,6 +21,35 @@ export function openExternal(url: string | undefined): void {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
+/**
+ * 사용자를 외부 사이트로 보냈다가 돌아오게 한다(Google 권한 화면처럼, 그 사이트에서 무언가를 마치고
+ * 와야 하는 흐름).
+ *
+ * 웹에서는 이 탭이 그대로 그 주소로 간다 — 돌아오면 화면이 처음부터 다시 그려져 바뀐 상태가 보인다.
+ * 앱에서는 그럴 수 없다. 웹뷰가 통째로 외부 사이트로 가면 그 안에 담긴 앱 화면을 잃고, 외부
+ * 사이트의 '돌아가기'는 앱이 아니라 웹사이트를 연다. 그래서 인앱 브라우저로 열고, 닫으면 앱으로
+ * 돌아온 뒤 `onReturn`으로 화면을 다시 맞춘다.
+ */
+export function leaveForExternal(url: string, onReturn?: () => void): void {
+  if (!url) return;
+  if (IS_APP_BUILD) {
+    void import("@capacitor/browser")
+      .then(async ({ Browser }) => {
+        const finished = await Browser.addListener("browserFinished", () => {
+          void finished.remove();
+          onReturn?.();
+        });
+        await Browser.open({ url });
+      })
+      .catch((error) => {
+        console.error("[native] 링크를 열지 못했습니다", error);
+        onReturn?.();
+      });
+    return;
+  }
+  window.location.assign(url);
+}
+
 export interface SharePayload {
   title: string;
   /** 링크까지 담은 문장. */
