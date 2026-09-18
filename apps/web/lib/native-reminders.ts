@@ -2,9 +2,12 @@
  * 앱(Capacitor)의 로컬 결제 알림을 기기에 걸고 지운다. 무엇을 언제 알릴지는 lib/local-reminders가
  * 정한다. 웹에서는 모든 함수가 아무것도 하지 않는다.
  *
- * 안드로이드 13부터는 알림을 띄우려면 사용자에게 알림 권한을 받아야 한다. 권한은 앱을 켤 때가
- * 아니라 사용자가 알림을 켤 때 묻는다. 정확한 시각 알람(SCHEDULE_EXACT_ALARM)은 쓰지 않는다 —
+ * 알림을 띄우려면 사용자에게 알림 권한을 받아야 한다(안드로이드 13 이상, iOS는 늘). 권한은 앱을
+ * 켤 때가 아니라 사용자가 알림을 켤 때 묻는다. 정확한 시각 알람(SCHEDULE_EXACT_ALARM)은 쓰지 않는다 —
  * 안드로이드 14부터 기본으로 막힌 별도 권한이고, 결제일 알림은 몇 분 늦어도 된다.
+ *
+ * 알림 채널은 안드로이드에만 있다. iOS에서 만들려 하면 거절당하는데, 알림을 걸기 전에 매번
+ * 기다리므로 그대로 두면 iOS에서는 알림이 하나도 걸리지 않는다.
  */
 import { IS_APP_BUILD } from "./platform";
 import type { PlannedReminder } from "./local-reminders";
@@ -47,8 +50,14 @@ export async function requestReminderPermission(): Promise<ReminderPermission> {
 
 let channelReady: Promise<void> | null = null;
 
-/** 안드로이드 8부터 알림은 채널에 속한다. 사용자는 설정에서 이 채널만 따로 끌 수 있다. */
-function ensureChannel(plugin: Plugin): Promise<void> {
+/**
+ * 안드로이드 8부터 알림은 채널에 속한다. 사용자는 설정에서 이 채널만 따로 끌 수 있다.
+ *
+ * iOS에는 채널이 없다. `createChannel`은 안드로이드 전용이라 iOS에서는 거절당하므로 건너뛴다.
+ */
+async function ensureChannel(plugin: Plugin): Promise<void> {
+  const { Capacitor } = await import("@capacitor/core");
+  if (Capacitor.getPlatform() !== "android") return;
   channelReady ??= plugin
     .createChannel({
       id: CHANNEL_ID,
