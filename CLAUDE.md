@@ -157,11 +157,23 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
 그래서 화면 코드는 다음을 지킨다.
 
 - 서버 API는 `apiUrl("/api/...")`(`lib/api`)로 부른다. 앱 안의 상대 주소는 앱 자신을 가리킨다.
-- 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은 `capacitor://`다.
+- 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은
+  `capacitor://localhost`(iOS)나 `https://localhost`(안드로이드)다.
 - 페이지에 동적 경로(`[id]`)를 새로 만들지 않는다. 브라우저에서 만든 ID로는 페이지를 미리
   만들 수 없다. 구독 상세는 `subscriptionDetailHref()`(`/subs/detail?id=`)를 쓴다.
 - 브라우저 기본 `confirm`·`prompt`·`alert`를 쓰지 않는다. 창 밖에서는 `ConfirmDialog`, 이미
   열린 창 안에서는 `InlineConfirm`을 쓴다(창을 겹치면 같은 Esc에 함께 닫힌다).
+- 페이지를 통째로 다시 부르는 이동(`window.location.href =`, `location.reload()`, next/link가
+  아닌 `<a href="/...">`)을 쓰지 않는다. 앱은 확장자 없는 주소(`/dashboard`)를 모두 `index.html`로
+  열어서, 다시 부른 페이지는 홈 화면이 된다. 화면 이동은 next/link와 `useRouter`로만 한다.
+- 페이지·레이아웃 파일은 `.tsx`로 만든다. 앱 빌드는 `.tsx`만 경로로 읽어 `route.ts`·`proxy.ts`를
+  뺀다(`next.config.ts`).
+
+앱 화면은 `pnpm --filter @subslash/web build:app`(정적 내보내기 → `apps/web/out`)으로 만들고,
+`apps/mobile`(Capacitor 8, appId `com.subslash.app`)이 그 폴더를 담는다. 빌드에는 앱이 부를 배포
+주소(`NEXT_PUBLIC_WEB_ORIGIN`)가 꼭 있어야 하고, 없으면 빌드를 멈춘다. 앱에서만 달라지는 동작은
+`IS_APP_BUILD`(`lib/platform`)로 가른다. CI가 이 빌드를 돌려 정적 내보내기를 깨는 코드를 막는다.
+안드로이드 빌드·실행은 README의 '모바일 앱'에 있다.
 
 `tools/ipad-preview`는 Mac 없이 iPad의 Expo Go로 화면을 iPhone 크기 그대로 보는 도구다(사용법은
 그 폴더의 README). pnpm 워크스페이스 밖이라 npm으로 따로 설치하고, CI·웹 빌드에 들어가지 않는다.
