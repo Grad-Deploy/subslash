@@ -16,6 +16,7 @@ import { isGmailAutoImportOpen } from "@lib/privacy";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
 import { CopyBlock } from "../../components/gmail/CopyBlock";
 import { GmailAutoImportSetup } from "../../components/gmail/GmailAutoImportSetup";
+import { GoogleCalendarSync } from "../../components/calendar/GoogleCalendarSync";
 import { Button } from "../../components/ui/button";
 
 type ImportState =
@@ -47,6 +48,8 @@ function Guide() {
       </header>
 
       {isGmailAutoImportOpen() && <GmailAutoImportSetup />}
+
+      {isGmailAutoImportOpen() && <GoogleCalendarSync />}
 
       {isGmailAutoImportOpen() && <h2 className="text-base font-bold">직접 실행해서 가져오기</h2>}
 

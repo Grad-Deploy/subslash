@@ -339,11 +339,17 @@ export const GMAIL_CONNECT_WEB_APP_MANIFEST = `${JSON.stringify(
     exceptionLogging: "STACKDRIVER",
     oauthScopes: [
       "https://www.googleapis.com/auth/gmail.readonly",
+      // 결제일을 쓸 전용 캘린더를 만들고 일정을 넣는다. Calendar 고급 서비스는 이 권한 하나만
+      // 있고 더 좁은 권한으로는 캘린더를 만들지 못한다.
+      "https://www.googleapis.com/auth/calendar",
       "https://www.googleapis.com/auth/script.external_request",
       "https://www.googleapis.com/auth/script.scriptapp",
     ],
     dependencies: {
-      enabledAdvancedServices: [{ userSymbol: "Gmail", serviceId: "gmail", version: "v1" }],
+      enabledAdvancedServices: [
+        { userSymbol: "Gmail", serviceId: "gmail", version: "v1" },
+        { userSymbol: "Calendar", serviceId: "calendar", version: "v3" },
+      ],
     },
     webapp: { executeAs: "USER_ACCESSING", access: "ANYONE" },
   },
@@ -359,6 +365,10 @@ const CONNECT_WEB_APP = String.raw`/**
  * 모든 사용자). 사용자가 SubSlash에서 'Gmail 연결'을 누르면 이 웹 앱으로 오고, Google 권한을
  * 허용하면 그 사람의 계정에 2주마다 도는 검사를 겁니다. 연결 토큰·검사 시각은 사람마다 따로
  * (UserProperties) 둡니다. SubSlash는 받은 메일에서 구독 후보만 남기고 제목·본문은 저장하지 않습니다.
+ *
+ * '구글 캘린더에 등록'(action=calendar)도 이 웹 앱이 합니다. SubSlash에서 받은 1회용 코드로 결제일을
+ * 받아, 이 계정의 'SubSlash 결제일' 캘린더에 반복 일정으로 씁니다. 다른 캘린더는 건드리지 않고,
+ * 전에 SubSlash가 쓴 일정은 지우고 다시 씁니다(전체 교체).
  */
 
 // 연결 코드를 바꾸고 메일을 보낼 SubSlash 주소. 이 목록에 없는 주소로는 보내지 않습니다.
@@ -383,6 +393,7 @@ function doGet(e) {
   if (!params.code) {
     return connectPage("연결할 수 없습니다", "연결 코드가 없습니다. SubSlash에서 다시 연결해 주세요.", origin);
   }
+  if (String(params.action || "") === "calendar") return calendarPage(origin, String(params.code));
 
   var response = UrlFetchApp.fetch(origin + "/api/gmail/connect/exchange", {
     method: "post",
@@ -480,6 +491,108 @@ function responseError(response, fallback) {
   } catch (error) {
     return fallback;
   }
+}
+
+// 'SubSlash 결제일' 캘린더에 결제일을 쓴다. SubSlash에서 받은 1회용 코드가 자격증명이다.
+function calendarPage(origin, code) {
+  var response = UrlFetchApp.fetch(origin + "/api/calendar-sync/claim", {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({ code: code }),
+    muteHttpExceptions: true,
+  });
+  if (response.getResponseCode() !== 200) {
+    return connectPage(
+      "캘린더에 등록하지 못했습니다",
+      responseError(response, "요청이 만료됐거나 이미 쓰였습니다. SubSlash에서 다시 눌러 주세요."),
+      origin,
+    );
+  }
+
+  var plan = JSON.parse(response.getContentText());
+  try {
+    var written = writeBillingEvents(plan.calendarName, plan.events || []);
+    return connectPage(
+      "구글 캘린더에 등록했습니다",
+      "'" + plan.calendarName + "' 캘린더에 결제일 " + written + "건을 넣었습니다. " +
+        "구독을 고친 뒤 SubSlash에서 다시 누르면 이 캘린더를 통째로 새로 씁니다.",
+      origin,
+    );
+  } catch (error) {
+    return connectPage("캘린더에 등록하지 못했습니다", String(error.message || error), origin);
+  }
+}
+
+// 결제일 일정을 전부 다시 쓴다. 미러·백업과 같은 규칙이다 — 합치지 않고 통째로 바꾼다.
+function writeBillingEvents(calendarName, events) {
+  var calendarId = billingCalendarId(calendarName);
+  clearBillingEvents(calendarId);
+  for (var i = 0; i < events.length; i++) {
+    var event = events[i];
+    Calendar.Events.insert(
+      {
+        summary: event.summary,
+        description: event.description,
+        start: { date: event.start },
+        end: { date: event.end },
+        recurrence: ["RRULE:" + event.rrule],
+        // 결제일에 다른 일정을 잡지 못하게 막지 않는다.
+        transparency: "transparent",
+        reminders: {
+          useDefault: false,
+          overrides: [{ method: "popup", minutes: event.reminderMinutes }],
+        },
+        // 다시 쓸 때 SubSlash가 만든 일정만 찾아 지우는 표식.
+        extendedProperties: { private: { subslash: "1", uid: String(event.uid) } },
+      },
+      calendarId,
+    );
+  }
+  return events.length;
+}
+
+// 전용 캘린더를 찾거나 만든다. 기본 캘린더에 쓰지 않는다 — 그러면 지울 때 하나씩 지워야 한다.
+function billingCalendarId(calendarName) {
+  var properties = PropertiesService.getUserProperties();
+  var saved = properties.getProperty("calendarId");
+  if (saved) {
+    try {
+      return Calendar.Calendars.get(saved).id;
+    } catch (error) {
+      // 사용자가 캘린더를 지웠다. 아래에서 다시 만든다.
+      properties.deleteProperty("calendarId");
+    }
+  }
+
+  var list = Calendar.CalendarList.list({ maxResults: 250 }).items || [];
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].summary === calendarName && list[i].accessRole === "owner") {
+      properties.setProperty("calendarId", list[i].id);
+      return list[i].id;
+    }
+  }
+
+  var created = Calendar.Calendars.insert({ summary: calendarName, timeZone: "Asia/Seoul" });
+  properties.setProperty("calendarId", created.id);
+  return created.id;
+}
+
+// 전에 SubSlash가 쓴 일정만 지운다. 같은 캘린더에 사용자가 직접 넣은 일정은 남는다.
+function clearBillingEvents(calendarId) {
+  var pageToken = null;
+  do {
+    var page = Calendar.Events.list(calendarId, {
+      privateExtendedProperty: "subslash=1",
+      showDeleted: false,
+      maxResults: 250,
+      pageToken: pageToken,
+    });
+    var items = page.items || [];
+    for (var i = 0; i < items.length; i++) {
+      Calendar.Events.remove(calendarId, items[i].id);
+    }
+    pageToken = page.nextPageToken;
+  } while (pageToken);
 }
 
 function connectPage(title, message, origin) {
