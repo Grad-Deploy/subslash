@@ -331,3 +331,60 @@ describe("해지했는데 결제 메일이 온 구독", () => {
     expect(queue.map((item) => item.kind)).toEqual(["verify-kill"]);
   });
 });
+
+describe("결제 메일 금액이 등록된 청구액과 다른 구독", () => {
+  it("두 숫자를 나란히 적고, 어느 쪽이 맞다고 단정하지 않는다", () => {
+    const [item] = getActionQueue(
+      [subDueIn(20, { amount: 13900, observedAmount: 17000, observedAmountAt: "2026.09.05" })],
+      [log("sub-1", { riskLevel: "green" })],
+      NOW,
+    );
+
+    expect(item.kind).toBe("amount-changed");
+    expect(item.reason).toContain("₩17,000");
+    expect(item.reason).toContain("₩13,900");
+    expect(item.reason).toContain("2026.09.05");
+    // 요금표를 조회하지 않으므로 "올랐다"고 말하지 않는다.
+    expect(item.reason).not.toContain("올랐");
+  });
+
+  it("세금이 따로 붙는 구독은 청구액과 견준다", () => {
+    const [item] = getActionQueue(
+      [
+        subDueIn(20, {
+          amount: 10,
+          currency: "USD",
+          taxRate: 10,
+          observedAmount: 12,
+          observedAmountAt: "2026.09.05",
+        }),
+      ],
+      [log("sub-1", { riskLevel: "green" })],
+      NOW,
+    );
+
+    // 등록 금액 $10이 아니라 세금 포함 $11과 비교해 보여준다.
+    expect(item.reason).toContain("$11.00");
+  });
+
+  it("결제가 코앞이면 그쪽이 먼저다 — 한 구독은 한 줄만 만든다", () => {
+    const queue = getActionQueue(
+      [subDueIn(1, { observedAmount: 99000, observedAmountAt: "2026.09.05" })],
+      // 저사용 경고에 걸리지 않게 충분히 쓴 기록으로 둔다.
+      [log("sub-1", { riskLevel: "green", usageCount: 5 })],
+      NOW,
+    );
+
+    expect(queue.map((item) => item.kind)).toEqual(["billing-soon"]);
+  });
+
+  it("날짜 없이 금액만 있으면 올리지 않는다", () => {
+    const queue = getActionQueue(
+      [subDueIn(20, { observedAmount: 17000 })],
+      [log("sub-1", { riskLevel: "green", checkedAt: daysAgo(1) })],
+      NOW,
+    );
+
+    expect(queue.map((item) => item.kind)).not.toContain("amount-changed");
+  });
+});
