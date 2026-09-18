@@ -385,3 +385,66 @@ describe("parseReceiptEmails (Gmail 결제 메일)", () => {
     expect(unknown.presetId).toBeUndefined();
   });
 });
+
+describe("붙여넣은 영수증의 결제일", () => {
+  const receipt = (line: string) => `상품명 : 넷플릭스
+결제금액 : 17,000원
+${line}`;
+
+  it("연도가 붙은 날짜에서 연도를 월로 읽지 않는다", () => {
+    // "2026.09.05"를 월·일만 훑으면 연도 끝과 월이 "6.09"로 붙어 9일이 됐다.
+    expect(parsePaymentSms(receipt("2026.09.05 결제 완료"))[0].billingDay).toBe(5);
+    expect(parsePaymentSms(receipt("2026-09-05 결제 완료"))[0].billingDay).toBe(5);
+    expect(parsePaymentSms(receipt("2026년 9월 5일 결제"))[0].billingDay).toBe(5);
+  });
+
+  it("결제일 라벨이 달라도 읽는다", () => {
+    for (const label of ["승인일자", "승인일", "거래일시", "이용일", "결제 완료일", "Date"]) {
+      expect(parsePaymentSms(receipt(`${label} : 2026.09.05`))[0].billingDay).toBe(5);
+    }
+  });
+
+  it("전화번호를 날짜로 읽지 않는다", () => {
+    // "02-1234-5678"에서 "02-12"를 집어 12일로 등록하던 것.
+    const parsed = parsePaymentSms(
+      receipt(`문의: 02-1234-5678
+2026.09.05 결제`),
+    )[0];
+    expect(parsed.billingDay).toBe(5);
+  });
+});
+
+describe("붙여넣은 영수증의 금액", () => {
+  const receipt = (amountLine: string) =>
+    `상품명 : 넷플릭스
+${amountLine}
+결제일시 : 2026.09.05`;
+
+  it("라벨 뒤에 통화 표시가 없어도 읽는다", () => {
+    expect(parsePaymentSms(receipt("결제금액 : 17,000"))[0].amount).toBe(17000);
+    expect(parsePaymentSms(receipt("결제금액 : KRW 17,000"))[0].amount).toBe(17000);
+  });
+
+  it("라벨이 가리키는 금액을 본문의 다른 숫자보다 먼저 쓴다", () => {
+    const parsed = parsePaymentSms(
+      `상품명 : 넷플릭스
+결제금액 : 17,000
+적립 500원
+결제일시 : 2026.09.05`,
+    )[0];
+    expect(parsed.amount).toBe(17000);
+  });
+
+  it("달러 영수증을 원으로 읽지 않는다", () => {
+    const dollars = parsePaymentSms(receipt("결제금액 : 20.00 USD"))[0];
+    expect(dollars.currency).toBe("USD");
+    expect(dollars.amount).toBe(20);
+  });
+
+  it("서비스 이름이 없어도 금액이 있으면 후보로 남긴다", () => {
+    const parsed = parsePaymentSms(`결제금액 : 17,000원
+결제일시 : 2026.09.05`)[0];
+    expect(parsed.name).toContain("알 수 없는 결제");
+    expect(parsed.amount).toBe(17000);
+  });
+});
