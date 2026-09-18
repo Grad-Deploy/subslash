@@ -28,6 +28,7 @@ export function GmailDiscoveryInbox() {
   const demo = useStore((state) => state.demo);
   const addBatchSubscriptions = useStore((state) => state.addBatchSubscriptions);
   const deleteSubscription = useStore((state) => state.deleteSubscription);
+  const markChargedAfterKill = useStore((state) => state.markChargedAfterKill);
 
   const [registered, setRegistered] = useState<{ ids: string[]; names: string[] } | null>(null);
   const [review, setReview] = useState<GmailDiscovery[]>([]);
@@ -61,6 +62,10 @@ export function GmailDiscoveryInbox() {
           names: created.map((sub) => sub.name),
         });
       }
+      // 해지했는데 결제 메일이 온 것은 그 구독에 적어 둔다. 행동 큐가 가장 위에 올린다.
+      for (const { subscriptionId, discovery } of plan.chargedAfterKill) {
+        markChargedAfterKill(subscriptionId, discovery.receiptDate, discovery.amount);
+      }
       setReview(plan.review);
 
       // 등록했거나 이미 구독 중인 후보는 지운다. 지우지 못해도 다음에 받을 때 '이미 구독 중'으로
@@ -69,7 +74,7 @@ export function GmailDiscoveryInbox() {
         [...plan.register, ...plan.alreadyTracked].map((item) => item.id),
       ).catch(() => undefined);
     })();
-  }, [account, demo, addBatchSubscriptions]);
+  }, [account, demo, addBatchSubscriptions, markChargedAfterKill]);
 
   const acknowledgeReview = () => {
     const ids = review.map((item) => item.id);

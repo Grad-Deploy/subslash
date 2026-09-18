@@ -272,6 +272,11 @@ interface SubSlashStore {
    * 해지한 구독에만 기록되고, 확인 시각은 이 액션을 통해서만 생긴다.
    */
   confirmKillVerified: (id: string) => void;
+  /**
+   * 해지로 기록한 구독인데 그 뒤에 결제 메일이 온 사실을 적는다. Gmail 가져오기만 부른다.
+   * 사용자의 기억이 아니라 영수증이므로, 이미 '확인'해 둔 구독에도 적는다.
+   */
+  markChargedAfterKill: (id: string, receiptDate: string, amount: number) => void;
   deleteSubscription: (id: string) => void;
   checkIn: (subscriptionId: string, usageCount: number) => CheckInResponse;
   getActiveSubscriptions: () => Subscription[];
@@ -465,7 +470,24 @@ export const useStore = create<SubSlashStore>()(
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
             sub.id === id
-              ? { ...sub, status: "active", killedAt: undefined, killVerifiedAt: undefined }
+              ? {
+                  ...sub,
+                  status: "active",
+                  killedAt: undefined,
+                  killVerifiedAt: undefined,
+                  // 다시 구독 중이면 "해지했는데 결제됐다"는 더 이상 이상한 일이 아니다.
+                  chargedAfterKillAt: undefined,
+                  chargedAfterKillAmount: undefined,
+                }
+              : sub,
+          ),
+        }));
+      },
+      markChargedAfterKill: (id, receiptDate, amount) => {
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            sub.id === id && sub.status === "killed"
+              ? { ...sub, chargedAfterKillAt: receiptDate, chargedAfterKillAmount: amount }
               : sub,
           ),
         }));
@@ -474,7 +496,15 @@ export const useStore = create<SubSlashStore>()(
         const verifiedAt = new Date().toISOString();
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
-            sub.id === id && sub.status === "killed" ? { ...sub, killVerifiedAt: verifiedAt } : sub,
+            sub.id === id && sub.status === "killed"
+              ? {
+                  ...sub,
+                  killVerifiedAt: verifiedAt,
+                  // 다시 확인해 줬으니 예전 영수증 증거는 내린다. 또 오면 다시 적힌다.
+                  chargedAfterKillAt: undefined,
+                  chargedAfterKillAmount: undefined,
+                }
+              : sub,
           ),
         }));
       },

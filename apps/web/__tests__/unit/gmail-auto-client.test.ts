@@ -66,6 +66,19 @@ describe("planDiscoveries", () => {
     expect(candidate.statusReason).toContain("해지로 기록한 서비스");
   });
 
+  it("해지한 구독에 결제 메일이 왔다는 사실을 그 구독에 적을 수 있게 넘긴다", () => {
+    const subs = [subscription({ id: "sub-1", status: "killed" })];
+    const plan = planDiscoveries([discovery({})], subs);
+
+    // 행동 큐가 "해지했는데 결제됐다"를 가장 위에 올리는 근거다.
+    expect(plan.chargedAfterKill).toEqual([{ subscriptionId: "sub-1", discovery: plan.review[0] }]);
+  });
+
+  it("구독 중이거나 처음 보는 서비스면 그 사실을 적지 않는다", () => {
+    expect(planDiscoveries([discovery({})], [subscription({})]).chargedAfterKill).toEqual([]);
+    expect(planDiscoveries([discovery({})], []).chargedAfterKill).toEqual([]);
+  });
+
   it("통화가 다르면 다른 구독으로 본다", () => {
     const plan = planDiscoveries([discovery({ currency: "USD" })], [subscription({})]);
     expect(plan.register.map((d) => d.id)).toEqual(["d1"]);
