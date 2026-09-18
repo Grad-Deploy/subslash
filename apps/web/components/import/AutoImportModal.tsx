@@ -382,6 +382,25 @@ export function AutoImportModal({
             </div>
           )}
 
+          {/*
+            붙여넣었는데 아무것도 못 찾았으면 그렇다고 말한다. 화면이 조용하면 사용자는 앱이
+            멈춘 줄 안다. 금액이 없으면 등록할 수 없다 — 지어낼 수 없는 값이라 그렇다고 적는다.
+          */}
+          {smsText.trim().length > 0 && discoveredItems.length === 0 && (
+            <div className="rounded-xl border border-dashed p-4 text-xs leading-relaxed text-muted-foreground">
+              <p className="font-semibold text-foreground">이 내용에서 결제를 찾지 못했습니다.</p>
+              <p className="mt-1.5">
+                결제 금액이 있어야 등록할 수 있습니다. 1회당 단가를 계산하는 근거라, 없는 금액을
+                지어내지 않습니다. 영수증에 <strong>결제금액</strong>이 적힌 줄이 들어갔는지 확인해
+                주세요.
+              </p>
+              <p className="mt-1.5">
+                서비스 이름은 없어도 됩니다 — &lsquo;알 수 없는 결제&rsquo;로 두고 나중에 고칠 수
+                있습니다. 결제일이 없으면 오늘로 봅니다.
+              </p>
+            </div>
+          )}
+
           {/* DISCOVERED SUBSCRIPTIONS RESULT */}
           {discoveredItems.length > 0 &&
             (() => {
