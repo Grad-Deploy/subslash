@@ -337,11 +337,25 @@ return { setup: setup, scan: scan };`,
 
 describe("원클릭 연결 웹 앱", () => {
   const ORIGIN = "https://www.subslash.me";
+  // 서버(`lib/calendar-sync`)가 만들어 보내는 모양. 스크립트는 이 값을 그대로 캘린더에 넣는다.
+  const CALENDAR_EVENT = {
+    uid: "sub-netflix",
+    summary: "💳 넷플릭스 ₩17,000",
+    description: "넷플릭스 결제일입니다.",
+    start: "2026-09-25",
+    end: "2026-09-26",
+    rrule: "FREQ=MONTHLY;BYMONTHDAY=25",
+    reminderMinutes: 4320,
+  };
 
   function runWebApp(
     options: {
       exchangeStatus?: number;
       ingestStatus?: number;
+      claimStatus?: number;
+      events?: unknown[];
+      calendars?: { id: string; summary: string; accessRole: string }[];
+      existingEvents?: { id: string }[];
       stored?: Record<string, string>;
     } = {},
   ) {
@@ -353,6 +367,11 @@ describe("원클릭 연결 웹 앱", () => {
     const triggers: { handler: string; weeks?: number }[] = [];
     const deleted: string[] = [];
     const properties = new Map<string, string>(Object.entries(options.stored ?? {}));
+    const calendarList = options.calendars ?? [];
+    const insertedCalendars: { summary: string }[] = [];
+    const insertedEvents: Record<string, unknown>[] = [];
+    const removedEvents: string[] = [];
+    const listedEvents: Record<string, unknown>[] = [];
 
     const builder = (handler: string) => {
       const trigger: (typeof triggers)[number] = { handler };
@@ -410,7 +429,41 @@ describe("원클릭 연결 웹 앱", () => {
               ? response(200, { token: "issued-token" })
               : response(status, { error: "연결 코드가 만료됐거나 이미 쓰였습니다." });
           }
+          if (url.endsWith("/api/calendar-sync/claim")) {
+            const status = options.claimStatus ?? 200;
+            return status === 200
+              ? response(200, {
+                  calendarName: "SubSlash 결제일",
+                  events: options.events ?? [CALENDAR_EVENT],
+                })
+              : response(status, { error: "요청이 만료됐거나 이미 쓰였습니다." });
+          }
           return response(options.ingestStatus ?? 200, { received: 2, candidates: 2 });
+        },
+      },
+      Calendar: {
+        Calendars: {
+          get: (id: string) => {
+            const found = calendarList.find((calendar) => calendar.id === id);
+            if (!found) throw new Error("not found");
+            return found;
+          },
+          insert: (body: { summary: string }) => {
+            insertedCalendars.push(body);
+            const created = { id: "made-calendar", summary: body.summary, accessRole: "owner" };
+            calendarList.push(created);
+            return created;
+          },
+        },
+        CalendarList: { list: () => ({ items: calendarList }) },
+        Events: {
+          list: (_id: string, query: Record<string, unknown>) => {
+            listedEvents.push(query);
+            return { items: options.existingEvents ?? [] };
+          },
+          insert: (body: Record<string, unknown>, calendarId: string) =>
+            insertedEvents.push({ ...body, calendarId }),
+          remove: (_calendarId: string, eventId: string) => removedEvents.push(eventId),
         },
       },
       HtmlService: {
@@ -429,7 +482,18 @@ describe("원클릭 연결 웹 앱", () => {
       doGet: (e: { parameter: Record<string, string> }) => unknown;
       scan: () => number;
     };
-    return { api, html, fetched, triggers, deleted, properties };
+    return {
+      api,
+      html,
+      fetched,
+      triggers,
+      deleted,
+      properties,
+      insertedCalendars,
+      insertedEvents,
+      removedEvents,
+      listedEvents,
+    };
   }
 
   it("허용 목록에 없는 주소에서 오면 코드를 어디로도 보내지 않는다", () => {
@@ -479,9 +543,77 @@ describe("원클릭 연결 웹 앱", () => {
     expect(run.properties.size).toBe(0);
   });
 
+  it("캘린더가 없으면 전용 캘린더를 만들고 결제일을 반복 일정으로 넣는다", () => {
+    const run = runWebApp();
+    run.api.doGet({ parameter: { action: "calendar", code: "plan-code", origin: ORIGIN } });
+
+    const [claim] = run.fetched;
+    expect(claim.url).toBe(`${ORIGIN}/api/calendar-sync/claim`);
+    expect(JSON.parse(claim.options.payload)).toEqual({ code: "plan-code" });
+
+    expect(run.insertedCalendars).toEqual([{ summary: "SubSlash 결제일", timeZone: "Asia/Seoul" }]);
+    // 다음에 다시 누를 때 같은 캘린더를 쓴다.
+    expect(run.properties.get("calendarId")).toBe("made-calendar");
+
+    expect(run.insertedEvents).toHaveLength(1);
+    const event = run.insertedEvents[0] as Record<string, never>;
+    expect(event.calendarId).toBe("made-calendar");
+    expect(event.recurrence).toEqual(["RRULE:FREQ=MONTHLY;BYMONTHDAY=25"]);
+    expect(event.start).toEqual({ date: "2026-09-25" });
+    expect(event.reminders).toEqual({
+      useDefault: false,
+      overrides: [{ method: "popup", minutes: 4320 }],
+    });
+    // 다시 쓸 때 우리 일정만 찾아 지우는 표식.
+    expect(event.extendedProperties).toEqual({
+      private: { subslash: "1", uid: "sub-netflix" },
+    });
+    expect(run.html.join("")).toContain("구글 캘린더에 등록했습니다");
+  });
+
+  it("다시 누르면 전에 SubSlash가 쓴 일정만 지우고 새로 쓴다", () => {
+    const run = runWebApp({
+      calendars: [{ id: "kept", summary: "SubSlash 결제일", accessRole: "owner" }],
+      stored: { calendarId: "kept" },
+      existingEvents: [{ id: "old-1" }, { id: "old-2" }],
+    });
+    run.api.doGet({ parameter: { action: "calendar", code: "plan-code", origin: ORIGIN } });
+
+    expect(run.insertedCalendars).toEqual([]);
+    expect(run.listedEvents[0].privateExtendedProperty).toBe("subslash=1");
+    expect(run.removedEvents).toEqual(["old-1", "old-2"]);
+    expect(run.insertedEvents).toHaveLength(1);
+  });
+
+  it("결제일을 받지 못하면 이유를 보여주고 캘린더를 만들지 않는다", () => {
+    const run = runWebApp({ claimStatus: 400 });
+    run.api.doGet({ parameter: { action: "calendar", code: "used-code", origin: ORIGIN } });
+
+    expect(run.html.join("")).toContain("요청이 만료됐거나 이미 쓰였습니다.");
+    expect(run.insertedCalendars).toEqual([]);
+    expect(run.insertedEvents).toEqual([]);
+  });
+
+  it("허용 목록에 없는 주소에서 오면 캘린더에도 손대지 않는다", () => {
+    const run = runWebApp();
+    run.api.doGet({
+      parameter: { action: "calendar", code: "c", origin: "https://evil.example" },
+    });
+
+    expect(run.fetched).toEqual([]);
+    expect(run.insertedCalendars).toEqual([]);
+  });
+
   it("매니페스트는 접속한 사용자의 권한으로 실행하는 웹 앱이다", () => {
     const manifest = JSON.parse(GMAIL_CONNECT_WEB_APP_MANIFEST);
     expect(manifest.webapp).toEqual({ executeAs: "USER_ACCESSING", access: "ANYONE" });
-    expect(manifest.oauthScopes).toEqual(JSON.parse(GMAIL_AUTO_SCRIPT_MANIFEST).oauthScopes);
+    // 복사 스크립트가 쓰는 권한에, 결제일을 쓸 캘린더 권한 하나만 더한다. 그 밖의 권한을
+    // 슬쩍 늘리면 권한 화면에서 사용자가 보는 목록이 달라진다.
+    expect(new Set(manifest.oauthScopes)).toEqual(
+      new Set([
+        ...JSON.parse(GMAIL_AUTO_SCRIPT_MANIFEST).oauthScopes,
+        "https://www.googleapis.com/auth/calendar",
+      ]),
+    );
   });
 });

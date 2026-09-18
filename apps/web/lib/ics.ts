@@ -118,7 +118,7 @@ export function calendarEligible(entries: CalendarEntry[]): CalendarEntry[] {
  * 일정 본문. 캘린더 앱은 본문의 주소를 눌러 열 수 있게 보여주므로, 결제일 알림에서 바로 구독을
  * 고치거나 해지하러 갈 수 있다.
  */
-function eventDescription(entry: CalendarEntry, detailUrl: string | null): string {
+export function eventDescription(entry: CalendarEntry, detailUrl: string | null): string {
   const parts = [
     `${entry.name} 결제일입니다. 지난 30일 동안 몇 번 썼는지 돌아보고, 아깝다면 지금 해지하세요.`,
   ];

@@ -5,6 +5,7 @@ import { canSignLinks, emailFingerprint, signLink, verifyLink } from "./tokens";
 import { accountVerificationEmail, appUrl, sendEmail } from "./email";
 import { VERIFY_ACCOUNT_TTL_DAYS } from "./verification-config";
 import { deleteGmailImportData } from "./gmail-auto-import";
+import { deleteCalendarSyncPlan } from "./calendar-sync";
 
 /**
  * 가입한 이메일이 그 사람 것인지 확인하기.
@@ -193,6 +194,7 @@ export async function deleteUnverifiedAccount(accountId: string): Promise<boolea
   await db.delete(sessions).where(eq(sessions.accountId, accountId));
   await db.delete(accountSnapshots).where(eq(accountSnapshots.accountId, accountId));
   await deleteGmailImportData(accountId);
+  await deleteCalendarSyncPlan(accountId);
   return true;
 }
 
