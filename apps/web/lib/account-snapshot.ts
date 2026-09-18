@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getDb } from "./db";
 import { accountSnapshots } from "./schema";
 import { createBackup, parseBackup, type BackupFile } from "./backup";
@@ -6,13 +6,15 @@ import { createBackup, parseBackup, type BackupFile } from "./backup";
 /**
  * 계정에 저장한 기록 한 벌.
  *
- * 기본 경험은 여전히 브라우저 안에서 끝난다. 로그인한 사람이 '계정에 저장'을 직접
- * 눌렀을 때만, 백업 파일과 같은 내용(구독·체크인·연동 계정·환율)을 계정에 올린다.
- * 다른 기기에서는 '계정에서 불러오기'로 받아 통째로 바꾼다.
+ * 기본 경험은 여전히 기기 안에서 끝난다. 로그인한 기기는 기록이 바뀔 때마다 백업 파일과 같은
+ * 내용(구독·체크인·연동 계정·환율)을 계정에 올리고, 다른 기기가 올린 것을 받아 온다
+ * (lib/account-sync, hooks/useAccountSync). 기기마다 자동 동기화를 끄면 '계정에 저장'을 누를
+ * 때만 올린다. 서버가 기기에 먼저 보내는 일은 없다 — 기기가 물어 가져간다.
  *
- * 병합하지 않는다. 두 기기의 기록을 합치는 규칙(같은 구독을 양쪽에서 고쳤다면?)은
- * 사용자가 알아채기 어려운 방식으로 무언가를 잃게 만든다. 저장도 불러오기도 전체
- * 교체이고, 무엇이 무엇으로 바뀌는지 개수를 보여준 뒤 확인받는다.
+ * 병합하지 않는다. 두 기기의 기록을 합치는 규칙(같은 구독을 양쪽에서 고쳤다면?)은 사용자가
+ * 알아채기 어려운 방식으로 무언가를 잃게 만든다. 그래서 저장 시각(savedAt)을 판 번호로 쓴다 —
+ * 기기는 마지막으로 본 판을 조건으로 올리고(If-Match), 그사이 다른 기기가 올렸으면 서버가
+ * 거절한다(409). 양쪽이 따로 바뀌었으면 기기가 사용자에게 어느 쪽을 쓸지 묻는다.
  *
  * 서버는 받은 기록을 믿지 않는다. 파일 복원과 같은 검사(`parseBackup`)를 다시 거쳐,
  * 틀린 항목이 하나라도 있으면 저장하지 않는다 — 계정에 든 기록이 복원할 수 없는
@@ -33,8 +35,19 @@ export interface SnapshotSummary {
   linkedAccountCount: number;
 }
 
+export type SaveCondition =
+  /** 조건 없이 덮어쓴다 — 자동 동기화를 끈 기기에서 '계정에 저장'을 누를 때. */
+  | { kind: "any" }
+  /** 계정에 기록이 없을 때만 저장한다(If-None-Match: *). */
+  | { kind: "none" }
+  /** 계정의 기록이 이 판일 때만 바꾼다(If-Match). 그사이 다른 기기가 올렸으면 거절한다. */
+  | { kind: "match"; savedAt: string };
+
 export type SaveResult =
-  { ok: true; summary: SnapshotSummary } | { ok: false; status: 400 | 413; error: string };
+  | { ok: true; summary: SnapshotSummary }
+  | { ok: false; status: 400 | 413; error: string }
+  /** 조건이 맞지 않았다. `current`는 지금 계정에 있는 기록(없으면 null). */
+  | { ok: false; status: 409; error: string; current: SnapshotSummary | null };
 
 function summarize(backup: BackupFile): SnapshotSummary {
   const { subscriptions, usageLogs, accounts } = backup.data;
@@ -47,11 +60,12 @@ function summarize(backup: BackupFile): SnapshotSummary {
   };
 }
 
-/** 브라우저가 보낸 백업 텍스트를 검사하고 계정의 기록을 통째로 바꾼다. */
+/** 브라우저가 보낸 백업 텍스트를 검사하고, 조건이 맞으면 계정의 기록을 통째로 바꾼다. */
 export async function saveSnapshot(
   accountId: string,
   text: string,
   now: Date = new Date(),
+  condition: SaveCondition = { kind: "any" },
 ): Promise<SaveResult> {
   if (Buffer.byteLength(text, "utf8") > MAX_SNAPSHOT_BYTES) {
     return {
@@ -64,20 +78,62 @@ export async function saveSnapshot(
   const parsed = parseBackup(text);
   if (!parsed.ok) return { ok: false, status: 400, error: parsed.error };
 
+  // 판 번호로 쓰는 시각이 이전 판과 겹치지 않게, 이전 판보다 늦은 시각으로 적는다. 서버가 여러
+  // 대라 시계가 조금씩 달라도 새 판은 늘 다른 값이 된다.
+  let savedAt = now;
+  if (condition.kind === "match") {
+    const previous = Date.parse(condition.savedAt);
+    if (!Number.isNaN(previous) && savedAt.getTime() <= previous) savedAt = new Date(previous + 1);
+  }
+
   // 검사를 통과한 값으로 다시 만든다. 브라우저가 붙여 보낸 모르는 최상위 칸은 버리고,
   // 저장 시각은 서버 시계로 적는다.
-  const backup = createBackup(parsed.data, now);
-  const payload = JSON.stringify(backup);
+  const backup = createBackup(parsed.data, savedAt);
   const values = {
-    payload,
+    payload: JSON.stringify(backup),
     subscriptionCount: backup.data.subscriptions.length,
     savedAt: backup.exportedAt,
   };
-  await getDb()
-    .insert(accountSnapshots)
-    .values({ accountId, ...values })
-    .onConflictDoUpdate({ target: accountSnapshots.accountId, set: values });
 
+  // 조건은 읽고 나서 쓰는 두 단계가 아니라 쓰는 문장 하나로 건다. 두 기기가 동시에 올려도
+  // 하나만 이긴다.
+  const db = getDb();
+  let written = 1;
+  if (condition.kind === "any") {
+    await db
+      .insert(accountSnapshots)
+      .values({ accountId, ...values })
+      .onConflictDoUpdate({ target: accountSnapshots.accountId, set: values });
+  } else if (condition.kind === "none") {
+    const rows = await db
+      .insert(accountSnapshots)
+      .values({ accountId, ...values })
+      .onConflictDoNothing()
+      .returning({ accountId: accountSnapshots.accountId });
+    written = rows.length;
+  } else {
+    const rows = await db
+      .update(accountSnapshots)
+      .set(values)
+      .where(
+        and(
+          eq(accountSnapshots.accountId, accountId),
+          eq(accountSnapshots.savedAt, condition.savedAt),
+        ),
+      )
+      .returning({ accountId: accountSnapshots.accountId });
+    written = rows.length;
+  }
+
+  if (written === 0) {
+    const current = await readSnapshot(accountId);
+    return {
+      ok: false,
+      status: 409,
+      error: "다른 기기에서 먼저 계정의 기록을 바꿨습니다.",
+      current: current?.summary ?? null,
+    };
+  }
   return { ok: true, summary: summarize(backup) };
 }
 

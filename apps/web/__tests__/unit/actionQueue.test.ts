@@ -268,3 +268,165 @@ describe("getNextBillingHint", () => {
     expect(getNextBillingHint([], NOW)).toBeNull();
   });
 });
+
+describe("해지했는데 결제 메일이 온 구독", () => {
+  const killed = (overrides: Partial<Subscription> = {}): Subscription =>
+    subDueIn(5, {
+      id: "sub-killed",
+      name: "티빙",
+      amount: 13900,
+      status: "killed",
+      killedAt: daysAgo(40),
+      ...overrides,
+    });
+
+  it("가장 위에 올린다 — 유일하게 '이미 잘못됐다'인 줄이다", () => {
+    const queue = getActionQueue(
+      [
+        subDueIn(1, { id: "sub-urgent" }),
+        killed({ chargedAfterKillAt: "2026.09.05", chargedAfterKillAmount: 13900 }),
+      ],
+      [log("sub-urgent")],
+      NOW,
+    );
+
+    expect(queue[0].kind).toBe("charged-after-kill");
+    expect(queue[0].subscriptionId).toBe("sub-killed");
+    // 물어보는 것이 아니라 다시 해지하러 보낸다.
+    expect(queue[0].verb).toBe("cancel-guide");
+  });
+
+  it("언제 얼마가 결제됐는지 사실만 적는다", () => {
+    const [item] = getActionQueue(
+      [killed({ chargedAfterKillAt: "2026.09.05", chargedAfterKillAmount: 13900 })],
+      [],
+      NOW,
+    );
+
+    expect(item.reason).toContain("2026.09.05");
+    expect(item.reason).toContain("₩13,900");
+  });
+
+  it("금액을 모르면 날짜만 적는다", () => {
+    const [item] = getActionQueue([killed({ chargedAfterKillAt: "2026.09.05" })], [], NOW);
+
+    expect(item.reason).toContain("2026.09.05");
+    expect(item.reason).not.toContain("₩");
+  });
+
+  it("증거가 있으면 '해지 확인'은 묻지 않는다 — 같은 구독을 두 번 올리지 않는다", () => {
+    const evidence = killed({
+      billingDay: 1,
+      killedAt: daysAgo(60),
+      chargedAfterKillAt: "2026.09.05",
+    });
+    const queue = getActionQueue([evidence], [], NOW);
+
+    expect(queue.map((item) => item.kind)).toEqual(["charged-after-kill"]);
+  });
+
+  it("증거가 없으면 지금처럼 해지 확인을 묻는다", () => {
+    const queue = getActionQueue([killed({ billingDay: 1, killedAt: daysAgo(60) })], [], NOW);
+
+    expect(queue.map((item) => item.kind)).toEqual(["verify-kill"]);
+  });
+});
+
+describe("결제 메일 금액이 등록된 청구액과 다른 구독", () => {
+  it("두 숫자를 나란히 적고, 어느 쪽이 맞다고 단정하지 않는다", () => {
+    const [item] = getActionQueue(
+      [subDueIn(20, { amount: 13900, observedAmount: 17000, observedAmountAt: "2026.09.05" })],
+      [log("sub-1", { riskLevel: "green" })],
+      NOW,
+    );
+
+    expect(item.kind).toBe("amount-changed");
+    expect(item.reason).toContain("₩17,000");
+    expect(item.reason).toContain("₩13,900");
+    expect(item.reason).toContain("2026.09.05");
+    // 요금표를 조회하지 않으므로 "올랐다"고 말하지 않는다.
+    expect(item.reason).not.toContain("올랐");
+  });
+
+  it("세금이 따로 붙는 구독은 청구액과 견준다", () => {
+    const [item] = getActionQueue(
+      [
+        subDueIn(20, {
+          amount: 10,
+          currency: "USD",
+          taxRate: 10,
+          observedAmount: 12,
+          observedAmountAt: "2026.09.05",
+        }),
+      ],
+      [log("sub-1", { riskLevel: "green" })],
+      NOW,
+    );
+
+    // 등록 금액 $10이 아니라 세금 포함 $11과 비교해 보여준다.
+    expect(item.reason).toContain("$11.00");
+  });
+
+  it("결제가 코앞이면 그쪽이 먼저다 — 한 구독은 한 줄만 만든다", () => {
+    const queue = getActionQueue(
+      [subDueIn(1, { observedAmount: 99000, observedAmountAt: "2026.09.05" })],
+      // 저사용 경고에 걸리지 않게 충분히 쓴 기록으로 둔다.
+      [log("sub-1", { riskLevel: "green", usageCount: 5 })],
+      NOW,
+    );
+
+    expect(queue.map((item) => item.kind)).toEqual(["billing-soon"]);
+  });
+
+  it("날짜 없이 금액만 있으면 올리지 않는다", () => {
+    const queue = getActionQueue(
+      [subDueIn(20, { observedAmount: 17000 })],
+      [log("sub-1", { riskLevel: "green", checkedAt: daysAgo(1) })],
+      NOW,
+    );
+
+    expect(queue.map((item) => item.kind)).not.toContain("amount-changed");
+  });
+});
+
+describe("무료 체험 중인 구독", () => {
+  /** NOW로부터 `days` 뒤에 체험이 끝난다. */
+  function trialEndingIn(days: number, overrides: Partial<Subscription> = {}): Subscription {
+    const end = new Date(NOW.getTime() + days * MS_PER_DAY);
+    const iso = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
+    return subDueIn(20, { trialEndsAt: iso, ...overrides });
+  }
+
+  it("끝나기 전에 알리고, 그대로 두면 얼마부터 나가는지 적는다", () => {
+    const [item] = getActionQueue([trialEndingIn(3)], [], NOW);
+
+    expect(item.kind).toBe("trial-ending");
+    expect(item.daysUntilBilling).toBe(3);
+    expect(item.reason).toContain("무료 체험");
+    expect(item.reason).toContain("₩17,000");
+    expect(item.amountAtStake).toBe(17000);
+  });
+
+  it("아직 멀면 올리지 않는다 — 큐는 '지금 할 것'이다", () => {
+    expect(getActionQueue([trialEndingIn(30)], [], NOW)).toEqual([]);
+  });
+
+  it("체험 중에는 다른 줄을 만들지 않는다 — 나가지도 않는 돈을 '곧 빠져나간다'고 하지 않는다", () => {
+    // 체크인이 없고 결제일도 코앞이지만, 체험 중이면 그것부터 말한다.
+    const queue = getActionQueue([trialEndingIn(2, { billingDay: NOW.getDate() + 1 })], [], NOW);
+
+    expect(queue.map((item) => item.kind)).toEqual(["trial-ending"]);
+  });
+
+  it("체험이 끝난 뒤에는 보통 구독과 같다", () => {
+    const ended = trialEndingIn(-1, { id: "sub-1" });
+    const queue = getActionQueue([ended], [], NOW);
+
+    expect(queue.map((item) => item.kind)).toEqual(["never-checked-in"]);
+  });
+
+  it("종료일을 모르면 체험 중으로 보지 않는다", () => {
+    const queue = getActionQueue([subDueIn(20)], [], NOW);
+    expect(queue.map((item) => item.kind)).not.toContain("trial-ending");
+  });
+});

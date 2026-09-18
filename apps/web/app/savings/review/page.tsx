@@ -16,6 +16,7 @@ import { useStore } from "../../../lib/store";
 import { useExchangeRate } from "../../../hooks/useExchangeRate";
 import { buildReviewShareSearchParams } from "../../../lib/share-review";
 import { webUrl } from "../../../lib/api";
+import { shareText } from "../../../lib/native";
 import { Button } from "../../../components/ui/button";
 
 /** 이보다 이른 해는 이 앱에 기록이 있을 수 없다. */
@@ -103,15 +104,8 @@ function YearInReviewContent() {
       yearTiers.confirmed > 0 ? ` · 그중 지킨 돈 ${formatKRW(yearTiers.confirmed)}` : "";
     const text = `📆 SubSlash ${scope} 구독 결산\n해지한 구독 ${review.killedThisYear.length}개 · 해지로 막은 결제 ${formatKRW(defended.pastAmount)}${confirmedLine}${spendingType ? `\n소비 유형: ${spendingType.title}` : ""}\n👉 결산 보기: ${url}`;
 
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: `SubSlash ${year}년 구독 결산`, text, url });
-        return;
-      } catch (error) {
-        // 공유 창을 닫은 것이면 그대로 둔다. 공유를 못 하는 환경이면 복사로 넘어간다.
-        if ((error as DOMException)?.name === "AbortError") return;
-      }
-    }
+    // 공유 창을 열었거나 사용자가 닫았으면 끝이다. 공유할 수 없는 환경이면 복사로 넘어간다.
+    if (await shareText({ title: `SubSlash ${year}년 구독 결산`, text, url })) return;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);

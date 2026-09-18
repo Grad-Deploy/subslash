@@ -6,7 +6,7 @@ import { refreshAuth, useAuth } from "@hooks/useAuth";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { ConfirmDialog } from "@components/ui/confirm-dialog";
-import { apiUrl } from "@lib/api";
+import { apiFetch } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
 
 /**
@@ -50,10 +50,9 @@ export function DeleteAccountSection() {
     setDeleting(true);
     setError(null);
     try {
-      const res = await fetch(apiUrl("/api/auth/account"), {
+      const res = await apiFetch("/api/auth/account", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
         body: JSON.stringify({ password }),
       });
       const data = await res.json().catch(() => ({}));

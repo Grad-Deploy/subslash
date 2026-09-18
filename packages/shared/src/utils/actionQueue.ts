@@ -1,10 +1,11 @@
 import { Currency, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { formatAmount, formatKRW, getBilledAmount } from "./currency";
-import { formatDday, getDaysUntilBillingFor } from "./date";
+import { formatDday, getDaysUntilBillingFor, getDaysUntilTrialEnd } from "./date";
 import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
 import { formatKillCheckDate, getKillCheckStatus } from "./killCheck";
+import { getLowUsageBillingMessage } from "./metaphor";
 
 /**
  * 대시보드의 행동 큐.
@@ -22,13 +23,24 @@ export const BILLING_SOON_DAYS = 7;
 /** 체크인이 이만큼 지나면 판단 근거가 낡은 것으로 본다. */
 export const STALE_CHECK_IN_DAYS = 30;
 
+/** 무료 체험 종료를 알리기 시작하는 날. 해지할 시간을 남겨 둔다. */
+export const TRIAL_ENDING_DAYS = 7;
+
 export type ActionKind =
-  /** 결제가 코앞인데 마지막 체크인이 '위험'이었다. 가장 급하다. */
+  /** 해지했는데 그 뒤에 결제 메일이 왔다. 지금 돈이 새고 있다는 유일한 '증거'다. */
+  | "charged-after-kill"
+  /** 무료 체험이 곧 끝난다. 두면 유료로 넘어간다. */
+  | "trial-ending"
+  /** 결제가 코앞인데 마지막 체크인이 '위험'이었다. */
   | "billing-soon-risky"
+  /** 결제가 코앞인데 이번 달 사용량이 적다 (체크인 기록 기반). */
+  | "low-usage-billing-soon"
   /** 결제가 코앞이다. */
   | "billing-soon"
   /** 해지 뒤 첫 결제일이 지났다. 결제가 정말 멈췄는지 물어야 한다. */
   | "verify-kill"
+  /** 결제 메일에 찍힌 금액이 등록된 청구액과 달랐다. 추측이 아니라 관측이다. */
+  | "amount-changed"
   /** 결제일과 무관하게 1회 단가가 위험 수준이다. */
   | "risky"
   /** 한 번도 체크인하지 않아 끊을지 판단할 근거가 없다. */
@@ -80,20 +92,32 @@ export interface ActionItem {
 // 해지 확인은 결제 임박 다음이다. 해지가 안 됐다면 돈이 계속 나가고 있지만,
 // 다음 결제까지는 보통 한 달 가까이 남아 있다.
 const PRIORITY: Record<ActionKind, number> = {
+  // 나머지는 모두 "아까울 수 있다"이고 이것만 "이미 잘못됐다"이다. 그래서 1보다 앞이다.
+  "charged-after-kill": 0,
+  // 첫 결제가 시작되는 순간이고, 가장 쉽게 막을 수 있는 지출이다.
+  "trial-ending": 1,
   "billing-soon-risky": 1,
+  "low-usage-billing-soon": 1,
   "billing-soon": 2,
   "verify-kill": 3,
-  risky: 4,
-  "never-checked-in": 5,
-  "stale-check-in": 6,
-  "price-check": 7,
-  "missing-billing-month": 8,
+  // 관측은 추측보다 앞이다. 'price-check'는 "오래됐으니 확인해 달라"일 뿐이다.
+  "amount-changed": 4,
+  risky: 5,
+  "never-checked-in": 6,
+  "stale-check-in": 7,
+  "price-check": 8,
+  "missing-billing-month": 9,
 };
 
 const VERB: Record<ActionKind, ActionVerb> = {
+  // 물어볼 것이 아니라 다시 해지하러 가야 한다.
+  "charged-after-kill": "cancel-guide",
+  "trial-ending": "cancel-guide",
   "billing-soon-risky": "cancel-guide",
+  "low-usage-billing-soon": "cancel-guide",
   "billing-soon": "check-in",
   "verify-kill": "verify-kill",
+  "amount-changed": "confirm-price",
   risky: "cancel-guide",
   "never-checked-in": "check-in",
   "stale-check-in": "check-in",
@@ -155,6 +179,30 @@ export function getActionQueue(
   const items: ActionItem[] = [];
 
   for (const sub of active) {
+    // 체험 중에는 카드에서 나가는 돈이 없다. 결제일을 근거로 "곧 빠져나갑니다"라고 하면 거짓이
+    // 되므로, 체험이 끝나간다는 것 하나만 말하고 다른 줄은 만들지 않는다.
+    const trialDays = getDaysUntilTrialEnd(sub, now);
+    if (trialDays !== null) {
+      if (trialDays > TRIAL_ENDING_DAYS) continue;
+      const stake = chargeAtStakeKRW(sub, rate);
+      items.push({
+        subscriptionId: sub.id,
+        name: sub.name,
+        iconEmoji: sub.iconUrl || "📦",
+        kind: "trial-ending",
+        reason:
+          `${formatDday(trialDays)} · 무료 체험이 ${sub.trialEndsAt}에 끝납니다. ` +
+          `그대로 두면 ${formatKRW(stake)}부터 결제가 시작됩니다.`,
+        verb: VERB["trial-ending"],
+        daysUntilBilling: trialDays,
+        amountAtStake: stake,
+        currency: sub.currency,
+        presetAmount: null,
+        priority: PRIORITY["trial-ending"],
+      });
+      continue;
+    }
+
     const days = getDaysUntilBillingFor(sub, now);
     const log = latest.get(sub.id);
     const isRisky = log?.riskLevel === "red";
@@ -167,16 +215,38 @@ export function getActionQueue(
     let kind: ActionKind;
     let reason: string;
 
+    // 결제 메일에 찍힌 금액이 등록된 청구액과 달랐다. 결제가 코앞인 것 다음으로 급하다 —
+    // 돈의 크기가 달라졌다는 사실이라, "오래됐으니 확인해 달라"보다 앞이다.
+    const observed =
+      typeof sub.observedAmount === "number" && sub.observedAmountAt ? sub.observedAmount : null;
+
     if (billingSoon && isRisky) {
       kind = "billing-soon-risky";
       reason =
         `${formatDday(days!)} · 마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${perUse})` +
         (stake !== null ? `. 결제 전에 끊으면 ${formatKRW(stake)}을 지킵니다.` : ".");
+    } else if (
+      billingSoon &&
+      days !== null &&
+      days <= 3 &&
+      log &&
+      log.usageCount <= 2 &&
+      !isRisky
+    ) {
+      // 결제 D-3 이내 + 최근 체크인 사용량 2회 이하: 저사용 경고 (메타포 포함)
+      kind = "low-usage-billing-soon";
+      reason = getLowUsageBillingMessage(sub, log.usageCount, days, rate);
     } else if (billingSoon) {
       kind = "billing-soon";
       reason = log
         ? `${formatDday(days!)} · ${stake !== null ? `${formatKRW(stake)}이 곧 빠져나갑니다.` : "곧 결제됩니다."}`
         : `${formatDday(days!)} · 아직 체크인한 적이 없어, 끊을지 판단할 근거가 없습니다.`;
+    } else if (observed !== null) {
+      kind = "amount-changed";
+      // 요금표를 조회하지 않으므로 "올랐다"고 말하지 않는다. 두 숫자를 나란히 놓을 뿐이다.
+      reason =
+        `${sub.observedAmountAt} 결제 메일에는 ${formatAmount(observed, sub.currency)}이 찍혔는데, ` +
+        `등록된 청구액은 ${formatAmount(getBilledAmount(sub), sub.currency)}입니다. 어느 쪽이 맞는지 확인해 주세요.`;
     } else if (isRisky) {
       kind = "risky";
       reason = `마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${perUse}). 돈값을 못 하고 있습니다.`;
@@ -216,9 +286,36 @@ export function getActionQueue(
     });
   }
 
+  // 해지한 구독인데 그 뒤에 결제 메일이 왔다. 묻는 것이 아니라 알리는 것이다 — 증거가 있다.
+  for (const sub of subscriptions) {
+    if (sub.status !== "killed" || !sub.chargedAfterKillAt) continue;
+
+    const charged =
+      typeof sub.chargedAfterKillAmount === "number"
+        ? formatAmount(sub.chargedAfterKillAmount, sub.currency)
+        : null;
+    items.push({
+      subscriptionId: sub.id,
+      name: sub.name,
+      iconEmoji: sub.iconUrl || "📦",
+      kind: "charged-after-kill",
+      reason:
+        `해지로 기록한 뒤인 ${sub.chargedAfterKillAt}에 결제 메일이 왔습니다` +
+        `${charged ? ` (${charged})` : ""}. 해지가 안 됐을 수 있으니 다시 확인해 주세요.`,
+      verb: VERB["charged-after-kill"],
+      daysUntilBilling: null,
+      amountAtStake: null,
+      currency: sub.currency,
+      presetAmount: null,
+      priority: PRIORITY["charged-after-kill"],
+    });
+  }
+
   // 해지한 구독에게는 한 가지만 묻는다 — 해지 뒤 첫 결제가 정말 멈췄는지.
   // 카드에 찍히는 것은 전체 금액이므로 내 몫이 아니라 청구액(세금 포함)을 보여준다.
   for (const sub of subscriptions) {
+    // 결제 메일이라는 증거가 있으면 그 줄이 이미 올라갔다. 같은 구독을 두 번 묻지 않는다.
+    if (sub.chargedAfterKillAt) continue;
     const check = getKillCheckStatus(sub, now);
     if (!check || check.state !== "due") continue;
 

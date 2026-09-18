@@ -12,7 +12,7 @@ import {
   shownStatus,
   type LiveStatus,
 } from "@lib/signup-status";
-import { apiUrl } from "@lib/api";
+import { apiFetch } from "@lib/api";
 import { StatusMessage, statusBorder } from "./LiveStatusMessage";
 
 type FieldErrors = { currentPassword?: string; password?: string; passwordConfirm?: string };
@@ -75,10 +75,9 @@ export function ChangePasswordSection() {
     setBusy(true);
     setSubmitErrors({});
     try {
-      const res = await fetch(apiUrl("/api/auth/password"), {
+      const res = await apiFetch("/api/auth/password", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
         body: JSON.stringify({ currentPassword: current, password, passwordConfirm: confirm }),
       });
       const data = await res.json().catch(() => ({}));

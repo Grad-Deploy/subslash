@@ -29,7 +29,7 @@ import {
   type EmailCheck,
   type LiveStatus,
 } from "@lib/signup-status";
-import { apiUrl } from "@lib/api";
+import { apiFetch } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
 
 interface VerificationNotice {
@@ -149,10 +149,9 @@ export function SignupForm() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(apiUrl("/api/auth/signup"), {
+      const res = await apiFetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
         // 값은 JSON 본문으로 보낸다. 주소창(쿼리스트링)에 실으면 브라우저
         // 기록과 서버 접근 로그에 비밀번호가 그대로 남는다.
         body: JSON.stringify({

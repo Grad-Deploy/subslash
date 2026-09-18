@@ -52,8 +52,37 @@ export interface Subscription {
    * 청구액이다(세금 포함이거나 붙지 않음).
    */
   taxRate?: number;
+  /**
+   * 무료 체험이 끝나 유료로 바뀌는 날(`YYYY-MM-DD`). 없으면 체험 중이 아니라는 뜻이 아니라,
+   * **모른다**는 뜻이다 — 앱은 추측해서 채우지 않는다.
+   *
+   * 이 날이 오기 전까지는 카드에서 나가는 돈이 없다. 그래서 지출 합계와 결제 캘린더는 체험 중인
+   * 구독을 빼고 센다. 넣으면 내지도 않은 돈을 이번 달 지출로 보여주게 된다.
+   */
+  trialEndsAt?: string;
   createdAt: string;
   killedAt?: string;
+  /**
+   * 해지로 기록한 뒤에 결제 메일이 온 사실. 결제가 멈추지 않았다는 **증거**다.
+   *
+   * `killVerifiedAt`(사용자가 "안 나갔다"고 답한 것)과 다르다. 그쪽은 기억이고 이쪽은 영수증이다.
+   * Gmail 가져오기가 해지한 서비스의 결제 메일을 찾으면 적고, 다시 해지를 확인했거나 구독을
+   * 되살리면 지운다. 메일 날짜(`YYYY.MM.DD`)와 그 메일에 적힌 금액(구독 통화)이다.
+   */
+  chargedAfterKillAt?: string;
+  chargedAfterKillAmount?: number;
+  /**
+   * 결제 메일에서 읽은 마지막 결제액이 등록된 청구액(`getBilledAmount`)과 달랐던 사실.
+   *
+   * `lastPriceCheckedAt`(요금 확인)과 다르다. 그쪽은 "오래돼서 확인해 달라"는 **추측**이고,
+   * 이쪽은 "이번엔 이만큼 빠져나갔다"는 **관측**이다. 앱은 서비스 요금표를 조회하지 않으므로
+   * "요금이 올랐다"고 단정하지 않고, 두 숫자를 나란히 보여주고 사용자가 판단하게 한다.
+   *
+   * 금액은 영수증에 적힌 값(구독 통화, 세금 포함된 청구액)이고 날짜는 메일 날짜(`YYYY.MM.DD`)다.
+   * 요금을 확인해 주거나 금액을 고치면 지운다.
+   */
+  observedAmount?: number;
+  observedAmountAt?: string;
 
   /**
    * 사용자가 "이 금액이 지금도 맞다"고 마지막으로 확인해 준 시각.
@@ -90,9 +119,22 @@ export interface Subscription {
   accountMemo?: string;
 }
 
+/**
+ * 사용자가 폼에서 적는 칸만. 앱이 스스로 적는 사실(해지 확인, 영수증 관측 등)은 뺀다 — 폼이
+ * 건드릴 수 있는 값으로 두면 실수로 덮어쓸 수 있다.
+ */
 export type SubscriptionFormData = Omit<
   Subscription,
-  "id" | "status" | "createdAt" | "killedAt" | "lastPriceCheckedAt" | "killVerifiedAt"
+  | "id"
+  | "status"
+  | "createdAt"
+  | "killedAt"
+  | "lastPriceCheckedAt"
+  | "killVerifiedAt"
+  | "chargedAfterKillAt"
+  | "chargedAfterKillAmount"
+  | "observedAmount"
+  | "observedAmountAt"
 >;
 
 export type EmailType = "payment" | "cancellation" | "refund" | "onetime";
@@ -137,6 +179,10 @@ export interface DiscoveredSubscription {
   linkedAccountName?: string;
   recipientEmail?: string;
   source: "gmail" | "sms" | "manual";
+  /** 알려진 서비스 목록(POPULAR_SERVICES)과 맞았으면 그 id. 이름만 추측한 후보에는 없다. */
+  presetId?: string;
+  /** 결제 메일의 보낸 사람. 메일에서 찾은 후보에만 있다. */
+  sender?: string;
   emailProvider?: "google" | "naver";
   sourceSnippet?: string;
   confidence: "high" | "medium";

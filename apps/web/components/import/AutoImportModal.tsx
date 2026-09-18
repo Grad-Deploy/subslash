@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import {
   CATEGORY_LABELS,
   DiscoveredSubscription,
@@ -27,6 +28,15 @@ interface AutoImportModalProps {
   defaultAccountId?: string;
   /** Pre-filled receipt/SMS text, e.g. handed over by the PWA share target. */
   initialSmsText?: string;
+  /**
+   * 이미 찾아 둔 후보(예: Gmail에서 가져온 결제 메일). 이때는 '이전 기록을 지우고 등록'을 꺼 둔 채
+   * 연다 — 메일에서 찾은 몇 건을 더하러 온 사람의 기존 목록이 지워지면 안 된다.
+   */
+  initialDiscovered?: DiscoveredSubscription[];
+  /** 후보 개수 옆에 붙일 설명(예: "Gmail 메일 40통에서"). */
+  initialResultsNote?: string;
+  /** 고른 후보를 등록한 뒤. 창을 닫기만 했을 때는 부르지 않는다. */
+  onRegistered?: () => void;
 }
 
 const SAMPLE_SMS = `[Web발신] 신한카드 승인 17,000원 넷플릭스 09/15 14:30 일시불
@@ -57,6 +67,9 @@ export function AutoImportModal({
   onClose,
   defaultAccountId,
   initialSmsText,
+  initialDiscovered,
+  initialResultsNote,
+  onRegistered,
 }: AutoImportModalProps) {
   const { accounts, addAccount, addBatchSubscriptions, subscriptions, clearSubscriptions } =
     useStore();
@@ -70,19 +83,21 @@ export function AutoImportModal({
   const [smsText, setSmsText] = useState<string>(initialSmsText ?? "");
 
   // Discovered items
-  const [discoveredItems, setDiscoveredItems] = useState<DiscoveredSubscription[]>([]);
+  const [discoveredItems, setDiscoveredItems] = useState<DiscoveredSubscription[]>(
+    initialDiscovered ?? [],
+  );
   const [targetAccountId, setTargetAccountId] = useState<string>(
     defaultAccountId || accounts[0]?.id || "",
   );
   const [customTargetEmail, setCustomTargetEmail] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "ott" | "ai" | "other">("all");
-  const [replaceExisting, setReplaceExisting] = useState<boolean>(true);
+  const [replaceExisting, setReplaceExisting] = useState<boolean>(!initialDiscovered);
   const [scanAccountId, setScanAccountId] = useState<string>(
     defaultAccountId || accounts[0]?.id || "__custom__",
   );
   const [scanCustomEmail, setScanCustomEmail] = useState<string>("");
   /** Qualifier the preview attaches to its result count, e.g. the 30-day filter. */
-  const [resultsNote, setResultsNote] = useState<string | null>(null);
+  const [resultsNote, setResultsNote] = useState<string | null>(initialResultsNote ?? null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -223,6 +238,7 @@ export function AutoImportModal({
 
     startTransition(() => {
       addBatchSubscriptions(dataList, { clearPrevious: replaceExisting });
+      onRegistered?.();
       handleClose();
     });
   };
@@ -342,6 +358,17 @@ export function AutoImportModal({
                 </div>
               </div>
 
+              <p className="text-[11px] text-muted-foreground">
+                Gmail을 쓰신다면{" "}
+                <Link
+                  href="/import"
+                  className="font-medium text-primary underline underline-offset-2"
+                >
+                  결제 메일에서 한 번에 찾기
+                </Link>
+                도 있습니다.
+              </p>
+
               <textarea
                 rows={5}
                 value={smsText}
@@ -352,6 +379,25 @@ export function AutoImportModal({
                 placeholder="결제 문자 또는 네이버 결제 영수증 이메일 내용을 그대로 붙여넣으세요.&#10;&#10;[예시]&#10;[네이버페이] 결제내역 안내 (정기/반복결제)&#10;상품명 : 네이버 MYBOX 80GB 이용권 (정기결제)&#10;결제금액 : 1,650원&#10;결제일시 : 2026.09.02 14:30&#10;결제수단 : 네이버페이 머니"
                 className="w-full p-3 text-xs md:text-sm font-mono rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
+            </div>
+          )}
+
+          {/*
+            붙여넣었는데 아무것도 못 찾았으면 그렇다고 말한다. 화면이 조용하면 사용자는 앱이
+            멈춘 줄 안다. 금액이 없으면 등록할 수 없다 — 지어낼 수 없는 값이라 그렇다고 적는다.
+          */}
+          {smsText.trim().length > 0 && discoveredItems.length === 0 && (
+            <div className="rounded-xl border border-dashed p-4 text-xs leading-relaxed text-muted-foreground">
+              <p className="font-semibold text-foreground">이 내용에서 결제를 찾지 못했습니다.</p>
+              <p className="mt-1.5">
+                결제 금액이 있어야 등록할 수 있습니다. 1회당 단가를 계산하는 근거라, 없는 금액을
+                지어내지 않습니다. 영수증에 <strong>결제금액</strong>이 적힌 줄이 들어갔는지 확인해
+                주세요.
+              </p>
+              <p className="mt-1.5">
+                서비스 이름은 없어도 됩니다 — &lsquo;알 수 없는 결제&rsquo;로 두고 나중에 고칠 수
+                있습니다. 결제일이 없으면 오늘로 봅니다.
+              </p>
             </div>
           )}
 
