@@ -105,6 +105,7 @@ export default function SubscriptionsPage() {
     reviveSubscription,
     deleteSubscription,
     clearSubscriptions,
+    accountSync,
     checkIn,
     getActiveSubscriptions,
     getKilledSubscriptions,
@@ -157,6 +158,10 @@ export default function SubscriptionsPage() {
 
   const activeSubs = getActiveSubscriptions();
   const killedSubs = getKilledSubscriptions();
+  const syncedWarning =
+    accountSync.enabled && accountSync.baseSavedAt
+      ? "\n자동 동기화가 켜져 있어 로그인한 다른 기기의 기록도 함께 지워집니다."
+      : "";
 
   const filteredActive =
     filterCategory === "all" ? activeSubs : activeSubs.filter((s) => s.category === filterCategory);
@@ -628,6 +633,7 @@ export default function SubscriptionsPage() {
         onConfirmKilled={handleConfirmKilled}
       />
 
+      {/* 자동 동기화 중이면 빈 기록이 올라가 로그인한 다른 기기에서도 지워진다. 알고 누르게 한다. */}
       {/* Confirmation Modal */}
       {/* 활성 탭이 비어 있어도 해지한 구독이 남아 있을 수 있다. 무엇이 지워지는지 나눠 적는다. */}
       <ConfirmDialog
@@ -648,8 +654,8 @@ export default function SubscriptionsPage() {
           demo
             ? `샘플 구독 ${subscriptions.length}건을 치우고 체험을 끝냅니다.\n내 구독 기록은 그대로 남습니다.`
             : killedSubs.length > 0
-              ? `현재 등록된 전체 구독 ${subscriptions.length}건(구독 중 ${activeSubs.length}건, 해지한 구독 ${killedSubs.length}건)을 모두 삭제하시겠습니까?\n해지한 구독의 절약 기록도 함께 지워집니다.`
-              : `현재 등록된 전체 구독 ${subscriptions.length}건을 모두 삭제하시겠습니까?`
+              ? `현재 등록된 전체 구독 ${subscriptions.length}건(구독 중 ${activeSubs.length}건, 해지한 구독 ${killedSubs.length}건)을 모두 삭제하시겠습니까?\n해지한 구독의 절약 기록도 함께 지워집니다.${syncedWarning}`
+              : `현재 등록된 전체 구독 ${subscriptions.length}건을 모두 삭제하시겠습니까?${syncedWarning}`
         }
         confirmText="모두 삭제"
         variant="destructive"

@@ -9,6 +9,8 @@ import { NotifySettingsModal } from "../notify/NotifySettingsModal";
 import { AccountMenu } from "./AccountMenu";
 import { useStore } from "@lib/store";
 import { useMirrorSync } from "@hooks/useMirrorSync";
+import { useAccountSync } from "@hooks/useAccountSync";
+import { AccountSyncConflictDialog } from "../account/AccountSyncConflictDialog";
 import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
 
@@ -40,6 +42,8 @@ export function Header() {
   // The header is mounted on every route, so the mirror stays in step wherever
   // the user edits their subscriptions.
   useMirrorSync();
+  // 로그인한 기기끼리 구독 기록을 자동으로 맞춘다. 양쪽이 따로 바뀌었으면 어느 쪽을 쓸지 묻는다.
+  const accountSync = useAccountSync();
 
   // 점은 '새 알림'이 아니라 알림 설정 상태다 — 읽지 않은 알림이라는 개념은 없다.
   const notifyLabel = remindersOn
@@ -144,6 +148,10 @@ export function Header() {
 
       <NotifySettingsModal isOpen={isNotifyOpen} onClose={() => setIsNotifyOpen(false)} />
       <AccountHubModal isOpen={isAccountsOpen} onClose={() => setIsAccountsOpen(false)} />
+      <AccountSyncConflictDialog
+        conflict={accountSync.conflict}
+        onChoose={(choice) => void accountSync.resolve(choice)}
+      />
     </>
   );
 }
