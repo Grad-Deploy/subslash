@@ -171,15 +171,15 @@ curl -H "Authorization: Bearer <CRON_SECRET>" http://localhost:3000/api/cron/not
 구독 데이터는 여전히 브라우저 안에 있습니다.
 
 > [!NOTE]
-> **로그인만으로 구독 기록이 계정에 올라가지는 않습니다.** 계정이 늘 보관하는 것은
-> 아이디·이메일·비밀번호 해시, 이메일 확인 여부, '내 정보'의 선택 항목(나이·성별)뿐입니다.
-> 구독 기록은 '내 구독' 아래 **데이터 백업**에서 '계정에 저장'을 직접 눌렀을 때만, 백업
-> 파일과 같은 내용(구독·체크인·연동 계정·환율)이 계정에 한 벌 저장됩니다. 다른 기기에서는
-> '계정에서 불러오기'로 받습니다.
+> **로그인하면 구독 기록이 계정에 자동으로 저장되고, 로그인한 기기(웹·앱)끼리 맞춰집니다.**
+> 백업 파일과 같은 내용(구독·체크인·연동 계정·환율)을 계정에 한 벌 두고, 기록이 바뀌면 새로
+> 올리며, 다른 기기에서 바뀐 기록은 화면으로 돌아올 때 받아 옵니다. 결제 알림 설정(동기화 토큰)은
+> 넣지 않습니다.
 >
-> 자동 동기화가 아닙니다. 저장도 불러오기도 병합 없이 통째로 바꾸고, 바꾸기 전에 무엇이
-> 무엇으로 바뀌는지 개수를 보여줍니다. 결제 알림 설정(동기화 토큰)은 넣지 않습니다.
-> '계정에서 지우기'로 서버의 기록만 지울 수 있습니다.
+> 병합하지 않습니다. 양쪽이 따로 바뀌었거나, 처음 로그인한 기기와 계정에 서로 다른 기록이 있으면
+> 두 쪽의 개수를 보여주고 어느 쪽을 쓸지 묻습니다. '내 구독' 아래 **데이터 백업**에서 기기마다
+> 자동 동기화를 끌 수 있고, 끈 동안에는 '계정에 저장'·'계정에서 불러오기'를 눌러야 옮겨집니다.
+> '계정에서 지우기'로 서버의 기록만 지울 수 있습니다(자동 동기화 중인 다른 기기는 멈춥니다).
 
 가입 시 받는 값은 아이디, 이메일, 비밀번호(+확인)와 "만 14세 이상" 확인뿐입니다.
 나이·성별은 가입 단계에서 묻지 않고, 가입 후 `/me`(내 정보)에서 원할 때만 적습니다.
@@ -307,6 +307,85 @@ vercel firewall publish --yes
   `/share?text=<결제문자>`로 직접 열어도 동일하게 동작합니다.
 - 서비스 워커는 오프라인 안내 화면 하나만 캐시합니다. 구독 데이터는 localStorage에
   있고 페이지도 작아서, 앱 셸을 캐시해봐야 배포 후 옛 빌드가 남을 위험만 커집니다.
+
+### 모바일 앱 (Capacitor, 안드로이드·iOS)
+
+`apps/mobile`은 웹 화면을 정적으로 내보낸 것(`apps/web/out`)을 앱 안에 담고, 로그인·알림·계정
+저장 같은 API는 배포된 웹 주소를 부릅니다. 기록은 웹과 같이 기기 안에만 있습니다. 앱에서는 서비스
+워커를 등록하지 않습니다.
+
+필요한 것: Node 22 이상(Capacitor 8 CLI), **JDK 21**(`JAVA_HOME`), Android SDK(`ANDROID_HOME`).
+로컬 알림 플러그인이 Gradle 툴체인으로 정확히 Java 21을 요구해서 다른 버전의 JDK로는 빌드되지 않고,
+Android Studio에 들어 있는 JDK 25로는 Gradle 8.14가 돌지 않습니다. Studio에서 열 때도 Gradle JDK를
+`JAVA_HOME`(21)으로 고릅니다.
+
+```bash
+# 1) 앱에 담을 화면을 만들고(apps/web/out) 안드로이드 프로젝트에 복사한다
+NEXT_PUBLIC_WEB_ORIGIN=https://<배포된 웹 주소> pnpm --filter @subslash/mobile sync
+
+# 2) 에뮬레이터·연결된 기기에서 실행하거나, Android Studio로 연다
+pnpm --filter @subslash/mobile android
+pnpm --filter @subslash/mobile open
+```
+
+- `NEXT_PUBLIC_WEB_ORIGIN`이 없으면 빌드가 멈춥니다. 앱 안의 화면이 서버 대신 자기 자신을 부르게
+  되기 때문입니다. 이 주소의 서버는 앱 출처(`https://localhost`)에 CORS를 열어 줍니다
+  (`apps/web/lib/app-origins.ts`).
+- 저장소 경로에 한글 같은 ASCII가 아닌 글자가 있으면(예: `바탕 화면`) 안드로이드 Gradle
+  플러그인이 빌드를 거부합니다. Windows에서는 영문 드라이브를 저장소에 연결해 그 경로에서 빌드하고
+  실행합니다: `subst S: "<저장소 경로>"` 뒤 `S:`에서 위 명령을 돌립니다. 되돌리려면 `subst S: /D`.
+- 웹 화면을 고친 뒤에는 1)을 다시 돌려야 앱에 반영됩니다.
+- 앱은 쿠키 대신 로그인 응답의 세션 토큰을 기기에 두고 헤더로 보냅니다. 구독 기록은 웹처럼
+  localStorage에 두고 기기 저장소에도 사본을 적어, 웹뷰 저장소가 비워지면 사본으로 되살립니다.
+- 해지 페이지 같은 외부 링크는 인앱 브라우저로, 공유는 기기의 공유 창으로 엽니다. 상태 표시줄 색은
+  앱 테마를 따릅니다(막대 뒤 색은 안드로이드에만 있는 네이티브 플러그인이라 iOS에서는 건너뜁니다).
+  인앱 브라우저와 공유 창은 따로 권한이 필요 없습니다.
+- 결제일 전 알림은 앱의 '내 구독' 아래 '이 기기 결제 알림'에서 켭니다. 서버·이메일을 거치지 않는
+  기기 알림이라 로그인이 필요 없고, 켤 때 알림 권한을 묻습니다(안드로이드 13 이상, iOS는 늘). 거부했으면
+  휴대폰 설정 › 애플리케이션 › SubSlash › 알림(iOS는 설정 › SubSlash › 알림)에서 허용합니다. 정확한
+  시각 알람 권한은 쓰지 않아서 알림이 몇 분 늦게 뜰 수 있습니다.
+
+#### iOS
+
+iOS 프로젝트(`apps/mobile/ios`)는 Windows에서도 만들어집니다 — Capacitor 8이 CocoaPods 대신 Swift
+Package Manager를 쓰기 때문입니다. **다만 빌드는 macOS에서만 됩니다.** Mac이 없으면 EAS의 macOS
+작업 서버로 돌립니다(아래).
+
+```bash
+# Mac에서: 화면을 만들어 iOS 프로젝트에 복사하고 Xcode로 연다
+NEXT_PUBLIC_WEB_ORIGIN=https://<배포된 웹 주소> pnpm --filter @subslash/mobile sync:ios
+pnpm --filter @subslash/mobile open:ios
+```
+
+- 앱 출처는 `capacitor://localhost`입니다. 안드로이드(`https://localhost`)와 다르지만 서버는 둘 다
+  열어 둡니다(`apps/web/lib/app-origins.ts`).
+- 실기기에 설치하거나 TestFlight·App Store에 올리려면 **Apple 개발자 프로그램(연 $99)** 이 필요합니다.
+  계정 없이 만들 수 있는 것은 시뮬레이터용 빌드뿐이고, 그건 Mac에서만 열립니다.
+
+#### EAS로 클라우드 빌드
+
+로컬 SDK 없이 빌드하거나 스토어용 파일을 만들 때는 EAS Build를 씁니다(Expo 프로젝트
+`@leesean2/subslash-mobile`). 앱은 Capacitor라 `expo` 패키지는 쓰지 않고, EAS가 읽는 `app.json`·`eas.json`만
+둡니다. EAS CLI(`npm i -g eas-cli`)로 로그인한 뒤 `apps/mobile`에서 돌립니다.
+
+```bash
+cd apps/mobile
+eas build --platform android --profile preview      # 기기에 바로 설치하는 APK
+eas build --platform android --profile production   # 스토어에 올리는 AAB (versionCode를 EAS가 올림)
+
+eas build --platform ios --profile preview          # 시뮬레이터용 (Apple 계정 없이 됨, Mac에서 열림)
+eas build --platform ios --profile production       # 실기기·TestFlight용 (Apple 개발자 프로그램 필요)
+```
+
+- 작업 서버에서 설치가 끝나면 `scripts/eas-build-post-install.sh`가 돕니다. EAS의 Android 이미지에는
+  JDK 17뿐이라 Capacitor 8이 컴파일되지 않아서 JDK 21을 받고(안드로이드일 때만), 웹 화면을
+  만들어(`build:app`) `cap sync $EAS_BUILD_PLATFORM`합니다. 앱이 부를 주소는 `eas.json`의
+  `NEXT_PUBLIC_WEB_ORIGIN`입니다. 훅은 플랫폼을 가려 쓰므로 iOS도 같은 훅으로 돕니다.
+- iOS `production`은 서명 자격이 필요해 Apple 개발자 프로그램에 등록하기 전에는 빌드가 멈춥니다.
+  `preview`(`simulator: true`)는 자격 없이 빌드되지만 시뮬레이터에서만 열립니다.
+- 서명 키는 EAS 서버에 둡니다(`credentialsSource: remote`). 키 확인·교체는 `eas credentials`로 합니다.
+- EAS는 작업 폴더를 `.gitignore` 기준으로 올립니다(커밋하지 않은 파일도 올라감). `.easignore`를 만들면
+  `.gitignore`를 통째로 대신하므로, `.env` 같은 규칙을 모두 옮겨 적을 게 아니라면 만들지 않습니다.
 
 ## 📄 라이선스
 

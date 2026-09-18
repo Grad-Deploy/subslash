@@ -32,9 +32,13 @@ import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { DataBackupCard } from "../../components/settings/DataBackupCard";
+import { LocalReminderCard } from "../../components/settings/LocalReminderCard";
+import { GoogleCalendarSync } from "../../components/calendar/GoogleCalendarSync";
+import { IS_APP_BUILD } from "@lib/platform";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { isWideScreen } from "@lib/wide-screen";
 import { subscriptionDetailHref } from "@lib/routes";
+import { isGmailAutoImportOpen } from "@lib/privacy";
 import { useIsClient } from "@hooks/useIsClient";
 
 /** 카드/표 중 고른 보기. 이 브라우저의 취향일 뿐이라 백업·동기화에 넣지 않는다. */
@@ -101,6 +105,7 @@ export default function SubscriptionsPage() {
     reviveSubscription,
     deleteSubscription,
     clearSubscriptions,
+    accountSync,
     checkIn,
     getActiveSubscriptions,
     getKilledSubscriptions,
@@ -153,6 +158,10 @@ export default function SubscriptionsPage() {
 
   const activeSubs = getActiveSubscriptions();
   const killedSubs = getKilledSubscriptions();
+  const syncedWarning =
+    accountSync.enabled && accountSync.baseSavedAt
+      ? "\n자동 동기화가 켜져 있어 로그인한 다른 기기의 기록도 함께 지워집니다."
+      : "";
 
   const filteredActive =
     filterCategory === "all" ? activeSubs : activeSubs.filter((s) => s.category === filterCategory);
@@ -556,8 +565,14 @@ export default function SubscriptionsPage() {
         </aside>
       </div>
 
+      {/* 구독을 확인한 뒤, 결제일을 내 구글 캘린더에 넣는 곳 */}
+      {isGmailAutoImportOpen() && <GoogleCalendarSync />}
+
       {/* 이 브라우저에만 있는 데이터를 파일로 지키는 곳 */}
       <DataBackupCard onMessage={showToast} />
+
+      {/* 앱에서만: 서버를 거치지 않는 이 기기의 결제 알림 */}
+      {IS_APP_BUILD && <LocalReminderCard onMessage={showToast} />}
 
       {/* Floating Action Button for Mobile */}
       <button
@@ -618,6 +633,7 @@ export default function SubscriptionsPage() {
         onConfirmKilled={handleConfirmKilled}
       />
 
+      {/* 자동 동기화 중이면 빈 기록이 올라가 로그인한 다른 기기에서도 지워진다. 알고 누르게 한다. */}
       {/* Confirmation Modal */}
       {/* 활성 탭이 비어 있어도 해지한 구독이 남아 있을 수 있다. 무엇이 지워지는지 나눠 적는다. */}
       <ConfirmDialog
@@ -638,8 +654,8 @@ export default function SubscriptionsPage() {
           demo
             ? `샘플 구독 ${subscriptions.length}건을 치우고 체험을 끝냅니다.\n내 구독 기록은 그대로 남습니다.`
             : killedSubs.length > 0
-              ? `현재 등록된 전체 구독 ${subscriptions.length}건(구독 중 ${activeSubs.length}건, 해지한 구독 ${killedSubs.length}건)을 모두 삭제하시겠습니까?\n해지한 구독의 절약 기록도 함께 지워집니다.`
-              : `현재 등록된 전체 구독 ${subscriptions.length}건을 모두 삭제하시겠습니까?`
+              ? `현재 등록된 전체 구독 ${subscriptions.length}건(구독 중 ${activeSubs.length}건, 해지한 구독 ${killedSubs.length}건)을 모두 삭제하시겠습니까?\n해지한 구독의 절약 기록도 함께 지워집니다.${syncedWarning}`
+              : `현재 등록된 전체 구독 ${subscriptions.length}건을 모두 삭제하시겠습니까?${syncedWarning}`
         }
         confirmText="모두 삭제"
         variant="destructive"

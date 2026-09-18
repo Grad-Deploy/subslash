@@ -1,6 +1,11 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import type { Subscription } from "@subslash/shared";
-import { SyncTokenRejectedError, pushMirror, toMirrorPayload } from "../../lib/notify-client";
+import {
+  SyncTokenRejectedError,
+  calendarSubscribeLinks,
+  pushMirror,
+  toMirrorPayload,
+} from "../../lib/notify-client";
 import { DEFAULT_NOTIFY, useStore, type NotifySettings } from "../../lib/store";
 
 const claude: Subscription = {
@@ -19,6 +24,20 @@ describe("toMirrorPayload", () => {
   it("알림 메일·캘린더로 보내는 금액은 세금까지 더한 카드 청구액이다", () => {
     expect(toMirrorPayload([{ ...claude, taxRate: 10 }])[0].amount).toBe(22);
     expect(toMirrorPayload([claude])[0].amount).toBe(20);
+  });
+
+  it("해지 주소를 함께 보낸다 — 캘린더 일정 메모에 적힌다", () => {
+    expect(
+      toMirrorPayload([{ ...claude, cancelUrl: "https://claude.ai/settings/billing" }])[0]
+        .cancelUrl,
+    ).toBe("https://claude.ai/settings/billing");
+    // 없으면 null이고, 그때 메모에는 해지 줄이 없다.
+    expect(toMirrorPayload([claude])[0].cancelUrl).toBeNull();
+  });
+
+  it("체험 중인 구독은 보내지 않는다 — 없는 결제를 알리지 않는다", () => {
+    const future = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    expect(toMirrorPayload([{ ...claude, trialEndsAt: future }])).toEqual([]);
   });
 
   it("해지한 구독은 보내지 않는다", () => {
@@ -85,5 +104,22 @@ describe("markNotifyRejected", () => {
     useStore.getState().markNotifyRejected("token-a");
     useStore.getState().clearNotify();
     expect(useStore.getState().notify.rejectedAt).toBeUndefined();
+  });
+});
+
+describe("calendarSubscribeLinks", () => {
+  const feed = "https://subslash.me/api/calendar/abc123.ics";
+
+  it("캘린더 앱으로 넘기는 주소는 같은 피드의 webcal:// 주소다", () => {
+    expect(calendarSubscribeLinks(feed).webcal).toBe(
+      "webcal://subslash.me/api/calendar/abc123.ics",
+    );
+  });
+
+  it("Google 캘린더에는 webcal 주소를 cid로 인코딩해 넘긴다", () => {
+    const google = new URL(calendarSubscribeLinks(feed).google);
+
+    expect(google.origin).toBe("https://calendar.google.com");
+    expect(google.searchParams.get("cid")).toBe("webcal://subslash.me/api/calendar/abc123.ics");
   });
 });

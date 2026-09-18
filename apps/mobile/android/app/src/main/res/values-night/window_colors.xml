@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 기기가 다크 모드일 때. 웹의 다크 테마 배경(layout의 themeColor)과 같다. -->
+    <color name="subslash_window_background">#09090B</color>
+</resources>

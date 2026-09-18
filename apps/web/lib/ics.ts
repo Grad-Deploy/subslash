@@ -1,10 +1,12 @@
 import {
+  cancelNoteFor,
   formatAmount,
   getNextBillingDateFor,
   needsBillingMonth,
   type BillingCycle,
   type Currency,
 } from "@subslash/shared";
+import { subscriptionDetailHref } from "./routes";
 
 /**
  * Builds the iCalendar feed a calendar app subscribes to.
@@ -22,6 +24,12 @@ export interface CalendarEntry {
   billingDay: number;
   billingCycle: string;
   billingMonth?: number | null;
+  /**
+   * 이 구독의 해지 주소. 캘린더 피드(`/api/calendar/[token]`)는 알림 미러에서 읽는데 그 표에는
+   * 이 칸이 없으므로 늘 비어 있다 — 방침의 사전 고지 없이 서버 저장 칸을 늘리지 않기로 했다.
+   * '구글 캘린더에 등록'은 브라우저가 계획에 실어 보내므로 채워진다.
+   */
+  cancelUrl?: string | null;
 }
 
 /** Escapes the characters RFC 5545 gives special meaning inside a TEXT value. */
@@ -113,6 +121,30 @@ export function calendarEligible(entries: CalendarEntry[]): CalendarEntry[] {
   );
 }
 
+/**
+ * 일정 본문. 캘린더 앱은 본문의 주소를 눌러 열 수 있게 보여주므로, 결제일 알림에서 바로 구독을
+ * 고치거나 해지하러 갈 수 있다.
+ */
+export function eventDescription(entry: CalendarEntry, detailUrl: string | null): string {
+  const parts = [
+    `${entry.name} 결제일입니다. 지난 30일 동안 몇 번 썼는지 돌아보고, 아깝다면 지금 해지하세요.`,
+  ];
+
+  // 해지하려고 캘린더를 연 사람이 앱을 다시 열지 않아도 되게, 갈 곳을 메모에 적는다.
+  const cancelNote = cancelNoteFor(entry.cancelUrl);
+  if (cancelNote) parts.push(cancelNote);
+
+  if (detailUrl) {
+    // 구독 기록은 서버가 아니라 기기에 있다. 등록한 기기가 아니면 열어도 보이지 않으므로 미리
+    // 적어 둔다. 로그인한 기기끼리는 계정 동기화로 맞춰지므로 그 길도 함께 알린다.
+    parts.push(
+      `구독 보기·수정: ${detailUrl}\n(이 구독을 등록한 기기에서 열거나, 로그인해 두면 다른 기기에서도 보입니다)`,
+    );
+  }
+
+  return parts.join("\n\n");
+}
+
 export function buildBillingCalendar(
   entries: CalendarEntry[],
   options: { reminderDays: number; now?: Date; appUrl?: string },
@@ -150,6 +182,10 @@ export function buildBillingCalendar(
     const currency: Currency = entry.currency === "USD" ? "USD" : "KRW";
     const price = formatAmount(entry.amount, currency);
 
+    const detailUrl = options.appUrl
+      ? `${options.appUrl}${subscriptionDetailHref(entry.clientId)}`
+      : null;
+
     lines.push(
       "BEGIN:VEVENT",
       `UID:${escapeText(entry.clientId)}@subslash`,
@@ -158,14 +194,12 @@ export function buildBillingCalendar(
       `DTEND;VALUE=DATE:${toDateValue(end)}`,
       `RRULE:${billingRRule(entry)}`,
       `SUMMARY:💳 ${escapeText(entry.name)} ${escapeText(price)}`,
-      `DESCRIPTION:${escapeText(
-        `${entry.name} 결제일입니다. 지난 30일 동안 몇 번 썼는지 돌아보고, 아깝다면 지금 해지하세요.`,
-      )}`,
+      `DESCRIPTION:${escapeText(eventDescription(entry, detailUrl))}`,
       "TRANSP:TRANSPARENT",
     );
 
-    if (options.appUrl) {
-      lines.push(`URL:${escapeText(options.appUrl)}/subs`);
+    if (detailUrl) {
+      lines.push(`URL:${escapeText(detailUrl)}`);
     }
 
     lines.push(

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { POPULAR_SERVICES, SERVICE_KEYWORD_PRESET_IDS, parsePaymentSms } from "@subslash/shared";
+import {
+  POPULAR_SERVICES,
+  SERVICE_KEYWORD_PRESET_IDS,
+  parsePaymentSms,
+  parseReceiptEmails,
+} from "@subslash/shared";
 
 describe("Payment SMS & Receipt Parser", () => {
   it("신한카드 넷플릭스 결제 승인 문자를 정상 파싱한다", () => {
@@ -239,5 +244,207 @@ describe("Payment SMS & Receipt Parser", () => {
   it("결제 금액이 없는 일반 텍스트나 빈 문자열은 무시한다", () => {
     expect(parsePaymentSms("")).toEqual([]);
     expect(parsePaymentSms("안녕하세요 반갑습니다.")).toEqual([]);
+  });
+});
+
+describe("parseReceiptEmails (Gmail 결제 메일)", () => {
+  const NOW = new Date("2026-09-15T03:00:00.000Z");
+  const email = (subject: string, body: string, date: string, from = "billing@example.com") => ({
+    from,
+    subject,
+    body,
+    date,
+  });
+
+  it("본문 하단의 '언제든 해지' 안내로 영수증을 해지 알림으로 읽지 않는다", () => {
+    const [item] = parseReceiptEmails(
+      [
+        email(
+          "넷플릭스 결제 안내",
+          "결제금액 : 17,000원\n\n멤버십은 언제든 해지할 수 있습니다.",
+          "2026-09-10T03:00:00.000Z",
+        ),
+      ],
+      { now: NOW },
+    );
+
+    expect(item.isCanceled).toBe(false);
+    expect(item.selected).toBe(true);
+    expect(item.source).toBe("gmail");
+  });
+
+  it("제목이 해지 안내면 해지로 보고 등록 후보에서 뺀다", () => {
+    const [item] = parseReceiptEmails(
+      [email("넷플릭스 멤버십 해지 완료", "결제금액 : 17,000원", "2026-09-10T03:00:00.000Z")],
+      { now: NOW },
+    );
+
+    expect(item.isCanceled).toBe(true);
+    expect(item.selected).toBe(false);
+  });
+
+  it("결제일 칸이 없으면 본문의 숫자가 아니라 메일을 받은 날을 결제일로 쓴다", () => {
+    const [item] = parseReceiptEmails(
+      [email("스포티파이 영수증", "$11.99 결제\n저장공간 1.5GB 추가", "2026-09-08T03:00:00.000Z")],
+      { now: NOW },
+    );
+
+    expect(item.billingDay).toBe(8);
+    expect(item.amount).toBe(11.99);
+    expect(item.currency).toBe("USD");
+  });
+
+  it("본문의 다른 서비스 광고보다 제목·보낸 사람의 서비스를 먼저 본다", () => {
+    const [item] = parseReceiptEmails(
+      [
+        email(
+          "결제 안내",
+          "결제금액 : 17,000원\n쿠팡플레이도 함께 즐겨보세요",
+          "2026-09-10T03:00:00.000Z",
+          "Netflix <info@account.netflix.com>",
+        ),
+      ],
+      { now: NOW },
+    );
+
+    expect(item.name).toBe("넷플릭스");
+  });
+
+  it("서비스를 알아보지 못하면 본문의 단어를 이름으로 쓰지 않는다", () => {
+    const [item] = parseReceiptEmails(
+      [email("Your receipt", "Thanks for your payment ₩8,900", "2026-09-10T03:00:00.000Z")],
+      { now: NOW },
+    );
+
+    expect(item.name).toBe("알 수 없는 결제 (₩8,900)");
+  });
+
+  it("같은 구독의 영수증은 가장 최근 것 하나만 남긴다", () => {
+    const items = parseReceiptEmails(
+      [
+        email("넷플릭스 결제 안내", "결제금액 : 13,500원", "2026-08-10T03:00:00.000Z"),
+        email("넷플릭스 결제 안내", "결제금액 : 17,000원", "2026-09-10T03:00:00.000Z"),
+        email("넷플릭스 결제 안내", "결제금액 : 13,500원", "2026-07-10T03:00:00.000Z"),
+      ],
+      { now: NOW },
+    );
+
+    expect(items).toHaveLength(1);
+    expect(items[0].amount).toBe(17000);
+    expect(items[0].receiptDate).toBe("2026.09.10");
+  });
+
+  it("마지막 결제 메일이 오래된 월간 구독은 지금도 결제 중인지 모른다고 보고 기본으로 빼 둔다", () => {
+    const [item] = parseReceiptEmails(
+      [email("티빙 정기결제 안내", "결제금액 : 13,900원", "2026-06-03T03:00:00.000Z")],
+      { now: NOW },
+    );
+
+    expect(item.selected).toBe(false);
+    expect(item.statusReason).toContain("지금도 결제 중인지 알 수 없습니다");
+  });
+
+  it("연간 결제 메일은 받은 달을 결제 월로 쓰고, 1년이 안 지났으면 후보로 둔다", () => {
+    const [item] = parseReceiptEmails(
+      [email("쿠팡 와우 연간 멤버십 결제", "결제금액 : 79,000원", "2025-11-20T03:00:00.000Z")],
+      { now: NOW },
+    );
+
+    expect(item.billingCycle).toBe("yearly");
+    expect(item.billingMonth).toBe(11);
+    expect(item.billingDay).toBe(20);
+    expect(item.selected).toBe(true);
+  });
+  it("시간대를 주면 그 시간대의 달력으로 받은 날을 읽는다(서버는 UTC라 한국 오전 메일이 전날이 되지 않게)", () => {
+    // 한국 시각 2026-09-10 08:00 = UTC 2026-09-09 23:00
+    const [item] = parseReceiptEmails(
+      [email("넷플릭스 결제 안내", "결제금액 : 17,000원", "2026-09-09T23:00:00.000Z")],
+      { now: NOW, timeZone: "Asia/Seoul" },
+    );
+
+    expect(item.billingDay).toBe(10);
+    expect(item.receiptDate).toBe("2026.09.10");
+  });
+
+  it("알려진 서비스와 맞으면 그 id와 보낸 사람을 남긴다", () => {
+    const [known, unknown] = parseReceiptEmails(
+      [
+        email(
+          "넷플릭스 결제 안내",
+          "결제금액 : 17,000원",
+          "2026-09-10T03:00:00.000Z",
+          "Netflix <a@b>",
+        ),
+        email("Your receipt", "₩8,900 paid", "2026-09-09T03:00:00.000Z", "Shop <c@d>"),
+      ],
+      { now: NOW },
+    );
+
+    expect(known.presetId).toBe("netflix");
+    expect(known.sender).toBe("Netflix <a@b>");
+    expect(unknown.presetId).toBeUndefined();
+  });
+});
+
+describe("붙여넣은 영수증의 결제일", () => {
+  const receipt = (line: string) => `상품명 : 넷플릭스
+결제금액 : 17,000원
+${line}`;
+
+  it("연도가 붙은 날짜에서 연도를 월로 읽지 않는다", () => {
+    // "2026.09.05"를 월·일만 훑으면 연도 끝과 월이 "6.09"로 붙어 9일이 됐다.
+    expect(parsePaymentSms(receipt("2026.09.05 결제 완료"))[0].billingDay).toBe(5);
+    expect(parsePaymentSms(receipt("2026-09-05 결제 완료"))[0].billingDay).toBe(5);
+    expect(parsePaymentSms(receipt("2026년 9월 5일 결제"))[0].billingDay).toBe(5);
+  });
+
+  it("결제일 라벨이 달라도 읽는다", () => {
+    for (const label of ["승인일자", "승인일", "거래일시", "이용일", "결제 완료일", "Date"]) {
+      expect(parsePaymentSms(receipt(`${label} : 2026.09.05`))[0].billingDay).toBe(5);
+    }
+  });
+
+  it("전화번호를 날짜로 읽지 않는다", () => {
+    // "02-1234-5678"에서 "02-12"를 집어 12일로 등록하던 것.
+    const parsed = parsePaymentSms(
+      receipt(`문의: 02-1234-5678
+2026.09.05 결제`),
+    )[0];
+    expect(parsed.billingDay).toBe(5);
+  });
+});
+
+describe("붙여넣은 영수증의 금액", () => {
+  const receipt = (amountLine: string) =>
+    `상품명 : 넷플릭스
+${amountLine}
+결제일시 : 2026.09.05`;
+
+  it("라벨 뒤에 통화 표시가 없어도 읽는다", () => {
+    expect(parsePaymentSms(receipt("결제금액 : 17,000"))[0].amount).toBe(17000);
+    expect(parsePaymentSms(receipt("결제금액 : KRW 17,000"))[0].amount).toBe(17000);
+  });
+
+  it("라벨이 가리키는 금액을 본문의 다른 숫자보다 먼저 쓴다", () => {
+    const parsed = parsePaymentSms(
+      `상품명 : 넷플릭스
+결제금액 : 17,000
+적립 500원
+결제일시 : 2026.09.05`,
+    )[0];
+    expect(parsed.amount).toBe(17000);
+  });
+
+  it("달러 영수증을 원으로 읽지 않는다", () => {
+    const dollars = parsePaymentSms(receipt("결제금액 : 20.00 USD"))[0];
+    expect(dollars.currency).toBe("USD");
+    expect(dollars.amount).toBe(20);
+  });
+
+  it("서비스 이름이 없어도 금액이 있으면 후보로 남긴다", () => {
+    const parsed = parsePaymentSms(`결제금액 : 17,000원
+결제일시 : 2026.09.05`)[0];
+    expect(parsed.name).toContain("알 수 없는 결제");
+    expect(parsed.amount).toBe(17000);
   });
 });

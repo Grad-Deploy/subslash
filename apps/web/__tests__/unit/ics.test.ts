@@ -128,4 +128,58 @@ describe("buildBillingCalendar", () => {
       "TRIGGER:PT0S",
     );
   });
+
+  it("일정 주소와 본문은 그 구독의 상세 화면으로 간다", () => {
+    const ics = buildBillingCalendar([{ ...netflix, clientId: "sub 1&x" }], {
+      reminderDays: 3,
+      now: NOW,
+      appUrl: "https://subslash.me",
+    });
+    // 본문은 75옥텟마다 접히므로 펼친 뒤 본다.
+    const unfolded = ics.replace(/\r\n /g, "");
+
+    expect(unfolded).toContain("URL:https://subslash.me/subs/detail?id=sub%201%26x\r\n");
+    expect(unfolded).toContain("구독 보기·수정: https://subslash.me/subs/detail?id=sub%201%26x");
+    // 다른 기기에서는 구독이 보이지 않는다는 것을 함께 적는다.
+    // 쉼표는 RFC 5545에서 \, 로 이스케이프되므로 쉼표가 없는 조각으로 본다.
+    expect(unfolded).toContain("로그인해 두면 다른 기기에서도 보입니다");
+  });
+
+  it("앱 주소를 모르면 링크를 만들지 않는다", () => {
+    const ics = buildBillingCalendar([netflix], { reminderDays: 3, now: NOW });
+
+    expect(ics).not.toContain("URL:");
+    expect(ics).not.toContain("/subs/detail");
+  });
+});
+
+describe("캘린더 피드의 해지 안내", () => {
+  const base = {
+    clientId: "sub-1",
+    name: "넷플릭스",
+    amount: 17000,
+    currency: "KRW",
+    billingDay: 25,
+    billingCycle: "monthly",
+    billingMonth: null,
+  };
+  const NOW = new Date(2026, 8, 18);
+
+  it("해지 주소가 있으면 일정 메모에 적는다", () => {
+    const feed = buildBillingCalendar(
+      [{ ...base, cancelUrl: "https://www.netflix.com/cancelplan" }],
+      { reminderDays: 3, now: NOW },
+    );
+    expect(feed).toContain("netflix.com/cancelplan");
+    expect(feed).toContain("확인된 해지 화면");
+  });
+
+  it("해지 주소가 없으면 메모에 해지 줄이 없다", () => {
+    const feed = buildBillingCalendar([{ ...base, cancelUrl: null }], {
+      reminderDays: 3,
+      now: NOW,
+    });
+    expect(feed).not.toContain("해지하러 가기");
+    expect(feed).not.toContain("확인된 해지 화면");
+  });
 });

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:app": "tsx scripts/build-app.ts",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
@@ -14,9 +15,15 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "check:cancel-links": "tsx scripts/cancel-links/run.ts"
+    "check:cancel-links": "tsx scripts/cancel-links/run.ts",
+    "gmail:web-app": "tsx scripts/gmail-web-app/write.ts"
   },
   "dependencies": {
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
     "@libsql/client": "^0.14.0",
     "@subslash/shared": "workspace:*",
     "clsx": "^2.1.0",

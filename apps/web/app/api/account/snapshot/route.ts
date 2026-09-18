@@ -7,6 +7,7 @@ import {
   readSnapshot,
   saveSnapshot,
 } from "@lib/account-snapshot";
+import type { SaveCondition } from "@lib/account-snapshot";
 
 /**
  * 계정에 저장한 기록 — 저장(PUT), 불러오기(GET), 지우기(DELETE).
@@ -50,7 +51,21 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** 본문: 백업 파일과 같은 JSON(`createBackup`의 결과). 계정의 기록을 통째로 바꾼다. */
+/**
+ * 요청 헤더에서 저장 조건을 읽는다. 자동 동기화는 마지막으로 본 판을 `If-Match`로(ETag처럼
+ * 따옴표로 감싸도 된다), 처음 올릴 때는 `If-None-Match: *`로 보낸다. 둘 다 없으면 덮어쓴다.
+ */
+function saveCondition(request: NextRequest): SaveCondition {
+  if (request.headers.get("if-none-match")?.trim() === "*") return { kind: "none" };
+  const ifMatch = request.headers.get("if-match")?.trim();
+  if (ifMatch) return { kind: "match", savedAt: ifMatch.replace(/^"(.*)"$/, "$1") };
+  return { kind: "any" };
+}
+
+/**
+ * 본문: 백업 파일과 같은 JSON(`createBackup`의 결과). 계정의 기록을 통째로 바꾼다. 조건
+ * (`saveCondition`)이 맞지 않으면 409와 함께 지금 계정에 있는 기록의 요약을 돌려준다.
+ */
 export async function PUT(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
@@ -67,8 +82,19 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const result = await saveSnapshot(account.id, await request.text());
+    const result = await saveSnapshot(
+      account.id,
+      await request.text(),
+      new Date(),
+      saveCondition(request),
+    );
     if (!result.ok) {
+      if (result.status === 409) {
+        return NextResponse.json(
+          { status: "conflict", error: result.error, summary: result.current },
+          { status: 409 },
+        );
+      }
       return NextResponse.json({ error: result.error }, { status: result.status });
     }
     return NextResponse.json({ status: "saved", summary: result.summary });
