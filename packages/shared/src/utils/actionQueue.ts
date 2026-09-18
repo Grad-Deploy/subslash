@@ -5,6 +5,7 @@ import { formatDday, getDaysUntilBillingFor } from "./date";
 import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
 import { formatKillCheckDate, getKillCheckStatus } from "./killCheck";
+import { getLowUsageBillingMessage } from "./metaphor";
 
 /**
  * 대시보드의 행동 큐.
@@ -25,6 +26,8 @@ export const STALE_CHECK_IN_DAYS = 30;
 export type ActionKind =
   /** 결제가 코앞인데 마지막 체크인이 '위험'이었다. 가장 급하다. */
   | "billing-soon-risky"
+  /** 결제가 코앞인데 이번 달 사용량이 적다 (체크인 기록 기반). */
+  | "low-usage-billing-soon"
   /** 결제가 코앞이다. */
   | "billing-soon"
   /** 해지 뒤 첫 결제일이 지났다. 결제가 정말 멈췄는지 물어야 한다. */
@@ -81,6 +84,7 @@ export interface ActionItem {
 // 다음 결제까지는 보통 한 달 가까이 남아 있다.
 const PRIORITY: Record<ActionKind, number> = {
   "billing-soon-risky": 1,
+  "low-usage-billing-soon": 1,
   "billing-soon": 2,
   "verify-kill": 3,
   risky: 4,
@@ -92,6 +96,7 @@ const PRIORITY: Record<ActionKind, number> = {
 
 const VERB: Record<ActionKind, ActionVerb> = {
   "billing-soon-risky": "cancel-guide",
+  "low-usage-billing-soon": "cancel-guide",
   "billing-soon": "check-in",
   "verify-kill": "verify-kill",
   risky: "cancel-guide",
@@ -172,6 +177,17 @@ export function getActionQueue(
       reason =
         `${formatDday(days!)} · 마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${perUse})` +
         (stake !== null ? `. 결제 전에 끊으면 ${formatKRW(stake)}을 지킵니다.` : ".");
+    } else if (
+      billingSoon &&
+      days !== null &&
+      days <= 3 &&
+      log &&
+      log.usageCount <= 2 &&
+      !isRisky
+    ) {
+      // 결제 D-3 이내 + 최근 체크인 사용량 2회 이하: 저사용 경고 (메타포 포함)
+      kind = "low-usage-billing-soon";
+      reason = getLowUsageBillingMessage(sub, log.usageCount, days, rate);
     } else if (billingSoon) {
       kind = "billing-soon";
       reason = log

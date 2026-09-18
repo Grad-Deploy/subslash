@@ -137,6 +137,10 @@ export interface DiscoveredSubscription {
   linkedAccountName?: string;
   recipientEmail?: string;
   source: "gmail" | "sms" | "manual";
+  /** 알려진 서비스 목록(POPULAR_SERVICES)과 맞았으면 그 id. 이름만 추측한 후보에는 없다. */
+  presetId?: string;
+  /** 결제 메일의 보낸 사람. 메일에서 찾은 후보에만 있다. */
+  sender?: string;
   emailProvider?: "google" | "naver";
   sourceSnippet?: string;
   confidence: "high" | "medium";
