@@ -34,10 +34,19 @@ export function UsageMetaphorCard({
         toneStyles[metaphor.tone]
       } max-w-[400px] w-full`}
     >
-      <div className="text-2xl">{metaphor.emoji}</div>
-      <div className="flex flex-col">
-        <span className="font-semibold text-sm opacity-80 mb-1">{metaphor.comparison}</span>
-        <span className="font-medium text-base break-keep leading-tight">{metaphor.message}</span>
+      <div className="shrink-0 text-2xl">{metaphor.emoji}</div>
+      {/*
+        문구에 서비스 이름이 들어간다. 길이를 모르는 글자라 min-w-0으로 줄어들 수 있게 하고,
+        띄어쓰기 없이 길게 적은 이름도 줄바꿈되도록 overflow-wrap:anywhere를 준다 — break-keep은
+        한국어 낱말을 끊지 않아 이름이 칸 밖으로 나간다.
+      */}
+      <div className="flex min-w-0 flex-col">
+        <span className="mb-1 text-sm font-semibold opacity-80 [overflow-wrap:anywhere]">
+          {metaphor.comparison}
+        </span>
+        <span className="text-base font-medium leading-tight [overflow-wrap:anywhere]">
+          {metaphor.message}
+        </span>
       </div>
     </div>
   );

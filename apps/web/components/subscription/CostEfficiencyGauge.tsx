@@ -56,12 +56,14 @@ export function CostEfficiencyGauge({
       </div>
 
       <div className="flex justify-between items-center text-xs mt-1">
-        <span className={`font-medium ${levelColors[breakEvenInfo.level]}`}>
+        <span
+          className={`min-w-0 font-medium [overflow-wrap:anywhere] ${levelColors[breakEvenInfo.level]}`}
+        >
           {breakEvenInfo.level === "danger" && `지출 다이어트 추천 (회당 ${formattedCostPerUse})`}
           {breakEvenInfo.level === "warning" && breakEvenInfo.remainingMessage}
           {breakEvenInfo.level === "safe" && `본전 달성 완료! (회당 ${formattedCostPerUse})`}
         </span>
-        <span className="text-muted-foreground text-[10px]">본전 기준선</span>
+        <span className="shrink-0 text-[10px] text-muted-foreground">본전 기준선</span>
       </div>
     </div>
   );
