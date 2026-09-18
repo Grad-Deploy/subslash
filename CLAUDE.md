@@ -72,6 +72,23 @@ USD 환산 환율은 상수가 아니라 사용자 설정값이다. 컴포넌트
 토큰은 용도별로 분리한다. sync 토큰은 Authorization 헤더 전용이고 URL에 넣지
 않는다. 캘린더 피드는 URL 자체가 자격증명이므로 읽기 전용 토큰을 따로 쓴다.
 
+해지한 구독에 결제 메일이 오면 그 사실을 구독에 적는다(`chargedAfterKillAt`). 행동 큐의
+`charged-after-kill`은 큐에서 유일하게 **증거가 있는** 줄이라 맨 앞이다 — 나머지는 "아까울 수
+있다"이고 이것만 "이미 잘못됐다"이다. 사용자의 기억(`killVerifiedAt`)과 섞지 않는다. 다시
+확인해 주거나 구독을 되살리면 지운다.
+
+결제 메일의 금액이 등록된 청구액과 다르면 그 사실을 적는다(`observedAmount`). 요금표를 조회하지
+않으므로 "요금이 올랐다"고 단정하지 않고 두 숫자를 나란히 보여준다 — `lastPriceCheckedAt`(오래돼서
+확인해 달라는 추측)과 달리 이것은 관측이라, 행동 큐에서도 `price-check`보다 앞이다. 비교는 요금표
+가격이 아니라 `getBilledAmount`와 하고(영수증은 청구액이다), 결제 주기가 다르면 비교하지 않는다.
+요금을 확인해 주거나 금액을 고치면 지운다.
+
+무료 체험 중인 구독(`trialEndsAt`이 아직 오지 않음, `isInTrial`)은 카드에서 나가는 돈이 없다.
+지출 합계·결제 캘린더·알림 미러·캘린더 등록에서 모두 뺀다 — 넣으면 내지도 않은 돈을 '월
+고정지출'로, 없는 결제를 달력에 보여주게 된다. 뺀 사실과 끝난 뒤 금액은 화면에 적는다. 행동 큐는
+종료 7일 전부터 `trial-ending` 하나만 만들고 다른 줄은 만들지 않는다. 종료일을 모르면 체험 중으로
+보지 않는다(모름을 체험으로 읽지 않는다).
+
 로그인 세션 토큰은 웹에서는 httpOnly 쿠키에만 있다. 앱(Capacitor)은 화면이 다른 출처에서
 돌아 쿠키가 실리지 않으므로 `Authorization: Bearer` 헤더로 보낸다(`readSessionToken`).
 로그인·가입·재설정 응답 본문의 토큰은 앱 출처(`lib/app-origins`)에만 주고
@@ -94,12 +111,57 @@ USD 환산 환율은 상수가 아니라 사용자 설정값이다. 컴포넌트
 보관 기간, 삭제 경로, 쓰는 외부 서비스(Vercel·Turso·Resend)나 그 지역을 바꾸면 방침도 같은
 PR에서 고친다. 보호책임자 연락처는 `lib/privacy.ts` 한 곳에만 있고, 정해지기 전에는 비워 둔다.
 
-`account_snapshots`는 로그인한 사람이 '계정에 저장'을 직접 눌렀을 때만 생기는 백업
-파일 한 벌이다. 알림 미러와 같은 규칙을 따른다 — 전체 교체, 병합 없음, 서버가 알아서
-브라우저로 되쓰지 않음('계정에서 불러오기'를 눌러야 받는다). 서버는 받은 기록을
-`parseBackup`으로 다시 검사하고, 동기화 토큰(`notify`)은 넣지 않는다. 계정을 지우는
-경로를 새로 만들면 `sessions`처럼 이 표도 직접 지운다 — `ON DELETE CASCADE`는
-`PRAGMA foreign_keys`가 켜져 있을 때만 동작한다.
+`account_snapshots`는 로그인한 계정의 기록 한 벌(백업 파일과 같은 형식)이다. 로그인한 기기는
+자동 동기화로 이 표와 기록을 맞춘다(`lib/account-sync`가 판단, `hooks/useAccountSync`가 실행) — 기록이
+바뀌면 올리고, 다른 기기가 올린 것은 화면으로 돌아올 때 받아 온다. 기기마다 끌 수 있고, 끈 기기는
+'계정에 저장'·'계정에서 불러오기'를 눌러야 옮긴다. 규칙은 이렇다.
+
+- 병합하지 않는다. 저장 시각(`savedAt`)을 판 번호로 쓰고, 올릴 때 마지막으로 본 판을
+  `If-Match`로(처음이면 `If-None-Match: *`) 건다. 그사이 다른 기기가 올렸으면 서버가 409로
+  거절한다. 서버만 바뀌었으면 받아 오고, 양쪽이 따로 바뀌었으면 어느 쪽을 쓸지 사용자에게 묻는다.
+- 서버가 기기에 먼저 보내지 않는다. 기기가 물어 가져간다.
+- 다른 기기에서 '계정에서 지우기'로 지웠으면 그 기록을 다시 올리지 않고 동기화를 멈춘다.
+- 기기마다 다른 것(동기화 상태 `accountSync`, 결제 알림 `notify`, 로컬 알림 설정)은 넣지 않는다.
+- 서버는 받은 기록을 `parseBackup`으로 다시 검사한다. 계정을 지우는 경로를 새로 만들면
+  `sessions`처럼 이 표도 직접 지운다 — `ON DELETE CASCADE`는 `PRAGMA foreign_keys`가 켜져 있을
+  때만 동작한다.
+
+Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버가 브라우저로 되쓰지
+않는다"의 유일한 예외이고, 그래서 좁게 묶어 둔다. SubSlash는 Google 권한을 받지 않는다 — 사용자
+계정의 Apps Script가 2주마다 메일을 `/api/gmail/ingest`로 보내고(연결 토큰, 해시만 저장), 서버는
+그 자리에서 파싱해 **구독 후보만** 남긴다. 메일 제목·본문을 표나 로그에 남기지 않는다. 브라우저는
+로그인했을 때 후보를 가져가(`GET /api/gmail/discoveries`) 스스로 등록하고 받은 후보를 지운다 —
+서버가 브라우저 기록을 고치는 것이 아니다. 알려진 서비스의 최근 결제만 확인 없이 등록하고, 이미
+구독 중이면 등록하지 않으며, 해지한 서비스는 되살리지 않고 확인을 받는다. 저장 항목이 늘어나는
+기능이라 방침의 사전 고지를 따른다: `lib/privacy.ts`의 `GMAIL_AUTO_IMPORT_STARTS_ON`을 정하면 방침에
+항목이 먼저 게시되고 그날부터 API·화면이 열린다(null이면 닫힘, 끊기는 언제나 된다). 테스트 서버만
+`NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN`으로 연다. 계정을 지우는 경로는 `deleteGmailImportData`를
+부른다.
+
+'구글 캘린더에 결제일 등록'도 같은 웹 앱이 한다(`action=calendar`). 버튼은 '내 구독'(`/subs`) 맨
+아래에 둔다 — 목록에서 금액·결제일을 확인하고 고친 뒤 마지막에 누르는 것이라, 가져오기 화면이
+아니라 구독을 보는 화면에 있어야 한다. SubSlash는 캘린더 권한을 받지
+않는다 — 버튼을 누르면 브라우저가 구독 중인 구독의 이름·금액·결제일을 계획으로 맡기고, 웹 앱이
+접속한 사람의 권한으로 그 계획을 받아 **자기** 'SubSlash 결제일' 캘린더에 쓴다. 계획은 주소에 싣지
+않고(`calendar_sync_plans`, 1회용 코드는 해시만) 받아 가면 곧바로, 늦어도 10분이면 지운다. 캘린더
+쓰기는 전체 교체다 — 전에 SubSlash가 쓴 일정(`extendedProperties.private.subslash`)만 지우고 다시
+쓴다. 날짜 계산과 RRULE은 캘린더 피드(`lib/ics.ts`)와 같은 함수를 쓴다. 일정 메모에는 해지 주소를
+적는다 — 해지하려고 캘린더를 연 사람이 앱을 다시 열지 않아도 되게. 주소의 성격(`getCancelUrlKind`)에
+따라 문구를 나누는 것은 화면과 같다(`cancelNoteFor`): 해지 화면이 아닌 주소를 '해지 페이지'라고
+부르면, 눌러서 첫 화면만 보고 해지된 줄 아는 사람이 생긴다. 캘린더 피드(`/api/calendar/[token]`)도 같은 문구를 쓴다 — 알림 미러에
+`cancel_url`을 두고(0010, 방침 시행일 2026-09-18), 브라우저가 미러에 올릴 때 함께 보낸다. 서버는
+양쪽 모두 http(s)만 받는다. 피드(`/api/calendar/[token]`,
+알림 설정)는 없애지 않는다 — 웹 앱이 없는 배포와 직접 설치 방식이 쓴다.
+
+연결은 두 갈래다. 복사 방식은 사용자가 자기 계정에 스크립트를 붙여 넣어 Google 심사 대상이 아니다.
+원클릭('Gmail 연결하기')은 **SubSlash 소유** Apps Script 웹 앱(접속한 사용자로 실행)이라 Google 심사 전에는
+'확인되지 않은 앱' 경고와 새 사용자 100명 제한이 있고, 그 이상은 제한 권한 심사·연례 보안 평가가
+필요하다 — 그래서 복사 방식을 없애지 않는다. 원클릭은 연결 토큰을 주소에 싣지 않는다: 주소에는 10분짜리
+서명 코드(`gmail-connect`, 연결 지문 포함 → 한 번만 교환)만 싣고, 웹 앱이 `/api/gmail/connect/exchange`로
+토큰을 받아 사용자별 저장소(UserProperties)에 둔다. 웹 앱 코드는 `lib/gmail-import.ts` 한 곳에만 있고
+`pnpm --filter @subslash/web gmail:web-app -- --origins …`가 파일로 쓴다. 코드를 고치면 운영자가 웹 앱을
+다시 배포해야 반영된다. 허용할 SubSlash 주소(`ALLOWED_ORIGINS`)와 `GMAIL_CONNECT_WEB_APP_URL`(두 Vercel
+프로젝트)이 서로 맞아야 한다.
 
 ## 파일 경계
 
@@ -111,17 +173,72 @@ Gmail/네이버 연동이 생기면 아래 오른쪽 열을 통째로 지운다.
 | `utils/parser.ts`     | `utils/inbox-simulation.ts`                           |
 | `AutoImportModal.tsx` | `InboxPreviewPanel.tsx`                               |
 
+Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash가 Gmail에 연결하는 것이
+아니다. 사용자가 자기 계정에 만든 Apps Script가 메일을 찾아 `/import#gmail=…`로 넘기고, 브라우저가
+`#` 뒤를 풀어 `parseReceiptEmails`로 후보를 만든다. `#` 뒤는 서버로 가지 않으므로 메일 내용은
+서버를 거치지 않는다 — 이 값을 API로 보내거나 쿼리(`?`)로 옮기지 않는다. 스크립트 권한은
+`gmail.readonly` 하나다(`GmailApp`은 전체 권한을 요구하고, 읽기 전용으로 좁히면 빈 결과를 준다).
+메일 본문에는 광고·약관이 섞이므로, 메일은 해지 여부를 제목으로, 결제일을 받은 날로 판단하고
+알아보지 못한 서비스는 본문 단어가 아니라 '알 수 없는 결제'로 이름 짓는다.
+
 ## 앱(Capacitor)에 담을 화면
 
 모바일 앱은 이 웹 화면을 정적으로 내보내 앱 안에 담고, API만 배포된 Vercel을 부른다.
 그래서 화면 코드는 다음을 지킨다.
 
 - 서버 API는 `apiUrl("/api/...")`(`lib/api`)로 부른다. 앱 안의 상대 주소는 앱 자신을 가리킨다.
-- 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은 `capacitor://`다.
+  로그인이 필요한 요청(`/api/auth`·`/api/account`)은 `apiFetch()`로 보낸다. 앱에는 쿠키가 실리지
+  않아서, `apiFetch`가 기기에 둔 세션 토큰(`lib/session-token`)을 헤더로 싣고 로그인·가입·비밀번호
+  변경 응답의 새 토큰을 받아 둔다.
+- 외부 사이트는 `openExternal()`, 공유는 `shareText()`(`lib/native`)로 연다. 앱에서는 인앱 브라우저와
+  네이티브 공유 창이 된다. `window.open`·`navigator.share`를 직접 부르지 않는다.
+- 외부 사이트에서 무언가를 마치고 **돌아와야 하는** 흐름(Google 권한 화면 등)은 `leaveForExternal()`을
+  쓴다. 웹에서는 이 탭이 그대로 가고(돌아오면 화면이 다시 그려진다), 앱에서는 인앱 브라우저로 열고
+  닫힐 때 `onReturn`으로 상태를 다시 읽는다. 앱에서 `window.location.assign`으로 나가면 앱 웹뷰가
+  통째로 외부 사이트가 되어, 담아 둔 화면을 잃고 그 사이트의 '돌아가기'는 앱이 아니라 웹사이트를 연다.
+- 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은
+  `capacitor://localhost`(iOS)나 `https://localhost`(안드로이드)다.
 - 페이지에 동적 경로(`[id]`)를 새로 만들지 않는다. 브라우저에서 만든 ID로는 페이지를 미리
   만들 수 없다. 구독 상세는 `subscriptionDetailHref()`(`/subs/detail?id=`)를 쓴다.
 - 브라우저 기본 `confirm`·`prompt`·`alert`를 쓰지 않는다. 창 밖에서는 `ConfirmDialog`, 이미
   열린 창 안에서는 `InlineConfirm`을 쓴다(창을 겹치면 같은 Esc에 함께 닫힌다).
+- 페이지를 통째로 다시 부르는 이동(`window.location.href =`, `location.reload()`, next/link가
+  아닌 `<a href="/...">`)을 쓰지 않는다. 앱은 확장자 없는 주소(`/dashboard`)를 모두 `index.html`로
+  열어서, 다시 부른 페이지는 홈 화면이 된다. 화면 이동은 next/link와 `useRouter`로만 한다.
+- 페이지·레이아웃 파일은 `.tsx`로 만든다. 앱 빌드는 `.tsx`만 경로로 읽어 `route.ts`·`proxy.ts`를
+  뺀다(`next.config.ts`).
+
+앱 화면은 `pnpm --filter @subslash/web build:app`(정적 내보내기 → `apps/web/out`)으로 만들고,
+`apps/mobile`(Capacitor 8, appId `com.subslash.app`)이 그 폴더를 담는다. 빌드에는 앱이 부를 배포
+주소(`NEXT_PUBLIC_WEB_ORIGIN`)가 꼭 있어야 하고, 없으면 빌드를 멈춘다. 앱에서만 달라지는 동작은
+`IS_APP_BUILD`(`lib/platform`)로 가른다. CI가 이 빌드를 돌려 정적 내보내기를 깨는 코드를 막는다.
+안드로이드 빌드·실행은 README의 '모바일 앱'에 있다.
+
+`apps/mobile`은 안드로이드(`android/`)와 iOS(`ios/`)를 모두 담는다. iOS 프로젝트는 Capacitor 8이
+CocoaPods 대신 SPM을 쓰므로 Windows에서도 만들어지지만, **빌드는 macOS나 EAS의 macOS 작업 서버에서만**
+된다. 실기기·TestFlight·스토어는 Apple 개발자 프로그램이 있어야 하고, 계정 없이 되는 것은 시뮬레이터
+빌드(`eas.json`의 `preview.ios.simulator`)뿐이다. 네이티브 플러그인은 안드로이드에만 있으므로
+(`AppWindowPlugin`), 플러그인을 부르는 코드는 `Capacitor.getPlatform()`으로 가른다 — iOS에서 부르면
+거절당해 경고만 쌓인다.
+
+앱의 구독 기록은 웹처럼 localStorage가 원본이고, 쓸 때마다 기기 저장소(Preferences)에 사본을
+적는다(`lib/mirrored-storage`). 앱을 열 때 localStorage가 비어 있었으면 사본으로 되살린다 — 운영체제가
+웹뷰 저장소를 비워도 기록이 남게 하려는 것이다. 저장소를 통째로 Preferences로 옮기지 않는 이유는 그
+파일에 있다. 상태 표시줄 색은 테마를 따라 `syncSystemBars`(`lib/native`)가 맞춘다.
+
+앱의 결제 알림은 기기 안의 로컬 알림이다(`lib/local-reminders`가 목록을 정하고
+`lib/native-reminders`가 건다). 서버를 거치지 않아 로그인 없이 쓰고, 이메일 알림(`notify`)과는 별개다.
+알림 권한은 앱을 켤 때가 아니라 사용자가 '알림 켜기'를 누를 때 묻는다. 정확한 시각 알람
+(`SCHEDULE_EXACT_ALARM`)은 매니페스트에서 뺀다 — 몇 분 늦어도 되는 알림에 사용자가 따로 켜야 하는
+권한을 요구하지 않는다. 결제 월을 모르는 연간 구독은 날짜가 없으므로 알리지 않는다. 켜짐·며칠 전
+설정은 기기마다 다르므로 스토어·백업·동기화에 넣지 않는다.
+
+클라우드 빌드는 EAS Build를 쓴다(`apps/mobile/eas.json`, Expo 프로젝트 `@leesean2/subslash-mobile`). 앱은
+Expo가 아니라 Capacitor이므로 `expo` 패키지를 넣지 않는다 — EAS는 `app.json`·`eas.json`만 읽는다. EAS의
+Android 이미지에는 JDK 17뿐인데 Capacitor 8은 Java 21로 컴파일해서, 설치 뒤 훅
+(`scripts/eas-build-post-install.sh`)이 JDK 21을 받고 웹 화면을 만들어 `cap sync`한다. EAS는 작업 폴더를
+`.gitignore` 기준으로 올린다. `.easignore`를 만들면 `.gitignore`를 통째로 대신해서 `.env`까지 올라갈 수
+있으니 만들지 않는다.
 
 `tools/ipad-preview`는 Mac 없이 iPad의 Expo Go로 화면을 iPhone 크기 그대로 보는 도구다(사용법은
 그 폴더의 README). pnpm 워크스페이스 밖이라 npm으로 따로 설치하고, CI·웹 빌드에 들어가지 않는다.

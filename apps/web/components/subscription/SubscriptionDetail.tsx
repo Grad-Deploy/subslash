@@ -13,6 +13,7 @@ import {
   getBilledAmount,
   getCancelUrlKind,
   getDaysUntilBillingFor,
+  getDaysUntilTrialEnd,
 } from "@subslash/shared";
 import { SubForm } from "./SubForm";
 import { CheckInModal } from "./CheckInModal";
@@ -23,7 +24,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { ConfirmDialog } from "../ui/confirm-dialog";
+import Link from "next/link";
 import { cn } from "@lib/utils";
+import { openExternal } from "@lib/native";
 
 interface SubscriptionDetailProps {
   id: string;
@@ -77,10 +80,20 @@ export function SubscriptionDetail({
   const Title = headingLevel;
 
   if (!sub) {
+    // 왜 없는지는 모른다. 구독 기록은 기기에 있으므로, 지웠을 수도 있고 다른 기기에 있을 수도
+    // 있다. "이미 삭제되었습니다"라고 단정하면 캘린더 링크를 다른 기기에서 연 사람에게 거짓말이
+    // 된다 — 그 기록은 멀쩡히 살아 있다.
     return (
       <div className={cn("text-center py-20 space-y-4", className)}>
-        <Title className="text-2xl font-bold">구독을 찾을 수 없습니다</Title>
-        <p className="text-sm text-muted-foreground">이미 삭제되었거나 존재하지 않는 구독입니다.</p>
+        <Title className="text-2xl font-bold">이 기기에는 이 구독이 없습니다</Title>
+        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+          구독 기록은 기기에 저장됩니다. 다른 기기에서 등록한 구독이거나, 이 기기에서 지운
+          구독입니다.{" "}
+          <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
+            로그인
+          </Link>
+          해 두면 로그인한 기기끼리 기록이 자동으로 맞춰집니다.
+        </p>
         <Button onClick={onLeave}>← 구독 목록으로 돌아가기</Button>
       </div>
     );
@@ -91,6 +104,8 @@ export function SubscriptionDetail({
   const daysLeft = getDaysUntilBillingFor(sub);
   const cancelUrlKind = getCancelUrlKind(sub.cancelUrl);
   // 연간 구독에 "매월 결제일"이라고 적으면 1년에 한 번인 결제가 매달 있는 것처럼 읽힌다.
+  // 체험 중이면 아직 청구되지 않는다. 결제 주기만 적으면 지금 나가는 돈처럼 읽힌다.
+  const trialDaysLeft = getDaysUntilTrialEnd(sub);
   const billingScheduleLabel =
     sub.billingCycle !== "yearly"
       ? `매월 ${sub.billingDay}일 결제`
@@ -217,6 +232,12 @@ export function SubscriptionDetail({
               </div>
             )}
             <div className="text-xs text-muted-foreground">{billingScheduleLabel}</div>
+            {trialDaysLeft !== null && (
+              <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                무료 체험 중 · {sub.trialEndsAt}에 끝납니다 ({formatDday(trialDaysLeft)}).
+                그때까지는 지출과 결제 캘린더에서 뺍니다.
+              </div>
+            )}
           </div>
         </div>
 
@@ -316,7 +337,7 @@ export function SubscriptionDetail({
                   <Button
                     size="lg"
                     className={`${WRAPPING_BUTTON} min-h-12 bg-primary text-primary-foreground hover:opacity-90 font-bold rounded-xl shadow-md`}
-                    onClick={() => window.open(pm.directCancelUrl, "_blank")}
+                    onClick={() => openExternal(pm.directCancelUrl)}
                   >
                     💳 {pm.label} 전용 정기결제 관리 열기 (새 창)
                   </Button>
@@ -326,7 +347,7 @@ export function SubscriptionDetail({
                     <Button
                       size="lg"
                       className={`${WRAPPING_BUTTON} min-h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold rounded-xl shadow-md`}
-                      onClick={() => window.open(sub.cancelUrl, "_blank")}
+                      onClick={() => openExternal(sub.cancelUrl)}
                     >
                       {cancelUrlKind === "direct"
                         ? `🚀 ${sub.name} 해지 페이지 바로가기 (새 창)`

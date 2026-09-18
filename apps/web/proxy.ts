@@ -13,7 +13,8 @@ import { isAppOrigin } from "./lib/app-origins";
  */
 const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  // If-Match·If-None-Match: 계정 기록 자동 동기화의 조건부 저장(app/api/account/snapshot).
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, If-Match, If-None-Match",
   "Access-Control-Max-Age": "600",
   Vary: "Origin",
 };

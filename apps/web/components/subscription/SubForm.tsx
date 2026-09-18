@@ -143,7 +143,10 @@ export function SubForm({
           ? value === ""
             ? undefined
             : Number(value)
-          : value,
+          : // 비운 체험 종료일도 '적지 않음'이다. 빈 글자로 두면 "모른다"와 구분되지 않는다.
+            name === "trialEndsAt" && value === ""
+            ? undefined
+            : value,
     }));
   };
 
@@ -691,6 +694,23 @@ export function SubForm({
           </p>
         </div>
       )}
+
+      <div className="space-y-1.5">
+        <label htmlFor={`${fieldId}-trial`} className={LABEL}>
+          무료 체험 종료일 <span className="font-normal text-muted-foreground">(선택)</span>
+        </label>
+        <Input
+          id={`${fieldId}-trial`}
+          type="date"
+          name="trialEndsAt"
+          value={formData.trialEndsAt ?? ""}
+          onChange={handleChange}
+        />
+        <p className="text-[11px] text-muted-foreground break-keep">
+          체험 중이라면 유료로 바뀌는 날을 적어주세요. 그날까지는 지출과 결제 캘린더에서 빼고 세고,
+          끝나기 전에 알려 드립니다. 모르면 비워 두세요 — 비워 두면 지금부터 결제되는 것으로 봅니다.
+        </p>
+      </div>
 
       {cycle === "yearly" && preset && !formData.planId && (
         <p className="text-[11px] text-muted-foreground break-keep">

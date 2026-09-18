@@ -1,4 +1,4 @@
-import { getBilledAmount, type Subscription } from "@subslash/shared";
+import { currentCancelUrl, getBilledAmount, isInTrial, type Subscription } from "@subslash/shared";
 import { apiUrl } from "./api";
 
 /**
@@ -16,19 +16,24 @@ export interface NotifyStatus {
 }
 
 export function toMirrorPayload(subscriptions: Subscription[]) {
-  return subscriptions
-    .filter((sub) => sub.status === "active")
-    .map((sub) => ({
-      id: sub.id,
-      name: sub.name,
-      // 알림 메일·캘린더에는 카드에 찍힐 금액을 적는다. 세금은 여기서 더해 보내므로 서버의
-      // 미러 표는 칸이 늘지 않는다.
-      amount: getBilledAmount(sub),
-      currency: sub.currency,
-      billingDay: sub.billingDay,
-      billingCycle: sub.billingCycle,
-      billingMonth: sub.billingMonth ?? null,
-    }));
+  return (
+    subscriptions
+      // 체험 중인 구독은 아직 청구되지 않는다. 알림도 캘린더도 없는 결제를 알리면 안 된다.
+      .filter((sub) => sub.status === "active" && !isInTrial(sub))
+      .map((sub) => ({
+        id: sub.id,
+        name: sub.name,
+        // 알림 메일·캘린더에는 카드에 찍힐 금액을 적는다. 세금은 여기서 더해 보내므로 서버의
+        // 미러 표는 칸이 늘지 않는다.
+        amount: getBilledAmount(sub),
+        currency: sub.currency,
+        billingDay: sub.billingDay,
+        billingCycle: sub.billingCycle,
+        billingMonth: sub.billingMonth ?? null,
+        // 캘린더 피드의 일정 메모에 적는다. 해지하려고 캘린더를 연 사람이 앱을 다시 열지 않아도 되게.
+        cancelUrl: sub.cancelUrl ? currentCancelUrl(sub.cancelUrl) : null,
+      }))
+  );
 }
 
 /**
@@ -117,6 +122,21 @@ export async function enableCalendarFeed(syncToken: string): Promise<string> {
 
   const body = (await response.json()) as { url: string };
   return body.url;
+}
+
+/**
+ * 캘린더 주소를 캘린더 앱에 바로 넘기는 링크.
+ *
+ * `webcal://`은 운영체제가 기본 캘린더 앱(iPhone·Mac 캘린더, Outlook 등)에 넘기는 구독 주소이고,
+ * Google 캘린더는 웹 화면에서 `cid`로 받은 주소를 구독한다. 둘 다 서버가 준 피드 주소로 만들므로,
+ * 앱(Capacitor) 안에서도 앱 주소가 아니라 배포된 웹 주소를 가리킨다.
+ */
+export function calendarSubscribeLinks(feedUrl: string): { webcal: string; google: string } {
+  const webcal = feedUrl.replace(/^https?:\/\//, "webcal://");
+  return {
+    webcal,
+    google: `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcal)}`,
+  };
 }
 
 /** Switches the feed off; calendars subscribed to the old URL stop resolving. */

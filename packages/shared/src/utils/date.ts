@@ -117,3 +117,25 @@ export function formatCountdown(targetDate: Date, now: Date = new Date()): strin
 
   return `D-${days} ${formatUnit(hours)}:${formatUnit(minutes)}:${formatUnit(seconds)}`;
 }
+
+/**
+ * 아직 무료 체험 중인지. 체험 종료일을 모르면 false다 — 모른다는 것을 "체험 중"으로 읽지 않는다.
+ *
+ * 종료일 당일은 체험이 끝나 결제가 시작되는 날로 본다. 이날부터는 보통 구독과 같다.
+ */
+export function isInTrial(sub: { trialEndsAt?: string }, now: Date = new Date()): boolean {
+  if (!sub.trialEndsAt) return false;
+  const ends = new Date(`${sub.trialEndsAt}T00:00:00`);
+  if (Number.isNaN(ends.getTime())) return false;
+  return startOfDay(now).getTime() < ends.getTime();
+}
+
+/** 체험이 끝나기까지 남은 날. 종료일을 모르거나 이미 끝났으면 null. */
+export function getDaysUntilTrialEnd(
+  sub: { trialEndsAt?: string },
+  now: Date = new Date(),
+): number | null {
+  if (!isInTrial(sub, now)) return null;
+  const ends = new Date(`${sub.trialEndsAt}T00:00:00`);
+  return Math.round((ends.getTime() - startOfDay(now).getTime()) / (1000 * 60 * 60 * 24));
+}
