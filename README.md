@@ -314,9 +314,10 @@ vercel firewall publish --yes
 저장 같은 API는 배포된 웹 주소를 부릅니다. 기록은 웹과 같이 기기 안에만 있습니다. 앱에서는 서비스
 워커를 등록하지 않습니다.
 
-필요한 것: Node 22 이상(Capacitor 8 CLI), JDK 21~24(`JAVA_HOME`), Android SDK(`ANDROID_HOME`).
-Android Studio에 들어 있는 JDK 25로는 Gradle 8.14가 돌지 않으니, Studio에서 열 때도 Gradle JDK를
-`JAVA_HOME`으로 고릅니다.
+필요한 것: Node 22 이상(Capacitor 8 CLI), **JDK 21**(`JAVA_HOME`), Android SDK(`ANDROID_HOME`).
+로컬 알림 플러그인이 Gradle 툴체인으로 정확히 Java 21을 요구해서 다른 버전의 JDK로는 빌드되지 않고,
+Android Studio에 들어 있는 JDK 25로는 Gradle 8.14가 돌지 않습니다. Studio에서 열 때도 Gradle JDK를
+`JAVA_HOME`(21)으로 고릅니다.
 
 ```bash
 # 1) 앱에 담을 화면을 만들고(apps/web/out) 안드로이드 프로젝트에 복사한다
@@ -338,6 +339,11 @@ pnpm --filter @subslash/mobile open
   localStorage에 두고 기기 저장소에도 사본을 적어, 웹뷰 저장소가 비워지면 사본으로 되살립니다.
 - 해지 페이지 같은 외부 링크는 인앱 브라우저로, 공유는 기기의 공유 창으로 엽니다. 상태 표시줄 색은
   앱 테마를 따릅니다(막대 뒤 색은 안드로이드에만 있는 네이티브 플러그인이라 iOS에서는 건너뜁니다).
+  인앱 브라우저와 공유 창은 따로 권한이 필요 없습니다.
+- 결제일 전 알림은 앱의 '내 구독' 아래 '이 기기 결제 알림'에서 켭니다. 서버·이메일을 거치지 않는
+  기기 알림이라 로그인이 필요 없고, 켤 때 알림 권한을 묻습니다(안드로이드 13 이상, iOS는 늘). 거부했으면
+  휴대폰 설정 › 애플리케이션 › SubSlash › 알림(iOS는 설정 › SubSlash › 알림)에서 허용합니다. 정확한
+  시각 알람 권한은 쓰지 않아서 알림이 몇 분 늦게 뜰 수 있습니다.
 
 #### iOS
 

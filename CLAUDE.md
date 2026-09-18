@@ -204,6 +204,13 @@ CocoaPods 대신 SPM을 쓰므로 Windows에서도 만들어지지만, **빌드�
 웹뷰 저장소를 비워도 기록이 남게 하려는 것이다. 저장소를 통째로 Preferences로 옮기지 않는 이유는 그
 파일에 있다. 상태 표시줄 색은 테마를 따라 `syncSystemBars`(`lib/native`)가 맞춘다.
 
+앱의 결제 알림은 기기 안의 로컬 알림이다(`lib/local-reminders`가 목록을 정하고
+`lib/native-reminders`가 건다). 서버를 거치지 않아 로그인 없이 쓰고, 이메일 알림(`notify`)과는 별개다.
+알림 권한은 앱을 켤 때가 아니라 사용자가 '알림 켜기'를 누를 때 묻는다. 정확한 시각 알람
+(`SCHEDULE_EXACT_ALARM`)은 매니페스트에서 뺀다 — 몇 분 늦어도 되는 알림에 사용자가 따로 켜야 하는
+권한을 요구하지 않는다. 결제 월을 모르는 연간 구독은 날짜가 없으므로 알리지 않는다. 켜짐·며칠 전
+설정은 기기마다 다르므로 스토어·백업·동기화에 넣지 않는다.
+
 클라우드 빌드는 EAS Build를 쓴다(`apps/mobile/eas.json`, Expo 프로젝트 `@leesean2/subslash-mobile`). 앱은
 Expo가 아니라 Capacitor이므로 `expo` 패키지를 넣지 않는다 — EAS는 `app.json`·`eas.json`만 읽는다. EAS의
 Android 이미지에는 JDK 17뿐인데 Capacitor 8은 Java 21로 컴파일해서, 설치 뒤 훅

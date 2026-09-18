@@ -32,7 +32,9 @@ import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { DataBackupCard } from "../../components/settings/DataBackupCard";
+import { LocalReminderCard } from "../../components/settings/LocalReminderCard";
 import { GoogleCalendarSync } from "../../components/calendar/GoogleCalendarSync";
+import { IS_APP_BUILD } from "@lib/platform";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { isWideScreen } from "@lib/wide-screen";
 import { subscriptionDetailHref } from "@lib/routes";
@@ -568,6 +570,9 @@ export default function SubscriptionsPage() {
 
       {/* 이 브라우저에만 있는 데이터를 파일로 지키는 곳 */}
       <DataBackupCard onMessage={showToast} />
+
+      {/* 앱에서만: 서버를 거치지 않는 이 기기의 결제 알림 */}
+      {IS_APP_BUILD && <LocalReminderCard onMessage={showToast} />}
 
       {/* Floating Action Button for Mobile */}
       <button
