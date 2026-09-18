@@ -1,4 +1,4 @@
-import { getBilledAmount, type Subscription } from "@subslash/shared";
+import { currentCancelUrl, getBilledAmount, type Subscription } from "@subslash/shared";
 import { apiUrl } from "./api";
 
 /**
@@ -17,6 +17,8 @@ export interface CalendarPlanEntryInput {
   billingDay: number;
   billingCycle: string;
   billingMonth: number | null;
+  /** 캘린더 일정 메모에 적을 해지 주소. 없으면 메모에 해지 줄이 없다. */
+  cancelUrl?: string;
 }
 
 /**
@@ -34,6 +36,9 @@ export function toCalendarPlanEntries(subscriptions: Subscription[]): CalendarPl
       billingDay: sub.billingDay,
       billingCycle: sub.billingCycle,
       billingMonth: sub.billingMonth ?? null,
+      // 해지하려고 캘린더를 연 사람이 앱을 다시 열지 않아도 되게 메모에 적는다. 사용자가 이
+      // 구독에 적어 둔 주소를 그대로 쓴다 — 이름으로 짐작해 붙이면 엉뚱한 곳으로 보낼 수 있다.
+      cancelUrl: sub.cancelUrl ? currentCancelUrl(sub.cancelUrl) : undefined,
     }));
 }
 

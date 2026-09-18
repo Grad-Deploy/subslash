@@ -82,6 +82,40 @@ describe("buildCalendarEvents", () => {
     expect(event.rrule).toBe("FREQ=MONTHLY;BYMONTHDAY=31,-1;BYSETPOS=1");
   });
 
+  it("해지 주소를 적고, 확인된 해지 화면인지 아닌지를 함께 말한다", () => {
+    // 넷플릭스 프리셋의 주소는 확인된 해지 화면(direct)이다.
+    const direct = parseCalendarPlan({
+      entries: [entry({ cancelUrl: "https://www.netflix.com/cancelplan" })],
+    })!;
+    const note = buildCalendarEvents(direct, { now: NOW })[0].description;
+    expect(note).toContain("https://www.netflix.com/cancelplan");
+    expect(note).toContain("확인된 해지 화면");
+
+    // 목록에 없는 주소는 어디로 가는지 모른다고 적는다 — '해지 페이지'라고 부르지 않는다.
+    const unknown = parseCalendarPlan({
+      entries: [entry({ cancelUrl: "https://example.com/my-account" })],
+    })!;
+    const unknownNote = buildCalendarEvents(unknown, { now: NOW })[0].description;
+    expect(unknownNote).toContain("확인되지 않았습니다");
+    expect(unknownNote).not.toContain("확인된 해지 화면");
+  });
+
+  it("해지 주소가 없으면 메모에 해지 줄이 없다", () => {
+    const plan = parseCalendarPlan({ entries: [entry()] })!;
+    // 기본 문구에도 '해지하세요'가 있으므로, 주소가 실렸는지로 본다.
+    expect(buildCalendarEvents(plan, { now: NOW })[0].description).not.toContain("http");
+  });
+
+  it("http(s)가 아닌 주소는 메모에 싣지 않는다", () => {
+    for (const bad of ["javascript:alert(1)", "data:text/html,x", "네이버", ""]) {
+      const plan = parseCalendarPlan({ entries: [entry({ cancelUrl: bad })] })!;
+      const description = buildCalendarEvents(plan, { now: NOW })[0].description;
+      expect(description).not.toContain("해지하러 가기");
+      expect(description).not.toContain("확인된 해지 화면");
+      if (bad) expect(description).not.toContain(bad);
+    }
+  });
+
   it("구독 상세 링크는 주소를 알 때만 적는다", () => {
     const plan = parseCalendarPlan({ entries: [entry()] })!;
     expect(buildCalendarEvents(plan, { now: NOW })[0].description).not.toContain("http");
