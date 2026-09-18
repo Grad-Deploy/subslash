@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { ConfirmDialog } from "../ui/confirm-dialog";
+import Link from "next/link";
 import { cn } from "@lib/utils";
 import { openExternal } from "@lib/native";
 
@@ -78,10 +79,20 @@ export function SubscriptionDetail({
   const Title = headingLevel;
 
   if (!sub) {
+    // 왜 없는지는 모른다. 구독 기록은 기기에 있으므로, 지웠을 수도 있고 다른 기기에 있을 수도
+    // 있다. "이미 삭제되었습니다"라고 단정하면 캘린더 링크를 다른 기기에서 연 사람에게 거짓말이
+    // 된다 — 그 기록은 멀쩡히 살아 있다.
     return (
       <div className={cn("text-center py-20 space-y-4", className)}>
-        <Title className="text-2xl font-bold">구독을 찾을 수 없습니다</Title>
-        <p className="text-sm text-muted-foreground">이미 삭제되었거나 존재하지 않는 구독입니다.</p>
+        <Title className="text-2xl font-bold">이 기기에는 이 구독이 없습니다</Title>
+        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+          구독 기록은 기기에 저장됩니다. 다른 기기에서 등록한 구독이거나, 이 기기에서 지운
+          구독입니다.{" "}
+          <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
+            로그인
+          </Link>
+          해 두면 로그인한 기기끼리 기록이 자동으로 맞춰집니다.
+        </p>
         <Button onClick={onLeave}>← 구독 목록으로 돌아가기</Button>
       </div>
     );
