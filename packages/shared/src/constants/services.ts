@@ -858,7 +858,7 @@ export function getCancelUrlKind(cancelUrl?: string): "direct" | "entry" | "unkn
  * 부르면, 눌러서 첫 화면만 보고 해지된 줄 아는 사람이 생긴다. 캘린더 메모는 앱 밖에서 읽히므로
  * 화면에서 설명해 줄 기회가 없다 — 문구 한 줄에 다 담아야 한다.
  */
-export function cancelNoteFor(cancelUrl?: string): string | null {
+export function cancelNoteFor(cancelUrl?: string | null): string | null {
   if (!cancelUrl) return null;
   switch (getCancelUrlKind(cancelUrl)) {
     case "direct":
