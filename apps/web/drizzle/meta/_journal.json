@@ -64,6 +64,13 @@
       "when": 1789625688945,
       "tag": "0008_gmail_auto_import",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1789690809375,
+      "tag": "0009_calendar_sync_plans",
+      "breakpoints": true
     }
   ]
 }

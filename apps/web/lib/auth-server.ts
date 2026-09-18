@@ -5,6 +5,7 @@ import { accountSnapshots, accounts, sessions, type Account } from "./schema";
 import type { NextRequest } from "next/server";
 import { isAppOrigin } from "./app-origins";
 import { deleteGmailImportData } from "./gmail-auto-import";
+import { deleteCalendarSyncPlan } from "./calendar-sync";
 
 /**
  * 로그인 세션.
@@ -133,6 +134,7 @@ export async function deleteAccount(accountId: string): Promise<boolean> {
   await db.delete(sessions).where(eq(sessions.accountId, accountId));
   await db.delete(accountSnapshots).where(eq(accountSnapshots.accountId, accountId));
   await deleteGmailImportData(accountId);
+  await deleteCalendarSyncPlan(accountId);
   const deleted = await db
     .delete(accounts)
     .where(eq(accounts.id, accountId))
