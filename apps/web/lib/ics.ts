@@ -1,4 +1,5 @@
 import {
+  cancelNoteFor,
   formatAmount,
   getNextBillingDateFor,
   needsBillingMonth,
@@ -23,6 +24,12 @@ export interface CalendarEntry {
   billingDay: number;
   billingCycle: string;
   billingMonth?: number | null;
+  /**
+   * 이 구독의 해지 주소. 캘린더 피드(`/api/calendar/[token]`)는 알림 미러에서 읽는데 그 표에는
+   * 이 칸이 없으므로 늘 비어 있다 — 방침의 사전 고지 없이 서버 저장 칸을 늘리지 않기로 했다.
+   * '구글 캘린더에 등록'은 브라우저가 계획에 실어 보내므로 채워진다.
+   */
+  cancelUrl?: string;
 }
 
 /** Escapes the characters RFC 5545 gives special meaning inside a TEXT value. */
@@ -122,6 +129,10 @@ export function eventDescription(entry: CalendarEntry, detailUrl: string | null)
   const parts = [
     `${entry.name} 결제일입니다. 지난 30일 동안 몇 번 썼는지 돌아보고, 아깝다면 지금 해지하세요.`,
   ];
+
+  // 해지하려고 캘린더를 연 사람이 앱을 다시 열지 않아도 되게, 갈 곳을 메모에 적는다.
+  const cancelNote = cancelNoteFor(entry.cancelUrl);
+  if (cancelNote) parts.push(cancelNote);
 
   if (detailUrl) {
     // 구독 기록은 서버가 아니라 기록한 브라우저에 있다. 다른 기기에서 열면 "구독을 찾을 수
