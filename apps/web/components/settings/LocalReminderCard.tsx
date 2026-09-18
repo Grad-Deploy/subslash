@@ -22,7 +22,8 @@ interface LocalReminderCardProps {
 }
 
 const DENIED_HELP =
-  "알림 권한이 꺼져 있어요. 휴대폰 설정 › 애플리케이션 › SubSlash › 알림에서 허용한 뒤 다시 켜 주세요.";
+  "알림 권한이 꺼져 있어요. 휴대폰 설정에서 SubSlash의 알림을 허용한 뒤 다시 켜 주세요" +
+  "(안드로이드: 설정 › 애플리케이션 › SubSlash › 알림, iOS: 설정 › SubSlash › 알림).";
 
 /**
  * 앱에서만 보이는 로컬 결제 알림 설정. 서버·이메일을 거치지 않으므로 로그인하지 않아도 쓴다.

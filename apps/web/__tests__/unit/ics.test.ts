@@ -128,4 +128,26 @@ describe("buildBillingCalendar", () => {
       "TRIGGER:PT0S",
     );
   });
+
+  it("일정 주소와 본문은 그 구독의 상세 화면으로 간다", () => {
+    const ics = buildBillingCalendar([{ ...netflix, clientId: "sub 1&x" }], {
+      reminderDays: 3,
+      now: NOW,
+      appUrl: "https://subslash.me",
+    });
+    // 본문은 75옥텟마다 접히므로 펼친 뒤 본다.
+    const unfolded = ics.replace(/\r\n /g, "");
+
+    expect(unfolded).toContain("URL:https://subslash.me/subs/detail?id=sub%201%26x\r\n");
+    expect(unfolded).toContain("구독 보기·수정: https://subslash.me/subs/detail?id=sub%201%26x");
+    // 다른 기기에서는 구독이 보이지 않는다는 것을 함께 적는다.
+    expect(unfolded).toContain("기록한 브라우저에서 열어야 보입니다");
+  });
+
+  it("앱 주소를 모르면 링크를 만들지 않는다", () => {
+    const ics = buildBillingCalendar([netflix], { reminderDays: 3, now: NOW });
+
+    expect(ics).not.toContain("URL:");
+    expect(ics).not.toContain("/subs/detail");
+  });
 });

@@ -36,7 +36,7 @@ export interface LinkPayload {
    * 계정을 인증하는 길이 열린다. `reset-password`도 따로 둔다 — 가입 확인 링크로
    * 비밀번호를 바꿀 수 있으면, 3일짜리 링크가 계정을 넘겨받는 열쇠가 된다.
    */
-  act: "verify" | "unsubscribe" | "verify-account" | "reset-password";
+  act: "verify" | "unsubscribe" | "verify-account" | "reset-password" | "gmail-connect";
   /**
    * 링크가 가리키는 이메일의 지문(`emailFingerprint`). 주소가 바뀌면 옛 주소로
    * 보낸 링크가 새 주소를 인증하지 못하게 한다.
@@ -48,6 +48,11 @@ export interface LinkPayload {
    * 쓸모없어진다. 링크를 DB에 따로 적어두지 않고도 한 번만 쓰이게 하는 방법이다.
    */
   pw?: string;
+  /**
+   * Gmail 연결 코드(`gmail-connect`)를 만들 때의 연결 지문. 연결이 없었으면 "none". 코드를 한 번
+   * 교환하면 연결이 새로 발급되어 이 값이 달라지므로, 같은 코드를 다시 쓸 수 없다.
+   */
+  ln?: string;
   /** Expiry, epoch seconds. */
   exp: number;
 }
