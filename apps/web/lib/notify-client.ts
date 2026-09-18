@@ -1,4 +1,4 @@
-import { currentCancelUrl, getBilledAmount, type Subscription } from "@subslash/shared";
+import { currentCancelUrl, getBilledAmount, isInTrial, type Subscription } from "@subslash/shared";
 import { apiUrl } from "./api";
 
 /**
@@ -16,21 +16,24 @@ export interface NotifyStatus {
 }
 
 export function toMirrorPayload(subscriptions: Subscription[]) {
-  return subscriptions
-    .filter((sub) => sub.status === "active")
-    .map((sub) => ({
-      id: sub.id,
-      name: sub.name,
-      // 알림 메일·캘린더에는 카드에 찍힐 금액을 적는다. 세금은 여기서 더해 보내므로 서버의
-      // 미러 표는 칸이 늘지 않는다.
-      amount: getBilledAmount(sub),
-      currency: sub.currency,
-      billingDay: sub.billingDay,
-      billingCycle: sub.billingCycle,
-      billingMonth: sub.billingMonth ?? null,
-      // 캘린더 피드의 일정 메모에 적는다. 해지하려고 캘린더를 연 사람이 앱을 다시 열지 않아도 되게.
-      cancelUrl: sub.cancelUrl ? currentCancelUrl(sub.cancelUrl) : null,
-    }));
+  return (
+    subscriptions
+      // 체험 중인 구독은 아직 청구되지 않는다. 알림도 캘린더도 없는 결제를 알리면 안 된다.
+      .filter((sub) => sub.status === "active" && !isInTrial(sub))
+      .map((sub) => ({
+        id: sub.id,
+        name: sub.name,
+        // 알림 메일·캘린더에는 카드에 찍힐 금액을 적는다. 세금은 여기서 더해 보내므로 서버의
+        // 미러 표는 칸이 늘지 않는다.
+        amount: getBilledAmount(sub),
+        currency: sub.currency,
+        billingDay: sub.billingDay,
+        billingCycle: sub.billingCycle,
+        billingMonth: sub.billingMonth ?? null,
+        // 캘린더 피드의 일정 메모에 적는다. 해지하려고 캘린더를 연 사람이 앱을 다시 열지 않아도 되게.
+        cancelUrl: sub.cancelUrl ? currentCancelUrl(sub.cancelUrl) : null,
+      }))
+  );
 }
 
 /**
