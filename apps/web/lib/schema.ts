@@ -312,6 +312,33 @@ export const gmailDiscoveries = sqliteTable(
   }),
 );
 
+/**
+ * '구글 캘린더에 등록'을 누른 브라우저가 맡겨 둔 결제일 계획.
+ *
+ * 브라우저에만 있는 구독을 사용자의 Apps Script 웹 앱이 읽어 그 사람의 캘린더에 쓰려면, 둘 사이에
+ * 잠깐 놓아 둘 곳이 필요하다. 주소에 실으면 구독 이름·금액이 Google의 기록과 브라우저 방문 기록에
+ * 남으므로, 주소에는 코드만 싣고 계획은 여기에 둔다. 웹 앱이 받아 가면 곧바로 지우고, 받아 가지
+ * 않아도 10분이 지나면 쓸 수 없다. 계정마다 한 벌이라 다시 누르면 앞의 것을 덮어쓴다.
+ */
+export const calendarSyncPlans = sqliteTable(
+  "calendar_sync_plans",
+  {
+    accountId: text("account_id")
+      .primaryKey()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** 웹 앱이 제시할 1회용 코드. 주소에 실리므로 되돌릴 수 없는 해시로만 둔다. */
+    codeHash: text("code_hash").notNull(),
+    /** 캘린더에 쓸 구독(이름·금액·통화·결제일·결제 주기·결제 월)과 알림 일수. JSON. */
+    payload: text("payload").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => ({
+    codeIdx: uniqueIndex("calendar_sync_plans_code_idx").on(table.codeHash),
+  }),
+);
+
+export type CalendarSyncPlanRow = typeof calendarSyncPlans.$inferSelect;
+
 export type GmailImportLink = typeof gmailImportLinks.$inferSelect;
 export type GmailDiscovery = typeof gmailDiscoveries.$inferSelect;
 
