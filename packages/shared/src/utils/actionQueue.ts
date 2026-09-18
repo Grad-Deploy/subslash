@@ -1,7 +1,7 @@
 import { Currency, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { formatAmount, formatKRW, getBilledAmount } from "./currency";
-import { formatDday, getDaysUntilBillingFor } from "./date";
+import { formatDday, getDaysUntilBillingFor, getDaysUntilTrialEnd } from "./date";
 import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
 import { formatKillCheckDate, getKillCheckStatus } from "./killCheck";
@@ -23,9 +23,14 @@ export const BILLING_SOON_DAYS = 7;
 /** 체크인이 이만큼 지나면 판단 근거가 낡은 것으로 본다. */
 export const STALE_CHECK_IN_DAYS = 30;
 
+/** 무료 체험 종료를 알리기 시작하는 날. 해지할 시간을 남겨 둔다. */
+export const TRIAL_ENDING_DAYS = 7;
+
 export type ActionKind =
   /** 해지했는데 그 뒤에 결제 메일이 왔다. 지금 돈이 새고 있다는 유일한 '증거'다. */
   | "charged-after-kill"
+  /** 무료 체험이 곧 끝난다. 두면 유료로 넘어간다. */
+  | "trial-ending"
   /** 결제가 코앞인데 마지막 체크인이 '위험'이었다. */
   | "billing-soon-risky"
   /** 결제가 코앞인데 이번 달 사용량이 적다 (체크인 기록 기반). */
@@ -89,6 +94,8 @@ export interface ActionItem {
 const PRIORITY: Record<ActionKind, number> = {
   // 나머지는 모두 "아까울 수 있다"이고 이것만 "이미 잘못됐다"이다. 그래서 1보다 앞이다.
   "charged-after-kill": 0,
+  // 첫 결제가 시작되는 순간이고, 가장 쉽게 막을 수 있는 지출이다.
+  "trial-ending": 1,
   "billing-soon-risky": 1,
   "low-usage-billing-soon": 1,
   "billing-soon": 2,
@@ -105,6 +112,7 @@ const PRIORITY: Record<ActionKind, number> = {
 const VERB: Record<ActionKind, ActionVerb> = {
   // 물어볼 것이 아니라 다시 해지하러 가야 한다.
   "charged-after-kill": "cancel-guide",
+  "trial-ending": "cancel-guide",
   "billing-soon-risky": "cancel-guide",
   "low-usage-billing-soon": "cancel-guide",
   "billing-soon": "check-in",
@@ -171,6 +179,30 @@ export function getActionQueue(
   const items: ActionItem[] = [];
 
   for (const sub of active) {
+    // 체험 중에는 카드에서 나가는 돈이 없다. 결제일을 근거로 "곧 빠져나갑니다"라고 하면 거짓이
+    // 되므로, 체험이 끝나간다는 것 하나만 말하고 다른 줄은 만들지 않는다.
+    const trialDays = getDaysUntilTrialEnd(sub, now);
+    if (trialDays !== null) {
+      if (trialDays > TRIAL_ENDING_DAYS) continue;
+      const stake = chargeAtStakeKRW(sub, rate);
+      items.push({
+        subscriptionId: sub.id,
+        name: sub.name,
+        iconEmoji: sub.iconUrl || "📦",
+        kind: "trial-ending",
+        reason:
+          `${formatDday(trialDays)} · 무료 체험이 ${sub.trialEndsAt}에 끝납니다. ` +
+          `그대로 두면 ${formatKRW(stake)}부터 결제가 시작됩니다.`,
+        verb: VERB["trial-ending"],
+        daysUntilBilling: trialDays,
+        amountAtStake: stake,
+        currency: sub.currency,
+        presetAmount: null,
+        priority: PRIORITY["trial-ending"],
+      });
+      continue;
+    }
+
     const days = getDaysUntilBillingFor(sub, now);
     const log = latest.get(sub.id);
     const isRisky = log?.riskLevel === "red";

@@ -13,6 +13,7 @@ import {
   getBilledAmount,
   getCancelUrlKind,
   getDaysUntilBillingFor,
+  getDaysUntilTrialEnd,
 } from "@subslash/shared";
 import { SubForm } from "./SubForm";
 import { CheckInModal } from "./CheckInModal";
@@ -103,6 +104,8 @@ export function SubscriptionDetail({
   const daysLeft = getDaysUntilBillingFor(sub);
   const cancelUrlKind = getCancelUrlKind(sub.cancelUrl);
   // 연간 구독에 "매월 결제일"이라고 적으면 1년에 한 번인 결제가 매달 있는 것처럼 읽힌다.
+  // 체험 중이면 아직 청구되지 않는다. 결제 주기만 적으면 지금 나가는 돈처럼 읽힌다.
+  const trialDaysLeft = getDaysUntilTrialEnd(sub);
   const billingScheduleLabel =
     sub.billingCycle !== "yearly"
       ? `매월 ${sub.billingDay}일 결제`
@@ -229,6 +232,12 @@ export function SubscriptionDetail({
               </div>
             )}
             <div className="text-xs text-muted-foreground">{billingScheduleLabel}</div>
+            {trialDaysLeft !== null && (
+              <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                무료 체험 중 · {sub.trialEndsAt}에 끝납니다 ({formatDday(trialDaysLeft)}).
+                그때까지는 지출과 결제 캘린더에서 뺍니다.
+              </div>
+            )}
           </div>
         </div>
 

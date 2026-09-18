@@ -52,6 +52,14 @@ export interface Subscription {
    * 청구액이다(세금 포함이거나 붙지 않음).
    */
   taxRate?: number;
+  /**
+   * 무료 체험이 끝나 유료로 바뀌는 날(`YYYY-MM-DD`). 없으면 체험 중이 아니라는 뜻이 아니라,
+   * **모른다**는 뜻이다 — 앱은 추측해서 채우지 않는다.
+   *
+   * 이 날이 오기 전까지는 카드에서 나가는 돈이 없다. 그래서 지출 합계와 결제 캘린더는 체험 중인
+   * 구독을 빼고 센다. 넣으면 내지도 않은 돈을 이번 달 지출로 보여주게 된다.
+   */
+  trialEndsAt?: string;
   createdAt: string;
   killedAt?: string;
   /**
@@ -111,9 +119,22 @@ export interface Subscription {
   accountMemo?: string;
 }
 
+/**
+ * 사용자가 폼에서 적는 칸만. 앱이 스스로 적는 사실(해지 확인, 영수증 관측 등)은 뺀다 — 폼이
+ * 건드릴 수 있는 값으로 두면 실수로 덮어쓸 수 있다.
+ */
 export type SubscriptionFormData = Omit<
   Subscription,
-  "id" | "status" | "createdAt" | "killedAt" | "lastPriceCheckedAt" | "killVerifiedAt"
+  | "id"
+  | "status"
+  | "createdAt"
+  | "killedAt"
+  | "lastPriceCheckedAt"
+  | "killVerifiedAt"
+  | "chargedAfterKillAt"
+  | "chargedAfterKillAmount"
+  | "observedAmount"
+  | "observedAmountAt"
 >;
 
 export type EmailType = "payment" | "cancellation" | "refund" | "onetime";
