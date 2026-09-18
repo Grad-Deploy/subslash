@@ -4,7 +4,7 @@ import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { mirroredSubscriptions, notificationSubscribers } from "@lib/schema";
 import { deleteUserCompletely, userFromRequest } from "@lib/notify-server";
 
-/** Only the fields the reminder needs — no cancel guides, categories or icons. */
+/** Only the fields the reminder and the calendar feed need — no guides, categories or icons. */
 interface MirrorInput {
   clientId: string;
   name: string;
@@ -13,6 +13,19 @@ interface MirrorInput {
   billingDay: number;
   billingCycle: string;
   billingMonth: number | null;
+  /** 캘린더 일정 메모에 적을 해지 주소. 없으면 null. */
+  cancelUrl: string | null;
+}
+
+/** 메모에 적어도 되는 주소인지. 사용자가 직접 적은 값이라 스킴을 믿지 않는다. */
+function httpUrlOrNull(value: unknown): string | null {
+  if (typeof value !== "string" || value.length > 500) return null;
+  try {
+    const { protocol } = new URL(value);
+    return protocol === "http:" || protocol === "https:" ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 const MAX_SUBSCRIPTIONS = 100;
@@ -49,6 +62,7 @@ function sanitize(raw: unknown): MirrorInput | null {
     billingDay,
     billingCycle: item.billingCycle === "yearly" ? "yearly" : "monthly",
     billingMonth,
+    cancelUrl: httpUrlOrNull(item.cancelUrl),
   };
 }
 

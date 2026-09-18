@@ -71,6 +71,13 @@
       "when": 1789690809375,
       "tag": "0009_calendar_sync_plans",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1789710115688,
+      "tag": "0010_mirror_cancel_url",
+      "breakpoints": true
     }
   ]
 }
