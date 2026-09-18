@@ -63,6 +63,18 @@ export interface Subscription {
    */
   chargedAfterKillAt?: string;
   chargedAfterKillAmount?: number;
+  /**
+   * 결제 메일에서 읽은 마지막 결제액이 등록된 청구액(`getBilledAmount`)과 달랐던 사실.
+   *
+   * `lastPriceCheckedAt`(요금 확인)과 다르다. 그쪽은 "오래돼서 확인해 달라"는 **추측**이고,
+   * 이쪽은 "이번엔 이만큼 빠져나갔다"는 **관측**이다. 앱은 서비스 요금표를 조회하지 않으므로
+   * "요금이 올랐다"고 단정하지 않고, 두 숫자를 나란히 보여주고 사용자가 판단하게 한다.
+   *
+   * 금액은 영수증에 적힌 값(구독 통화, 세금 포함된 청구액)이고 날짜는 메일 날짜(`YYYY.MM.DD`)다.
+   * 요금을 확인해 주거나 금액을 고치면 지운다.
+   */
+  observedAmount?: number;
+  observedAmountAt?: string;
 
   /**
    * 사용자가 "이 금액이 지금도 맞다"고 마지막으로 확인해 준 시각.
