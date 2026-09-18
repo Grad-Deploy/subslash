@@ -308,7 +308,7 @@ vercel firewall publish --yes
 - 서비스 워커는 오프라인 안내 화면 하나만 캐시합니다. 구독 데이터는 localStorage에
   있고 페이지도 작아서, 앱 셸을 캐시해봐야 배포 후 옛 빌드가 남을 위험만 커집니다.
 
-### 모바일 앱 (Capacitor, 안드로이드)
+### 모바일 앱 (Capacitor, 안드로이드·iOS)
 
 `apps/mobile`은 웹 화면을 정적으로 내보낸 것(`apps/web/out`)을 앱 안에 담고, 로그인·알림·계정
 저장 같은 API는 배포된 웹 주소를 부릅니다. 기록은 웹과 같이 기기 안에만 있습니다. 앱에서는 서비스
@@ -337,7 +337,24 @@ pnpm --filter @subslash/mobile open
 - 앱은 쿠키 대신 로그인 응답의 세션 토큰을 기기에 두고 헤더로 보냅니다. 구독 기록은 웹처럼
   localStorage에 두고 기기 저장소에도 사본을 적어, 웹뷰 저장소가 비워지면 사본으로 되살립니다.
 - 해지 페이지 같은 외부 링크는 인앱 브라우저로, 공유는 기기의 공유 창으로 엽니다. 상태 표시줄 색은
-  앱 테마를 따릅니다.
+  앱 테마를 따릅니다(막대 뒤 색은 안드로이드에만 있는 네이티브 플러그인이라 iOS에서는 건너뜁니다).
+
+#### iOS
+
+iOS 프로젝트(`apps/mobile/ios`)는 Windows에서도 만들어집니다 — Capacitor 8이 CocoaPods 대신 Swift
+Package Manager를 쓰기 때문입니다. **다만 빌드는 macOS에서만 됩니다.** Mac이 없으면 EAS의 macOS
+작업 서버로 돌립니다(아래).
+
+```bash
+# Mac에서: 화면을 만들어 iOS 프로젝트에 복사하고 Xcode로 연다
+NEXT_PUBLIC_WEB_ORIGIN=https://<배포된 웹 주소> pnpm --filter @subslash/mobile sync:ios
+pnpm --filter @subslash/mobile open:ios
+```
+
+- 앱 출처는 `capacitor://localhost`입니다. 안드로이드(`https://localhost`)와 다르지만 서버는 둘 다
+  열어 둡니다(`apps/web/lib/app-origins.ts`).
+- 실기기에 설치하거나 TestFlight·App Store에 올리려면 **Apple 개발자 프로그램(연 $99)** 이 필요합니다.
+  계정 없이 만들 수 있는 것은 시뮬레이터용 빌드뿐이고, 그건 Mac에서만 열립니다.
 
 #### EAS로 클라우드 빌드
 
@@ -349,11 +366,17 @@ pnpm --filter @subslash/mobile open
 cd apps/mobile
 eas build --platform android --profile preview      # 기기에 바로 설치하는 APK
 eas build --platform android --profile production   # 스토어에 올리는 AAB (versionCode를 EAS가 올림)
+
+eas build --platform ios --profile preview          # 시뮬레이터용 (Apple 계정 없이 됨, Mac에서 열림)
+eas build --platform ios --profile production       # 실기기·TestFlight용 (Apple 개발자 프로그램 필요)
 ```
 
 - 작업 서버에서 설치가 끝나면 `scripts/eas-build-post-install.sh`가 돕니다. EAS의 Android 이미지에는
-  JDK 17뿐이라 Capacitor 8이 컴파일되지 않아서 JDK 21을 받고, 웹 화면을 만들어(`build:app`) `cap sync`합니다.
-  앱이 부를 주소는 `eas.json`의 `NEXT_PUBLIC_WEB_ORIGIN`입니다.
+  JDK 17뿐이라 Capacitor 8이 컴파일되지 않아서 JDK 21을 받고(안드로이드일 때만), 웹 화면을
+  만들어(`build:app`) `cap sync $EAS_BUILD_PLATFORM`합니다. 앱이 부를 주소는 `eas.json`의
+  `NEXT_PUBLIC_WEB_ORIGIN`입니다. 훅은 플랫폼을 가려 쓰므로 iOS도 같은 훅으로 돕니다.
+- iOS `production`은 서명 자격이 필요해 Apple 개발자 프로그램에 등록하기 전에는 빌드가 멈춥니다.
+  `preview`(`simulator: true`)는 자격 없이 빌드되지만 시뮬레이터에서만 열립니다.
 - 서명 키는 EAS 서버에 둡니다(`credentialsSource: remote`). 키 확인·교체는 `eas credentials`로 합니다.
 - EAS는 작업 폴더를 `.gitignore` 기준으로 올립니다(커밋하지 않은 파일도 올라감). `.easignore`를 만들면
   `.gitignore`를 통째로 대신하므로, `.env` 같은 규칙을 모두 옮겨 적을 게 아니라면 만들지 않습니다.

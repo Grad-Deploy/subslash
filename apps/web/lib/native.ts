@@ -96,23 +96,29 @@ let appWindow: AppWindowPlugin | null = null;
 /**
  * 상태 표시줄·내비게이션 바를 앱 테마에 맞춘다. 웹에서는 아무것도 하지 않는다.
  *
- * 아이콘 색은 Capacitor에 들어 있는 SystemBars로 바꾼다. 막대 뒤 색은 네이티브 AppWindow
- * (apps/mobile의 AppWindowPlugin)로 바꾼다 — 웹뷰가 오래됐으면(Chromium 140 미만) Capacitor가
- * 웹뷰를 막대 안쪽으로 줄여, 막대 뒤에는 페이지가 아니라 창 배경이 보이기 때문이다. 새 웹뷰에서는
- * 페이지(헤더의 pt-safe)가 막대 뒤까지 칠하고, 창 배경은 가려진다.
+ * 아이콘 색은 Capacitor에 들어 있는 SystemBars로 바꾼다. 막대 뒤 색은 **안드로이드에서만**
+ * 네이티브 AppWindow(apps/mobile의 AppWindowPlugin)로 바꾼다 — 웹뷰가 오래됐으면(Chromium 140
+ * 미만) Capacitor가 웹뷰를 막대 안쪽으로 줄여, 막대 뒤에는 페이지가 아니라 창 배경이 보이기
+ * 때문이다. 새 웹뷰에서는 페이지(헤더의 pt-safe)가 막대 뒤까지 칠하고, 창 배경은 가려진다.
+ *
+ * iOS에는 그 플러그인이 없다. 부르면 "not implemented on ios"로 거절당해, 테마를 바꿀 때마다
+ * 경고만 쌓인다. iOS의 WKWebView는 늘 막대 밑까지 그려서 창 배경이 보이지도 않으므로 건너뛴다.
  */
 export function syncSystemBars(theme: "light" | "dark"): void {
   if (!IS_APP_BUILD) return;
   void import("@capacitor/core")
-    .then(async ({ SystemBars, SystemBarsStyle, registerPlugin }) => {
-      appWindow ??= registerPlugin<AppWindowPlugin>("AppWindow");
-      await Promise.all([
+    .then(async ({ Capacitor, SystemBars, SystemBarsStyle, registerPlugin }) => {
+      const tasks: Promise<unknown>[] = [
         // Dark는 "어두운 배경 위의 밝은 아이콘"이다.
         SystemBars.setStyle({
           style: theme === "dark" ? SystemBarsStyle.Dark : SystemBarsStyle.Light,
         }),
-        appWindow.setBackgroundColor({ color: WINDOW_COLORS[theme] }),
-      ]);
+      ];
+      if (Capacitor.getPlatform() === "android") {
+        appWindow ??= registerPlugin<AppWindowPlugin>("AppWindow");
+        tasks.push(appWindow.setBackgroundColor({ color: WINDOW_COLORS[theme] }));
+      }
+      await Promise.all(tasks);
     })
     .catch((error) => console.warn("[native] 시스템 막대 색을 맞추지 못했습니다", error));
 }
