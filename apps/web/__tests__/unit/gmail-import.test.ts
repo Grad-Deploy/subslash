@@ -569,6 +569,8 @@ describe("원클릭 연결 웹 앱", () => {
       private: { subslash: "1", uid: "sub-netflix" },
     });
     expect(run.html.join("")).toContain("구글 캘린더에 등록했습니다");
+    // 버튼이 있던 '내 구독'으로 돌려보낸다.
+    expect(run.html.join("")).toContain(`href="${ORIGIN}/subs"`);
   });
 
   it("다시 누르면 전에 SubSlash가 쓴 일정만 지우고 새로 쓴다", () => {

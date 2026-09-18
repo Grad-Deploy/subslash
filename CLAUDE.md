@@ -113,7 +113,9 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 `NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN`으로 연다. 계정을 지우는 경로는 `deleteGmailImportData`를
 부른다.
 
-'구글 캘린더에 결제일 등록'도 같은 웹 앱이 한다(`action=calendar`). SubSlash는 캘린더 권한을 받지
+'구글 캘린더에 결제일 등록'도 같은 웹 앱이 한다(`action=calendar`). 버튼은 '내 구독'(`/subs`) 맨
+아래에 둔다 — 목록에서 금액·결제일을 확인하고 고친 뒤 마지막에 누르는 것이라, 가져오기 화면이
+아니라 구독을 보는 화면에 있어야 한다. SubSlash는 캘린더 권한을 받지
 않는다 — 버튼을 누르면 브라우저가 구독 중인 구독의 이름·금액·결제일을 계획으로 맡기고, 웹 앱이
 접속한 사람의 권한으로 그 계획을 받아 **자기** 'SubSlash 결제일' 캘린더에 쓴다. 계획은 주소에 싣지
 않고(`calendar_sync_plans`, 1회용 코드는 해시만) 받아 가면 곧바로, 늦어도 10분이면 지운다. 캘린더
