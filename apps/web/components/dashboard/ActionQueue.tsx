@@ -39,6 +39,7 @@ const VERB_LABEL: Record<ActionVerb, string> = {
 /** 급한 정도를 색으로만 구분한다. 문구는 이유가 이미 말해준다. */
 const TONE: Partial<Record<ActionKind, string>> = {
   "billing-soon-risky": "border-destructive/40 bg-destructive/5",
+  "low-usage-billing-soon": "border-orange-500/40 bg-orange-500/5",
   "billing-soon": "border-amber-500/40 bg-amber-500/5",
   "verify-kill": "border-primary/30 bg-primary/5",
   risky: "border-destructive/30 bg-destructive/5",
