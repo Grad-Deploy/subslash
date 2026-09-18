@@ -24,7 +24,9 @@ export const BILLING_SOON_DAYS = 7;
 export const STALE_CHECK_IN_DAYS = 30;
 
 export type ActionKind =
-  /** 결제가 코앞인데 마지막 체크인이 '위험'이었다. 가장 급하다. */
+  /** 해지했는데 그 뒤에 결제 메일이 왔다. 지금 돈이 새고 있다는 유일한 '증거'다. */
+  | "charged-after-kill"
+  /** 결제가 코앞인데 마지막 체크인이 '위험'이었다. */
   | "billing-soon-risky"
   /** 결제가 코앞인데 이번 달 사용량이 적다 (체크인 기록 기반). */
   | "low-usage-billing-soon"
@@ -83,6 +85,8 @@ export interface ActionItem {
 // 해지 확인은 결제 임박 다음이다. 해지가 안 됐다면 돈이 계속 나가고 있지만,
 // 다음 결제까지는 보통 한 달 가까이 남아 있다.
 const PRIORITY: Record<ActionKind, number> = {
+  // 나머지는 모두 "아까울 수 있다"이고 이것만 "이미 잘못됐다"이다. 그래서 1보다 앞이다.
+  "charged-after-kill": 0,
   "billing-soon-risky": 1,
   "low-usage-billing-soon": 1,
   "billing-soon": 2,
@@ -95,6 +99,8 @@ const PRIORITY: Record<ActionKind, number> = {
 };
 
 const VERB: Record<ActionKind, ActionVerb> = {
+  // 물어볼 것이 아니라 다시 해지하러 가야 한다.
+  "charged-after-kill": "cancel-guide",
   "billing-soon-risky": "cancel-guide",
   "low-usage-billing-soon": "cancel-guide",
   "billing-soon": "check-in",
@@ -232,9 +238,36 @@ export function getActionQueue(
     });
   }
 
+  // 해지한 구독인데 그 뒤에 결제 메일이 왔다. 묻는 것이 아니라 알리는 것이다 — 증거가 있다.
+  for (const sub of subscriptions) {
+    if (sub.status !== "killed" || !sub.chargedAfterKillAt) continue;
+
+    const charged =
+      typeof sub.chargedAfterKillAmount === "number"
+        ? formatAmount(sub.chargedAfterKillAmount, sub.currency)
+        : null;
+    items.push({
+      subscriptionId: sub.id,
+      name: sub.name,
+      iconEmoji: sub.iconUrl || "📦",
+      kind: "charged-after-kill",
+      reason:
+        `해지로 기록한 뒤인 ${sub.chargedAfterKillAt}에 결제 메일이 왔습니다` +
+        `${charged ? ` (${charged})` : ""}. 해지가 안 됐을 수 있으니 다시 확인해 주세요.`,
+      verb: VERB["charged-after-kill"],
+      daysUntilBilling: null,
+      amountAtStake: null,
+      currency: sub.currency,
+      presetAmount: null,
+      priority: PRIORITY["charged-after-kill"],
+    });
+  }
+
   // 해지한 구독에게는 한 가지만 묻는다 — 해지 뒤 첫 결제가 정말 멈췄는지.
   // 카드에 찍히는 것은 전체 금액이므로 내 몫이 아니라 청구액(세금 포함)을 보여준다.
   for (const sub of subscriptions) {
+    // 결제 메일이라는 증거가 있으면 그 줄이 이미 올라갔다. 같은 구독을 두 번 묻지 않는다.
+    if (sub.chargedAfterKillAt) continue;
     const check = getKillCheckStatus(sub, now);
     if (!check || check.state !== "due") continue;
 

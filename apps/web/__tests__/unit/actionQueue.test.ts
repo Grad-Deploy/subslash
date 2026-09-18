@@ -268,3 +268,66 @@ describe("getNextBillingHint", () => {
     expect(getNextBillingHint([], NOW)).toBeNull();
   });
 });
+
+describe("해지했는데 결제 메일이 온 구독", () => {
+  const killed = (overrides: Partial<Subscription> = {}): Subscription =>
+    subDueIn(5, {
+      id: "sub-killed",
+      name: "티빙",
+      amount: 13900,
+      status: "killed",
+      killedAt: daysAgo(40),
+      ...overrides,
+    });
+
+  it("가장 위에 올린다 — 유일하게 '이미 잘못됐다'인 줄이다", () => {
+    const queue = getActionQueue(
+      [
+        subDueIn(1, { id: "sub-urgent" }),
+        killed({ chargedAfterKillAt: "2026.09.05", chargedAfterKillAmount: 13900 }),
+      ],
+      [log("sub-urgent")],
+      NOW,
+    );
+
+    expect(queue[0].kind).toBe("charged-after-kill");
+    expect(queue[0].subscriptionId).toBe("sub-killed");
+    // 물어보는 것이 아니라 다시 해지하러 보낸다.
+    expect(queue[0].verb).toBe("cancel-guide");
+  });
+
+  it("언제 얼마가 결제됐는지 사실만 적는다", () => {
+    const [item] = getActionQueue(
+      [killed({ chargedAfterKillAt: "2026.09.05", chargedAfterKillAmount: 13900 })],
+      [],
+      NOW,
+    );
+
+    expect(item.reason).toContain("2026.09.05");
+    expect(item.reason).toContain("₩13,900");
+  });
+
+  it("금액을 모르면 날짜만 적는다", () => {
+    const [item] = getActionQueue([killed({ chargedAfterKillAt: "2026.09.05" })], [], NOW);
+
+    expect(item.reason).toContain("2026.09.05");
+    expect(item.reason).not.toContain("₩");
+  });
+
+  it("증거가 있으면 '해지 확인'은 묻지 않는다 — 같은 구독을 두 번 올리지 않는다", () => {
+    const evidence = killed({
+      billingDay: 1,
+      killedAt: daysAgo(60),
+      chargedAfterKillAt: "2026.09.05",
+    });
+    const queue = getActionQueue([evidence], [], NOW);
+
+    expect(queue.map((item) => item.kind)).toEqual(["charged-after-kill"]);
+  });
+
+  it("증거가 없으면 지금처럼 해지 확인을 묻는다", () => {
+    const queue = getActionQueue([killed({ billingDay: 1, killedAt: daysAgo(60) })], [], NOW);
+
+    expect(queue.map((item) => item.kind)).toEqual(["verify-kill"]);
+  });
+});

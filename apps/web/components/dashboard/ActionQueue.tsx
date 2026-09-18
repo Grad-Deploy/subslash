@@ -38,6 +38,8 @@ const VERB_LABEL: Record<ActionVerb, string> = {
 
 /** 급한 정도를 색으로만 구분한다. 문구는 이유가 이미 말해준다. */
 const TONE: Partial<Record<ActionKind, string>> = {
+  // 유일하게 "이미 잘못됐다"인 줄이라 가장 세게 표시한다.
+  "charged-after-kill": "border-destructive bg-destructive/10",
   "billing-soon-risky": "border-destructive/40 bg-destructive/5",
   "low-usage-billing-soon": "border-orange-500/40 bg-orange-500/5",
   "billing-soon": "border-amber-500/40 bg-amber-500/5",
@@ -133,6 +135,9 @@ export function ActionQueue({
                 {/* 해지한 구독이 활성 구독 사이에 섞여 보이므로 무엇을 묻는지 붙인다. */}
                 {item.kind === "verify-kill" && (
                   <span className="text-[11px] font-semibold text-primary">해지 확인</span>
+                )}
+                {item.kind === "charged-after-kill" && (
+                  <span className="text-[11px] font-black text-destructive">해지 후 결제됨</span>
                 )}
                 {item.daysUntilBilling !== null && item.daysUntilBilling <= 7 && (
                   <span className="text-[11px] font-black text-destructive">
