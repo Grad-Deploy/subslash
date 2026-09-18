@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Subscription, getUsageMetaphor, getMyMonthlyShareAmount } from "@subslash/shared";
+import { useExchangeRate } from "@hooks/useExchangeRate";
 
 interface UsageMetaphorCardProps {
   subscription: Subscription;
@@ -14,12 +15,15 @@ export function UsageMetaphorCard({
   usageCount,
   costPerUse: _costPerUse,
 }: UsageMetaphorCardProps) {
+  const rate = useExchangeRate();
   const monthlyAmount = getMyMonthlyShareAmount(subscription);
+  // 환율은 사용자 설정값이다. 헬퍼 기본값에 기대면 '내 환율'과 다른 비유가 나온다.
   const metaphor = getUsageMetaphor(
     monthlyAmount,
     subscription.currency,
     usageCount,
     subscription.name,
+    rate,
   );
 
   const toneStyles = {
