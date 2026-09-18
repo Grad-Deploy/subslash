@@ -72,6 +72,11 @@ USD 환산 환율은 상수가 아니라 사용자 설정값이다. 컴포넌트
 토큰은 용도별로 분리한다. sync 토큰은 Authorization 헤더 전용이고 URL에 넣지
 않는다. 캘린더 피드는 URL 자체가 자격증명이므로 읽기 전용 토큰을 따로 쓴다.
 
+해지한 구독에 결제 메일이 오면 그 사실을 구독에 적는다(`chargedAfterKillAt`). 행동 큐의
+`charged-after-kill`은 큐에서 유일하게 **증거가 있는** 줄이라 맨 앞이다 — 나머지는 "아까울 수
+있다"이고 이것만 "이미 잘못됐다"이다. 사용자의 기억(`killVerifiedAt`)과 섞지 않는다. 다시
+확인해 주거나 구독을 되살리면 지운다.
+
 로그인 세션 토큰은 웹에서는 httpOnly 쿠키에만 있다. 앱(Capacitor)은 화면이 다른 출처에서
 돌아 쿠키가 실리지 않으므로 `Authorization: Bearer` 헤더로 보낸다(`readSessionToken`).
 로그인·가입·재설정 응답 본문의 토큰은 앱 출처(`lib/app-origins`)에만 주고

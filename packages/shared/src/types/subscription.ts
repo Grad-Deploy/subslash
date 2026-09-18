@@ -54,6 +54,15 @@ export interface Subscription {
   taxRate?: number;
   createdAt: string;
   killedAt?: string;
+  /**
+   * 해지로 기록한 뒤에 결제 메일이 온 사실. 결제가 멈추지 않았다는 **증거**다.
+   *
+   * `killVerifiedAt`(사용자가 "안 나갔다"고 답한 것)과 다르다. 그쪽은 기억이고 이쪽은 영수증이다.
+   * Gmail 가져오기가 해지한 서비스의 결제 메일을 찾으면 적고, 다시 해지를 확인했거나 구독을
+   * 되살리면 지운다. 메일 날짜(`YYYY.MM.DD`)와 그 메일에 적힌 금액(구독 통화)이다.
+   */
+  chargedAfterKillAt?: string;
+  chargedAfterKillAmount?: number;
 
   /**
    * 사용자가 "이 금액이 지금도 맞다"고 마지막으로 확인해 준 시각.

@@ -126,6 +126,11 @@ export interface DiscoveryPlan {
   review: GmailDiscovery[];
   /** 이미 구독 중이라 등록하지 않고 지울 후보. */
   alreadyTracked: GmailDiscovery[];
+  /**
+   * 해지로 기록한 구독인데 그 뒤에 결제 메일이 온 것. 해지가 안 됐다는 증거라, 되살리지 않고
+   * 그 구독에 사실만 적어 행동 큐가 알리게 한다.
+   */
+  chargedAfterKill: { subscriptionId: string; discovery: GmailDiscovery }[];
 }
 
 /**
@@ -139,12 +144,27 @@ export function planDiscoveries(
   discoveries: GmailDiscovery[],
   subscriptions: Subscription[],
 ): DiscoveryPlan {
-  const plan: DiscoveryPlan = { register: [], review: [], alreadyTracked: [] };
+  const plan: DiscoveryPlan = {
+    register: [],
+    review: [],
+    alreadyTracked: [],
+    chargedAfterKill: [],
+  };
   for (const discovery of discoveries) {
     const matches = subscriptions.filter((sub) => sameService(sub, discovery));
     if (matches.some((sub) => sub.status === "active")) {
       plan.alreadyTracked.push(discovery);
-    } else if (discovery.tier === "auto" && matches.length === 0) {
+      continue;
+    }
+
+    // 해지로 기록해 둔 서비스의 결제 메일이다. 결제가 멈추지 않았다는 뜻이므로, 그 구독에
+    // 사실을 적어 둔다. 확인 목록에도 함께 올려 사용자가 되살릴지 고를 수 있게 한다.
+    const killed = matches.find((sub) => sub.status === "killed");
+    if (killed) {
+      plan.chargedAfterKill.push({ subscriptionId: killed.id, discovery });
+    }
+
+    if (discovery.tier === "auto" && matches.length === 0) {
       plan.register.push(discovery);
     } else {
       plan.review.push(discovery);
