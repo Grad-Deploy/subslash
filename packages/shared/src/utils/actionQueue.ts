@@ -34,6 +34,8 @@ export type ActionKind =
   | "billing-soon"
   /** 해지 뒤 첫 결제일이 지났다. 결제가 정말 멈췄는지 물어야 한다. */
   | "verify-kill"
+  /** 결제 메일에 찍힌 금액이 등록된 청구액과 달랐다. 추측이 아니라 관측이다. */
+  | "amount-changed"
   /** 결제일과 무관하게 1회 단가가 위험 수준이다. */
   | "risky"
   /** 한 번도 체크인하지 않아 끊을지 판단할 근거가 없다. */
@@ -91,11 +93,13 @@ const PRIORITY: Record<ActionKind, number> = {
   "low-usage-billing-soon": 1,
   "billing-soon": 2,
   "verify-kill": 3,
-  risky: 4,
-  "never-checked-in": 5,
-  "stale-check-in": 6,
-  "price-check": 7,
-  "missing-billing-month": 8,
+  // 관측은 추측보다 앞이다. 'price-check'는 "오래됐으니 확인해 달라"일 뿐이다.
+  "amount-changed": 4,
+  risky: 5,
+  "never-checked-in": 6,
+  "stale-check-in": 7,
+  "price-check": 8,
+  "missing-billing-month": 9,
 };
 
 const VERB: Record<ActionKind, ActionVerb> = {
@@ -105,6 +109,7 @@ const VERB: Record<ActionKind, ActionVerb> = {
   "low-usage-billing-soon": "cancel-guide",
   "billing-soon": "check-in",
   "verify-kill": "verify-kill",
+  "amount-changed": "confirm-price",
   risky: "cancel-guide",
   "never-checked-in": "check-in",
   "stale-check-in": "check-in",
@@ -178,6 +183,11 @@ export function getActionQueue(
     let kind: ActionKind;
     let reason: string;
 
+    // 결제 메일에 찍힌 금액이 등록된 청구액과 달랐다. 결제가 코앞인 것 다음으로 급하다 —
+    // 돈의 크기가 달라졌다는 사실이라, "오래됐으니 확인해 달라"보다 앞이다.
+    const observed =
+      typeof sub.observedAmount === "number" && sub.observedAmountAt ? sub.observedAmount : null;
+
     if (billingSoon && isRisky) {
       kind = "billing-soon-risky";
       reason =
@@ -199,6 +209,12 @@ export function getActionQueue(
       reason = log
         ? `${formatDday(days!)} · ${stake !== null ? `${formatKRW(stake)}이 곧 빠져나갑니다.` : "곧 결제됩니다."}`
         : `${formatDday(days!)} · 아직 체크인한 적이 없어, 끊을지 판단할 근거가 없습니다.`;
+    } else if (observed !== null) {
+      kind = "amount-changed";
+      // 요금표를 조회하지 않으므로 "올랐다"고 말하지 않는다. 두 숫자를 나란히 놓을 뿐이다.
+      reason =
+        `${sub.observedAmountAt} 결제 메일에는 ${formatAmount(observed, sub.currency)}이 찍혔는데, ` +
+        `등록된 청구액은 ${formatAmount(getBilledAmount(sub), sub.currency)}입니다. 어느 쪽이 맞는지 확인해 주세요.`;
     } else if (isRisky) {
       kind = "risky";
       reason = `마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${perUse}). 돈값을 못 하고 있습니다.`;

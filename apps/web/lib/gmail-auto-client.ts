@@ -1,5 +1,6 @@
 import {
   POPULAR_SERVICES,
+  getBilledAmount,
   type BillingCycle,
   type Currency,
   type DiscoveredSubscription,
@@ -131,6 +132,11 @@ export interface DiscoveryPlan {
    * 그 구독에 사실만 적어 행동 큐가 알리게 한다.
    */
   chargedAfterKill: { subscriptionId: string; discovery: GmailDiscovery }[];
+  /**
+   * 구독 중인데 결제 메일의 금액이 등록된 청구액과 다른 것. 요금이 바뀌었을 수도, 등록한 금액이
+   * 틀렸을 수도 있다 — 앱은 어느 쪽인지 모르므로 사실만 적어 두고 사용자가 판단하게 한다.
+   */
+  amountChanged: { subscriptionId: string; discovery: GmailDiscovery }[];
 }
 
 /**
@@ -140,6 +146,19 @@ export interface DiscoveryPlan {
  * 기록한 서비스의 결제 메일이 왔다면 해지가 안 됐을 수 있으니, 자동으로 되살리지 않고 확인
  * 목록에 둔다.
  */
+/**
+ * 영수증 금액이 등록된 청구액과 다른지.
+ *
+ * 영수증에 찍힌 값은 카드에 청구된 금액이므로 `amount`(요금표 가격)가 아니라
+ * `getBilledAmount`(세금 포함)와 비교한다. 결제 주기가 다르면 비교하지 않는다 — 연 결제
+ * 영수증을 월 요금과 견주면 늘 다르다고 나온다. 원 단위 미만 차이는 반올림으로 본다.
+ */
+function chargedDifferently(sub: Subscription, discovery: GmailDiscovery): boolean {
+  if (sub.billingCycle !== discovery.billingCycle) return false;
+  if (!(discovery.amount > 0)) return false;
+  return Math.abs(getBilledAmount(sub) - discovery.amount) >= 1;
+}
+
 export function planDiscoveries(
   discoveries: GmailDiscovery[],
   subscriptions: Subscription[],
@@ -149,11 +168,16 @@ export function planDiscoveries(
     review: [],
     alreadyTracked: [],
     chargedAfterKill: [],
+    amountChanged: [],
   };
   for (const discovery of discoveries) {
     const matches = subscriptions.filter((sub) => sameService(sub, discovery));
-    if (matches.some((sub) => sub.status === "active")) {
+    const active = matches.find((sub) => sub.status === "active");
+    if (active) {
       plan.alreadyTracked.push(discovery);
+      if (chargedDifferently(active, discovery)) {
+        plan.amountChanged.push({ subscriptionId: active.id, discovery });
+      }
       continue;
     }
 

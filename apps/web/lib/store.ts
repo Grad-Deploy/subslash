@@ -277,6 +277,11 @@ interface SubSlashStore {
    * 사용자의 기억이 아니라 영수증이므로, 이미 '확인'해 둔 구독에도 적는다.
    */
   markChargedAfterKill: (id: string, receiptDate: string, amount: number) => void;
+  /**
+   * 결제 메일의 금액이 등록된 청구액과 달랐던 사실을 적는다. Gmail 가져오기만 부른다.
+   * 요금을 확인해 주거나 금액을 고치면 지워진다.
+   */
+  markObservedAmount: (id: string, receiptDate: string, amount: number) => void;
   deleteSubscription: (id: string) => void;
   checkIn: (subscriptionId: string, usageCount: number) => CheckInResponse;
   getActiveSubscriptions: () => Subscription[];
@@ -425,7 +430,16 @@ export const useStore = create<SubSlashStore>()(
       updateSubscription: (id, data) => {
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
-            sub.id === id ? { ...sub, ...data } : sub,
+            sub.id === id
+              ? {
+                  ...sub,
+                  ...data,
+                  // 금액을 고쳤으면 "영수증과 다르다"는 표식은 더 이상 맞지 않는다.
+                  ...(data.amount !== undefined
+                    ? { observedAmount: undefined, observedAmountAt: undefined }
+                    : {}),
+                }
+              : sub,
           ),
         }));
       },
@@ -441,6 +455,9 @@ export const useStore = create<SubSlashStore>()(
                       ? newAmount
                       : sub.amount,
                   lastPriceCheckedAt: checkedAt,
+                  // 사용자가 답을 줬으니 관측 표식을 내린다. 또 다른 금액이 오면 다시 적힌다.
+                  observedAmount: undefined,
+                  observedAmountAt: undefined,
                 }
               : sub,
           ),
@@ -479,6 +496,15 @@ export const useStore = create<SubSlashStore>()(
                   chargedAfterKillAt: undefined,
                   chargedAfterKillAmount: undefined,
                 }
+              : sub,
+          ),
+        }));
+      },
+      markObservedAmount: (id, receiptDate, amount) => {
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            sub.id === id && sub.status === "active"
+              ? { ...sub, observedAmount: amount, observedAmountAt: receiptDate }
               : sub,
           ),
         }));
