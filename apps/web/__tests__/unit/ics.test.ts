@@ -141,7 +141,8 @@ describe("buildBillingCalendar", () => {
     expect(unfolded).toContain("URL:https://subslash.me/subs/detail?id=sub%201%26x\r\n");
     expect(unfolded).toContain("구독 보기·수정: https://subslash.me/subs/detail?id=sub%201%26x");
     // 다른 기기에서는 구독이 보이지 않는다는 것을 함께 적는다.
-    expect(unfolded).toContain("기록한 브라우저에서 열어야 보입니다");
+    // 쉼표는 RFC 5545에서 \, 로 이스케이프되므로 쉼표가 없는 조각으로 본다.
+    expect(unfolded).toContain("로그인해 두면 다른 기기에서도 보입니다");
   });
 
   it("앱 주소를 모르면 링크를 만들지 않는다", () => {
