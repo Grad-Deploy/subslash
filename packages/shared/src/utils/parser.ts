@@ -6,6 +6,7 @@ import {
   Currency,
 } from "../types";
 import { POPULAR_SERVICES, ServicePreset } from "../constants/services";
+import { formatCurrency } from "./cost-per-use";
 
 // Known keyword mapping for popular services
 const SERVICE_KEYWORDS: {
@@ -247,10 +248,27 @@ function looksLikeMerchantName(word: string): boolean {
   return !FIELD_LABELS.includes(token);
 }
 
+/**
+ * 메일 한 통을 읽을 때 문자보다 더 아는 것.
+ *
+ * 문자는 짧아서 본문 전체가 판단 근거지만, 메일 본문에는 광고·약관·하단 안내가 섞인다.
+ * "언제든 해지할 수 있습니다"가 모든 영수증을 해지 알림으로, "1.5GB"가 결제일 5일로 읽히지
+ * 않도록 판단마다 믿을 곳을 따로 준다.
+ */
+interface ReceiptHints {
+  /** 해지·취소 여부를 판단할 글. 메일에서는 제목이다. */
+  cancelText: string;
+  /** 서비스·결제수단을 먼저 찾아볼 글. 메일에서는 제목과 보낸 사람이다. */
+  serviceText: string;
+  /** 본문에 결제일 칸이 없을 때 쓸 날짜. 메일에서는 받은 날(사용자 시간대의 달·일)이다. */
+  received: CalendarDate;
+}
+
 function parseSingleMessageBlock(
   block: string,
   index: number,
   options?: { linkedAccountId?: string; linkedAccountName?: string },
+  hints?: ReceiptHints,
 ): DiscoveredSubscription | null {
   const normalized = block.replace(/\r/g, " ");
   const lower = normalized.toLowerCase();
@@ -309,14 +327,15 @@ function parseSingleMessageBlock(
   }
 
   // 3. Check if this is a cancellation / refund notice
+  const cancelText = hints ? hints.cancelText : normalized;
   const isCanceled =
-    normalized.includes("해지") ||
-    normalized.includes("취소") ||
-    normalized.includes("환불") ||
-    normalized.includes("만료") ||
-    normalized.includes("종료") ||
-    lower.includes("cancel") ||
-    lower.includes("refund");
+    cancelText.includes("해지") ||
+    cancelText.includes("취소") ||
+    cancelText.includes("환불") ||
+    cancelText.includes("만료") ||
+    cancelText.includes("종료") ||
+    cancelText.toLowerCase().includes("cancel") ||
+    cancelText.toLowerCase().includes("refund");
 
   // 4. Extract Date (explicit 결제일시 or MM/DD, M월 D일, MM.DD, MM-DD)
   let billingDay = new Date().getDate();
@@ -344,6 +363,10 @@ function parseSingleMessageBlock(
       explicitDateMatch[1] || explicitDateMatch[3],
       explicitDateMatch[2] || explicitDateMatch[4] || explicitDateMatch[5],
     );
+  } else if (hints) {
+    // 메일 본문의 "1.5GB", "3-5일" 같은 숫자는 날짜가 아니다. 결제일 칸이 없으면 메일을 받은
+    // 날을 결제일로 본다 — 결제 메일은 결제한 날 온다.
+    takeDate(String(hints.received.month), String(hints.received.day));
   } else {
     // Strip currency amounts so numbers like "$20.00" are not mistaken for MM.DD
     const dateScanText = normalized.replace(/\$\s*[0-9.]+/g, "").replace(/[0-9.]+\s*USD/gi, "");
@@ -361,37 +384,58 @@ function parseSingleMessageBlock(
   const billingCycle: BillingCycle = YEARLY_HINT.test(normalized) ? "yearly" : "monthly";
   if (billingCycle !== "yearly") {
     billingMonth = undefined;
+  } else if (hints && billingMonth === undefined) {
+    // "결제일 : 3일"처럼 달이 없는 영수증이라도 메일을 받은 달에 결제된 것이다.
+    billingMonth = hints.received.month;
   }
 
   // 5. Extract Payment Method
   let paymentMethod: PaymentMethod = "credit_card";
-  if (lower.includes("네이버페이") || lower.includes("naverpay") || lower.includes("naver pay")) {
+  // 메일 하단의 "App Store에서 받기" 같은 배지는 결제수단이 아니므로, 메일은 제목·보낸 사람만 본다.
+  const paymentText = hints ? hints.serviceText.toLowerCase() : lower;
+  if (
+    paymentText.includes("네이버페이") ||
+    paymentText.includes("naverpay") ||
+    paymentText.includes("naver pay")
+  ) {
     paymentMethod = "naverpay";
-  } else if (lower.includes("카카오페이") || lower.includes("kakaopay")) {
+  } else if (paymentText.includes("카카오페이") || paymentText.includes("kakaopay")) {
     paymentMethod = "kakaopay";
-  } else if (lower.includes("apple") || lower.includes("애플") || lower.includes("app store")) {
+  } else if (
+    paymentText.includes("apple") ||
+    paymentText.includes("애플") ||
+    paymentText.includes("app store")
+  ) {
     paymentMethod = "apple_iap";
   } else if (
-    lower.includes("google play") ||
-    lower.includes("구글플레이") ||
-    lower.includes("구글페이먼트") ||
-    lower.includes("google payment")
+    paymentText.includes("google play") ||
+    paymentText.includes("구글플레이") ||
+    paymentText.includes("구글페이먼트") ||
+    paymentText.includes("google payment")
   ) {
     paymentMethod = "google_play";
   }
 
   // 6. Match Known Service Preset
   let matchedPreset: ServicePreset | undefined;
-  const targetToMatch = (structuredProductName + " " + lower).toLowerCase();
-  for (const item of SERVICE_KEYWORDS) {
-    for (const kw of item.keywords) {
-      if (targetToMatch.includes(kw.toLowerCase())) {
-        matchedPreset = POPULAR_SERVICES.find((s) => s.id === item.presetId);
-        if (item.defaultPaymentMethod && paymentMethod === "credit_card") {
-          paymentMethod = item.defaultPaymentMethod;
+  // 메일은 제목·보낸 사람에서 먼저 찾는다. 본문에는 다른 서비스 광고가 섞여 있을 수 있다.
+  // 구글 플레이 영수증처럼 본문에만 서비스 이름이 있는 메일을 위해 본문도 뒤이어 본다.
+  const matchTargets = [
+    ...(hints ? [hints.serviceText.toLowerCase()] : []),
+    (structuredProductName + " " + lower).toLowerCase(),
+  ];
+  for (const targetToMatch of matchTargets) {
+    for (const item of SERVICE_KEYWORDS) {
+      for (const kw of item.keywords) {
+        if (targetToMatch.includes(kw.toLowerCase())) {
+          matchedPreset = POPULAR_SERVICES.find((s) => s.id === item.presetId);
+          if (item.defaultPaymentMethod && paymentMethod === "credit_card") {
+            paymentMethod = item.defaultPaymentMethod;
+          }
+          break;
         }
-        break;
       }
+      if (matchedPreset) break;
     }
     if (matchedPreset) break;
   }
@@ -423,6 +467,9 @@ function parseSingleMessageBlock(
   } else if (structuredProductName) {
     name = structuredProductName;
     confidence = "high";
+  } else if (hints) {
+    // 메일 본문에서 남은 단어는 인사말·광고 문구이기 쉽다. 이름으로 쓰지 않고 모른다고 둔다.
+    name = `알 수 없는 결제 (${formatCurrency(amount, currency)})`;
   } else {
     // Clean out known keywords
     const cleaned = normalized
@@ -456,6 +503,7 @@ function parseSingleMessageBlock(
     linkedAccountId: options?.linkedAccountId,
     linkedAccountName: options?.linkedAccountName,
     source: "sms",
+    presetId: matchedPreset?.id,
     sourceSnippet: block.length > 80 ? block.slice(0, 80) + "..." : block,
     confidence,
     selected: !isCanceled,
@@ -463,4 +511,112 @@ function parseSingleMessageBlock(
     isWithin30Days: !isCanceled,
     statusReason: isCanceled ? "해지/취소 알림 감지됨 (활성 구독 제외)" : "결제 승인 확인됨",
   };
+}
+
+/** Apps Script가 Gmail에서 꺼내 온 메일 한 통. */
+export interface ReceiptEmail {
+  from: string;
+  subject: string;
+  /** 받은 시각(ISO 8601). */
+  date: string;
+  /** 본문 글자. HTML 메일은 태그를 뺀 글자다. */
+  body: string;
+}
+
+/** 이보다 오래전에 마지막 결제 메일이 온 구독은 지금도 결제 중인지 알 수 없다. */
+const STALE_AFTER_DAYS: Record<BillingCycle, number> = { monthly: 35, yearly: 370 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+interface CalendarDate {
+  year: number;
+  month: number;
+  day: number;
+}
+
+/**
+ * 어느 시간대의 달력으로 본 날짜인지. 서버(UTC)에서 한국 시각 오전 8시에 온 메일을 그냥 읽으면
+ * 전날이 되어 결제일이 하루 어긋난다. 시간대를 주지 않으면 실행 환경의 시간대(브라우저)다.
+ */
+function calendarDate(date: Date, timeZone?: string): CalendarDate {
+  if (!timeZone) {
+    return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
+  }
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(date);
+  const part = (type: string) => Number(parts.find((p) => p.type === type)?.value);
+  return { year: part("year"), month: part("month"), day: part("day") };
+}
+
+/**
+ * Gmail에서 가져온 결제 메일을 구독 후보로 바꾼다.
+ *
+ * 문자와 달리 메일은 한 통이 한 건이다. 본문의 빈 줄로 나누면 메일 하나가 여러 조각이 되므로
+ * 나누지 않는다. 같은 구독의 영수증은 달마다 쌓이므로 가장 최근 메일 하나만 남기고, 그 메일이
+ * 오래됐거나 해지 알림이면 등록 후보에서 기본으로 빼 둔다(사용자가 다시 고를 수 있다).
+ */
+export function parseReceiptEmails(
+  emails: ReceiptEmail[],
+  options?: {
+    linkedAccountId?: string;
+    linkedAccountName?: string;
+    now?: Date;
+    /** 받은 날을 읽을 시간대(IANA 이름). 서버에서 부를 때는 사용자의 시간대를 준다. */
+    timeZone?: string;
+  },
+): DiscoveredSubscription[] {
+  const now = options?.now ?? new Date();
+  const newestFirst = emails
+    .map((email) => ({ email, receivedAt: new Date(email.date) }))
+    .filter(({ receivedAt }) => !Number.isNaN(receivedAt.getTime()))
+    .sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime());
+
+  const seen = new Set<string>();
+  const results: DiscoveredSubscription[] = [];
+
+  newestFirst.forEach(({ email, receivedAt }, index) => {
+    const block = `${email.subject}
+${email.body}`;
+    const received = calendarDate(receivedAt, options?.timeZone);
+    const parsed = parseSingleMessageBlock(block, index, options, {
+      cancelText: email.subject,
+      serviceText: `${email.subject} ${email.from}`,
+      received,
+    });
+    if (!parsed) return;
+
+    // 같은 서비스라도 통화가 다르면 다른 구독일 수 있다.
+    const key = `${parsed.name}|${parsed.currency}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    const daysAgo = Math.max(0, Math.floor((now.getTime() - receivedAt.getTime()) / DAY_MS));
+    const stale = daysAgo > STALE_AFTER_DAYS[parsed.billingCycle];
+    const receiptDate = `${received.year}.${String(received.month).padStart(2, "0")}.${String(received.day).padStart(2, "0")}`;
+    const snippet = `${receiptDate} · ${email.from} · ${email.subject}`;
+
+    results.push({
+      ...parsed,
+      id: `gmail-${receivedAt.getTime()}-${index}`,
+      source: "gmail",
+      sender: email.from,
+      emailProvider: "google",
+      sourceSnippet: snippet.length > 120 ? `${snippet.slice(0, 120)}...` : snippet,
+      receiptDate,
+      daysAgo,
+      selected: !parsed.isCanceled && !stale,
+      isWithin30Days: !parsed.isCanceled && !stale,
+      statusReason: parsed.isCanceled
+        ? "가장 최근 메일이 해지·취소 알림입니다 (활성 구독 제외)"
+        : stale
+          ? `마지막 결제 메일이 ${daysAgo}일 전이라 지금도 결제 중인지 알 수 없습니다`
+          : `${daysAgo}일 전 결제 메일 확인됨`,
+    });
+  });
+
+  return results;
 }
