@@ -20,6 +20,7 @@ import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { OnboardingTourCard } from "../../components/dashboard/OnboardingTourCard";
 import { ActionQueue } from "../../components/dashboard/ActionQueue";
 import { BillingCalendar } from "../../components/dashboard/BillingCalendar";
+import { MonthlyValueReport } from "../../components/dashboard/MonthlyValueReport";
 import { SubForm } from "../../components/subscription/SubForm";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
@@ -232,6 +233,15 @@ export default function Dashboard() {
             않아 본문에 둔다.
           */}
           <BillingCalendar subscriptions={activeSubs} now={now} />
+
+          {/* 월간 구독 가성비 리포트 (손익 영수증) */}
+          <MonthlyValueReport
+            subscriptions={activeSubs}
+            usageLogs={usageLogs}
+            now={now}
+            onCancelGuide={handleCancelGuide}
+            onCheckIn={handleOpenCheckIn}
+          />
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-20" aria-label="이번 달 요약">
