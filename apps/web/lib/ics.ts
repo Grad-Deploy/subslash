@@ -135,10 +135,10 @@ export function eventDescription(entry: CalendarEntry, detailUrl: string | null)
   if (cancelNote) parts.push(cancelNote);
 
   if (detailUrl) {
-    // 구독 기록은 서버가 아니라 기록한 브라우저에 있다. 다른 기기에서 열면 "구독을 찾을 수
-    // 없습니다"가 나오므로 미리 적어 둔다.
+    // 구독 기록은 서버가 아니라 기기에 있다. 등록한 기기가 아니면 열어도 보이지 않으므로 미리
+    // 적어 둔다. 로그인한 기기끼리는 계정 동기화로 맞춰지므로 그 길도 함께 알린다.
     parts.push(
-      `구독 보기·수정: ${detailUrl}\n(SubSlash에 이 구독을 기록한 브라우저에서 열어야 보입니다)`,
+      `구독 보기·수정: ${detailUrl}\n(이 구독을 등록한 기기에서 열거나, 로그인해 두면 다른 기기에서도 보입니다)`,
     );
   }
 
