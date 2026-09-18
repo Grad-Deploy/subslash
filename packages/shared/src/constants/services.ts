@@ -852,6 +852,27 @@ export function getCancelUrlKind(cancelUrl?: string): "direct" | "entry" | "unkn
 }
 
 /**
+ * 캘린더 일정 메모에 적을 해지 안내. 주소가 없으면 null이다.
+ *
+ * 주소의 성격(`getCancelUrlKind`)에 따라 문구를 나눈다. 해지 화면이 아닌 주소를 '해지 페이지'라고
+ * 부르면, 눌러서 첫 화면만 보고 해지된 줄 아는 사람이 생긴다. 캘린더 메모는 앱 밖에서 읽히므로
+ * 화면에서 설명해 줄 기회가 없다 — 문구 한 줄에 다 담아야 한다.
+ */
+export function cancelNoteFor(cancelUrl?: string | null): string | null {
+  if (!cancelUrl) return null;
+  switch (getCancelUrlKind(cancelUrl)) {
+    case "direct":
+      return `해지하기(확인된 해지 화면): ${cancelUrl}`;
+    case "entry":
+      return `해지하러 가기: ${cancelUrl}
+(해지 화면이 아니라 서비스 첫 화면이나 계정 화면입니다. 거기서 해지 메뉴까지 찾아 들어가세요.)`;
+    default:
+      return `해지하러 가기: ${cancelUrl}
+(직접 적은 주소입니다. 어디로 연결되는지는 확인되지 않았습니다.)`;
+  }
+}
+
+/**
  * 예전 프리셋 해지 주소를 지금 주소로 바꾼다. 해당하지 않으면 그대로 돌려준다.
  *
  * 프리셋이 쓰던 주소와 정확히 같을 때만 바꾼다. 사용자가 직접 적은 주소는

@@ -13,7 +13,10 @@ import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { Input } from "../ui/input";
 import { RiskBadge } from "../dashboard/RiskBadge";
 import { CostPerUseBar } from "./CostPerUseBar";
+import { UsageMetaphorCard } from "./UsageMetaphorCard";
+import { CostEfficiencyGauge } from "./CostEfficiencyGauge";
 import { cn } from "@lib/utils";
+import { openExternal } from "@lib/native";
 
 interface CheckInModalProps {
   subscription: Subscription;
@@ -155,13 +158,28 @@ export function CheckInModal({
               </div>
             </div>
 
-            <div className="w-full p-4 bg-muted/70 rounded-2xl border">
-              <CostPerUseBar
-                costPerUse={result.costPerUse}
-                monthlyAmount={getMyMonthlyShareAmount(subscription)}
-                currency={subscription.currency}
+            {/* 1. 실체감 환산 지표: 커피/영화 티켓 메타포 */}
+            <UsageMetaphorCard
+              subscription={subscription}
+              usageCount={count}
+              costPerUse={result.costPerUse}
+            />
+
+            {/* 2. 게이미피케이션: 가성비 게이지 (본전선) + 1회당 비용 */}
+            <div className="w-full p-4 bg-muted/70 rounded-2xl border space-y-4 flex flex-col items-center">
+              <CostEfficiencyGauge
+                subscription={subscription}
                 usageCount={count}
+                costPerUse={result.costPerUse}
               />
+              <div className="w-full border-t border-border/50 pt-3">
+                <CostPerUseBar
+                  costPerUse={result.costPerUse}
+                  monthlyAmount={getMyMonthlyShareAmount(subscription)}
+                  currency={subscription.currency}
+                  usageCount={count}
+                />
+              </div>
             </div>
 
             {/* Smart Cancellation Navigator with Linked Account Info */}
@@ -211,7 +229,7 @@ export function CheckInModal({
                 <Button
                   variant="destructive"
                   className={`${WRAPPING_BUTTON} min-h-12 text-sm font-bold rounded-xl shadow-lg`}
-                  onClick={() => window.open(directUrl, "_blank")}
+                  onClick={() => openExternal(directUrl)}
                 >
                   {cancelButtonLabel}
                 </Button>

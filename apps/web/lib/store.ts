@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { recordStorage } from "./mirrored-storage";
 import type {
   Subscription,
   UsageLog,
@@ -44,7 +45,7 @@ const SEEDED_DEMO_ACCOUNTS: ReadonlyArray<Pick<LinkedAccount, "id" | "name" | "e
 
 type PersistedState = Pick<
   SubSlashStore,
-  "subscriptions" | "usageLogs" | "accounts" | "notify" | "exchangeRate"
+  "subscriptions" | "usageLogs" | "accounts" | "notify" | "exchangeRate" | "accountSync"
 >;
 
 /**
@@ -153,6 +154,33 @@ export const DEFAULT_NOTIFY: NotifySettings = {
   calendarUrl: null,
 };
 
+/**
+ * 계정 기록 자동 동기화에서 이 기기가 기억하는 것(lib/account-sync, hooks/useAccountSync). 기기마다
+ * 다르므로 백업·계정 저장에는 넣지 않는다.
+ */
+export interface AccountSyncState {
+  /** 이 기기가 맞춰 온 계정. 다른 계정으로 로그인하면 처음부터 다시 맞춘다. */
+  accountId: string | null;
+  /** 이 기기에서 자동 동기화를 쓰는지. 로그인하면 켜져 있고, 사용자가 끄면 false다. */
+  enabled: boolean;
+  /** 마지막으로 서버와 맞춘 판(계정 기록의 savedAt). */
+  baseSavedAt: string | null;
+  /** 그때 이 기기 기록의 지문. 지금 지문과 다르면 이 기기에서 바뀐 것이다. */
+  baseHash: string | null;
+  lastSyncedAt: string | null;
+  /** 사용자가 끄지 않았는데 멈춘 이유. 다른 기기에서 계정의 기록을 지웠으면 다시 올리지 않는다. */
+  stoppedReason: "deleted-elsewhere" | null;
+}
+
+export const DEFAULT_ACCOUNT_SYNC: AccountSyncState = {
+  accountId: null,
+  enabled: true,
+  baseSavedAt: null,
+  baseHash: null,
+  lastSyncedAt: null,
+  stoppedReason: null,
+};
+
 // 환율 설정은 서버(계정에 저장한 기록의 검증)도 쓰므로 스토어 밖에 둔다. 이 모듈에서
 // 가져다 쓰던 곳이 그대로 동작하도록 다시 내보낸다.
 export { DEFAULT_EXCHANGE_RATE_SETTING, isValidExchangeRate };
@@ -209,6 +237,7 @@ interface SubSlashStore {
   accounts: LinkedAccount[];
   notify: NotifySettings;
   exchangeRate: ExchangeRateSetting;
+  accountSync: AccountSyncState;
   /** 샘플 체험 중이면 그 상태. 저장소에 저장하지 않는다 — 새로고침하면 체험이 끝난다. */
   demo: DemoSession | null;
   /** 샘플로 체험을 시작한다. 이미 체험 중이면 그대로 둔다. */
@@ -243,6 +272,16 @@ interface SubSlashStore {
    * 해지한 구독에만 기록되고, 확인 시각은 이 액션을 통해서만 생긴다.
    */
   confirmKillVerified: (id: string) => void;
+  /**
+   * 해지로 기록한 구독인데 그 뒤에 결제 메일이 온 사실을 적는다. Gmail 가져오기만 부른다.
+   * 사용자의 기억이 아니라 영수증이므로, 이미 '확인'해 둔 구독에도 적는다.
+   */
+  markChargedAfterKill: (id: string, receiptDate: string, amount: number) => void;
+  /**
+   * 결제 메일의 금액이 등록된 청구액과 달랐던 사실을 적는다. Gmail 가져오기만 부른다.
+   * 요금을 확인해 주거나 금액을 고치면 지워진다.
+   */
+  markObservedAmount: (id: string, receiptDate: string, amount: number) => void;
   deleteSubscription: (id: string) => void;
   checkIn: (subscriptionId: string, usageCount: number) => CheckInResponse;
   getActiveSubscriptions: () => Subscription[];
@@ -258,6 +297,7 @@ interface SubSlashStore {
    * 꺼진 상태로 돌린다 — 응답을 기다리는 사이 다시 신청했다면 새 신청을 건드리지 않는다.
    */
   markNotifyRejected: (syncToken: string) => void;
+  setAccountSync: (next: Partial<AccountSyncState>) => void;
 
   // Exchange rate actions
   setExchangeRate: (rate: number, source: Exclude<ExchangeRateSource, "default">) => void;
@@ -280,6 +320,7 @@ export function toPersistedState(state: SubSlashStore): PersistedState {
     accounts: state.accounts,
     notify: state.notify,
     exchangeRate: state.exchangeRate,
+    accountSync: state.accountSync,
   };
 }
 
@@ -292,6 +333,7 @@ export const useStore = create<SubSlashStore>()(
       notify: DEFAULT_NOTIFY,
       exchangeRate: DEFAULT_EXCHANGE_RATE_SETTING,
       demo: null,
+      accountSync: DEFAULT_ACCOUNT_SYNC,
 
       addSubscription: (data) => {
         const newSub: Subscription = {
@@ -388,7 +430,16 @@ export const useStore = create<SubSlashStore>()(
       updateSubscription: (id, data) => {
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
-            sub.id === id ? { ...sub, ...data } : sub,
+            sub.id === id
+              ? {
+                  ...sub,
+                  ...data,
+                  // 금액을 고쳤으면 "영수증과 다르다"는 표식은 더 이상 맞지 않는다.
+                  ...(data.amount !== undefined
+                    ? { observedAmount: undefined, observedAmountAt: undefined }
+                    : {}),
+                }
+              : sub,
           ),
         }));
       },
@@ -404,6 +455,9 @@ export const useStore = create<SubSlashStore>()(
                       ? newAmount
                       : sub.amount,
                   lastPriceCheckedAt: checkedAt,
+                  // 사용자가 답을 줬으니 관측 표식을 내린다. 또 다른 금액이 오면 다시 적힌다.
+                  observedAmount: undefined,
+                  observedAmountAt: undefined,
                 }
               : sub,
           ),
@@ -433,7 +487,33 @@ export const useStore = create<SubSlashStore>()(
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
             sub.id === id
-              ? { ...sub, status: "active", killedAt: undefined, killVerifiedAt: undefined }
+              ? {
+                  ...sub,
+                  status: "active",
+                  killedAt: undefined,
+                  killVerifiedAt: undefined,
+                  // 다시 구독 중이면 "해지했는데 결제됐다"는 더 이상 이상한 일이 아니다.
+                  chargedAfterKillAt: undefined,
+                  chargedAfterKillAmount: undefined,
+                }
+              : sub,
+          ),
+        }));
+      },
+      markObservedAmount: (id, receiptDate, amount) => {
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            sub.id === id && sub.status === "active"
+              ? { ...sub, observedAmount: amount, observedAmountAt: receiptDate }
+              : sub,
+          ),
+        }));
+      },
+      markChargedAfterKill: (id, receiptDate, amount) => {
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            sub.id === id && sub.status === "killed"
+              ? { ...sub, chargedAfterKillAt: receiptDate, chargedAfterKillAmount: amount }
               : sub,
           ),
         }));
@@ -442,7 +522,15 @@ export const useStore = create<SubSlashStore>()(
         const verifiedAt = new Date().toISOString();
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
-            sub.id === id && sub.status === "killed" ? { ...sub, killVerifiedAt: verifiedAt } : sub,
+            sub.id === id && sub.status === "killed"
+              ? {
+                  ...sub,
+                  killVerifiedAt: verifiedAt,
+                  // 다시 확인해 줬으니 예전 영수증 증거는 내린다. 또 오면 다시 적힌다.
+                  chargedAfterKillAt: undefined,
+                  chargedAfterKillAmount: undefined,
+                }
+              : sub,
           ),
         }));
       },
@@ -544,6 +632,9 @@ export const useStore = create<SubSlashStore>()(
         }));
       },
 
+      setAccountSync: (next) => {
+        set((state) => ({ accountSync: { ...state.accountSync, ...next } }));
+      },
       setExchangeRate: (rate, source) => {
         if (!isValidExchangeRate(rate)) return;
         set({ exchangeRate: { rate, source, updatedAt: new Date().toISOString() } });
@@ -602,7 +693,7 @@ export const useStore = create<SubSlashStore>()(
     }),
     {
       name: "subslash-storage",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => recordStorage()),
       version: 1,
       // Stores written before v1 carry the seeded demo accounts; drop them on
       // the first load rather than leaving invented addresses in place.
