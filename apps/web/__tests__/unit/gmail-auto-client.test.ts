@@ -74,6 +74,35 @@ describe("planDiscoveries", () => {
     expect(plan.chargedAfterKill).toEqual([{ subscriptionId: "sub-1", discovery: plan.review[0] }]);
   });
 
+  it("구독 중인데 영수증 금액이 다르면 그 사실을 넘긴다", () => {
+    const subs = [subscription({ id: "sub-1", amount: 13900 })];
+    const plan = planDiscoveries([discovery({ amount: 17000 })], subs);
+
+    expect(plan.alreadyTracked.map((d) => d.id)).toEqual(["d1"]);
+    expect(plan.amountChanged).toEqual([
+      { subscriptionId: "sub-1", discovery: plan.alreadyTracked[0] },
+    ]);
+  });
+
+  it("세금이 따로 붙는 구독은 청구액과 견준다 — 세금만큼 다르다고 하지 않는다", () => {
+    const subs = [subscription({ id: "sub-1", amount: 10, currency: "USD", taxRate: 10 })];
+    // $10 + 10% = $11이 카드에 찍힌다. 영수증이 $11이면 다르지 않다.
+    expect(
+      planDiscoveries([discovery({ amount: 11, currency: "USD" })], subs).amountChanged,
+    ).toEqual([]);
+  });
+
+  it("결제 주기가 다르면 견주지 않는다 — 연 결제 영수증과 월 요금은 늘 다르다", () => {
+    const subs = [subscription({ id: "sub-1", amount: 13900 })];
+    const yearly = discovery({ amount: 139000, billingCycle: "yearly" });
+    expect(planDiscoveries([yearly], subs).amountChanged).toEqual([]);
+  });
+
+  it("금액이 같으면 적지 않는다", () => {
+    const subs = [subscription({ id: "sub-1", amount: 13900 })];
+    expect(planDiscoveries([discovery({ amount: 13900 })], subs).amountChanged).toEqual([]);
+  });
+
   it("구독 중이거나 처음 보는 서비스면 그 사실을 적지 않는다", () => {
     expect(planDiscoveries([discovery({})], [subscription({})]).chargedAfterKill).toEqual([]);
     expect(planDiscoveries([discovery({})], []).chargedAfterKill).toEqual([]);

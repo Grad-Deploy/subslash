@@ -29,6 +29,7 @@ export function GmailDiscoveryInbox() {
   const addBatchSubscriptions = useStore((state) => state.addBatchSubscriptions);
   const deleteSubscription = useStore((state) => state.deleteSubscription);
   const markChargedAfterKill = useStore((state) => state.markChargedAfterKill);
+  const markObservedAmount = useStore((state) => state.markObservedAmount);
 
   const [registered, setRegistered] = useState<{ ids: string[]; names: string[] } | null>(null);
   const [review, setReview] = useState<GmailDiscovery[]>([]);
@@ -66,6 +67,11 @@ export function GmailDiscoveryInbox() {
       for (const { subscriptionId, discovery } of plan.chargedAfterKill) {
         markChargedAfterKill(subscriptionId, discovery.receiptDate, discovery.amount);
       }
+      // 구독 중인데 영수증 금액이 다른 것도 적어 둔다. 요금이 바뀐 것일 수도, 등록이 틀린 것일
+      // 수도 있어 어느 쪽인지 말하지 않고 두 숫자만 나란히 보여준다.
+      for (const { subscriptionId, discovery } of plan.amountChanged) {
+        markObservedAmount(subscriptionId, discovery.receiptDate, discovery.amount);
+      }
       setReview(plan.review);
 
       // 등록했거나 이미 구독 중인 후보는 지운다. 지우지 못해도 다음에 받을 때 '이미 구독 중'으로
@@ -74,7 +80,7 @@ export function GmailDiscoveryInbox() {
         [...plan.register, ...plan.alreadyTracked].map((item) => item.id),
       ).catch(() => undefined);
     })();
-  }, [account, demo, addBatchSubscriptions, markChargedAfterKill]);
+  }, [account, demo, addBatchSubscriptions, markChargedAfterKill, markObservedAmount]);
 
   const acknowledgeReview = () => {
     const ids = review.map((item) => item.id);
