@@ -1,4 +1,4 @@
-import { currentCancelUrl, getBilledAmount, type Subscription } from "@subslash/shared";
+import { currentCancelUrl, getBilledAmount, isInTrial, type Subscription } from "@subslash/shared";
 import { apiUrl } from "./api";
 
 /**
@@ -26,20 +26,23 @@ export interface CalendarPlanEntryInput {
  * 찍히는 값(`getBilledAmount`)으로 보낸다. 체크인·절약 기록과 해지한 구독은 보내지 않는다.
  */
 export function toCalendarPlanEntries(subscriptions: Subscription[]): CalendarPlanEntryInput[] {
-  return subscriptions
-    .filter((sub) => sub.status === "active")
-    .map((sub) => ({
-      clientId: sub.id,
-      name: sub.name,
-      amount: getBilledAmount(sub),
-      currency: sub.currency,
-      billingDay: sub.billingDay,
-      billingCycle: sub.billingCycle,
-      billingMonth: sub.billingMonth ?? null,
-      // 해지하려고 캘린더를 연 사람이 앱을 다시 열지 않아도 되게 메모에 적는다. 사용자가 이
-      // 구독에 적어 둔 주소를 그대로 쓴다 — 이름으로 짐작해 붙이면 엉뚱한 곳으로 보낼 수 있다.
-      cancelUrl: sub.cancelUrl ? currentCancelUrl(sub.cancelUrl) : undefined,
-    }));
+  return (
+    subscriptions
+      // 체험 중인 구독은 아직 청구되지 않는다. 캘린더에 없는 결제를 넣지 않는다.
+      .filter((sub) => sub.status === "active" && !isInTrial(sub))
+      .map((sub) => ({
+        clientId: sub.id,
+        name: sub.name,
+        amount: getBilledAmount(sub),
+        currency: sub.currency,
+        billingDay: sub.billingDay,
+        billingCycle: sub.billingCycle,
+        billingMonth: sub.billingMonth ?? null,
+        // 해지하려고 캘린더를 연 사람이 앱을 다시 열지 않아도 되게 메모에 적는다. 사용자가 이
+        // 구독에 적어 둔 주소를 그대로 쓴다 — 이름으로 짐작해 붙이면 엉뚱한 곳으로 보낼 수 있다.
+        cancelUrl: sub.cancelUrl ? currentCancelUrl(sub.cancelUrl) : undefined,
+      }))
+  );
 }
 
 async function readError(response: Response, fallback: string): Promise<string> {

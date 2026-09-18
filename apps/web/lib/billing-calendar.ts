@@ -1,4 +1,10 @@
-import { getBilledAmount, needsBillingMonth, toKRW, type Subscription } from "@subslash/shared";
+import {
+  getBilledAmount,
+  isInTrial,
+  needsBillingMonth,
+  toKRW,
+  type Subscription,
+} from "@subslash/shared";
 
 /**
  * 대시보드 결제 캘린더가 그릴 한 달치.
@@ -67,6 +73,8 @@ export function buildBillingMonth(
 
   for (const sub of subscriptions) {
     if (sub.status !== "active") continue;
+    // 체험 중이면 그 달에 청구되지 않는다. 찍으면 있지도 않은 결제를 달력에 올리게 된다.
+    if (isInTrial(sub, new Date(year, monthIndex, 1))) continue;
     if (needsBillingMonth(sub)) {
       undatedCount += 1;
       continue;
