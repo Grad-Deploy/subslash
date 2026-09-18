@@ -8,6 +8,7 @@ import { GmailDiscoveryInbox } from "../components/gmail/GmailDiscoveryInbox";
 import { BottomNav } from "../components/layout/BottomNav";
 import { ThemeProvider } from "../components/layout/ThemeProvider";
 import { ServiceWorkerRegistrar } from "../components/layout/ServiceWorkerRegistrar";
+import { NativeAppEffects } from "../components/layout/NativeAppEffects";
 
 const geist = Geist({ subsets: ["latin"] });
 
@@ -62,6 +63,7 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <ServiceWorkerRegistrar />
+          <NativeAppEffects />
           <Header />
           <DemoBanner />
           <GmailDiscoveryInbox />

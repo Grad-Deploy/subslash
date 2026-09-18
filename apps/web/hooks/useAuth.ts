@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
-import { apiUrl } from "@lib/api";
+import { apiFetch } from "@lib/api";
+import { clearSessionToken } from "@lib/session-token";
 
 export interface AuthAccount {
   id: string;
@@ -25,9 +26,9 @@ export interface AuthState {
 /**
  * 로그인 상태.
  *
- * 세션은 httpOnly 쿠키에 있어 자바스크립트가 읽을 수 없다. 그래서 상태는
- * 서버에 물어봐서만 알 수 있고, localStorage에 복사해두지 않는다 — 복사본은
- * 로그아웃 뒤에도 남아 "로그인된 것처럼" 보이게 만든다.
+ * 세션은 httpOnly 쿠키에 있어 자바스크립트가 읽을 수 없다(앱은 기기에 둔 토큰을 헤더로
+ * 보낸다, lib/session-token). 그래서 상태는 서버에 물어봐서만 알 수 있고, localStorage에
+ * 복사해두지 않는다 — 복사본은 로그아웃 뒤에도 남아 "로그인된 것처럼" 보이게 만든다.
  *
  * 상태를 훅 안의 지역 변수가 아니라 모듈 하나에 모아두는 이유는, 로그인 폼과
  * 헤더가 서로 다른 컴포넌트이기 때문이다. 각자 자기 상태를 들고 있으면 가입에
@@ -90,7 +91,7 @@ export async function refreshAuth(): Promise<void> {
 
   inflight = (async () => {
     try {
-      const res = await fetch(apiUrl("/api/auth/me"), { credentials: "same-origin" });
+      const res = await apiFetch("/api/auth/me");
       const data = await res.json();
       cache = { account: data?.account ?? null, loading: false };
     } catch {
@@ -107,8 +108,10 @@ export async function refreshAuth(): Promise<void> {
 /** 로그아웃하고 공유 상태를 즉시 비운다. */
 export async function logoutAuth(): Promise<void> {
   try {
-    await fetch(apiUrl("/api/auth/logout"), { method: "POST", credentials: "same-origin" });
+    await apiFetch("/api/auth/logout", { method: "POST" });
   } finally {
+    // 서버에 닿지 못했어도 이 기기에서는 로그아웃한다.
+    await clearSessionToken().catch(() => {});
     cache = { account: null, loading: false };
     emit();
   }

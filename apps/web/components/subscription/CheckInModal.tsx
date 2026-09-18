@@ -16,6 +16,7 @@ import { CostPerUseBar } from "./CostPerUseBar";
 import { UsageMetaphorCard } from "./UsageMetaphorCard";
 import { CostEfficiencyGauge } from "./CostEfficiencyGauge";
 import { cn } from "@lib/utils";
+import { openExternal } from "@lib/native";
 
 interface CheckInModalProps {
   subscription: Subscription;
@@ -228,7 +229,7 @@ export function CheckInModal({
                 <Button
                   variant="destructive"
                   className={`${WRAPPING_BUTTON} min-h-12 text-sm font-bold rounded-xl shadow-lg`}
-                  onClick={() => window.open(directUrl, "_blank")}
+                  onClick={() => openExternal(directUrl)}
                 >
                   {cancelButtonLabel}
                 </Button>

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { recordStorage } from "./mirrored-storage";
 import type {
   Subscription,
   UsageLog,
@@ -602,7 +603,7 @@ export const useStore = create<SubSlashStore>()(
     }),
     {
       name: "subslash-storage",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => recordStorage()),
       version: 1,
       // Stores written before v1 carry the seeded demo accounts; drop them on
       // the first load rather than leaving invented addresses in place.

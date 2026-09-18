@@ -19,6 +19,10 @@
     "gmail:web-app": "tsx scripts/gmail-web-app/write.ts"
   },
   "dependencies": {
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
     "@libsql/client": "^0.14.0",
     "@subslash/shared": "workspace:*",
     "clsx": "^2.1.0",
