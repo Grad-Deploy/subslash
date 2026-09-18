@@ -157,6 +157,11 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
 그래서 화면 코드는 다음을 지킨다.
 
 - 서버 API는 `apiUrl("/api/...")`(`lib/api`)로 부른다. 앱 안의 상대 주소는 앱 자신을 가리킨다.
+  로그인이 필요한 요청(`/api/auth`·`/api/account`)은 `apiFetch()`로 보낸다. 앱에는 쿠키가 실리지
+  않아서, `apiFetch`가 기기에 둔 세션 토큰(`lib/session-token`)을 헤더로 싣고 로그인·가입·비밀번호
+  변경 응답의 새 토큰을 받아 둔다.
+- 외부 사이트는 `openExternal()`, 공유는 `shareText()`(`lib/native`)로 연다. 앱에서는 인앱 브라우저와
+  네이티브 공유 창이 된다. `window.open`·`navigator.share`를 직접 부르지 않는다.
 - 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은
   `capacitor://localhost`(iOS)나 `https://localhost`(안드로이드)다.
 - 페이지에 동적 경로(`[id]`)를 새로 만들지 않는다. 브라우저에서 만든 ID로는 페이지를 미리
@@ -174,6 +179,11 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
 주소(`NEXT_PUBLIC_WEB_ORIGIN`)가 꼭 있어야 하고, 없으면 빌드를 멈춘다. 앱에서만 달라지는 동작은
 `IS_APP_BUILD`(`lib/platform`)로 가른다. CI가 이 빌드를 돌려 정적 내보내기를 깨는 코드를 막는다.
 안드로이드 빌드·실행은 README의 '모바일 앱'에 있다.
+
+앱의 구독 기록은 웹처럼 localStorage가 원본이고, 쓸 때마다 기기 저장소(Preferences)에 사본을
+적는다(`lib/mirrored-storage`). 앱을 열 때 localStorage가 비어 있었으면 사본으로 되살린다 — 운영체제가
+웹뷰 저장소를 비워도 기록이 남게 하려는 것이다. 저장소를 통째로 Preferences로 옮기지 않는 이유는 그
+파일에 있다. 상태 표시줄 색은 테마를 따라 `syncSystemBars`(`lib/native`)가 맞춘다.
 
 `tools/ipad-preview`는 Mac 없이 iPad의 Expo Go로 화면을 iPhone 크기 그대로 보는 도구다(사용법은
 그 폴더의 README). pnpm 워크스페이스 밖이라 npm으로 따로 설치하고, CI·웹 빌드에 들어가지 않는다.

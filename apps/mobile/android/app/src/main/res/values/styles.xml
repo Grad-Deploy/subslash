@@ -13,6 +13,8 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- 오래된 웹뷰에서 상태 표시줄·내비게이션 바 뒤로 보이는 색. window_colors.xml 참고. -->
+        <item name="android:windowBackground">@color/subslash_window_background</item>
     </style>
 
 
