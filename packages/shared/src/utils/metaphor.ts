@@ -1,5 +1,4 @@
 import { Currency, Subscription, UsageLog } from "../types";
-import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { calculateCostPerUse, getRiskLevel } from "./cost-per-use";
 import { formatAmount, formatKRW, toKRW } from "./currency";
 import { getMyMonthlyShareAmount, getMyMonthlyAmountKRW } from "./sharing";
@@ -37,9 +36,14 @@ export function getUsageMetaphor(
   currency: Currency,
   usageCount: number,
   serviceName: string,
+  /**
+   * USD를 원으로 바꿀 환율. 기본값을 두지 않는다 — 화면이 넘기는 것을 잊으면 '내 환율을 쓴다'고
+   * 적힌 화면 옆에 1,350으로 계산한 비유가 나오고, 타입이 그것을 잡아 주지 못한다.
+   */
+  rate: number,
 ): UsageMetaphor {
-  // KRW 기준으로 비교한다. USD면 대략 환산.
-  const amountKRW = currency === "USD" ? amount * DEFAULT_EXCHANGE_RATE : amount;
+  // 소비재 가격이 원 기준이라 원으로 맞춰 비교한다.
+  const amountKRW = toKRW(amount, currency, rate);
   const costPerUse = usageCount === 0 ? amountKRW : amountKRW / usageCount;
   const risk = getRiskLevel(calculateCostPerUse(amount, usageCount), amount, usageCount);
   const tone: UsageMetaphor["tone"] =
@@ -206,7 +210,8 @@ export interface MonthlyValueSummary {
 export function getMonthlyValueSummary(
   subscriptions: Subscription[],
   usageLogs: UsageLog[],
-  rate: number = DEFAULT_EXCHANGE_RATE,
+  /** 부르는 쪽이 반드시 넘긴다. 기본값을 두면 화면이 잊었을 때 타입이 잡아 주지 못한다. */
+  rate: number,
 ): MonthlyValueSummary {
   const active = subscriptions.filter((s) => s.status === "active");
 
@@ -309,7 +314,8 @@ export function getLowUsageBillingMessage(
   sub: Subscription,
   usageCount: number,
   daysUntilBilling: number,
-  rate: number = DEFAULT_EXCHANGE_RATE,
+  /** 부르는 쪽이 반드시 넘긴다. 기본값을 두면 화면이 잊었을 때 타입이 잡아 주지 못한다. */
+  rate: number,
 ): string {
   const amount = getMyMonthlyShareAmount(sub);
   const amountKRW = toKRW(amount, sub.currency, rate);
