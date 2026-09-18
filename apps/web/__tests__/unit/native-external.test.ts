@@ -103,3 +103,42 @@ describe("앱에서", () => {
     expect(mocks.listeners).toEqual([]);
   });
 });
+
+/**
+ * 상태 표시줄 색 맞추기(`syncSystemBars`)는 플랫폼을 가려야 한다. 막대 뒤 색을 바꾸는 AppWindow는
+ * apps/mobile의 안드로이드 네이티브 플러그인이라 iOS에는 없다.
+ */
+describe("시스템 막대", () => {
+  beforeEach(() => {
+    process.env.NEXT_PUBLIC_BUILD_TARGET = "app";
+  });
+
+  async function run(platform: string) {
+    const bars = { styles: [] as string[] };
+    const registered: string[] = [];
+    vi.doMock("@capacitor/core", () => ({
+      Capacitor: { getPlatform: () => platform },
+      SystemBars: {
+        setStyle: async ({ style }: { style: string }) => void bars.styles.push(style),
+      },
+      SystemBarsStyle: { Dark: "DARK", Light: "LIGHT" },
+      registerPlugin: (name: string) => {
+        registered.push(name);
+        return { setBackgroundColor: async () => undefined };
+      },
+    }));
+    const { syncSystemBars } = await import("../../lib/native");
+    syncSystemBars("dark");
+    await vi.waitFor(() => expect(bars.styles).toEqual(["DARK"]));
+    return registered;
+  }
+
+  it("안드로이드에서는 막대 뒤 색까지 맞춘다", async () => {
+    expect(await run("android")).toEqual(["AppWindow"]);
+  });
+
+  it("iOS에서는 안드로이드에만 있는 플러그인을 부르지 않는다", async () => {
+    // 부르면 "not implemented on ios"로 거절당해 테마를 바꿀 때마다 경고만 쌓인다.
+    expect(await run("ios")).toEqual([]);
+  });
+});

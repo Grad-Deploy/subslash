@@ -184,6 +184,13 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
 `IS_APP_BUILD`(`lib/platform`)로 가른다. CI가 이 빌드를 돌려 정적 내보내기를 깨는 코드를 막는다.
 안드로이드 빌드·실행은 README의 '모바일 앱'에 있다.
 
+`apps/mobile`은 안드로이드(`android/`)와 iOS(`ios/`)를 모두 담는다. iOS 프로젝트는 Capacitor 8이
+CocoaPods 대신 SPM을 쓰므로 Windows에서도 만들어지지만, **빌드는 macOS나 EAS의 macOS 작업 서버에서만**
+된다. 실기기·TestFlight·스토어는 Apple 개발자 프로그램이 있어야 하고, 계정 없이 되는 것은 시뮬레이터
+빌드(`eas.json`의 `preview.ios.simulator`)뿐이다. 네이티브 플러그인은 안드로이드에만 있으므로
+(`AppWindowPlugin`), 플러그인을 부르는 코드는 `Capacitor.getPlatform()`으로 가른다 — iOS에서 부르면
+거절당해 경고만 쌓인다.
+
 앱의 구독 기록은 웹처럼 localStorage가 원본이고, 쓸 때마다 기기 저장소(Preferences)에 사본을
 적는다(`lib/mirrored-storage`). 앱을 열 때 localStorage가 비어 있었으면 사본으로 되살린다 — 운영체제가
 웹뷰 저장소를 비워도 기록이 남게 하려는 것이다. 저장소를 통째로 Preferences로 옮기지 않는 이유는 그
