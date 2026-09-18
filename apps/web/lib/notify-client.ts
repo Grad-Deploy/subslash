@@ -119,6 +119,21 @@ export async function enableCalendarFeed(syncToken: string): Promise<string> {
   return body.url;
 }
 
+/**
+ * 캘린더 주소를 캘린더 앱에 바로 넘기는 링크.
+ *
+ * `webcal://`은 운영체제가 기본 캘린더 앱(iPhone·Mac 캘린더, Outlook 등)에 넘기는 구독 주소이고,
+ * Google 캘린더는 웹 화면에서 `cid`로 받은 주소를 구독한다. 둘 다 서버가 준 피드 주소로 만들므로,
+ * 앱(Capacitor) 안에서도 앱 주소가 아니라 배포된 웹 주소를 가리킨다.
+ */
+export function calendarSubscribeLinks(feedUrl: string): { webcal: string; google: string } {
+  const webcal = feedUrl.replace(/^https?:\/\//, "webcal://");
+  return {
+    webcal,
+    google: `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcal)}`,
+  };
+}
+
 /** Switches the feed off; calendars subscribed to the old URL stop resolving. */
 export async function disableCalendarFeed(syncToken: string) {
   const response = await fetch(apiUrl("/api/notify/calendar"), {

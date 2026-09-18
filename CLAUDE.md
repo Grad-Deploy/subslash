@@ -109,6 +109,38 @@ PR에서 고친다. 보호책임자 연락처는 `lib/privacy.ts` 한 곳에만 
   `sessions`처럼 이 표도 직접 지운다 — `ON DELETE CASCADE`는 `PRAGMA foreign_keys`가 켜져 있을
   때만 동작한다.
 
+Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버가 브라우저로 되쓰지
+않는다"의 유일한 예외이고, 그래서 좁게 묶어 둔다. SubSlash는 Google 권한을 받지 않는다 — 사용자
+계정의 Apps Script가 2주마다 메일을 `/api/gmail/ingest`로 보내고(연결 토큰, 해시만 저장), 서버는
+그 자리에서 파싱해 **구독 후보만** 남긴다. 메일 제목·본문을 표나 로그에 남기지 않는다. 브라우저는
+로그인했을 때 후보를 가져가(`GET /api/gmail/discoveries`) 스스로 등록하고 받은 후보를 지운다 —
+서버가 브라우저 기록을 고치는 것이 아니다. 알려진 서비스의 최근 결제만 확인 없이 등록하고, 이미
+구독 중이면 등록하지 않으며, 해지한 서비스는 되살리지 않고 확인을 받는다. 저장 항목이 늘어나는
+기능이라 방침의 사전 고지를 따른다: `lib/privacy.ts`의 `GMAIL_AUTO_IMPORT_STARTS_ON`을 정하면 방침에
+항목이 먼저 게시되고 그날부터 API·화면이 열린다(null이면 닫힘, 끊기는 언제나 된다). 테스트 서버만
+`NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN`으로 연다. 계정을 지우는 경로는 `deleteGmailImportData`를
+부른다.
+
+'구글 캘린더에 결제일 등록'도 같은 웹 앱이 한다(`action=calendar`). 버튼은 '내 구독'(`/subs`) 맨
+아래에 둔다 — 목록에서 금액·결제일을 확인하고 고친 뒤 마지막에 누르는 것이라, 가져오기 화면이
+아니라 구독을 보는 화면에 있어야 한다. SubSlash는 캘린더 권한을 받지
+않는다 — 버튼을 누르면 브라우저가 구독 중인 구독의 이름·금액·결제일을 계획으로 맡기고, 웹 앱이
+접속한 사람의 권한으로 그 계획을 받아 **자기** 'SubSlash 결제일' 캘린더에 쓴다. 계획은 주소에 싣지
+않고(`calendar_sync_plans`, 1회용 코드는 해시만) 받아 가면 곧바로, 늦어도 10분이면 지운다. 캘린더
+쓰기는 전체 교체다 — 전에 SubSlash가 쓴 일정(`extendedProperties.private.subslash`)만 지우고 다시
+쓴다. 날짜 계산과 RRULE은 캘린더 피드(`lib/ics.ts`)와 같은 함수를 쓴다. 피드(`/api/calendar/[token]`,
+알림 설정)는 없애지 않는다 — 웹 앱이 없는 배포와 직접 설치 방식이 쓴다.
+
+연결은 두 갈래다. 복사 방식은 사용자가 자기 계정에 스크립트를 붙여 넣어 Google 심사 대상이 아니다.
+원클릭('Gmail 연결하기')은 **SubSlash 소유** Apps Script 웹 앱(접속한 사용자로 실행)이라 Google 심사 전에는
+'확인되지 않은 앱' 경고와 새 사용자 100명 제한이 있고, 그 이상은 제한 권한 심사·연례 보안 평가가
+필요하다 — 그래서 복사 방식을 없애지 않는다. 원클릭은 연결 토큰을 주소에 싣지 않는다: 주소에는 10분짜리
+서명 코드(`gmail-connect`, 연결 지문 포함 → 한 번만 교환)만 싣고, 웹 앱이 `/api/gmail/connect/exchange`로
+토큰을 받아 사용자별 저장소(UserProperties)에 둔다. 웹 앱 코드는 `lib/gmail-import.ts` 한 곳에만 있고
+`pnpm --filter @subslash/web gmail:web-app -- --origins …`가 파일로 쓴다. 코드를 고치면 운영자가 웹 앱을
+다시 배포해야 반영된다. 허용할 SubSlash 주소(`ALLOWED_ORIGINS`)와 `GMAIL_CONNECT_WEB_APP_URL`(두 Vercel
+프로젝트)이 서로 맞아야 한다.
+
 ## 파일 경계
 
 실제로 동작하는 코드와, 플래그 뒤의 미리보기용 픽스처를 섞지 않는다. 실제
@@ -118,6 +150,14 @@ Gmail/네이버 연동이 생기면 아래 오른쪽 열을 통째로 지운다.
 | --------------------- | ----------------------------------------------------- |
 | `utils/parser.ts`     | `utils/inbox-simulation.ts`                           |
 | `AutoImportModal.tsx` | `InboxPreviewPanel.tsx`                               |
+
+Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash가 Gmail에 연결하는 것이
+아니다. 사용자가 자기 계정에 만든 Apps Script가 메일을 찾아 `/import#gmail=…`로 넘기고, 브라우저가
+`#` 뒤를 풀어 `parseReceiptEmails`로 후보를 만든다. `#` 뒤는 서버로 가지 않으므로 메일 내용은
+서버를 거치지 않는다 — 이 값을 API로 보내거나 쿼리(`?`)로 옮기지 않는다. 스크립트 권한은
+`gmail.readonly` 하나다(`GmailApp`은 전체 권한을 요구하고, 읽기 전용으로 좁히면 빈 결과를 준다).
+메일 본문에는 광고·약관이 섞이므로, 메일은 해지 여부를 제목으로, 결제일을 받은 날로 판단하고
+알아보지 못한 서비스는 본문 단어가 아니라 '알 수 없는 결제'로 이름 짓는다.
 
 ## 앱(Capacitor)에 담을 화면
 
@@ -130,6 +170,10 @@ Gmail/네이버 연동이 생기면 아래 오른쪽 열을 통째로 지운다.
   변경 응답의 새 토큰을 받아 둔다.
 - 외부 사이트는 `openExternal()`, 공유는 `shareText()`(`lib/native`)로 연다. 앱에서는 인앱 브라우저와
   네이티브 공유 창이 된다. `window.open`·`navigator.share`를 직접 부르지 않는다.
+- 외부 사이트에서 무언가를 마치고 **돌아와야 하는** 흐름(Google 권한 화면 등)은 `leaveForExternal()`을
+  쓴다. 웹에서는 이 탭이 그대로 가고(돌아오면 화면이 다시 그려진다), 앱에서는 인앱 브라우저로 열고
+  닫힐 때 `onReturn`으로 상태를 다시 읽는다. 앱에서 `window.location.assign`으로 나가면 앱 웹뷰가
+  통째로 외부 사이트가 되어, 담아 둔 화면을 잃고 그 사이트의 '돌아가기'는 앱이 아니라 웹사이트를 연다.
 - 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은
   `capacitor://localhost`(iOS)나 `https://localhost`(안드로이드)다.
 - 페이지에 동적 경로(`[id]`)를 새로 만들지 않는다. 브라우저에서 만든 ID로는 페이지를 미리
@@ -147,6 +191,13 @@ Gmail/네이버 연동이 생기면 아래 오른쪽 열을 통째로 지운다.
 주소(`NEXT_PUBLIC_WEB_ORIGIN`)가 꼭 있어야 하고, 없으면 빌드를 멈춘다. 앱에서만 달라지는 동작은
 `IS_APP_BUILD`(`lib/platform`)로 가른다. CI가 이 빌드를 돌려 정적 내보내기를 깨는 코드를 막는다.
 안드로이드 빌드·실행은 README의 '모바일 앱'에 있다.
+
+`apps/mobile`은 안드로이드(`android/`)와 iOS(`ios/`)를 모두 담는다. iOS 프로젝트는 Capacitor 8이
+CocoaPods 대신 SPM을 쓰므로 Windows에서도 만들어지지만, **빌드는 macOS나 EAS의 macOS 작업 서버에서만**
+된다. 실기기·TestFlight·스토어는 Apple 개발자 프로그램이 있어야 하고, 계정 없이 되는 것은 시뮬레이터
+빌드(`eas.json`의 `preview.ios.simulator`)뿐이다. 네이티브 플러그인은 안드로이드에만 있으므로
+(`AppWindowPlugin`), 플러그인을 부르는 코드는 `Capacitor.getPlatform()`으로 가른다 — iOS에서 부르면
+거절당해 경고만 쌓인다.
 
 앱의 구독 기록은 웹처럼 localStorage가 원본이고, 쓸 때마다 기기 저장소(Preferences)에 사본을
 적는다(`lib/mirrored-storage`). 앱을 열 때 localStorage가 비어 있었으면 사본으로 되살린다 — 운영체제가

@@ -32,9 +32,11 @@ import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { DataBackupCard } from "../../components/settings/DataBackupCard";
+import { GoogleCalendarSync } from "../../components/calendar/GoogleCalendarSync";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { isWideScreen } from "@lib/wide-screen";
 import { subscriptionDetailHref } from "@lib/routes";
+import { isGmailAutoImportOpen } from "@lib/privacy";
 import { useIsClient } from "@hooks/useIsClient";
 
 /** 카드/표 중 고른 보기. 이 브라우저의 취향일 뿐이라 백업·동기화에 넣지 않는다. */
@@ -560,6 +562,9 @@ export default function SubscriptionsPage() {
           )}
         </aside>
       </div>
+
+      {/* 구독을 확인한 뒤, 결제일을 내 구글 캘린더에 넣는 곳 */}
+      {isGmailAutoImportOpen() && <GoogleCalendarSync />}
 
       {/* 이 브라우저에만 있는 데이터를 파일로 지키는 곳 */}
       <DataBackupCard onMessage={showToast} />
