@@ -303,6 +303,12 @@ function parseSingleMessageBlock(
     }
   }
 
+  // 라벨 뒤에 통화 표시가 없는 영수증이 있다("결제금액 : 17,000", "결제금액 : KRW 17,000").
+  // 달러를 먼저 보고 나서 이 값을 쓴다 — "결제금액 : 10.99 USD"를 10원으로 읽으면 안 된다.
+  const labeledNumberMatch = block.match(
+    /(?:결제금액|총\s*결제금액|청구금액|이용금액|결제\s*금액)\s*[:：]?\s*(?:KRW\s*)?([0-9][0-9,]*)(?:\s*(?:원|KRW|won))?/i,
+  );
+
   if (amount === 0) {
     // KRW patterns: 17,000원, 17000원, ₩17,000
     const krwMatch = normalized.match(/(?:₩\s*([0-9,]+)|([0-9,]+)\s*원)/i);
@@ -315,6 +321,13 @@ function parseSingleMessageBlock(
       if (!isNaN(parsedVal) && parsedVal > 0) {
         amount = parsedVal;
         currency = "USD";
+      }
+    } else if (labeledNumberMatch) {
+      // 라벨이 가리키는 값이라, 본문 아무 곳의 숫자(적립금·할인액)보다 믿을 만하다.
+      const parsedVal = parseInt(labeledNumberMatch[1].replace(/,/g, ""), 10);
+      if (!isNaN(parsedVal) && parsedVal > 0) {
+        amount = parsedVal;
+        currency = "KRW";
       }
     } else if (krwMatch) {
       const rawVal = (krwMatch[1] || krwMatch[2]).replace(/,/g, "");
@@ -344,7 +357,7 @@ function parseSingleMessageBlock(
   // mention says nothing extra.
   let billingMonth: number | undefined;
   const explicitDateMatch = block.match(
-    /(?:결제일시|결제일|승인일시|일시|다음\s*결제\s*(?:예정)?일)\s*[:：]?\s*(?:[0-9]{4}[./-]([0-9]{1,2})[./-]([0-3]?[0-9])|([0-1]?[0-9])[/.-]([0-3]?[0-9])|([0-3]?[0-9])일)/i,
+    /(?:결제일시|결제일자|결제일|승인일시|승인일자|승인일|거래일시|거래일자|이용일자|이용일|결제\s*완료일|일시|다음\s*결제\s*(?:예정)?일|\bdate\b|\bbilled\s*on\b|\bpayment\s*date\b)\s*[:：]?\s*(?:[0-9]{4}[./-]([0-9]{1,2})[./-]([0-3]?[0-9])|([0-1]?[0-9])[/.-]([0-3]?[0-9])|([0-3]?[0-9])일)/i,
   );
 
   const takeDate = (rawMonth?: string, rawDay?: string) => {
@@ -370,11 +383,25 @@ function parseSingleMessageBlock(
   } else {
     // Strip currency amounts so numbers like "$20.00" are not mistaken for MM.DD
     const dateScanText = normalized.replace(/\$\s*[0-9.]+/g, "").replace(/[0-9.]+\s*USD/gi, "");
-    const dateRegex =
-      /(?:([0-1]?[0-9])[/.-]([0-3]?[0-9])|([0-1]?[0-9])\s*월\s*([0-3]?[0-9])\s*일)/g;
-    let match: RegExpExecArray | null;
-    while ((match = dateRegex.exec(dateScanText)) !== null) {
-      if (takeDate(match[1] || match[3], match[2] || match[4])) break;
+
+    // 연도가 붙은 날짜를 먼저 읽는다. "2026.09.05"를 월·일만 훑으면 연도 끝과 월이 "6.09"로
+    // 붙어 9일이 된다 — 실제 결제일(5일)과 나흘이 어긋난다.
+    const fullDate =
+      dateScanText.match(/(?:19|20)[0-9]{2}\s*[./-]\s*([0-1]?[0-9])\s*[./-]\s*([0-3]?[0-9])/) ??
+      dateScanText.match(/(?:19|20)[0-9]{2}\s*년\s*([0-1]?[0-9])\s*월\s*([0-3]?[0-9])\s*일/);
+
+    if (!fullDate || !takeDate(fullDate[1], fullDate[2])) {
+      const dateRegex =
+        /(?:([0-1]?[0-9])[/.-]([0-3]?[0-9])|([0-1]?[0-9])\s*월\s*([0-3]?[0-9])\s*일)/g;
+      let match: RegExpExecArray | null;
+      while ((match = dateRegex.exec(dateScanText)) !== null) {
+        // 전화번호("02-1234-5678")나 카드번호의 토막은 날짜가 아니다. 앞뒤에 숫자가 더 붙어
+        // 있으면 더 긴 번호의 일부로 본다.
+        const before = dateScanText[match.index - 1] ?? "";
+        const after = dateScanText[match.index + match[0].length] ?? "";
+        if (/[0-9-]/.test(before) || /[0-9-]/.test(after)) continue;
+        if (takeDate(match[1] || match[3], match[2] || match[4])) break;
+      }
     }
   }
 
