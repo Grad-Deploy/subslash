@@ -81,6 +81,12 @@ export const mirroredSubscriptions = sqliteTable(
      * skips the subscription rather than mailing about it every month.
      */
     billingMonth: integer("billing_month"),
+    /**
+     * 해지 주소. 캘린더 피드의 일정 메모에 적어, 캘린더에서 바로 해지하러 갈 수 있게 한다.
+     * 브라우저가 이 구독에 적어 둔 주소를 그대로 보내고, 서버는 http(s)만 받는다. 없으면 null이고
+     * 그때 메모에는 해지 줄이 없다.
+     */
+    cancelUrl: text("cancel_url"),
     updatedAt: text("updated_at")
       .notNull()
       .default(sql`(datetime('now'))`),

@@ -1,4 +1,4 @@
-import { getBilledAmount, type Subscription } from "@subslash/shared";
+import { currentCancelUrl, getBilledAmount, type Subscription } from "@subslash/shared";
 import { apiUrl } from "./api";
 
 /**
@@ -28,6 +28,8 @@ export function toMirrorPayload(subscriptions: Subscription[]) {
       billingDay: sub.billingDay,
       billingCycle: sub.billingCycle,
       billingMonth: sub.billingMonth ?? null,
+      // 캘린더 피드의 일정 메모에 적는다. 해지하려고 캘린더를 연 사람이 앱을 다시 열지 않아도 되게.
+      cancelUrl: sub.cancelUrl ? currentCancelUrl(sub.cancelUrl) : null,
     }));
 }
 

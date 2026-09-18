@@ -26,6 +26,15 @@ describe("toMirrorPayload", () => {
     expect(toMirrorPayload([claude])[0].amount).toBe(20);
   });
 
+  it("해지 주소를 함께 보낸다 — 캘린더 일정 메모에 적힌다", () => {
+    expect(
+      toMirrorPayload([{ ...claude, cancelUrl: "https://claude.ai/settings/billing" }])[0]
+        .cancelUrl,
+    ).toBe("https://claude.ai/settings/billing");
+    // 없으면 null이고, 그때 메모에는 해지 줄이 없다.
+    expect(toMirrorPayload([claude])[0].cancelUrl).toBeNull();
+  });
+
   it("해지한 구독은 보내지 않는다", () => {
     expect(toMirrorPayload([{ ...claude, status: "killed" }])).toEqual([]);
   });

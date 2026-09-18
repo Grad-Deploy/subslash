@@ -151,3 +151,34 @@ describe("buildBillingCalendar", () => {
     expect(ics).not.toContain("/subs/detail");
   });
 });
+
+describe("캘린더 피드의 해지 안내", () => {
+  const base = {
+    clientId: "sub-1",
+    name: "넷플릭스",
+    amount: 17000,
+    currency: "KRW",
+    billingDay: 25,
+    billingCycle: "monthly",
+    billingMonth: null,
+  };
+  const NOW = new Date(2026, 8, 18);
+
+  it("해지 주소가 있으면 일정 메모에 적는다", () => {
+    const feed = buildBillingCalendar(
+      [{ ...base, cancelUrl: "https://www.netflix.com/cancelplan" }],
+      { reminderDays: 3, now: NOW },
+    );
+    expect(feed).toContain("netflix.com/cancelplan");
+    expect(feed).toContain("확인된 해지 화면");
+  });
+
+  it("해지 주소가 없으면 메모에 해지 줄이 없다", () => {
+    const feed = buildBillingCalendar([{ ...base, cancelUrl: null }], {
+      reminderDays: 3,
+      now: NOW,
+    });
+    expect(feed).not.toContain("해지하러 가기");
+    expect(feed).not.toContain("확인된 해지 화면");
+  });
+});

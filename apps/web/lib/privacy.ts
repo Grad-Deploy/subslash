@@ -9,7 +9,7 @@
 export const PRIVACY_OFFICER: { name: string; email: string } | null = null;
 
 /** 이 방침이 효력을 갖는 날. 내용을 바꾸면 함께 바꾼다. */
-export const PRIVACY_EFFECTIVE_DATE = "2026년 9월 17일";
+export const PRIVACY_EFFECTIVE_DATE = "2026년 9월 18일";
 
 /**
  * Gmail 자동 가져오기를 시작하는 날(YYYY-MM-DD, 한국 시간 0시). 이 기능은 서버에 저장하는 항목을

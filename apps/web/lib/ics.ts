@@ -29,7 +29,7 @@ export interface CalendarEntry {
    * 이 칸이 없으므로 늘 비어 있다 — 방침의 사전 고지 없이 서버 저장 칸을 늘리지 않기로 했다.
    * '구글 캘린더에 등록'은 브라우저가 계획에 실어 보내므로 채워진다.
    */
-  cancelUrl?: string;
+  cancelUrl?: string | null;
 }
 
 /** Escapes the characters RFC 5545 gives special meaning inside a TEXT value. */
