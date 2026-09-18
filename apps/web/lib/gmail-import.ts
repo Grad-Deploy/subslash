@@ -506,6 +506,7 @@ function calendarPage(origin, code) {
       "캘린더에 등록하지 못했습니다",
       responseError(response, "요청이 만료됐거나 이미 쓰였습니다. SubSlash에서 다시 눌러 주세요."),
       origin,
+      "/subs",
     );
   }
 
@@ -517,9 +518,15 @@ function calendarPage(origin, code) {
       "'" + plan.calendarName + "' 캘린더에 결제일 " + written + "건을 넣었습니다. " +
         "구독을 고친 뒤 SubSlash에서 다시 누르면 이 캘린더를 통째로 새로 씁니다.",
       origin,
+      "/subs",
     );
   } catch (error) {
-    return connectPage("캘린더에 등록하지 못했습니다", String(error.message || error), origin);
+    return connectPage(
+      "캘린더에 등록하지 못했습니다",
+      String(error.message || error),
+      origin,
+      "/subs",
+    );
   }
 }
 
@@ -595,9 +602,10 @@ function clearBillingEvents(calendarId) {
   } while (pageToken);
 }
 
-function connectPage(title, message, origin) {
+// backPath는 '돌아가기'가 열 SubSlash 화면이다. 캘린더는 버튼이 있던 '내 구독'으로 돌려보낸다.
+function connectPage(title, message, origin, backPath) {
   var back = origin
-    ? '<p><a href="' + escapeHtml(origin + "/import") + '" target="_top" ' +
+    ? '<p><a href="' + escapeHtml(origin + (backPath || "/import")) + '" target="_top" ' +
       'style="display:inline-block;padding:12px 20px;border-radius:10px;background:#18181b;color:#fff;text-decoration:none;font-weight:700">' +
       "SubSlash로 돌아가기</a></p>"
     : "";

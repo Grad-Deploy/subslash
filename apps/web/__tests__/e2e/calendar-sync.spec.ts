@@ -1,8 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * '구글 캘린더에 결제일 등록'의 화면 쪽. 서버(계획 맡기기·받아 가기)는 통합 테스트가 실제 SQLite로
- * 보므로, 여기서는 브라우저가 무엇을 보내고 어디로 가는지만 본다. 실제 Google로는 나가지 않는다.
+ * '구글 캘린더에 결제일 등록'의 화면 쪽. 버튼은 구독을 확인하고 고친 뒤 누르는 곳, 곧 '내 구독'
+ * 맨 아래에 있다. 서버(계획 맡기기·받아 가기)는 통합 테스트가 실제 SQLite로 보므로, 여기서는
+ * 브라우저가 무엇을 보내고 어디로 가는지만 본다. 실제 Google로는 나가지 않는다.
  */
 
 const STORAGE_KEY = "subslash-storage";
@@ -83,7 +84,7 @@ test.describe("구글 캘린더에 결제일 등록 (E2E)", () => {
         route.fulfill({ contentType: "text/html", body: "<h1>google</h1>" }),
       );
 
-    await page.goto("/import");
+    await page.goto("/subs");
     // 결제 월을 모르는 연간 구독은 빼고 센다.
     await expect(page.getByText(/지금 올릴 결제일/)).toContainText("1건", { timeout: 30_000 });
     await expect(page.getByText(/지금 올릴 결제일/)).toContainText("연간 구독 1건은 뺍니다");
@@ -102,7 +103,7 @@ test.describe("구글 캘린더에 결제일 등록 (E2E)", () => {
     await seed(page);
     await mockLoggedIn(page, false);
 
-    await page.goto("/import");
+    await page.goto("/subs");
     await expect(
       page.getByText(/이 서버에는 구글 캘린더 등록이 설정되어 있지 않습니다/),
     ).toBeVisible({ timeout: 30_000 });
