@@ -165,13 +165,14 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 
 ## 파일 경계
 
-실제로 동작하는 코드와, 플래그 뒤의 미리보기용 픽스처를 섞지 않는다. 실제
-Gmail/네이버 연동이 생기면 아래 오른쪽 열을 통째로 지운다.
+화면에 보이는 결제 내역은 전부 사용자가 실제로 넘긴 것이다. 지어낸 영수증을 만드는
+코드는 없다.
 
-| 실동작                | 미리보기 (`NEXT_PUBLIC_SHOW_INBOX_PREVIEW`, 기본 off) |
-| --------------------- | ----------------------------------------------------- |
-| `utils/parser.ts`     | `utils/inbox-simulation.ts`                           |
-| `AutoImportModal.tsx` | `InboxPreviewPanel.tsx`                               |
+예전에는 메일 연동이 없는 동안 `NEXT_PUBLIC_SHOW_INBOX_PREVIEW` 뒤에 예시 영수증을
+만들어 보여 주는 '메일함 스캔' 탭이 있었다(`utils/inbox-simulation.ts`,
+`InboxPreviewPanel.tsx`). Gmail 가져오기가 생겨 그 자리를 실제로 채웠으므로 2026년 9월
+19일에 플래그·픽스처·화면을 모두 지웠다. 다시 만들지 않는다 — 그 탭은 등록을 누르면
+예시 데이터를 진짜 구독 목록에 써 넣었다.
 
 Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash가 Gmail에 연결하는 것이
 아니다. 사용자가 자기 계정에 만든 Apps Script가 메일을 찾아 `/import#gmail=…`로 넘기고, 브라우저가
