@@ -203,6 +203,11 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
   만들 수 없다. 구독 상세는 `subscriptionDetailHref()`(`/subs/detail?id=`)를 쓴다.
 - 브라우저 기본 `confirm`·`prompt`·`alert`를 쓰지 않는다. 창 밖에서는 `ConfirmDialog`, 이미
   열린 창 안에서는 `InlineConfirm`을 쓴다(창을 겹치면 같은 Esc에 함께 닫힌다).
+- 화면 위에 띄우는 것은 `ui/dialog`의 `Dialog`를 쓴다. 이 창은 포털로 `document.body`에 붙는다.
+  그 자리에 그냥 그리면 조상이 만든 쌓임 맥락에 갇혀, 창의 `z-50`이 그 안에서만 통한다 —
+  `/subs`의 상세 칸(`xl:sticky`)에서 연 창을 헤더(`z-40`)가 덮어 제목과 닫기 버튼이 가려졌다.
+  `position: sticky`는 z-index를 주지 않아도 **늘** 쌓임 맥락을 만든다. `fixed`와 큰 `z-`만으로는
+  모자라니, 덮개를 새로 만들지 말고 이 `Dialog`에 얹는다.
 - 페이지를 통째로 다시 부르는 이동(`window.location.href =`, `location.reload()`, next/link가
   아닌 `<a href="/...">`)을 쓰지 않는다. 앱은 확장자 없는 주소(`/dashboard`)를 모두 `index.html`로
   열어서, 다시 부른 페이지는 홈 화면이 된다. 화면 이동은 next/link와 `useRouter`로만 한다.
