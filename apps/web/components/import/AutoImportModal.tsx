@@ -215,7 +215,7 @@ export function AutoImportModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-2xl max-h-[92vh] flex flex-col overflow-y-hidden bg-card text-foreground border-border">
+      <DialogContent className="max-w-2xl bg-card text-foreground border-border">
         <DialogHeader className="pb-2 border-b border-border">
           <div className="flex items-center gap-2">
             <span className="text-2xl">⚡</span>
