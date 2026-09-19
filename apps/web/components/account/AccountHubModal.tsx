@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { useStore } from "../../lib/store";
-import { SHOW_INBOX_PREVIEW } from "../../lib/flags";
 import { AccountProvider, ACCOUNT_PROVIDERS, formatKRW, sumMonthlyKRW } from "@subslash/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
@@ -10,7 +9,6 @@ import { Input } from "../ui/input";
 import { Select } from "../ui/select";
 import { Badge } from "../ui/badge";
 import { EmailDomainInput } from "../ui/email-domain-input";
-import { AutoImportModal } from "../import/AutoImportModal";
 
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 
@@ -23,7 +21,6 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
   const { accounts, addAccount, deleteAccount, subscriptions } = useStore();
   const rate = useExchangeRate();
   const [isAdding, setIsAdding] = useState(false);
-  const [scanAccountId, setScanAccountId] = useState<string | null>(null);
   const [provider, setProvider] = useState<AccountProvider>("google");
   const [name, setName] = useState("");
   const [emailOrId, setEmailOrId] = useState("");
@@ -237,18 +234,6 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
                         </div>
 
                         <div className="flex items-center gap-1">
-                          {/* Per-account scan only drives the simulated inbox preview. */}
-                          {SHOW_INBOX_PREVIEW && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs gap-1 border-primary/30 text-primary hover:bg-primary/10"
-                              onClick={() => setScanAccountId(acc.id)}
-                              title="이 계정으로 예시 영수증 스캔 미리보기 실행"
-                            >
-                              <span>🧪</span> 예시 스캔
-                            </Button>
-                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -282,14 +267,6 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
           </div>
         </div>
       </DialogContent>
-
-      {scanAccountId && (
-        <AutoImportModal
-          isOpen={!!scanAccountId}
-          onClose={() => setScanAccountId(null)}
-          defaultAccountId={scanAccountId}
-        />
-      )}
     </Dialog>
   );
 }
