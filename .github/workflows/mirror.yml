@@ -51,7 +51,19 @@ jobs:
 
       - name: Clone every branch and tag
         # --mirror는 refs/pull/*까지 받아 오는데, 그건 GitHub가 받지 않는 숨은 참조다.
-        run: git clone --bare "https://github.com/${{ github.repository }}.git" source.git
+        #
+        # 이 레포는 비공개다. 익명으로 clone하면 git이 사용자 이름을 묻는데, 러너에는
+        # 답할 사람이 없어 "could not read Username"으로 끝난다. 그래서 워크플로 자신의
+        # 토큰으로 읽는다(permissions의 contents: read가 그걸 허용한다).
+        #
+        # 복제본은 그대로 새 레포로 밀려 나가므로, 토큰이 .git/config에 남지 않도록
+        # clone 직후 origin을 지운다.
+        env:
+          READ_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REPO_URL="https://x-access-token:${READ_TOKEN}@github.com/${{ github.repository }}.git"
+          git clone --bare "$REPO_URL" source.git
+          git -C source.git remote remove origin
 
       - name: Remove files that must not reach Grad-Deploy
         working-directory: source.git
