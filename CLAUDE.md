@@ -240,8 +240,8 @@ Android 이미지에는 JDK 17뿐인데 Capacitor 8은 Java 21로 컴파일해�
 `.gitignore` 기준으로 올린다. `.easignore`를 만들면 `.gitignore`를 통째로 대신해서 `.env`까지 올라갈 수
 있으니 만들지 않는다.
 
-`tools/ipad-preview`는 Mac 없이 iPad의 Expo Go로 화면을 iPhone 크기 그대로 보는 도구다(사용법은
-그 폴더의 README). pnpm 워크스페이스 밖이라 npm으로 따로 설치하고, CI·웹 빌드에 들어가지 않는다.
+`tools/ipad-preview`는 Mac 없이 iPad·iPhone의 Expo Go로 화면을 iPhone에서 보는 모습 그대로 보는
+도구다(iPad는 iPhone 크기 틀, iPhone은 전체 화면. 사용법은 그 폴더의 README). pnpm 워크스페이스 밖이라 npm으로 따로 설치하고, CI·웹 빌드에 들어가지 않는다.
 출시할 앱이 아니므로 네이티브 기능은 여기서 확인할 수 없다.
 
 ## 작업 절차
