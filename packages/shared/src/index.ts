@@ -15,5 +15,4 @@ export * from "./constants/thresholds";
 export * from "./constants/services";
 export * from "./constants/categories";
 export * from "./utils/parser";
-export * from "./utils/inbox-simulation";
 export * from "./utils/metaphor";

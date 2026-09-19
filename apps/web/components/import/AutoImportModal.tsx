@@ -13,13 +13,11 @@ import {
 } from "@subslash/shared";
 import { useStore } from "../../lib/store";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
-import { SHOW_INBOX_PREVIEW } from "../../lib/flags";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Select } from "../ui/select";
 import { EmailDomainInput } from "../ui/email-domain-input";
-import { InboxPreviewPanel } from "./InboxPreviewPanel";
 import { InlineConfirm } from "../ui/inline-confirm";
 
 interface AutoImportModalProps {
@@ -77,7 +75,6 @@ export function AutoImportModal({
   // 사람이 모르고 지우지 않게 따로 적는다.
   const killedCount = subscriptions.filter((sub) => sub.status === "killed").length;
   const rate = useExchangeRate();
-  const [activeTab, setActiveTab] = useState<"email" | "sms">("sms");
 
   // SMS parse state
   const [smsText, setSmsText] = useState<string>(initialSmsText ?? "");
@@ -92,11 +89,7 @@ export function AutoImportModal({
   const [customTargetEmail, setCustomTargetEmail] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "ott" | "ai" | "other">("all");
   const [replaceExisting, setReplaceExisting] = useState<boolean>(!initialDiscovered);
-  const [scanAccountId, setScanAccountId] = useState<string>(
-    defaultAccountId || accounts[0]?.id || "__custom__",
-  );
-  const [scanCustomEmail, setScanCustomEmail] = useState<string>("");
-  /** Qualifier the preview attaches to its result count, e.g. the 30-day filter. */
+  /** 후보 개수 옆에 붙일 설명(예: "Gmail 메일 40통에서"). */
   const [resultsNote, setResultsNote] = useState<string | null>(initialResultsNote ?? null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [, startTransition] = useTransition();
@@ -107,30 +100,6 @@ export function AutoImportModal({
     setSmsText("");
     setDiscoveredItems([]);
     setResultsNote(null);
-  };
-
-  /**
-   * Mirrors the preview panel's own scan selection.
-   *
-   * Registration falls back to the scanned address when no target account was
-   * chosen, so the modal has to know what the panel is pointed at even though
-   * the panel owns that state.
-   */
-  const handleScanTargetChange = ({
-    scanAccountId,
-    scanCustomEmail,
-    target,
-  }: {
-    scanAccountId: string;
-    scanCustomEmail: string;
-    target?: { accountId: string; customEmail: string };
-  }) => {
-    setScanAccountId(scanAccountId);
-    setScanCustomEmail(scanCustomEmail);
-    if (target) {
-      setTargetAccountId(target.accountId);
-      setCustomTargetEmail(target.customEmail);
-    }
   };
 
   const handleClose = () => {
@@ -182,13 +151,9 @@ export function AutoImportModal({
     let accId: string | undefined = undefined;
     let accName: string | undefined = undefined;
 
-    const effectiveCustomEmail =
-      customTargetEmail.trim() || (scanAccountId === "__custom__" ? scanCustomEmail.trim() : "");
+    const effectiveCustomEmail = customTargetEmail.trim();
 
-    if (
-      (targetAccountId === "__custom__" || scanAccountId === "__custom__" || !targetAccountId) &&
-      effectiveCustomEmail
-    ) {
+    if ((targetAccountId === "__custom__" || !targetAccountId) && effectiveCustomEmail) {
       const email = effectiveCustomEmail;
       const existingAcc = accounts.find((a) => a.emailOrId.toLowerCase() === email.toLowerCase());
       if (existingAcc) {
@@ -263,124 +228,68 @@ export function AutoImportModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/*
-          Tab Selector — only meaningful while the simulated inbox preview is
-          enabled. With it off there is a single real input mode, so the modal
-          shows no tabs at all.
-        */}
-        {SHOW_INBOX_PREVIEW && (
-          <div className="flex gap-2 border-b border-border pt-2 pb-3">
-            <Button
-              type="button"
-              variant={activeTab === "email" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => {
-                setActiveTab("email");
-                handleClearParsingRecords();
-              }}
-              className="flex-1 text-sm font-medium gap-1.5"
-            >
-              <span>🧪</span> 메일함 스캔 (미리보기)
-            </Button>
-            <Button
-              type="button"
-              variant={activeTab === "sms" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => {
-                setActiveTab("sms");
-                handleClearParsingRecords();
-              }}
-              className="flex-1 text-sm font-medium gap-1.5"
-            >
-              <span>💬</span> 결제 문자 · 영수증 붙여넣기
-            </Button>
-          </div>
-        )}
-
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto py-3 space-y-4 pr-1">
-          {SHOW_INBOX_PREVIEW && activeTab === "email" && (
-            <InboxPreviewPanel
-              accounts={accounts}
-              defaultAccountId={defaultAccountId}
-              targetAccountId={targetAccountId}
-              hasResults={discoveredItems.length > 0}
-              onResults={(items, note) => {
-                setDiscoveredItems(items);
-                setResultsNote(note ?? null);
-              }}
-              onReset={handleClearParsingRecords}
-              onScanTargetChange={handleScanTargetChange}
-              onSwitchToPasteTab={() => {
-                setActiveTab("sms");
-                handleClearParsingRecords();
-              }}
-            />
-          )}
-
-          {/* TAB 2: SMS & EMAIL RECEIPT PARSE */}
-          {activeTab === "sms" && (
-            <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <label className="text-xs font-medium text-muted-foreground">
-                  카드 승인 문자 또는 네이버페이 결제 영수증 메일 본문 붙여넣기
-                </label>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleFillSample}
-                    className="text-xs py-1 h-7 border-dashed"
-                  >
-                    ✨ 카드 문자 예시
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleFillSampleNaver}
-                    className="text-xs py-1 h-7 border-dashed text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/10"
-                  >
-                    🟢 네이버페이 영수증 예시
-                  </Button>
-                  {(smsText || discoveredItems.length > 0) && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClearParsingRecords}
-                      className="text-xs py-1 h-7 border-dashed text-rose-600 dark:text-rose-400 border-rose-500/40 hover:bg-rose-500/10"
-                    >
-                      🗑️ 파싱 내용 비우기
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              <p className="text-[11px] text-muted-foreground">
-                Gmail을 쓰신다면{" "}
-                <Link
-                  href="/import"
-                  className="font-medium text-primary underline underline-offset-2"
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label className="text-xs font-medium text-muted-foreground">
+                카드 승인 문자 또는 네이버페이 결제 영수증 메일 본문 붙여넣기
+              </label>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFillSample}
+                  className="text-xs py-1 h-7 border-dashed"
                 >
-                  결제 메일에서 한 번에 찾기
-                </Link>
-                도 있습니다.
-              </p>
-
-              <textarea
-                rows={5}
-                value={smsText}
-                onChange={(e) => {
-                  setSmsText(e.target.value);
-                  handleParseSms(e.target.value);
-                }}
-                placeholder="결제 문자 또는 네이버 결제 영수증 이메일 내용을 그대로 붙여넣으세요.&#10;&#10;[예시]&#10;[네이버페이] 결제내역 안내 (정기/반복결제)&#10;상품명 : 네이버 MYBOX 80GB 이용권 (정기결제)&#10;결제금액 : 1,650원&#10;결제일시 : 2026.09.02 14:30&#10;결제수단 : 네이버페이 머니"
-                className="w-full p-3 text-xs md:text-sm font-mono rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+                  ✨ 카드 문자 예시
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleFillSampleNaver}
+                  className="text-xs py-1 h-7 border-dashed text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/10"
+                >
+                  🟢 네이버페이 영수증 예시
+                </Button>
+                {(smsText || discoveredItems.length > 0) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearParsingRecords}
+                    className="text-xs py-1 h-7 border-dashed text-rose-600 dark:text-rose-400 border-rose-500/40 hover:bg-rose-500/10"
+                  >
+                    🗑️ 파싱 내용 비우기
+                  </Button>
+                )}
+              </div>
             </div>
-          )}
+
+            <p className="text-[11px] text-muted-foreground">
+              Gmail을 쓰신다면{" "}
+              <Link
+                href="/import"
+                className="font-medium text-primary underline underline-offset-2"
+              >
+                결제 메일에서 한 번에 찾기
+              </Link>
+              도 있습니다.
+            </p>
+
+            <textarea
+              rows={5}
+              value={smsText}
+              onChange={(e) => {
+                setSmsText(e.target.value);
+                handleParseSms(e.target.value);
+              }}
+              placeholder="결제 문자 또는 네이버 결제 영수증 이메일 내용을 그대로 붙여넣으세요.&#10;&#10;[예시]&#10;[네이버페이] 결제내역 안내 (정기/반복결제)&#10;상품명 : 네이버 MYBOX 80GB 이용권 (정기결제)&#10;결제금액 : 1,650원&#10;결제일시 : 2026.09.02 14:30&#10;결제수단 : 네이버페이 머니"
+              className="w-full p-3 text-xs md:text-sm font-mono rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
 
           {/*
             붙여넣었는데 아무것도 못 찾았으면 그렇다고 말한다. 화면이 조용하면 사용자는 앱이
@@ -421,9 +330,7 @@ export function AutoImportModal({
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-border/50">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                        <span>
-                          {activeTab === "email" ? "예시 구독 서비스" : "검색된 구독 서비스"}
-                        </span>
+                        <span>검색된 구독 서비스</span>
                         <Badge variant="secondary" className="text-xs font-bold">
                           {discoveredItems.length}건
                         </Badge>
@@ -586,14 +493,6 @@ export function AutoImportModal({
 
         {/* Modal Footer Actions */}
         <div className="pt-3 border-t border-border mt-auto flex flex-col gap-3">
-          {/* Registering preview results writes sample data into the real list. */}
-          {activeTab === "email" && discoveredItems.length > 0 && (
-            <div className="px-3 py-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-[11px] leading-relaxed text-amber-900 dark:text-amber-200">
-              지금 등록하면 <strong>예시 데이터</strong>가 내 구독 목록에 그대로 저장됩니다. 실제
-              결제 내역을 등록하려면 <strong>결제 문자 · 영수증 붙여넣기</strong> 탭을 이용하세요.
-            </div>
-          )}
-
           {/* Previous records replacement option & clear button */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs py-2 px-3 bg-muted/30 rounded-xl border border-border/70">
             <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -690,8 +589,7 @@ export function AutoImportModal({
                   </option>
                 ))}
                 <option value="__custom__">
-                  ✏️ 직접 입력한 계정 (
-                  {scanCustomEmail.trim() || customTargetEmail.trim() || "새 이메일"}) 매핑
+                  ✏️ 직접 입력한 계정 ({customTargetEmail.trim() || "새 이메일"}) 매핑
                 </option>
               </Select>
             </div>
