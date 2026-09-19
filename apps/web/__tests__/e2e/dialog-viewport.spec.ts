@@ -76,6 +76,36 @@ test.describe("창이 화면 밖으로 잘리지 않는다 (E2E)", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 
+  test("넓은 화면 옆 칸에서 연 창이 상단 바에 가리지 않는다", async ({ page }) => {
+    // 옆 칸(aside)은 position:sticky라 쌓임 맥락을 만든다. 그 안에서 그린 fixed 창은 z-50이어도
+    // aside 안에서만 위라, 상단 바(sticky z-40)가 창 위를 덮어 닫기 버튼이 그 뒤로 숨었다. 창을
+    // body로 포털한 뒤에는 화면 전체를 기준으로 덮는다.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seed(page);
+    await page.goto("/subs?sub=netflix");
+
+    await page
+      .getByRole("button", { name: /정보 수정/ })
+      .first()
+      .click({ timeout: 30_000 });
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    // 화면 맨 위(상단 바가 있는 자리)에서 제일 위에 그려진 것이 창의 어둠막이어야 한다 —
+    // 상단 바가 창을 덮고 있으면 여기서 header가 잡힌다.
+    const topmostIsHeader = await page.evaluate(() => {
+      const el = document.elementFromPoint(Math.floor(window.innerWidth / 2), 6);
+      return !!el?.closest("header");
+    });
+    expect(topmostIsHeader).toBe(false);
+
+    // 닫기 버튼이 상단 바 뒤로 숨지 않고, 눌러서 닫힌다(가려져 있으면 클릭이 가로채인다).
+    const close = dialog.getByRole("button", { name: "Close" });
+    await expect(close).toBeInViewport();
+    await close.click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+
   test("폼을 끝까지 내려도 닫기 버튼이 따라 사라지지 않는다", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 600 });
     await seed(page);
