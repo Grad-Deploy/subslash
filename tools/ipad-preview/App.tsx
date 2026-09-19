@@ -5,15 +5,16 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 
 /**
- * iPad에서 SubSlash 웹 화면을 iPhone 크기 그대로 보는 미리보기.
+ * Expo Go로 SubSlash 웹 화면을 iPhone에서 보는 모습 그대로 보는 미리보기.
  *
  * 앱(Capacitor iOS)은 웹 화면을 WKWebView로 그린다. 여기서도 같은 WKWebView(react-native-webview)로
- * 그리되, iPad 화면 가운데에 iPhone 크기의 틀을 두고 그 안에만 그린다. 웹은 틀의 폭을 기기 폭으로
- * 알아서 iPhone과 같은 배치가 나온다.
+ * 그린다.
  *
- * 상태 표시줄·홈 표시줄 자리는 틀 안에서 그만큼 비워 둔다. 실제 iPhone에서는 웹이 그 자리까지
- * 그리고 safe-area 여백으로 비켜 가는데, 틀 안의 WebView에는 safe-area 값이 없어서(0) 여기서
- * 대신 비운다. 빈 자리는 페이지 배경색으로 칠한다.
+ * - iPad: 화면 가운데에 iPhone 크기의 틀을 두고 그 안에만 그린다. 웹은 틀의 폭을 기기 폭으로 알아서
+ *   iPhone과 같은 배치가 나온다. 상태 표시줄·홈 표시줄 자리는 틀 안에서 그만큼 비워 둔다 — 틀 안의
+ *   WebView에는 safe-area 값이 없어서(0) 페이지가 스스로 비켜 가지 못한다. 빈 자리는 페이지 배경색으로 칠한다.
+ * - iPhone: 틀 없이 화면 전체에 그린다. 앱처럼 웹이 상태 표시줄 자리까지 그리고, 페이지가 safe-area
+ *   여백(viewport-fit=cover)으로 비켜 간다. 주소·기기 크기를 바꾸는 도구 줄은 iPad에서만 보인다.
  */
 
 const TARGETS = [
@@ -29,6 +30,9 @@ const DEVICES = [
 ] as const;
 
 type Device = (typeof DEVICES)[number];
+
+/** 짧은 변이 이보다 좁으면 iPhone으로 보고 틀 없이 그린다. 가장 작은 iPad(mini)의 짧은 변이 744pt다. */
+const PHONE_MAX_SHORT_SIDE = 600;
 
 /** 페이지 배경색을 알려준다. 테마를 바꾸면(<html>의 class) 다시 알린다. */
 const REPORT_BACKGROUND = `
@@ -66,6 +70,8 @@ function Preview() {
   const [device, setDevice] = useState<Device>(DEVICES[0]);
   const [pageBackground, setPageBackground] = useState("#ffffff");
 
+  const onPhone = Math.min(windowWidth, windowHeight) < PHONE_MAX_SHORT_SIDE;
+
   // iPad를 눕히면 틀이 화면에 다 들어오게 비율 그대로 줄인다. 키우지는 않는다(1pt는 1pt).
   const scale = Math.min(
     1,
@@ -87,6 +93,30 @@ function Preview() {
       // 페이지가 보낸 다른 메시지는 무시한다.
     }
   };
+
+  const web = (
+    <WebView
+      ref={webView}
+      source={{ uri: url }}
+      style={styles.web}
+      injectedJavaScript={REPORT_BACKGROUND}
+      onMessage={onMessage}
+      allowsBackForwardNavigationGestures
+      contentInsetAdjustmentBehavior="never"
+      automaticallyAdjustContentInsets={false}
+      setSupportMultipleWindows={false}
+    />
+  );
+
+  if (onPhone) {
+    return (
+      <View style={[styles.fill, { backgroundColor: pageBackground }]}>
+        {/* 상태 표시줄 글자는 페이지 배경에 맞춘다. 다크 테마에서 검은 글자면 보이지 않는다. */}
+        <StatusBar style={isDark(pageBackground) ? "light" : "dark"} />
+        {web}
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.root}>
@@ -152,23 +182,21 @@ function Preview() {
             ]}
           >
             <View style={{ height: device.top }} />
-            <WebView
-              ref={webView}
-              source={{ uri: url }}
-              style={styles.web}
-              injectedJavaScript={REPORT_BACKGROUND}
-              onMessage={onMessage}
-              allowsBackForwardNavigationGestures
-              contentInsetAdjustmentBehavior="never"
-              automaticallyAdjustContentInsets={false}
-              setSupportMultipleWindows={false}
-            />
+            {web}
             <View style={{ height: device.bottom }} />
           </View>
         </View>
       </View>
     </SafeAreaView>
   );
+}
+
+/** getComputedStyle의 "rgb(9, 9, 11)" 같은 값이 어두운 색인지. 읽지 못하면 밝은 색으로 본다. */
+function isDark(color: string): boolean {
+  const channels = color.match(/\d+(\.\d+)?/g)?.map(Number);
+  if (!channels || channels.length < 3) return false;
+  const [r, g, b] = channels;
+  return 0.299 * r + 0.587 * g + 0.114 * b < 128;
 }
 
 function Chip({
@@ -194,6 +222,7 @@ function Chip({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#e4e4e7" },
+  fill: { flex: 1 },
   toolbar: { height: TOOLBAR_HEIGHT, paddingHorizontal: 16, paddingTop: 8, gap: 8 },
   row: { flexDirection: "row", alignItems: "center", gap: 8 },
   spacer: { flex: 1 },
