@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@lib/utils";
+import { useIsClient } from "@hooks/useIsClient";
 import { X } from "lucide-react";
 
 interface DialogProps {
@@ -13,6 +15,14 @@ interface DialogProps {
 const DialogContext = React.createContext<{ onOpenChange?: (open: boolean) => void }>({});
 
 const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
+  // 창은 <body> 바로 아래에 그린다(포털). 창을 여는 자리가 어디냐에 따라 창이 화면을 덮는 방식이
+  // 달라지면 안 된다. 넓은 화면의 '내 구독' 옆 칸(aside)은 position:sticky라 쌓임 맥락을 만들고,
+  // 그 안에서 그려진 fixed 창은 z-50이어도 aside 안에서만 위인 것이라, 상단 바(sticky z-40)가 창을
+  // 덮어 버렸다 — 상단 바만 어두워지지 않고, 창 위쪽이 그 바 뒤로 잘려 보였다(크롬에서 특히).
+  // 포털로 body에 붙이면 옆 칸의 쌓임 맥락·overflow를 벗어나 늘 화면 전체를 기준으로 그린다.
+  // 포털 대상(document.body)은 서버에 없으므로, 브라우저에서 그릴 때만 붙인다.
+  const isClient = useIsClient();
+
   // Close on Escape and lock background scrolling while the dialog is open.
   React.useEffect(() => {
     if (!open) return;
@@ -31,9 +41,9 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
     };
   }, [open, onOpenChange]);
 
-  if (!open) return null;
+  if (!open || !isClient) return null;
 
-  return (
+  return createPortal(
     <DialogContext.Provider value={{ onOpenChange }}>
       <div className="fixed inset-0 z-50 flex h-[100dvh] items-center justify-center p-4">
         <div
@@ -42,7 +52,8 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
         />
         {children}
       </div>
-    </DialogContext.Provider>
+    </DialogContext.Provider>,
+    document.body,
   );
 };
 
