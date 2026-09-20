@@ -39,8 +39,6 @@ const PICK_CATEGORY_ORDER: SubscriptionCategory[] = [
   "ai",
   "shopping",
   "cloud",
-  "news",
-  "fitness",
   "other",
 ];
 
@@ -50,8 +48,6 @@ const CATEGORY_ICONS: Record<SubscriptionCategory, string> = {
   ai: "🤖",
   shopping: "🛒",
   cloud: "☁️",
-  news: "📰",
-  fitness: "💪",
   other: "📦",
 };
 
@@ -500,8 +496,6 @@ export function SubForm({
               <option value="shopping">쇼핑 / 멤버십</option>
               <option value="cloud">클라우드 / 저장공간</option>
               <option value="ai">AI 툴 / 생산성</option>
-              <option value="fitness">피트니스 / 건강</option>
-              <option value="news">뉴스 / 도서</option>
               <option value="other">기타</option>
             </Select>
           </div>
