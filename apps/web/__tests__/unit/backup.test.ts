@@ -139,6 +139,21 @@ describe("parseBackup — 앱이 만든 것은 모두 통과한다", () => {
     expect(result.ok && result.data.subscriptions[1]).toMatchObject({ taxRate: 10 });
   });
 
+  it("없앤 분류로 저장된 옛 백업은 '기타'로 옮겨 들어온다", () => {
+    // 분류만 지우면 복원된 구독이 '내 구독'의 어느 칩으로도 걸러지지 않는다.
+    const file = withData((data) => {
+      (data.subscriptions as Record<string, unknown>[])[0].category = "fitness";
+    });
+    const result = roundTrip(file);
+    expect(result.ok && result.data.subscriptions[0].category).toBe("other");
+    // 분류만 바뀌고 나머지는 그대로다.
+    expect(result.ok && result.data.subscriptions[0]).toMatchObject({
+      name: "넷플릭스",
+      amount: 17000,
+      sharingCount: 4,
+    });
+  });
+
   it("환율 설정이 없는 백업은 기본값으로 둔다", () => {
     const file = withData((data) => {
       delete data.exchangeRate;

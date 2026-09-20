@@ -292,8 +292,6 @@ export default function SubscriptionsPage() {
     { value: "shopping", label: "쇼핑" },
     { value: "cloud", label: "클라우드" },
     { value: "ai", label: "AI 툴" },
-    { value: "fitness", label: "피트니스" },
-    { value: "news", label: "뉴스" },
     // 없으면 노션·어도비처럼 '기타'로 등록된 구독을 분류로 걸러 볼 수 없다.
     { value: "other", label: "기타" },
   ];

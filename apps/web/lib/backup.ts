@@ -1,3 +1,4 @@
+import { currentCategory } from "@subslash/shared";
 import type { LinkedAccount, Subscription, UsageLog } from "@subslash/shared";
 // 스토어 모듈에서는 타입만 가져온다. 이 파일은 서버(계정에 저장한 기록의 검증)도
 // 쓰는데, 스토어 모듈을 실제로 불러오면 브라우저 전용 zustand 스토어가 함께 만들어진다.
@@ -227,7 +228,11 @@ export function parseBackup(text: string): BackupParseResult {
   return {
     ok: true,
     data: {
-      subscriptions: data.subscriptions as Subscription[],
+      // 백업 파일에는 지금 쓰지 않는 분류가 남아 있을 수 있다. 불러오기와 같은 규칙으로 옮긴다.
+      subscriptions: (data.subscriptions as Subscription[]).map((sub) => {
+        const category = currentCategory(sub.category);
+        return category === sub.category ? sub : { ...sub, category };
+      }),
       usageLogs: data.usageLogs as UsageLog[],
       accounts: data.accounts as LinkedAccount[],
       exchangeRate,

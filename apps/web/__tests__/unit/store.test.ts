@@ -3,6 +3,7 @@ import {
   useStore,
   migrateSeededAccounts,
   migrateLegacyCancelUrls,
+  migrateRetiredCategories,
   mergePersistedState,
   isValidExchangeRate,
   isDemoExpired,
@@ -458,6 +459,56 @@ describe("migrateSeededAccounts", () => {
     const migrated = migrateSeededAccounts({ accounts: [seededAccount, mine], subscriptions: [] });
 
     expect(migrated.accounts).toEqual([mine]);
+  });
+});
+
+describe("migrateRetiredCategories", () => {
+  const subIn = (id: string, category: string) =>
+    ({
+      id,
+      name: "동네 헬스장",
+      amount: 60000,
+      currency: "KRW" as const,
+      billingDay: 5,
+      billingCycle: "monthly" as const,
+      category,
+      status: "active" as const,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- 지금은 없는 분류로 저장된 옛 기록을 흉내 낸다.
+    }) as any;
+
+  it("없앤 분류로 저장된 구독을 '기타'로 옮긴다", () => {
+    // 분류를 목록에서 빼기만 하면 이 구독은 '내 구독'의 어느 칩으로도 걸러지지 않는다.
+    const migrated = migrateRetiredCategories({
+      subscriptions: [subIn("sub-1", "fitness"), subIn("sub-2", "news")],
+    });
+
+    expect(migrated.subscriptions?.map((sub) => sub.category)).toEqual(["other", "other"]);
+  });
+
+  it("옮기면서 구독의 다른 값은 건드리지 않는다", () => {
+    const before = subIn("sub-3", "fitness");
+
+    const after = migrateRetiredCategories({ subscriptions: [before] }).subscriptions?.[0];
+
+    expect(after).toEqual({ ...before, category: "other" });
+  });
+
+  it("지금 쓰는 분류는 그대로 둔다", () => {
+    const kept = subIn("sub-4", "ott");
+
+    const migrated = migrateRetiredCategories({ subscriptions: [kept] });
+
+    expect(migrated.subscriptions).toEqual([kept]);
+  });
+
+  it("저장소를 불러올 때마다 적용된다", () => {
+    const merged = mergePersistedState(
+      { subscriptions: [subIn("sub-5", "news")] },
+      useStore.getState(),
+    );
+
+    expect(merged.subscriptions[0].category).toBe("other");
   });
 });
 
