@@ -18,6 +18,7 @@ import { buildReviewShareSearchParams } from "../../../lib/share-review";
 import { webUrl } from "../../../lib/api";
 import { shareText } from "../../../lib/native";
 import { Button } from "../../../components/ui/button";
+import { ServiceLogo } from "@components/subscription/ServiceLogo";
 
 /** 이보다 이른 해는 이 앱에 기록이 있을 수 없다. */
 const EARLIEST_YEAR = 2020;
@@ -47,7 +48,13 @@ function Standing({ label, item, value }: { label: string; item: CheckInStanding
     <div className="p-3 rounded-xl bg-muted/60 space-y-0.5">
       <dt className="text-[11px] text-muted-foreground">{label}</dt>
       <dd className="text-sm font-bold text-foreground">
-        {item.iconUrl ?? "📦"} {item.name}
+        <ServiceLogo
+          name={item.name}
+          fallbackEmoji={item.iconUrl}
+          size={16}
+          className="align-text-bottom"
+        />{" "}
+        {item.name}
         {item.killed && (
           <span className="ml-1 text-[11px] font-medium text-muted-foreground">(해지함)</span>
         )}
@@ -201,7 +208,13 @@ function YearInReviewContent() {
                 key={sub.id}
                 className="px-3 py-1.5 rounded-lg bg-muted/60 text-xs font-medium text-foreground"
               >
-                {sub.iconUrl ?? "📦"} {sub.name}
+                <ServiceLogo
+                  name={sub.name}
+                  fallbackEmoji={sub.iconUrl}
+                  size={14}
+                  className="align-text-bottom"
+                />{" "}
+                {sub.name}
                 <span className="ml-1 text-muted-foreground">
                   · {formatDay(sub.killedAt as string)}
                 </span>

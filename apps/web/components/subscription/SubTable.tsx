@@ -25,6 +25,7 @@ import { Button } from "../ui/button";
 import { cn } from "@lib/utils";
 import { isWideScreen } from "@lib/wide-screen";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
+import { ServiceLogo } from "./ServiceLogo";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -218,9 +219,12 @@ export function SubTable({
             >
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl" aria-hidden="true">
-                    {sub.iconUrl || "📦"}
-                  </span>
+                  <ServiceLogo
+                    name={sub.name}
+                    cancelUrl={sub.cancelUrl}
+                    fallbackEmoji={sub.iconUrl}
+                    size={22}
+                  />
                   <div className="min-w-0">
                     <Link
                       href={subscriptionDetailHref(sub.id)}

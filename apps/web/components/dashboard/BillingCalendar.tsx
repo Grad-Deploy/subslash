@@ -17,6 +17,7 @@ import {
   nextBillingDayInMonth,
   type BillingMonth,
 } from "@lib/billing-calendar";
+import { ServiceLogo } from "@components/subscription/ServiceLogo";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
@@ -242,7 +243,12 @@ function SelectedDay({
               href={subscriptionDetailHref(sub.id)}
               className="flex min-w-0 items-center gap-2 hover:underline underline-offset-2"
             >
-              <span aria-hidden="true">{sub.iconUrl || "📦"}</span>
+              <ServiceLogo
+                name={sub.name}
+                cancelUrl={sub.cancelUrl}
+                fallbackEmoji={sub.iconUrl}
+                size={18}
+              />
               <span className="truncate">{sub.name}</span>
             </Link>
             <span className="shrink-0 font-mono text-xs font-semibold">

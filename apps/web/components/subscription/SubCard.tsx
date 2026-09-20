@@ -23,6 +23,7 @@ import { cn } from "@lib/utils";
 import { isWideScreen } from "@lib/wide-screen";
 import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
+import { ServiceLogo } from "./ServiceLogo";
 
 interface SubCardProps {
   subscription: Subscription;
@@ -81,8 +82,13 @@ export function SubCard({
         <CardContent className="p-5 flex flex-col gap-4">
           <div className="flex justify-between items-start">
             <div className="flex items-center gap-3">
-              <div className="text-3xl bg-secondary w-12 h-12 flex items-center justify-center rounded-xl shadow-inner">
-                {subscription.iconUrl || "📦"}
+              <div className="bg-secondary w-12 h-12 flex items-center justify-center rounded-xl shadow-inner">
+                <ServiceLogo
+                  name={subscription.name}
+                  cancelUrl={subscription.cancelUrl}
+                  fallbackEmoji={subscription.iconUrl}
+                  size={32}
+                />
               </div>
               <div>
                 <div className="flex items-center gap-2">
