@@ -3,6 +3,7 @@
 import React from "react";
 import { POPULAR_SERVICES, ServicePreset, describePresetPrice } from "@subslash/shared";
 import { Subscription } from "@subslash/shared";
+import { ServiceLogo } from "./ServiceLogo";
 
 interface QuickPresetRecommenderProps {
   subscriptions: Subscription[];
@@ -57,9 +58,12 @@ export function QuickPresetRecommender({
             className="flex items-center justify-between p-3 rounded-xl border bg-background hover:bg-muted/80 hover:border-primary/40 text-left transition-all group shadow-xs active:scale-[0.98]"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="text-2xl group-hover:scale-110 transition-transform">
-                {preset.iconEmoji}
-              </span>
+              <ServiceLogo
+                presetId={preset.id}
+                name={preset.nameKo}
+                size={28}
+                className="group-hover:scale-110 transition-transform"
+              />
               <div className="min-w-0">
                 <p className="font-bold text-xs sm:text-sm text-foreground truncate">
                   {preset.nameKo}

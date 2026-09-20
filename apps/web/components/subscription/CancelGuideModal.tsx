@@ -12,6 +12,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { openExternal } from "@lib/native";
+import { ServiceLogo } from "./ServiceLogo";
 
 interface CancelGuideModalProps {
   subscription: Subscription | null;
@@ -48,7 +49,12 @@ export function CancelGuideModal({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <span>{sub.iconUrl || "📦"}</span>
+            <ServiceLogo
+              name={sub.name}
+              cancelUrl={sub.cancelUrl}
+              fallbackEmoji={sub.iconUrl}
+              size={20}
+            />
             <span className="min-w-0 [overflow-wrap:anywhere]">{sub.name} 해지 가이드</span>
           </DialogTitle>
           <DialogDescription>

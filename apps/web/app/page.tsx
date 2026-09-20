@@ -21,6 +21,7 @@ import {
   DialogDescription,
 } from "../components/ui/dialog";
 import { Button } from "../components/ui/button";
+import { ServiceLogo } from "@components/subscription/ServiceLogo";
 
 /**
  * 처음 온 사람이 "여기가 뭐 하는 곳인지" 알 수 있게, 앱이 실제로 하는 일을
@@ -167,7 +168,7 @@ export default function Home() {
               onClick={() => handlePresetClick(preset)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-card border text-sm font-medium hover:bg-muted hover:border-primary/50 transition-all shadow-sm active:scale-95"
             >
-              <span>{preset.iconEmoji}</span>
+              <ServiceLogo presetId={preset.id} name={preset.nameKo} size={18} />
               <span>{preset.nameKo}</span>
               <span className="text-xs text-muted-foreground">{describePresetPrice(preset)}</span>
             </button>

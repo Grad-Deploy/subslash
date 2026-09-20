@@ -11,6 +11,7 @@ import {
 } from "@subslash/shared";
 import { Button } from "../ui/button";
 import { subscriptionDetailHref } from "@lib/routes";
+import { ServiceLogo } from "@components/subscription/ServiceLogo";
 
 interface ActionQueueProps {
   items: ActionItem[];
@@ -127,7 +128,7 @@ export function ActionQueue({
               TONE[item.kind] ?? "bg-card"
             }`}
           >
-            <span className="text-2xl leading-none shrink-0">{item.iconEmoji}</span>
+            <ServiceLogo name={item.name} fallbackEmoji={item.iconEmoji} size={28} />
 
             <div className="flex-1 min-w-0 space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">

@@ -27,6 +27,7 @@ import { ConfirmDialog } from "../ui/confirm-dialog";
 import Link from "next/link";
 import { cn } from "@lib/utils";
 import { openExternal } from "@lib/native";
+import { ServiceLogo } from "./ServiceLogo";
 
 interface SubscriptionDetailProps {
   id: string;
@@ -193,8 +194,13 @@ export function SubscriptionDetail({
       <div className="@container p-6 border rounded-2xl bg-card shadow-sm space-y-4">
         <div className="flex flex-col gap-3 @md:flex-row @md:items-start @md:justify-between">
           <div className="flex min-w-0 items-center gap-4">
-            <div className="w-16 h-16 shrink-0 rounded-2xl bg-secondary flex items-center justify-center text-3xl">
-              {sub.iconUrl || "📦"}
+            <div className="w-16 h-16 shrink-0 rounded-2xl bg-secondary flex items-center justify-center">
+              <ServiceLogo
+                name={sub.name}
+                cancelUrl={sub.cancelUrl}
+                fallbackEmoji={sub.iconUrl}
+                size={44}
+              />
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
