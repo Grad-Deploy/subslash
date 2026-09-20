@@ -28,6 +28,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
 import { EmailDomainInput } from "../ui/email-domain-input";
+import { ServiceLogo } from "./ServiceLogo";
 
 const LABEL = "text-xs font-bold text-foreground";
 
@@ -388,7 +389,7 @@ export function SubForm({
                 onClick={() => pickPreset(service)}
                 className="flex items-center gap-2 p-2.5 rounded-xl border bg-card hover:bg-muted hover:border-primary/40 text-left transition-colors"
               >
-                <span className="text-xl shrink-0">{service.iconEmoji}</span>
+                <ServiceLogo presetId={service.id} name={service.nameKo} size={22} />
                 <span className="min-w-0">
                   <span className="block text-xs font-bold truncate">{service.nameKo}</span>
                   <span className="block text-[11px] text-muted-foreground">
@@ -435,7 +436,17 @@ export function SubForm({
       {!isEdit && (
         <div className="flex items-center justify-between gap-3 p-3 rounded-xl border bg-muted/40">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="text-2xl shrink-0">{isCustom ? "✏️" : formData.iconUrl || "📦"}</span>
+            {isCustom ? (
+              <span className="text-2xl shrink-0">✏️</span>
+            ) : (
+              <ServiceLogo
+                presetId={preset?.id}
+                name={formData.name ?? ""}
+                cancelUrl={formData.cancelUrl}
+                fallbackEmoji={formData.iconUrl}
+                size={28}
+              />
+            )}
             <div className="min-w-0">
               <p className="text-sm font-bold truncate">{isCustom ? "직접 입력" : formData.name}</p>
               <p className="text-[11px] text-muted-foreground break-keep">

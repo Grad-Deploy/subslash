@@ -30,6 +30,7 @@ import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { Subscription } from "@subslash/shared";
+import { ServiceLogo } from "@components/subscription/ServiceLogo";
 
 export default function SavingsDashboard() {
   const router = useRouter();
@@ -192,7 +193,12 @@ export default function SavingsDashboard() {
                   className="flex flex-col gap-3 p-4 border rounded-2xl bg-card hover:shadow-sm transition-all sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="text-2xl">{sub.iconUrl || "📦"}</span>
+                    <ServiceLogo
+                      name={sub.name}
+                      cancelUrl={sub.cancelUrl}
+                      fallbackEmoji={sub.iconUrl}
+                      size={28}
+                    />
                     <div className="min-w-0">
                       <h4 className="font-bold text-sm line-through text-muted-foreground">
                         {sub.name}
