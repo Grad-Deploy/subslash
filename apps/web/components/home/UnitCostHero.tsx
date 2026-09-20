@@ -12,6 +12,7 @@ import {
   type ServicePreset,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
+import { ServiceLogo } from "@components/subscription/ServiceLogo";
 
 /**
  * 체험용으로 고를 수 있는 서비스. 요금은 여기 적지 않고 서비스 목록에서 읽는다. 요금제가
@@ -141,7 +142,14 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
                         : "border-border bg-transparent text-muted-foreground hover:border-foreground/30 hover:text-foreground",
                     )}
                   >
-                    {sample.preset.iconEmoji} {shortName(sample.preset)}
+                    <span className="inline-flex items-center gap-1.5">
+                      <ServiceLogo
+                        presetId={sample.preset.id}
+                        name={sample.preset.nameKo}
+                        size={16}
+                      />
+                      {shortName(sample.preset)}
+                    </span>
                   </button>
                 );
               })}
@@ -172,7 +180,13 @@ function HeroResult({
   return (
     <>
       <p className="mt-4 text-sm text-foreground">
-        {preset.iconEmoji} {shortName(preset)}
+        <ServiceLogo
+          presetId={preset.id}
+          name={preset.nameKo}
+          size={16}
+          className="align-text-bottom"
+        />{" "}
+        {shortName(preset)}
         {planName ? ` ${planName}` : ""} · 월 {amountText}
       </p>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">

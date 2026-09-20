@@ -12,6 +12,7 @@ import {
   sumMyYearDefendedKRW,
 } from "@subslash/shared";
 import { DetoxLevelBadge } from "./DetoxLevelBadge";
+import { ServiceLogo } from "@components/subscription/ServiceLogo";
 
 interface SavingsBreakdownChartProps {
   killedSubscriptions: Subscription[];
@@ -48,7 +49,8 @@ export function SavingsBreakdownChart({
       return {
         id: sub.id,
         name: sub.name,
-        iconUrl: sub.iconUrl || "📦",
+        iconUrl: sub.iconUrl,
+        cancelUrl: sub.cancelUrl,
         category: sub.category,
         amount,
         percentage,
@@ -111,7 +113,12 @@ export function SavingsBreakdownChart({
           <div key={item.id} className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2 font-medium">
-                <span className="text-base">{item.iconUrl}</span>
+                <ServiceLogo
+                  name={item.name}
+                  cancelUrl={item.cancelUrl}
+                  fallbackEmoji={item.iconUrl}
+                  size={18}
+                />
                 <span className="font-semibold text-foreground">{item.name}</span>
                 <span className="text-[10px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
                   {CATEGORY_LABELS[item.category] ?? item.category}
