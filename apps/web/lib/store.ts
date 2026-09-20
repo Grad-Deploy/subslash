@@ -20,6 +20,7 @@ import {
   DEFAULT_EXCHANGE_RATE,
   DEMO_SUBSCRIPTIONS,
   currentCancelUrl,
+  currentCategory,
 } from "@subslash/shared";
 import {
   DEFAULT_EXCHANGE_RATE_SETTING,
@@ -108,6 +109,25 @@ export function migrateLegacyCancelUrls(state: Partial<PersistedState>): Partial
 }
 
 /**
+ * Moves subscriptions saved under a category the app no longer offers.
+ *
+ * A subscription keeps the category it was created with, so dropping one from
+ * the list alone would leave those subscriptions filtered out of every chip in
+ * 내 구독, and the edit form would have nothing to select for them. They move
+ * to 기타 here, on load, the same way retired cancel links are rewritten.
+ */
+export function migrateRetiredCategories(state: Partial<PersistedState>): Partial<PersistedState> {
+  if (!state.subscriptions) return state;
+  return {
+    ...state,
+    subscriptions: state.subscriptions.map((sub) => {
+      const category = currentCategory(sub.category);
+      return category === sub.category ? sub : { ...sub, category };
+    }),
+  };
+}
+
+/**
  * How a saved store is laid over the fresh one on load.
  *
  * Retired cancel links are rewritten here, on every load, rather than in
@@ -118,7 +138,9 @@ export function migrateLegacyCancelUrls(state: Partial<PersistedState>): Partial
 export function mergePersistedState(persisted: unknown, current: SubSlashStore): SubSlashStore {
   return {
     ...current,
-    ...migrateLegacyCancelUrls((persisted ?? {}) as Partial<PersistedState>),
+    ...migrateRetiredCategories(
+      migrateLegacyCancelUrls((persisted ?? {}) as Partial<PersistedState>),
+    ),
   };
 }
 
