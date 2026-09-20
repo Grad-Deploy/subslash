@@ -49,7 +49,7 @@ describe("getSpendingType", () => {
       spend("ott", 40, 0.4),
       spend("music", 35, 0.35),
       spend("cloud", 25, 0.25),
-      spend("news", 0, 0),
+      spend("shopping", 0, 0),
     ]);
     expect(type).toEqual({ kind: "spread", categoryCount: 3 });
     expect(describeSpendingType(type!).title).toBe("고루 쓰는 분산형");

@@ -1,5 +1,4 @@
-export type SubscriptionCategory =
-  "ott" | "music" | "cloud" | "news" | "fitness" | "shopping" | "ai" | "other";
+export type SubscriptionCategory = "ott" | "music" | "cloud" | "shopping" | "ai" | "other";
 
 export type SubscriptionStatus = "active" | "killed";
 export type RiskLevel = "green" | "yellow" | "red";
