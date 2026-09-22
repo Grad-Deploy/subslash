@@ -57,11 +57,16 @@ export function ServiceLogo({
   if (!logo) {
     return (
       <span
-        className={cn("inline-flex shrink-0 items-center justify-center leading-none", className)}
-        style={{ width: size, height: size, fontSize: size * 0.82 }}
+        className={cn(
+          "inline-flex shrink-0 items-center justify-center rounded-md bg-muted font-bold leading-none text-muted-foreground",
+          className,
+        )}
+        style={{ width: size, height: size, fontSize: size * (fallbackEmoji ? 0.82 : 0.46) }}
         aria-hidden="true"
       >
-        {fallbackEmoji || "📦"}
+        {/* 사용자가 직접 넣은 아이콘은 그대로 쓰고, 없으면 이름 첫 글자로 둔다.
+            상자 이모지는 어느 서비스인지 알려주지 않으면서 자리만 차지했다. */}
+        {fallbackEmoji || name.trim().charAt(0).toUpperCase()}
       </span>
     );
   }

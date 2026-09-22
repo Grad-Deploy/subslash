@@ -60,7 +60,7 @@ export function LocalReminderCard({ onMessage }: LocalReminderCardProps) {
       setPermission(next);
       if (next !== "granted") return;
       update({ enabled: true });
-      onMessage("🔔 이 기기에서 결제 알림을 켰습니다.");
+      onMessage("이 기기에서 결제 알림을 켰습니다.");
     } finally {
       setBusy(false);
     }
@@ -82,7 +82,7 @@ export function LocalReminderCard({ onMessage }: LocalReminderCardProps) {
     >
       <div className="space-y-1">
         <h3 id="local-reminder-heading" className="font-bold text-sm sm:text-base">
-          📱 이 기기 결제 알림
+          이 기기 결제 알림
         </h3>
         <p className="text-xs text-muted-foreground leading-relaxed">
           결제일 전 오전 9시에 이 휴대폰에 알림을 띄웁니다. 서버나 이메일을 거치지 않아 로그인하지

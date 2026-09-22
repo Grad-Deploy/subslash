@@ -78,7 +78,7 @@ test.describe("올해 구독 결산 (E2E)", () => {
     // 하이드레이션 전에 누른 클릭은 React가 붙은 뒤에 처리된다. 느린 기기(WebKit)에서는 기본 5초가
     // 모자랄 수 있다.
     await expect(page).toHaveURL(/\/savings\/review/, { timeout: 30_000 });
-    await expect(page.getByRole("heading", { name: `📆 ${year}년 구독 결산` })).toBeVisible({
+    await expect(page.getByRole("heading", { name: `${year}년 구독 결산` })).toBeVisible({
       timeout: 30_000,
     });
 
@@ -107,7 +107,7 @@ test.describe("올해 구독 결산 (E2E)", () => {
     const lastYear = new Date().getFullYear() - 1;
     await page.goto(`/savings/review?year=${lastYear}`);
 
-    await expect(page.getByRole("heading", { name: `📆 ${lastYear}년 구독 결산` })).toBeVisible({
+    await expect(page.getByRole("heading", { name: `${lastYear}년 구독 결산` })).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.getByText(`${lastYear}년 한 해 동안의 기록입니다.`)).toBeVisible();

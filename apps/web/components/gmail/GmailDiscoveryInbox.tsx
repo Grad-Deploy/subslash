@@ -108,8 +108,10 @@ export function GmailDiscoveryInbox() {
         {registered && (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="leading-relaxed break-keep">
-              📬{" "}
-              <strong>Gmail 결제 메일에서 구독 {registered.names.length}건을 등록했습니다:</strong>{" "}
+              {" "}
+              <strong>
+                Gmail 결제 메일에서 구독 {registered.names.length}건을 등록했습니다:
+              </strong>{" "}
               {registered.names.join(", ")}. 금액은 메일에서 읽은 값이니 한 번 확인해 주세요.
             </p>
             <div className="flex shrink-0 gap-2">
@@ -127,7 +129,7 @@ export function GmailDiscoveryInbox() {
           <div className="space-y-2">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="leading-relaxed break-keep">
-                🔎 <strong>Gmail 결제 메일에서 확인이 필요한 구독 {review.length}건</strong>을
+                <strong>Gmail 결제 메일에서 확인이 필요한 구독 {review.length}건</strong>을
                 찾았습니다.
               </p>
               <div className="flex shrink-0 gap-2">

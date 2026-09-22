@@ -25,7 +25,7 @@ export function OnboardingTourCard({ onStartAdd, activeCount }: OnboardingTourCa
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary mb-1.5">
-            <span>✨</span> 3단계 디지털 구독 디톡스 루틴
+            3단계 디지털 구독 디톡스 루틴
           </div>
           <h3 className="font-bold text-base text-foreground">
             처음 오셨나요? SubSlash는 이렇게 사용합니다
@@ -41,7 +41,7 @@ export function OnboardingTourCard({ onStartAdd, activeCount }: OnboardingTourCa
           className="shrink-0 whitespace-nowrap text-xs text-muted-foreground hover:text-foreground font-medium p-1 rounded-lg hover:bg-muted transition-colors"
           title="가이드 닫기"
         >
-          ✕ 닫기
+          닫기
         </button>
       </div>
 
@@ -98,7 +98,7 @@ export function OnboardingTourCard({ onStartAdd, activeCount }: OnboardingTourCa
             링크가 없는 곳은 메뉴까지 가는 단계를 안내합니다.
           </p>
           <div className="pt-1 text-[11px] font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded-md text-center">
-            결제일이 지나면 지킨 돈으로 쌓여요 💰
+            결제일이 지나면 지킨 돈으로 쌓여요
           </div>
         </div>
       </div>

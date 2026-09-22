@@ -64,7 +64,7 @@ const riskColor: Record<RiskLevel, string> = {
 function verdict(uses: number, risk: RiskLevel, amountText: string) {
   if (uses === 0) return `한 번도 안 썼다면 ${amountText}을 그냥 낸 셈이에요`;
   if (uses === 1) return "한 번 쓰려고 한 달 요금을 다 냈어요";
-  if (risk === "green") return "요금만큼 잘 쓰고 있어요 👍";
+  if (risk === "green") return "요금만큼 잘 쓰고 있어요";
   return "애매해요. 다음 달에도 이 정도라면 다시 생각해 보세요";
 }
 
@@ -86,7 +86,7 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
         {/* 왼쪽: 카피 + CTA */}
         <div>
           <span className="inline-block rounded-full border px-3 py-1 text-xs text-muted-foreground">
-            ⚡ 능동형 디지털 구독 디톡스
+            능동형 디지털 구독 디톡스
           </span>
 
           <h1 className="mt-4 text-3xl font-medium leading-snug text-foreground">
@@ -113,12 +113,12 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
               onClick={onDemo}
               className="whitespace-nowrap rounded-lg border px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
             >
-              ✨ 샘플 데이터로 1초 체험
+              샘플 데이터로 1초 체험
             </button>
           </div>
 
           <p className="mt-3 text-xs text-muted-foreground">
-            🔒 회원가입 없이 이 브라우저에 저장됩니다. 결제 알림은 로그인한 뒤 켤 수 있고, 켤 때만
+            회원가입 없이 이 브라우저에 저장됩니다. 결제 알림은 로그인한 뒤 켤 수 있고, 켤 때만
             이메일을 받습니다.
           </p>
         </div>

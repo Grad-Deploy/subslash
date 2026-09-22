@@ -7,6 +7,7 @@ import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { VERIFY_ACCOUNT_TTL_DAYS } from "@lib/verification-config";
 import { apiFetch, apiUrl } from "@lib/api";
+import { Spinner } from "../ui/spinner";
 
 type View =
   | { kind: "loading" }
@@ -78,7 +79,7 @@ export function EmailVerification() {
     case "loading":
       return (
         <div className="flex items-center justify-center py-10">
-          <div className="animate-spin text-2xl">✂️</div>
+          <Spinner className="size-7" />
         </div>
       );
 
