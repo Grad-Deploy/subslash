@@ -13,6 +13,7 @@ import { useAccountSync } from "@hooks/useAccountSync";
 import { AccountSyncConflictDialog } from "../account/AccountSyncConflictDialog";
 import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
+import { BrandLockup } from "../brand/Brand";
 
 const navLinks = [
   { name: "대시보드", href: "/dashboard" },
@@ -66,12 +67,8 @@ export function Header() {
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 pt-safe backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
           <div className="flex h-full items-center gap-8">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-lg font-bold tracking-tight transition-opacity hover:opacity-80"
-            >
-              <span className="text-2xl">✂️</span>
-              <span>SubSlash</span>
+            <Link href="/" className="flex items-center transition-opacity hover:opacity-80">
+              <BrandLockup />
             </Link>
 
             {/* 좁은 화면에서는 하단 탭(BottomNav)이 같은 역할을 한다. */}
