@@ -8,6 +8,37 @@ function koreanDate(isoDate: string): string {
   return `${year}년 ${month}월 ${day}일`;
 }
 
+/**
+ * 권익침해 구제를 맡는 기관. 번호와 주소는 각 기관이 안내하는 값이고, 확인하지 못한 값은
+ * 적지 않는다 — 도움을 받으려는 사람이 엉뚱한 곳으로 가면 안 된다.
+ */
+const REMEDY_BODIES = [
+  {
+    name: "개인정보분쟁조정위원회",
+    role: "분쟁 조정 신청, 집단분쟁조정",
+    phone: "1833-6972",
+    url: "https://www.kopico.go.kr",
+  },
+  {
+    name: "개인정보침해신고센터",
+    role: "침해 사실 신고, 상담",
+    phone: "118",
+    url: "https://privacy.kisa.or.kr",
+  },
+  {
+    name: "대검찰청 사이버수사과",
+    role: "형사 사건 고소·상담",
+    phone: "1301",
+    url: "https://www.spo.go.kr",
+  },
+  {
+    name: "경찰청 사이버수사국",
+    role: "형사 사건 신고·상담",
+    phone: "182",
+    url: "https://ecrm.cyber.go.kr/minwon/main",
+  },
+] as const;
+
 export const metadata = {
   title: "개인정보처리방침 · SubSlash",
 };
@@ -192,9 +223,74 @@ export default function PrivacyPage() {
             </tbody>
           </table>
         </div>
+        {/*
+          국외 이전은 거부할 권리와 방법을 함께 알려야 한다(개인정보 보호법 제28조의8 제5항).
+          SubSlash는 국외 서버 하나로 돌아가므로, 거부하는 방법은 곧 그 기능을 쓰지 않는 것이다 —
+          '거부할 수 있다'고만 적고 무엇을 못 쓰게 되는지 적지 않으면 고른 결과를 알 수 없다.
+        */}
+        <div className="space-y-2 rounded-xl border bg-card p-4">
+          <h3 className="text-sm font-semibold">국외 이전을 원하지 않을 때</h3>
+          <p className="text-muted-foreground">
+            국외 이전을 거부할 수 있습니다. SubSlash의 서버는 위 표의 국외 서비스 위에서만 돌기
+            때문에, 거부하는 방법은 서버로 정보를 보내는 기능을 쓰지 않는 것입니다. 회원가입을 하지
+            않고 쓰면 구독 기록이 이 기기 밖으로 나가지 않으며, 그 상태에서도 구독 등록·체크인·1회
+            사용 단가·해지 안내·백업 파일 내려받기를 모두 쓸 수 있습니다. 이미 쓰고 있다면 내 정보의
+            &lsquo;회원 탈퇴&rsquo;, 결제 알림 설정의 &lsquo;알림 끄기&rsquo;, &lsquo;계정에서
+            지우기&rsquo;, Gmail 연결의 &lsquo;연결 끊기&rsquo;로 보낸 정보를 지우고 멈출 수
+            있습니다. 다만 거부하면 로그인, 계정에 저장, 여러 기기 동기화, 결제 알림 메일과 캘린더
+            구독
+            {GMAIL_AUTO_IMPORT_STARTS_ON && ", Gmail 자동 가져오기, 구글 캘린더에 결제일 등록"}은 쓸
+            수 없습니다.
+          </p>
+        </div>
       </Section>
 
-      <Section title="5. 이용자의 권리와 행사 방법">
+      {/*
+        Google API로 받은 사용자 데이터를 어떻게 쓰는지 밝히는 절. Gmail 읽기(gmail.readonly)는
+        Google이 '제한된 범위'로 분류하는 권한이라, 방침에 Limited Use를 명시해야 심사를 받을 수
+        있다. 문장은 Google API Services User Data Policy의 요구를 그대로 옮긴 것이므로, 코드가
+        하는 일을 바꾸면 이 절도 함께 본다.
+      */}
+      <Section title="5. Google 사용자 데이터 취급 (Limited Use)">
+        <p>
+          SubSlash가 Google API로 받은 정보를 쓰고 다른 앱으로 넘기는 방식은 Google API Services
+          User Data Policy를 따르며, 여기에는 Limited Use 요구사항이 포함됩니다.
+        </p>
+        <p className="text-muted-foreground">
+          SubSlash&rsquo;s use and transfer to any other app of information received from Google
+          APIs will adhere to the{" "}
+          <a
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-4"
+          >
+            Google API Services User Data Policy
+          </a>
+          , including the Limited Use requirements.
+        </p>
+        <ul className="list-disc space-y-1.5 pl-5">
+          <li>
+            메일 읽기 권한(<code>gmail.readonly</code>)으로 받은 내용은 결제 메일에서 구독을 찾아
+            등록하는 기능에만 씁니다. 그 밖의 목적으로 쓰지 않습니다.
+          </li>
+          <li>
+            광고에 쓰지 않습니다. 맞춤·관심 기반 광고나 리타기팅에 쓰거나 넘기지 않으며,
+            SubSlash에는 광고가 없습니다.
+          </li>
+          <li>
+            사람이 읽지 않습니다. 메일은 서버가 그 자리에서 기계적으로 파싱하고, 제목과 본문은
+            저장하지 않습니다(남는 것은 서비스 이름·금액·결제일 같은 구독 후보뿐입니다). 다만 법령이
+            요구하거나 보안 문제를 조사해야 하거나 이용자가 직접 동의한 경우는 예외입니다.
+          </li>
+          <li>
+            제3자에게 팔거나 넘기지 않습니다. 광고 플랫폼·데이터 중개업자에게 제공하지 않습니다.
+          </li>
+          <li>인공지능 모델을 학습시키는 데 쓰지 않습니다.</li>
+        </ul>
+      </Section>
+
+      <Section title="6. 이용자의 권리와 행사 방법">
         <ul className="list-disc space-y-1.5 pl-5">
           <li>
             열람·정정:{" "}
@@ -207,15 +303,21 @@ export default function PrivacyPage() {
             삭제: 내 정보의 &lsquo;회원 탈퇴&rsquo;, 결제 알림 설정의 &lsquo;알림 끄기&rsquo;,
             &lsquo;계정에서 지우기&rsquo;로 직접 지울 수 있습니다.
           </li>
+          <li>
+            처리정지: 서버에서 일어나는 처리는 그 기능을 끄면 곧바로 멈춥니다 — 결제 알림 설정의
+            &lsquo;알림 끄기&rsquo;, 기기마다 있는 &lsquo;자동 동기화 끄기&rsquo;, Gmail 연결의
+            &lsquo;연결 끊기&rsquo;가 그것입니다. 그 밖의 처리를 멈춰 달라는 요구는 아래
+            보호책임자에게 해 주세요. 법에서 정한 사유로 멈출 수 없을 때는 그 이유를 알려드립니다.
+          </li>
           <li>그 밖의 요청은 아래 개인정보 보호책임자에게 해 주세요.</li>
         </ul>
       </Section>
 
-      <Section title="6. 만 14세 미만 아동">
+      <Section title="7. 만 14세 미만 아동">
         <p>가입할 때 만 14세 이상인지 확인하며, 만 14세 미만은 가입할 수 없습니다.</p>
       </Section>
 
-      <Section title="7. 쿠키와 브라우저 저장공간">
+      <Section title="8. 쿠키와 브라우저 저장공간">
         <p>
           로그인 상태를 유지하는 세션 쿠키 하나(<code>subslash_session</code>, 자바스크립트가 읽을
           수 없음, 30일)를 씁니다. 구독 기록·테마·보기 방식 같은 설정은 브라우저
@@ -224,7 +326,7 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
-      <Section title="8. 안전성 확보 조치">
+      <Section title="9. 안전성 확보 조치">
         <ul className="list-disc space-y-1.5 pl-5">
           <li>비밀번호는 scrypt로 해시해 저장하고 원문은 저장하지 않습니다.</li>
           <li>
@@ -235,7 +337,7 @@ export default function PrivacyPage() {
         </ul>
       </Section>
 
-      <Section title="9. 개인정보 보호책임자">
+      <Section title="10. 개인정보 보호책임자">
         {PRIVACY_OFFICER ? (
           <p>
             {PRIVACY_OFFICER.name} ·{" "}
@@ -250,7 +352,53 @@ export default function PrivacyPage() {
         )}
       </Section>
 
-      <Section title="10. 방침의 변경">
+      {/*
+        권익침해 구제 방법. 기관 이름·번호·주소는 각 기관이 안내하는 값을 그대로 적는다 —
+        연락처를 잘못 적으면 도움을 받으려는 사람이 엉뚱한 곳으로 간다.
+      */}
+      <Section title="11. 권익침해 구제 방법">
+        <p>
+          개인정보가 침해되어 도움이 필요하면 아래 기관에 분쟁 해결이나 상담을 신청할 수 있습니다.
+          SubSlash의 처리에 대한 이의는 위 개인정보 보호책임자에게 먼저 알려 주셔도 됩니다.
+        </p>
+        <div className="overflow-x-auto rounded-xl border">
+          <table className="w-full text-xs">
+            <thead className="bg-muted/50 text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium">기관</th>
+                <th className="px-3 py-2 text-left font-medium">하는 일</th>
+                <th className="px-3 py-2 text-left font-medium">연락처</th>
+              </tr>
+            </thead>
+            <tbody>
+              {REMEDY_BODIES.map((body) => (
+                <tr key={body.name} className="border-t">
+                  <td className="px-3 py-2 font-medium">{body.name}</td>
+                  <td className="px-3 py-2">{body.role}</td>
+                  <td className="px-3 py-2">
+                    (국번 없이) {body.phone}
+                    <br />
+                    <a
+                      href={body.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-4"
+                    >
+                      {body.url.replace(/^https?:\/\//, "")}
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-muted-foreground">
+          개인정보 보호법 제35조(열람), 제36조(정정·삭제), 제37조(처리정지)에 따른 요구를 거절당했을
+          때는 행정심판법에 따라 행정심판을 청구할 수도 있습니다.
+        </p>
+      </Section>
+
+      <Section title="12. 방침의 변경">
         <p>
           이 방침을 바꾸면 이 페이지에 새 내용과 시행일을 적습니다. 저장하는 항목이 늘어나는 변경은
           시행 전에 알립니다.
