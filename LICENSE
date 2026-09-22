@@ -1,0 +1,57 @@
+MIT License
+
+Copyright (c) 2026 SubSlash contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+NOT COVERED BY THIS LICENSE — THIRD-PARTY BRAND ASSETS
+이 라이선스가 덮지 않는 것 — 제3자 브랜드 자산
+
+The MIT license above covers the source code of this repository. It does NOT
+cover third-party trademarks or brand assets, which remain the property of
+their respective owners and are used here only to identify the services a user
+may be subscribed to (nominative use):
+
+위의 MIT 라이선스는 이 저장소의 소스 코드에 적용됩니다. 아래의 제3자 상표와 브랜드
+자산에는 적용되지 않습니다. 이들은 각 소유자의 자산이며, 이용자가 구독 중인 서비스를
+식별하기 위한 목적으로만 쓰입니다.
+
+  - apps/web/public/logos/*.png
+      Official app icons and favicons of each service. The origin of each file
+      is recorded in the `source` field of apps/web/lib/service-logos.ts.
+      각 서비스의 공식 앱 아이콘·파비콘. 파일마다 받아 온 곳을 service-logos.ts의
+      `source`에 적어 두었습니다.
+
+  - The brand glyphs (`path`) in apps/web/lib/service-logos.ts
+      Some are traced from simple-icons (CC0-1.0,
+      https://github.com/simple-icons/simple-icons); others are taken from a
+      mark the service itself publishes. CC0 waives copyright in the glyph,
+      but it does NOT grant any trademark rights — see simple-icons' own notice.
+      일부는 simple-icons(CC0-1.0)에서, 일부는 서비스가 스스로 내보내는 마크에서
+      옮긴 것입니다. CC0는 글리프의 저작권을 포기할 뿐 상표권을 주지 않습니다.
+
+  - Service names used throughout the app and in
+    packages/shared/src/constants/services.ts.
+    앱과 서비스 목록에 쓰인 서비스 이름.
+
+If you own one of these marks and want it removed, please open an issue and it
+will be taken out.
+이 마크의 권리자로서 삭제를 원하시면 이슈로 알려 주시면 빼겠습니다.

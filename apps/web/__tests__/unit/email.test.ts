@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { accountVerificationEmail, reminderEmail } from "../../lib/email";
+import { accountVerificationEmail, maskEmail, reminderEmail } from "../../lib/email";
 
 const item = {
   clientId: "sub 1",
@@ -65,5 +65,25 @@ describe("accountVerificationEmail", () => {
 
     expect(html).not.toContain('<a href="https://evil.example">');
     expect(html).toContain("&lt;a href=&quot;https://evil.example&quot;&gt;");
+  });
+});
+
+describe("maskEmail", () => {
+  it("앞 한 글자와 도메인만 남긴다", () => {
+    expect(maskEmail("dldmstjd154@gmail.com")).toBe("d***@gmail.com");
+    expect(maskEmail("a@b.co")).toBe("a***@b.co");
+  });
+
+  it("남이 보낸 오류 본문 안의 주소도 가린다", () => {
+    // Resend가 거절할 때 받는 주소를 그대로 실어 보낸다. 그 본문을 로그에 남기면
+    // 주소가 배포 로그에 남는다.
+    const detail = '{"statusCode":422,"message":"Invalid `to` field: someone@example.com"}';
+
+    expect(maskEmail(detail)).toContain("s***@example.com");
+    expect(maskEmail(detail)).not.toContain("someone@example.com");
+  });
+
+  it("주소가 아닌 글자는 건드리지 않는다", () => {
+    expect(maskEmail("rate limited (5 per 24h)")).toBe("rate limited (5 per 24h)");
   });
 });

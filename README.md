@@ -389,4 +389,12 @@ eas build --platform ios --profile production       # 실기기·TestFlight용 (
 
 ## 📄 라이선스
 
-MIT
+소스 코드는 [MIT](LICENSE)입니다.
+
+**서비스 로고와 이름은 MIT가 덮지 않습니다.** `apps/web/public/logos/`의 앱 아이콘과
+`apps/web/lib/service-logos.ts`의 브랜드 글리프, 그리고 앱에 나오는 서비스 이름은 각 소유자의
+상표이며, 이용자가 구독 중인 서비스를 알아볼 수 있게 하려고 쓸 뿐입니다. 자세한 내용과 삭제
+요청 방법은 `LICENSE` 아래쪽에 적어 두었습니다.
+
+새 서비스를 더할 때 로고를 눈대중으로 그리거나 브랜드 색을 지어내지 않습니다. 받아 온 곳을
+`source`에 남기는 규칙은 `service-logos.ts` 첫머리에 있습니다.
