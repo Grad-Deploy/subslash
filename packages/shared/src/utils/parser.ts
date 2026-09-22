@@ -13,8 +13,21 @@ const SERVICE_KEYWORDS: {
   keywords: string[];
   presetId: string;
   defaultPaymentMethod?: PaymentMethod;
+  /**
+   * 이 서비스가 영수증을 보내는 도메인. 하위 도메인(email.openai.com)도 같은 서비스로 본다.
+   *
+   * 보낸 사람이 여기 맞으면 제목·본문보다 먼저 믿는다. 반대로 여러 서비스가 함께 쓰는
+   * 도메인(google.com·apple.com·naver.com)은 어느 서비스인지 가리지 못하므로 적지 않고,
+   * 확인하지 못한 도메인도 적지 않는다 — 틀린 도메인을 적으면 남의 메일을 이 서비스의
+   * 영수증으로 읽는다.
+   */
+  senderDomains?: string[];
 }[] = [
-  { keywords: ["넷플릭스", "netflix", "넷플릭스코리아"], presetId: "netflix" },
+  {
+    keywords: ["넷플릭스", "netflix", "넷플릭스코리아"],
+    presetId: "netflix",
+    senderDomains: ["netflix.com"],
+  },
   {
     keywords: ["유튜브", "youtube", "youtube premium", "유튜브 프리미엄", "구글페이먼트(유튜브)"],
     presetId: "youtube-premium",
@@ -23,11 +36,20 @@ const SERVICE_KEYWORDS: {
   {
     keywords: ["쿠팡", "와우", "coupang", "와우멤버십", "쿠팡플레이", "coupang play"],
     presetId: "coupang-wow",
+    senderDomains: ["coupang.com"],
   },
-  { keywords: ["티빙", "tving"], presetId: "tving" },
-  { keywords: ["웨이브", "wavve", "콘텐츠웨이브"], presetId: "wavve" },
-  { keywords: ["왓챠", "watcha", "왓챠플레이"], presetId: "watcha" },
-  { keywords: ["디즈니", "disney", "디즈니플러스", "disney+", "디즈니+"], presetId: "disney-plus" },
+  { keywords: ["티빙", "tving"], presetId: "tving", senderDomains: ["tving.com"] },
+  {
+    keywords: ["웨이브", "wavve", "콘텐츠웨이브"],
+    presetId: "wavve",
+    senderDomains: ["wavve.com"],
+  },
+  { keywords: ["왓챠", "watcha", "왓챠플레이"], presetId: "watcha", senderDomains: ["watcha.com"] },
+  {
+    keywords: ["디즈니", "disney", "디즈니플러스", "disney+", "디즈니+"],
+    presetId: "disney-plus",
+    senderDomains: ["disneyplus.com"],
+  },
   {
     keywords: ["애플tv", "애플티비", "apple tv", "apple tv+", "애플 tv", "appletv"],
     presetId: "apple-tv",
@@ -38,8 +60,12 @@ const SERVICE_KEYWORDS: {
     presetId: "prime-video",
     defaultPaymentMethod: "credit_card",
   },
-  { keywords: ["라프텔", "laftel", "애니메이션 라프텔"], presetId: "laftel" },
-  { keywords: ["스포티파이", "spotify"], presetId: "spotify" },
+  {
+    keywords: ["라프텔", "laftel", "애니메이션 라프텔"],
+    presetId: "laftel",
+    senderDomains: ["laftel.net"],
+  },
+  { keywords: ["스포티파이", "spotify"], presetId: "spotify", senderDomains: ["spotify.com"] },
   { keywords: ["멜론", "melon", "로엔"], presetId: "melon" },
   {
     keywords: ["네이버플러스", "네이버 멤버십", "네이버페이 멤버십"],
@@ -99,8 +125,16 @@ const SERVICE_KEYWORDS: {
     presetId: "google-ai-pro",
     defaultPaymentMethod: "google_play",
   },
-  { keywords: ["notion", "노션"], presetId: "notion" },
-  { keywords: ["chatgpt", "openai", "챗gpt"], presetId: "chatgpt-plus" },
+  {
+    keywords: ["notion", "노션"],
+    presetId: "notion",
+    senderDomains: ["notion.so", "makenotion.com"],
+  },
+  {
+    keywords: ["chatgpt", "openai", "챗gpt"],
+    presetId: "chatgpt-plus",
+    senderDomains: ["openai.com"],
+  },
   {
     keywords: [
       "claude",
@@ -114,10 +148,15 @@ const SERVICE_KEYWORDS: {
       "claude.ai",
     ],
     presetId: "claude-pro",
+    senderDomains: ["anthropic.com"],
     defaultPaymentMethod: "credit_card",
   },
-  { keywords: ["어도비", "adobe"], presetId: "adobe-cc" },
-  { keywords: ["마이크로소프트", "microsoft", "ms 365", "m365"], presetId: "microsoft-365" },
+  { keywords: ["어도비", "adobe"], presetId: "adobe-cc", senderDomains: ["adobe.com"] },
+  {
+    keywords: ["마이크로소프트", "microsoft", "ms 365", "m365"],
+    presetId: "microsoft-365",
+    senderDomains: ["microsoft.com"],
+  },
   { keywords: ["밀리", "밀리의 서재", "millie"], presetId: "millie" },
   { keywords: ["리디", "리디셀렉트", "ridi"], presetId: "ridi-select" },
 ];
@@ -256,13 +295,70 @@ function looksLikeMerchantName(word: string): boolean {
  * 않도록 판단마다 믿을 곳을 따로 준다.
  */
 interface ReceiptHints {
-  /** 해지·취소 여부를 판단할 글. 메일에서는 제목이다. */
-  cancelText: string;
-  /** 서비스·결제수단을 먼저 찾아볼 글. 메일에서는 제목과 보낸 사람이다. */
-  serviceText: string;
+  /** 메일 제목. 해지 여부와 서비스 이름을 여기서 먼저 본다. */
+  subject: string;
+  /** 보낸 사람. 도메인이 서비스와 맞으면 제목·본문보다 믿을 만한 근거다. */
+  sender: string;
+  /** 메일 본문. 서비스 이름을 마지막으로 찾아볼 곳이다. */
+  body: string;
   /** 본문에 결제일 칸이 없을 때 쓸 날짜. 메일에서는 받은 날(사용자 시간대의 달·일)이다. */
   received: CalendarDate;
 }
+
+/**
+ * 메일이 "이 결제가 실제로 일어났다"고 말하는 표현.
+ *
+ * 메일함 검색은 '구독'·'subscription'처럼 넓은 단어로 하기 때문에 광고와 뉴스레터가 함께
+ * 걸린다. 그런 메일에도 금액("$20/month")과 서비스 이름이 있어서, 증거를 따로 묻지 않으면
+ * 쓰지도 않는 구독이 등록된다 — 챗GPT 광고 메일이 '챗GPT $20 구독'으로 등록되던 것이 그랬다.
+ * '구독'·'멤버십'·'subscription'은 메일 하단의 수신 설정 안내에도 나오므로 증거로 치지 않는다.
+ * 여기 걸리지 않아 놓친 결제는 사용자가 직접 등록하면 되지만, 지어낸 구독은 사용자가 잘못됐다는
+ * 것조차 모른다.
+ */
+const PAYMENT_EVIDENCE: RegExp[] = [
+  /영수증|청구서|receipt|invoice/i,
+  /(?:결제|청구|이용|승인|주문)\s*금액/,
+  /결제(?:가|를)?\s*(?:완료|승인|처리)(?:되|했|됐|하)/,
+  /(?:정기|자동)\s*결제\s*(?:안내|완료|승인|내역|예정)/,
+  /(?:결제|승인|주문)\s*(?:내역|번호|일시|완료)/,
+  /[0-9,]+\s*원\s*(?:승인|결제|청구)|(?:승인|결제|청구)\s*[0-9,]+\s*원/,
+  /payment\s*(?:confirmation|receipt|received|successful|succeeded|complete|processed)/i,
+  /(?:has been|have been|was|were)\s*(?:charged|billed)/i,
+  /we(?:'ve| have)?\s*charged/i,
+  /thank(?:s| you)[^.\n]{0,40}(?:payment|purchase|order)/i,
+  /(?:amount|total)\s*(?:charged|billed|paid|due)/i,
+  /order\s*confirmation|confirmation\s*of\s*(?:your\s*)?payment/i,
+];
+
+function hasPaymentEvidence(text: string): boolean {
+  return PAYMENT_EVIDENCE.some((pattern) => pattern.test(text));
+}
+
+/** "Netflix <info@account.netflix.com>"에서 도메인만 꺼낸다. */
+function senderDomainOf(from: string): string {
+  const match = /@([A-Za-z0-9.-]+)/.exec(from);
+  return match ? match[1].toLowerCase().replace(/[^a-z0-9.-]|\.+$/g, "") : "";
+}
+
+/** 하위 도메인(email.openai.com)도 그 서비스의 것으로 본다. */
+function isDomainOf(domain: string, registrable: string): boolean {
+  return domain === registrable || domain.endsWith("." + registrable);
+}
+
+/**
+ * 한 메일로 여러 서비스를 청구하는 발신자. 구글 플레이 영수증은 제목이 "주문 영수증"뿐이고
+ * 어느 서비스인지는 본문에만 있다. 이 발신자들만 본문에서 찾은 이름을 확인 없이 등록해도 되는
+ * 것으로 본다 — 나머지는 사용자가 골라야 등록된다.
+ */
+const PLATFORM_SENDER_DOMAINS = [
+  "google.com",
+  "apple.com",
+  "naver.com",
+  "kakao.com",
+  "payco.com",
+  "paypal.com",
+  "stripe.com",
+];
 
 function parseSingleMessageBlock(
   block: string,
@@ -272,6 +368,9 @@ function parseSingleMessageBlock(
 ): DiscoveredSubscription | null {
   const normalized = block.replace(/\r/g, " ");
   const lower = normalized.toLowerCase();
+
+  // 메일은 결제가 일어났다는 증거가 있어야 읽는다. 문자는 카드 승인 문자 자체가 증거다.
+  if (hints && !hasPaymentEvidence(normalized)) return null;
 
   // 1. Structured Field Extraction for Naver / Email Receipts
   // e.g. "상품명 : VIBE 무제한 듣기 (정기결제)" / "서비스명: 네이버 MYBOX" / "가맹점: 스포티파이"
@@ -309,11 +408,20 @@ function parseSingleMessageBlock(
     /(?:결제금액|총\s*결제금액|청구금액|이용금액|결제\s*금액)\s*[:：]?\s*(?:KRW\s*)?([0-9][0-9,]*)(?:\s*(?:원|KRW|won))?/i,
   );
 
+  // "9,900원부터", "starting at $20"은 안내 가격이지 이 메일의 결제액이 아니다. 광고 문구의
+  // 가격을 결제액으로 읽으면, 쓰지도 않는 요금제가 지출에 잡힌다.
+  const amountScanText = normalized
+    .replace(/(?:₩\s*[0-9,]+|[0-9,]+\s*원|\$\s*[0-9.]+|[0-9.]+\s*USD)\s*(?:부터|~)/gi, " ")
+    .replace(
+      /(?:starting\s*(?:at|from)|정가|할인가)\s*(?:₩\s*[0-9,]+|\$\s*[0-9.]+|[0-9,]+\s*원)/gi,
+      " ",
+    );
+
   if (amount === 0) {
     // KRW patterns: 17,000원, 17000원, ₩17,000
-    const krwMatch = normalized.match(/(?:₩\s*([0-9,]+)|([0-9,]+)\s*원)/i);
+    const krwMatch = amountScanText.match(/(?:₩\s*([0-9,]+)|([0-9,]+)\s*원)/i);
     // USD patterns: $20, $0.99, 20.00 USD, 20 USD
-    const usdMatch = normalized.match(/(?:\$\s*([0-9.]+)|([0-9.]+)\s*USD)/i);
+    const usdMatch = amountScanText.match(/(?:\$\s*([0-9.]+)|([0-9.]+)\s*USD)/i);
 
     if (usdMatch) {
       const rawVal = (usdMatch[1] || usdMatch[2]).replace(/,/g, "");
@@ -340,7 +448,7 @@ function parseSingleMessageBlock(
   }
 
   // 3. Check if this is a cancellation / refund notice
-  const cancelText = hints ? hints.cancelText : normalized;
+  const cancelText = hints ? hints.subject : normalized;
   const isCanceled =
     cancelText.includes("해지") ||
     cancelText.includes("취소") ||
@@ -419,7 +527,7 @@ function parseSingleMessageBlock(
   // 5. Extract Payment Method
   let paymentMethod: PaymentMethod = "credit_card";
   // 메일 하단의 "App Store에서 받기" 같은 배지는 결제수단이 아니므로, 메일은 제목·보낸 사람만 본다.
-  const paymentText = hints ? hints.serviceText.toLowerCase() : lower;
+  const paymentText = hints ? (hints.subject + " " + hints.sender).toLowerCase() : lower;
   if (
     paymentText.includes("네이버페이") ||
     paymentText.includes("naverpay") ||
@@ -445,26 +553,46 @@ function parseSingleMessageBlock(
 
   // 6. Match Known Service Preset
   let matchedPreset: ServicePreset | undefined;
-  // 메일은 제목·보낸 사람에서 먼저 찾는다. 본문에는 다른 서비스 광고가 섞여 있을 수 있다.
-  // 구글 플레이 영수증처럼 본문에만 서비스 이름이 있는 메일을 위해 본문도 뒤이어 본다.
-  const matchTargets = [
-    ...(hints ? [hints.serviceText.toLowerCase()] : []),
-    (structuredProductName + " " + lower).toLowerCase(),
-  ];
-  for (const targetToMatch of matchTargets) {
-    for (const item of SERVICE_KEYWORDS) {
-      for (const kw of item.keywords) {
-        if (targetToMatch.includes(kw.toLowerCase())) {
-          matchedPreset = POPULAR_SERVICES.find((s) => s.id === item.presetId);
-          if (item.defaultPaymentMethod && paymentMethod === "credit_card") {
-            paymentMethod = item.defaultPaymentMethod;
-          }
-          break;
-        }
-      }
-      if (matchedPreset) break;
+  // 이름을 어디서 찾았는지. 본문에서만 찾은 이름은 덜 믿는다(아래 confidence).
+  let matchedIn: "sender" | "subject" | "body" = "body";
+
+  const takeMatch = (item: (typeof SERVICE_KEYWORDS)[number]): boolean => {
+    // 키워드 표의 오타로 프리셋을 찾지 못하면 다음 후보를 계속 본다.
+    const preset = POPULAR_SERVICES.find((s) => s.id === item.presetId);
+    if (!preset) return false;
+    matchedPreset = preset;
+    if (item.defaultPaymentMethod && paymentMethod === "credit_card") {
+      paymentMethod = item.defaultPaymentMethod;
     }
-    if (matchedPreset) break;
+    return true;
+  };
+
+  const matchByKeyword = (text: string): boolean => {
+    const target = text.toLowerCase();
+    for (const item of SERVICE_KEYWORDS) {
+      if (!item.keywords.some((kw) => target.includes(kw.toLowerCase()))) continue;
+      if (takeMatch(item)) return true;
+    }
+    return false;
+  };
+
+  if (hints) {
+    // 메일은 ① 보낸 사람의 도메인 ② 제목·보낸 사람 이름 ③ 본문 순으로 본다. 제목과 본문은 남의
+    // 서비스를 말할 수 있지만(비교 기사·광고), 영수증이 온 도메인은 그 서비스의 것이다. 보낸
+    // 사람이 아는 서비스면 본문은 아예 보지 않는다 — 넷플릭스 메일 본문의 '쿠팡플레이'는 광고다.
+    const senderDomain = senderDomainOf(hints.sender);
+    const byDomain = SERVICE_KEYWORDS.find((item) =>
+      (item.senderDomains ?? []).some((domain) => isDomainOf(senderDomain, domain)),
+    );
+    if (byDomain && takeMatch(byDomain)) {
+      matchedIn = "sender";
+    } else if (matchByKeyword(hints.subject + " " + hints.sender)) {
+      matchedIn = "subject";
+    } else if (!byDomain) {
+      matchByKeyword(structuredProductName + " " + hints.body);
+    }
+  } else {
+    matchByKeyword(structuredProductName + " " + normalized);
   }
 
   // If no amount found and not a recognized cancellation notice for a known service, skip
@@ -490,7 +618,13 @@ function parseSingleMessageBlock(
     category = matchedPreset.category;
     cancelUrl = matchedPreset.cancelUrl;
     cancelGuide = matchedPreset.cancelGuide;
-    confidence = "high";
+    // 본문에서만 찾은 이름은 사용자가 골라야 등록된다(자동 가져오기의 review). 한 메일로 여러
+    // 서비스를 청구하는 발신자는 본문이 유일한 근거라 예외다.
+    const bodyOnly =
+      hints !== undefined &&
+      matchedIn === "body" &&
+      !PLATFORM_SENDER_DOMAINS.some((domain) => isDomainOf(senderDomainOf(hints.sender), domain));
+    confidence = bodyOnly ? "medium" : "high";
   } else if (structuredProductName) {
     name = structuredProductName;
     confidence = "high";
@@ -610,8 +744,9 @@ export function parseReceiptEmails(
 ${email.body}`;
     const received = calendarDate(receivedAt, options?.timeZone);
     const parsed = parseSingleMessageBlock(block, index, options, {
-      cancelText: email.subject,
-      serviceText: `${email.subject} ${email.from}`,
+      subject: email.subject,
+      sender: email.from,
+      body: email.body,
       received,
     });
     if (!parsed) return;
