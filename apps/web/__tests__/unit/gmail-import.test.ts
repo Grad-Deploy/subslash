@@ -155,7 +155,7 @@ describe("Gmail Apps Script → /import", () => {
   it("찾은 메일이 없으면 링크 대신 검색어를 고치라고 안내한다", () => {
     const html = runScript([]);
     expect(html).not.toContain("href=");
-    expect(html).toContain("SEARCH_QUERY");
+    expect(html).toContain("SEARCH_QUERIES");
   });
 
   it("가져오기 주소는 스크립트 안에 문자열로 들어간다", () => {
@@ -298,6 +298,21 @@ return { setup: setup, scan: scan };`,
     expect(request.url).toBe("https://subslash.me/api/gmail/ingest");
     expect(request.options.headers.Authorization).toBe("Bearer secret-token");
     const emails = readReceiptEmails(JSON.parse(request.options.payload));
+    expect(emails?.map((e) => e.subject)).toEqual(["넷플릭스 결제 안내", "티빙 정기결제 안내"]);
+  });
+
+  it("'구매' 분류와 결제 낱말을 따로 찾아 합치고, 자리를 나눠 쓴다", () => {
+    // 구매 분류만 보면 쇼핑 주문이 상한을 채워 구독 영수증이 밀린다. 반대로 낱말만 보면
+    // 광고가 섞인다. 두 쿼리에 자리를 나눠 주고, 같은 메일은 한 번만 읽는다.
+    const run = runAutoScript();
+    run.api.scan();
+
+    expect(run.queries).toHaveLength(3);
+    expect(run.queries[0]).toContain("category:purchases");
+    expect(run.queries[0]).toContain("구독");
+    expect(run.queries[1]).toBe("category:purchases newer_than:400d");
+    expect(run.queries[2]).not.toContain("category:");
+    const emails = readReceiptEmails(JSON.parse(run.fetched[0].options.payload));
     expect(emails?.map((e) => e.subject)).toEqual(["넷플릭스 결제 안내", "티빙 정기결제 안내"]);
   });
 
