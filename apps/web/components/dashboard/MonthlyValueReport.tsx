@@ -46,13 +46,11 @@ export function MonthlyValueReport({
       </div>
 
       <div className="flex flex-col gap-4">
-        {/* 🟢 뽕 뽑은 구독 */}
+        {/* 뽕 뽑은 구독 */}
         {summary.worthItItems.length > 0 && (
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center text-emerald-500">
-              <span className="text-sm font-semibold flex items-center gap-1.5">
-                🟢 뽕 뽑은 구독
-              </span>
+              <span className="text-sm font-semibold flex items-center gap-1.5">뽕 뽑은 구독</span>
               <span className="text-sm font-semibold">{formatKRW(summary.worthItKRW)}</span>
             </div>
             <div className="pl-6 flex flex-col gap-1.5">
@@ -95,11 +93,11 @@ export function MonthlyValueReport({
           </div>
         )}
 
-        {/* ❓ 판단 불가 */}
+        {/* 판단 불가 */}
         {summary.unknownItems.length > 0 && (
           <div className="flex flex-col gap-2 mt-2 opacity-70">
             <div className="flex justify-between items-center text-muted-foreground">
-              <span className="text-sm font-semibold flex items-center gap-1.5">❓ 판단 불가</span>
+              <span className="text-sm font-semibold flex items-center gap-1.5">판단 불가</span>
               <span className="text-sm font-semibold">{formatKRW(summary.unknownKRW)}</span>
             </div>
             <div className="pl-6 flex flex-col gap-1.5">
@@ -125,7 +123,6 @@ export function MonthlyValueReport({
         <div className="mt-5 pt-4 border-t flex flex-col gap-3">
           {summary.wasteSuggestion && (
             <div className="text-sm font-medium bg-secondary/50 p-3 rounded-lg flex gap-2 items-center leading-relaxed">
-              <span>💡</span>
               <span>{summary.wasteSuggestion}</span>
             </div>
           )}

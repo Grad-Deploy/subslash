@@ -60,7 +60,7 @@ export function DetoxLevelBadge({
       {showProgress &&
         (level.nextThreshold === null ? (
           <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            🎉 최고 레벨입니다. 더 지킬 구독이 남아있는지 점검해보세요.
+            최고 레벨입니다. 더 지킬 구독이 남아있는지 점검해보세요.
           </p>
         ) : (
           <div className="space-y-1.5">

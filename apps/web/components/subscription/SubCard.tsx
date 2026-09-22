@@ -104,7 +104,6 @@ export function SubCard({
                     className="font-bold text-lg leading-none hover:underline hover:text-primary transition-colors flex items-center gap-1.5"
                   >
                     <span>{subscription.name}</span>
-                    <span className="text-xs text-muted-foreground opacity-70">⚙️</span>
                   </Link>
                   {isKilled && (
                     <Badge variant="secondary" className="text-[10px]">
@@ -124,7 +123,7 @@ export function SubCard({
                 </p>
                 {shared && (
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    👥 {getSharingCount(subscription)}명이서 나눔 · 내 몫 월{" "}
+                    {getSharingCount(subscription)}명이서 나눔 · 내 몫 월{" "}
                     {formatKRW(getMyMonthlyAmountKRW(subscription, rate))}
                   </p>
                 )}
@@ -150,7 +149,7 @@ export function SubCard({
                   className="min-w-0 max-w-full text-[11px]"
                   title={subscription.linkedAccountName}
                 >
-                  <span className="truncate">👤 {subscription.linkedAccountName}</span>
+                  <span className="truncate">{subscription.linkedAccountName}</span>
                 </Badge>
               )}
               {shared && !isKilled && (
@@ -160,7 +159,7 @@ export function SubCard({
                   className="h-7 px-2 text-[11px] text-muted-foreground"
                   onClick={copySettlementMessage}
                 >
-                  {copied ? "✅ 복사됨" : "💬 정산 문구 복사"}
+                  {copied ? "복사됨" : "정산 문구 복사"}
                 </Button>
               )}
             </div>

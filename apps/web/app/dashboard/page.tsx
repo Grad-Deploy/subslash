@@ -36,6 +36,7 @@ import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
+import { Spinner } from "../../components/ui/spinner";
 
 /**
  * 대시보드는 "지금 무엇을 결정할까"에만 답한다.
@@ -81,7 +82,7 @@ export default function Dashboard() {
   if (!mounted) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin text-3xl">✂️</div>
+        <Spinner className="size-8" />
       </div>
     );
   }
@@ -147,7 +148,7 @@ export default function Dashboard() {
     const sub = findSub(id);
     if (!sub) return;
     confirmKillVerified(id);
-    showToast(`✅ ${sub.name} 결제가 멈춘 것을 확인했습니다.`);
+    showToast(`${sub.name} 결제가 멈춘 것을 확인했습니다.`);
   };
 
   const handleKillCharged = (id: string) => {
@@ -158,7 +159,7 @@ export default function Dashboard() {
   const handleAddSubmit = (data: SubscriptionFormData) => {
     addSubscription(data);
     setIsAddOpen(false);
-    showToast(`✅ ${data.name} 구독이 등록되었습니다.`);
+    showToast(`${data.name} 구독이 등록되었습니다.`);
   };
 
   // 샘플은 내 구독에 더하지 않고 잠시 동안만 보여준다(store의 DemoSession).
@@ -186,7 +187,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-2">
           {activeSubs.length === 0 && (
             <Button variant="outline" size="sm" onClick={handleLoadDemo}>
-              ✨ 샘플 불러오기
+              샘플 불러오기
             </Button>
           )}
           <Button
@@ -195,7 +196,7 @@ export default function Dashboard() {
             onClick={() => setIsAutoImportOpen(true)}
             className="font-semibold border-primary/30 text-primary hover:bg-primary/10 gap-1.5"
           >
-            <span>⚡</span> 자동 불러오기
+            자동 불러오기
           </Button>
           <Button size="sm" onClick={() => setIsAddOpen(true)} className="font-bold">
             + 새 구독 등록
@@ -262,7 +263,7 @@ export default function Dashboard() {
               <div className="min-w-0">
                 {/* 머리 숫자는 결제가 멈춘 것을 확인한 돈뿐이다. 1년치 요금은 아끼는 속도로 적는다. */}
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  ✅ 지킨 돈
+                  지킨 돈
                 </p>
                 <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
                   {formatKRW(tiers.confirmed)}
@@ -322,7 +323,7 @@ export default function Dashboard() {
           onConfirm={() => {
             if (killTarget) {
               killSubscription(killTarget.id);
-              showToast(`🔪 ${killTarget.name}을(를) 해지한 구독으로 기록했습니다.`);
+              showToast(`${killTarget.name}을(를) 해지한 구독으로 기록했습니다.`);
               setKillTarget(null);
             }
           }}

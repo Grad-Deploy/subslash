@@ -31,6 +31,8 @@ import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { Subscription } from "@subslash/shared";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
+import { Spinner } from "../../components/ui/spinner";
+import { PiggyBank } from "lucide-react";
 
 export default function SavingsDashboard() {
   const router = useRouter();
@@ -43,7 +45,7 @@ export default function SavingsDashboard() {
   if (!mounted) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin text-3xl">✂️</div>
+        <Spinner className="size-8" />
       </div>
     );
   }
@@ -85,7 +87,7 @@ export default function SavingsDashboard() {
       tiers.confirmed > 0
         ? `구독을 해지해 ${formatKRW(tiers.confirmed)}을 지켰고, 해지를 유지하면 1년에 ${formatKRW(annualSavings)}을 아낍니다!`
         : `구독을 해지해 1년에 ${formatKRW(annualSavings)}을 아낄 예정입니다!`;
-    const text = `✂️ SubSlash 구독 디톡스 ${detoxLevel.levelLabel} ${detoxLevel.title} ${detoxLevel.emoji}\n${savingsLine} ${headlineEquivalent}\n👉 결과 보기: ${shareUrl}`;
+    const text = `SubSlash 구독 디톡스 ${detoxLevel.levelLabel} ${detoxLevel.title} ${detoxLevel.emoji}\n${savingsLine} ${headlineEquivalent}\n결과 보기: ${shareUrl}`;
     // 공유 창을 열었거나 사용자가 닫았으면 끝이다. 공유할 수 없는 환경이면 복사로 넘어간다.
     if (await shareText({ title: "SubSlash 구독 디톡스 결과", text, url: shareUrl })) return;
     await copyToClipboard(text);
@@ -104,13 +106,13 @@ export default function SavingsDashboard() {
           href="/savings/review"
           className="text-sm font-semibold text-foreground underline underline-offset-4 hover:text-muted-foreground"
         >
-          📆 올해 구독 결산 보기 →
+          올해 구독 결산 보기 →
         </Link>
       </div>
 
       {killedSubs.length === 0 ? (
         <div className="text-center py-20 border border-dashed rounded-2xl space-y-4">
-          <div className="text-5xl">🛡️</div>
+          <PiggyBank className="mx-auto size-12 text-muted-foreground" aria-hidden />
           <div className="space-y-1">
             <h3 className="text-xl font-bold">아직 해지 완료된 구독이 없습니다</h3>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
@@ -154,7 +156,7 @@ export default function SavingsDashboard() {
 
             {/* Reward Equivalent Cards — only the tiers the savings actually cover */}
             <div className="min-w-0 space-y-3 lg:col-span-2">
-              <h3 className="font-bold text-base">🎁 1년 동안 아끼면 누릴 수 있는 보상</h3>
+              <h3 className="font-bold text-base">1년 동안 아끼면 누릴 수 있는 보상</h3>
               {equivalents.length === 0 ? (
                 <div className="p-4 border border-dashed rounded-2xl text-sm text-muted-foreground">
                   아직 환산할 만큼 모이지 않았습니다. 연간 ₩5,000부터 여기에 표시됩니다.
@@ -180,7 +182,7 @@ export default function SavingsDashboard() {
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-base">해지한 구독 목록 ({killedSubs.length})</h3>
               <Button size="sm" variant="outline" onClick={handleShare}>
-                {copied ? "클립보드에 복사됨! 📋" : "결과 공유하기 📤"}
+                {copied ? "클립보드에 복사됨!" : "결과 공유하기"}
               </Button>
             </div>
 

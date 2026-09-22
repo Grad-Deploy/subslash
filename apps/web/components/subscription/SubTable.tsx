@@ -253,7 +253,7 @@ export function SubTable({
                 {formatCurrency(getBilledAmount(sub), sub.currency)}
                 {isShared(sub) && (
                   <p className="text-[11px] text-muted-foreground">
-                    👥 {getSharingCount(sub)}명이서 나눔
+                    {getSharingCount(sub)}명이서 나눔
                   </p>
                 )}
               </td>

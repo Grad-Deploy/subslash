@@ -218,7 +218,6 @@ export function AutoImportModal({
       <DialogContent className="max-w-2xl bg-card text-foreground border-border">
         <DialogHeader className="pb-2 border-b border-border">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">⚡</span>
             <DialogTitle className="text-xl font-bold text-foreground">
               스마트 구독 자동 불러오기
             </DialogTitle>
@@ -243,7 +242,7 @@ export function AutoImportModal({
                   onClick={handleFillSample}
                   className="text-xs py-1 h-7 border-dashed"
                 >
-                  ✨ 카드 문자 예시
+                  카드 문자 예시
                 </Button>
                 <Button
                   type="button"
@@ -252,7 +251,7 @@ export function AutoImportModal({
                   onClick={handleFillSampleNaver}
                   className="text-xs py-1 h-7 border-dashed text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/10"
                 >
-                  🟢 네이버페이 영수증 예시
+                  네이버페이 영수증 예시
                 </Button>
                 {(smsText || discoveredItems.length > 0) && (
                   <Button
@@ -262,7 +261,7 @@ export function AutoImportModal({
                     onClick={handleClearParsingRecords}
                     className="text-xs py-1 h-7 border-dashed text-rose-600 dark:text-rose-400 border-rose-500/40 hover:bg-rose-500/10"
                   >
-                    🗑️ 파싱 내용 비우기
+                    파싱 내용 비우기
                   </Button>
                 )}
               </div>
@@ -364,7 +363,7 @@ export function AutoImportModal({
                             : "bg-muted/40 hover:bg-muted text-muted-foreground border-border"
                         }`}
                       >
-                        🎬 OTT ({ottCount})
+                        OTT ({ottCount})
                       </button>
                       <button
                         type="button"
@@ -375,7 +374,7 @@ export function AutoImportModal({
                             : "bg-muted/40 hover:bg-muted text-muted-foreground border-border"
                         }`}
                       >
-                        🤖 AI ({aiCount})
+                        AI ({aiCount})
                       </button>
                       <button
                         type="button"
@@ -427,11 +426,11 @@ export function AutoImportModal({
                                 </span>
                                 {item.emailProvider === "naver" ? (
                                   <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] py-0 border-0">
-                                    🟢 네이버
+                                    네이버
                                   </Badge>
                                 ) : item.emailProvider === "google" ? (
                                   <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] py-0 border-0">
-                                    🌐 Google
+                                    Google
                                   </Badge>
                                 ) : null}
                                 <Badge
@@ -442,18 +441,18 @@ export function AutoImportModal({
                                 </Badge>
                                 {item.isCanceled ? (
                                   <Badge className="bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[10px] py-0 border-0 font-semibold">
-                                    🔴 해지 완료 메일 감지 (비활성)
+                                    해지 완료 메일 감지 (비활성)
                                   </Badge>
                                 ) : item.isWithin30Days ? (
                                   <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] py-0 border-0 font-medium">
-                                    🟢 30일 내 결제 확인 (활성)
+                                    30일 내 결제 확인 (활성)
                                   </Badge>
                                 ) : (
                                   <Badge
                                     variant="outline"
                                     className="text-[10px] py-0 text-muted-foreground"
                                   >
-                                    ⚪ 30일 초과 미결제 (만료)
+                                    30일 초과 미결제 (만료)
                                   </Badge>
                                 )}
                               </div>
@@ -534,7 +533,7 @@ export function AutoImportModal({
                   onClick={() => setConfirmClear(true)}
                   className="text-xs text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-0.5 font-medium"
                 >
-                  <span>🗑️</span> 이전 기록 전체 삭제
+                  이전 기록 전체 삭제
                 </button>
               )}
             </div>
@@ -561,7 +560,7 @@ export function AutoImportModal({
           {targetAccountId === "__custom__" && (
             <div className="p-2.5 rounded-xl bg-muted/40 border border-border/80 flex flex-col sm:flex-row sm:items-center gap-2">
               <span className="text-xs font-semibold text-foreground shrink-0">
-                ✏️ 직접 매핑할 이메일:
+                직접 매핑할 이메일:
               </span>
               <div className="flex-1">
                 <EmailDomainInput
@@ -589,7 +588,7 @@ export function AutoImportModal({
                   </option>
                 ))}
                 <option value="__custom__">
-                  ✏️ 직접 입력한 계정 ({customTargetEmail.trim() || "새 이메일"}) 매핑
+                  직접 입력한 계정 ({customTargetEmail.trim() || "새 이메일"}) 매핑
                 </option>
               </Select>
             </div>

@@ -60,7 +60,7 @@ export function MonthlyDefenseChart({
     >
       <div className="space-y-1">
         <h3 id="monthly-defense-title" className="font-bold text-base flex items-center gap-1.5">
-          <span aria-hidden>📅</span> {year}년 월별 방어액
+          {year}년 월별 방어액
         </h3>
         <p className="text-xs text-muted-foreground">
           해지 뒤 결제일마다 빠져나가지 않았을 금액입니다. 결제가 실제로 멈췄는지 확인하기 전 금액도
@@ -197,7 +197,7 @@ export function MonthlyDefenseChart({
 
       {series.unknownCount > 0 && (
         <p className="text-[11px] text-amber-700 dark:text-amber-300">
-          ⚠️ 결제 월을 모르는 연간 구독 {series.unknownCount}건은 어느 달에 결제되는지 알 수 없어
+          결제 월을 모르는 연간 구독 {series.unknownCount}건은 어느 달에 결제되는지 알 수 없어
           그래프에서 빠졌습니다. 구독 상세에서 결제 월을 지정하면 반영됩니다.
         </p>
       )}

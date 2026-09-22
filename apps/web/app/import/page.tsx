@@ -17,6 +17,8 @@ import { AutoImportModal } from "../../components/import/AutoImportModal";
 import { CopyBlock } from "../../components/gmail/CopyBlock";
 import { GmailAutoImportSetup } from "../../components/gmail/GmailAutoImportSetup";
 import { Button } from "../../components/ui/button";
+import { Spinner } from "../../components/ui/spinner";
+import { Inbox, SearchX } from "lucide-react";
 
 type ImportState =
   | { kind: "checking" }
@@ -24,10 +26,10 @@ type ImportState =
   | { kind: "error"; message: string }
   | { kind: "ready"; emailCount: number; items: DiscoveredSubscription[] };
 
-function Spinner() {
+function LoadingScreen() {
   return (
     <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="animate-spin text-3xl">✂️</div>
+      <Spinner className="size-8" />
     </div>
   );
 }
@@ -142,13 +144,13 @@ export default function ImportPage() {
       );
   }, []);
 
-  if (!mounted || state.kind === "checking") return <Spinner />;
+  if (!mounted || state.kind === "checking") return <LoadingScreen />;
   if (state.kind === "guide") return <Guide />;
 
   if (state.kind === "error" || state.items.length === 0) {
     return (
       <div className="mx-auto max-w-md space-y-4 py-10 text-center">
-        <div className="text-4xl">📭</div>
+        <SearchX className="mx-auto size-10 text-muted-foreground" aria-hidden />
         <h1 className="text-xl font-black tracking-tight">
           {state.kind === "error" ? "메일을 가져오지 못했습니다" : "구독 결제를 찾지 못했습니다"}
         </h1>
@@ -166,7 +168,7 @@ export default function ImportPage() {
 
   return (
     <div className="space-y-4 py-10 text-center">
-      <div className="text-4xl">📥</div>
+      <Inbox className="mx-auto size-10 text-muted-foreground" aria-hidden />
       <h1 className="text-xl font-black tracking-tight">Gmail에서 찾은 구독을 확인하세요</h1>
       <Button variant="outline" onClick={() => router.replace("/subs")}>
         구독 목록으로 이동

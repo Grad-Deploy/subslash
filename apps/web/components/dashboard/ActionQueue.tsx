@@ -12,6 +12,7 @@ import {
 import { Button } from "../ui/button";
 import { subscriptionDetailHref } from "@lib/routes";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
+import { ListChecks } from "lucide-react";
 
 interface ActionQueueProps {
   items: ActionItem[];
@@ -32,7 +33,7 @@ interface ActionQueueProps {
 const VERB_LABEL: Record<ActionVerb, string> = {
   "cancel-guide": "해지 가이드",
   "check-in": "체크인하기",
-  "confirm-price": "✅ 요금 유지",
+  "confirm-price": "요금 유지",
   "set-billing-month": "결제 월 입력",
   "verify-kill": "결제 안 됐어요",
 };
@@ -87,7 +88,7 @@ export function ActionQueue({
   if (activeCount === 0 && items.length === 0) {
     return (
       <section className="text-center py-14 border border-dashed rounded-2xl space-y-4">
-        <div className="text-4xl">✂️</div>
+        <ListChecks className="mx-auto size-10 text-muted-foreground" aria-hidden />
         <div className="space-y-1">
           <h2 className="text-lg font-bold">아직 등록된 구독이 없습니다</h2>
           <p className="text-sm text-muted-foreground">
@@ -102,7 +103,7 @@ export function ActionQueue({
   if (items.length === 0) {
     return (
       <section className="p-6 border rounded-2xl bg-card text-center space-y-2">
-        <div className="text-3xl">✅</div>
+        <ListChecks className="mx-auto size-9 text-muted-foreground" aria-hidden />
         <h2 className="font-bold">지금 결정할 것이 없습니다</h2>
         <p className="text-sm text-muted-foreground">
           {nextBilling
@@ -116,7 +117,7 @@ export function ActionQueue({
   return (
     <section className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-xl font-bold tracking-tight">⚡ 지금 결정할 것 ({items.length})</h2>
+        <h2 className="text-xl font-bold tracking-tight">지금 결정할 것 ({items.length})</h2>
         <span className="text-xs text-muted-foreground">급한 순으로 정렬됩니다</span>
       </div>
 
@@ -175,7 +176,7 @@ export function ActionQueue({
                     onConfirmPrice(item.subscriptionId, item.presetAmount ?? undefined)
                   }
                 >
-                  🔄 {formatCurrency(item.presetAmount, item.currency)}으로 갱신
+                  {formatCurrency(item.presetAmount, item.currency)}으로 갱신
                 </Button>
               )}
               {item.verb === "confirm-price" && (
@@ -185,7 +186,7 @@ export function ActionQueue({
                   className="text-xs"
                   onClick={() => router.push(subscriptionDetailHref(item.subscriptionId))}
                 >
-                  ✏️ 수정
+                  수정
                 </Button>
               )}
 

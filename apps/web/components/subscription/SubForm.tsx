@@ -29,6 +29,7 @@ import { Button } from "../ui/button";
 import { Select } from "../ui/select";
 import { EmailDomainInput } from "../ui/email-domain-input";
 import { ServiceLogo } from "./ServiceLogo";
+import { SquarePen } from "lucide-react";
 
 const LABEL = "text-xs font-bold text-foreground";
 
@@ -41,15 +42,6 @@ const PICK_CATEGORY_ORDER: SubscriptionCategory[] = [
   "cloud",
   "other",
 ];
-
-const CATEGORY_ICONS: Record<SubscriptionCategory, string> = {
-  ott: "📺",
-  music: "🎵",
-  ai: "🤖",
-  shopping: "🛒",
-  cloud: "☁️",
-  other: "📦",
-};
 
 /**
  * 구독 등록·수정 폼.
@@ -367,9 +359,7 @@ export function SubForm({
                     : "rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
                 }
               >
-                {category === "all"
-                  ? "전체"
-                  : `${CATEGORY_ICONS[category]} ${CATEGORY_LABELS[category]}`}
+                {category === "all" ? "전체" : CATEGORY_LABELS[category]}
                 <span className="ml-1 text-[10px] opacity-70">{countOf(category)}</span>
               </button>
             );
@@ -407,7 +397,7 @@ export function SubForm({
           className="w-full h-11 font-semibold"
           onClick={startCustom}
         >
-          ✏️ {keyword ? `'${query.trim()}' 직접 입력하기` : "목록에 없는 서비스 직접 입력"}
+          {keyword ? `'${query.trim()}' 직접 입력하기` : "목록에 없는 서비스 직접 입력"}
         </Button>
       </div>
     );
@@ -433,7 +423,7 @@ export function SubForm({
         <div className="flex items-center justify-between gap-3 p-3 rounded-xl border bg-muted/40">
           <div className="flex items-center gap-2.5 min-w-0">
             {isCustom ? (
-              <span className="text-2xl shrink-0">✏️</span>
+              <SquarePen className="size-7 shrink-0 text-muted-foreground" aria-hidden />
             ) : (
               <ServiceLogo
                 presetId={preset?.id}
@@ -833,7 +823,7 @@ export function SubForm({
                       {acc.name} - {acc.emailOrId}
                     </option>
                   ))}
-                  <option value="__custom__">✏️ 새 이메일 직접 입력 매핑</option>
+                  <option value="__custom__">새 이메일 직접 입력 매핑</option>
                 </Select>
               </div>
             )}
