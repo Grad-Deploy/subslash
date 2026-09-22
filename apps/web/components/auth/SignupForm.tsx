@@ -190,7 +190,7 @@ export function SignupForm() {
   if (done) {
     return (
       <div className="space-y-4 text-center" role="status">
-        <p className="text-lg font-black">가입했습니다 🎉</p>
+        <p className="text-lg font-black">가입했습니다</p>
         <p
           className={cn(
             "text-sm leading-relaxed",

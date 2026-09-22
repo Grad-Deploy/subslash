@@ -22,7 +22,7 @@ export function CopyBlock({ label, code }: { label: string; code: string }) {
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold">{label}</span>
         <Button size="sm" variant="outline" onClick={copy}>
-          {status === "copied" ? "✅ 복사됨" : `${label} 복사`}
+          {status === "copied" ? "복사됨" : `${label} 복사`}
         </Button>
       </div>
       <pre className="max-h-48 overflow-auto rounded-lg bg-muted p-3 text-[11px] leading-snug">

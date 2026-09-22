@@ -11,6 +11,7 @@ import { RESET_PASSWORD_TTL_MINUTES } from "@lib/verification-config";
 import { apiFetch, apiUrl } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
 import { StatusMessage, statusBorder } from "./LiveStatusMessage";
+import { Spinner } from "../ui/spinner";
 
 type View =
   | { kind: "loading" }
@@ -133,7 +134,7 @@ export function ResetPassword() {
     case "loading":
       return (
         <div className="flex items-center justify-center py-10">
-          <div className="animate-spin text-2xl">✂️</div>
+          <Spinner className="size-7" />
         </div>
       );
 

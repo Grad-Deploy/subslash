@@ -143,10 +143,10 @@ export function SubscriptionDetail({
   const executeConfirm = () => {
     if (confirmType === "kill") {
       killSubscription(sub.id);
-      showToast(`🔪 ${sub.name}을(를) 해지한 구독으로 기록했습니다.`);
+      showToast(`${sub.name}을(를) 해지한 구독으로 기록했습니다.`);
     } else if (confirmType === "revive") {
       reviveSubscription(sub.id);
-      showToast(`✨ ${sub.name} 구독을 다시 활성화했습니다.`);
+      showToast(`${sub.name} 구독을 다시 활성화했습니다.`);
     } else if (confirmType === "delete") {
       deleteSubscription(sub.id);
       onLeave();
@@ -173,7 +173,7 @@ export function SubscriptionDetail({
         </button>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
-            ✏️ 정보 수정
+            정보 수정
           </Button>
           <Button
             variant="ghost"
@@ -261,10 +261,10 @@ export function SubscriptionDetail({
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={handleOpenCheckIn}>
-                📊 이용 횟수 체크인
+                이용 횟수 체크인
               </Button>
               <Button size="sm" variant="destructive" onClick={handleKill}>
-                🔪 지금 해지하기
+                지금 해지하기
               </Button>
             </div>
           </div>
@@ -281,7 +281,6 @@ export function SubscriptionDetail({
       {/* 해지 경로 안내 — 계정, 결제 수단, 링크, 단계 안내를 한곳에 */}
       <div className="p-6 border-2 border-primary/20 bg-muted/30 rounded-2xl space-y-5">
         <div className="flex items-center gap-2">
-          <span className="text-xl">⚡</span>
           <h2 className="text-lg font-bold">해지 경로 안내</h2>
         </div>
         <p className="text-xs text-muted-foreground">
@@ -291,7 +290,7 @@ export function SubscriptionDetail({
         {/* Linked Account Card */}
         <div className="p-4 bg-card border rounded-2xl space-y-2 text-xs">
           <div className="font-bold flex items-center justify-between text-foreground">
-            <span>🔐 로그인 연동 계정</span>
+            <span>로그인 연동 계정</span>
             {sub.linkedAccountName && (
               <button
                 onClick={() => {
@@ -299,11 +298,11 @@ export function SubscriptionDetail({
                     sub.linkedAccountName!.split("(")[1]?.replace(")", "") ||
                     sub.linkedAccountName!;
                   navigator.clipboard.writeText(idOnly);
-                  showToast("계정 ID가 클립보드에 복사되었습니다! 📋");
+                  showToast("계정 ID가 클립보드에 복사되었습니다!");
                 }}
                 className="text-primary underline hover:opacity-80 font-medium"
               >
-                계정 ID 복사 📋
+                계정 ID 복사
               </button>
             )}
           </div>
@@ -345,7 +344,7 @@ export function SubscriptionDetail({
                     className={`${WRAPPING_BUTTON} min-h-12 bg-primary text-primary-foreground hover:opacity-90 font-bold rounded-xl shadow-md`}
                     onClick={() => openExternal(pm.directCancelUrl)}
                   >
-                    💳 {pm.label} 전용 정기결제 관리 열기 (새 창)
+                    {pm.label} 전용 정기결제 관리 열기 (새 창)
                   </Button>
                 )}
                 {sub.cancelUrl && (
@@ -356,8 +355,8 @@ export function SubscriptionDetail({
                       onClick={() => openExternal(sub.cancelUrl)}
                     >
                       {cancelUrlKind === "direct"
-                        ? `🚀 ${sub.name} 해지 페이지 바로가기 (새 창)`
-                        : `🚀 ${sub.name} 열기 (새 창)`}
+                        ? `${sub.name} 해지 페이지 바로가기 (새 창)`
+                        : `${sub.name} 열기 (새 창)`}
                     </Button>
                     {cancelUrlKind !== "direct" && (
                       <p className="text-[11px] text-muted-foreground text-center">
@@ -380,12 +379,12 @@ export function SubscriptionDetail({
           className={`${WRAPPING_BUTTON} min-h-11 rounded-xl font-semibold`}
           onClick={() => setIsGuideOpen(true)}
         >
-          📖 해지 방법 보기 (단계별 안내 · 폴백 링크)
+          해지 방법 보기 (단계별 안내 · 폴백 링크)
         </Button>
 
         {sub.cancelGuide && (
           <div className="p-4 bg-background border rounded-xl space-y-2 text-xs">
-            <div className="font-bold text-foreground">💡 저장해 둔 해지 단계:</div>
+            <div className="font-bold text-foreground">저장해 둔 해지 단계:</div>
             <p className="whitespace-pre-line text-muted-foreground leading-relaxed">
               {sub.cancelGuide}
             </p>

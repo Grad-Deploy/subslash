@@ -25,7 +25,8 @@ export function RiskBadge({
       className={size === "sm" ? "text-[10px] px-1.5" : size === "lg" ? "text-sm px-3 py-1" : ""}
       title={`위험도: ${selected.label}`}
     >
-      {showLabel ? selected.label : level === "green" ? "🟢" : level === "yellow" ? "🟡" : "🔴"}
+      {/* 배지가 이미 색으로 말한다. 색 이모지는 같은 말을 기기마다 다른 그림으로 되풀이했다. */}
+      {showLabel ? selected.label : <span className="block size-2 rounded-full bg-current" />}
     </Badge>
   );
 }

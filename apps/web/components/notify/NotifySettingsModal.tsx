@@ -191,7 +191,6 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <span>🔔</span>
             <span>결제 임박 알림</span>
           </DialogTitle>
           <DialogDescription>
@@ -261,7 +260,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                   <span className="font-bold text-foreground">{notify.email}</span>
                   {notify.verified ? (
                     <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                      ✓ 알림 켜짐
+                      알림 켜짐
                     </span>
                   ) : (
                     <span className="text-amber-600 dark:text-amber-400 font-semibold">
@@ -286,7 +285,6 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
 
               <div className="p-3.5 rounded-xl border bg-card space-y-2 text-xs">
                 <div className="font-bold text-foreground flex items-center gap-1.5">
-                  <span>📅</span>
                   <span>캘린더에 결제일 띄우기</span>
                 </div>
 
@@ -333,7 +331,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                     </p>
                     <div className="flex flex-wrap gap-2 pt-0.5">
                       <Button size="sm" variant="outline" onClick={copyFeedUrl}>
-                        {copiedFeed ? "✅ 복사됨" : "주소 복사"}
+                        {copiedFeed ? "복사됨" : "주소 복사"}
                       </Button>
                       <Button
                         size="sm"
@@ -403,7 +401,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
 
           {justSent && !notify.verified && (
             <p className="text-xs text-center text-emerald-600 dark:text-emerald-400 font-medium">
-              확인 메일을 보냈습니다. 메일함을 확인해주세요 📬
+              확인 메일을 보냈습니다. 메일함을 확인해주세요
             </p>
           )}
           {error && <p className="text-xs text-center text-destructive font-medium">{error}</p>}

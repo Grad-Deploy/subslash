@@ -69,21 +69,17 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
   const getProviderBadge = (p: AccountProvider) => {
     switch (p) {
       case "google":
-        return <Badge className="bg-red-500/10 text-red-600 border-red-500/20">🌐 Google</Badge>;
+        return <Badge className="bg-red-500/10 text-red-600 border-red-500/20">Google</Badge>;
       case "kakao":
         return (
-          <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">🟡 카카오</Badge>
+          <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">카카오</Badge>
         );
       case "naver":
-        return (
-          <Badge className="bg-green-500/10 text-green-600 border-green-500/20">🟢 네이버</Badge>
-        );
+        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">네이버</Badge>;
       case "apple":
-        return (
-          <Badge className="bg-zinc-500/10 text-zinc-600 border-zinc-500/20">🍎 Apple ID</Badge>
-        );
+        return <Badge className="bg-zinc-500/10 text-zinc-600 border-zinc-500/20">Apple ID</Badge>;
       default:
-        return <Badge variant="outline">📧 이메일</Badge>;
+        return <Badge variant="outline">이메일</Badge>;
     }
   };
 
@@ -92,7 +88,6 @@ export function AccountHubModal({ isOpen, onClose }: AccountHubModalProps) {
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <span>👤</span>
             <span>사용 계정 연동 및 관리 허브</span>
           </DialogTitle>
           <DialogDescription>

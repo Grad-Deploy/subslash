@@ -45,7 +45,7 @@ export function MonthlyDefenseWidget({ killedSubscriptions }: MonthlyDefenseWidg
       className="p-5 border rounded-2xl bg-card shadow-sm space-y-3"
     >
       <h3 id="month-billing-heading" className="font-bold text-base">
-        🗓️ {month}월 결제일 현황
+        {month}월 결제일 현황
       </h3>
 
       <dl className="grid grid-cols-2 gap-3">
@@ -84,7 +84,7 @@ export function MonthlyDefenseWidget({ killedSubscriptions }: MonthlyDefenseWidg
 
       {unknownCount > 0 && (
         <p className="text-[11px] text-amber-700 dark:text-amber-300">
-          ⚠️ 결제 월을 모르는 연간 구독 {unknownCount}건은 이번 달 결제 여부를 알 수 없어 합계에서
+          결제 월을 모르는 연간 구독 {unknownCount}건은 이번 달 결제 여부를 알 수 없어 합계에서
           빠졌습니다. 구독 상세에서 결제 월을 지정하면 반영됩니다.
         </p>
       )}

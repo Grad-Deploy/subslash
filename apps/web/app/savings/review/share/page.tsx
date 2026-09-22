@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { describeSpendingType, formatKRW } from "@subslash/shared";
 import { Button } from "@components/ui/button";
 import { readSharedReview } from "@lib/share-review";
+import { Spinner } from "../../../../components/ui/spinner";
 
 /**
  * 링크만으로 열리는 연말 결산 카드. 보는 사람의 브라우저에는 공유한 사람의 기록이
@@ -39,7 +40,7 @@ function SharedReviewContent() {
   return (
     <div className="max-w-xl mx-auto py-8 px-4 space-y-8 text-center">
       <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">
-        📆 SubSlash {shared.year}년 구독 결산
+        SubSlash {shared.year}년 구독 결산
       </div>
 
       <div className="p-6 sm:p-8 rounded-3xl border bg-card shadow-lg space-y-6">
@@ -99,10 +100,10 @@ function SharedReviewContent() {
           className="w-full h-13 text-base font-bold shadow-md rounded-xl"
           onClick={() => router.push("/")}
         >
-          ✂️ 나도 구독 정리 시작하기 (무료)
+          나도 구독 정리 시작하기 (무료)
         </Button>
         <p className="text-[11px] text-muted-foreground">
-          🔒 회원가입 없이 브라우저에서 바로 사용할 수 있습니다.
+          회원가입 없이 브라우저에서 바로 사용할 수 있습니다.
         </p>
       </div>
     </div>
@@ -114,7 +115,7 @@ export default function SharedReviewPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin text-3xl">✂️</div>
+          <Spinner className="size-8" />
         </div>
       }
     >

@@ -46,7 +46,7 @@ export function CheckInEvidence({ logs, currency }: CheckInEvidenceProps) {
 
   return (
     <section className="p-4 border rounded-xl bg-card space-y-3" aria-label="체크인 근거">
-      <h4 className="text-sm font-bold">📈 체크인으로 본 근거</h4>
+      <h4 className="text-sm font-bold">체크인으로 본 근거</h4>
       <dl className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="p-3 rounded-lg bg-muted/60 space-y-0.5">
           <dt className="text-[11px] text-muted-foreground">최근 {recent.length}회 체크인 평균</dt>

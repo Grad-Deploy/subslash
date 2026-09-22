@@ -65,9 +65,7 @@ export function SavingsBreakdownChart({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-bold text-base flex items-center gap-1.5">
-              <span>📊</span> 서비스별 절약 기여도
-            </h3>
+            <h3 className="font-bold text-base flex items-center gap-1.5">서비스별 절약 기여도</h3>
             {/* 레벨은 지킨 돈 기준이라 보기 모드와 무관하게 같다. */}
             <DetoxLevelBadge
               savings={confirmed}
@@ -162,7 +160,7 @@ export function SavingsBreakdownChart({
 
       {viewMode === "yearDefended" && totalYearDefended.unknownCount > 0 && (
         <p className="text-[11px] text-amber-700 dark:text-amber-300">
-          ⚠️ 결제 월을 모르는 연간 구독 {totalYearDefended.unknownCount}건은 올해 결제가 해지
+          결제 월을 모르는 연간 구독 {totalYearDefended.unknownCount}건은 올해 결제가 해지
           전이었는지 알 수 없어 합계에서 빠졌습니다. 구독 상세에서 결제 월을 지정하면 반영됩니다.
         </p>
       )}
@@ -171,7 +169,7 @@ export function SavingsBreakdownChart({
       {topContributor && topContributor.percentage > 0 && (
         <div className="pt-2 border-t flex items-center justify-between text-xs text-muted-foreground">
           <span>
-            💡 <strong>{topContributor.name}</strong> 해지가 전체 절약의{" "}
+            <strong>{topContributor.name}</strong> 해지가 전체 절약의{" "}
             <strong className="text-emerald-600 dark:text-emerald-400">
               {topContributor.percentage}%
             </strong>

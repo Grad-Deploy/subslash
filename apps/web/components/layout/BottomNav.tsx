@@ -3,15 +3,16 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { House, PiggyBank, Receipt } from "lucide-react";
 import { cn } from "@lib/utils";
 
 export function BottomNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { name: "대시보드", href: "/dashboard", icon: "🏠" },
-    { name: "구독 관리", href: "/subs", icon: "📋" },
-    { name: "절약 현황", href: "/savings", icon: "💰" },
+    { name: "대시보드", href: "/dashboard", Icon: House },
+    { name: "구독 관리", href: "/subs", Icon: Receipt },
+    { name: "절약 현황", href: "/savings", Icon: PiggyBank },
   ] as const;
 
   return (
@@ -28,9 +29,10 @@ export function BottomNav() {
                 isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <span className={cn("text-xl transition-transform", isActive && "scale-110")}>
-                {item.icon}
-              </span>
+              <item.Icon
+                className={cn("size-5 transition-transform", isActive && "scale-110")}
+                aria-hidden
+              />
               <span className="text-[10px] font-medium">{item.name}</span>
             </Link>
           );

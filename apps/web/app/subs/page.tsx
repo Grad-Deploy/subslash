@@ -40,14 +40,16 @@ import { isWideScreen } from "@lib/wide-screen";
 import { subscriptionDetailHref } from "@lib/routes";
 import { isGmailAutoImportOpen } from "@lib/privacy";
 import { useIsClient } from "@hooks/useIsClient";
+import { Spinner } from "../../components/ui/spinner";
+import { Receipt, ShieldCheck } from "lucide-react";
 
 /** 카드/표 중 고른 보기. 이 브라우저의 취향일 뿐이라 백업·동기화에 넣지 않는다. */
 const VIEW_KEY = "subslash-subs-view";
 
 /** Feedback for the redirect targets of the reminder emails' links. */
 const NOTIFY_MESSAGES: Record<string, string> = {
-  verified: "🔔 결제 알림이 켜졌습니다. 결제일 전에 메일로 알려드릴게요.",
-  unsubscribed: "🔕 결제 알림을 껐습니다. 서버에 있던 구독 사본도 삭제했습니다.",
+  verified: "결제 알림이 켜졌습니다. 결제일 전에 메일로 알려드릴게요.",
+  unsubscribed: "결제 알림을 껐습니다. 서버에 있던 구독 사본도 삭제했습니다.",
   invalid: "링크가 만료되었거나 올바르지 않습니다. 알림 설정에서 다시 시도해주세요.",
   error: "알림 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
 };
@@ -205,7 +207,7 @@ export default function SubscriptionsPage() {
   if (!mounted) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin text-3xl">✂️</div>
+        <Spinner className="size-8" />
       </div>
     );
   }
@@ -268,10 +270,10 @@ export default function SubscriptionsPage() {
     const { type, sub } = confirmAction;
     if (type === "kill") {
       killSubscription(sub.id);
-      showToast(`🔪 ${sub.name}을(를) 해지 처리했습니다.`);
+      showToast(`${sub.name}을(를) 해지 처리했습니다.`);
     } else if (type === "revive") {
       reviveSubscription(sub.id);
-      showToast(`✨ ${sub.name}을(를) 다시 활성화했습니다.`);
+      showToast(`${sub.name}을(를) 다시 활성화했습니다.`);
     } else if (type === "delete") {
       deleteSubscription(sub.id);
       showToast("삭제되었습니다.");
@@ -282,7 +284,7 @@ export default function SubscriptionsPage() {
   const handleAddSubmit = (data: SubscriptionFormData) => {
     addSubscription(data);
     setIsAddOpen(false);
-    showToast(`✅ ${data.name} 구독이 추가되었습니다.`);
+    showToast(`${data.name} 구독이 추가되었습니다.`);
   };
 
   const categories = [
@@ -326,7 +328,7 @@ export default function SubscriptionsPage() {
               onClick={() => setConfirmClearAll(true)}
               className="font-medium text-xs text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10 gap-1"
             >
-              <span>🗑️</span> 전체 초기화
+              전체 초기화
             </Button>
           )}
           <Button
@@ -334,7 +336,7 @@ export default function SubscriptionsPage() {
             onClick={() => setIsAutoImportOpen(true)}
             className="font-semibold border-primary/30 text-primary hover:bg-primary/10 gap-1.5"
           >
-            <span>⚡</span> 자동 불러오기
+            자동 불러오기
           </Button>
           <Button onClick={() => setIsAddOpen(true)} className="font-bold shadow-md">
             + 구독 추가
@@ -421,7 +423,7 @@ export default function SubscriptionsPage() {
             <div className="space-y-4">
               {filteredActive.length === 0 ? (
                 <div className="text-center py-16 border border-dashed rounded-2xl space-y-3">
-                  <div className="text-3xl">📭</div>
+                  <Receipt className="mx-auto size-9 text-muted-foreground" aria-hidden />
                   <p className="font-bold">등록된 활성 구독이 없습니다.</p>
                   <p className="text-xs text-muted-foreground">
                     새 구독을 추가하여 고정비 관리를 시작하세요.
@@ -478,7 +480,7 @@ export default function SubscriptionsPage() {
             <div className="space-y-4">
               {filteredKilled.length === 0 ? (
                 <div className="text-center py-16 border border-dashed rounded-2xl space-y-3">
-                  <div className="text-3xl">🛡️</div>
+                  <ShieldCheck className="mx-auto size-9 text-muted-foreground" aria-hidden />
                   <p className="font-bold">아직 해지(방어)한 구독이 없습니다.</p>
                   <p className="text-xs text-muted-foreground">
                     활성 구독에서 불필요한 결제에 대해 &lsquo;해지하기&rsquo;를 누르면 이곳에 방어
@@ -544,7 +546,7 @@ export default function SubscriptionsPage() {
                 key={selectedId}
                 id={selectedId}
                 headingLevel="h2"
-                closeLabel="✕ 닫기"
+                closeLabel="닫기"
                 onClose={clearSelection}
                 onLeave={leaveSelection}
                 className="space-y-6"

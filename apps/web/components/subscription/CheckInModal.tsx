@@ -69,10 +69,10 @@ export function CheckInModal({
   const directUrl = paymentMethodInfo?.directCancelUrl || subscription.cancelUrl;
   const cancelUrlKind = getCancelUrlKind(subscription.cancelUrl);
   const cancelButtonLabel = usesPaymentMethodUrl
-    ? `💳 ${paymentMethodInfo?.label} 정기결제 관리 열기 (새 창)`
+    ? `${paymentMethodInfo?.label} 정기결제 관리 열기 (새 창)`
     : cancelUrlKind === "direct"
-      ? `🚀 ${subscription.name} 해지 페이지 바로가기 (새 창)`
-      : `🚀 ${subscription.name} 열기 (새 창)`;
+      ? `${subscription.name} 해지 페이지 바로가기 (새 창)`
+      : `${subscription.name} 열기 (새 창)`;
 
   const handleCopyId = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -185,7 +185,7 @@ export function CheckInModal({
             {/* Smart Cancellation Navigator with Linked Account Info */}
             <div className="w-full p-4 border rounded-2xl bg-card space-y-3 text-xs">
               <div className="font-bold flex items-center justify-between">
-                <span>🔐 해지 시 로그인 계정 안내</span>
+                <span>해지 시 로그인 계정 안내</span>
                 {subscription.linkedAccountName && (
                   <button
                     onClick={() =>
@@ -196,7 +196,7 @@ export function CheckInModal({
                     }
                     className="text-[11px] text-primary underline hover:opacity-80"
                   >
-                    {copied ? "복사완료! ✓" : "ID 복사 📋"}
+                    {copied ? "복사완료!" : "ID 복사"}
                   </button>
                 )}
               </div>
@@ -215,8 +215,7 @@ export function CheckInModal({
 
               {paymentMethodInfo && (
                 <div className="text-[11px] text-muted-foreground bg-secondary/70 p-2.5 rounded-xl">
-                  💳 결제 수단:{" "}
-                  <strong className="text-foreground">{paymentMethodInfo.label}</strong>
+                  결제 수단: <strong className="text-foreground">{paymentMethodInfo.label}</strong>
                   {paymentMethodInfo.guide && (
                     <div className="mt-1 opacity-90">{paymentMethodInfo.guide}</div>
                   )}
@@ -243,7 +242,7 @@ export function CheckInModal({
                     onClose();
                   }}
                 >
-                  🔪 해지 가이드 열기
+                  해지 가이드 열기
                 </Button>
               )}
               <Button variant="ghost" className="w-full" onClick={onClose}>

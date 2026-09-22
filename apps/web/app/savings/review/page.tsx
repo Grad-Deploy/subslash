@@ -19,6 +19,7 @@ import { webUrl } from "../../../lib/api";
 import { shareText } from "../../../lib/native";
 import { Button } from "../../../components/ui/button";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
+import { Spinner } from "../../../components/ui/spinner";
 
 /** 이보다 이른 해는 이 앱에 기록이 있을 수 없다. */
 const EARLIEST_YEAR = 2020;
@@ -35,10 +36,10 @@ function formatDay(iso: string): string {
   return date.toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
 }
 
-function Spinner() {
+function LoadingScreen() {
   return (
     <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="animate-spin text-3xl">✂️</div>
+      <Spinner className="size-8" />
     </div>
   );
 }
@@ -71,7 +72,7 @@ function YearInReviewContent() {
   const mounted = useIsClient();
   const [copied, setCopied] = useState(false);
 
-  if (!mounted) return <Spinner />;
+  if (!mounted) return <LoadingScreen />;
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -109,7 +110,7 @@ function YearInReviewContent() {
     // 남에게 보이는 문장이라 지킨 돈이 없으면 막은 결제만 적는다.
     const confirmedLine =
       yearTiers.confirmed > 0 ? ` · 그중 지킨 돈 ${formatKRW(yearTiers.confirmed)}` : "";
-    const text = `📆 SubSlash ${scope} 구독 결산\n해지한 구독 ${review.killedThisYear.length}개 · 해지로 막은 결제 ${formatKRW(defended.pastAmount)}${confirmedLine}${spendingType ? `\n소비 유형: ${spendingType.title}` : ""}\n👉 결산 보기: ${url}`;
+    const text = `SubSlash ${scope} 구독 결산\n해지한 구독 ${review.killedThisYear.length}개 · 해지로 막은 결제 ${formatKRW(defended.pastAmount)}${confirmedLine}${spendingType ? `\n소비 유형: ${spendingType.title}` : ""}\n결산 보기: ${url}`;
 
     // 공유 창을 열었거나 사용자가 닫았으면 끝이다. 공유할 수 없는 환경이면 복사로 넘어간다.
     if (await shareText({ title: `SubSlash ${year}년 구독 결산`, text, url })) return;
@@ -150,7 +151,7 @@ function YearInReviewContent() {
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-black tracking-tight">📆 {year}년 구독 결산</h1>
+          <h1 className="text-2xl font-black tracking-tight">{year}년 구독 결산</h1>
           <p className="text-sm text-muted-foreground">
             {review.isComplete
               ? `${year}년 한 해 동안의 기록입니다.`
@@ -159,7 +160,7 @@ function YearInReviewContent() {
         </div>
         {canShare && (
           <Button size="sm" variant="outline" onClick={handleShare}>
-            {copied ? "클립보드에 복사됨! 📋" : "결산 공유하기 📤"}
+            {copied ? "클립보드에 복사됨!" : "결산 공유하기"}
           </Button>
         )}
       </header>
@@ -186,7 +187,7 @@ function YearInReviewContent() {
         )}
         {defended.unknownCount > 0 && (
           <p className="text-[11px] text-amber-700 dark:text-amber-300">
-            ⚠️ 결제 월을 모르는 연간 구독 {defended.unknownCount}건은 언제 결제되는지 알 수 없어
+            결제 월을 모르는 연간 구독 {defended.unknownCount}건은 언제 결제되는지 알 수 없어
             빠졌습니다.
           </p>
         )}
@@ -338,7 +339,7 @@ function YearInReviewContent() {
 
 export default function YearInReviewPage() {
   return (
-    <Suspense fallback={<Spinner />}>
+    <Suspense fallback={<LoadingScreen />}>
       <YearInReviewContent />
     </Suspense>
   );

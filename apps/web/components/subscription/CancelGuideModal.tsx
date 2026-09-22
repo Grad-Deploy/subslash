@@ -76,8 +76,8 @@ export function CancelGuideModal({
                   onClick={() => openExternal(sub.cancelUrl)}
                 >
                   {cancelUrlKind === "direct"
-                    ? `🚀 ${sub.name} 해지 페이지 열기 (새 창)`
-                    : `🚀 ${sub.name} 열기 (새 창)`}
+                    ? `${sub.name} 해지 페이지 열기 (새 창)`
+                    : `${sub.name} 열기 (새 창)`}
                 </Button>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
                   {cancelUrlKind === "direct"
@@ -109,7 +109,7 @@ export function CancelGuideModal({
                       className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
                       onClick={() => openExternal(paymentMethod.directCancelUrl)}
                     >
-                      💳 {paymentMethod.label} 정기결제 관리 열기
+                      {paymentMethod.label} 정기결제 관리 열기
                     </Button>
                     {paymentMethod.guide && (
                       <p className="text-[11px] text-muted-foreground">{paymentMethod.guide}</p>
@@ -123,7 +123,7 @@ export function CancelGuideModal({
                       className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
                       onClick={() => openExternal(accountUrl)}
                     >
-                      👤 계정 관리 페이지로 이동 시도
+                      계정 관리 페이지로 이동 시도
                     </Button>
                     <p className="text-[11px] text-muted-foreground break-all">
                       {accountUrl} — 많은 서비스가 쓰는 주소 형태로 만든 것이라, 이 서비스에 실제로
@@ -139,7 +139,7 @@ export function CancelGuideModal({
                       className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
                       onClick={() => openExternal(homeUrl)}
                     >
-                      🏠 {new URL(homeUrl).hostname} 첫 화면 열기
+                      {new URL(homeUrl).hostname} 첫 화면 열기
                     </Button>
                     <p className="text-[11px] text-muted-foreground">
                       계정·멤버십 메뉴 위치는 서비스마다 달라서 확인되지 않았습니다. 로그인한 뒤

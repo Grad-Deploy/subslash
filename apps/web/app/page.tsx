@@ -29,22 +29,18 @@ import { ServiceLogo } from "@components/subscription/ServiceLogo";
  */
 const HOW_IT_WORKS = [
   {
-    icon: "📝",
     title: "구독 등록",
     body: "목록에서 서비스를 고르면 요금과 해지 방법이 채워집니다. 결제 문자·영수증을 붙여 넣어 한 번에 불러올 수도 있어요.",
   },
   {
-    icon: "🔢",
     title: "한 달에 한 번 체크인",
     body: "“지난 30일 동안 몇 번 썼나요?”에 답하면 1회당 실제 단가와 초록·노랑·빨강 신호가 나옵니다.",
   },
   {
-    icon: "✂️",
     title: "해지 방법 안내",
     body: "해지는 각 서비스에서 직접 합니다. 해지 화면으로 바로 가는 링크가 있으면 그리로, 없으면 어느 메뉴로 가야 하는지 단계별로 알려드려요.",
   },
   {
-    icon: "💰",
     title: "지킨 돈 기록",
     body: "해지 후 첫 결제일이 지나 결제가 정말 멈췄는지 확인하면, 그 금액이 절약 현황에 ‘지킨 돈’으로 쌓입니다.",
   },
@@ -140,12 +136,8 @@ export default function Home() {
         <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {HOW_IT_WORKS.map((step, i) => (
             <li key={step.title} className="space-y-2 rounded-2xl border bg-card p-5 shadow-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-xl" aria-hidden="true">
-                  {step.icon}
-                </span>
-                <span className="text-xs font-semibold text-muted-foreground">{i + 1}단계</span>
-              </div>
+              {/* 순서는 1단계라는 글자가 말한다. 앞에 붙던 이모지는 같은 말을 되풀이했다. */}
+              <span className="text-xs font-semibold text-muted-foreground">{i + 1}단계</span>
               <h3 className="text-base font-bold">{step.title}</h3>
               <p className="text-xs leading-relaxed text-muted-foreground">{step.body}</p>
             </li>
