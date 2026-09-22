@@ -462,6 +462,41 @@ describe("결제 메일이 아닌 메일을 구독으로 읽지 않는다", () =
     expect(item.confidence).toBe("medium");
   });
 
+  it("앱스토어 영수증은 애플이 보냈다는 이유로 아이클라우드가 되지 않고, 본문의 앱 이름을 쓴다", () => {
+    // 키워드에 "apple.com"이 있어 보낸 사람 주소만으로 아이클라우드가 됐다. 1년째 쓰는 굿노트
+    // 구독이 '아이클라우드 연간 13,000원'으로 등록됐고, 해지하려고 누르면 애플 iCloud 설정이
+    // 열렸다. 애플 결제라는 사실만으로는 어느 앱인지 알 수 없다.
+    const [item] = parseReceiptEmails(
+      mail(
+        "귀하의 영수증입니다.",
+        "APPLE 계정\nGoodnotes 6\n연간 구독 (자동 갱신)\n₩13,000\n합계 ₩13,000",
+        "Apple <no_reply@email.apple.com>",
+      ),
+      { now: NOW },
+    );
+
+    expect(item.presetId).toBe("goodnotes");
+    expect(item.name).toBe("굿노트");
+    expect(item.billingCycle).toBe("yearly");
+    expect(item.amount).toBe(13000);
+    expect(item.paymentMethod).toBe("apple_iap");
+    // 한 메일로 여러 앱을 청구하는 발신자라 본문의 이름을 그대로 믿는다.
+    expect(item.confidence).toBe("high");
+  });
+
+  it("아이클라우드 영수증은 그대로 아이클라우드다", () => {
+    const [item] = parseReceiptEmails(
+      mail(
+        "귀하의 영수증입니다.",
+        "APPLE 계정\niCloud+ 50GB\n월간 구독\n₩1,100",
+        "Apple <no_reply@email.apple.com>",
+      ),
+      { now: NOW },
+    );
+
+    expect(item.presetId).toBe("apple-icloud");
+  });
+
   it("한 메일로 여러 서비스를 청구하는 발신자는 본문의 이름을 그대로 믿는다", () => {
     // 구글 플레이 영수증은 제목이 '주문 영수증'뿐이고 어느 서비스인지는 본문에만 있다.
     const [item] = parseReceiptEmails(
