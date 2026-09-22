@@ -221,13 +221,13 @@ export const BRAND_LOGOS: Record<string, BrandLogo> = {
     source: "millie.co.kr/favicon/ios-icon.png",
   },
   "ridi-select": {
+    // 리디의 마크는 글자 R 자체다(공식 앱 아이콘). 우리가 만든 이니셜 폴백이 아니다.
     image: "/logos/ridi-select.png",
-    source: "select.ridibooks.com 앱 아이콘 180x180",
+    source: "ridibooks.com의 apple-touch-icon(180x180)",
   },
   goodnotes: {
-    // 굿노트는 단색 벡터 마크를 공개하지 않고 simple-icons에도 없다. 앱 아이콘을 눈대중으로
-    // 그리거나 브랜드 색을 지어내지 않고, 이니셜 마크에 중립 회색 타일로 둔다.
-    initial: "G",
+    image: "/logos/goodnotes.png",
+    source: "goodnotes.com의 apple-touch-icon(256x256)",
   },
   "apple-play-store": {
     hex: "#414141",
