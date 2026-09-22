@@ -54,7 +54,7 @@ test.describe("절약 세 칸 (E2E)", () => {
     await seedOnce(page);
     await page.goto("/savings");
 
-    const tiers = page.getByRole("region", { name: "✅ 지킨 돈" });
+    const tiers = page.getByRole("region", { name: "지킨 돈" });
     await expect(tiers).toBeVisible({ timeout: 30_000 });
     // 확인한 넷플릭스의 한 번치만 지킨 돈이다.
     await expect(tiers.getByText("₩17,000", { exact: true })).toBeVisible();
@@ -79,7 +79,7 @@ test.describe("절약 세 칸 (E2E)", () => {
     await notice.getByRole("button", { name: /닫기/ }).click();
     await expect(notice).toBeHidden();
     await page.reload();
-    await expect(page.getByRole("region", { name: "✅ 지킨 돈" })).toBeVisible({
+    await expect(page.getByRole("region", { name: "지킨 돈" })).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.getByRole("region", { name: "레벨 기준이 바뀌었습니다" })).toBeHidden();
@@ -89,7 +89,7 @@ test.describe("절약 세 칸 (E2E)", () => {
     await seedOnce(page);
     await page.goto("/dashboard");
 
-    const card = page.getByRole("link", { name: /✅ 지킨 돈/ });
+    const card = page.getByRole("link", { name: /지킨 돈/ });
     await expect(card).toBeVisible({ timeout: 30_000 });
     await expect(card.getByText("₩17,000", { exact: true })).toBeVisible();
     await expect(card).toContainText("확인 대기 ₩10,900");

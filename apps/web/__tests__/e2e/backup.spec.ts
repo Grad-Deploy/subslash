@@ -92,7 +92,7 @@ test.describe("데이터 백업 (E2E)", () => {
     await seedOnce(page);
     await page.goto("/subs");
 
-    const card = page.getByRole("region", { name: "💾 데이터 백업" });
+    const card = page.getByRole("region", { name: "데이터 백업" });
     await expect(card).toBeVisible({ timeout: 30_000 });
 
     const [download] = await Promise.all([
@@ -113,7 +113,7 @@ test.describe("데이터 백업 (E2E)", () => {
     await seedOnce(page);
     await page.goto("/subs");
 
-    const card = page.getByRole("region", { name: "💾 데이터 백업" });
+    const card = page.getByRole("region", { name: "데이터 백업" });
     await expect(card).toBeVisible({ timeout: 30_000 });
     await expect(subCard(page, "넷플릭스")).toBeVisible();
 
@@ -138,7 +138,7 @@ test.describe("데이터 백업 (E2E)", () => {
     await seedOnce(page);
     await page.goto("/subs");
 
-    const card = page.getByRole("region", { name: "💾 데이터 백업" });
+    const card = page.getByRole("region", { name: "데이터 백업" });
     await expect(card).toBeVisible({ timeout: 30_000 });
 
     await card.getByLabel("백업 파일 선택").setInputFiles({
@@ -157,7 +157,7 @@ test.describe("데이터 백업 (E2E)", () => {
     await seedOnce(page);
     await page.goto("/subs");
 
-    const card = page.getByRole("region", { name: "💾 데이터 백업" });
+    const card = page.getByRole("region", { name: "데이터 백업" });
     await expect(card).toBeVisible({ timeout: 30_000 });
 
     await expect(card.getByText(/로그인하면 이 기록이 계정에 저장되고/)).toBeVisible();
