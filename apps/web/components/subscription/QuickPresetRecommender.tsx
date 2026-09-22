@@ -41,7 +41,7 @@ export function QuickPresetRecommender({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-bold text-sm sm:text-base flex items-center gap-1.5">
-            <span>💡</span> 혹시 이 서비스도 구독 중이신가요?
+            혹시 이 서비스도 구독 중이신가요?
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             놓치기 쉬운 인기 구독 서비스를 탭하여 1초 만에 간편 등록하세요.

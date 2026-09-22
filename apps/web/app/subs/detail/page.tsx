@@ -4,11 +4,12 @@ import React, { Suspense, useEffect } from "react";
 import { useIsClient } from "@hooks/useIsClient";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SubscriptionDetail } from "../../../components/subscription/SubscriptionDetail";
+import { Spinner } from "../../../components/ui/spinner";
 
-function Spinner() {
+function LoadingScreen() {
   return (
     <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="animate-spin text-3xl">✂️</div>
+      <Spinner className="size-8" />
     </div>
   );
 }
@@ -27,7 +28,7 @@ function DetailFromQuery() {
   }, [id, router]);
 
   // 구독은 브라우저 저장소에 있어 서버에서는 그릴 수 없다.
-  if (!mounted || !id) return <Spinner />;
+  if (!mounted || !id) return <LoadingScreen />;
 
   return (
     <SubscriptionDetail
@@ -42,7 +43,7 @@ function DetailFromQuery() {
 
 export default function SubscriptionDetailPage() {
   return (
-    <Suspense fallback={<Spinner />}>
+    <Suspense fallback={<LoadingScreen />}>
       <DetailFromQuery />
     </Suspense>
   );

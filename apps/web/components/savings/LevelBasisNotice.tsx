@@ -48,7 +48,7 @@ export function LevelBasisNotice({ annualRunRate, confirmed, killCount }: LevelB
           onClick={dismiss}
           className="whitespace-nowrap text-xs text-muted-foreground hover:text-foreground font-medium p-1 rounded-lg hover:bg-muted transition-colors shrink-0"
         >
-          ✕ 닫기
+          닫기
         </button>
       </div>
       <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed">

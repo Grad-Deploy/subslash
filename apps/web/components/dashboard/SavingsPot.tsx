@@ -33,7 +33,7 @@ export function SavingsPot({ killedSubscriptions }: { killedSubscriptions: Subsc
           id="savings-tiers-heading"
           className="text-sm font-bold text-emerald-800 dark:text-emerald-300"
         >
-          ✅ 지킨 돈
+          지킨 돈
         </h2>
         <p className="text-4xl font-black text-emerald-700 dark:text-emerald-300 font-mono">
           {formatKRW(tiers.confirmed)}
@@ -66,7 +66,7 @@ export function SavingsPot({ killedSubscriptions }: { killedSubscriptions: Subsc
 
       <div className="text-xs text-emerald-900/80 dark:text-emerald-200/80 space-y-0.5">
         <p>
-          <span className="font-semibold">📅 앞으로</span> · 해지를 유지하면 연{" "}
+          <span className="font-semibold">앞으로</span> · 해지를 유지하면 연{" "}
           {formatKRW(tiers.annualRunRate)} 아끼는 중
         </p>
         {equivalent && <p>{equivalent}</p>}
@@ -74,7 +74,7 @@ export function SavingsPot({ killedSubscriptions }: { killedSubscriptions: Subsc
 
       {tiers.unknownCount > 0 && (
         <p className="text-[11px] text-amber-700 dark:text-amber-300">
-          ⚠️ 결제 월이나 해지 날짜를 모르는 {tiers.unknownCount}건은 언제 결제되는지 알 수 없어 지킨
+          결제 월이나 해지 날짜를 모르는 {tiers.unknownCount}건은 언제 결제되는지 알 수 없어 지킨
           돈과 확인 대기에서 빠졌습니다.
         </p>
       )}

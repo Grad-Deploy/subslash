@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { WifiOff } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "오프라인 - SubSlash",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 export default function OfflinePage() {
   return (
     <div className="py-16 text-center space-y-3">
-      <div className="text-4xl">📡</div>
+      <WifiOff className="mx-auto size-10 text-muted-foreground" aria-hidden />
       <h1 className="text-xl font-black tracking-tight">지금은 오프라인입니다</h1>
       <p className="text-sm text-muted-foreground leading-relaxed">
         구독 정보는 이 기기에 그대로 있습니다.

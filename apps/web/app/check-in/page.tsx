@@ -9,6 +9,8 @@ import { CheckInModal } from "../../components/subscription/CheckInModal";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { Button } from "../../components/ui/button";
+import { Spinner } from "../../components/ui/spinner";
+import { CalendarCheck } from "lucide-react";
 
 type Stage = "check-in" | "guide" | "confirm";
 
@@ -61,7 +63,7 @@ function CheckInReceiver() {
   if (!mounted) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin text-3xl">✂️</div>
+        <Spinner className="size-8" />
       </div>
     );
   }
@@ -150,7 +152,7 @@ function Fallback({ title, body }: { title: string; body: string }) {
   const router = useRouter();
   return (
     <div className="text-center py-20 space-y-4">
-      <div className="text-4xl">📭</div>
+      <CalendarCheck className="mx-auto size-10 text-muted-foreground" aria-hidden />
       <h1 className="text-xl font-black tracking-tight">{title}</h1>
       <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">{body}</p>
       <Button onClick={() => router.push("/dashboard")}>대시보드로 가기 →</Button>
@@ -163,7 +165,7 @@ export default function CheckInPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin text-3xl">✂️</div>
+          <Spinner className="size-8" />
         </div>
       }
     >

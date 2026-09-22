@@ -16,6 +16,7 @@ import { refreshAuth, useAuth } from "@hooks/useAuth";
 import { ResendVerificationButton } from "./ResendVerificationButton";
 import { apiFetch } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
+import { Spinner } from "../ui/spinner";
 
 type SaveStatus = { tone: "ok" | "error"; message: string } | null;
 
@@ -45,7 +46,7 @@ export function ProfileForm() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <div className="animate-spin text-2xl">✂️</div>
+        <Spinner className="size-7" />
       </div>
     );
   }

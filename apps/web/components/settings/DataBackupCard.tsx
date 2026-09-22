@@ -143,7 +143,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     link.click();
     URL.revokeObjectURL(url);
     setError(null);
-    onMessage(`💾 백업 파일을 저장했습니다. (구독 ${subscriptions.length}개)`);
+    onMessage(`백업 파일을 저장했습니다. (구독 ${subscriptions.length}개)`);
   };
 
   const handleFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,7 +172,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
       stoppedReason: null,
     });
     requestAccountSync();
-    onMessage("🔄 자동 동기화를 켰습니다.");
+    onMessage("자동 동기화를 켰습니다.");
   };
 
   const turnSyncOff = () => {
@@ -195,7 +195,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
       }
       const data = await res.json();
       setSnapshot({ kind: "saved", summary: data.summary });
-      onMessage(`☁️ 계정에 저장했습니다. (구독 ${data.summary.subscriptionCount}개)`);
+      onMessage(`계정에 저장했습니다. (구독 ${data.summary.subscriptionCount}개)`);
     } catch {
       setAccountError("네트워크에 문제가 있어 계정에 저장하지 못했습니다.");
     } finally {
@@ -321,7 +321,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     >
       <div className="space-y-1">
         <h3 id="data-backup-heading" className="font-bold text-sm sm:text-base">
-          💾 데이터 백업
+          데이터 백업
         </h3>
         <p className="text-xs text-muted-foreground leading-relaxed">
           구독 목록과 해지·체크인 기록은 이 기기에 저장됩니다. 브라우저 데이터를 지우거나 기기를
@@ -359,7 +359,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
 
       {!authLoading && (
         <div className="pt-3 border-t space-y-2">
-          <p className="text-xs font-bold text-foreground">☁️ 계정 동기화</p>
+          <p className="text-xs font-bold text-foreground">계정 동기화</p>
           {!account ? (
             <p className="text-[11px] text-muted-foreground leading-relaxed">
               로그인하면 이 기록이 계정에 저장되고, 로그인한 다른 기기(웹·앱)와 자동으로 맞춰집니다.{" "}

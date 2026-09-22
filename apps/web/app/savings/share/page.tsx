@@ -11,6 +11,8 @@ import {
   getSavingsEquivalents,
 } from "@subslash/shared";
 import { readSharedSavings } from "../../../lib/share-savings";
+import { Spinner } from "../../../components/ui/spinner";
+import { PiggyBank } from "lucide-react";
 
 function SharedSavingsContent() {
   const searchParams = useSearchParams();
@@ -33,12 +35,12 @@ function SharedSavingsContent() {
     <div className="max-w-xl mx-auto py-8 px-4 space-y-8 text-center">
       {/* Header Badge */}
       <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">
-        🛡️ SubSlash 구독 디톡스 인증서
+        SubSlash 구독 디톡스 인증서
       </div>
 
       {/* Main Hero Card */}
       <div className="p-6 sm:p-8 rounded-3xl border bg-card shadow-lg space-y-6 relative overflow-hidden">
-        <div className="text-5xl animate-bounce">🎉</div>
+        <PiggyBank className="mx-auto size-12 text-muted-foreground" aria-hidden />
 
         {/* Detox level & title */}
         {detoxLevel && (
@@ -136,7 +138,7 @@ function SharedSavingsContent() {
         {equivalents.length > 0 && (
           <div className="space-y-2.5 text-left pt-2">
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              🎁 1년 동안 아끼면 누릴 수 있는 보상
+              1년 동안 아끼면 누릴 수 있는 보상
             </h3>
             <div className="grid grid-cols-2 gap-2.5">
               {equivalents.slice(0, 4).map((item) => (
@@ -166,11 +168,11 @@ function SharedSavingsContent() {
           className="w-full h-13 text-base font-bold shadow-md rounded-xl"
           onClick={() => router.push("/")}
         >
-          ✂️ 나도 구독 디톡스 시작하기 (무료)
+          나도 구독 디톡스 시작하기 (무료)
         </Button>
 
         <p className="text-[11px] text-muted-foreground">
-          🔒 회원가입 없이 브라우저에서 바로 사용할 수 있습니다.
+          회원가입 없이 브라우저에서 바로 사용할 수 있습니다.
         </p>
       </div>
 
@@ -191,7 +193,7 @@ export default function SharedSavingsPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin text-3xl">✂️</div>
+          <Spinner className="size-8" />
         </div>
       }
     >
