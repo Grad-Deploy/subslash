@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { Header } from "../components/layout/Header";
@@ -7,10 +7,16 @@ import { DemoBanner } from "../components/layout/DemoBanner";
 import { GmailDiscoveryInbox } from "../components/gmail/GmailDiscoveryInbox";
 import { BottomNav } from "../components/layout/BottomNav";
 import { ThemeProvider } from "../components/layout/ThemeProvider";
+import { BrandWordmark } from "../components/brand/Brand";
 import { ServiceWorkerRegistrar } from "../components/layout/ServiceWorkerRegistrar";
 import { NativeAppEffects } from "../components/layout/NativeAppEffects";
 
-const geist = Geist({ subsets: ["latin"] });
+/**
+ * 브랜드 시트의 워드마크는 Helvetica 계열의 굵은 그로테스크다. 화면 글꼴도 같은 계열로 맞춰,
+ * 로고 옆의 글자가 다른 집안처럼 보이지 않게 한다. Inter는 그 계열의 자유 글꼴이고 굵기 900까지
+ * 있어 워드마크를 글자로 그릴 수 있다.
+ */
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "SubSlash - 구독, 끊을 용기",
@@ -59,7 +65,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body
-        className={`${geist.className} min-h-screen flex flex-col bg-background text-foreground antialiased`}
+        className={`${inter.className} min-h-screen flex flex-col bg-background text-foreground antialiased`}
       >
         <ThemeProvider>
           <ServiceWorkerRegistrar />
@@ -78,7 +84,7 @@ export default function RootLayout({
           */}
           <footer className="container max-w-6xl mx-auto px-4 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 text-xs text-muted-foreground">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-4">
-              <span>SubSlash</span>
+              <BrandWordmark className="text-xs" />
               <Link
                 href="/privacy"
                 className="underline-offset-4 hover:text-foreground hover:underline"
