@@ -16,6 +16,21 @@ const RESEND_ENDPOINT = "https://api.resend.com/emails";
  */
 const DEFAULT_FROM = "SubSlash <noreply@subslash.me>";
 
+/**
+ * 로그에 남길 때 가리는 메일 주소.
+ *
+ * 메일 주소는 그 자체로 사람을 가리키는 개인정보이고, 배포 로그는 방침이 말하는 보관 대상이
+ * 아니다(방침의 '접속 기록'은 IP·시각·경로다). 그렇다고 통째로 지우면 "어느 주소로 못 보냈나"를
+ * 못 보므로, 앞 한 글자와 도메인만 남긴다. 문자열 안의 모든 주소를 바꾸므로 남이 보낸 오류
+ * 본문에도 쓸 수 있다.
+ */
+export function maskEmail(value: string): string {
+  return value.replace(
+    /([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*(@[A-Za-z0-9.-]+.[A-Za-z]{2,})/g,
+    "$1***$2",
+  );
+}
+
 export interface SendResult {
   delivered: boolean;
   /** Set when the message was logged instead of sent. */
@@ -38,7 +53,7 @@ export async function sendEmail(params: {
 
   if (!apiKey) {
     console.warn(
-      `[email] RESEND_API_KEY not set — not sending. to=${params.to} subject=${params.subject}`,
+      `[email] RESEND_API_KEY not set — not sending. to=${maskEmail(params.to)} subject=${params.subject}`,
     );
     // `pnpm dev`에서 확인 링크를 직접 눌러볼 수 있게 본문을 찍는다. 링크는
     // 자격증명이라, 배포 로그와 테스트 출력에는 남기지 않는다.
@@ -64,7 +79,10 @@ export async function sendEmail(params: {
 
     if (!response.ok) {
       const detail = await response.text();
-      console.error(`[email] Resend rejected the message (${response.status}): ${detail}`);
+      // 거절 본문에 받는 주소가 그대로 실려 오는 경우가 있다.
+      console.error(
+        `[email] Resend rejected the message (${response.status}): ${maskEmail(detail)}`,
+      );
       return { delivered: false, error: `resend_${response.status}` };
     }
 

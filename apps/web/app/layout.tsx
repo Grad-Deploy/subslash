@@ -83,14 +83,24 @@ export default function RootLayout({
             홈 표시줄만큼 높아지므로 그 높이도 더한다.
           */}
           <footer className="container max-w-6xl mx-auto px-4 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 text-xs text-muted-foreground">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-4">
-              <BrandWordmark className="text-xs" />
-              <Link
-                href="/privacy"
-                className="underline-offset-4 hover:text-foreground hover:underline"
-              >
-                개인정보처리방침
-              </Link>
+            <div className="space-y-2 border-t pt-4">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <BrandWordmark className="text-xs" />
+                <Link
+                  href="/privacy"
+                  className="underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  개인정보처리방침
+                </Link>
+              </div>
+              {/*
+                화면에 보이는 서비스 이름과 로고는 남의 상표다. 구독을 알아볼 수 있게 쓸 뿐이고
+                SubSlash가 그 서비스와 제휴한 것이 아니라는 것을 로고가 보이는 곳에서 밝힌다.
+              */}
+              <p className="text-[11px] leading-relaxed text-muted-foreground/80">
+                서비스 이름과 로고는 각 소유자의 상표이며, 구독을 알아볼 수 있게 쓸 뿐입니다.
+                SubSlash는 해당 서비스와 제휴하거나 보증받지 않았습니다.
+              </p>
             </div>
           </footer>
           <BottomNav />
