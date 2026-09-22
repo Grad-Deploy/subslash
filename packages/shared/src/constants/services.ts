@@ -743,6 +743,24 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     iconEmoji: "📖",
   },
   {
+    id: "goodnotes",
+    name: "Goodnotes",
+    nameKo: "굿노트",
+    category: "other",
+    // 요금을 확인하지 못했다. 결제한 스토어와 나라에 따라 다르고, 한 번 사는 상품도 있다.
+    // 영수증에 적힌 금액을 등록할 때 적는다.
+    defaultAmount: null,
+    priceNote: "요금을 확인하지 못했어요. 영수증이나 스토어의 구독 화면에 적힌 금액을 적어주세요.",
+    currency: "KRW",
+    // 결제한 곳(앱스토어·구글플레이·굿노트 웹)에서 해지한다. 어디서 결제했는지는 앱이 알 수
+    // 없으므로 한 곳을 '해지 페이지'라고 부르지 않고, 첫 화면을 주고 안내로 나눈다.
+    cancelUrl: "https://www.goodnotes.com/",
+    cancelUrlKind: "entry",
+    cancelGuide:
+      "결제한 곳에서 해지해요.\n\n[앱스토어에서 결제했다면]\n1. 아이폰/아이패드 설정 > 최상단 프로필 이름 클릭\n2. [구독] 메뉴 선택\n3. Goodnotes 선택 후 [구독 취소] 클릭\n\n[구글플레이에서 결제했다면]\n1. Play 스토어 > 프로필 > [결제 및 정기결제]\n2. [정기결제] > Goodnotes 선택\n3. [구독 취소] 클릭\n\n[굿노트에서 바로 결제했다면]\ngoodnotes.com에 로그인해 계정의 구독 상태를 확인하세요.",
+    iconEmoji: "📝",
+  },
+  {
     id: "apple-play-store",
     name: "Apple Play Store subscriptions",
     nameKo: "구글 플레이스토어 정기결제",

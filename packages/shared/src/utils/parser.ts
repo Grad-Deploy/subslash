@@ -100,9 +100,16 @@ const SERVICE_KEYWORDS: {
     defaultPaymentMethod: "kakaopay",
   },
   {
-    keywords: ["아이클라우드", "icloud", "apple.com/bill", "apple.com"],
+    // "apple.com"을 넣어 두었더니 애플이 보낸 영수증이 모두 아이클라우드가 됐다(보낸 사람
+    // 주소에 그 글자가 들어 있다). 애플 결제라는 사실만으로는 어느 앱인지 알 수 없다.
+    keywords: ["아이클라우드", "icloud"],
     presetId: "apple-icloud",
     defaultPaymentMethod: "apple_iap",
+  },
+  {
+    keywords: ["굿노트", "goodnotes", "good notes"],
+    presetId: "goodnotes",
+    senderDomains: ["goodnotes.com"],
   },
   {
     keywords: ["구글원", "google one", "google storage"],
@@ -159,6 +166,14 @@ const SERVICE_KEYWORDS: {
   },
   { keywords: ["밀리", "밀리의 서재", "millie"], presetId: "millie" },
   { keywords: ["리디", "리디셀렉트", "ridi"], presetId: "ridi-select" },
+  {
+    // 카드 명세에 찍히는 애플 결제 표기. 어느 앱의 구독인지는 알 수 없으므로 앱스토어 구독
+    // 묶음(요금 없음)으로 두고 사용자가 앱과 요금을 적게 한다. 이 줄은 위의 어느 서비스와도
+    // 맞지 않았을 때만 닿도록 맨 뒤에 둔다.
+    keywords: ["apple.com/bill"],
+    presetId: "apple-app-store",
+    defaultPaymentMethod: "apple_iap",
+  },
 ];
 
 /**
