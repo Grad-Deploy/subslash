@@ -95,19 +95,32 @@ const MANUAL_SCRIPT = String.raw`/**
 
 var SUBSLASH_IMPORT_URL = __IMPORT_URL__;
 
-// 찾을 메일. Gmail 검색창과 같은 문법입니다. 빠지는 결제 메일이 있으면 단어를 더하세요.
-var SEARCH_QUERY =
-  "newer_than:400d (결제 OR 영수증 OR 청구 OR 구독 OR 멤버십 OR receipt OR invoice OR subscription OR payment)";
-var MAX_MESSAGES = 60;
+// 찾을 메일. Gmail 검색창과 같은 문법입니다.
+//
+// 세 갈래로 나눠 찾고 합칩니다. 한 갈래에 다 맡기면 상한을 그 갈래가 다 써 버리기 때문입니다.
+// ① '구매' 분류 안에서 구독을 가리키는 말 — 구독 영수증에 가장 가깝습니다.
+// ② '구매' 분류 전체 — 주문·영수증만 모여 광고가 거의 없지만, 쇼핑 주문이 대부분이라
+//    이것만 보면 1년에 한 번 오는 연간 구독 영수증이 상한 밖으로 밀립니다.
+// ③ 결제 낱말 — Gmail이 '구매'로 분류하지 못한 영수증을 줍습니다. 광고가 섞이지만
+//    SubSlash가 결제한 증거가 없는 메일은 버립니다.
+// 빠지는 결제 메일이 있으면 ③에 단어를 더하세요.
+var SEARCH_QUERIES = [
+  "category:purchases (구독 OR 멤버십 OR 정기결제 OR 자동결제 OR 이용권 OR subscription OR membership OR renewal) newer_than:400d",
+  "category:purchases newer_than:400d",
+  "(영수증 OR 결제 OR 청구 OR 정기결제 OR 구독 OR 멤버십 OR receipt OR invoice OR subscription OR payment) newer_than:400d",
+];
+// 읽을 메일 수. 400일치를 보므로 넉넉히 둡니다. 주소에 실어 보내는 방식이라 자동 가져오기보다
+// 적게 읽습니다.
+var MAX_MESSAGES = 150;
 var MAX_BODY_CHARS = 1500;
 
 function doGet() {
-  var emails = collectReceiptEmails(SEARCH_QUERY, MAX_MESSAGES);
+  var emails = collectReceiptEmails(SEARCH_QUERIES, MAX_MESSAGES);
   var body;
   if (emails.length === 0) {
     body =
       "<h2>결제 메일을 찾지 못했습니다</h2>" +
-      "<p>스크립트의 SEARCH_QUERY에 결제 메일 제목에 들어가는 단어를 더한 뒤 다시 배포해 보세요.</p>";
+      "<p>스크립트의 SEARCH_QUERIES에 결제 메일 제목에 들어가는 단어를 더한 뒤 다시 배포해 보세요.</p>";
   } else {
     var link = SUBSLASH_IMPORT_URL + "#gmail=" + encodeEmails(emails);
     body =
@@ -133,9 +146,21 @@ function encodeEmails(emails) {
 `;
 
 // 두 스크립트가 함께 쓰는 메일 읽기. 스크립트마다 MAX_BODY_CHARS를 정해 둔다.
-const MAIL_HELPERS = String.raw`function collectReceiptEmails(query, maxMessages) {
-  var list = Gmail.Users.Messages.list("me", { q: query, maxResults: maxMessages });
-  var refs = list.messages || [];
+const MAIL_HELPERS = String.raw`function collectReceiptEmails(queries, maxMessages) {
+  var refs = [];
+  var seen = {};
+  for (var q = 0; q < queries.length; q++) {
+    // 쿼리마다 자리를 나눠 씁니다. 앞 쿼리에 상한을 다 주면 뒤 쿼리는 아예 돌지 못합니다.
+    var room = Math.ceil((maxMessages - refs.length) / (queries.length - q));
+    if (room < 1) break;
+    var list = Gmail.Users.Messages.list("me", { q: queries[q], maxResults: room });
+    var found = list.messages || [];
+    for (var i = 0; i < found.length; i++) {
+      if (seen[found[i].id]) continue;
+      seen[found[i].id] = true;
+      refs.push(found[i]);
+    }
+  }
   return refs.map(function (ref) {
     var message = Gmail.Users.Messages.get("me", ref.id, { format: "full" });
     var headers = message.payload.headers || [];
@@ -273,11 +298,24 @@ const AUTO_SCRIPT = String.raw`/**
 var SUBSLASH_INGEST_URL = __INGEST_URL__;
 var SUBSLASH_TOKEN = __TOKEN__;
 
-// 찾을 메일. Gmail 검색창과 같은 문법입니다. 빠지는 결제 메일이 있으면 단어를 더하세요.
-var SEARCH_QUERY =
-  "(결제 OR 영수증 OR 청구 OR 구독 OR 멤버십 OR receipt OR invoice OR subscription OR payment)";
+// 찾을 메일. Gmail 검색창과 같은 문법입니다.
+//
+// 세 갈래로 나눠 찾고 합칩니다. 한 갈래에 다 맡기면 상한을 그 갈래가 다 써 버리기 때문입니다.
+// ① '구매' 분류 안에서 구독을 가리키는 말 — 구독 영수증에 가장 가깝습니다.
+// ② '구매' 분류 전체 — 주문·영수증만 모여 광고가 거의 없지만, 쇼핑 주문이 대부분이라
+//    이것만 보면 1년에 한 번 오는 연간 구독 영수증이 상한 밖으로 밀립니다.
+// ③ 결제 낱말 — Gmail이 '구매'로 분류하지 못한 영수증을 줍습니다. 광고가 섞이지만
+//    SubSlash가 결제한 증거가 없는 메일은 버립니다.
+// 빠지는 결제 메일이 있으면 ③에 단어를 더하세요.
+var SEARCH_QUERIES = [
+  "category:purchases (구독 OR 멤버십 OR 정기결제 OR 자동결제 OR 이용권 OR subscription OR membership OR renewal)",
+  "category:purchases",
+  "(영수증 OR 결제 OR 청구 OR 정기결제 OR 구독 OR 멤버십 OR receipt OR invoice OR subscription OR payment)",
+];
 // 처음에는 연간 결제까지 보이게 400일을 봅니다. 그 뒤로는 지난 검사 이후 메일만 봅니다.
 var FIRST_SCAN_DAYS = 400;
+// 첫 검사는 400일치라 더 많이 읽습니다. 그 뒤로는 2주치뿐이라 100통이면 남습니다.
+var FIRST_SCAN_MAX_MESSAGES = 200;
 var MAX_MESSAGES = 100;
 var MAX_BODY_CHARS = 1500;
 
@@ -298,12 +336,15 @@ function scan() {
   var properties = PropertiesService.getScriptProperties();
   var lastScanAt = Number(properties.getProperty("lastScanAt") || 0);
   var startedAt = Date.now();
-  var query =
-    SEARCH_QUERY +
-    (lastScanAt
-      ? " after:" + Math.floor(lastScanAt / 1000)
-      : " newer_than:" + FIRST_SCAN_DAYS + "d");
-  var emails = collectReceiptEmails(query, MAX_MESSAGES);
+  var range = lastScanAt
+    ? " after:" + Math.floor(lastScanAt / 1000)
+    : " newer_than:" + FIRST_SCAN_DAYS + "d";
+  var emails = collectReceiptEmails(
+    SEARCH_QUERIES.map(function (query) {
+      return query + range;
+    }),
+    lastScanAt ? MAX_MESSAGES : FIRST_SCAN_MAX_MESSAGES,
+  );
 
   var response = UrlFetchApp.fetch(SUBSLASH_INGEST_URL, {
     method: "post",
@@ -374,9 +415,22 @@ const CONNECT_WEB_APP = String.raw`/**
 // 연결 코드를 바꾸고 메일을 보낼 SubSlash 주소. 이 목록에 없는 주소로는 보내지 않습니다.
 var ALLOWED_ORIGINS = __ORIGINS__;
 
-var SEARCH_QUERY =
-  "(결제 OR 영수증 OR 청구 OR 구독 OR 멤버십 OR receipt OR invoice OR subscription OR payment)";
+// 찾을 메일. Gmail 검색창과 같은 문법입니다.
+//
+// 세 갈래로 나눠 찾고 합칩니다. 한 갈래에 다 맡기면 상한을 그 갈래가 다 써 버리기 때문입니다.
+// ① '구매' 분류 안에서 구독을 가리키는 말 — 구독 영수증에 가장 가깝습니다.
+// ② '구매' 분류 전체 — 주문·영수증만 모여 광고가 거의 없지만, 쇼핑 주문이 대부분이라
+//    이것만 보면 1년에 한 번 오는 연간 구독 영수증이 상한 밖으로 밀립니다.
+// ③ 결제 낱말 — Gmail이 '구매'로 분류하지 못한 영수증을 줍습니다. 광고가 섞이지만
+//    SubSlash가 결제한 증거가 없는 메일은 버립니다.
+// 빠지는 결제 메일이 있으면 ③에 단어를 더하세요.
+var SEARCH_QUERIES = [
+  "category:purchases (구독 OR 멤버십 OR 정기결제 OR 자동결제 OR 이용권 OR subscription OR membership OR renewal)",
+  "category:purchases",
+  "(영수증 OR 결제 OR 청구 OR 정기결제 OR 구독 OR 멤버십 OR receipt OR invoice OR subscription OR payment)",
+];
 var FIRST_SCAN_DAYS = 400;
+var FIRST_SCAN_MAX_MESSAGES = 200;
 var MAX_MESSAGES = 100;
 var MAX_BODY_CHARS = 1500;
 
@@ -449,12 +503,15 @@ function scan() {
 
   var lastScanAt = Number(properties.getProperty("lastScanAt") || 0);
   var startedAt = Date.now();
-  var query =
-    SEARCH_QUERY +
-    (lastScanAt
-      ? " after:" + Math.floor(lastScanAt / 1000)
-      : " newer_than:" + FIRST_SCAN_DAYS + "d");
-  var emails = collectReceiptEmails(query, MAX_MESSAGES);
+  var range = lastScanAt
+    ? " after:" + Math.floor(lastScanAt / 1000)
+    : " newer_than:" + FIRST_SCAN_DAYS + "d";
+  var emails = collectReceiptEmails(
+    SEARCH_QUERIES.map(function (query) {
+      return query + range;
+    }),
+    lastScanAt ? MAX_MESSAGES : FIRST_SCAN_MAX_MESSAGES,
+  );
 
   var response = UrlFetchApp.fetch(origin + "/api/gmail/ingest", {
     method: "post",

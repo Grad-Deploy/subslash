@@ -386,6 +386,98 @@ describe("parseReceiptEmails (Gmail 결제 메일)", () => {
   });
 });
 
+describe("결제 메일이 아닌 메일을 구독으로 읽지 않는다", () => {
+  const NOW = new Date("2026-09-15T03:00:00.000Z");
+  const mail = (subject: string, body: string, from: string) => [
+    { from, subject, body, date: "2026-09-10T03:00:00.000Z" },
+  ];
+
+  it("광고 메일의 안내 가격을 결제액으로 읽지 않는다", () => {
+    // 쓰지도 않는 챗GPT가 '$20 구독'으로 등록되던 메일이다. 메일함 검색이 'subscription'까지
+    // 훑기 때문에 광고가 함께 걸리고, 그 본문에도 서비스 이름과 금액이 있다.
+    const items = parseReceiptEmails(
+      mail(
+        "Introducing new ChatGPT features",
+        "Upgrade to ChatGPT Plus for $20/month. Manage your email subscription preferences here.",
+        "OpenAI <noreply@email.openai.com>",
+      ),
+      { now: NOW },
+    );
+
+    expect(items).toEqual([]);
+  });
+
+  it("다른 서비스를 이야기하는 뉴스레터를 그 서비스의 구독으로 읽지 않는다", () => {
+    const items = parseReceiptEmails(
+      mail(
+        "이번 주 AI 소식: ChatGPT와 Claude 비교",
+        "두 서비스의 구독료는 월 29,000원 안팎입니다.",
+        "뉴스레터 <news@example.com>",
+      ),
+      { now: NOW },
+    );
+
+    expect(items).toEqual([]);
+  });
+
+  it("영수증에 적힌 인상 예정 금액을 이번 결제액으로 읽지 않는다", () => {
+    const [item] = parseReceiptEmails(
+      mail(
+        "넷플릭스 결제 안내",
+        "결제가 완료되었습니다\n17,000원\n다음 달부터 19,500원부터 시작하는 요금제로 바뀝니다.",
+        "Netflix <info@account.netflix.com>",
+      ),
+      { now: NOW },
+    );
+
+    expect(item.amount).toBe(17000);
+  });
+
+  it("보낸 사람의 도메인을 제목·본문의 다른 서비스보다 먼저 믿는다", () => {
+    const [item] = parseReceiptEmails(
+      mail(
+        "Your receipt — compare us with Netflix",
+        "Thank you for your payment. $20.00 charged. 넷플릭스보다 좋습니다.",
+        "OpenAI <billing@openai.com>",
+      ),
+      { now: NOW },
+    );
+
+    expect(item.presetId).toBe("chatgpt-plus");
+    expect(item.confidence).toBe("high");
+  });
+
+  it("본문에서만 찾은 이름은 확인 없이 등록하지 않는다", () => {
+    // 이름의 근거가 본문 한 줄뿐이라 사용자가 골라야 한다(자동 가져오기의 review).
+    const [item] = parseReceiptEmails(
+      mail(
+        "결제 영수증",
+        "결제금액 : 13,900원\n상품: 티빙 이용권",
+        "결제알림 <noreply@some-biller.example>",
+      ),
+      { now: NOW },
+    );
+
+    expect(item.presetId).toBe("tving");
+    expect(item.confidence).toBe("medium");
+  });
+
+  it("한 메일로 여러 서비스를 청구하는 발신자는 본문의 이름을 그대로 믿는다", () => {
+    // 구글 플레이 영수증은 제목이 '주문 영수증'뿐이고 어느 서비스인지는 본문에만 있다.
+    const [item] = parseReceiptEmails(
+      mail(
+        "Google Play 주문 영수증",
+        "결제금액 : 14,900원\nYouTube Premium 월간 멤버십",
+        "Google Play <googleplay-noreply@google.com>",
+      ),
+      { now: NOW },
+    );
+
+    expect(item.presetId).toBe("youtube-premium");
+    expect(item.confidence).toBe("high");
+  });
+});
+
 describe("붙여넣은 영수증의 결제일", () => {
   const receipt = (line: string) => `상품명 : 넷플릭스
 결제금액 : 17,000원
