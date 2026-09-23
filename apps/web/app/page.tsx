@@ -30,19 +30,19 @@ import { ServiceLogo } from "@components/subscription/ServiceLogo";
 const HOW_IT_WORKS = [
   {
     title: "구독 등록",
-    body: "목록에서 서비스를 고르면 요금과 해지 방법이 채워집니다. 결제 문자·영수증을 붙여 넣어 한 번에 불러올 수도 있어요.",
+    body: "서비스를 고르면 요금과 해지 방법이 채워져요.",
   },
   {
     title: "한 달에 한 번 체크인",
-    body: "“지난 30일 동안 몇 번 썼나요?”에 답하면 1회당 실제 단가와 초록·노랑·빨강 신호가 나옵니다.",
+    body: "몇 번 썼는지 답하면 1회당 단가가 나와요.",
   },
   {
     title: "해지 방법 안내",
-    body: "해지는 각 서비스에서 직접 합니다. 해지 화면으로 바로 가는 링크가 있으면 그리로, 없으면 어느 메뉴로 가야 하는지 단계별로 알려드려요.",
+    body: "해지 화면이나 메뉴 경로를 알려 드려요. 해지는 서비스에서 직접 해요.",
   },
   {
     title: "지킨 돈 기록",
-    body: "해지 후 첫 결제일이 지나 결제가 정말 멈췄는지 확인하면, 그 금액이 절약 현황에 ‘지킨 돈’으로 쌓입니다.",
+    body: "해지 후 결제가 멈춘 걸 확인하면 절약액으로 쌓여요.",
   },
 ] as const;
 
@@ -93,30 +93,29 @@ export default function Home() {
           <div className="text-left">
             {activeCount > 0 ? (
               <>
-                <p className="font-bold text-sm">
-                  현재 구독 중인 서비스가 {activeCount}개 있습니다.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  대시보드에서 가성비 상태를 점검하세요.
-                  {killedCount > 0 && ` 해지한 구독 ${killedCount}개는 절약 현황에 있습니다.`}
-                </p>
+                <p className="font-bold text-sm">구독 중 {activeCount}개</p>
+                {killedCount > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    해지한 {killedCount}개는 절약 현황에 있어요.
+                  </p>
+                )}
               </>
             ) : (
               <>
-                <p className="font-bold text-sm">지금 구독 중인 서비스는 없습니다.</p>
+                <p className="font-bold text-sm">구독 중인 서비스 없음</p>
                 <p className="text-xs text-muted-foreground">
-                  해지한 구독 {killedCount}개는 절약 현황에서 볼 수 있습니다.
+                  해지한 {killedCount}개는 절약 현황에 있어요.
                 </p>
               </>
             )}
           </div>
           {activeCount > 0 ? (
             <Button onClick={() => router.push("/dashboard")} variant="default">
-              대시보드로 가기 →
+              대시보드 →
             </Button>
           ) : (
             <Button onClick={() => router.push("/savings")} variant="default">
-              절약 현황 보기 →
+              절약 현황 →
             </Button>
           )}
         </div>
@@ -124,15 +123,9 @@ export default function Home() {
 
       {/* SubSlash가 하는 일 */}
       <section className="w-full space-y-4" aria-labelledby="how-it-works">
-        <div className="space-y-1">
-          <h2 id="how-it-works" className="text-xl font-bold tracking-tight">
-            SubSlash는 이렇게 도와드려요
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            매달 빠져나가는 구독을 모아 두고, 실제로 쓴 만큼 값을 하는지 확인해 돈값을 못 하는
-            구독을 끊도록 돕는 가계부입니다.
-          </p>
-        </div>
+        <h2 id="how-it-works" className="text-xl font-bold tracking-tight">
+          이렇게 써요
+        </h2>
         <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {HOW_IT_WORKS.map((step, i) => (
             <li key={step.title} className="space-y-2 rounded-2xl border bg-card p-5 shadow-sm">
@@ -151,7 +144,7 @@ export default function Home() {
           id="quick-add"
           className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
         >
-          자주 이용하는 서비스 빠른 등록
+          바로 등록
         </h2>
         <div className="flex flex-wrap gap-2">
           {POPULAR_SERVICES.slice(0, 8).map((preset) => (
@@ -172,8 +165,8 @@ export default function Home() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-md text-left">
           <DialogHeader>
-            <DialogTitle>새 구독 등록하기</DialogTitle>
-            <DialogDescription>관리할 구독 서비스의 정보를 입력하세요.</DialogDescription>
+            <DialogTitle>구독 등록</DialogTitle>
+            <DialogDescription>서비스를 고르고 요금을 확인하세요.</DialogDescription>
           </DialogHeader>
           <div className="py-2">
             <SubForm

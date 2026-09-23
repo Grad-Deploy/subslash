@@ -387,7 +387,7 @@ export function SubForm({
           </div>
         ) : (
           <p className="text-xs text-muted-foreground p-3 border border-dashed rounded-xl text-center">
-            &lsquo;{query.trim()}&rsquo;은(는) 목록에 없습니다. 아래에서 직접 입력하세요.
+            &lsquo;{query.trim()}&rsquo;은(는) 목록에 없어요. 직접 입력하세요.
           </p>
         )}
 
@@ -439,10 +439,10 @@ export function SubForm({
                 {isCustom
                   ? "목록에 없는 서비스"
                   : plans.length > 0
-                    ? "요금제를 고르면 요금이 채워집니다."
+                    ? "요금제를 고르면 요금이 채워져요."
                     : typeof preset?.defaultAmount === "number"
-                      ? "기본 요금을 채웠습니다. 요금이 다르면 고쳐주세요."
-                      : "요금을 직접 적어주세요."}
+                      ? "기본 요금이에요. 다르면 고쳐 주세요."
+                      : "요금을 적어 주세요."}
               </p>
             </div>
           </div>
@@ -618,8 +618,8 @@ export function SubForm({
           </Select>
           <p className="text-[11px] text-muted-foreground break-keep">
             {preset?.taxRate
-              ? `한국에서 결제하면 ${preset.nameKo} 요금에 부가세 ${preset.taxRate}%가 더해집니다(결제 화면에서 확인). 그래서 부가세를 넣은 금액으로 채웠습니다. 사업자 결제처럼 부가세가 붙지 않으면 '금액에 포함 · 따로 붙지 않음'으로 바꾸세요.`
-              : "해외 서비스는 요금표 가격에 부가세 10%가 더해져 청구되기도 합니다. 카드 명세서 금액과 비교해 고르세요."}
+              ? `한국 결제 시 ${preset.nameKo}에 부가세 ${preset.taxRate}%가 붙어요. 사업자 결제라 안 붙으면 '금액에 포함'으로 바꾸세요.`
+              : "해외 서비스는 부가세 10%가 붙기도 해요. 카드 명세서와 비교해 고르세요."}
           </p>
           {formData.taxRate && billed !== undefined && typeof formData.amount === "number" ? (
             <p className="text-[11px] font-semibold text-foreground">
@@ -684,8 +684,7 @@ export function SubForm({
             ))}
           </Select>
           <p className="text-[11px] text-muted-foreground">
-            연간 결제는 며칠에 빠져나가는지만으로는 날짜를 알 수 없습니다. 결제 월을 넣어야 D-day와
-            알림, 캘린더가 실제 결제일을 가리킵니다.
+            결제 월을 넣어야 D-day·알림·캘린더가 맞아요.
           </p>
         </div>
       )}
@@ -702,16 +701,15 @@ export function SubForm({
           onChange={handleChange}
         />
         <p className="text-[11px] text-muted-foreground break-keep">
-          체험 중이라면 유료로 바뀌는 날을 적어주세요. 그날까지는 지출과 결제 캘린더에서 빼고 세고,
-          끝나기 전에 알려 드립니다. 모르면 비워 두세요 — 비워 두면 지금부터 결제되는 것으로 봅니다.
+          유료로 바뀌는 날이에요. 그전까지는 지출에서 빼고, 끝나기 전에 알려 드려요. 모르면 비워
+          두세요(지금 결제 중으로 봐요).
         </p>
       </div>
 
       {cycle === "yearly" && preset && !formData.planId && (
         <p className="text-[11px] text-muted-foreground break-keep">
-          {plans.length > 0 ? `${preset.nameKo}의 연 결제 요금은 목록에 없습니다. ` : ""}
-          결제한 1년치 금액을 적어주세요. 연 결제는 할인되는 경우가 있어 월 요금 × 12와 다를 수
-          있습니다.
+          {plans.length > 0 ? `${preset.nameKo}의 연 요금은 목록에 없어요. ` : ""}
+          1년치 결제액을 적어 주세요(월 요금 × 12와 다를 수 있어요).
         </p>
       )}
 
@@ -798,8 +796,7 @@ export function SubForm({
                     formData.currency || "KRW",
                   )}
                 </strong>
-                로 계산됩니다. 비워두면 인원수로 똑같이 나눕니다. 대시보드의 월 고정지출과 절약
-                자산은 이 금액을 기준으로 집계됩니다.
+                이에요. 비워 두면 인원수로 나눠요. 지출·절약은 이 금액으로 계산해요.
               </p>
             )}
           </div>
@@ -817,13 +814,13 @@ export function SubForm({
                   value={isCustomAccount ? "__custom__" : formData.linkedAccountId || ""}
                   onChange={handleAccountChange}
                 >
-                  <option value="">계정 지정 안 함 (직접 관리)</option>
+                  <option value="">지정 안 함</option>
                   {accounts.map((acc) => (
                     <option key={acc.id} value={acc.id}>
                       {acc.name} - {acc.emailOrId}
                     </option>
                   ))}
-                  <option value="__custom__">새 이메일 직접 입력 매핑</option>
+                  <option value="__custom__">새 이메일 입력</option>
                 </Select>
               </div>
             )}
@@ -852,10 +849,7 @@ export function SubForm({
           {isLoggedIn && isCustomAccount && (
             <div className="p-3 rounded-xl bg-muted/40 border border-border/80 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className={LABEL}>매핑할 이메일 계정 (아이디 입력 @ 도메인 선택)</span>
-                <span className="text-[10px] text-muted-foreground">
-                  도메인을 선택하면 해당 서비스로 자동 연계됩니다
-                </span>
+                <span className={LABEL}>이메일 계정</span>
               </div>
               <EmailDomainInput
                 value={customEmail}
@@ -896,9 +890,8 @@ export function SubForm({
                   </p>
                 ) : (
                   <p className="text-[11px] text-muted-foreground">
-                    도메인만 적어도 됩니다. 해지 가이드에 이 주소와, 여기서 추정한 계정 관리
-                    페이지(/account) 링크가 생깁니다. 추정한 주소라 실제로는 없는 페이지일 수
-                    있습니다.
+                    도메인만 적어도 돼요. 해지 가이드에 이 주소와 추정한 계정 관리 링크(/account)가
+                    생겨요. 추정이라 없는 페이지일 수 있어요.
                   </p>
                 )}
               </div>
@@ -919,7 +912,7 @@ export function SubForm({
                   className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  적어 두면 해지 가이드에 단계별로 보여줍니다. 한 줄에 한 단계씩 적어주세요.
+                  한 줄에 한 단계씩 적으면 해지 가이드에 보여요.
                 </p>
               </div>
             </>

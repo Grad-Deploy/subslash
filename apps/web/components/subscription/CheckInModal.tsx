@@ -98,7 +98,7 @@ export function CheckInModal({
           <div className="py-4 space-y-6">
             <h3 className="text-base text-center font-medium leading-relaxed [overflow-wrap:anywhere]">
               지난 30일 동안 <strong className="text-primary">{subscription.name}</strong>을(를)
-              <br />몇 번이나 실제로 이용하셨나요?
+              <br />몇 번 썼나요?
             </h3>
 
             <div className="flex items-center justify-center gap-4">
@@ -151,7 +151,7 @@ export function CheckInModal({
           <div className="py-4 space-y-5 flex flex-col items-center">
             <div className="text-center space-y-2">
               <h3 className="text-xl sm:text-2xl font-black leading-snug">
-                {result.shockMessage || "충격적인 결과입니다!"}
+                {result.shockMessage || "결과를 확인하세요"}
               </h3>
               <div className="flex justify-center">
                 <RiskBadge level={result.riskLevel} size="lg" />
@@ -196,7 +196,7 @@ export function CheckInModal({
                     }
                     className="text-[11px] text-primary underline hover:opacity-80"
                   >
-                    {copied ? "복사완료!" : "ID 복사"}
+                    {copied ? "복사했어요" : "ID 복사"}
                   </button>
                 )}
               </div>
@@ -205,12 +205,10 @@ export function CheckInModal({
                 <p className="text-muted-foreground [overflow-wrap:anywhere]">
                   이 구독은{" "}
                   <strong className="text-foreground">{subscription.linkedAccountName}</strong>{" "}
-                  계정으로 등록되어 있습니다. 해당 계정으로 접속하셔야 해지 메뉴가 표시됩니다.
+                  계정으로 로그인해야 해지 메뉴가 보여요.
                 </p>
               ) : (
-                <p className="text-muted-foreground">
-                  지정된 연동 계정이 없습니다. 평소 주로 사용하는 계정으로 로그인해 주세요.
-                </p>
+                <p className="text-muted-foreground">가입한 계정으로 로그인하세요.</p>
               )}
 
               {paymentMethodInfo && (
