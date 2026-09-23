@@ -10,6 +10,7 @@ import { ThemeProvider } from "../components/layout/ThemeProvider";
 import { BrandWordmark } from "../components/brand/Brand";
 import { ServiceWorkerRegistrar } from "../components/layout/ServiceWorkerRegistrar";
 import { NativeAppEffects } from "../components/layout/NativeAppEffects";
+import { AppLaunch } from "../components/launch/AppLaunch";
 import {
   SITE_DESCRIPTION,
   SITE_METADATA_BASE,
@@ -88,6 +89,7 @@ export default function RootLayout({
         <ThemeProvider>
           <ServiceWorkerRegistrar />
           <NativeAppEffects />
+          <AppLaunch />
           <Header />
           <DemoBanner />
           <GmailDiscoveryInbox />

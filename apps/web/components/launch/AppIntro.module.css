@@ -1,0 +1,150 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+
+.intro {
+  --bg: #09090b;
+  --red: #ef4444;
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+}
+
+/* 로고 무대: 512x512 좌표계를 %로 옮긴 정사각형. 움직이는 것은 전부 transform·opacity만 쓴다(GPU 합성). */
+.stage {
+  position: relative;
+  width: 68%;
+  max-width: 320px;
+  aspect-ratio: 1;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
+}
+
+.layer svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* 슬래시(92,422)→(420,102)를 경계로 자른 두 반쪽 */
+.upper {
+  clip-path: polygon(-121.9% 218.8%, 221.9% -116.4%, 85.5% -256.3%, -258.2% 79.1%);
+}
+
+.lower {
+  clip-path: polygon(-121.9% 218.8%, 221.9% -116.4%, 358.2% 23.4%, 14.6% 358.6%);
+}
+
+.upper,
+.lower {
+  opacity: 0;
+}
+
+/* 슬래시: 선을 따라 눕힌 둥근 틀 안에서 막대가 미끄러져 들어온다 */
+.slashWrap {
+  position: absolute;
+  left: 50%;
+  top: 51.17%;
+  width: 99.45%;
+  height: 9.96%;
+  transform: translate(-50%, -50%) rotate(-44.29deg);
+  border-radius: 999px;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.slashBar {
+  position: absolute;
+  inset: 0;
+  background: var(--red);
+  border-radius: 999px;
+  transform: translateX(-101%);
+  will-change: transform;
+}
+
+.glint {
+  position: absolute;
+  top: 20%;
+  bottom: 20%;
+  left: 0;
+  width: 22%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+  transform: translateX(-120%);
+  will-change: transform;
+}
+
+.flash {
+  position: absolute;
+  left: 50%;
+  top: 51.17%;
+  width: 140%;
+  height: 34%;
+  transform: translate(-50%, -50%) rotate(-44.29deg);
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 255, 255, 0.95),
+    rgba(239, 68, 68, 0.45) 55%,
+    transparent
+  );
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.ring {
+  position: absolute;
+  left: 50%;
+  top: 51%;
+  width: 60%;
+  aspect-ratio: 1;
+  margin: -30% 0 0 -30%;
+  border-radius: 50%;
+  border: 3px solid var(--red);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.shard {
+  position: absolute;
+  width: 3.2%;
+  height: 1.2%;
+  border-radius: 2px;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.word {
+  display: flex;
+  overflow: hidden;
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.word span {
+  display: block;
+  transform: translateY(110%);
+  will-change: transform;
+}
+
+.sub {
+  color: #fafafa;
+}
+
+.slashTxt {
+  color: var(--red);
+}
