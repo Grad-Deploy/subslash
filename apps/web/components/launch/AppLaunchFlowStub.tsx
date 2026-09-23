@@ -4,6 +4,6 @@
  * 들어가지 않도록, 상대 경로 import 대신 이 가상 지정자를 빌드 대상에 따라 다른 파일로 바꿔
  * 끼운다.
  */
-export default function AppLaunchFlowStub() {
+export default function AppLaunchFlowStub(_props: { onReady: () => void }) {
   return null;
 }

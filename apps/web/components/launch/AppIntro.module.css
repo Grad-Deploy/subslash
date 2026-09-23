@@ -2,6 +2,8 @@
   position: fixed;
   inset: 0;
   z-index: 100;
+  /* 인트로(.intro)가 사라져도 바깥 판은 검은색으로 남아, 다음 화면(환영 화면)이 뜨기 전에 홈이 비치지 않는다. */
+  background: #09090b;
 }
 
 .intro {
