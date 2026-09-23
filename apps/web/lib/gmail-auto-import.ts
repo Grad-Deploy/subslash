@@ -52,10 +52,16 @@ export interface DiscoveryDto {
 /**
  * 확인 없이 등록해도 되는 후보인지. 알려진 서비스와 맞았고, 최근 결제 메일이며, 해지 알림이
  * 아닌 것만 `auto`다. 이름을 추측한 후보('알 수 없는 결제' 포함)는 사용자가 고른다(`review`).
- * 해지 알림이거나 오래된 메일이라 지금도 결제 중인지 모르는 후보는 남기지 않는다(null).
+ *
+ * 해지 알림만 남기지 않는다(null). 결제가 끝났다는 **증거**라 등록 후보로 만들면 안 되기
+ * 때문이다. 반대로 마지막 결제 메일이 오래됐다는 것은 **모른다**는 뜻이므로 버리지 않고
+ * `review`로 내려 사용자가 고르게 한다 — 버렸더니 1년에 한 번 영수증이 오는 연간 구독(굿노트)이
+ * 후보에 아예 나타나지 않아, 파싱을 몇 번 다시 돌려도 등록할 수 없었다.
  */
 export function discoveryTier(item: DiscoveredSubscription): "auto" | "review" | null {
-  if (!item.selected) return null;
+  if (item.isCanceled) return null;
+  // 해지 알림을 걸러낸 뒤 남은 `selected: false`는 '오래된 메일'뿐이다.
+  if (!item.selected) return "review";
   return item.presetId && item.confidence === "high" ? "auto" : "review";
 }
 
