@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { siteUrl } from "@lib/site-metadata";
 
 /**
  * /robots.txt. 검색에 노출하는 것은 첫 화면과 개인정보처리방침뿐이다. 나머지 화면(대시보드·내 구독·
@@ -14,8 +15,17 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/$", "/privacy$", "/icon.svg", "/manifest.json", "/logos/", "/_next/static/"],
+      allow: [
+        "/$",
+        "/privacy$",
+        "/sitemap.xml",
+        "/icon.svg",
+        "/manifest.json",
+        "/logos/",
+        "/_next/static/",
+      ],
       disallow: "/",
     },
+    sitemap: siteUrl("/sitemap.xml"),
   };
 }
