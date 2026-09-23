@@ -69,6 +69,12 @@ describe("등록 폼에 채울 값", () => {
     expect(data.billingDay).toBeUndefined();
   });
 
+  it("결제 주기가 하나뿐인 서비스는 그 주기로 채운다", () => {
+    // 굿노트는 1년 단위 결제뿐이다. 월 결제로 채우면 손대지 않은 사람의 결제가 매달 있는 것이 된다.
+    expect(presetFormData(byId("goodnotes")).billingCycle).toBe("yearly");
+    expect(presetFormData(byId("coupang-wow")).billingCycle).toBe("monthly");
+  });
+
   it("요금제를 고르면 요금·결제 주기·요금제 이름이 그 요금제를 따른다", () => {
     const notion = byId("notion");
     const yearly = notion.plans!.find((p) => p.id === "plus-yearly")!;
