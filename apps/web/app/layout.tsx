@@ -10,6 +10,12 @@ import { ThemeProvider } from "../components/layout/ThemeProvider";
 import { BrandWordmark } from "../components/brand/Brand";
 import { ServiceWorkerRegistrar } from "../components/layout/ServiceWorkerRegistrar";
 import { NativeAppEffects } from "../components/layout/NativeAppEffects";
+import {
+  SITE_DESCRIPTION,
+  SITE_METADATA_BASE,
+  SITE_TITLE,
+  siteOpenGraph,
+} from "@lib/site-metadata";
 
 /**
  * 브랜드 시트의 워드마크는 Helvetica 계열의 굵은 그로테스크다. 화면 글꼴도 같은 계열로 맞춰,
@@ -19,8 +25,20 @@ import { NativeAppEffects } from "../components/layout/NativeAppEffects";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SubSlash - 구독, 끊을 용기",
-  description: "구독 1회 사용 단가 분석과 해지 도우미",
+  metadataBase: SITE_METADATA_BASE,
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    ...siteOpenGraph,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: "/",
+  },
+  twitter: {
+    card: "summary",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
   manifest: "/manifest.json",
   applicationName: "SubSlash",
   appleWebApp: {

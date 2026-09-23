@@ -1,6 +1,8 @@
 import React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { GMAIL_AUTO_IMPORT_STARTS_ON, PRIVACY_EFFECTIVE_DATE, PRIVACY_OFFICER } from "@lib/privacy";
+import { siteOpenGraph } from "@lib/site-metadata";
 
 /** "2026-10-01" → "2026년 10월 1일". */
 function koreanDate(isoDate: string): string {
@@ -39,8 +41,15 @@ const REMEDY_BODIES = [
   },
 ] as const;
 
-export const metadata = {
-  title: "개인정보처리방침 · SubSlash",
+const TITLE = "개인정보처리방침 · SubSlash";
+const DESCRIPTION =
+  "SubSlash가 무엇을, 왜, 얼마나 저장하는지 적었습니다. 구독 기록은 기본적으로 기기 안에만 저장됩니다.";
+
+export const metadata: Metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { ...siteOpenGraph, title: TITLE, description: DESCRIPTION, url: "/privacy" },
+  twitter: { card: "summary", title: TITLE, description: DESCRIPTION },
 };
 
 /**
