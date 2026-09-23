@@ -74,7 +74,7 @@ test.describe("해지 후 결제 확인 (E2E)", () => {
     await page.getByRole("button", { name: "되돌리고 가이드 열기" }).click();
 
     await expect(page.getByText("넷플릭스 해지 가이드")).toBeVisible();
-    await expect(page.getByText("넷플릭스을(를) 구독 중으로 되돌렸습니다.")).toBeVisible();
+    await expect(page.getByText("넷플릭스 구독 중으로 되돌림")).toBeVisible();
 
     await page.keyboard.press("Escape");
     // 이제 활성 구독이므로 해지 확인 대신 평소의 할 일로 올라온다.

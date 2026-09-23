@@ -25,14 +25,9 @@ export function OnboardingTourCard({ onStartAdd, activeCount }: OnboardingTourCa
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary mb-1.5">
-            3단계 디지털 구독 디톡스 루틴
+            시작하기
           </div>
-          <h3 className="font-bold text-base text-foreground">
-            처음 오셨나요? SubSlash는 이렇게 사용합니다
-          </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            매달 통장에서 조용히 빠져나가는 구독료, 단 3단계로 현실을 직시하고 통제하세요.
-          </p>
+          <h3 className="font-bold text-base text-foreground">3단계로 시작해요</h3>
         </div>
 
         <button
@@ -55,7 +50,7 @@ export function OnboardingTourCard({ onStartAdd, activeCount }: OnboardingTourCa
             <span className="font-bold text-xs text-foreground">구독 등록하기</span>
           </div>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            자주 쓰는 서비스를 목록에서 고르거나, 결제 문자를 붙여넣어 등록하세요.
+            목록에서 서비스를 고르세요.
           </p>
           <div className="pt-1">
             <Button
@@ -75,14 +70,11 @@ export function OnboardingTourCard({ onStartAdd, activeCount }: OnboardingTourCa
             <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold">
               2
             </span>
-            <span className="font-bold text-xs text-foreground">월간 이용 체크인</span>
+            <span className="font-bold text-xs text-foreground">한 달에 한 번 체크인</span>
           </div>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            지난 30일 동안 몇 번 썼는지 고르면 1회 사용 단가가 나옵니다.
+            몇 번 썼는지 고르면 1회 단가가 나와요.
           </p>
-          <div className="pt-1 text-[11px] font-medium text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-1 rounded-md text-center">
-            &ldquo;영화 1편을 ₩17,000에 보셨네요&rdquo;
-          </div>
         </div>
 
         {/* Step 3 */}
@@ -94,8 +86,7 @@ export function OnboardingTourCard({ onStartAdd, activeCount }: OnboardingTourCa
             <span className="font-bold text-xs text-foreground">해지하고 기록하기</span>
           </div>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            돈값을 못 하는 구독은 해지 가이드를 따라 서비스에서 해지하세요. 해지 화면으로 바로 가는
-            링크가 없는 곳은 메뉴까지 가는 단계를 안내합니다.
+            해지 가이드를 따라 서비스에서 해지하세요.
           </p>
           <div className="pt-1 text-[11px] font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-1 rounded-md text-center">
             결제일이 지나면 지킨 돈으로 쌓여요

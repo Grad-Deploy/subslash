@@ -98,9 +98,7 @@ export default function SavingsDashboard() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black tracking-tight">절약 & 방어 자산 현황</h1>
-          <p className="text-sm text-muted-foreground">
-            해지한 구독으로 1년에 아끼는 돈과, 해지 뒤 결제일이 지나 실제로 지킨 돈을 보여줍니다.
-          </p>
+          <p className="text-sm text-muted-foreground">해지로 아끼는 돈과 실제로 지킨 돈이에요.</p>
         </div>
         <Link
           href="/savings/review"
@@ -114,10 +112,9 @@ export default function SavingsDashboard() {
         <div className="text-center py-20 border border-dashed rounded-2xl space-y-4">
           <PiggyBank className="mx-auto size-12 text-muted-foreground" aria-hidden />
           <div className="space-y-1">
-            <h3 className="text-xl font-bold">아직 해지 완료된 구독이 없습니다</h3>
+            <h3 className="text-xl font-bold">아직 해지한 구독이 없어요</h3>
             <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              대시보드에서 각 구독의 이용 횟수를 점검하고, 가성비가 낮은 구독에 대해
-              &lsquo;해지하기&rsquo;를 눌러보세요!
+              대시보드에서 잘 안 쓰는 구독을 해지해 보세요.
             </p>
           </div>
           <Button onClick={() => router.push("/dashboard")}>대시보드로 가기 →</Button>
@@ -159,7 +156,7 @@ export default function SavingsDashboard() {
               <h3 className="font-bold text-base">1년 동안 아끼면 누릴 수 있는 보상</h3>
               {equivalents.length === 0 ? (
                 <div className="p-4 border border-dashed rounded-2xl text-sm text-muted-foreground">
-                  아직 환산할 만큼 모이지 않았습니다. 연간 ₩5,000부터 여기에 표시됩니다.
+                  연간 ₩5,000부터 보여요.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-3">
@@ -182,7 +179,7 @@ export default function SavingsDashboard() {
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-base">해지한 구독 목록 ({killedSubs.length})</h3>
               <Button size="sm" variant="outline" onClick={handleShare}>
-                {copied ? "클립보드에 복사됨!" : "결과 공유하기"}
+                {copied ? "복사했어요" : "결과 공유하기"}
               </Button>
             </div>
 
@@ -253,7 +250,7 @@ export default function SavingsDashboard() {
             }
           }}
           title="구독 다시 살리기"
-          description={`'${reviveTarget.name}' 구독을 다시 활성화하시겠습니까?\n활성 구독 목록으로 복원되며, 절약 방어 자산에서 제외됩니다.`}
+          description={`'${reviveTarget.name}'을(를) 다시 구독 중으로 바꿀까요?\n절약 기록에서 빠져요.`}
           confirmText="다시 살리기"
           cancelText="취소"
         />

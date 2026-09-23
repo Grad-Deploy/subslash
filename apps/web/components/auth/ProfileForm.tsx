@@ -55,8 +55,7 @@ export function ProfileForm() {
     return (
       <div className="text-center space-y-3 py-4">
         <p className="text-sm text-muted-foreground leading-relaxed">
-          로그인한 계정에만 있는 화면입니다. 로그인하지 않아도 구독 기록·체크인·절약 현황은 그대로
-          쓸 수 있고, 결제 알림과 연동 계정은 로그인하면 쓸 수 있습니다.
+          로그인하지 않아도 모든 기록을 쓸 수 있어요. 로그인하면 기기끼리 기록이 맞춰져요.
         </p>
         <Link
           href="/login"

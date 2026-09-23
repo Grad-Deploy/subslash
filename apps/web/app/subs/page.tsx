@@ -31,7 +31,6 @@ import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
-import { DataBackupCard } from "../../components/settings/DataBackupCard";
 import { LocalReminderCard } from "../../components/settings/LocalReminderCard";
 import { GoogleCalendarSync } from "../../components/calendar/GoogleCalendarSync";
 import { IS_APP_BUILD } from "@lib/platform";
@@ -48,10 +47,10 @@ const VIEW_KEY = "subslash-subs-view";
 
 /** Feedback for the redirect targets of the reminder emails' links. */
 const NOTIFY_MESSAGES: Record<string, string> = {
-  verified: "결제 알림이 켜졌습니다. 결제일 전에 메일로 알려드릴게요.",
-  unsubscribed: "결제 알림을 껐습니다. 서버에 있던 구독 사본도 삭제했습니다.",
-  invalid: "링크가 만료되었거나 올바르지 않습니다. 알림 설정에서 다시 시도해주세요.",
-  error: "알림 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+  verified: "결제 알림이 켜졌어요. 결제일 전에 메일로 알려 드려요.",
+  unsubscribed: "결제 알림을 껐어요. 서버의 구독 사본도 지웠어요.",
+  invalid: "만료됐거나 잘못된 링크예요. 알림 설정에서 다시 시도해 주세요.",
+  error: "알림을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.",
 };
 
 function NotifyBanner({ onMessage }: { onMessage: (message: string) => void }) {
@@ -162,7 +161,7 @@ export default function SubscriptionsPage() {
   const killedSubs = getKilledSubscriptions();
   const syncedWarning =
     accountSync.enabled && accountSync.baseSavedAt
-      ? "\n자동 동기화가 켜져 있어 로그인한 다른 기기의 기록도 함께 지워집니다."
+      ? "\n자동 동기화가 켜져 있어 다른 기기의 기록도 지워져요."
       : "";
 
   const filteredActive =
@@ -236,10 +235,10 @@ export default function SubscriptionsPage() {
     try {
       const res = checkIn(checkInSub.id, count);
       setCheckInResult(res);
-      showToast(`${checkInSub.name} 체크인이 완료되었습니다.`);
+      showToast(`${checkInSub.name} 체크인 완료`);
     } catch (error) {
       console.error(error);
-      showToast("체크인 오류가 발생했습니다.");
+      showToast("체크인하지 못했어요. 다시 시도해 주세요.");
     }
   };
 
@@ -270,13 +269,13 @@ export default function SubscriptionsPage() {
     const { type, sub } = confirmAction;
     if (type === "kill") {
       killSubscription(sub.id);
-      showToast(`${sub.name}을(를) 해지 처리했습니다.`);
+      showToast(`${sub.name} 해지 완료로 기록`);
     } else if (type === "revive") {
       reviveSubscription(sub.id);
-      showToast(`${sub.name}을(를) 다시 활성화했습니다.`);
+      showToast(`${sub.name} 구독 중으로 되돌림`);
     } else if (type === "delete") {
       deleteSubscription(sub.id);
-      showToast("삭제되었습니다.");
+      showToast("삭제했어요");
     }
     setConfirmAction(null);
   };
@@ -284,7 +283,7 @@ export default function SubscriptionsPage() {
   const handleAddSubmit = (data: SubscriptionFormData) => {
     addSubscription(data);
     setIsAddOpen(false);
-    showToast(`${data.name} 구독이 추가되었습니다.`);
+    showToast(`${data.name} 등록 완료`);
   };
 
   const categories = [
@@ -316,9 +315,7 @@ export default function SubscriptionsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black tracking-tight">구독 관리</h1>
-          <p className="text-sm text-muted-foreground">
-            등록된 구독 목록을 확인하고, 1회 단가 점검 및 해지 관리를 진행하세요.
-          </p>
+          <p className="text-sm text-muted-foreground">1회 단가를 보고 해지할 구독을 고르세요.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {subscriptions.length > 0 && (
@@ -424,12 +421,10 @@ export default function SubscriptionsPage() {
               {filteredActive.length === 0 ? (
                 <div className="text-center py-16 border border-dashed rounded-2xl space-y-3">
                   <Receipt className="mx-auto size-9 text-muted-foreground" aria-hidden />
-                  <p className="font-bold">등록된 활성 구독이 없습니다.</p>
-                  <p className="text-xs text-muted-foreground">
-                    새 구독을 추가하여 고정비 관리를 시작하세요.
-                  </p>
+                  <p className="font-bold">구독 중인 서비스가 없어요</p>
+                  <p className="text-xs text-muted-foreground">구독을 등록해 보세요.</p>
                   <Button size="sm" onClick={() => setIsAddOpen(true)}>
-                    + 지금 추가하기
+                    + 구독 추가
                   </Button>
                 </div>
               ) : (
@@ -481,10 +476,9 @@ export default function SubscriptionsPage() {
               {filteredKilled.length === 0 ? (
                 <div className="text-center py-16 border border-dashed rounded-2xl space-y-3">
                   <ShieldCheck className="mx-auto size-9 text-muted-foreground" aria-hidden />
-                  <p className="font-bold">아직 해지(방어)한 구독이 없습니다.</p>
+                  <p className="font-bold">아직 해지한 구독이 없어요</p>
                   <p className="text-xs text-muted-foreground">
-                    활성 구독에서 불필요한 결제에 대해 &lsquo;해지하기&rsquo;를 누르면 이곳에 방어
-                    자산으로 기록됩니다.
+                    &lsquo;지금 해지하기&rsquo;로 기록하면 여기에 모여요.
                   </p>
                 </div>
               ) : (
@@ -492,8 +486,7 @@ export default function SubscriptionsPage() {
                   <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300">
                     {/* 해지를 유지하면 아낄 금액이다. 이미 지킨 돈은 절약 현황이 따로 센다. */}
                     해지한 구독 {filteredKilled.length}개 · 해지를 유지하면 매달{" "}
-                    <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 아낍니다.
-                    실제로 지킨 돈은 절약 현황에서 확인하세요.
+                    <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 아껴요.
                   </div>
 
                   {view === "table" && (
@@ -539,7 +532,7 @@ export default function SubscriptionsPage() {
             <div className="space-y-3">
               {selectedExists && !visibleIds.includes(selectedId) && (
                 <p className="rounded-xl border border-dashed p-3 text-xs text-muted-foreground">
-                  지금 탭·분류에서는 목록에 보이지 않는 구독입니다.
+                  지금 탭·분류의 목록에는 없는 구독이에요.
                 </p>
               )}
               <SubscriptionDetail
@@ -554,12 +547,8 @@ export default function SubscriptionsPage() {
             </div>
           ) : (
             <div className="space-y-2 rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-              <p className="font-semibold text-foreground">
-                구독을 고르면 여기에 자세히 보여줍니다
-              </p>
-              <p className="text-xs">
-                목록에서 이름을 누르세요. 고른 뒤에는 ↑↓ 키로 다음 구독으로 넘어갑니다.
-              </p>
+              <p className="font-semibold text-foreground">구독을 고르면 여기에 자세히 보여요</p>
+              <p className="text-xs">목록에서 이름을 누르세요. ↑↓ 키로 넘길 수 있어요.</p>
             </div>
           )}
         </aside>
@@ -567,9 +556,6 @@ export default function SubscriptionsPage() {
 
       {/* 구독을 확인한 뒤, 결제일을 내 구글 캘린더에 넣는 곳 */}
       {isGmailAutoImportOpen() && <GoogleCalendarSync />}
-
-      {/* 이 브라우저에만 있는 데이터를 파일로 지키는 곳 */}
-      <DataBackupCard onMessage={showToast} />
 
       {/* 앱에서만: 서버를 거치지 않는 이 기기의 결제 알림 */}
       {IS_APP_BUILD && <LocalReminderCard onMessage={showToast} />}
@@ -596,9 +582,7 @@ export default function SubscriptionsPage() {
             <DialogTitle>
               {selectedPreset ? `${selectedPreset.nameKo} 등록` : "새 구독 추가"}
             </DialogTitle>
-            <DialogDescription>
-              서비스 정보를 등록하면 D-Day 및 1회당 단가를 자동 계산합니다.
-            </DialogDescription>
+            <DialogDescription>서비스를 고르거나 직접 입력하세요.</DialogDescription>
           </DialogHeader>
           <div className="py-2">
             <SubForm
@@ -644,18 +628,16 @@ export default function SubscriptionsPage() {
           const wasDemo = Boolean(demo);
           clearSubscriptions();
           showToast(
-            wasDemo
-              ? "샘플 체험을 끝냈습니다. 내 구독은 그대로입니다."
-              : "이전 구독 기록이 모두 삭제되었습니다.",
+            wasDemo ? "샘플 체험을 끝냈어요. 내 구독은 그대로예요." : "구독 기록을 모두 지웠어요",
           );
         }}
         title="전체 초기화"
         description={
           demo
-            ? `샘플 구독 ${subscriptions.length}건을 치우고 체험을 끝냅니다.\n내 구독 기록은 그대로 남습니다.`
+            ? `샘플 ${subscriptions.length}건을 치우고 체험을 끝내요.\n내 구독은 그대로예요.`
             : killedSubs.length > 0
-              ? `현재 등록된 전체 구독 ${subscriptions.length}건(구독 중 ${activeSubs.length}건, 해지한 구독 ${killedSubs.length}건)을 모두 삭제하시겠습니까?\n해지한 구독의 절약 기록도 함께 지워집니다.${syncedWarning}`
-              : `현재 등록된 전체 구독 ${subscriptions.length}건을 모두 삭제하시겠습니까?${syncedWarning}`
+              ? `구독 ${subscriptions.length}건(구독 중 ${activeSubs.length}, 해지 ${killedSubs.length})을 모두 지울까요?\n절약 기록도 지워져요.${syncedWarning}`
+              : `구독 ${subscriptions.length}건을 모두 지울까요?${syncedWarning}`
         }
         confirmText="모두 삭제"
         variant="destructive"
@@ -675,10 +657,10 @@ export default function SubscriptionsPage() {
           }
           description={
             confirmAction.type === "kill"
-              ? `'${confirmAction.sub.name}' 구독을 해지 완료로 기록하시겠습니까?\n해지 뒤 결제일이 지나면 그만큼이 지킨 돈으로 쌓입니다.`
+              ? `'${confirmAction.sub.name}'을(를) 해지 완료로 기록할까요?\n결제일이 지나면 지킨 돈으로 쌓여요.`
               : confirmAction.type === "revive"
-                ? `'${confirmAction.sub.name}' 구독을 다시 활성화하시겠습니까?\n활성 구독 목록으로 복원되며, 절약 방어 자산에서 제외됩니다.`
-                : `'${confirmAction.sub.name}' 구독을 영구 삭제하시겠습니까?\n삭제된 구독 데이터는 복구할 수 없습니다.`
+                ? `'${confirmAction.sub.name}'을(를) 다시 구독 중으로 바꿀까요?\n절약 기록에서 빠져요.`
+                : `'${confirmAction.sub.name}'을(를) 삭제할까요?\n되돌릴 수 없어요.`
           }
           confirmText={
             confirmAction.type === "kill"

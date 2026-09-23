@@ -71,7 +71,7 @@ test.describe("결제 알림 미러 (E2E)", () => {
     await seed(page, {});
 
     await page.goto("/");
-    await page.getByRole("button", { name: /샘플 데이터로 1초 체험/ }).click();
+    await page.getByRole("button", { name: /샘플로 둘러보기/ }).click();
     await expect(page).toHaveURL(/\/dashboard$/, { timeout: 30_000 });
     await expect(page.getByText("샘플로 체험하는 중입니다.")).toBeVisible({ timeout: 30_000 });
 

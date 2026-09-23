@@ -309,13 +309,13 @@ export default function PrivacyPage() {
             에서 계정 정보를 보고 나이·성별을 고치거나 지울 수 있습니다.
           </li>
           <li>
-            삭제: 내 정보의 &lsquo;회원 탈퇴&rsquo;, 결제 알림 설정의 &lsquo;알림 끄기&rsquo;,
-            &lsquo;계정에서 지우기&rsquo;로 직접 지울 수 있습니다.
+            삭제: 내 정보의 &lsquo;회원 탈퇴&rsquo;와 &lsquo;계정에서 지우기&rsquo;, 결제 알림
+            설정의 &lsquo;알림 끄기&rsquo;로 직접 지울 수 있습니다.
           </li>
           <li>
             처리정지: 서버에서 일어나는 처리는 그 기능을 끄면 곧바로 멈춥니다 — 결제 알림 설정의
-            &lsquo;알림 끄기&rsquo;, 기기마다 있는 &lsquo;자동 동기화 끄기&rsquo;, Gmail 연결의
-            &lsquo;연결 끊기&rsquo;가 그것입니다. 그 밖의 처리를 멈춰 달라는 요구는 아래
+            &lsquo;알림 끄기&rsquo;, 내 정보에서 기기마다 끄는 &lsquo;자동 동기화 끄기&rsquo;, Gmail
+            연결의 &lsquo;연결 끊기&rsquo;가 그것입니다. 그 밖의 처리를 멈춰 달라는 요구는 아래
             보호책임자에게 해 주세요. 법에서 정한 사유로 멈출 수 없을 때는 그 이유를 알려드립니다.
           </li>
           <li>그 밖의 요청은 아래 개인정보 보호책임자에게 해 주세요.</li>

@@ -23,15 +23,15 @@ type PendingConfirm = "rotate" | "calendar-off" | "disable";
 
 const CONFIRM_COPY: Record<PendingConfirm, { message: string; action: string }> = {
   rotate: {
-    message: "새 주소를 만들면 기존 주소로 구독한 캘린더는 끊깁니다.",
+    message: "새 주소를 만들면 기존 주소의 캘린더는 끊겨요.",
     action: "새 주소 만들기",
   },
   "calendar-off": {
-    message: "캘린더 구독을 끊을까요? 이미 등록한 캘린더에서 결제일이 사라집니다.",
+    message: "캘린더 구독을 끊을까요? 등록한 캘린더에서 결제일이 사라져요.",
     action: "구독 끊기",
   },
   disable: {
-    message: "알림을 끄고 서버에 저장된 구독 사본을 삭제할까요?",
+    message: "알림을 끄고 서버의 구독 사본을 지울까요?",
     action: "알림 끄기",
   },
 };
@@ -194,8 +194,8 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
             <span>결제 임박 알림</span>
           </DialogTitle>
           <DialogDescription>
-            결제일이 다가오면 &ldquo;지난 30일 동안 몇 번 쓰셨나요?&rdquo; 한 가지만 이메일로
-            묻습니다. 답은 메일에서 바로 누르면 됩니다.
+            결제일 전에 &ldquo;지난 30일 동안 몇 번 썼나요?&rdquo;를 메일로 물어요. 메일에서 바로
+            답하면 돼요.
           </DialogDescription>
         </DialogHeader>
 
@@ -204,10 +204,9 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
           <div className="p-3.5 rounded-xl bg-muted/40 border text-xs space-y-1.5">
             <div className="font-bold text-foreground">서버로 전송되는 정보</div>
             <p className="text-muted-foreground leading-relaxed">
-              알림을 켜면 이메일 주소와{" "}
-              <strong className="text-foreground">활성 구독의 이름 · 금액 · 결제일</strong>만 서버에
-              보관됩니다. 체크인 기록, 절약 자산, 해지한 구독, 연동 계정은 전송되지 않고 이
-              브라우저에만 남습니다.
+              이메일과{" "}
+              <strong className="text-foreground">구독 중인 서비스의 이름 · 금액 · 결제일</strong>만
+              서버에 보관해요. 나머지 기록은 이 브라우저에만 있어요.
             </p>
           </div>
 
@@ -218,10 +217,8 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                   role="status"
                   className="p-3 rounded-xl border border-rose-500/40 bg-rose-500/10 text-xs text-rose-900 dark:text-rose-200 leading-relaxed"
                 >
-                  <strong>이 브라우저의 결제 알림이 꺼졌습니다.</strong> 서버에 알림 기록이 없어
-                  구독 목록을 보내지 못했습니다. 메일의 &lsquo;수신 거부&rsquo;를 눌렀거나, 같은
-                  주소로 다른 기기·브라우저에서 다시 신청하면 이렇게 됩니다. 계속 받으려면 다시
-                  신청해주세요.
+                  <strong>이 브라우저의 결제 알림이 꺼졌습니다.</strong> 수신 거부를 눌렀거나 다른
+                  기기에서 다시 신청하면 이렇게 돼요. 계속 받으려면 다시 신청하세요.
                 </div>
               )}
 
@@ -250,7 +247,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                 {busy ? "신청 중..." : "확인 메일 받기"}
               </Button>
               <p className="text-[11px] text-muted-foreground text-center">
-                확인 메일의 버튼을 눌러야 알림이 시작됩니다.
+                확인 메일의 버튼을 눌러야 시작돼요.
               </p>
             </>
           ) : (
@@ -278,8 +275,8 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
 
               {!notify.verified && (
                 <div className="p-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
-                  받은 메일함에서 확인 버튼을 눌러주세요. 확인 전에는 알림이 발송되지 않습니다. 이미
-                  누르셨다면 아래 &lsquo;상태 새로고침&rsquo;을 눌러보세요.
+                  메일함에서 확인 버튼을 누르세요. 이미 눌렀다면 &lsquo;상태 새로고침&rsquo;을
+                  누르세요.
                 </div>
               )}
 
@@ -291,9 +288,8 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                 {calendarLinks ? (
                   <>
                     <p className="text-muted-foreground leading-relaxed">
-                      아래 버튼으로 캘린더에 바로 추가하거나, 캘린더 앱의 &lsquo;URL로 구독&rsquo;에
-                      주소를 넣으세요. 일정에는 결제 {notify.reminderDays}일 전 알림이 들어 있고,
-                      앱에서 구독을 고치면 캘린더도 따라 바뀝니다.
+                      버튼으로 추가하거나 캘린더 앱의 &lsquo;URL로 구독&rsquo;에 주소를 넣으세요.
+                      구독을 고치면 캘린더도 바뀌어요.
                     </p>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <Button
@@ -318,16 +314,14 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                       </Button>
                     </div>
                     <p className="text-muted-foreground leading-relaxed">
-                      Google 캘린더는 바뀐 내용이 늦게 반영될 수 있고, 일정에 든 알림 대신 캘린더
-                      설정의 알림을 따를 수 있습니다. 알림이 오지 않으면 Google 캘린더에서 이
-                      캘린더의 알림을 켜주세요.
+                      Google 캘린더는 늦게 반영될 수 있어요. 알림이 안 오면 그 캘린더의 알림을
+                      켜세요.
                     </p>
                     <code className="block break-all rounded-lg bg-muted px-2.5 py-2 text-[11px] text-foreground">
                       {notify.calendarUrl}
                     </code>
                     <p className="text-muted-foreground">
-                      이 주소를 가진 사람은 구독 목록을 볼 수 있습니다. 공유했다면 새 주소를 만들어
-                      이전 주소를 끊으세요.
+                      주소를 가진 사람은 구독 목록을 볼 수 있어요. 공유했다면 새 주소를 만드세요.
                     </p>
                     <div className="flex flex-wrap gap-2 pt-0.5">
                       <Button size="sm" variant="outline" onClick={copyFeedUrl}>
@@ -353,7 +347,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                     </div>
                     {copyFeedFailed && (
                       <p className="text-amber-700 dark:text-amber-300" role="status">
-                        자동으로 복사하지 못했습니다. 위 주소를 길게 눌러 복사해주세요.
+                        복사하지 못했어요. 주소를 길게 눌러 복사하세요.
                       </p>
                     )}
                     {confirmFor(["rotate", "calendar-off"])}
@@ -361,9 +355,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                 ) : (
                   <>
                     <p className="text-muted-foreground leading-relaxed">
-                      구독의 결제일을 캘린더 앱에 반복 일정으로 띄웁니다. 확인 메일을 누르지 않아도
-                      동작합니다. 결제 &lsquo;월&rsquo;을 적지 않은 연간 결제 구독은 날짜를 알 수
-                      없어 넣지 않습니다.
+                      결제일을 캘린더에 반복 일정으로 띄워요. 결제 월이 없는 연간 구독은 빠져요.
                     </p>
                     <Button
                       size="sm"
@@ -401,7 +393,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
 
           {justSent && !notify.verified && (
             <p className="text-xs text-center text-emerald-600 dark:text-emerald-400 font-medium">
-              확인 메일을 보냈습니다. 메일함을 확인해주세요
+              확인 메일을 보냈어요. 메일함을 확인하세요
             </p>
           )}
           {error && <p className="text-xs text-center text-destructive font-medium">{error}</p>}

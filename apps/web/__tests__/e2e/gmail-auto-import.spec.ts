@@ -173,7 +173,7 @@ test.describe("Gmail 자동 가져오기 (E2E)", () => {
     await page.goto("/import");
     await page.getByRole("button", { name: "자동 가져오기 켜기" }).click({ timeout: 30_000 });
 
-    await expect(page.getByText(/아직 스크립트가 보낸 적이 없습니다/)).toBeVisible();
+    await expect(page.getByText(/아직 받은 메일이 없어요/)).toBeVisible();
     await expect(
       page.getByText(`var SUBSLASH_INGEST_URL = "${baseURL}/api/gmail/ingest";`),
     ).toBeVisible();
@@ -189,7 +189,7 @@ test.describe("Gmail 자동 가져오기 (E2E)", () => {
     await page.route("**/api/auth/me", (route) => route.fulfill({ json: { account: null } }));
     await page.goto("/import");
 
-    await expect(page.getByText(/이 필요합니다/)).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/이 필요해요/)).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole("heading", { name: "직접 실행해서 가져오기" })).toBeVisible();
   });
   test("원클릭 연결이 설정돼 있으면 Gmail 연결하기가 웹 앱으로 보내고, 복사 방식은 접혀 있다", async ({

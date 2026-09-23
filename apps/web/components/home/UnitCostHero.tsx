@@ -86,7 +86,7 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
         {/* 왼쪽: 카피 + CTA */}
         <div>
           <span className="inline-block rounded-full border px-3 py-1 text-xs text-muted-foreground">
-            능동형 디지털 구독 디톡스
+            구독 디톡스
           </span>
 
           <h1 className="mt-4 text-3xl font-medium leading-snug text-foreground">
@@ -95,8 +95,7 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
           </h1>
 
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            가격만 보지 말고, 1회당 실제 사용 단가로 판단하세요. 서비스를 고르고 한 달에 쓴 횟수를
-            움직여 보세요.
+            가격 말고 1회당 단가로 판단하세요. 아래에서 횟수를 움직여 보세요.
           </p>
 
           {/* 글자는 한 줄로 두고, 폭이 모자라면 버튼째 다음 줄로 넘긴다. */}
@@ -106,21 +105,18 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
               onClick={onStart}
               className="whitespace-nowrap rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
             >
-              내 구독 모두 계산하기 →
+              내 구독 등록하기 →
             </button>
             <button
               type="button"
               onClick={onDemo}
               className="whitespace-nowrap rounded-lg border px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
             >
-              샘플 데이터로 1초 체험
+              샘플로 둘러보기
             </button>
           </div>
 
-          <p className="mt-3 text-xs text-muted-foreground">
-            회원가입 없이 이 브라우저에 저장됩니다. 결제 알림은 로그인한 뒤 켤 수 있고, 켤 때만
-            이메일을 받습니다.
-          </p>
+          <p className="mt-3 text-xs text-muted-foreground">가입 없이 이 브라우저에 저장돼요.</p>
         </div>
 
         {/* 오른쪽: 인터랙티브 계산기 */}
@@ -190,8 +186,7 @@ function HeroResult({
         {planName ? ` ${planName}` : ""} · 월 {amountText}
       </p>
       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-        SubSlash 서비스 목록에 적힌 요금이에요. 등록할 때 내 요금제를 고르거나 요금을 고칠 수
-        있어요.
+        목록 기준 요금 · 등록할 때 바꿀 수 있어요
       </p>
 
       <div className="mt-4 flex items-center gap-3">

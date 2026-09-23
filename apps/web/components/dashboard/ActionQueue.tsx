@@ -90,12 +90,10 @@ export function ActionQueue({
       <section className="text-center py-14 border border-dashed rounded-2xl space-y-4">
         <ListChecks className="mx-auto size-10 text-muted-foreground" aria-hidden />
         <div className="space-y-1">
-          <h2 className="text-lg font-bold">아직 등록된 구독이 없습니다</h2>
-          <p className="text-sm text-muted-foreground">
-            매달 빠져나가는 구독을 하나만 등록해도, 여기에 무엇을 결정해야 할지 뜹니다.
-          </p>
+          <h2 className="text-lg font-bold">아직 등록된 구독이 없어요</h2>
+          <p className="text-sm text-muted-foreground">구독을 등록하면 결정할 일이 여기 떠요.</p>
         </div>
-        <Button onClick={onAddFirst}>+ 첫 구독 등록하기</Button>
+        <Button onClick={onAddFirst}>+ 첫 구독 등록</Button>
       </section>
     );
   }
@@ -104,11 +102,11 @@ export function ActionQueue({
     return (
       <section className="p-6 border rounded-2xl bg-card text-center space-y-2">
         <ListChecks className="mx-auto size-9 text-muted-foreground" aria-hidden />
-        <h2 className="font-bold">지금 결정할 것이 없습니다</h2>
+        <h2 className="font-bold">지금 결정할 것이 없어요</h2>
         <p className="text-sm text-muted-foreground">
           {nextBilling
-            ? `다음 결제는 ${nextBilling.name} ${formatDday(nextBilling.daysUntilBilling)}입니다.`
-            : "결제일을 아는 구독이 아직 없습니다. 구독 상세에서 결제일을 채워주세요."}
+            ? `다음 결제: ${nextBilling.name} ${formatDday(nextBilling.daysUntilBilling)}`
+            : "결제일을 아는 구독이 없어요. 구독 상세에서 채워 주세요."}
         </p>
       </section>
     );
@@ -118,7 +116,7 @@ export function ActionQueue({
     <section className="space-y-3">
       <div className="flex items-baseline justify-between">
         <h2 className="text-xl font-bold tracking-tight">지금 결정할 것 ({items.length})</h2>
-        <span className="text-xs text-muted-foreground">급한 순으로 정렬됩니다</span>
+        <span className="text-xs text-muted-foreground">급한 순</span>
       </div>
 
       <ul className="space-y-2">

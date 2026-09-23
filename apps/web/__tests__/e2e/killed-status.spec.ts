@@ -53,14 +53,12 @@ test.describe("해지한 구독의 상태 (E2E)", () => {
     await seedOnce(page, [killedNetflix]);
     await page.goto("/");
 
-    await expect(page.getByText("지금 구독 중인 서비스는 없습니다.")).toBeVisible({
+    await expect(page.getByText("구독 중인 서비스 없음")).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByText(/구독이 등록되어 있습니다|구독 중인 서비스가 \d+개/)).toHaveCount(
-      0,
-    );
+    await expect(page.getByText(/구독 중 \d+개/)).toHaveCount(0);
 
-    await page.getByRole("button", { name: /절약 현황 보기/ }).click();
+    await page.getByRole("button", { name: /절약 현황 →/ }).click();
     await expect(page).toHaveURL(/\/savings/, { timeout: 30_000 });
   });
 
@@ -68,10 +66,10 @@ test.describe("해지한 구독의 상태 (E2E)", () => {
     await seedOnce(page, [killedNetflix, activeMelon]);
     await page.goto("/");
 
-    await expect(page.getByText("현재 구독 중인 서비스가 1개 있습니다.")).toBeVisible({
+    await expect(page.getByText("구독 중 1개")).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByText(/해지한 구독 1개는 절약 현황에 있습니다/)).toBeVisible();
+    await expect(page.getByText(/해지한 1개는 절약 현황에 있어요/)).toBeVisible();
   });
 
   test("해지한 구독의 상세에서는 다시 해지로 기록하거나 체크인할 수 없다", async ({ page }) => {
@@ -83,7 +81,7 @@ test.describe("해지한 구독의 상태 (E2E)", () => {
 
     await page.getByRole("button", { name: /해지 방법 보기/ }).click();
     const guide = page.getByRole("dialog");
-    await expect(guide.getByText(/이미 해지한 구독으로 기록되어 있습니다/)).toBeVisible();
+    await expect(guide.getByText(/이미 해지한 구독으로 기록되어 있어요/)).toBeVisible();
     await expect(guide.getByRole("button", { name: "해지 완료했어요" })).toHaveCount(0);
     await guide.getByRole("button", { name: "닫기" }).last().click();
 
