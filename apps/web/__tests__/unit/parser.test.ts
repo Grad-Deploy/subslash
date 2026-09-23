@@ -645,3 +645,49 @@ ${amountLine}
     expect(parsed.amount).toBe(17000);
   });
 });
+
+describe("결제 주기가 하나뿐인 서비스", () => {
+  const NOW = new Date("2026-09-23T03:00:00.000Z");
+  // 애플 영수증은 앱 이름·갱신일·금액만 적고 '연간'이라고 쓰지 않을 때가 있다.
+  const MARCH_GOODNOTES = {
+    from: "Apple <no_reply@email.apple.com>",
+    subject: "Apple 영수증",
+    date: "2026-03-12T03:00:00.000Z",
+    body: [
+      "영수증",
+      "Apple 계정",
+      "주문 ID MT4ABCD123",
+      "App Store",
+      "Goodnotes: AI Notes, Docs, PDF",
+      "Goodnotes 6",
+      "2027년 3월 12일에 갱신",
+      "₩13,000",
+      "합계 ₩13,000",
+    ].join("\n"),
+  };
+
+  it("굿노트는 영수증에 '연간'이 없어도 연 결제로 읽고, 반년 전 영수증을 오래됐다고 하지 않는다", () => {
+    // 1년 단위 결제뿐인 굿노트의 3월 영수증이 월 결제로 읽혀, 35일이 지난 '오래된 메일'로 체크가
+    // 풀린 채 남았다. 자동으로 등록되지 않았다.
+    const [item] = parseReceiptEmails([MARCH_GOODNOTES], { now: NOW, timeZone: "Asia/Seoul" });
+
+    expect(item.presetId).toBe("goodnotes");
+    expect(item.amount).toBe(13000);
+    expect(item.billingCycle).toBe("yearly");
+    expect(item.billingMonth).toBe(3);
+    expect(item.billingDay).toBe(12);
+    expect(item.confidence).toBe("high");
+    expect(item.selected).toBe(true);
+    expect(item.isWithin30Days).toBe(true);
+  });
+
+  it("결제 주기가 정해지지 않은 서비스는 여전히 영수증의 말을 따른다", () => {
+    const [item] = parseReceiptEmails(
+      [{ ...MARCH_GOODNOTES, body: MARCH_GOODNOTES.body.replace(/Goodnotes/g, "iCloud+") }],
+      { now: NOW, timeZone: "Asia/Seoul" },
+    );
+
+    expect(item.presetId).toBe("apple-icloud");
+    expect(item.billingCycle).toBe("monthly");
+  });
+});

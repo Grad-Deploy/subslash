@@ -596,13 +596,8 @@ function parseSingleMessageBlock(
   // 4b. Yearly plans: a receipt that says so is the only place the app can
   // learn the billing cycle, and importing one as monthly multiplies the user's
   // reported fixed spend by twelve.
-  const billingCycle: BillingCycle = YEARLY_HINT.test(normalized) ? "yearly" : "monthly";
-  if (billingCycle !== "yearly") {
-    billingMonth = undefined;
-  } else if (hints && billingMonth === undefined) {
-    // "결제일 : 3일"처럼 달이 없는 영수증이라도 메일을 받은 달에 결제된 것이다.
-    billingMonth = hints.received.month;
-  }
+  // 결제 주기가 하나뿐인 서비스는 아래에서 이름을 찾은 뒤 그 주기로 바꾼다.
+  let billingCycle: BillingCycle = YEARLY_HINT.test(normalized) ? "yearly" : "monthly";
 
   // 5. Extract Payment Method
   let paymentMethod: PaymentMethod = "credit_card";
@@ -677,6 +672,17 @@ function parseSingleMessageBlock(
     }
   } else {
     matchByKeyword(structuredProductName + " " + normalized);
+  }
+
+  // 연 결제만 있는 서비스(굿노트)의 영수증은 '연간'이라고 적혀 있지 않아도 연 결제다. 애플
+  // 영수증은 앱 이름과 갱신일만 적기도 해서, 월 결제로 읽으면 3월 영수증이 반년 뒤 '오래된 메일'이
+  // 되어 자동으로 등록되지 않았다.
+  if (matchedPreset?.onlyBillingCycle) billingCycle = matchedPreset.onlyBillingCycle;
+  if (billingCycle !== "yearly") {
+    billingMonth = undefined;
+  } else if (hints && billingMonth === undefined) {
+    // "결제일 : 3일"처럼 달이 없는 영수증이라도 메일을 받은 달에 결제된 것이다.
+    billingMonth = hints.received.month;
   }
 
   // If no amount found and not a recognized cancellation notice for a known service, skip
