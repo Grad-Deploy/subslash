@@ -22,6 +22,17 @@ export const SITE_DESCRIPTION = "구독 1회 사용 단가 분석과 해지 도�
 const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL;
 export const SITE_METADATA_BASE = productionHost ? new URL(`https://${productionHost}`) : undefined;
 
+/** 검색에 노출하는 화면. app/robots.ts의 허용 목록, app/sitemap.ts와 함께 고친다. */
+export const INDEXED_PATHS = ["/", "/privacy"] as const;
+
+/**
+ * 사이트맵·robots.txt에 적는 절대 주소. Vercel 밖(로컬)에서는 Next.js가 메타데이터에 쓰는 것처럼
+ * localhost를 기준으로 한다.
+ */
+export function siteUrl(path: string): string {
+  return new URL(path, SITE_METADATA_BASE ?? "http://localhost:3000").toString();
+}
+
 export const siteOpenGraph = {
   type: "website",
   siteName: SITE_NAME,
