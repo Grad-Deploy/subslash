@@ -9,6 +9,7 @@
     "open:ios": "cap open ios",
     "android": "cap run android",
     "ios": "cap run ios",
+    "assets": "node scripts/generate-brand-assets.mjs",
     "eas-build-post-install": "bash scripts/eas-build-post-install.sh"
   },
   "dependencies": {
@@ -21,6 +22,7 @@
     "@capacitor/share": "^8.0.1"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.5.2"
+    "@capacitor/cli": "^8.5.2",
+    "sharp": "^0.35.4"
   }
 }
