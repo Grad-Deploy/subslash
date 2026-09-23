@@ -5,6 +5,9 @@
 declare module "virtual:app-launch-flow" {
   import type { ComponentType } from "react";
 
-  const AppLaunchFlow: ComponentType;
+  const AppLaunchFlow: ComponentType<{
+    /** 실행 화면이 검은 바탕으로 자리를 잡았을 때(AppLaunch의 덮개를 걷어도 될 때) 한 번 부른다. */
+    onReady: () => void;
+  }>;
   export default AppLaunchFlow;
 }

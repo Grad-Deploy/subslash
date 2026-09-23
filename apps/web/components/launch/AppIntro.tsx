@@ -213,7 +213,7 @@ export function AppIntro({ onDone }: { onDone: () => void }) {
     });
 
     // 6) 퇴장: 인트로가 확대되며 사라진다
-    const outAt = T + 800;
+    const outAt = T + 1600;
     const introAnim = animate(
       introRef.current,
       [
