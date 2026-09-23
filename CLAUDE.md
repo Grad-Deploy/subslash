@@ -204,7 +204,9 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
 
 브랜드 마크는 `components/brand/Brand.tsx` 한 곳에 있다(마크·워드마크·락업). 좌표와 색은 브랜드
 시트에서 뽑은 값이고, 앱 아이콘(`app/icon.svg`)도 같은 좌표를 쓴다 — 한쪽만 고치면 상단 바와 홈
-화면 아이콘이 서로 다른 로고가 된다. 워드마크 가운데의 빨간 슬래시는 글꼴의 `/`가 아니라 기울인
+화면 아이콘이 서로 다른 로고가 된다. 모바일 앱의 아이콘·스플래시(안드로이드 `res/`, iOS
+`Assets.xcassets`)는 `icon.svg`에서 만든 그림이다 — `icon.svg`를 고치면
+`pnpm --filter @subslash/mobile assets`를 다시 돌린다(Capacitor 기본 그림이 남아 있어 앱만 다른 로고였다). 워드마크 가운데의 빨간 슬래시는 글꼴의 `/`가 아니라 기울인
 막대이고, 읽는 기계에는 `Sub/Slash`로 들리도록 따로 적는다.
 
 서비스 로고(`lib/service-logos.ts`)는 **확인한 것만** 적는다. 글리프를 눈대중으로 그리거나 브랜드
