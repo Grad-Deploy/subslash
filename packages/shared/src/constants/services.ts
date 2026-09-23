@@ -35,6 +35,12 @@ export interface ServicePreset {
   /** 결제 경로·조건에 따라 요금이 달라지는 점을 알리는 한 줄. */
   priceNote?: string;
   /**
+   * 이 서비스의 구독이 한 가지 결제 주기뿐일 때(확인한 곳만). 등록 폼과 영수증 파싱이 이 주기를
+   * 쓴다. 영수증에 '연간'이 적혀 있지 않아도 연 결제만 있는 서비스를 월 결제로 읽으면, 1년에 한
+   * 번인 결제가 매달 있는 것처럼 보이고 지난 영수증은 35일 만에 '오래됨'이 된다.
+   */
+  onlyBillingCycle?: BillingCycle;
+  /**
    * 요금표 가격에 세금이 빠져 있다고 서비스가 스스로 밝힌 경우(요금표의 문구로 확인한 곳만).
    * 한국에서 결제할 때 요금표 가격에 더해져 청구되는 세금(%). 결제 화면에서 세금이 따로 붙는 것을
    * 확인한 서비스만 적는다. 서비스를 고르면 이 세율이 채워진 채 등록되고, 사업자 결제처럼 세금이
@@ -751,6 +757,9 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // 영수증에 적힌 금액을 등록할 때 적는다.
     defaultAmount: null,
     priceNote: "요금을 확인하지 못했어요. 영수증이나 스토어의 구독 화면에 적힌 금액을 적어주세요.",
+    // 구독은 1년 단위 결제 하나뿐이다(월 결제 없음, 2026-09 사용자 확인). 애플 영수증에는 '연간'이
+    // 적히지 않을 때가 있어, 이것이 없으면 3월 영수증이 월 결제로 읽혀 '오래된 메일'이 됐다.
+    onlyBillingCycle: "yearly",
     currency: "KRW",
     // 결제한 곳(앱스토어·구글플레이·굿노트 웹)에서 해지한다. 어디서 결제했는지는 앱이 알 수
     // 없으므로 한 곳을 '해지 페이지'라고 부르지 않고, 첫 화면을 주고 안내로 나눈다.
@@ -1035,7 +1044,7 @@ export function presetFormData(preset: ServicePreset): Partial<SubscriptionFormD
     name: preset.nameKo || preset.name,
     amount: preset.defaultAmount ?? undefined,
     currency: preset.currency,
-    billingCycle: "monthly",
+    billingCycle: preset.onlyBillingCycle ?? "monthly",
     category: preset.category,
     cancelUrl: preset.cancelUrl,
     cancelGuide: preset.cancelGuide,

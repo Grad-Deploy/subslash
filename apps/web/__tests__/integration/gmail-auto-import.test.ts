@@ -139,6 +139,13 @@ const LAST_YEAR_GOODNOTES = {
   date: daysAgo(400),
   body: "APPLE 계정\nGoodnotes 6\n연간 구독 (자동 갱신)\n₩13,000",
 };
+/** 반년 전 굿노트 영수증. 애플은 '연간'이라고 적지 않고 갱신일만 적기도 한다. */
+const MARCH_GOODNOTES = {
+  from: "Apple <no_reply@email.apple.com>",
+  subject: "Apple 영수증",
+  date: daysAgo(195),
+  body: "App Store\nGoodnotes 6\n2027년 3월 12일에 갱신\n₩13,000\n합계 ₩13,000",
+};
 
 beforeEach(async () => {
   process.env.NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN = "true";
@@ -208,6 +215,19 @@ describe("Gmail 자동 가져오기", () => {
     const found = await discoveries(cookie);
     expect(found.map((d) => [d.name, d.billingCycle, d.tier])).toEqual([
       ["굿노트", "yearly", "review"],
+    ]);
+  });
+
+  it("1년 단위 결제뿐인 굿노트는 반년 전 영수증으로도 확인 없이 등록한다", async () => {
+    // 월 결제로 읽혀 35일이 지난 '오래된 메일'이 됐고, 그래서 자동으로 등록되지 않았다.
+    const { cookie } = await loggedIn("sean");
+    const token = await issueToken(cookie);
+
+    await ingest(token, [MARCH_GOODNOTES]);
+
+    const found = await discoveries(cookie);
+    expect(found.map((d) => [d.name, d.amount, d.billingCycle, d.tier])).toEqual([
+      ["굿노트", 13000, "yearly", "auto"],
     ]);
   });
 
