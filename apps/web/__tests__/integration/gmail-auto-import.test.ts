@@ -132,6 +132,13 @@ const CANCELED = {
   date: daysAgo(2),
   body: "결제금액 : 7,900원",
 };
+/** 1년에 한 번 오는 연간 구독의 지난 영수증. 다음 갱신이 가까우면 늘 이만큼 오래된 것이 있다. */
+const LAST_YEAR_GOODNOTES = {
+  from: "Apple <no_reply@email.apple.com>",
+  subject: "귀하의 영수증입니다.",
+  date: daysAgo(400),
+  body: "APPLE 계정\nGoodnotes 6\n연간 구독 (자동 갱신)\n₩13,000",
+};
 
 beforeEach(async () => {
   process.env.NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN = "true";
@@ -166,12 +173,14 @@ describe("Gmail 자동 가져오기", () => {
 
     const response = await ingest(token, [NETFLIX, UNKNOWN, OLD_TVING, CANCELED]);
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ received: 4, candidates: 2 });
+    expect(await response.json()).toEqual({ received: 4, candidates: 3 });
 
     const found = await discoveries(cookie);
     expect(found.map((d) => [d.name, d.amount, d.tier]).sort()).toEqual([
       ["넷플릭스", 17000, "auto"],
       ["알 수 없는 결제 (₩8,900)", 8900, "review"],
+      // 해지 알림(왓챠)만 빠진다. 오래된 메일은 '모른다'는 뜻이라 확인 목록에 남는다.
+      ["티빙", 13900, "review"],
     ]);
 
     // 표에 남은 모든 칸을 이어 붙여도 메일 제목·본문의 흔적이 없다.
@@ -183,6 +192,23 @@ describe("Gmail 자동 가져오기", () => {
     const [link] = await getDb().select().from(gmailImportLinks);
     expect(link.lastEmailCount).toBe(4);
     expect(link.lastIngestAt).not.toBeNull();
+  });
+
+  it("1년에 한 번 오는 연간 구독의 지난 영수증도 확인 목록에 남긴다", async () => {
+    // 오래된 메일을 버렸더니, 1년째 쓰는 굿노트가 후보에 아예 나타나지 않았다. 파싱을 몇 번
+    // 다시 돌려도 등록할 수 없었고, 사용자는 그 구독이 걸렸다는 것조차 알 수 없었다.
+    const { cookie } = await loggedIn("sean");
+    const token = await issueToken(cookie);
+
+    expect(await (await ingest(token, [LAST_YEAR_GOODNOTES, CANCELED])).json()).toEqual({
+      received: 2,
+      candidates: 1,
+    });
+
+    const found = await discoveries(cookie);
+    expect(found.map((d) => [d.name, d.billingCycle, d.tier])).toEqual([
+      ["굿노트", "yearly", "review"],
+    ]);
   });
 
   it("같은 서비스는 한 줄로 두고, 늦게 온 옛 메일이 최근 결과를 덮지 않는다", async () => {

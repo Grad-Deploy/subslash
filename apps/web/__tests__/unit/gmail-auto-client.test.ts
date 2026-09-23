@@ -66,6 +66,43 @@ describe("planDiscoveries", () => {
     expect(candidate.statusReason).toContain("해지로 기록한 서비스");
   });
 
+  it("마지막 결제 메일이 오래된 후보는 체크를 풀고 며칠 전인지 말한다", () => {
+    // 연간 구독의 영수증은 1년에 한 번뿐이라 갱신 직전에는 늘 이만큼 오래돼 있다. 앱이 아는
+    // 것은 '오래됐다'뿐이므로 '만료'라고 쓰지 않고, 등록할지는 사용자가 고른다.
+    const now = new Date("2026-09-23T00:00:00.000Z");
+    const candidate = discoveryToCandidate(
+      discovery({
+        name: "굿노트",
+        presetId: "goodnotes",
+        billingCycle: "yearly",
+        billingMonth: 8,
+        receiptDate: "2025.08.12",
+        tier: "review",
+      }),
+      [],
+      now,
+    );
+
+    expect(candidate.selected).toBe(false);
+    expect(candidate.isWithin30Days).toBe(false);
+    expect(candidate.daysAgo).toBe(407);
+    expect(candidate.statusReason).toBe(
+      "마지막 결제 메일이 407일 전이라 지금도 결제 중인지 알 수 없습니다",
+    );
+  });
+
+  it("연간 구독은 1년쯤 된 영수증을 오래됐다고 하지 않는다", () => {
+    const now = new Date("2026-09-23T00:00:00.000Z");
+    const candidate = discoveryToCandidate(
+      discovery({ billingCycle: "yearly", receiptDate: "2025.10.01", tier: "auto" }),
+      [],
+      now,
+    );
+
+    expect(candidate.selected).toBe(true);
+    expect(candidate.isWithin30Days).toBe(true);
+  });
+
   it("해지한 구독에 결제 메일이 왔다는 사실을 그 구독에 적을 수 있게 넘긴다", () => {
     const subs = [subscription({ id: "sub-1", status: "killed" })];
     const plan = planDiscoveries([discovery({})], subs);

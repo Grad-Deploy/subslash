@@ -189,6 +189,11 @@ export interface DiscoveredSubscription {
   receiptDate?: string;
   daysAgo?: number;
   statusReason?: string;
+  /**
+   * 마지막 결제 메일이 아직 최근인지. 이름과 달리 기준은 결제 주기마다 다르다
+   * (`STALE_AFTER_DAYS` — 월간 35일·연간 370일). 연간 구독의 영수증은 1년에 한 번뿐이라
+   * 30일로 재면 늘 오래된 것이 된다.
+   */
   isWithin30Days?: boolean;
   isCanceled?: boolean;
   cancellationDate?: string;

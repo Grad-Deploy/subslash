@@ -1,6 +1,8 @@
 import {
   POPULAR_SERVICES,
+  daysSinceReceipt,
   getBilledAmount,
+  isStaleReceipt,
   type BillingCycle,
   type Currency,
   type DiscoveredSubscription,
@@ -217,15 +219,26 @@ export function discoveryToFormData(discovery: GmailDiscovery): SubscriptionForm
   };
 }
 
-/** 확인 목록에 띄울 모양으로. 가져오기 창이 이 모양을 받는다. */
+/**
+ * 확인 목록에 띄울 모양으로. 가져오기 창이 이 모양을 받는다.
+ *
+ * 왜 확인이 필요한지를 후보마다 적는다. 셋은 서로 다른 말이라 뭉뚱그리지 않는다 — 해지한
+ * 서비스에 결제 메일이 온 것은 증거이고, 마지막 결제 메일이 오래된 것은 모른다는 뜻이며,
+ * 이름을 찾지 못한 것은 어느 서비스인지 모른다는 뜻이다. 앞의 둘은 체크를 풀어 두어 사용자가
+ * 직접 고르게 한다.
+ */
 export function discoveryToCandidate(
   discovery: GmailDiscovery,
   subscriptions: Subscription[],
+  now = new Date(),
 ): DiscoveredSubscription {
   const form = discoveryToFormData(discovery);
   const killed = subscriptions.some(
     (sub) => sub.status === "killed" && sameService(sub, discovery),
   );
+  const daysAgo = daysSinceReceipt(discovery.receiptDate, now);
+  const stale = isStaleReceipt(discovery.receiptDate, discovery.billingCycle, now);
+
   return {
     ...form,
     id: discovery.id,
@@ -235,11 +248,14 @@ export function discoveryToCandidate(
     sender: discovery.sender,
     sourceSnippet: `${discovery.receiptDate} · ${discovery.sender}`,
     receiptDate: discovery.receiptDate,
+    daysAgo: daysAgo ?? undefined,
     confidence: discovery.presetId ? "high" : "medium",
-    selected: !killed,
-    isWithin30Days: true,
+    selected: !killed && !stale,
+    isWithin30Days: !stale,
     statusReason: killed
       ? "해지로 기록한 서비스인데 결제 메일이 왔습니다. 해지가 됐는지 확인해 주세요"
-      : "결제 메일에서 찾았지만 어떤 서비스인지 확실하지 않습니다",
+      : stale
+        ? `마지막 결제 메일이 ${daysAgo}일 전이라 지금도 결제 중인지 알 수 없습니다`
+        : "결제 메일에서 찾았지만 어떤 서비스인지 확실하지 않습니다",
   };
 }
