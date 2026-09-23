@@ -445,14 +445,16 @@ export function AutoImportModal({
                                   </Badge>
                                 ) : item.isWithin30Days ? (
                                   <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] py-0 border-0 font-medium">
-                                    30일 내 결제 확인 (활성)
+                                    최근 결제 확인 (활성)
                                   </Badge>
                                 ) : (
+                                  // '만료'라고 쓰지 않는다. 앱이 아는 것은 마지막 결제 메일이
+                                  // 오래됐다는 것뿐이고, 연간 구독은 원래 1년에 한 번 온다.
                                   <Badge
                                     variant="outline"
                                     className="text-[10px] py-0 text-muted-foreground"
                                   >
-                                    30일 초과 미결제 (만료)
+                                    마지막 결제 메일이 오래됨 (확인 필요)
                                   </Badge>
                                 )}
                               </div>

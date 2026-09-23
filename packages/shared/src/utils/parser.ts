@@ -318,6 +318,14 @@ interface ReceiptHints {
   body: string;
   /** 본문에 결제일 칸이 없을 때 쓸 날짜. 메일에서는 받은 날(사용자 시간대의 달·일)이다. */
   received: CalendarDate;
+  /**
+   * 이 조각이 어느 서비스의 것인지 이미 정해졌을 때의 프리셋 id.
+   *
+   * 한 통으로 여러 앱을 청구하는 영수증을 항목별로 쪼갤 때만 쓴다(`splitPlatformReceipt`).
+   * 조각에는 그 앱의 이름·금액·주기만 들어 있으므로, 이름을 다시 찾게 두면 키워드 표에서
+   * 앞선 서비스가 조각을 가로챈다.
+   */
+  forcedPresetId?: string;
 }
 
 /**
@@ -374,6 +382,63 @@ const PLATFORM_SENDER_DOMAINS = [
   "paypal.com",
   "stripe.com",
 ];
+
+function isPlatformSender(sender: string): boolean {
+  const domain = senderDomainOf(sender);
+  return PLATFORM_SENDER_DOMAINS.some((registrable) => isDomainOf(domain, registrable));
+}
+
+/**
+ * 어느 앱인지 모를 때 쓰는 묶음 프리셋. 항목별로 쪼갤 때는 후보가 아니다.
+ *
+ * 애플 영수증 하단의 "apple.com/bill"은 어느 줄에나 있는 안내 문구라, 이것으로 조각을 하나 더
+ * 만들면 실제로 결제하지 않은 '앱스토어 구독'이 그 옆 항목의 금액을 달고 등록된다.
+ */
+const PLATFORM_FALLBACK_PRESET_IDS = new Set(["apple-app-store", "apple-play-store"]);
+
+/**
+ * 한 통으로 여러 앱을 청구하는 영수증을 항목별 조각으로 나눈다.
+ *
+ * 애플·구글 플레이 영수증은 한 통에 굿노트·아이클라우드가 나란히 적힌다. 메일 한 통을 후보
+ * 하나로 읽으면 키워드 표에서 앞선 서비스(아이클라우드)만 남고, 그 이름에 뒤 항목의 금액·주기
+ * (굿노트의 연간 13,000원)가 붙는다 — 1년째 쓰는 굿노트가 '아이클라우드 연간 13,000원'으로
+ * 등록되던 것이 이 경우였다.
+ *
+ * 본문에서 **아는 서비스**가 두 곳 이상 나올 때만 나눈다. 나누는 자리는 그 이름이 처음 나온
+ * 위치이고, 조각은 다음 이름 직전까지다. 금액이 없는 조각은 뒤에서 버려지므로, 하단 안내에
+ * 이름만 스친 서비스는 후보가 되지 않는다.
+ *
+ * 하나만 나오면 빈 배열을 돌려준다 — 지금까지처럼 메일 한 통을 통째로 읽는다.
+ */
+function splitPlatformReceipt(body: string): { presetId: string; text: string }[] {
+  const lower = body.toLowerCase();
+  const found = new Map<string, number>();
+
+  for (const item of SERVICE_KEYWORDS) {
+    if (PLATFORM_FALLBACK_PRESET_IDS.has(item.presetId)) continue;
+    if (!POPULAR_SERVICES.some((s) => s.id === item.presetId)) continue;
+    let at = -1;
+    for (const keyword of item.keywords) {
+      const found_at = lower.indexOf(keyword.toLowerCase());
+      if (found_at >= 0 && (at < 0 || found_at < at)) at = found_at;
+    }
+    // 같은 서비스가 여러 번 나오면 처음 나온 자리를 쓴다.
+    if (at >= 0 && (!found.has(item.presetId) || at < found.get(item.presetId)!)) {
+      found.set(item.presetId, at);
+    }
+  }
+
+  if (found.size < 2) return [];
+
+  const marks = [...found.entries()]
+    .map(([presetId, at]) => ({ presetId, at }))
+    .sort((a, b) => a.at - b.at);
+
+  return marks.map((mark, i) => ({
+    presetId: mark.presetId,
+    text: body.slice(mark.at, i + 1 < marks.length ? marks[i + 1].at : undefined),
+  }));
+}
 
 function parseSingleMessageBlock(
   block: string,
@@ -591,7 +656,11 @@ function parseSingleMessageBlock(
     return false;
   };
 
-  if (hints) {
+  if (hints?.forcedPresetId) {
+    // 항목별로 쪼갠 조각이다. 어느 서비스의 것인지는 나눌 때 이미 정해졌다.
+    const forced = SERVICE_KEYWORDS.find((item) => item.presetId === hints.forcedPresetId);
+    if (forced) takeMatch(forced);
+  } else if (hints) {
     // 메일은 ① 보낸 사람의 도메인 ② 제목·보낸 사람 이름 ③ 본문 순으로 본다. 제목과 본문은 남의
     // 서비스를 말할 수 있지만(비교 기사·광고), 영수증이 온 도메인은 그 서비스의 것이다. 보낸
     // 사람이 아는 서비스면 본문은 아예 보지 않는다 — 넷플릭스 메일 본문의 '쿠팡플레이'는 광고다.
@@ -635,10 +704,7 @@ function parseSingleMessageBlock(
     cancelGuide = matchedPreset.cancelGuide;
     // 본문에서만 찾은 이름은 사용자가 골라야 등록된다(자동 가져오기의 review). 한 메일로 여러
     // 서비스를 청구하는 발신자는 본문이 유일한 근거라 예외다.
-    const bodyOnly =
-      hints !== undefined &&
-      matchedIn === "body" &&
-      !PLATFORM_SENDER_DOMAINS.some((domain) => isDomainOf(senderDomainOf(hints.sender), domain));
+    const bodyOnly = hints !== undefined && matchedIn === "body" && !isPlatformSender(hints.sender);
     confidence = bodyOnly ? "medium" : "high";
   } else if (structuredProductName) {
     name = structuredProductName;
@@ -699,8 +765,38 @@ export interface ReceiptEmail {
   body: string;
 }
 
-/** 이보다 오래전에 마지막 결제 메일이 온 구독은 지금도 결제 중인지 알 수 없다. */
-const STALE_AFTER_DAYS: Record<BillingCycle, number> = { monthly: 35, yearly: 370 };
+/**
+ * 이보다 오래전에 마지막 결제 메일이 온 구독은 지금도 결제 중인지 알 수 없다.
+ *
+ * "알 수 없다"는 "아니다"가 아니다. 이 선을 넘은 후보는 기본으로 체크를 풀어 사용자가 고르게
+ * 할 뿐, 없애지 않는다 — 연간 구독의 영수증은 1년에 한 번뿐이라 갱신 직전에는 늘 이 근처이고,
+ * 없애면 1년에 한 번 결제되는 구독은 영영 등록할 수 없다.
+ */
+export const STALE_AFTER_DAYS: Record<BillingCycle, number> = { monthly: 35, yearly: 370 };
+
+/**
+ * `YYYY.MM.DD`로 적어 둔 영수증 날짜가 며칠 전인지. 읽을 수 없으면 `null`.
+ *
+ * 메일을 막 읽는 자리에서는 받은 시각을 그대로 쓰면 되지만(더 정확하다), 후보를 저장해 둔 뒤
+ * 다시 판단할 때는 이 날짜밖에 남아 있지 않다.
+ */
+export function daysSinceReceipt(receiptDate: string, now: Date): number | null {
+  const match = /^([0-9]{4})\.([0-9]{2})\.([0-9]{2})$/.exec(receiptDate);
+  if (!match) return null;
+  const at = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  if (Number.isNaN(at)) return null;
+  return Math.max(0, Math.floor((now.getTime() - at) / DAY_MS));
+}
+
+/** 마지막 결제 메일이 오래돼 지금도 결제 중인지 알 수 없는 후보인지. */
+export function isStaleReceipt(
+  receiptDate: string,
+  billingCycle: BillingCycle,
+  now: Date,
+): boolean {
+  const days = daysSinceReceipt(receiptDate, now);
+  return days !== null && days > STALE_AFTER_DAYS[billingCycle];
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -732,8 +828,12 @@ function calendarDate(date: Date, timeZone?: string): CalendarDate {
  * Gmail에서 가져온 결제 메일을 구독 후보로 바꾼다.
  *
  * 문자와 달리 메일은 한 통이 한 건이다. 본문의 빈 줄로 나누면 메일 하나가 여러 조각이 되므로
- * 나누지 않는다. 같은 구독의 영수증은 달마다 쌓이므로 가장 최근 메일 하나만 남기고, 그 메일이
- * 오래됐거나 해지 알림이면 등록 후보에서 기본으로 빼 둔다(사용자가 다시 고를 수 있다).
+ * 나누지 않는다. 다만 한 통으로 여러 앱을 청구하는 발신자(애플·구글 플레이)의 영수증에 아는
+ * 서비스가 둘 이상 적혀 있으면 항목별로 나눈다 — 그러지 않으면 뒤 항목이 통째로 사라지고,
+ * 그 금액이 앞 항목의 이름에 붙는다(`splitPlatformReceipt`).
+ *
+ * 같은 구독의 영수증은 달마다 쌓이므로 가장 최근 메일 하나만 남기고, 그 메일이 오래됐거나
+ * 해지 알림이면 등록 후보에서 기본으로 빼 둔다(사용자가 다시 고를 수 있다).
  */
 export function parseReceiptEmails(
   emails: ReceiptEmail[],
@@ -755,43 +855,54 @@ export function parseReceiptEmails(
   const results: DiscoveredSubscription[] = [];
 
   newestFirst.forEach(({ email, receivedAt }, index) => {
-    const block = `${email.subject}
-${email.body}`;
     const received = calendarDate(receivedAt, options?.timeZone);
-    const parsed = parseSingleMessageBlock(block, index, options, {
-      subject: email.subject,
-      sender: email.from,
-      body: email.body,
-      received,
-    });
-    if (!parsed) return;
+    // 한 통으로 여러 앱을 청구하는 발신자만 항목별로 나눈다. 나눌 것이 없으면 통째로 읽는다.
+    const parts = isPlatformSender(email.from) ? splitPlatformReceipt(email.body) : [];
+    const pieces =
+      parts.length > 0
+        ? parts.map((part) => ({ body: part.text, forcedPresetId: part.presetId }))
+        : [{ body: email.body, forcedPresetId: undefined }];
 
-    // 같은 서비스라도 통화가 다르면 다른 구독일 수 있다.
-    const key = `${parsed.name}|${parsed.currency}`;
-    if (seen.has(key)) return;
-    seen.add(key);
+    pieces.forEach((piece, pieceIndex) => {
+      // 결제가 일어났다는 증거는 제목에 있는 경우가 많아(‘귀하의 영수증입니다’) 조각에도 붙인다.
+      const block = `${email.subject}
+${piece.body}`;
+      const parsed = parseSingleMessageBlock(block, index, options, {
+        subject: email.subject,
+        sender: email.from,
+        body: piece.body,
+        received,
+        forcedPresetId: piece.forcedPresetId,
+      });
+      if (!parsed) return;
 
-    const daysAgo = Math.max(0, Math.floor((now.getTime() - receivedAt.getTime()) / DAY_MS));
-    const stale = daysAgo > STALE_AFTER_DAYS[parsed.billingCycle];
-    const receiptDate = `${received.year}.${String(received.month).padStart(2, "0")}.${String(received.day).padStart(2, "0")}`;
-    const snippet = `${receiptDate} · ${email.from} · ${email.subject}`;
+      // 같은 서비스라도 통화가 다르면 다른 구독일 수 있다.
+      const key = `${parsed.name}|${parsed.currency}`;
+      if (seen.has(key)) return;
+      seen.add(key);
 
-    results.push({
-      ...parsed,
-      id: `gmail-${receivedAt.getTime()}-${index}`,
-      source: "gmail",
-      sender: email.from,
-      emailProvider: "google",
-      sourceSnippet: snippet.length > 120 ? `${snippet.slice(0, 120)}...` : snippet,
-      receiptDate,
-      daysAgo,
-      selected: !parsed.isCanceled && !stale,
-      isWithin30Days: !parsed.isCanceled && !stale,
-      statusReason: parsed.isCanceled
-        ? "가장 최근 메일이 해지·취소 알림입니다 (활성 구독 제외)"
-        : stale
-          ? `마지막 결제 메일이 ${daysAgo}일 전이라 지금도 결제 중인지 알 수 없습니다`
-          : `${daysAgo}일 전 결제 메일 확인됨`,
+      const daysAgo = Math.max(0, Math.floor((now.getTime() - receivedAt.getTime()) / DAY_MS));
+      const stale = daysAgo > STALE_AFTER_DAYS[parsed.billingCycle];
+      const receiptDate = `${received.year}.${String(received.month).padStart(2, "0")}.${String(received.day).padStart(2, "0")}`;
+      const snippet = `${receiptDate} · ${email.from} · ${email.subject}`;
+
+      results.push({
+        ...parsed,
+        id: `gmail-${receivedAt.getTime()}-${index}-${pieceIndex}`,
+        source: "gmail",
+        sender: email.from,
+        emailProvider: "google",
+        sourceSnippet: snippet.length > 120 ? `${snippet.slice(0, 120)}...` : snippet,
+        receiptDate,
+        daysAgo,
+        selected: !parsed.isCanceled && !stale,
+        isWithin30Days: !parsed.isCanceled && !stale,
+        statusReason: parsed.isCanceled
+          ? "가장 최근 메일이 해지·취소 알림입니다 (활성 구독 제외)"
+          : stale
+            ? `마지막 결제 메일이 ${daysAgo}일 전이라 지금도 결제 중인지 알 수 없습니다`
+            : `${daysAgo}일 전 결제 메일 확인됨`,
+      });
     });
   });
 
