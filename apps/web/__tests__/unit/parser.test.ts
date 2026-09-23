@@ -511,6 +511,76 @@ describe("결제 메일이 아닌 메일을 구독으로 읽지 않는다", () =
     expect(item.presetId).toBe("youtube-premium");
     expect(item.confidence).toBe("high");
   });
+
+  it("한 영수증이 여러 앱을 청구하면 항목마다 후보를 만든다", () => {
+    // 애플 영수증은 한 통에 여러 앱이 나란히 적힌다. 메일 한 통을 후보 하나로 읽었더니 키워드
+    // 표에서 앞선 아이클라우드만 남고, 그 이름에 굿노트의 금액·주기(연간 13,000원)가 붙었다.
+    // 굿노트는 후보에 아예 나타나지 않아, 파싱을 다시 돌려도 등록할 수 없었다.
+    const items = parseReceiptEmails(
+      mail(
+        "귀하의 영수증입니다.",
+        [
+          "APPLE 계정",
+          "Goodnotes 6",
+          "연간 구독 (자동 갱신)",
+          "₩13,000",
+          "iCloud+ 50GB",
+          "월간 구독 (자동 갱신)",
+          "₩1,100",
+          "합계 ₩14,100",
+        ].join("\n"),
+        "Apple <no_reply@email.apple.com>",
+      ),
+      { now: NOW },
+    );
+
+    const goodnotes = items.find((item) => item.presetId === "goodnotes");
+    const icloud = items.find((item) => item.presetId === "apple-icloud");
+
+    expect(goodnotes).toBeDefined();
+    expect(goodnotes!.name).toBe("굿노트");
+    expect(goodnotes!.amount).toBe(13000);
+    expect(goodnotes!.billingCycle).toBe("yearly");
+    expect(goodnotes!.confidence).toBe("high");
+
+    expect(icloud).toBeDefined();
+    expect(icloud!.amount).toBe(1100);
+    expect(icloud!.billingCycle).toBe("monthly");
+
+    // 두 항목이 각자의 줄로 남는다.
+    expect(new Set(items.map((item) => item.id)).size).toBe(items.length);
+  });
+
+  it("항목을 나눌 때 금액이 없는 조각은 후보가 되지 않는다", () => {
+    // 하단 안내에 이름만 스친 서비스를 후보로 만들면, 결제하지도 않은 구독이 등록된다.
+    const items = parseReceiptEmails(
+      mail(
+        "귀하의 영수증입니다.",
+        "APPLE 계정\nGoodnotes 6\n연간 구독 (자동 갱신)\n₩13,000\n합계 ₩13,000\n" +
+          "Apple Music을 무료로 사용해 보세요.",
+        "Apple <no_reply@email.apple.com>",
+      ),
+      { now: NOW },
+    );
+
+    expect(items.map((item) => item.presetId)).toEqual(["goodnotes"]);
+  });
+
+  it("어느 앱인지 모를 때 쓰는 묶음 프리셋은 조각을 만들지 않는다", () => {
+    // 'apple.com/bill'은 애플 영수증 어디에나 있는 안내라, 이것으로 조각을 하나 더 만들면
+    // 결제하지 않은 '앱스토어 구독'이 옆 항목의 금액을 달고 등록된다.
+    const items = parseReceiptEmails(
+      mail(
+        "귀하의 영수증입니다.",
+        "APPLE 계정\nGoodnotes 6\n연간 구독 (자동 갱신)\n₩13,000\n" +
+          "청구 내역은 apple.com/bill 에서 확인하세요.",
+        "Apple <no_reply@email.apple.com>",
+      ),
+      { now: NOW },
+    );
+
+    expect(items.map((item) => item.presetId)).toEqual(["goodnotes"]);
+  });
 });
 
 describe("붙여넣은 영수증의 결제일", () => {
