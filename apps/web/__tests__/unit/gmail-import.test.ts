@@ -205,7 +205,16 @@ describe("decodeGmailImport", () => {
 describe("자동 가져오기 스크립트", () => {
   type Fetched = { url: string; options: { headers: Record<string, string>; payload: string } };
 
-  function runAutoScript(options: { status?: number; lastScanAt?: string } = {}) {
+  function runAutoScript(
+    options: {
+      status?: number;
+      lastScanAt?: string;
+      quotaErrors?: number;
+      otherError?: string;
+    } = {},
+  ) {
+    let quotaErrors = options.quotaErrors ?? 0;
+    const slept: number[] = [];
     const triggers: { handler: string; weeks?: number; day?: string; hour?: number }[] = [];
     const deleted: string[] = [];
     const properties = new Map<string, string>();
@@ -249,6 +258,13 @@ describe("자동 가져오기 스크립트", () => {
       Users: {
         Messages: {
           list: (_user: string, { q }: { q: string }) => {
+            if (options.otherError) throw new Error(options.otherError);
+            if (quotaErrors > 0) {
+              quotaErrors--;
+              throw new Error(
+                "Quota exceeded for quota metric 'Total Query Cost' and limit 'Units per minute per user'",
+              );
+            }
             queries.push(q);
             return { messages: MESSAGES.map((m) => ({ id: m.id })) };
           },
@@ -257,6 +273,7 @@ describe("자동 가져오기 스크립트", () => {
       },
     };
     const Utilities = {
+      sleep: (ms: number) => slept.push(ms),
       base64DecodeWebSafe: (data: string) => [...Buffer.from(data, "base64url")],
       newBlob: (data: number[]) => ({
         getDataAsString: (charset?: string) =>
@@ -278,7 +295,7 @@ return { setup: setup, scan: scan };`,
       setup: () => void;
       scan: () => void;
     };
-    return { api, triggers, deleted, properties, fetched, queries };
+    return { api, triggers, deleted, properties, fetched, queries, slept };
   }
 
   it("setup은 예전 검사 트리거만 지우고 2주마다 도는 트리거를 건 뒤 바로 한 번 검사한다", () => {
@@ -307,13 +324,40 @@ return { setup: setup, scan: scan };`,
     const run = runAutoScript();
     run.api.scan();
 
-    expect(run.queries).toHaveLength(3);
-    expect(run.queries[0]).toContain("category:purchases");
-    expect(run.queries[0]).toContain("구독");
-    expect(run.queries[1]).toBe("category:purchases newer_than:400d");
-    expect(run.queries[2]).not.toContain("category:");
+    expect(run.queries).toHaveLength(4);
+    // 앱스토어·구글 플레이 영수증은 따로, 맨 먼저 찾는다. 다른 갈래와 섞으면 반년 전 연간 구독
+    // 영수증(굿노트)이 쇼핑 주문·광고에 밀려 아예 읽히지 않았다.
+    expect(run.queries[0]).toBe(
+      "from:(apple.com OR google.com) (영수증 OR receipt OR 주문) newer_than:400d",
+    );
+    expect(run.queries[1]).toContain("category:purchases");
+    expect(run.queries[1]).toContain("구독");
+    expect(run.queries[2]).toBe("category:purchases newer_than:400d");
+    expect(run.queries[3]).not.toContain("category:");
     const emails = readReceiptEmails(JSON.parse(run.fetched[0].options.payload));
     expect(emails?.map((e) => e.subject)).toEqual(["넷플릭스 결제 안내", "티빙 정기결제 안내"]);
+  });
+
+  it("Gmail 사용 한도에 걸리면 기다렸다가 다시 불러, 첫 검사를 2주 뒤로 미루지 않는다", () => {
+    // 첫 검사는 메일 200통을 읽어 1분 한도(6,000)의 3분의 2를 쓴다. 연결을 다시 누르면 곧바로
+    // 한도에 걸렸고, 스크립트가 포기해 '첫 검사는 2주 뒤'라는 안내만 남았다.
+    const run = runAutoScript({ quotaErrors: 2 });
+    run.api.scan();
+
+    expect(run.slept).toEqual([10000, 30000]);
+    expect(run.fetched).toHaveLength(1);
+    expect(run.properties.get("lastScanAt")).toBeDefined();
+  });
+
+  it("기다려도 풀리지 않거나 한도가 아닌 오류는 그대로 알린다", () => {
+    const exhausted = runAutoScript({ quotaErrors: 10 });
+    expect(() => exhausted.api.scan()).toThrow("Quota exceeded");
+    expect(exhausted.slept).toHaveLength(3);
+    expect(exhausted.fetched).toHaveLength(0);
+
+    const other = runAutoScript({ otherError: "Invalid query" });
+    expect(() => other.api.scan()).toThrow("Invalid query");
+    expect(other.slept).toEqual([]);
   });
 
   it("처음에는 400일을 보고, 그 뒤로는 지난 검사 이후 메일만 본다", () => {

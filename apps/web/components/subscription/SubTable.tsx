@@ -223,6 +223,7 @@ export function SubTable({
                     name={sub.name}
                     cancelUrl={sub.cancelUrl}
                     fallbackEmoji={sub.iconUrl}
+                    fallbackColor={sub.iconColor}
                     size={22}
                   />
                   <div className="min-w-0">

@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useIsClient } from "@hooks/useIsClient";
 import { useRouter } from "next/navigation";
 import { useStore } from "../lib/store";
+import { IS_APP_BUILD } from "@lib/platform";
 import {
   POPULAR_SERVICES,
   ServicePreset,
@@ -56,6 +57,12 @@ export default function Home() {
   const mounted = useIsClient();
   const activeCount = subscriptions.filter((sub) => sub.status === "active").length;
   const killedCount = subscriptions.filter((sub) => sub.status === "killed").length;
+
+  // 앱의 첫 화면은 대시보드다. 앱을 켜면 이 페이지(index.html)부터 열리지만, 실행 화면(인트로·짧은
+  // 로고)이 가린 사이에 대시보드로 옮긴다. 소개용 홈은 웹에서만 쓴다.
+  useEffect(() => {
+    if (IS_APP_BUILD) router.replace("/dashboard");
+  }, [router]);
 
   const handleStart = () => {
     setSelectedPreset(undefined);

@@ -1,0 +1,15 @@
+.slashes {
+  display: inline-flex;
+  gap: 4px;
+  height: 14px;
+  align-items: center;
+}
+
+.slashes i {
+  display: block;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: #ef4444;
+  will-change: transform, opacity;
+}

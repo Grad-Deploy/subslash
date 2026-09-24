@@ -1,0 +1,50 @@
+/* 다시 실행할 때의 짧은 로고 화면. 인트로의 마지막 장면(로고 + 워드마크)과 같은 모양이다. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #09090b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  will-change: opacity;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  will-change: transform, opacity;
+}
+
+.mark {
+  width: 40%;
+  max-width: 180px;
+  aspect-ratio: 1;
+}
+
+.mark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.word {
+  display: flex;
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.sub {
+  color: #fafafa;
+}
+
+.slashTxt {
+  color: #ef4444;
+}

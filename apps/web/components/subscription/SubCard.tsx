@@ -87,6 +87,7 @@ export function SubCard({
                   name={subscription.name}
                   cancelUrl={subscription.cancelUrl}
                   fallbackEmoji={subscription.iconUrl}
+                  fallbackColor={subscription.iconColor}
                   size={32}
                 />
               </div>

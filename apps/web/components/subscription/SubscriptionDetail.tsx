@@ -198,6 +198,7 @@ export function SubscriptionDetail({
                 name={sub.name}
                 cancelUrl={sub.cancelUrl}
                 fallbackEmoji={sub.iconUrl}
+                fallbackColor={sub.iconColor}
                 size={44}
               />
             </div>
