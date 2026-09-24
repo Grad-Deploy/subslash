@@ -53,6 +53,7 @@ export function CancelGuideModal({
               name={sub.name}
               cancelUrl={sub.cancelUrl}
               fallbackEmoji={sub.iconUrl}
+              fallbackColor={sub.iconColor}
               size={20}
             />
             <span className="min-w-0 [overflow-wrap:anywhere]">{sub.name} 해지 가이드</span>

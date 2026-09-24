@@ -17,6 +17,18 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
+  // AppLaunch(components/launch)가 앱 첫 실행 인트로·환영 화면을 "virtual:app-launch-flow"로
+  // 불러온다. 상대 경로(./AppLaunchFlow)를 바로 썼다면 웹 빌드에서도 그 청크가 만들어져(실행되지
+  // 않아도 파일로는 남는다), 화면 문구가 웹 번들(.next/static)에 나타난다. 이 가상 지정자를
+  // 빌드 대상에 따라 실제 구현 또는 아무 것도 하지 않는 스텁으로 바꿔 끼워, 웹 빌드에는 그
+  // 코드 자체가 없게 한다.
+  turbopack: {
+    resolveAlias: {
+      "virtual:app-launch-flow": isAppBuild
+        ? "./components/launch/AppLaunchFlow.tsx"
+        : "./components/launch/AppLaunchFlowStub.tsx",
+    },
+  },
   ...(isAppBuild
     ? {
         output: "export",
