@@ -3,6 +3,7 @@ import { databaseUnavailableResponse } from "@lib/db";
 import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
 import { isGmailAutoImportOpen } from "@lib/privacy";
 import { appUrl } from "@lib/email";
+import { isAppOrigin } from "@lib/app-origins";
 import { createConnectCode, gmailConnectWebAppUrl } from "@lib/gmail-auto-import";
 
 /**
@@ -31,6 +32,9 @@ export async function POST(request: NextRequest) {
     url.searchParams.set("code", await createConnectCode(account.id));
     // 웹 앱은 이 주소로 코드를 바꾸고 메일을 보낸다. 스크립트가 허용 목록으로 다시 확인한다.
     url.searchParams.set("origin", appUrl());
+    // 앱은 이 주소를 인앱 브라우저로 연다. 웹 앱이 끝 화면에 웹사이트로 가는 '돌아가기' 대신
+    // '창을 닫으면 앱으로 돌아간다'를 띄우게 알린다.
+    if (isAppOrigin(request.headers.get("origin"))) url.searchParams.set("client", "app");
     return NextResponse.json({ url: url.toString() });
   } catch (error) {
     console.error("[api/gmail/connect]", error);
