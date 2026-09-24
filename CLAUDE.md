@@ -228,9 +228,11 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
 그래서 화면 코드는 다음을 지킨다.
 
 - 서버 API는 `apiUrl("/api/...")`(`lib/api`)로 부른다. 앱 안의 상대 주소는 앱 자신을 가리킨다.
-  로그인이 필요한 요청(`/api/auth`·`/api/account`)은 `apiFetch()`로 보낸다. 앱에는 쿠키가 실리지
+  로그인이 필요한 요청(`/api/auth`·`/api/account`·`/api/gmail`·`/api/calendar-sync`, 서버가
+  `readSessionToken`으로 읽는 곳 전부)은 `apiFetch()`로 보낸다. 앱에는 쿠키가 실리지
   않아서, `apiFetch`가 기기에 둔 세션 토큰(`lib/session-token`)을 헤더로 싣고 로그인·가입·비밀번호
-  변경 응답의 새 토큰을 받아 둔다.
+  변경 응답의 새 토큰을 받아 둔다. 그냥 `fetch`로 부르면 앱에서만 로그인하지 않은 것으로 읽힌다(Gmail
+  자동 가져오기가 로그인한 앱에서 '로그인이 필요합니다'를 냈다).
 - 외부 사이트는 `openExternal()`, 공유는 `shareText()`(`lib/native`)로 연다. 앱에서는 인앱 브라우저와
   네이티브 공유 창이 된다. `window.open`·`navigator.share`를 직접 부르지 않는다.
 - 외부 사이트에서 무언가를 마치고 **돌아와야 하는** 흐름(Google 권한 화면 등)은 `leaveForExternal()`을
