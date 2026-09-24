@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { and, eq, isNotNull } from "drizzle-orm";
 import {
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
       { status: 503 },
     );
   }
-  if (request.headers.get("authorization") !== `Bearer ${secret}`) {
+  if (!sameSecret(request.headers.get("authorization"), `Bearer ${secret}`)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -154,4 +155,11 @@ export async function GET(request: NextRequest) {
     console.error("[cron/notify]", error);
     return NextResponse.json({ error: "Reminder sweep failed" }, { status: 500 });
   }
+}
+
+/** 앞에서부터 다른 글자에서 바로 멈추는 비교는 응답 시간으로 비밀값을 한 글자씩 알아낼 수 있다. */
+function sameSecret(given: string | null, expected: string): boolean {
+  const a = Buffer.from(given ?? "");
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
 }

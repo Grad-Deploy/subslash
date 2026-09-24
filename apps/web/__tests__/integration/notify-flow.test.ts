@@ -24,6 +24,7 @@ const { signLink, verifyLink, hashSyncToken } = await import("../../lib/tokens")
 const { deleteUserCompletely } = await import("../../lib/notify-server");
 
 const { POST: subscribeRoute } = await import("../../app/api/notify/subscribe/route");
+const { resetAllRateLimits } = await import("../../lib/rate-limit");
 const { PUT: syncRoute, GET: statusRoute } = await import("../../app/api/notify/sync/route");
 const { GET: verifyRoute } = await import("../../app/api/notify/verify/route");
 const { GET: cronRoute } = await import("../../app/api/cron/notify/route");
@@ -110,6 +111,7 @@ async function markVerified(userId: string) {
 
 beforeEach(async () => {
   await resetDatabase();
+  resetAllRateLimits();
 });
 
 afterAll(() => {
@@ -181,6 +183,27 @@ describe("데이터베이스가 설정되지 않은 배포", () => {
 });
 
 describe("알림 옵트인", () => {
+  it("같은 주소로 한 시간에 세 번 넘게 신청하면 메일을 보내지 않고 막는다", async () => {
+    // 로그인 없이 부르는 곳이라, 막지 않으면 남의 주소로 확인 메일을 끝없이 보내거나
+    // 그 주소의 알림 설정을 거듭 지울 수 있다.
+    const subscribe = (email: string) =>
+      subscribeRoute(
+        request("http://localhost:3000/api/notify/subscribe", {
+          method: "POST",
+          body: JSON.stringify({ email, reminderDays: 3 }),
+        }),
+      );
+    for (let i = 0; i < 3; i++) {
+      expect((await subscribe(i % 2 ? "Victim@Example.com" : "victim@example.com")).status).toBe(
+        200,
+      );
+    }
+    const blocked = await subscribe("victim@example.com");
+    expect(blocked.status).toBe(429);
+    expect(Number(blocked.headers.get("retry-after"))).toBeGreaterThan(0);
+    expect((await subscribe("someone-else@example.com")).status).toBe(200);
+  });
+
   it("이메일을 등록하면 sync 토큰을 발급하고 미확인 상태로 둔다", async () => {
     const response = await subscribeRoute(
       request("http://localhost:3000/api/notify/subscribe", {
