@@ -150,10 +150,10 @@ export default function Dashboard() {
     try {
       const res = checkIn(checkInSub.id, count);
       setCheckInResult(res);
-      showToast(`${checkInSub.name} 체크인이 완료되었습니다.`);
+      showToast(`${checkInSub.name} 체크인 완료`);
     } catch (error) {
       console.error(error);
-      showToast("체크인 중 오류가 발생했습니다.");
+      showToast("체크인하지 못했어요. 다시 시도해 주세요.");
     }
   };
 
@@ -175,8 +175,8 @@ export default function Dashboard() {
     confirmSubscriptionPrice(id, newAmount);
     showToast(
       newAmount !== undefined
-        ? `${sub.name} 요금을 ${formatCurrency(newAmount, sub.currency)}으로 갱신했습니다.`
-        : `${sub.name} 요금을 확인한 것으로 기록했습니다.`,
+        ? `${sub.name} 요금을 ${formatCurrency(newAmount, sub.currency)}으로 바꿨어요.`
+        : `${sub.name} 요금 확인 완료`,
     );
   };
 
@@ -185,7 +185,7 @@ export default function Dashboard() {
     const sub = findSub(id);
     if (!sub) return;
     confirmKillVerified(id);
-    showToast(`${sub.name} 결제가 멈춘 것을 확인했습니다.`);
+    showToast(`${sub.name} 결제 멈춤 확인`);
   };
 
   const handleKillCharged = (id: string) => {
@@ -196,13 +196,13 @@ export default function Dashboard() {
   const handleAddSubmit = (data: SubscriptionFormData) => {
     addSubscription(data);
     setIsAddOpen(false);
-    showToast(`${data.name} 구독이 등록되었습니다.`);
+    showToast(`${data.name} 등록 완료`);
   };
 
   // 샘플은 내 구독에 더하지 않고 잠시 동안만 보여준다(store의 DemoSession).
   const handleLoadDemo = () => {
     startDemo();
-    showToast("샘플로 체험을 시작했습니다. 내 구독과 섞이지 않고, 끝내면 사라집니다.");
+    showToast("샘플 체험 시작 · 내 구독과 섞이지 않아요");
   };
 
   return (
@@ -217,9 +217,7 @@ export default function Dashboard() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         <div>
           <h1 className="text-2xl font-black tracking-tight">오늘의 구독 점검</h1>
-          <p className="text-sm text-muted-foreground">
-            결정이 필요한 구독만 모았습니다. 전체 목록은 &lsquo;내 구독&rsquo;에 있습니다.
-          </p>
+          <p className="text-sm text-muted-foreground">결정이 필요한 구독만 모았어요.</p>
         </div>
         <div className="flex items-center gap-2">
           {/* 앱에서 구독이 없을 때는 이 버튼들 대신 아래 빈 화면이 할 일을 보여준다. */}
@@ -364,7 +362,7 @@ export default function Dashboard() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>새 구독 등록</DialogTitle>
-            <DialogDescription>인기 서비스를 선택하거나 직접 정보를 입력하세요.</DialogDescription>
+            <DialogDescription>서비스를 고르거나 직접 입력하세요.</DialogDescription>
           </DialogHeader>
           <div className="py-2">
             <SubForm
@@ -417,12 +415,12 @@ export default function Dashboard() {
           onConfirm={() => {
             if (killTarget) {
               killSubscription(killTarget.id);
-              showToast(`${killTarget.name}을(를) 해지한 구독으로 기록했습니다.`);
+              showToast(`${killTarget.name} 해지 완료로 기록`);
               setKillTarget(null);
             }
           }}
           title="구독 해지 완료 처리"
-          description={`'${killTarget.name}' 구독을 해지 완료로 기록하시겠습니까?\n해지 뒤 결제일이 지나면 그만큼이 지킨 돈으로 쌓입니다.`}
+          description={`'${killTarget.name}'을(를) 해지 완료로 기록할까요?\n결제일이 지나면 지킨 돈으로 쌓여요.`}
           confirmText="해지 완료"
           cancelText="취소"
           variant="destructive"
@@ -442,11 +440,11 @@ export default function Dashboard() {
               .getState()
               .subscriptions.find((s) => s.id === chargedTarget.id);
             if (revived) setGuideTarget(revived);
-            showToast(`${chargedTarget.name}을(를) 구독 중으로 되돌렸습니다.`);
+            showToast(`${chargedTarget.name} 구독 중으로 되돌림`);
             setChargedTarget(null);
           }}
-          title="해지가 아직 안 됐을 수 있습니다"
-          description={`'${chargedTarget.name}' 해지 후 첫 결제일에 결제가 됐다면, 해지가 끝나지 않았을 수 있습니다.\n구독 중으로 되돌리고 해지 가이드를 엽니다. 해지를 마치고 다시 '해지 완료했어요'를 누르면 그날부터 절약으로 셉니다.`}
+          title="해지가 안 됐을 수 있어요"
+          description={`해지 후에도 결제됐다면 해지가 끝나지 않았을 수 있어요.\n구독 중으로 되돌리고 해지 가이드를 열어요.`}
           confirmText="되돌리고 가이드 열기"
           cancelText="취소"
         />

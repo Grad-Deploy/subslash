@@ -55,9 +55,8 @@ function Guide() {
       <header className="space-y-2">
         <h1 className="text-2xl font-black tracking-tight">Gmail 결제 메일에서 구독 찾기</h1>
         <p className="text-muted-foreground">
-          내 Google 계정에 Apps Script를 한 번 만들어 두면, 열 때마다 최근 결제 메일을 찾아
-          SubSlash로 넘깁니다. 메일 내용은 SubSlash 서버를 거치지 않고 이 브라우저 안에서만 읽히고,
-          목록을 보고 직접 고른 구독만 등록됩니다.
+          한 번 설정하면 최근 결제 메일에서 구독을 찾아 줘요. 메일은 서버를 거치지 않고 이
+          브라우저에서만 읽어요.
         </p>
       </header>
 
@@ -75,27 +74,24 @@ function Guide() {
           >
             Apps Script 새 프로젝트
           </a>
-          를 만듭니다.
+          를 만드세요.
         </li>
         <li>
-          왼쪽의 톱니바퀴(프로젝트 설정)에서 <code>appsscript.json</code> 매니페스트 파일을 편집기에
-          표시하도록 켭니다.
+          톱니바퀴(프로젝트 설정)에서 <code>appsscript.json</code> 표시를 켜세요.
         </li>
         <li>
-          편집기의 <code>appsscript.json</code> 내용을 지우고 아래 매니페스트를 붙여 넣습니다. 메일
-          읽기 권한 하나만 요청하도록 적혀 있습니다.
+          <code>appsscript.json</code>에 아래 매니페스트를 붙여 넣으세요(메일 읽기 권한만 요청).
         </li>
         <li>
-          <code>Code.gs</code> 내용을 지우고 아래 스크립트를 붙여 넣은 뒤 저장합니다.
+          <code>Code.gs</code>에 아래 스크립트를 붙여 넣고 저장하세요.
         </li>
         <li>
-          배포 → 새 배포 → 유형 &lsquo;웹 앱&rsquo;으로 배포하고, 권한 화면에서 메일 읽기를
-          허용합니다. 직접 만든 스크립트라 Google이 확인하지 않은 앱이라는 경고가 나오며,
-          &lsquo;고급&rsquo;에서 계속할 수 있습니다.
+          배포 → 새 배포 → &lsquo;웹 앱&rsquo;으로 배포하고 메일 읽기를 허용하세요. 경고가 나오면
+          &lsquo;고급&rsquo;에서 계속하세요.
         </li>
         <li>
-          받은 웹 앱 주소를 열고 &lsquo;SubSlash로 가져오기&rsquo;를 누릅니다. 다음부터는 그 주소만
-          열면 됩니다.
+          웹 앱 주소를 열고 &lsquo;SubSlash로 가져오기&rsquo;를 누르세요. 다음부터는 주소만 열면
+          돼요.
         </li>
       </ol>
 
@@ -103,17 +99,10 @@ function Guide() {
       <CopyBlock label="스크립트" code={script} />
 
       <ul className="list-disc space-y-1.5 pl-5 text-xs text-muted-foreground">
+        <li>금액·결제일이 틀리게 읽힐 수 있어요. 등록 전에 확인하세요.</li>
+        <li>가져온 구독은 버튼을 연 브라우저에 저장돼요.</li>
         <li>
-          메일 형식은 서비스마다 달라 금액·결제일·연간 여부가 틀리게 읽힐 수 있습니다. 등록 전에
-          목록에서 확인하고, 등록한 뒤에도 구독 상세에서 고칠 수 있습니다.
-        </li>
-        <li>
-          가져온 구독은 버튼을 연 브라우저의 SubSlash에 저장됩니다. 결제 알림에서 캘린더 구독을 켜
-          두었다면 등록한 구독도 캘린더에 들어갑니다(캘린더 앱이 주소를 다시 읽을 때 반영됩니다).
-        </li>
-        <li>
-          찾는 메일은 스크립트의 <code>SEARCH_QUERY</code>에 적혀 있습니다. 빠지는 결제 메일이
-          있으면 그 메일 제목의 단어를 더하세요.
+          빠진 메일이 있으면 스크립트의 <code>SEARCH_QUERY</code>에 그 메일 제목의 단어를 더하세요.
         </li>
       </ul>
     </article>
@@ -165,12 +154,12 @@ export default function ImportPage() {
       <div className="mx-auto max-w-md space-y-4 py-10 text-center">
         <SearchX className="mx-auto size-10 text-muted-foreground" aria-hidden />
         <h1 className="text-xl font-black tracking-tight">
-          {state.kind === "error" ? "메일을 가져오지 못했습니다" : "구독 결제를 찾지 못했습니다"}
+          {state.kind === "error" ? "메일을 가져오지 못했어요" : "구독 결제를 찾지 못했어요"}
         </h1>
         <p className="text-sm text-muted-foreground">
           {state.kind === "error"
             ? state.message
-            : `메일 ${state.emailCount}통에서 금액이 적힌 결제 메일을 찾지 못했습니다. 스크립트의 SEARCH_QUERY에 결제 메일 제목의 단어를 더해 보세요.`}
+            : `메일 ${state.emailCount}통에서 결제 메일을 찾지 못했어요. SEARCH_QUERY에 결제 메일 제목의 단어를 더해 보세요.`}
         </p>
         <Button variant="outline" onClick={() => setState({ kind: "guide" })}>
           설치 안내 보기
@@ -182,9 +171,9 @@ export default function ImportPage() {
   return (
     <div className="space-y-4 py-10 text-center">
       <Inbox className="mx-auto size-10 text-muted-foreground" aria-hidden />
-      <h1 className="text-xl font-black tracking-tight">Gmail에서 찾은 구독을 확인하세요</h1>
+      <h1 className="text-xl font-black tracking-tight">찾은 구독을 확인하세요</h1>
       <Button variant="outline" onClick={() => router.replace("/subs")}>
-        구독 목록으로 이동
+        구독 목록
       </Button>
       <AutoImportModal
         isOpen

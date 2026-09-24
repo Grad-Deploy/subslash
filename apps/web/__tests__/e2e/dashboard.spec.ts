@@ -8,12 +8,12 @@ test.describe("Dashboard (E2E)", () => {
 
   test("온보딩 표시", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("button", { name: /내 구독 모두 계산하기/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /내 구독 등록하기/ })).toBeVisible();
   });
 
   test("구독 등록 폼 표시", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /내 구독 모두 계산하기/ }).click();
+    await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
 
     // 새 등록은 서비스부터 고른다. 이름·금액 칸은 고른 다음에 나온다.
     const dialog = page.getByRole("dialog");
@@ -27,7 +27,7 @@ test.describe("Dashboard (E2E)", () => {
 
   test("Escape 키로 모달 닫기", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /내 구독 모두 계산하기/ }).click();
+    await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
 
     await page.keyboard.press("Escape");
@@ -71,7 +71,7 @@ test.describe("Dashboard (E2E)", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: /샘플 데이터로 1초 체험/ }).click();
+    await page.getByRole("button", { name: /샘플로 둘러보기/ }).click();
     const banner = page.getByRole("status").filter({ hasText: "샘플로 체험하는 중입니다." });
     await expect(banner).toBeVisible({ timeout: 30_000 });
     // 샘플 3건만 행동 큐에 오른다(체크인 기록이 없다). 내 노션은 섞이지 않는다.
@@ -98,7 +98,7 @@ test.describe("Dashboard (E2E)", () => {
 
   test("체험 중에 새로고침하면 샘플이 사라진다", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /샘플 데이터로 1초 체험/ }).click();
+    await page.getByRole("button", { name: /샘플로 둘러보기/ }).click();
     await expect(page.getByText("샘플로 체험하는 중입니다.")).toBeVisible({ timeout: 30_000 });
     // 배너는 홈에서 먼저 뜨고 대시보드로 옮기는 것은 그 뒤다. 옮기기 전에 새로고침하면 홈을
     // 다시 여는 것이라, 대시보드가 뜬 것을 보고 새로고침한다.

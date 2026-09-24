@@ -32,7 +32,7 @@ test.describe("Subscription Flow (E2E)", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /내 구독 모두 계산하기/ }).click();
+    await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
 
     const dialog = page.getByRole("dialog");
     await dialog.getByPlaceholder(/서비스 이름 검색/).fill("넷플");
@@ -57,7 +57,7 @@ test.describe("Subscription Flow (E2E)", () => {
 
   test("구독 등록 플로우: 목록에 없는 서비스 직접 입력", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /내 구독 모두 계산하기/ }).click();
+    await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
 
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: /목록에 없는 서비스 직접 입력/ }).click();
@@ -198,7 +198,7 @@ test.describe("Subscription Flow (E2E)", () => {
     );
 
     await page.goto("/dashboard");
-    await expect(page.getByText("지금 결정할 것이 없습니다")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText("지금 결정할 것이 없어요")).toBeVisible({ timeout: 30_000 });
   });
 
   test("행동 큐: 체크인 기록이 없으면 이유와 함께 올라온다", async ({ page }) => {

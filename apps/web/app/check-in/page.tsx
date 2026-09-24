@@ -71,8 +71,8 @@ function CheckInReceiver() {
   if (!subId || count === null) {
     return (
       <Fallback
-        title="잘못된 체크인 링크입니다"
-        body="이메일의 버튼을 다시 눌러보시거나, 대시보드에서 직접 체크인해주세요."
+        title="잘못된 체크인 링크예요"
+        body="메일의 버튼을 다시 누르거나 대시보드에서 체크인하세요."
       />
     );
   }
@@ -80,8 +80,8 @@ function CheckInReceiver() {
   if (!subscription) {
     return (
       <Fallback
-        title="이 기기에서 해당 구독을 찾을 수 없습니다"
-        body="구독 정보는 기기에 저장됩니다. 구독을 등록한 기기에서 링크를 열거나, 로그인해 두면 로그인한 기기끼리 기록이 자동으로 맞춰집니다."
+        title="이 기기에는 이 구독이 없어요"
+        body="등록한 기기에서 링크를 열거나, 로그인해 기기끼리 기록을 맞추세요."
       />
     );
   }
@@ -90,7 +90,7 @@ function CheckInReceiver() {
     return (
       <Fallback
         title="이미 해지한 구독입니다"
-        body={`'${subscription.name}'은(는) 해지한 구독으로 기록되어 있어 체크인을 남기지 않았습니다. 해지하기 전에 받은 메일일 수 있습니다.`}
+        body={`'${subscription.name}'은(는) 해지한 구독이라 체크인을 남기지 않았어요.`}
       />
     );
   }
@@ -139,7 +139,7 @@ function CheckInReceiver() {
           router.replace("/savings");
         }}
         title="구독 해지 완료 처리"
-        description={`'${subscription.name}' 구독을 해지 완료로 기록하시겠습니까?\n해지 뒤 결제일이 지나면 그만큼이 지킨 돈으로 쌓입니다.`}
+        description={`'${subscription.name}'을(를) 해지 완료로 기록할까요?\n결제일이 지나면 지킨 돈으로 쌓여요.`}
         confirmText="해지 완료"
         cancelText="취소"
         variant="destructive"
@@ -155,7 +155,7 @@ function Fallback({ title, body }: { title: string; body: string }) {
       <CalendarCheck className="mx-auto size-10 text-muted-foreground" aria-hidden />
       <h1 className="text-xl font-black tracking-tight">{title}</h1>
       <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">{body}</p>
-      <Button onClick={() => router.push("/dashboard")}>대시보드로 가기 →</Button>
+      <Button onClick={() => router.push("/dashboard")}>대시보드 →</Button>
     </div>
   );
 }

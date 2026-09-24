@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("새 구독 등록 — 서비스 고르기 (E2E)", () => {
   test("분류 탭으로 좁히고, 검색은 고른 분류와 상관없이 전체에서 찾는다", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /내 구독 모두 계산하기/ }).click();
+    await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
 
     const dialog = page.getByRole("dialog");
     const tabs = dialog.getByRole("group", { name: "서비스 분류" });
@@ -30,7 +30,7 @@ test.describe("새 구독 등록 — 서비스 고르기 (E2E)", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /내 구독 모두 계산하기/ }).click();
+    await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
 
     const dialog = page.getByRole("dialog");
     await dialog.getByPlaceholder(/서비스 이름 검색/).fill("Claude");
@@ -46,9 +46,7 @@ test.describe("새 구독 등록 — 서비스 고르기 (E2E)", () => {
     // 제외)")에도 '세금'이 들어가므로 정확한 이름으로 찾는다.
     const tax = dialog.getByLabel("세금", { exact: true });
     await expect(tax).toHaveValue("10");
-    await expect(
-      dialog.getByText(/한국에서 결제하면 Claude 요금에 부가세 10%가 더해집니다/),
-    ).toBeVisible();
+    await expect(dialog.getByText(/한국 결제 시 Claude에 부가세 10%가 붙어요/)).toBeVisible();
 
     await dialog.locator('input[name="planId"][value="pro"]').check({ force: true });
     await expect(dialog.getByLabel("월 요금 (세금 제외)")).toHaveValue("20");
@@ -72,6 +70,6 @@ test.describe("새 구독 등록 — 서비스 고르기 (E2E)", () => {
     await expect(dialog.getByLabel("월 요금 (세금 제외)")).toHaveValue("100");
     await dialog.getByLabel("주기").selectOption("yearly");
     await expect(dialog.getByLabel("연 요금 (세금 제외)")).toHaveValue("");
-    await expect(dialog.getByText(/Claude의 연 결제 요금은 목록에 없습니다/)).toBeVisible();
+    await expect(dialog.getByText(/Claude의 연 요금은 목록에 없어요/)).toBeVisible();
   });
 });
