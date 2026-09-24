@@ -30,6 +30,8 @@ import { Select } from "../ui/select";
 import { EmailDomainInput } from "../ui/email-domain-input";
 import { ServiceLogo } from "./ServiceLogo";
 import { SquarePen } from "lucide-react";
+import { IS_APP_BUILD } from "@lib/platform";
+import { CUSTOM_ICON_COLORS, CUSTOM_ICON_EMOJIS } from "@lib/custom-icon";
 
 const LABEL = "text-xs font-bold text-foreground";
 
@@ -59,12 +61,18 @@ export function SubForm({
   popularServices,
   submitLabel = "구독 등록하기",
   mode = "create",
+  openCustom = false,
 }: {
   onSubmit: (data: SubscriptionFormData) => void;
   initialData?: Partial<SubscriptionFormData>;
   popularServices: ServicePreset[];
   submitLabel?: string;
   mode?: "create" | "edit";
+  /**
+   * 서비스 고르기 단계를 건너뛰고 '직접 입력'으로 연다. 앱의 빈 대시보드에서 "목록에 없어요"를
+   * 누른 경우다. 기본값(false)이면 지금처럼 고르는 단계부터 연다.
+   */
+  openCustom?: boolean;
 }) {
   const isEdit = mode === "edit";
   const { accounts, addAccount } = useStore();
@@ -76,11 +84,12 @@ export function SubForm({
 
   // 프리셋을 누르고 연 경우(이름이 이미 채워짐)에는 고르는 단계를 건너뛴다.
   const [step, setStep] = useState<"pick" | "details">(
-    isEdit || initialData?.name ? "details" : "pick",
+    isEdit || initialData?.name || openCustom ? "details" : "pick",
   );
   // 프리셋은 이름·카테고리·해지 링크를 이미 안다. 목록에 없는 서비스일 때만 묻는다.
   const [isCustom, setIsCustom] = useState(
-    () => !popularServices.some((preset) => preset.cancelUrl === initialData?.cancelUrl),
+    () =>
+      openCustom || !popularServices.some((preset) => preset.cancelUrl === initialData?.cancelUrl),
   );
   // 고른 서비스. 요금제 칸을 그리는 데 쓴다. 프리셋을 누르고 열었거나 수정할 때는
   // 이름·주소로 되찾는다.
@@ -213,7 +222,7 @@ export function SubForm({
   };
 
   const pickPreset = (service: ServicePreset) => {
-    setFormData((prev) => ({ ...prev, ...presetFormData(service) }));
+    setFormData((prev) => ({ ...prev, ...presetFormData(service), iconColor: undefined }));
     setPreset(service);
     setIsCustom(false);
     setStep("details");
@@ -233,6 +242,7 @@ export function SubForm({
       cancelUrl: undefined,
       cancelGuide: undefined,
       iconUrl: undefined,
+      iconColor: undefined,
       planId: undefined,
       planName: undefined,
       taxRate: undefined,
@@ -489,6 +499,74 @@ export function SubForm({
               <option value="other">기타</option>
             </Select>
           </div>
+        </div>
+      )}
+
+      {/*
+        앱에서 목록에 없는 서비스를 직접 등록할 때는 아이콘(이모지)과 타일 색을 고르게 한다. 브랜드
+        마크를 지어내지 않는 대신, 사용자가 고른 것으로 목록에서 알아보게 한다(lib/custom-icon).
+        웹은 지금 모양 그대로 둔다.
+      */}
+      {IS_APP_BUILD && isCustom && (
+        <div className="space-y-3 rounded-xl border bg-muted/40 p-3">
+          <div className="flex items-center gap-2.5">
+            <ServiceLogo
+              name={formData.name || "?"}
+              fallbackEmoji={formData.iconUrl}
+              fallbackColor={formData.iconColor}
+              size={36}
+            />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold">{formData.name || "이름을 적어주세요"}</p>
+              <p className="text-[11px] text-muted-foreground">목록에서 이렇게 보여요</p>
+            </div>
+          </div>
+          <fieldset className="space-y-1.5">
+            <legend className={`${LABEL} mb-1.5`}>아이콘</legend>
+            <div className="grid grid-cols-8 gap-1">
+              {CUSTOM_ICON_EMOJIS.map((emoji) => {
+                const on = formData.iconUrl === emoji;
+                return (
+                  <button
+                    key={emoji}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, iconUrl: on ? undefined : emoji }))
+                    }
+                    className={`grid aspect-square place-items-center rounded-lg border text-lg transition-colors ${
+                      on ? "border-primary bg-background" : "border-transparent hover:bg-background"
+                    }`}
+                  >
+                    {emoji}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+          <fieldset className="space-y-1.5">
+            <legend className={`${LABEL} mb-1.5`}>색</legend>
+            <div className="flex flex-wrap gap-2">
+              {CUSTOM_ICON_COLORS.map((color) => {
+                const on = formData.iconColor === color.id;
+                return (
+                  <button
+                    key={color.id}
+                    type="button"
+                    aria-label={color.label}
+                    aria-pressed={on}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, iconColor: on ? undefined : color.id }))
+                    }
+                    className={`size-7 rounded-full ring-offset-2 ring-offset-background transition ${
+                      on ? "ring-2 ring-foreground" : "ring-1 ring-black/10 dark:ring-white/15"
+                    }`}
+                    style={{ backgroundColor: color.hex }}
+                  />
+                );
+              })}
+            </div>
+          </fieldset>
         </div>
       )}
 

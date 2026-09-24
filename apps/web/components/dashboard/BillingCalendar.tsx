@@ -247,6 +247,7 @@ function SelectedDay({
                 name={sub.name}
                 cancelUrl={sub.cancelUrl}
                 fallbackEmoji={sub.iconUrl}
+                fallbackColor={sub.iconColor}
                 size={18}
               />
               <span className="truncate">{sub.name}</span>
