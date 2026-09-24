@@ -381,6 +381,8 @@ eas build --platform ios --profile production       # 실기기·TestFlight용 (
   JDK 17뿐이라 Capacitor 8이 컴파일되지 않아서 JDK 21을 받고(안드로이드일 때만), 웹 화면을
   만들어(`build:app`) `cap sync $EAS_BUILD_PLATFORM`합니다. 앱이 부를 주소는 `eas.json`의
   `NEXT_PUBLIC_WEB_ORIGIN`입니다. 훅은 플랫폼을 가려 쓰므로 iOS도 같은 훅으로 돕니다.
+- 앱이 부르는 주소는 공개 웹 `https://www.subslash.me`입니다. 배포마다 DB가 따로라, 다른 배포를 부르면
+  웹에서 만든 계정으로 앱에 로그인할 수 없고 계정 저장·동기화도 서로 보이지 않습니다.
 - iOS `production`은 서명 자격이 필요해 Apple 개발자 프로그램에 등록하기 전에는 빌드가 멈춥니다.
   `preview`(`simulator: true`)는 자격 없이 빌드되지만 시뮬레이터에서만 열립니다.
 - 서명 키는 EAS 서버에 둡니다(`credentialsSource: remote`). 키 확인·교체는 `eas credentials`로 합니다.
