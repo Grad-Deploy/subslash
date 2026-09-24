@@ -153,6 +153,8 @@ export function AppIntro({ onDone }: { onDone: () => void }) {
     );
 
     // 4) 충격 효과
+    // 파동·파편은 첫 키프레임이 보이는 상태(불투명)라, 기본값 fill: "both"로 두면 충격 전 지연
+    // 동안에도 그 모습으로 떠 있다(작은 원과 점선이 좌표축처럼 보였다). 끝난 뒤만 붙잡아 둔다.
     animate(
       flashRef.current,
       [
@@ -172,7 +174,7 @@ export function AppIntro({ onDone }: { onDone: () => void }) {
         { opacity: 0.9, transform: "scale(.25)" },
         { opacity: 0, transform: "scale(1.9)" },
       ],
-      { duration: 460, delay: T, easing: "cubic-bezier(.1,.7,.3,1)" },
+      { duration: 460, delay: T, easing: "cubic-bezier(.1,.7,.3,1)", fill: "forwards" },
     );
     SHARDS.forEach((s, i) => {
       animate(
@@ -184,7 +186,7 @@ export function AppIntro({ onDone }: { onDone: () => void }) {
             transform: `translate(calc(-50% + ${s.dx}px), calc(-50% + ${s.dy}px)) rotate(${s.rot}deg) scale(.4)`,
           },
         ],
-        { duration: 520, delay: T, easing: "cubic-bezier(.1,.8,.3,1)" },
+        { duration: 520, delay: T, easing: "cubic-bezier(.1,.8,.3,1)", fill: "forwards" },
       );
     });
     animate(
