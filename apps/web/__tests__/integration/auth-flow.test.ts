@@ -21,6 +21,7 @@ const { hashSessionToken, SESSION_COOKIE } = await import("../../lib/auth-server
 
 const { POST: signupRoute } = await import("../../app/api/auth/signup/route");
 const { POST: loginRoute } = await import("../../app/api/auth/login/route");
+const { resetAllRateLimits } = await import("../../lib/rate-limit");
 const { POST: logoutRoute } = await import("../../app/api/auth/logout/route");
 const { GET: meRoute } = await import("../../app/api/auth/me/route");
 const { PUT: profileRoute } = await import("../../app/api/auth/profile/route");
@@ -118,6 +119,7 @@ function sessionTokenFrom(response: Response): string {
 
 beforeEach(async () => {
   await resetDatabase();
+  resetAllRateLimits();
 });
 
 afterAll(() => {
@@ -304,6 +306,70 @@ describe("로그인", () => {
       );
       expect(missing.status).toBe(wrong.status);
       expect(await missing.json()).toEqual(await wrong.json());
+    },
+    SCRYPT_TIMEOUT_MS,
+  );
+});
+
+describe("로그인 대입 막기", () => {
+  beforeEach(async () => {
+    await signupRoute(json("http://localhost/api/auth/signup", VALID_SIGNUP));
+  });
+
+  it(
+    "한 계정에 10번 틀리면 맞는 비밀번호도 잠시 받지 않고, 다른 계정은 그대로 로그인된다",
+    async () => {
+      const attempt = (identifier: string, password: string, ip: string) =>
+        loginRoute(
+          request("http://localhost/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-forwarded-for": ip },
+            body: JSON.stringify({ identifier, password }),
+          }),
+        );
+      // 아이디 대소문자를 바꿔도 같은 계정으로 센다. IP를 바꿔도 계정 기준으로 막힌다.
+      for (let i = 0; i < 10; i++) {
+        const res = await attempt(i % 2 ? "SEAN_LEE" : "sean_lee", "wrong-one!!", `10.0.0.${i}`);
+        expect(res.status).toBe(401);
+      }
+      const blocked = await attempt("sean_lee", VALID_SIGNUP.password, "10.0.1.1");
+      expect(blocked.status).toBe(429);
+      expect(Number(blocked.headers.get("retry-after"))).toBeGreaterThan(0);
+
+      await signupRoute(
+        json("http://localhost/api/auth/signup", {
+          ...VALID_SIGNUP,
+          username: "other_user",
+          email: "other@gmail.com",
+        }),
+      );
+      expect((await attempt("other_user", VALID_SIGNUP.password, "10.0.1.1")).status).toBe(200);
+    },
+    SCRYPT_TIMEOUT_MS,
+  );
+
+  it(
+    "로그인에 성공하면 그 계정의 실패 횟수를 지운다",
+    async () => {
+      for (let i = 0; i < 9; i++) {
+        await loginRoute(
+          json("http://localhost/api/auth/login", {
+            identifier: "sean_lee",
+            password: "nope-nope!",
+          }),
+        );
+      }
+      const ok = await loginRoute(
+        json("http://localhost/api/auth/login", {
+          identifier: "sean_lee",
+          password: VALID_SIGNUP.password,
+        }),
+      );
+      expect(ok.status).toBe(200);
+      const again = await loginRoute(
+        json("http://localhost/api/auth/login", { identifier: "sean_lee", password: "nope-nope!" }),
+      );
+      expect(again.status).toBe(401);
     },
     SCRYPT_TIMEOUT_MS,
   );
