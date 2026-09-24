@@ -13,6 +13,7 @@ import {
   formatKRW,
   presetFormData,
   sumMyMonthlyKRW,
+  getNextBillingDateFor,
 } from "@subslash/shared";
 import { SubCard } from "../../components/subscription/SubCard";
 import { SubTable } from "../../components/subscription/SubTable";
@@ -44,7 +45,7 @@ import { subscriptionDetailHref } from "@lib/routes";
 import { isGmailAutoImportOpen } from "@lib/privacy";
 import { useIsClient } from "@hooks/useIsClient";
 import { Spinner } from "../../components/ui/spinner";
-import { Receipt, ShieldCheck } from "lucide-react";
+import { ChevronDown, Receipt, ShieldCheck } from "lucide-react";
 
 /**
  * 앱에서만 쓰는 아래쪽 설정 목록. 웹 번들에 들어가지 않도록 앱 빌드에서만 불러온다 —
@@ -112,6 +113,23 @@ function SelectedSubSync({ onChange }: { onChange: (id: string | null) => void }
   return null;
 }
 
+/** 앱의 구독 목록에서 처음 보여줄 개수. 넘으면 '더 보기'로 펼친다. */
+const APP_LIST_LIMIT = 8;
+
+/** 앱의 긴 구독 목록 아래 '더 보기'. 펼친 뒤에는 목록이 그대로 이어지므로 접기는 두지 않는다. */
+function ListMoreToggle({ hidden, onOpen }: { hidden: number; onOpen: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex w-full items-center justify-center gap-1 rounded-xl border py-2.5 text-sm font-bold text-muted-foreground"
+    >
+      {hidden}개 더 보기
+      <ChevronDown className="size-4" aria-hidden />
+    </button>
+  );
+}
+
 // 앱에서는 구독을 하나 등록한 뒤 같은 창에서 이번 달 사용 횟수를 묻는다. 웹 번들에는 넣지 않는다.
 const AppDuplicateDialog = IS_APP_BUILD
   ? dynamic(
@@ -151,6 +169,7 @@ export default function SubscriptionsPage() {
   const mounted = useIsClient();
   const [tab, setTab] = useState<"active" | "killed">("active");
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [showAllCards, setShowAllCards] = useState(false);
   // 앱: 방금 등록한 구독. 있으면 등록 창이 사용 횟수 묻기로 바뀐다.
   const [addedSub, setAddedSub] = useState<Subscription | null>(null);
   // 앱: 같은 서비스를 또 등록하려 할 때 한 번 묻는다. data는 확인하면 그대로 등록할 폼 값이다.
@@ -210,13 +229,31 @@ export default function SubscriptionsPage() {
       ? "\n자동 동기화가 켜져 있어 다른 기기의 기록도 지워져요."
       : "";
 
-  const filteredActive =
+  const filteredActiveRaw =
     filterCategory === "all" ? activeSubs : activeSubs.filter((s) => s.category === filterCategory);
+  // 앱: 결제일이 가까운 순. 결제월을 모르는 연간 구독은 날짜가 없으니 맨 뒤에 둔다. 웹은 등록 순 그대로.
+  const filteredActive = IS_APP_BUILD
+    ? [...filteredActiveRaw].sort((a, b) => {
+        const now = new Date();
+        const da = getNextBillingDateFor(a, now)?.getTime() ?? Number.POSITIVE_INFINITY;
+        const db = getNextBillingDateFor(b, now)?.getTime() ?? Number.POSITIVE_INFINITY;
+        return da - db;
+      })
+    : filteredActiveRaw;
+  // 앱: 목록이 길면 앞의 몇 개만 보이고 '더 보기'로 펼친다. 탭·분류를 바꾸면 다시 접힌다.
+  const limit = IS_APP_BUILD && !showAllCards ? APP_LIST_LIMIT : Number.POSITIVE_INFINITY;
 
   const filteredKilled =
     filterCategory === "all" ? killedSubs : killedSubs.filter((s) => s.category === filterCategory);
 
   const visibleIds = (tab === "active" ? filteredActive : filteredKilled).map((s) => s.id);
+  const listKey = `${tab}|${filterCategory}`;
+  const [shownFor, setShownFor] = useState(listKey);
+  if (shownFor !== listKey) {
+    // 탭이나 분류를 바꾸면 다시 접는다(렌더 중 상태 맞추기 — effect를 거치지 않는다).
+    setShownFor(listKey);
+    setShowAllCards(false);
+  }
   const visibleOrder = view === "table" && tableOrder.length > 0 ? tableOrder : visibleIds;
   const orderKey = visibleOrder.join("|");
 
@@ -549,7 +586,7 @@ export default function SubscriptionsPage() {
                   <div
                     className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4${view === "table" ? " md:hidden" : ""}`}
                   >
-                    {filteredActive.map((sub) => (
+                    {filteredActive.slice(0, limit).map((sub) => (
                       <SubCard
                         key={sub.id}
                         subscription={sub}
@@ -560,6 +597,12 @@ export default function SubscriptionsPage() {
                       />
                     ))}
                   </div>
+                  {filteredActive.length > limit && (
+                    <ListMoreToggle
+                      hidden={filteredActive.length - limit}
+                      onOpen={() => setShowAllCards(true)}
+                    />
+                  )}
                 </>
               )}
 
@@ -609,7 +652,7 @@ export default function SubscriptionsPage() {
                   <div
                     className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4${view === "table" ? " md:hidden" : ""}`}
                   >
-                    {filteredKilled.map((sub) => (
+                    {filteredKilled.slice(0, limit).map((sub) => (
                       <SubCard
                         key={sub.id}
                         subscription={sub}
@@ -620,6 +663,12 @@ export default function SubscriptionsPage() {
                       />
                     ))}
                   </div>
+                  {filteredKilled.length > limit && (
+                    <ListMoreToggle
+                      hidden={filteredKilled.length - limit}
+                      onOpen={() => setShowAllCards(true)}
+                    />
+                  )}
                 </div>
               )}
             </div>
