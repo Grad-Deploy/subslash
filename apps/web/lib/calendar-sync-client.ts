@@ -1,5 +1,5 @@
 import { currentCancelUrl, getBilledAmount, isInTrial, type Subscription } from "@subslash/shared";
-import { apiUrl } from "./api";
+import { apiFetch } from "./api";
 
 /**
  * '구글 캘린더에 등록'의 브라우저 쪽.
@@ -62,10 +62,9 @@ export async function startCalendarSync(
   entries: CalendarPlanEntryInput[],
   reminderDays: number,
 ): Promise<string> {
-  const response = await fetch(apiUrl("/api/calendar-sync"), {
+  const response = await apiFetch("/api/calendar-sync", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
     body: JSON.stringify({ entries, reminderDays }),
   });
   if (!response.ok) {
