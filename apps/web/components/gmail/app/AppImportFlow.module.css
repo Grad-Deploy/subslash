@@ -1,0 +1,191 @@
+/*
+ * 연결 → 검사 → 등록을 한 번만 차례로 켜고 마지막 모습(셋 다 켜짐)에서 멈춘다.
+ * 연결선은 아이콘에 닿지 않는 따로 떨어진 막대로, 로딩 시안(design-refs/loading-slash-preview.html)의
+ * 진행률 막대처럼 앞머리가 슬래시 각도로 비스듬하고, 채워지는 동안만 사선 무늬가 흐른다.
+ * transform·opacity만 움직인다.
+ *
+ * 시간표(총 3.3초): 연결 0–0.45 → 선1 0.55–1.35 → 검사 1.35–1.8 → 선2 1.9–2.7 → 등록 2.7–3.15
+ */
+.flow {
+  position: relative;
+  --red: #ef4444;
+}
+
+.steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.tile {
+  opacity: 0.35;
+  transform: scale(0.92);
+  animation: pop 0.45s cubic-bezier(0.3, 1.4, 0.5, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.label {
+  color: var(--muted-foreground);
+  animation: lit 0.3s ease-out forwards;
+}
+
+.ok {
+  opacity: 0;
+  transform: scale(0.4);
+  animation: ok 0.3s cubic-bezier(0.3, 1.6, 0.5, 1) forwards;
+}
+
+.step:nth-child(1) .tile,
+.step:nth-child(1) .label {
+  animation-delay: 0s;
+}
+.step:nth-child(1) .ok {
+  animation-delay: 0.35s;
+}
+.step:nth-child(2) .tile,
+.step:nth-child(2) .label {
+  animation-delay: 1.35s;
+}
+.step:nth-child(2) .ok {
+  animation-delay: 1.7s;
+}
+.step:nth-child(3) .tile,
+.step:nth-child(3) .label {
+  animation-delay: 2.7s;
+}
+.step:nth-child(3) .ok {
+  animation-delay: 3.05s;
+}
+
+/* 연결선: 타일(56px) 가장자리에서 10px씩 띄운다. 칸 폭이 1/3이라 타일 중심 사이는 33.33%. */
+.track {
+  position: absolute;
+  top: 25px;
+  height: 6px;
+  width: calc(33.333% - 76px);
+  border-radius: 999px;
+  background: var(--secondary);
+  overflow: hidden;
+}
+.track1 {
+  left: calc(16.667% + 38px);
+}
+.track2 {
+  left: calc(50% + 38px);
+}
+
+.fill {
+  position: absolute;
+  inset: 0;
+  background: var(--red);
+  /* 앞머리만 비스듬히 */
+  clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+  transform: translateX(-102%);
+  animation: fill 0.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  will-change: transform;
+}
+.track1 .fill {
+  animation-delay: 0.55s;
+}
+.track2 .fill {
+  animation-delay: 1.9s;
+}
+
+/* 채워지는 동안만 흐르는 사선 무늬. 다 차면 사라진다. */
+.fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -24px;
+  right: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.35) 0 4px,
+    transparent 4px 8px
+  );
+  animation:
+    stripes 0.4s linear 2,
+    fade 0.25s ease-out 0.8s forwards;
+}
+.track1 .fill::after {
+  animation-delay: 0.55s, 1.35s;
+}
+.track2 .fill::after {
+  animation-delay: 1.9s, 2.7s;
+}
+
+@keyframes pop {
+  0% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes lit {
+  to {
+    color: var(--foreground);
+  }
+}
+@keyframes ok {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes fill {
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes stripes {
+  to {
+    transform: translateX(11.31px);
+  }
+}
+@keyframes fade {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile,
+  .label,
+  .ok,
+  .fill,
+  .fill::after {
+    animation: none;
+  }
+  .tile {
+    opacity: 1;
+    transform: none;
+  }
+  .label {
+    color: var(--foreground);
+  }
+  .ok {
+    opacity: 1;
+    transform: none;
+  }
+  .fill {
+    transform: none;
+  }
+  .fill::after {
+    opacity: 0;
+  }
+}
