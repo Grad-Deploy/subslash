@@ -33,6 +33,7 @@ import { Subscription } from "@subslash/shared";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { Spinner } from "../../components/ui/spinner";
 import { PiggyBank } from "lucide-react";
+import { copyText } from "@lib/native";
 
 export default function SavingsDashboard() {
   const router = useRouter();
@@ -60,12 +61,11 @@ export default function SavingsDashboard() {
   const detoxLevel = getDetoxLevel(tiers.confirmed, killedSubs.length);
 
   const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
+    if (await copyText(text)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
-    } catch (error) {
-      console.error("Failed to copy share text:", error);
+    } else {
+      console.error("Failed to copy share text");
     }
   };
 

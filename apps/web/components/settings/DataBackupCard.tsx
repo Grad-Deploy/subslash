@@ -14,6 +14,7 @@ import { requestAccountSync } from "../../hooks/useAccountSync";
 import { Button } from "../ui/button";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { apiFetch } from "@lib/api";
+import { saveFile } from "@lib/native";
 
 type ParsedBackup = Extract<BackupParseResult, { ok: true }>;
 /** 어디서 가져온 기록인지에 따라 확인 창의 말이 달라진다. */
@@ -132,18 +133,22 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
   const currentBackup = () =>
     createBackup({ subscriptions, usageLogs, accounts, exchangeRate }, new Date());
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const now = new Date();
     const backup = createBackup({ subscriptions, usageLogs, accounts, exchangeRate }, now);
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = backupFileName(now);
-    link.click();
-    URL.revokeObjectURL(url);
     setError(null);
-    onMessage(`백업 파일 저장 (구독 ${subscriptions.length}개)`);
+    try {
+      // 앱에서는 공유 창이 열린다. 사용자가 닫았으면 저장하지 않은 것이니 저장했다고 말하지 않는다.
+      const saved = await saveFile(
+        backupFileName(now),
+        JSON.stringify(backup, null, 2),
+        "application/json",
+      );
+      if (saved) onMessage(`백업 파일 저장 (구독 ${subscriptions.length}개)`);
+    } catch (e) {
+      console.error("[backup] 백업 파일을 만들지 못했습니다", e);
+      setError("백업 파일을 만들지 못했습니다. 다시 시도해 주세요.");
+    }
   };
 
   const handleFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -330,7 +335,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" onClick={handleExport}>
+        <Button size="sm" variant="outline" onClick={() => void handleExport()}>
           백업 파일 저장
         </Button>
         <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()}>

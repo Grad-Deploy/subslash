@@ -28,6 +28,7 @@ import Link from "next/link";
 import { cn } from "@lib/utils";
 import { openExternal } from "@lib/native";
 import { ServiceLogo } from "./ServiceLogo";
+import { copyText } from "@lib/native";
 
 interface SubscriptionDetailProps {
   id: string;
@@ -292,8 +293,13 @@ export function SubscriptionDetail({
                   const idOnly =
                     sub.linkedAccountName!.split("(")[1]?.replace(")", "") ||
                     sub.linkedAccountName!;
-                  navigator.clipboard.writeText(idOnly);
-                  showToast("계정 ID를 복사했어요");
+                  void copyText(idOnly).then((copied) =>
+                    showToast(
+                      copied
+                        ? "계정 ID를 복사했어요"
+                        : "복사하지 못했어요. 화면의 ID를 직접 선택해 주세요",
+                    ),
+                  );
                 }}
                 className="text-primary underline hover:opacity-80 font-medium"
               >

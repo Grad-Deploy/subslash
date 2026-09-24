@@ -17,6 +17,7 @@ import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { Select } from "../ui/select";
 import { EmailDomainInput } from "../ui/email-domain-input";
 import { InlineConfirm } from "../ui/inline-confirm";
+import { copyText } from "../../lib/native";
 
 /** 되돌리기 어려워 한 번 더 묻는 동작. */
 type PendingConfirm = "rotate" | "calendar-off" | "disable";
@@ -139,12 +140,11 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
 
   const copyFeedUrl = async () => {
     if (!notify.calendarUrl) return;
-    try {
-      await navigator.clipboard.writeText(notify.calendarUrl);
+    if (await copyText(notify.calendarUrl)) {
       setCopyFeedFailed(false);
       setCopiedFeed(true);
       setTimeout(() => setCopiedFeed(false), 2000);
-    } catch {
+    } else {
       // Clipboard access can be refused; the URL is on screen either way, but
       // a button that silently does nothing would look broken.
       setCopyFeedFailed(true);
