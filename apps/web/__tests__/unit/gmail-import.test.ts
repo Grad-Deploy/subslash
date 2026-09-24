@@ -585,6 +585,26 @@ describe("원클릭 연결 웹 앱", () => {
     expect(run.html.join("")).toContain(`href="${ORIGIN}/import"`);
   });
 
+  it("앱에서 왔으면 웹사이트로 가는 '돌아가기' 대신 창을 닫으라고 한다", () => {
+    // 앱의 인앱 브라우저에서 웹사이트를 열면, 웹에 로그인된 브라우저가 찾은 구독을 먼저 받아 간다.
+    for (const parameter of [
+      { code: "signed-code", origin: ORIGIN, client: "app" } as Record<string, string>,
+      { action: "calendar", code: "plan-code", origin: ORIGIN, client: "app" },
+    ]) {
+      const run = runWebApp();
+      run.api.doGet({ parameter });
+      const page = run.html.join("");
+      expect(page).toContain("이 창을 닫으면 SubSlash 앱으로 돌아갑니다");
+      expect(page).not.toContain("href=");
+    }
+
+    // 같은 실행 환경에서 이어 불려도 앞의 앱 요청이 웹 요청의 화면을 바꾸지 않는다.
+    const run = runWebApp();
+    run.api.doGet({ parameter: { code: "c", origin: ORIGIN, client: "app" } });
+    run.api.doGet({ parameter: { code: "c", origin: ORIGIN } });
+    expect(run.html[1]).toContain(`href="${ORIGIN}/import"`);
+  });
+
   it("코드를 바꾸지 못하면 서버가 알려 준 이유를 보여주고 아무것도 설치하지 않는다", () => {
     const run = runWebApp({ exchangeStatus: 400 });
     run.api.doGet({ parameter: { code: "used-code", origin: ORIGIN } });

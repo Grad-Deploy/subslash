@@ -398,6 +398,31 @@ describe("원클릭 Gmail 연결", () => {
     expect(await discoveries(cookie)).toHaveLength(1);
   });
 
+  it("앱에서 시작하면 웹 앱이 끝 화면에 웹사이트 대신 '창을 닫으면 앱으로'를 띄우게 알린다", async () => {
+    // 앱이 인앱 브라우저에서 웹사이트를 열면, 웹에 로그인된 브라우저가 찾은 구독을 먼저 받아 가
+    // 앱에는 오지 않았다.
+    const { account } = await loggedIn("sean");
+    const session = await createSession(account.id);
+    for (const [origin, client] of [
+      ["https://localhost", "app"],
+      ["capacitor://localhost", "app"],
+      ["http://localhost:3000", null],
+    ] as const) {
+      const response = await connectRoute.POST(
+        request(`${BASE}/connect`, {
+          method: "POST",
+          bearer: session.token,
+          headers: { origin },
+        }),
+      );
+      expect(response.status).toBe(200);
+      const url = new URL(((await response.json()) as { url: string }).url);
+      expect(url.searchParams.get("client")).toBe(client);
+      // 연결 코드를 바꾸고 메일을 보낼 곳은 앱이든 웹이든 서버 주소다.
+      expect(url.searchParams.get("origin")).toBe("http://localhost:3000");
+    }
+  });
+
   it("같은 코드는 한 번만 바꿀 수 있고, 다시 연결하면 예전 토큰은 거절된다", async () => {
     const { cookie } = await loggedIn("sean");
     const code = await connectCode(cookie);

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { realRecords, useStore } from "../../lib/store";
+import { openExternal } from "../../lib/native";
 import {
   SyncTokenRejectedError,
   fetchNotifyStatus,
@@ -306,9 +307,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                         size="sm"
                         variant="outline"
                         className={WRAPPING_BUTTON}
-                        onClick={() =>
-                          window.open(calendarLinks.google, "_blank", "noopener,noreferrer")
-                        }
+                        onClick={() => openExternal(calendarLinks.google)}
                       >
                         Google 캘린더에 추가 (새 창)
                       </Button>
