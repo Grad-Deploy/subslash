@@ -70,6 +70,6 @@ test.describe("회원 탈퇴 (E2E)", () => {
     await expect(page.getByRole("status").getByText("탈퇴했습니다.")).toBeVisible();
     await expect(page.getByText(/이 브라우저의 구독 기록은 그대로 있어/)).toBeVisible();
     // 로그아웃 상태로 바뀐다.
-    await expect(page.getByText(/로그인한 계정에만 있는 화면입니다/)).toBeVisible();
+    await expect(page.getByText(/로그인하지 않아도 모든 기록을 쓸 수 있어요/)).toBeVisible();
   });
 });
