@@ -2,6 +2,7 @@ import { findPresetForSubscription } from "@subslash/shared";
 
 import { BRAND_LOGOS, foregroundOn, NEUTRAL_LOGO_HEX, type BrandLogo } from "@lib/service-logos";
 import { cn } from "@lib/utils";
+import { customIconHex } from "@lib/custom-icon";
 
 /** 글자 수가 늘수록 글자를 줄여, 세 글자(GPT)도 타일 안에 들어오게 한다. */
 function initialFontSize(size: number, initial: string): number {
@@ -28,6 +29,11 @@ interface ServiceLogoProps {
    * 지금처럼 이모지를 쓴다 — 첫 글자로 그럴듯한 마크를 만들어 브랜드인 척하지 않는다.
    */
   fallbackEmoji?: string;
+  /**
+   * 직접 등록한 구독의 타일 색 이름(`Subscription.iconColor`). 프리셋을 찾지 못했을 때만 쓴다.
+   * 모르는 값이면 지금처럼 중립 타일로 둔다.
+   */
+  fallbackColor?: string;
   /** 타일 한 변의 크기(px). */
   size?: number;
   className?: string;
@@ -47,6 +53,7 @@ export function ServiceLogo({
   name,
   cancelUrl,
   fallbackEmoji,
+  fallbackColor,
   size = 24,
   className,
 }: ServiceLogoProps) {
@@ -55,13 +62,21 @@ export function ServiceLogo({
   const logo: BrandLogo | undefined = id ? BRAND_LOGOS[id] : undefined;
 
   if (!logo) {
+    const tileHex = customIconHex(fallbackColor);
     return (
       <span
         className={cn(
-          "inline-flex shrink-0 items-center justify-center rounded-md bg-muted font-bold leading-none text-muted-foreground",
+          "inline-flex shrink-0 items-center justify-center rounded-md font-bold leading-none",
+          tileHex ? "text-white" : "bg-muted text-muted-foreground",
           className,
         )}
-        style={{ width: size, height: size, fontSize: size * (fallbackEmoji ? 0.82 : 0.46) }}
+        style={{
+          width: size,
+          height: size,
+          // 색 타일 위의 이모지는 조금 작게 둬야 가장자리에 여백이 생겨 타일로 읽힌다.
+          fontSize: size * (fallbackEmoji ? (tileHex ? 0.6 : 0.82) : 0.46),
+          ...(tileHex && { backgroundColor: tileHex }),
+        }}
         aria-hidden="true"
       >
         {/* 사용자가 직접 넣은 아이콘은 그대로 쓰고, 없으면 이름 첫 글자로 둔다.
