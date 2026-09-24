@@ -139,3 +139,33 @@ describe("웹 빌드의 apiFetch", () => {
     expect(mocks.prefs.size).toBe(0);
   });
 });
+
+describe("앱 빌드에서 로그인이 필요한 다른 API", () => {
+  // Gmail 자동 가져오기·캘린더 등록이 토큰 없이 fetch를 불러, 로그인한 앱에서도 서버가
+  // '로그인이 필요합니다'를 돌려줬다. 로그인 상태(useAuth)는 apiFetch로 물어 '로그인됨'이라,
+  // 화면은 로그인한 사람에게 연결 버튼 대신 오류를 보여줬다.
+  it("Gmail 연결·후보와 캘린더 등록도 세션 토큰을 싣는다", async () => {
+    mocks.prefs.set("subslash-session-token", "tok-1");
+    await load("app");
+    const gmail = await import("@lib/gmail-auto-client");
+    const calendar = await import("@lib/calendar-sync-client");
+    replies["/api/gmail/link"] = { body: { open: true, linked: false, connectAvailable: true } };
+    replies["/api/gmail/connect"] = { body: { url: "https://script.google.com/x" } };
+    replies["/api/gmail/discoveries"] = { body: { discoveries: [] } };
+    replies["/api/calendar-sync"] = { body: { url: "https://script.google.com/y" } };
+
+    const calls: [() => Promise<unknown>, string][] = [
+      [() => gmail.fetchGmailLink(), "/api/gmail/link"],
+      [() => gmail.startGmailConnect(), "/api/gmail/connect"],
+      [() => gmail.deleteGmailLink(), "/api/gmail/link"],
+      [() => gmail.fetchGmailDiscoveries(), "/api/gmail/discoveries"],
+      [() => gmail.acknowledgeGmailDiscoveries(["d1"]), "/api/gmail/discoveries"],
+      [() => calendar.startCalendarSync([], 1), "/api/calendar-sync"],
+    ];
+    for (const [call, path] of calls) {
+      await call();
+      expect(lastRequest().url).toBe(`${ORIGIN}${path}`);
+      expect(lastRequest().auth).toBe("Bearer tok-1");
+    }
+  });
+});
