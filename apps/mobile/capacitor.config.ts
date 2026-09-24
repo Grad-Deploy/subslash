@@ -11,6 +11,9 @@ const config: CapacitorConfig = {
   appId: "com.subslash.app",
   appName: "SubSlash",
   webDir: "../web/out",
+  // 웹뷰가 첫 화면을 그리기 전의 바탕색. 기본값(흰색)이면 검은 실행 화면 사이에 흰 화면이 번쩍인다.
+  // 실행 화면·웹 manifest의 background_color와 같은 브랜드 검정.
+  backgroundColor: "#09090B",
 };
 
 export default config;
