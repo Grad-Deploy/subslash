@@ -8,6 +8,7 @@ import {
   isValidExchangeRate,
   type ExchangeRateSetting,
 } from "./exchange-rate";
+import { isCustomIconColor } from "./custom-icon";
 
 /**
  * 이 브라우저의 데이터를 파일로 내보내고 되돌려 넣는다.
@@ -116,6 +117,7 @@ function checkSubscription(v: unknown): string | null {
   if (!optional(v.cancelUrl, isString)) return "해지 링크";
   if (!optional(v.cancelGuide, isString)) return "해지 안내";
   if (!optional(v.iconUrl, isString)) return "아이콘";
+  if (!optional(v.iconColor, isCustomIconColor)) return "아이콘 색";
   if (!optional(v.planId, isString)) return "요금제";
   if (!optional(v.planName, isString)) return "요금제 이름";
   if (

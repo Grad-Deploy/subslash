@@ -1,0 +1,273 @@
+.overlay {
+  --bg: #09090b;
+  --red: #ef4444;
+  --fg: #fafafa;
+  --muted: #a1a1aa;
+  --dim: #71717a;
+  --line: rgba(255, 255, 255, 0.08);
+  --card: #141417;
+
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow-y: auto;
+  background: var(--bg);
+  color: var(--fg);
+  display: flex;
+  flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 28px);
+}
+
+/* 위쪽 은은한 빛: 스플래시의 검은 화면에서 자연스럽게 이어지도록 아주 약하게 */
+.overlay::before {
+  content: "";
+  position: absolute;
+  left: -30%;
+  right: -30%;
+  top: -120px;
+  height: 360px;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(239, 68, 68, 0.16), transparent);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.brand svg {
+  width: 26px;
+  height: 26px;
+}
+
+.brand b {
+  color: var(--red);
+}
+
+.hero {
+  margin-top: 28px;
+}
+
+.hero h2 {
+  margin: 0;
+  font-size: 27px;
+  line-height: 1.28;
+  letter-spacing: -0.035em;
+  font-weight: 800;
+}
+
+.hero h2 em {
+  font-style: normal;
+  color: var(--red);
+}
+
+.hero p {
+  margin: 12px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--muted);
+  letter-spacing: -0.01em;
+}
+
+.preview {
+  margin-top: 26px;
+  position: relative;
+  display: grid;
+  gap: 10px;
+}
+
+.chip {
+  position: absolute;
+  top: -26px;
+  right: 0;
+  font-size: 10.5px;
+  color: var(--dim);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.sub {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+}
+
+.meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.info {
+  font-size: 11.5px;
+  color: var(--dim);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.per {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.per .v {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.per .k {
+  font-size: 10.5px;
+  color: var(--dim);
+  margin-top: 1px;
+}
+
+.bad .per .v {
+  color: var(--red);
+}
+
+.tagcut {
+  display: inline-block;
+  vertical-align: 1px;
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--red);
+  position: relative;
+  z-index: 2;
+  background: #2a1517;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  border-radius: 999px;
+  padding: 1px 7px;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* 카드를 가로지르는 슬래시 */
+.cut {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 118%;
+  height: 3px;
+  border-radius: 99px;
+  overflow: hidden;
+  transform: translate(-50%, -50%) rotate(-11deg);
+  pointer-events: none;
+}
+
+.cutBar {
+  position: absolute;
+  inset: 0;
+  background: var(--red);
+  border-radius: 99px;
+  transform: translateX(-101%);
+  will-change: transform;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.spacerHalf {
+  flex: 0.5;
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+}
+
+.btn {
+  height: 52px;
+  border-radius: 14px;
+  border: 0;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.12s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.primary {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.secondary {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.fine {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.6;
+}
+
+.fine a {
+  color: var(--fg);
+  text-decoration: none;
+  font-weight: 600;
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* 등장 순서용: JS가 이 클래스가 붙은 요소에 차례로 애니메이션을 건다 */
+.in {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.dimmable {
+  will-change: opacity;
+}
