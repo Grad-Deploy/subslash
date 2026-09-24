@@ -219,7 +219,7 @@ export function AppWelcome({ onDone }: { onDone: () => void }) {
           ref={(el) => {
             inRefs.current[6] = el;
           }}
-          onClick={() => void finish(() => router.push("/?start=1"))}
+          onClick={() => void finish(() => router.push("/dashboard"))}
         >
           내 구독 등록하기
         </button>

@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useIsClient } from "@hooks/useIsClient";
 import { useRouter } from "next/navigation";
-import { IS_APP_BUILD } from "@lib/platform";
 import { useStore } from "../lib/store";
 import {
   POPULAR_SERVICES,
@@ -62,18 +61,6 @@ export default function Home() {
     setSelectedPreset(undefined);
     setIsFormOpen(true);
   };
-
-  // 앱(Capacitor)의 환영 화면 "내 구독 등록하기"가 넘기는 /?start=1로 들어오면 등록 폼을 바로
-  // 연다. 정적 내보내기에서는 useSearchParams가 Suspense 경계를 요구해 쓰지 않고, 직접 읽는다.
-  useEffect(() => {
-    if (!IS_APP_BUILD) return;
-    if (new URLSearchParams(window.location.search).get("start") !== "1") return;
-    // 주소창의 start=1을 폼 상태로 옮기는 일회성 동기화라 렌더 중에는 할 수 없다.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    handleStart();
-    router.replace("/");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handlePresetClick = (preset: ServicePreset) => {
     setSelectedPreset(presetFormData(preset));

@@ -13,6 +13,7 @@ import {
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
+import { IS_APP_BUILD } from "@lib/platform";
 
 /**
  * 체험용으로 고를 수 있는 서비스. 요금은 여기 적지 않고 서비스 목록에서 읽는다. 요금제가
@@ -83,45 +84,50 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
     // 테마 색 변수로 칠한다. 예전에는 라이트 모드에서도 이 상자만 검게 칠해져 화면에서 따로 놀았다.
     <section className="w-full rounded-2xl border bg-card px-5 py-7 text-left text-card-foreground shadow-sm sm:px-10 sm:py-10">
       <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-2">
-        {/* 왼쪽: 카피 + CTA */}
-        <div>
-          <span className="inline-block rounded-full border px-3 py-1 text-xs text-muted-foreground">
-            능동형 디지털 구독 디톡스
-          </span>
+        {/*
+          왼쪽: 카피 + CTA. 앱(Capacitor)에서는 첫 실행 환영 화면이 같은 말과 같은 버튼(등록·샘플)을
+          이미 보여주므로 빼고, 오른쪽 계산기만 둔다. "이 브라우저에 저장"이라는 문구도 앱에는 맞지 않는다.
+        */}
+        {!IS_APP_BUILD && (
+          <div>
+            <span className="inline-block rounded-full border px-3 py-1 text-xs text-muted-foreground">
+              능동형 디지털 구독 디톡스
+            </span>
 
-          <h1 className="mt-4 text-3xl font-medium leading-snug text-foreground">
-            그 구독,
-            <br />한 달에 몇 번 써요?
-          </h1>
+            <h1 className="mt-4 text-3xl font-medium leading-snug text-foreground">
+              그 구독,
+              <br />한 달에 몇 번 써요?
+            </h1>
 
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            가격만 보지 말고, 1회당 실제 사용 단가로 판단하세요. 서비스를 고르고 한 달에 쓴 횟수를
-            움직여 보세요.
-          </p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              가격만 보지 말고, 1회당 실제 사용 단가로 판단하세요. 서비스를 고르고 한 달에 쓴 횟수를
+              움직여 보세요.
+            </p>
 
-          {/* 글자는 한 줄로 두고, 폭이 모자라면 버튼째 다음 줄로 넘긴다. */}
-          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            <button
-              type="button"
-              onClick={onStart}
-              className="whitespace-nowrap rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
-            >
-              내 구독 모두 계산하기 →
-            </button>
-            <button
-              type="button"
-              onClick={onDemo}
-              className="whitespace-nowrap rounded-lg border px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
-            >
-              샘플 데이터로 1초 체험
-            </button>
+            {/* 글자는 한 줄로 두고, 폭이 모자라면 버튼째 다음 줄로 넘긴다. */}
+            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              <button
+                type="button"
+                onClick={onStart}
+                className="whitespace-nowrap rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
+              >
+                내 구독 모두 계산하기 →
+              </button>
+              <button
+                type="button"
+                onClick={onDemo}
+                className="whitespace-nowrap rounded-lg border px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
+              >
+                샘플 데이터로 1초 체험
+              </button>
+            </div>
+
+            <p className="mt-3 text-xs text-muted-foreground">
+              회원가입 없이 이 브라우저에 저장됩니다. 결제 알림은 로그인한 뒤 켤 수 있고, 켤 때만
+              이메일을 받습니다.
+            </p>
           </div>
-
-          <p className="mt-3 text-xs text-muted-foreground">
-            회원가입 없이 이 브라우저에 저장됩니다. 결제 알림은 로그인한 뒤 켤 수 있고, 켤 때만
-            이메일을 받습니다.
-          </p>
-        </div>
+        )}
 
         {/* 오른쪽: 인터랙티브 계산기 */}
         {selected && (
