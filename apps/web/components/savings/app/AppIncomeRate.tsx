@@ -19,7 +19,29 @@ function pct(part: number, whole: number): string {
   return `${value < 10 ? value.toFixed(1) : Math.round(value)}%`;
 }
 
-const QUICK_ADD = [100_000, 500_000, 1_000_000];
+/**
+ * 단위 버튼. 숫자를 친 바로 뒤에 누르면 그 숫자에 단위를 붙이고(3 → 십만 = 30만 원),
+ * 그렇지 않으면 한 단위를 더한다(30만 원 → 십만 = 40만 원). 토스의 금액 입력과 같은 방식이다.
+ */
+const UNITS = [
+  { label: "만", value: 10_000 },
+  { label: "십만", value: 100_000 },
+  { label: "백만", value: 1_000_000 },
+  { label: "천만", value: 10_000_000 },
+] as const;
+
+/** 입력 상한(100억 원). 자릿수를 잘못 붙여 비율이 무의미해지는 것을 막는다. */
+const MAX_INCOME = 10_000_000_000;
+
+/** 3,450,000 → "345만 원", 12,345,678 → "1,234만 5,678원". 입력 칸 아래에 읽기 쉬운 금액으로 보여준다. */
+function toKoreanWon(value: number): string {
+  const man = Math.floor(value / 10_000);
+  const rest = value % 10_000;
+  if (man === 0) return `${rest.toLocaleString("ko-KR")}원`;
+  return rest === 0
+    ? `${man.toLocaleString("ko-KR")}만 원`
+    : `${man.toLocaleString("ko-KR")}만 ${rest.toLocaleString("ko-KR")}원`;
+}
 
 /**
  * 월 수입 대비 구독비. 지금 내는 구독비(활성 구독 월 환산)와 해지로 줄인 몫(해지한 구독 월 환산)을
@@ -240,6 +262,15 @@ function IncomeForm({
   onSave: (value: number | null) => void;
 }) {
   const [value, setValue] = useState(initial ?? 0);
+  // 방금 친 숫자가 만 원보다 작으면(3, 250 같은 '몇 만'의 숫자) 단위 버튼이 곱하고, 아니면 더한다.
+  // 이미 원 단위로 다 친 금액(2,500,000)에 단위를 곱해 자릿수가 튀지 않게 한다.
+  const [justTyped, setJustTyped] = useState(false);
+  const multiplies = justTyped && value > 0 && value < 10_000;
+
+  const applyUnit = (unit: number) => {
+    setValue((v) => Math.min(MAX_INCOME, multiplies ? v * unit : v + unit));
+    setJustTyped(false);
+  };
 
   return (
     <div className="pt-1">
@@ -254,28 +285,42 @@ function IncomeForm({
           inputMode="numeric"
           autoFocus
           value={value ? value.toLocaleString("ko-KR") : ""}
-          onChange={(e) => setValue(Number(e.target.value.replace(/[^0-9]/g, "")) || 0)}
+          onChange={(e) => {
+            setValue(Math.min(MAX_INCOME, Number(e.target.value.replace(/[^0-9]/g, "")) || 0));
+            setJustTyped(true);
+          }}
           placeholder="0"
           aria-label="월 수입(원)"
           className="min-w-0 flex-1 bg-transparent text-[22px] font-black tabular-nums outline-none placeholder:text-muted-foreground"
         />
         <span className="text-xs text-muted-foreground">/ 월</span>
       </label>
+      <p
+        className="mt-1.5 min-h-4 px-1 text-xs font-semibold text-muted-foreground"
+        aria-live="polite"
+      >
+        {value > 0
+          ? `월 ${toKoreanWon(value)}`
+          : "숫자를 쓰고 단위를 누르면 붙어요 (3 → 십만 = 30만 원)"}
+      </p>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        {QUICK_ADD.map((step) => (
+        {UNITS.map((unit) => (
           <button
-            key={step}
+            key={unit.value}
             type="button"
-            onClick={() => setValue((v) => v + step)}
+            onClick={() => applyUnit(unit.value)}
             className="rounded-full border px-3 py-1 text-[11.5px] font-bold"
           >
-            +{step / 10_000}만
+            {multiplies ? unit.label : `+${unit.label}`}
           </button>
         ))}
         {value > 0 && (
           <button
             type="button"
-            onClick={() => setValue(0)}
+            onClick={() => {
+              setValue(0);
+              setJustTyped(false);
+            }}
             className="rounded-full border px-3 py-1 text-[11.5px] font-bold text-muted-foreground"
           >
             지우기
