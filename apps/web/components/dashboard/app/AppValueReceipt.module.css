@@ -1,0 +1,27 @@
+/*
+ * 영수증 종이. 위아래 끝을 톱니 모양으로 잘라 낸다(mask). 색은 토큰을 쓴다.
+ */
+.paper {
+  --zz: 8px;
+  position: relative;
+  background: color-mix(in srgb, var(--card) 96%, var(--foreground));
+  -webkit-mask:
+    radial-gradient(circle at 50% 0, transparent 5px, #000 5.5px) top / 14px var(--zz) repeat-x,
+    radial-gradient(circle at 50% 100%, transparent 5px, #000 5.5px) bottom / 14px var(--zz)
+      repeat-x,
+    linear-gradient(#000, #000) center / 100% calc(100% - 2 * var(--zz) + 1px) no-repeat;
+  mask:
+    radial-gradient(circle at 50% 0, transparent 5px, #000 5.5px) top / 14px var(--zz) repeat-x,
+    radial-gradient(circle at 50% 100%, transparent 5px, #000 5.5px) bottom / 14px var(--zz)
+      repeat-x,
+    linear-gradient(#000, #000) center / 100% calc(100% - 2 * var(--zz) + 1px) no-repeat;
+}
+
+/* 이름 ······ 금액 사이의 점선 */
+.leader {
+  flex: 1;
+  min-width: 12px;
+  border-bottom: 1.5px dotted var(--muted-foreground);
+  opacity: 0.5;
+  transform: translateY(-3px);
+}
