@@ -90,7 +90,7 @@ const OTHER_DEVICE_BACKUP = {
 test.describe("데이터 백업 (E2E)", () => {
   test("백업 파일에 구독이 담기고, 동기화 토큰은 담기지 않는다", async ({ page }) => {
     await seedOnce(page);
-    await page.goto("/subs");
+    await page.goto("/me");
 
     const card = page.getByRole("region", { name: "데이터 백업" });
     await expect(card).toBeVisible({ timeout: 30_000 });
@@ -111,11 +111,10 @@ test.describe("데이터 백업 (E2E)", () => {
 
   test("복원하면 지금 목록을 백업 내용으로 통째로 바꾼다", async ({ page }) => {
     await seedOnce(page);
-    await page.goto("/subs");
+    await page.goto("/me");
 
     const card = page.getByRole("region", { name: "데이터 백업" });
     await expect(card).toBeVisible({ timeout: 30_000 });
-    await expect(subCard(page, "넷플릭스")).toBeVisible();
 
     await card.getByLabel("백업 파일 선택").setInputFiles({
       name: "subslash-backup-2026-09-01.json",
@@ -127,8 +126,11 @@ test.describe("데이터 백업 (E2E)", () => {
     await expect(dialog.getByText(/구독 2개 \(해지 1개\)/)).toBeVisible();
     await expect(dialog.getByText(/지금: 구독 1개/)).toBeVisible();
     await dialog.getByRole("button", { name: "복원" }).click();
+    await expect(dialog).toHaveCount(0);
 
-    await expect(subCard(page, "유튜브 프리미엄")).toBeVisible();
+    // 기록 관리는 내 정보에 있고, 바뀐 목록은 내 구독에서 본다.
+    await page.goto("/subs");
+    await expect(subCard(page, "유튜브 프리미엄")).toBeVisible({ timeout: 30_000 });
     await expect(subCard(page, "넷플릭스")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "활성 구독 (1)" })).toBeVisible();
     await expect(page.getByRole("button", { name: "해지 완료 (1)" })).toBeVisible();
@@ -136,7 +138,7 @@ test.describe("데이터 백업 (E2E)", () => {
 
   test("백업이 아닌 파일은 아무것도 바꾸지 않고 이유를 알려준다", async ({ page }) => {
     await seedOnce(page);
-    await page.goto("/subs");
+    await page.goto("/me");
 
     const card = page.getByRole("region", { name: "데이터 백업" });
     await expect(card).toBeVisible({ timeout: 30_000 });
@@ -148,19 +150,21 @@ test.describe("데이터 백업 (E2E)", () => {
     });
 
     await expect(card.getByRole("alert")).toContainText("JSON 파일이 아닙니다");
-    await expect(card.getByRole("alert")).toContainText("지금 데이터는 바뀌지 않았습니다");
+    await expect(card.getByRole("alert")).toContainText("지금 기록은 바뀌지 않았어요");
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(subCard(page, "넷플릭스")).toBeVisible();
+
+    await page.goto("/subs");
+    await expect(subCard(page, "넷플릭스")).toBeVisible({ timeout: 30_000 });
   });
 
   test("로그인하지 않았으면 계정에 저장하는 버튼 대신 로그인 안내를 보여준다", async ({ page }) => {
     await seedOnce(page);
-    await page.goto("/subs");
+    await page.goto("/me");
 
     const card = page.getByRole("region", { name: "데이터 백업" });
     await expect(card).toBeVisible({ timeout: 30_000 });
 
-    await expect(card.getByText(/로그인하면 이 기록이 계정에 저장되고/)).toBeVisible();
+    await expect(card.getByText(/로그인하면 기록이 계정에 저장되고/)).toBeVisible();
     await expect(card.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/login");
     await expect(card.getByRole("button", { name: "계정에 저장" })).toHaveCount(0);
     await expect(card.getByRole("button", { name: "계정에서 불러오기" })).toHaveCount(0);

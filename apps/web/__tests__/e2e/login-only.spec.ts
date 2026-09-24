@@ -42,7 +42,7 @@ async function mockLoggedIn(page: Page) {
 /** 새 구독 등록 창을 직접 입력으로 열고 '자세히 입력'을 펼친다. */
 async function openAddFormDetails(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: /내 구독 모두 계산하기/ }).click();
+  await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
   const dialog = page.getByRole("dialog");
   await dialog
     .getByRole("button", { name: /목록에 없는 서비스 직접 입력/ })

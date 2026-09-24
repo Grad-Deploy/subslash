@@ -58,9 +58,7 @@ export function CancelGuideModal({
             />
             <span className="min-w-0 [overflow-wrap:anywhere]">{sub.name} 해지 가이드</span>
           </DialogTitle>
-          <DialogDescription>
-            링크가 안 열리거나 로그인 화면으로 튕기면 아래 단계 안내를 따라가세요.
-          </DialogDescription>
+          <DialogDescription>링크가 안 열리면 아래 단계를 따라가세요.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -82,16 +80,16 @@ export function CancelGuideModal({
                 </Button>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
                   {cancelUrlKind === "direct"
-                    ? "확인된 해지 화면으로 바로 연결됩니다."
+                    ? "해지 화면으로 바로 가요."
                     : cancelUrlKind === "entry"
-                      ? "이 링크는 해지 화면이 아니라 서비스 첫 화면이나 계정 화면으로 갑니다. 아래 단계 안내를 따라 해지 메뉴까지 이동하세요."
-                      : "직접 입력한 주소입니다. 어디로 연결되는지는 확인되지 않았습니다."}
+                      ? "해지 화면이 아니라 첫 화면·계정 화면으로 가요. 아래 단계대로 해지 메뉴를 찾아가세요."
+                      : "직접 입력한 주소예요. 어디로 가는지는 확인하지 않았어요."}
                 </p>
               </>
             ) : (
               <p className="text-xs text-muted-foreground p-3 border border-dashed rounded-xl">
-                이 구독에는 저장된 해지 링크가 없습니다. &lsquo;정보 수정&rsquo;에서 해지 주소를
-                추가하면 여기에 바로가기가 생깁니다.
+                저장된 해지 링크가 없어요. &lsquo;정보 수정&rsquo;에서 주소를 넣으면 바로가기가
+                생겨요.
               </p>
             )}
           </section>
@@ -127,9 +125,7 @@ export function CancelGuideModal({
                       계정 관리 페이지로 이동 시도
                     </Button>
                     <p className="text-[11px] text-muted-foreground break-all">
-                      {accountUrl} — 많은 서비스가 쓰는 주소 형태로 만든 것이라, 이 서비스에 실제로
-                      있는 주소인지는 확인되지 않았습니다. 열리지 않으면 아래 단계 안내를
-                      따라가세요.
+                      {accountUrl} — 흔한 주소 형태로 추정한 것이라 없을 수 있어요.
                     </p>
                   </div>
                 )}
@@ -143,8 +139,7 @@ export function CancelGuideModal({
                       {new URL(homeUrl).hostname} 첫 화면 열기
                     </Button>
                     <p className="text-[11px] text-muted-foreground">
-                      계정·멤버십 메뉴 위치는 서비스마다 달라서 확인되지 않았습니다. 로그인한 뒤
-                      아래 단계 안내를 따라가세요.
+                      로그인한 뒤 아래 단계를 따라가세요.
                     </p>
                   </div>
                 )}
@@ -170,8 +165,7 @@ export function CancelGuideModal({
               </ol>
             ) : (
               <p className="text-xs text-muted-foreground p-3 border border-dashed rounded-xl">
-                이 구독에는 저장된 단계 안내가 없습니다. 해지 절차를 직접 적어두면 다음에 다시 찾지
-                않아도 됩니다.
+                저장된 단계 안내가 없어요. &lsquo;정보 수정&rsquo;에 적어 두면 다음에 편해요.
               </p>
             )}
           </section>
@@ -183,8 +177,8 @@ export function CancelGuideModal({
           {sub.status === "killed" ? (
             <section className="pt-2 border-t space-y-2">
               <p className="text-[11px] text-muted-foreground">
-                이미 해지한 구독으로 기록되어 있습니다. 해지가 안 된 것 같다면 구독 상세에서
-                &lsquo;다시 구독 중으로 변경&rsquo;한 뒤 해지를 마치고 다시 기록해 주세요.
+                이미 해지한 구독으로 기록되어 있어요. 해지가 안 됐다면 구독 상세에서 &lsquo;다시
+                구독 중으로 변경&rsquo; 후 다시 기록하세요.
               </p>
               <Button variant="outline" className="w-full rounded-xl" onClick={onClose}>
                 닫기
@@ -193,8 +187,7 @@ export function CancelGuideModal({
           ) : (
             <section className="pt-2 border-t space-y-2">
               <p className="text-[11px] text-muted-foreground">
-                해지를 마치셨나요? 아래를 눌러야 해지한 구독으로 기록됩니다. 앱이 해지 여부를 직접
-                확인할 수는 없습니다.
+                해지를 마쳤다면 눌러 주세요. 앱은 해지 여부를 직접 확인할 수 없어요.
               </p>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 rounded-xl" onClick={onClose}>

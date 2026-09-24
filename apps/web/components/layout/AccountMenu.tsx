@@ -157,6 +157,13 @@ export function AccountMenu({
               </Link>
             )
           )}
+          {/* 로그인하지 않아도 백업 파일은 쓸 수 있다. 내 정보의 '데이터 백업'으로 보낸다. */}
+          {!account && !loading && (
+            <Link href="/me" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
+              <User className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              데이터 백업
+            </Link>
+          )}
           {!account && !loading && (
             <p className="px-2.5 pb-1.5 text-[11px] leading-relaxed text-muted-foreground">
               로그인하면 결제 알림과 연동 계정을 쓸 수 있어요.

@@ -95,7 +95,7 @@ test.describe("계정 (E2E)", () => {
   test("로그인하지 않고 내 정보에 오면, 로그인 없이도 쓸 수 있다고 안내한다", async ({ page }) => {
     await page.goto("/me");
 
-    await expect(page.getByText(/로그인한 계정에만 있는 화면입니다/)).toBeVisible({
+    await expect(page.getByText(/로그인하지 않아도 모든 기록을 쓸 수 있어요/)).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.getByRole("link", { name: "로그인하기" })).toBeVisible();

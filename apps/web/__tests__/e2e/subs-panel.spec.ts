@@ -48,7 +48,7 @@ test.describe("내 구독 옆 칸 상세 (E2E)", () => {
     const panel = page.getByRole("complementary", { name: "구독 상세" });
     const panelTitle = (name: string) =>
       panel.getByRole("heading", { level: 2, name, exact: true });
-    await expect(panel.getByText("구독을 고르면 여기에 자세히 보여줍니다")).toBeVisible({
+    await expect(panel.getByText("구독을 고르면 여기에 자세히 보여요")).toBeVisible({
       timeout: 30_000,
     });
 
@@ -74,7 +74,7 @@ test.describe("내 구독 옆 칸 상세 (E2E)", () => {
 
     await panel.getByRole("button", { name: /닫기/ }).click();
     await expect(page).toHaveURL(/\/subs$/);
-    await expect(panel.getByText("구독을 고르면 여기에 자세히 보여줍니다")).toBeVisible();
+    await expect(panel.getByText("구독을 고르면 여기에 자세히 보여요")).toBeVisible();
   });
 
   test("옆 칸에서 구독을 지우면 목록의 다음 구독으로 넘어간다", async ({ page }) => {

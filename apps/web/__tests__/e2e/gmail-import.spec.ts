@@ -79,7 +79,7 @@ test.describe("Gmail 결제 메일 가져오기 (E2E)", () => {
   test("망가진 값으로 열면 오류를 알리고 설치 안내로 갈 수 있다", async ({ page }) => {
     await page.goto("/import#gmail=broken");
 
-    await expect(page.getByRole("heading", { name: "메일을 가져오지 못했습니다" })).toBeVisible({
+    await expect(page.getByRole("heading", { name: "메일을 가져오지 못했어요" })).toBeVisible({
       timeout: 30_000,
     });
     await page.getByRole("button", { name: "설치 안내 보기" }).click();

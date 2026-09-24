@@ -143,7 +143,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     link.click();
     URL.revokeObjectURL(url);
     setError(null);
-    onMessage(`백업 파일을 저장했습니다. (구독 ${subscriptions.length}개)`);
+    onMessage(`백업 파일 저장 (구독 ${subscriptions.length}개)`);
   };
 
   const handleFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,12 +172,12 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
       stoppedReason: null,
     });
     requestAccountSync();
-    onMessage("자동 동기화를 켰습니다.");
+    onMessage("자동 동기화 켜짐");
   };
 
   const turnSyncOff = () => {
     setAccountSync({ enabled: false });
-    onMessage("자동 동기화를 껐습니다. 계정의 기록은 그대로 남습니다.");
+    onMessage("자동 동기화 꺼짐 · 계정 기록은 그대로예요");
   };
 
   const saveToAccount = async () => {
@@ -195,7 +195,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
       }
       const data = await res.json();
       setSnapshot({ kind: "saved", summary: data.summary });
-      onMessage(`계정에 저장했습니다. (구독 ${data.summary.subscriptionCount}개)`);
+      onMessage(`계정에 저장 (구독 ${data.summary.subscriptionCount}개)`);
     } catch {
       setAccountError("네트워크에 문제가 있어 계정에 저장하지 못했습니다.");
     } finally {
@@ -248,9 +248,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
       setSnapshot({ kind: "none" });
       // 켜 둔 채면 다음 변경 때 다시 올라간다. 지운 뜻을 따라 이 기기의 동기화도 끈다.
       setAccountSync({ enabled: false, baseSavedAt: null, baseHash: null });
-      onMessage(
-        "계정에 저장된 기록을 지우고 이 기기의 자동 동기화를 껐습니다. 이 기기의 기록은 그대로입니다.",
-      );
+      onMessage("계정 기록을 지우고 자동 동기화를 껐어요. 이 기기의 기록은 그대로예요.");
     } catch {
       setAccountError("네트워크에 문제가 있어 지우지 못했습니다.");
     } finally {
@@ -264,18 +262,18 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     const date = formatBackupDate(restore.exportedAt);
     const label = restore.source === "account" ? "계정에 저장된 기록" : "백업";
     const lines = [
-      `지금 이 기기의 데이터를 ${label} 내용으로 바꿉니다.`,
+      `이 기기의 기록을 ${label} 내용으로 바꿔요.`,
       "",
       `${label}${date ? ` (${date})` : ""}: 구독 ${subs.length}개 (해지 ${killed}개), 체크인 ${restore.data.usageLogs.length}건, 연동 계정 ${restore.data.accounts.length}개`,
       `지금: 구독 ${subscriptions.length}개, 체크인 ${usageLogs.length}건, 연동 계정 ${accounts.length}개`,
       "",
-      "지금 데이터는 합쳐지지 않고 사라집니다. 필요하면 먼저 '백업 파일 저장'을 눌러주세요.",
+      "지금 기록은 합쳐지지 않고 사라져요. 필요하면 먼저 '백업 파일 저장'을 누르세요.",
     ];
     if (syncOn) {
-      lines.push("자동 동기화가 켜져 있어, 로그인한 다른 기기의 기록도 이 내용으로 바뀝니다.");
+      lines.push("자동 동기화 중이라 다른 기기의 기록도 바뀌어요.");
     }
     if (notify.syncToken) {
-      lines.push("결제 알림을 켜 두셨다면, 알림용 서버 사본도 가져온 목록으로 바뀝니다.");
+      lines.push("결제 알림용 서버 사본도 바뀌어요.");
     }
     return lines.join("\n");
   };
@@ -284,21 +282,21 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     if (snapshot.kind !== "saved") return "";
     const saved = snapshot.summary;
     return [
-      "계정에 저장된 기록을 지금 이 기기의 기록으로 바꿉니다.",
+      "계정 기록을 이 기기의 기록으로 바꿔요.",
       "",
       `계정 (${formatSavedAt(saved.savedAt)}): 구독 ${saved.subscriptionCount}개 (해지 ${saved.killedCount}개), 체크인 ${saved.usageLogCount}건, 연동 계정 ${saved.linkedAccountCount}개`,
       `지금: 구독 ${subscriptions.length}개, 체크인 ${usageLogs.length}건, 연동 계정 ${accounts.length}개`,
       "",
-      "계정의 기록은 합쳐지지 않고 바뀝니다.",
+      "합쳐지지 않고 바뀌어요.",
     ].join("\n");
   };
 
   const snapshotLine = (): string => {
     switch (snapshot.kind) {
       case "loading":
-        return "계정에 저장된 기록을 확인하는 중…";
+        return "계정 기록 확인 중…";
       case "none":
-        return "아직 계정에 저장한 기록이 없습니다.";
+        return "계정에 저장한 기록이 없어요.";
       case "error":
         return snapshot.message;
       case "saved": {
@@ -324,13 +322,10 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
           데이터 백업
         </h3>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          구독 목록과 해지·체크인 기록은 이 기기에 저장됩니다. 브라우저 데이터를 지우거나 기기를
-          바꾸면 사라지므로, 백업 파일로 저장하거나 로그인해 두세요. 로그인하면 계정에 자동으로
-          저장됩니다.
+          기록은 이 기기에만 있어요. 브라우저를 지우거나 기기를 바꾸기 전에 백업하거나 로그인하세요.
         </p>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          결제 알림 설정은 백업·계정에 넣지 않습니다. 알림용 인증 정보가 파일로 퍼지지 않게 하기
-          위해서입니다.
+          결제 알림 설정은 백업에 넣지 않아요.
         </p>
       </div>
 
@@ -353,7 +348,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
 
       {error && (
         <p role="alert" className="text-xs text-destructive leading-relaxed">
-          {error} 지금 데이터는 바뀌지 않았습니다.
+          {error} 지금 기록은 바뀌지 않았어요.
         </p>
       )}
 
@@ -362,7 +357,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
           <p className="text-xs font-bold text-foreground">계정 동기화</p>
           {!account ? (
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              로그인하면 이 기록이 계정에 저장되고, 로그인한 다른 기기(웹·앱)와 자동으로 맞춰집니다.{" "}
+              로그인하면 기록이 계정에 저장되고 다른 기기와 자동으로 맞춰져요.{" "}
               <Link
                 href="/login"
                 className="font-semibold text-primary underline underline-offset-4"
@@ -384,9 +379,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
                 {deleteButton}
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                로그인한 기기끼리 구독·체크인·연동 계정·환율 기록을 맞춥니다. 기록이 바뀌면 계정에
-                올리고, 다른 기기에서 바뀐 기록은 이 화면으로 돌아올 때 받아 옵니다. 양쪽이 따로
-                바뀌었으면 합치지 않고 어느 쪽을 쓸지 묻습니다.
+                로그인한 기기끼리 기록을 맞춰요. 양쪽이 따로 바뀌면 어느 쪽을 쓸지 물어요.
               </p>
             </>
           ) : (
@@ -396,8 +389,8 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
                   role="status"
                   className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed"
                 >
-                  다른 기기에서 계정의 기록을 지워 이 기기의 자동 동기화를 멈췄습니다. 다시 켜면 이
-                  기기의 기록을 계정에 올립니다.
+                  다른 기기에서 계정 기록을 지워 동기화를 멈췄어요. 다시 켜면 이 기기의 기록을
+                  올려요.
                 </p>
               )}
               <p className="text-[11px] text-muted-foreground" aria-live="polite">
@@ -421,8 +414,8 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
                 {deleteButton}
               </div>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                이 기기의 자동 동기화가 꺼져 있습니다. 꺼 둔 동안에는 &lsquo;계정에 저장&rsquo;과
-                &lsquo;계정에서 불러오기&rsquo;를 눌러야 옮겨집니다.
+                자동 동기화가 꺼져 있어요. &lsquo;계정에 저장&rsquo;·&lsquo;계정에서
+                불러오기&rsquo;로 옮기세요.
               </p>
             </>
           )}
@@ -440,8 +433,8 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
             replaceAllData(pending.data);
             onMessage(
               pending.source === "account"
-                ? `계정에서 구독 ${pending.data.subscriptions.length}개를 불러왔습니다.`
-                : `백업에서 구독 ${pending.data.subscriptions.length}개를 복원했습니다.`,
+                ? `계정에서 구독 ${pending.data.subscriptions.length}개를 불러왔어요`
+                : `백업에서 구독 ${pending.data.subscriptions.length}개를 복원했어요`,
             );
             setPending(null);
           }}
@@ -478,7 +471,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
             void deleteFromAccount();
           }}
           title="계정에서 지우기"
-          description="계정에 저장된 기록을 서버에서 지우고, 이 기기의 자동 동기화를 끕니다. 이 기기의 기록은 그대로 남습니다. 자동 동기화 중인 다른 기기는 동기화를 멈춥니다."
+          description="서버의 계정 기록을 지우고 이 기기의 자동 동기화를 꺼요. 이 기기의 기록은 남고, 다른 기기의 동기화는 멈춰요."
           confirmText="지우기"
           cancelText="취소"
           variant="destructive"

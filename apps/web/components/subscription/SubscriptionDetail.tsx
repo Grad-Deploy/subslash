@@ -86,16 +86,15 @@ export function SubscriptionDetail({
     // 된다 — 그 기록은 멀쩡히 살아 있다.
     return (
       <div className={cn("text-center py-20 space-y-4", className)}>
-        <Title className="text-2xl font-bold">이 기기에는 이 구독이 없습니다</Title>
+        <Title className="text-2xl font-bold">이 기기에는 이 구독이 없어요</Title>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          구독 기록은 기기에 저장됩니다. 다른 기기에서 등록한 구독이거나, 이 기기에서 지운
-          구독입니다.{" "}
+          다른 기기에서 등록했거나 지운 구독이에요.{" "}
           <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
             로그인
           </Link>
-          해 두면 로그인한 기기끼리 기록이 자동으로 맞춰집니다.
+          하면 기기끼리 기록이 맞춰져요.
         </p>
-        <Button onClick={onLeave}>← 구독 목록으로 돌아가기</Button>
+        <Button onClick={onLeave}>← 구독 목록</Button>
       </div>
     );
   }
@@ -117,7 +116,7 @@ export function SubscriptionDetail({
   const handleEditSubmit = (data: SubscriptionFormData) => {
     updateSubscription(sub.id, data);
     setIsEditOpen(false);
-    showToast("구독 정보가 수정되었습니다.");
+    showToast("저장했어요");
   };
 
   const handleOpenCheckIn = () => {
@@ -129,10 +128,10 @@ export function SubscriptionDetail({
     try {
       const res = checkIn(sub.id, count);
       setCheckInResult(res);
-      showToast("체크인이 기록되었습니다.");
+      showToast("체크인 완료");
     } catch (error) {
       console.error(error);
-      showToast("오류가 발생했습니다.");
+      showToast("저장하지 못했어요. 다시 시도해 주세요.");
     }
   };
 
@@ -143,10 +142,10 @@ export function SubscriptionDetail({
   const executeConfirm = () => {
     if (confirmType === "kill") {
       killSubscription(sub.id);
-      showToast(`${sub.name}을(를) 해지한 구독으로 기록했습니다.`);
+      showToast(`${sub.name} 해지 완료로 기록`);
     } else if (confirmType === "revive") {
       reviveSubscription(sub.id);
-      showToast(`${sub.name} 구독을 다시 활성화했습니다.`);
+      showToast(`${sub.name} 구독 중으로 되돌림`);
     } else if (confirmType === "delete") {
       deleteSubscription(sub.id);
       onLeave();
@@ -241,8 +240,8 @@ export function SubscriptionDetail({
             <div className="text-xs text-muted-foreground">{billingScheduleLabel}</div>
             {trialDaysLeft !== null && (
               <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-                무료 체험 중 · {sub.trialEndsAt}에 끝납니다 ({formatDday(trialDaysLeft)}).
-                그때까지는 지출과 결제 캘린더에서 뺍니다.
+                무료 체험 중 · {sub.trialEndsAt} 종료({formatDday(trialDaysLeft)}) · 그때까지
+                지출에서 빼요
               </div>
             )}
           </div>
@@ -253,9 +252,7 @@ export function SubscriptionDetail({
             <div className="text-sm font-medium">
               다음 결제까지:{" "}
               {daysLeft === null ? (
-                <span className="font-bold text-muted-foreground">
-                  연간 결제 월이 등록되지 않았습니다
-                </span>
+                <span className="font-bold text-muted-foreground">결제 월 미설정</span>
               ) : (
                 <span className="font-bold text-destructive">{formatDday(daysLeft)}</span>
               )}
@@ -284,9 +281,6 @@ export function SubscriptionDetail({
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-bold">해지 경로 안내</h2>
         </div>
-        <p className="text-xs text-muted-foreground">
-          어떤 계정으로 가입했는지, 어떤 수단으로 결제했는지 확인하고 해지하러 갈 링크를 엽니다.
-        </p>
 
         {/* Linked Account Card */}
         <div className="p-4 bg-card border rounded-2xl space-y-2 text-xs">
@@ -299,7 +293,7 @@ export function SubscriptionDetail({
                     sub.linkedAccountName!.split("(")[1]?.replace(")", "") ||
                     sub.linkedAccountName!;
                   navigator.clipboard.writeText(idOnly);
-                  showToast("계정 ID가 클립보드에 복사되었습니다!");
+                  showToast("계정 ID를 복사했어요");
                 }}
                 className="text-primary underline hover:opacity-80 font-medium"
               >
@@ -309,14 +303,12 @@ export function SubscriptionDetail({
           </div>
           {sub.linkedAccountName ? (
             <p className="text-muted-foreground [overflow-wrap:anywhere]">
-              이 구독은 <strong className="text-foreground">{sub.linkedAccountName}</strong> 계정에
-              연결되어 있습니다. 해지 페이지 진입 시 해당 계정으로 로그인되어 있어야 구독 취소
-              버튼이 나타납니다.
+              <strong className="text-foreground">{sub.linkedAccountName}</strong> 계정으로
+              로그인해야 해지 버튼이 보여요.
             </p>
           ) : (
             <p className="text-muted-foreground">
-              연동된 계정이 없습니다. 평소 주로 사용하는 대표 계정으로 로그인해주세요. (상단
-              &lsquo;정보 수정&rsquo;에서 연동 계정 지정 가능)
+              가입한 계정으로 로그인하세요. 계정은 &lsquo;정보 수정&rsquo;에서 적을 수 있어요.
             </p>
           )}
 
@@ -362,8 +354,8 @@ export function SubscriptionDetail({
                     {cancelUrlKind !== "direct" && (
                       <p className="text-[11px] text-muted-foreground text-center">
                         {cancelUrlKind === "entry"
-                          ? "이 링크는 해지 화면이 아니라 서비스 첫 화면이나 계정 화면으로 갑니다. 아래 안내를 따라 해지 메뉴까지 이동하세요."
-                          : "직접 입력한 주소입니다. 어디로 연결되는지는 확인되지 않았습니다."}
+                          ? "해지 화면이 아니라 첫 화면·계정 화면으로 가요. 아래 안내대로 해지 메뉴를 찾아가세요."
+                          : "직접 입력한 주소예요. 어디로 가는지는 확인하지 않았어요."}
                       </p>
                     )}
                   </>
@@ -380,7 +372,7 @@ export function SubscriptionDetail({
           className={`${WRAPPING_BUTTON} min-h-11 rounded-xl font-semibold`}
           onClick={() => setIsGuideOpen(true)}
         >
-          해지 방법 보기 (단계별 안내 · 폴백 링크)
+          해지 방법 보기
         </Button>
 
         {sub.cancelGuide && (
@@ -409,7 +401,7 @@ export function SubscriptionDetail({
 
         {subLogs.length === 0 ? (
           <div className="text-center py-10 border border-dashed rounded-xl text-xs text-muted-foreground">
-            아직 체크인 기록이 없습니다. 월 이용 횟수를 입력하여 1회당 비용을 계산해보세요.
+            아직 체크인 기록이 없어요. 이번 달 이용 횟수를 넣어 보세요.
           </div>
         ) : (
           <div className="space-y-2">
@@ -439,7 +431,7 @@ export function SubscriptionDetail({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>구독 정보 수정</DialogTitle>
-            <DialogDescription>금액, 결제일, 해지 링크 등의 정보를 수정합니다.</DialogDescription>
+            <DialogDescription>금액·결제일·해지 링크를 고쳐요.</DialogDescription>
           </DialogHeader>
           <div className="py-2">
             <SubForm
@@ -468,7 +460,7 @@ export function SubscriptionDetail({
                 linkedAccountName: sub.linkedAccountName,
                 accountMemo: sub.accountMemo,
               }}
-              submitLabel="수정 내용 저장하기"
+              submitLabel="저장"
               onSubmit={handleEditSubmit}
             />
           </div>
@@ -508,13 +500,13 @@ export function SubscriptionDetail({
           }
           description={
             confirmType === "kill"
-              ? `'${sub.name}' 구독을 해지 완료로 기록하시겠습니까?
-해지 뒤 결제일이 지나면 그만큼이 지킨 돈으로 쌓입니다.`
+              ? `'${sub.name}'을(를) 해지 완료로 기록할까요?
+결제일이 지나면 지킨 돈으로 쌓여요.`
               : confirmType === "revive"
-                ? `'${sub.name}' 구독을 다시 활성화하시겠습니까?
-활성 구독 목록으로 복원되며, 절약 방어 자산에서 제외됩니다.`
-                : `'${sub.name}' 구독을 영구 삭제하시겠습니까?
-삭제된 구독 데이터는 복구할 수 없습니다.`
+                ? `'${sub.name}'을(를) 다시 구독 중으로 바꿀까요?
+절약 기록에서 빠져요.`
+                : `'${sub.name}'을(를) 삭제할까요?
+되돌릴 수 없어요.`
           }
           confirmText={
             confirmType === "kill" ? "해지 완료" : confirmType === "revive" ? "다시 살리기" : "삭제"

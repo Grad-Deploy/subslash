@@ -219,11 +219,11 @@ export function AutoImportModal({
         <DialogHeader className="pb-2 border-b border-border">
           <div className="flex items-center gap-2">
             <DialogTitle className="text-xl font-bold text-foreground">
-              스마트 구독 자동 불러오기
+              결제 문자로 불러오기
             </DialogTitle>
           </div>
           <DialogDescription className="text-sm text-muted-foreground">
-            카드 결제 문자나 영수증 메일 본문을 붙여넣으면 현재 실제로 결제 중인 구독만 추출합니다.
+            카드 결제 문자나 영수증을 붙여 넣으면 구독을 찾아 줘요.
           </DialogDescription>
         </DialogHeader>
 
@@ -232,7 +232,7 @@ export function AutoImportModal({
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <label className="text-xs font-medium text-muted-foreground">
-                카드 승인 문자 또는 네이버페이 결제 영수증 메일 본문 붙여넣기
+                결제 문자·영수증 붙여 넣기
               </label>
               <div className="flex items-center gap-1.5 flex-wrap">
                 <Button
@@ -261,21 +261,21 @@ export function AutoImportModal({
                     onClick={handleClearParsingRecords}
                     className="text-xs py-1 h-7 border-dashed text-rose-600 dark:text-rose-400 border-rose-500/40 hover:bg-rose-500/10"
                   >
-                    파싱 내용 비우기
+                    비우기
                   </Button>
                 )}
               </div>
             </div>
 
             <p className="text-[11px] text-muted-foreground">
-              Gmail을 쓰신다면{" "}
+              Gmail이라면{" "}
               <Link
                 href="/import"
                 className="font-medium text-primary underline underline-offset-2"
               >
-                결제 메일에서 한 번에 찾기
+                메일에서 한 번에 찾기
               </Link>
-              도 있습니다.
+              도 돼요.
             </p>
 
             <textarea
@@ -285,7 +285,7 @@ export function AutoImportModal({
                 setSmsText(e.target.value);
                 handleParseSms(e.target.value);
               }}
-              placeholder="결제 문자 또는 네이버 결제 영수증 이메일 내용을 그대로 붙여넣으세요.&#10;&#10;[예시]&#10;[네이버페이] 결제내역 안내 (정기/반복결제)&#10;상품명 : 네이버 MYBOX 80GB 이용권 (정기결제)&#10;결제금액 : 1,650원&#10;결제일시 : 2026.09.02 14:30&#10;결제수단 : 네이버페이 머니"
+              placeholder="결제 문자나 영수증을 그대로 붙여 넣으세요.&#10;&#10;[예시]&#10;[네이버페이] 결제내역 안내 (정기/반복결제)&#10;상품명 : 네이버 MYBOX 80GB 이용권 (정기결제)&#10;결제금액 : 1,650원&#10;결제일시 : 2026.09.02 14:30&#10;결제수단 : 네이버페이 머니"
               className="w-full p-3 text-xs md:text-sm font-mono rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -296,15 +296,13 @@ export function AutoImportModal({
           */}
           {smsText.trim().length > 0 && discoveredItems.length === 0 && (
             <div className="rounded-xl border border-dashed p-4 text-xs leading-relaxed text-muted-foreground">
-              <p className="font-semibold text-foreground">이 내용에서 결제를 찾지 못했습니다.</p>
+              <p className="font-semibold text-foreground">결제를 찾지 못했어요</p>
               <p className="mt-1.5">
-                결제 금액이 있어야 등록할 수 있습니다. 1회당 단가를 계산하는 근거라, 없는 금액을
-                지어내지 않습니다. 영수증에 <strong>결제금액</strong>이 적힌 줄이 들어갔는지 확인해
-                주세요.
+                <strong>결제금액</strong>이 적힌 줄이 들어갔는지 확인하세요. 금액이 없으면 등록할 수
+                없어요.
               </p>
               <p className="mt-1.5">
-                서비스 이름은 없어도 됩니다 — &lsquo;알 수 없는 결제&rsquo;로 두고 나중에 고칠 수
-                있습니다. 결제일이 없으면 오늘로 봅니다.
+                서비스 이름이 없으면 &lsquo;알 수 없는 결제&rsquo;로, 결제일이 없으면 오늘로 둬요.
               </p>
             </div>
           )}
@@ -393,7 +391,7 @@ export function AutoImportModal({
                   <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                     {filteredDiscoveredItems.length === 0 ? (
                       <div className="p-4 text-center text-xs text-muted-foreground border border-dashed rounded-xl">
-                        선택한 카테고리에 해당하는 구독 서비스가 없습니다.
+                        이 분류에는 없어요.
                       </div>
                     ) : (
                       filteredDiscoveredItems.map((item) => (
@@ -526,7 +524,7 @@ export function AutoImportModal({
                   onClick={handleClearParsingRecords}
                   className="text-xs text-muted-foreground hover:text-foreground underline"
                 >
-                  파싱 결과 비우기
+                  결과 비우기
                 </button>
               )}
               {subscriptions.length > 0 && (
