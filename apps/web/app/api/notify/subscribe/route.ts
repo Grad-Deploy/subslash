@@ -5,8 +5,23 @@ import { notificationSubscribers } from "@lib/schema";
 import { generateSyncToken, hashSyncToken, signLink } from "@lib/tokens";
 import { appUrl, sendEmail, verificationEmail } from "@lib/email";
 import { deleteUserCompletely, normalizeEmail } from "@lib/notify-server";
+import {
+  clientIp,
+  hit,
+  retryAfterSeconds,
+  tooManyRequestsMessage,
+  type RateLimitRule,
+} from "@lib/rate-limit";
 
 const VERIFY_TTL_SECONDS = 60 * 60 * 24 * 3;
+
+/**
+ * 로그인 없이 부르는 곳이라, 막지 않으면 남의 주소로 확인 메일을 끝없이 보내거나 메일 발송 한도를
+ * 다 써 버릴 수 있다. 같은 주소로 다시 신청하면 그 주소의 알림 설정이 처음부터 다시 시작되므로,
+ * 주소 기준 제한은 남의 설정을 거듭 지우는 것도 늦춘다.
+ */
+const PER_EMAIL: RateLimitRule = { limit: 3, windowMs: 60 * 60 * 1000 };
+const PER_IP: RateLimitRule = { limit: 10, windowMs: 60 * 60 * 1000 };
 
 /**
  * Opt into email reminders. Always issues a fresh sync token and always
@@ -22,6 +37,18 @@ export async function POST(request: NextRequest) {
     if (!email) {
       return NextResponse.json({ error: "유효한 이메일 주소를 입력해주세요." }, { status: 400 });
     }
+
+    const emailKey = `notify-subscribe:email:${email}`;
+    const ipKey = `notify-subscribe:ip:${clientIp(request.headers)}`;
+    const wait = Math.max(retryAfterSeconds(emailKey, PER_EMAIL), retryAfterSeconds(ipKey, PER_IP));
+    if (wait > 0) {
+      return NextResponse.json(
+        { error: tooManyRequestsMessage(wait) },
+        { status: 429, headers: { "Retry-After": String(wait) } },
+      );
+    }
+    hit(emailKey, PER_EMAIL);
+    hit(ipKey, PER_IP);
 
     const reminderDays =
       Number.isInteger(body?.reminderDays) && body.reminderDays >= 1 && body.reminderDays <= 14

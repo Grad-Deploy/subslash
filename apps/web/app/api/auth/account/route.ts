@@ -7,6 +7,18 @@ import {
   readSessionToken,
 } from "@lib/auth-server";
 import { verifyPassword } from "@lib/password";
+import {
+  hit,
+  retryAfterSeconds,
+  tooManyRequestsMessage,
+  type RateLimitRule,
+} from "@lib/rate-limit";
+
+/**
+ * 로그인한 세션으로 지금 비밀번호를 거듭 대입하지 못하게 한다(자리를 비운 사이 누가 쓰는 경우).
+ * 비밀번호 변경·회원 탈퇴가 같은 칸을 나눠 센다.
+ */
+const PASSWORD_CHECK_FAILURES: RateLimitRule = { limit: 10, windowMs: 15 * 60 * 1000 };
 
 /**
  * 회원 탈퇴.
@@ -37,7 +49,16 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    const checkKey = `password-check:${account.id}`;
+    const wait = retryAfterSeconds(checkKey, PASSWORD_CHECK_FAILURES);
+    if (wait > 0) {
+      return NextResponse.json(
+        { error: tooManyRequestsMessage(wait) },
+        { status: 429, headers: { "Retry-After": String(wait) } },
+      );
+    }
     if (!(await verifyPassword(password, account.passwordHash))) {
+      hit(checkKey, PASSWORD_CHECK_FAILURES);
       return NextResponse.json(
         {
           error: "비밀번호가 맞지 않습니다.",
