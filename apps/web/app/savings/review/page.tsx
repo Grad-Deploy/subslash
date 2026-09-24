@@ -20,6 +20,7 @@ import { shareText } from "../../../lib/native";
 import { Button } from "../../../components/ui/button";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { Spinner } from "../../../components/ui/spinner";
+import { copyText } from "@lib/native";
 
 /** 이보다 이른 해는 이 앱에 기록이 있을 수 없다. */
 const EARLIEST_YEAR = 2020;
@@ -114,12 +115,11 @@ function YearInReviewContent() {
 
     // 공유 창을 열었거나 사용자가 닫았으면 끝이다. 공유할 수 없는 환경이면 복사로 넘어간다.
     if (await shareText({ title: `SubSlash ${year}년 구독 결산`, text, url })) return;
-    try {
-      await navigator.clipboard.writeText(text);
+    if (await copyText(text)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
-    } catch (error) {
-      console.error("Failed to copy review share text:", error);
+    } else {
+      console.error("Failed to copy review share text");
     }
   };
 

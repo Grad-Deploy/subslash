@@ -2,17 +2,17 @@
 
 import React, { useState } from "react";
 import { Button } from "../ui/button";
+import { copyText } from "@lib/native";
 
 /** 사용자가 Apps Script 편집기에 붙여 넣을 코드와 복사 버튼. */
 export function CopyBlock({ label, code }: { label: string; code: string }) {
   const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
+    if (await copyText(code)) {
       setStatus("copied");
       setTimeout(() => setStatus("idle"), 2000);
-    } catch {
+    } else {
       setStatus("failed");
     }
   };

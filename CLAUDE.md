@@ -235,6 +235,11 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
   자동 가져오기가 로그인한 앱에서 '로그인이 필요합니다'를 냈다).
 - 외부 사이트는 `openExternal()`, 공유는 `shareText()`(`lib/native`)로 연다. 앱에서는 인앱 브라우저와
   네이티브 공유 창이 된다. `window.open`·`navigator.share`를 직접 부르지 않는다.
+- 복사는 `copyText()`, 파일 내려받기는 `saveFile()`(`lib/native`)로 한다. 앱의 웹뷰는 `<a download>`를
+  처리하지 않고(백업 파일 저장이 앱에서 아무것도 만들지 않으면서 '저장'이라고 떴다), `navigator.clipboard`는
+  출처·웹뷰에 따라 없거나 거절된다. 앱에서는 네이티브 클립보드와, 임시 폴더에 쓴 파일을 넘기는 공유 창이
+  된다. 둘 다 성공 여부를 돌려주므로 실패했을 때 '복사됨'·'저장'을 띄우지 않는다. 네이티브 플러그인을
+  더하면 `apps/web`과 `apps/mobile` 양쪽 의존성에 넣고 `npx cap sync`로 네이티브 프로젝트를 갱신한다.
 - 외부 사이트에서 무언가를 마치고 **돌아와야 하는** 흐름(Google 권한 화면 등)은 `leaveForExternal()`을
   쓴다. 웹에서는 이 탭이 그대로 가고(돌아오면 화면이 다시 그려진다), 앱에서는 인앱 브라우저로 열고
   닫힐 때 `onReturn`으로 상태를 다시 읽는다. 앱에서 `window.location.assign`으로 나가면 앱 웹뷰가
