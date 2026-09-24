@@ -9,6 +9,7 @@ import {
   discoveryToCandidate,
   discoveryToFormData,
   fetchGmailDiscoveries,
+  onGmailDiscoveriesRequested,
   planDiscoveries,
   type GmailDiscovery,
 } from "@lib/gmail-auto-client";
@@ -16,12 +17,15 @@ import { AutoImportModal } from "../import/AutoImportModal";
 import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
 
+/** 화면으로 돌아올 때 다시 묻기까지의 간격. */
+const RECHECK_AFTER_MS = 60_000;
+
 /**
  * Gmail 자동 가져오기로 찾아 둔 구독을 받는 곳. 모든 화면 위에 붙는다.
  *
- * 로그인한 브라우저가 열릴 때 서버의 후보를 한 번 받는다. 알려진 서비스의 최근 결제는 확인 없이
- * 등록하고 무엇을 등록했는지와 되돌리기를 보여준다. 확실하지 않은 후보는 사용자가 고를 때까지
- * 서버에 남겨 둔다. 샘플 체험 중에는 받지 않는다 — 등록하면 체험이 끝나 버린다.
+ * 로그인한 브라우저가 열릴 때, Gmail 연결에서 돌아올 때(`requestGmailDiscoveries`), 화면으로 돌아올
+ * 때 서버의 후보를 받는다. 알려진 서비스의 최근 결제는 확인 없이 등록하고 무엇을 등록했는지와
+ * 되돌리기를 보여준다. 확실하지 않은 후보는 사용자가 고를 때까지 서버에 남겨 둔다. 샘플 체험 중에는 받지 않는다 — 등록하면 체험이 끝나 버린다.
  */
 export function GmailDiscoveryInbox() {
   const { account } = useAuth();
@@ -35,52 +39,86 @@ export function GmailDiscoveryInbox() {
   const [review, setReview] = useState<GmailDiscovery[]>([]);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
-  // 계정마다 한 번만 받는다. 개발 모드의 StrictMode가 effect를 두 번 돌려도 두 번 등록하지 않는다.
-  const handledAccount = useRef<string | null>(null);
+  // 한 번에 하나만 받는다. 개발 모드의 StrictMode가 effect를 두 번 돌리거나, 돌아온 신호가 겹쳐도
+  // 같은 후보를 두 번 등록하지 않는다.
+  const pulling = useRef(false);
+  const lastPulledAt = useRef(0);
+  // 확인 창은 연 순간의 후보로 그린다. 창이 열린 동안 목록을 바꾸지 않는다.
+  const reviewOpenRef = useRef(false);
+  useEffect(() => {
+    reviewOpenRef.current = reviewOpen;
+  }, [reviewOpen]);
+
+  const accountId = account?.id ?? null;
 
   useEffect(() => {
     if (!isGmailAutoImportOpen()) return;
-    if (!account || demo || handledAccount.current === account.id) return;
-    handledAccount.current = account.id;
+    if (!accountId || demo) return;
 
-    void (async () => {
-      let discoveries: GmailDiscovery[];
+    const pull = async () => {
+      if (pulling.current || reviewOpenRef.current) return;
+      pulling.current = true;
+      lastPulledAt.current = Date.now();
       try {
-        discoveries = await fetchGmailDiscoveries();
-      } catch {
-        // 받지 못하면 다음에 열 때 다시 받는다. 후보는 서버에 그대로 있다.
-        return;
-      }
-      if (discoveries.length === 0) return;
+        let discoveries: GmailDiscovery[];
+        try {
+          discoveries = await fetchGmailDiscoveries();
+        } catch {
+          // 받지 못하면 다음에 다시 받는다. 후보는 서버에 그대로 있다.
+          return;
+        }
+        if (discoveries.length === 0) return;
 
-      const subscriptions = realRecords(useStore.getState()).subscriptions;
-      const plan = planDiscoveries(discoveries, subscriptions);
+        const subscriptions = realRecords(useStore.getState()).subscriptions;
+        const plan = planDiscoveries(discoveries, subscriptions);
 
-      if (plan.register.length > 0) {
-        const created = addBatchSubscriptions(plan.register.map(discoveryToFormData));
-        setRegistered({
-          ids: created.map((sub) => sub.id),
-          names: created.map((sub) => sub.name),
-        });
-      }
-      // 해지했는데 결제 메일이 온 것은 그 구독에 적어 둔다. 행동 큐가 가장 위에 올린다.
-      for (const { subscriptionId, discovery } of plan.chargedAfterKill) {
-        markChargedAfterKill(subscriptionId, discovery.receiptDate, discovery.amount);
-      }
-      // 구독 중인데 영수증 금액이 다른 것도 적어 둔다. 요금이 바뀐 것일 수도, 등록이 틀린 것일
-      // 수도 있어 어느 쪽인지 말하지 않고 두 숫자만 나란히 보여준다.
-      for (const { subscriptionId, discovery } of plan.amountChanged) {
-        markObservedAmount(subscriptionId, discovery.receiptDate, discovery.amount);
-      }
-      setReview(plan.review);
+        if (plan.register.length > 0) {
+          const created = addBatchSubscriptions(plan.register.map(discoveryToFormData));
+          // 전에 등록한 알림을 아직 닫지 않았으면 이어 붙인다 — 되돌리기가 앞의 것도 되돌리게.
+          setRegistered((previous) => ({
+            ids: [...(previous?.ids ?? []), ...created.map((sub) => sub.id)],
+            names: [...(previous?.names ?? []), ...created.map((sub) => sub.name)],
+          }));
+        }
+        // 해지했는데 결제 메일이 온 것은 그 구독에 적어 둔다. 행동 큐가 가장 위에 올린다.
+        for (const { subscriptionId, discovery } of plan.chargedAfterKill) {
+          markChargedAfterKill(subscriptionId, discovery.receiptDate, discovery.amount);
+        }
+        // 구독 중인데 영수증 금액이 다른 것도 적어 둔다. 요금이 바뀐 것일 수도, 등록이 틀린 것일
+        // 수도 있어 어느 쪽인지 말하지 않고 두 숫자만 나란히 보여준다.
+        for (const { subscriptionId, discovery } of plan.amountChanged) {
+          markObservedAmount(subscriptionId, discovery.receiptDate, discovery.amount);
+        }
+        // 확인할 후보는 받을 때까지 서버에 남으므로, 새로 받은 목록이 곧 전체다.
+        setReview(plan.review);
 
-      // 등록했거나 이미 구독 중인 후보는 지운다. 지우지 못해도 다음에 받을 때 '이미 구독 중'으로
-      // 걸러지므로 두 번 등록되지 않는다.
-      await acknowledgeGmailDiscoveries(
-        [...plan.register, ...plan.alreadyTracked].map((item) => item.id),
-      ).catch(() => undefined);
-    })();
-  }, [account, demo, addBatchSubscriptions, markChargedAfterKill, markObservedAmount]);
+        // 등록했거나 이미 구독 중인 후보는 지운다. 지우지 못해도 다음에 받을 때 '이미 구독 중'으로
+        // 걸러지므로 두 번 등록되지 않는다.
+        await acknowledgeGmailDiscoveries(
+          [...plan.register, ...plan.alreadyTracked].map((item) => item.id),
+        ).catch(() => undefined);
+      } finally {
+        pulling.current = false;
+      }
+    };
+
+    // 화면으로 돌아올 때도 받는다 — 웹 탭을 열어 둔 채 2주 검사가 돌았거나, 앱을 켜 둔 채 다른 곳에서
+    // 연결했을 수 있다. 자주 돌아오는 화면이라 1분 안에는 다시 묻지 않는다.
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastPulledAt.current < RECHECK_AFTER_MS) return;
+      void pull();
+    };
+
+    void pull();
+    // Gmail 연결 화면에서 돌아왔다는 신호는 바로 받는다. 앱은 이때 화면이 새로 열리지 않는다.
+    const stopListening = onGmailDiscoveriesRequested(() => void pull());
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      stopListening();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [accountId, demo, addBatchSubscriptions, markChargedAfterKill, markObservedAmount]);
 
   const acknowledgeReview = () => {
     const ids = review.map((item) => item.id);
