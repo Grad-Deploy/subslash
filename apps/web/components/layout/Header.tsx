@@ -14,6 +14,7 @@ import { AccountSyncConflictDialog } from "../account/AccountSyncConflictDialog"
 import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
 import { BrandLockup } from "../brand/Brand";
+import { IS_APP_BUILD } from "@lib/platform";
 
 const navLinks = [
   { name: "대시보드", href: "/dashboard" },
@@ -67,9 +68,19 @@ export function Header() {
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 pt-safe backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
           <div className="flex h-full items-center gap-8">
-            <Link href="/" className="flex items-center transition-opacity hover:opacity-80">
-              <BrandLockup />
-            </Link>
+            {/*
+              앱에서는 로고가 링크가 아니다. 앱의 첫 화면은 대시보드이고(app/page.tsx), 홈(소개 화면)으로
+              가면 이미 쓰고 있는 사람에게 처음 보는 사람용 화면이 나와 등록한 구독이 사라진 것처럼 보였다.
+            */}
+            {IS_APP_BUILD ? (
+              <div className="flex items-center">
+                <BrandLockup />
+              </div>
+            ) : (
+              <Link href="/" className="flex items-center transition-opacity hover:opacity-80">
+                <BrandLockup />
+              </Link>
+            )}
 
             {/* 좁은 화면에서는 하단 탭(BottomNav)이 같은 역할을 한다. */}
             <nav className="hidden h-full items-center gap-6 md:flex" aria-label="주요 메뉴">
