@@ -22,12 +22,17 @@ import { useIsClient } from "@hooks/useIsClient";
 import { cn } from "@lib/utils";
 import { ExchangeRateNote } from "../../settings/ExchangeRateNote";
 import styles from "./AppValueReceipt.module.css";
+import { lockBodyScroll } from "@lib/scroll-lock";
 
 interface AppValueReceiptProps {
   subscriptions: Subscription[];
   usageLogs: UsageLog[];
   now: Date;
-  onCancelGuide: (subscriptionId: string) => void;
+  /**
+   * 해지 안내를 연다. rest는 그 뒤에 이어서 물어볼 '쉬어가도 될 구독'들(금액이 큰 순)이다 —
+   * 대시보드가 해지를 기록할 때마다 다음 구독을 묻는다.
+   */
+  onCancelGuide: (subscriptionId: string, rest?: string[]) => void;
   onCheckIn: (subscriptionId: string) => void;
 }
 
@@ -53,6 +58,14 @@ function won(amount: number): string {
 
 function spaced(text: string): string {
   return text.replace(/^([−-]?)([₩$])\s*/, "$1$2 ");
+}
+
+/** 먼저 연 구독을 빼고, 남은 '쉬어가도 될 구독'을 금액이 큰 순서로. 이어서 해지할 차례다. */
+function wasteOrder(items: ValueReportItem[], firstId: string): string[] {
+  return items
+    .filter((item) => item.sub.id !== firstId)
+    .sort((a, b) => b.monthlyAmountKRW - a.monthlyAmountKRW)
+    .map((item) => item.sub.id);
 }
 
 function detail(item: ValueReportItem): string {
@@ -179,14 +192,10 @@ export function AppValueReceipt({
         onClose={() => setOpen(false)}
         now={now}
         data={data}
-        onCheckIn={(id) => {
-          setOpen(false);
-          onCheckIn(id);
-        }}
-        onCancelGuide={(id) => {
-          setOpen(false);
-          onCancelGuide(id);
-        }}
+        // 해지 안내·체크인 창은 계산서 위에 겹쳐 뜬다(나중에 붙은 포털이 위). 계산서를 닫지 않아야
+        // 해지를 이어 가는 동안 계산서가 그대로 남고, 끝나면 바뀐 숫자를 바로 볼 수 있다.
+        onCheckIn={onCheckIn}
+        onCancelGuide={onCancelGuide}
       />
     </section>
   );
@@ -205,7 +214,7 @@ function ReceiptSheet({
   now: Date;
   data: ReturnType<typeof useReceipt>;
   onCheckIn: (id: string) => void;
-  onCancelGuide: (id: string) => void;
+  onCancelGuide: (id: string, rest?: string[]) => void;
 }) {
   const isClient = useIsClient();
 
@@ -215,16 +224,21 @@ function ReceiptSheet({
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
+      unlockScroll();
     };
   }, [open, onClose]);
 
   if (!open || !isClient) return null;
   const { summary } = data;
+  // 아래 고정 버튼은 금액이 큰 것부터 연다. 나머지는 계산서의 각 줄을 눌러 연다.
+  const byAmount = (a: ValueReportItem, b: ValueReportItem) =>
+    b.monthlyAmountKRW - a.monthlyAmountKRW;
+  const wasteTarget = [...summary.wastedItems].sort(byAmount)[0];
+  const killOrder = (firstId: string) => wasteOrder(summary.wastedItems, firstId);
+  const checkTarget = [...summary.unknownItems].sort(byAmount)[0];
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex h-[100dvh] items-end">
@@ -247,34 +261,36 @@ function ReceiptSheet({
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
-          <Receipt now={now} data={data} onCheckIn={onCheckIn} />
+          <Receipt now={now} data={data} onCheckIn={onCheckIn} onCancelGuide={onCancelGuide} />
           <div className="mt-3">
             <ExchangeRateNote />
           </div>
         </div>
         {(summary.wastedItems.length > 0 || summary.unknownItems.length > 0) && (
           <div className="flex shrink-0 gap-2 border-t px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-            {summary.wastedItems.length > 0 && (
+            {wasteTarget && (
               <button
                 type="button"
-                onClick={() => onCancelGuide(summary.wastedItems[0].sub.id)}
-                className="h-11 flex-1 rounded-xl bg-primary text-[13px] font-extrabold text-primary-foreground"
+                onClick={() => onCancelGuide(wasteTarget.sub.id, killOrder(wasteTarget.sub.id))}
+                className="h-11 min-w-0 flex-1 truncate rounded-xl bg-primary px-3 text-[13px] font-extrabold text-primary-foreground"
               >
-                쉬어갈 구독 해지 안내
+                {summary.wastedItems.length > 1
+                  ? `${wasteTarget.sub.name}부터 해지 안내`
+                  : `${wasteTarget.sub.name} 해지 안내`}
               </button>
             )}
-            {summary.unknownItems.length > 0 && (
+            {checkTarget && (
               <button
                 type="button"
-                onClick={() => onCheckIn(summary.unknownItems[0].sub.id)}
+                onClick={() => onCheckIn(checkTarget.sub.id)}
                 className={cn(
-                  "h-11 flex-1 rounded-xl text-[13px] font-extrabold",
-                  summary.wastedItems.length > 0
-                    ? "border bg-card"
-                    : "bg-primary text-primary-foreground",
+                  "h-11 min-w-0 flex-1 truncate rounded-xl px-3 text-[13px] font-extrabold",
+                  wasteTarget ? "border bg-card" : "bg-primary text-primary-foreground",
                 )}
               >
-                체크인하기
+                {summary.unknownItems.length > 1
+                  ? `${checkTarget.sub.name}부터 체크인`
+                  : `${checkTarget.sub.name} 체크인`}
               </button>
             )}
           </div>
@@ -293,13 +309,16 @@ function Receipt({
   now,
   data,
   onCheckIn,
+  onCancelGuide,
 }: {
   now: Date;
   data: ReturnType<typeof useReceipt>;
   onCheckIn: (id: string) => void;
+  onCancelGuide: (id: string, rest?: string[]) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const { active, summary, categories } = data;
+  const killOrder = (firstId: string) => wasteOrder(summary.wastedItems, firstId);
 
   const sections: { key: SectionKey; items: ValueReportItem[]; subtotal: number }[] = [
     { key: "worth" as const, items: summary.worthItItems, subtotal: summary.worthItKRW },
@@ -343,32 +362,53 @@ function Receipt({
               <span className="ml-auto font-semibold tracking-normal">{items.length}개</span>
             </p>
             <ul>
-              {shown.map((item) => (
-                <li key={item.sub.id} className="py-1.5">
-                  <p className="flex items-baseline gap-1.5 text-[13px] font-bold">
-                    <span className="min-w-0 truncate">{item.sub.name}</span>
-                    <span className={styles.leader} aria-hidden />
-                    <span className="shrink-0 font-mono tabular-nums">
-                      {won(item.monthlyAmountKRW)}
+              {shown.map((item) => {
+                // 쉬어가도 될 구독은 해지 안내, 체크인 필요는 체크인을 줄 전체를 눌러 연다. 버튼을 줄마다
+                // 달지 않고 오른쪽에 작은 글씨와 › 하나만 두어 영수증을 깔끔하게 둔다.
+                const action =
+                  key === "wasted"
+                    ? {
+                        label: "해지 안내",
+                        run: () => onCancelGuide(item.sub.id, killOrder(item.sub.id)),
+                      }
+                    : key === "unknown"
+                      ? { label: "체크인", run: () => onCheckIn(item.sub.id) }
+                      : null;
+                const body = (
+                  <>
+                    <span className="flex items-baseline gap-1.5 text-[13px] font-bold">
+                      <span className="min-w-0 truncate">{item.sub.name}</span>
+                      <span className={styles.leader} aria-hidden />
+                      <span className="shrink-0 font-mono tabular-nums">
+                        {won(item.monthlyAmountKRW)}
+                      </span>
                     </span>
-                  </p>
-                  <p className="mt-0.5 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-                    <span>
-                      {detail(item)}
-                      {isInTrial(item.sub) && " · 체험 중"}
+                    <span className="mt-0.5 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+                      <span>
+                        {detail(item)}
+                        {isInTrial(item.sub) && " · 체험 중"}
+                      </span>
+                      {action && <span className="shrink-0 font-semibold">{action.label} ›</span>}
                     </span>
-                    {key === "unknown" && (
+                  </>
+                );
+                return (
+                  <li key={item.sub.id}>
+                    {action ? (
                       <button
                         type="button"
-                        onClick={() => onCheckIn(item.sub.id)}
-                        className="rounded-full border bg-card px-2 py-px text-[10.5px] font-extrabold text-foreground"
+                        onClick={action.run}
+                        aria-label={`${item.sub.name} ${action.label}`}
+                        className="-mx-2 block w-[calc(100%+1rem)] rounded-lg px-2 py-1.5 text-left active:bg-secondary"
                       >
-                        체크인
+                        {body}
                       </button>
+                    ) : (
+                      <div className="py-1.5">{body}</div>
                     )}
-                  </p>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
             {collapsed && items.length > PREVIEW_PER_SECTION && (
               <p className="text-[11px] text-muted-foreground">

@@ -18,6 +18,7 @@ import { cn } from "@lib/utils";
 import { ServiceLogo } from "../../subscription/ServiceLogo";
 import type { AutoImportModalProps } from "../AutoImportModal";
 import { SAMPLE_NAVER_RECEIPT, SAMPLE_SMS } from "../samples";
+import { lockBodyScroll } from "@lib/scroll-lock";
 
 /** 결제 주기 한 줄. 연간인데 결제 월을 모르면 날짜를 지어내지 않고 '미설정'으로 둔다. */
 function cycleText(item: DiscoveredSubscription): string {
@@ -114,11 +115,10 @@ export function AppAutoImportModal({
       if (e.key === "Escape") close();
     };
     document.addEventListener("keydown", onKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
+      unlockScroll();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
