@@ -41,6 +41,27 @@ const nextConfig: NextConfig = {
         // 구독 상세는 /subs/<id>에서 /subs/detail?id=<id>로 옮겼다(lib/routes). 북마크와 이미 보낸
         // 링크가 깨지지 않게 예전 주소를 새 주소로 보낸다. 앱 빌드는 리다이렉트를 쓸 수 없고,
         // 앱에는 예전 주소로 들어올 링크도 없다.
+        // 보안 헤더. 다른 사이트가 SubSlash를 보이지 않는 틀(iframe)에 넣어 버튼을 누르게 하는 것
+        // (클릭재킹)을 막고, 브라우저가 파일 형식을 짐작해 스크립트로 실행하지 않게 한다. 주소창의
+        // 토큰(비밀번호 재설정 링크 등)이 바깥 사이트로 넘어가지 않도록 리퍼러에는 출처만 싣는다.
+        // 앱 빌드는 정적 파일이라 헤더를 붙일 서버가 없고, 앱 안에서는 틀에 넣을 수도 없다.
+        async headers() {
+          return [
+            {
+              source: "/:path*",
+              headers: [
+                { key: "X-Frame-Options", value: "DENY" },
+                { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+                { key: "X-Content-Type-Options", value: "nosniff" },
+                { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+                {
+                  key: "Permissions-Policy",
+                  value: "camera=(), microphone=(), geolocation=(), payment=()",
+                },
+              ],
+            },
+          ];
+        },
         async redirects() {
           return [
             {

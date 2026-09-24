@@ -167,6 +167,15 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 다시 배포해야 반영된다. 허용할 SubSlash 주소(`ALLOWED_ORIGINS`)와 `GMAIL_CONNECT_WEB_APP_URL`(두 Vercel
 프로젝트)이 서로 맞아야 한다.
 
+## 요청 수 제한
+
+로그인 없이 메일을 보내는 곳(`/api/notify/subscribe`)과 비밀번호를 확인하는 곳(로그인, 비밀번호 변경,
+회원 탈퇴)은 `lib/rate-limit`으로 횟수를 제한한다. 로그인은 실패만 세고(아이디·IP 기준), 계정을 잠그지
+않고 잠시 기다리게 한다 — 잠그면 남이 일부러 틀려 주인을 못 들어오게 할 수 있다. 서버 인스턴스
+메모리에 세므로 대량 공격을 완전히 막지는 못한다. 그건 Vercel 방화벽(WAF)의 속도 제한이 맡는다.
+비밀값 비교(크론 `CRON_SECRET` 등)는 `timingSafeEqual`로 한다. 웹 응답의 보안 헤더(틀 넣기 금지 등)는
+`next.config.ts`의 `headers()`에 있다.
+
 ## 파일 경계
 
 화면에 보이는 결제 내역은 전부 사용자가 실제로 넘긴 것이다. 지어낸 영수증을 만드는
