@@ -336,5 +336,12 @@ pnpm build
   부른다. 웹과 다른 배포를 부르게 하면 DB가 달라져, 웹 계정으로 앱에 로그인할 수 없다.
 - E2E는 CI와 같게 `--workers=1`로 돌린다. 기본 병렬로는 샘플 데이터 테스트가
   30초 테스트 타임아웃에 걸리는 기존 flake가 있다.
+- Claude Code 훅(`.claude/settings.json`, 스크립트는 `scripts/claude-hooks/`)이 붙어 있다. 파일을
+  고치면 그 파일에 prettier·eslint를 돌리고(`post-edit.mjs`), 작업을 마칠 때 커밋하지 않은 TypeScript
+  변경이 있으면 타입 검사와 `vitest related`를 돌린다(`on-stop.mjs`). 실패하면 exit 2로 돌려보내 고치게
+  한다. 저장소 경로에 공백('바탕 화면')이 있어 셸로 넘기는 경로는 상대 경로로 쓴다.
+- PR마다 Claude가 리뷰 댓글을 남긴다(`.github/workflows/claude-review.yml`). 병합을 막지 않는 피드백이고,
+  저장소 시크릿 `ANTHROPIC_API_KEY`(또는 `CLAUDE_CODE_OAUTH_TOKEN`)가 없으면 건너뛴다. 미러 저장소와
+  포크 PR에서는 돌지 않는다.
 - 커밋 메시지는 한국어로, "무엇을 왜"를 쓴다. 무엇이 잘못돼 있었고 사용자에게
   어떻게 보였는지가 핵심이다.
