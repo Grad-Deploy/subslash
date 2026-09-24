@@ -5,6 +5,8 @@ import { useIsClient } from "@hooks/useIsClient";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { IS_APP_BUILD } from "@lib/platform";
+import { findDuplicateSubscription } from "@lib/duplicate-subscription";
+import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt";
 import { useLocalReminderSettings } from "@hooks/useLocalReminders";
 import { useStore } from "../../lib/store";
 import {
@@ -53,6 +55,24 @@ import { ReminderPromptSheet } from "../../components/app-start/ReminderPromptSh
 const AppValueReceipt = IS_APP_BUILD
   ? dynamic(
       () => import("../../components/dashboard/app/AppValueReceipt").then((m) => m.AppValueReceipt),
+      { ssr: false },
+    )
+  : null;
+
+// 앱에서는 구독을 하나 등록한 뒤 같은 창에서 이번 달 사용 횟수를 묻는다. 웹 번들에는 넣지 않는다.
+const AppDuplicateDialog = IS_APP_BUILD
+  ? dynamic(
+      () =>
+        import("../../components/subscription/app/AppDuplicateDialog").then(
+          (m) => m.AppDuplicateDialog,
+        ),
+      { ssr: false },
+    )
+  : null;
+
+const AppAddCheckIn = IS_APP_BUILD
+  ? dynamic(
+      () => import("../../components/subscription/app/AppAddCheckIn").then((m) => m.AppAddCheckIn),
       { ssr: false },
     )
   : null;
@@ -116,6 +136,17 @@ export default function Dashboard() {
 
   const mounted = useIsClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
+  // 앱: 방금 등록한 구독. 있으면 등록 창이 사용 횟수 묻기로 바뀐다.
+  const [addedSub, setAddedSub] = useState<Subscription | null>(null);
+  // 앱: 같은 서비스를 또 등록하려 할 때 한 번 묻는다. data는 확인하면 그대로 등록할 폼 값이다.
+  const [duplicate, setDuplicate] = useState<{
+    data: SubscriptionFormData;
+    existing: Subscription;
+  } | null>(null);
+  // 앱: 등록 직후 체크인이 이 사람의 첫 체크인인지. 맞으면 결제 알림을 한 번 묻는다.
+  const [firstEverCheckIn, setFirstEverCheckIn] = useState(false);
+  // 앱: 체크인·불러오기 창이 닫히면 결제 알림을 물을 구독(처음 한 번만). false면 묻지 않는다.
+  const [pendingReminder, setPendingReminder] = useState<Subscription | null | false>(false);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   // 등록 창을 여는 방식(앱의 빈 대시보드에서 서비스를 눌렀는지, '직접 입력'을 눌렀는지).
   // 열 때마다 key를 바꿔 SubForm을 새로 그린다 — 앞서 연 창의 입력이 남지 않게.
@@ -196,8 +227,28 @@ export default function Dashboard() {
     }
   };
 
+  const flushPendingReminder = () => {
+    if (pendingReminder === false) return;
+    markReminderPrompted();
+    setReminderPromptSub(pendingReminder);
+    setPendingReminder(false);
+  };
+
+  // 불러오기로 구독을 처음 등록했을 때도 창이 닫히면 한 번 묻는다. 대표로 가장 최근 구독을 보여준다.
+  const handleImportRegistered = () => {
+    if (!shouldPromptReminder(reminderSettings.enabled)) return;
+    const latest = [...useStore.getState().subscriptions]
+      .filter((sub) => sub.status === "active")
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    setPendingReminder(latest ?? null);
+  };
+
   const handleCheckInSubmit = (count: number) => {
     if (!checkInSub) return;
+    // 이 사람의 첫 체크인이면 체크인 창을 닫을 때 결제 알림을 한 번 묻는다(결과 화면을 가리지 않게).
+    if (usageLogs.length === 0 && shouldPromptReminder(reminderSettings.enabled)) {
+      setPendingReminder(checkInSub);
+    }
     try {
       const res = checkIn(checkInSub.id, count);
       setCheckInResult(res);
@@ -276,10 +327,27 @@ export default function Dashboard() {
     if (sub) setChargedTarget(sub);
   };
 
-  const handleAddSubmit = (data: SubscriptionFormData) => {
-    addSubscription(data);
+  const handleAddSubmit = (data: SubscriptionFormData, allowDuplicate = false) => {
+    if (AppDuplicateDialog && !allowDuplicate) {
+      const existing = findDuplicateSubscription(subscriptions, data);
+      if (existing) {
+        setDuplicate({ data, existing });
+        return;
+      }
+    }
+    const added = addSubscription(data);
+    if (AppAddCheckIn) {
+      setFirstEverCheckIn(usageLogs.length === 0);
+      setAddedSub(added);
+      return;
+    }
     setIsAddOpen(false);
     showToast(`${data.name} 등록 완료`);
+  };
+
+  const closeAdd = (open: boolean) => {
+    setIsAddOpen(open);
+    if (!open) setAddedSub(null);
   };
 
   // 샘플은 내 구독에 더하지 않고 잠시 동안만 보여준다(store의 DemoSession).
@@ -357,7 +425,10 @@ export default function Dashboard() {
                 checkIn(firstCheckInSub.id, count);
                 showToast(`${firstCheckInSub.name} 사용 횟수를 기록했습니다.`);
                 // 체크리스트의 다음 단계(결제 알림)를 바로 이어서 묻는다. 이미 켰으면 묻지 않는다.
-                if (!reminderSettings.enabled) setReminderPromptSub(firstCheckInSub);
+                if (shouldPromptReminder(reminderSettings.enabled)) {
+                  markReminderPrompted();
+                  setReminderPromptSub(firstCheckInSub);
+                }
               }}
             />
           )}
@@ -454,29 +525,69 @@ export default function Dashboard() {
       </div>
 
       {/* SubForm Modal for Adding */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+      <Dialog open={isAddOpen} onOpenChange={closeAdd}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>새 구독 등록</DialogTitle>
-            <DialogDescription>서비스를 고르거나 직접 입력하세요.</DialogDescription>
-          </DialogHeader>
-          <div className="py-2">
-            <SubForm
-              key={addKey}
-              popularServices={POPULAR_SERVICES}
-              initialData={addInitial}
-              openCustom={addCustom}
-              onSubmit={handleAddSubmit}
+          {addedSub && AppAddCheckIn ? (
+            <AppAddCheckIn
+              subscription={addedSub}
+              onDone={(recorded) => {
+                closeAdd(false);
+                // 이 사람의 첫 체크인이면 결제 알림을 한 번만 묻는다(첫 체크인 카드와 같은 흐름).
+                if (
+                  recorded !== undefined &&
+                  firstEverCheckIn &&
+                  shouldPromptReminder(reminderSettings.enabled)
+                ) {
+                  markReminderPrompted();
+                  setReminderPromptSub(addedSub);
+                }
+                showToast(
+                  recorded === undefined
+                    ? `${addedSub.name} 등록 완료`
+                    : `${addedSub.name} 등록 · ${recorded}회 기록`,
+                );
+              }}
             />
-          </div>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>새 구독 등록</DialogTitle>
+                <DialogDescription>서비스를 고르거나 직접 입력하세요.</DialogDescription>
+              </DialogHeader>
+              <div className="py-2">
+                <SubForm
+                  key={addKey}
+                  popularServices={POPULAR_SERVICES}
+                  initialData={addInitial}
+                  openCustom={addCustom}
+                  onSubmit={(data) => handleAddSubmit(data)}
+                />
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
+
+      {duplicate && AppDuplicateDialog && (
+        <AppDuplicateDialog
+          existing={duplicate.existing}
+          onCancel={() => setDuplicate(null)}
+          onAddAnyway={() => {
+            const data = duplicate.data;
+            setDuplicate(null);
+            handleAddSubmit(data, true);
+          }}
+        />
+      )}
 
       {checkInSub && (
         <CheckInModal
           subscription={checkInSub}
           isOpen={!!checkInSub}
-          onClose={() => setCheckInSub(null)}
+          onClose={() => {
+            setCheckInSub(null);
+            flushPendingReminder();
+          }}
           onSubmit={handleCheckInSubmit}
           onKill={handleCancelGuide}
           result={checkInResult}
@@ -495,7 +606,14 @@ export default function Dashboard() {
         />
       )}
 
-      <AutoImportModal isOpen={isAutoImportOpen} onClose={() => setIsAutoImportOpen(false)} />
+      <AutoImportModal
+        isOpen={isAutoImportOpen}
+        onClose={() => {
+          setIsAutoImportOpen(false);
+          flushPendingReminder();
+        }}
+        onRegistered={handleImportRegistered}
+      />
 
       <CancelGuideModal
         subscription={guideTarget}

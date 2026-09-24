@@ -34,6 +34,10 @@ import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { GoogleCalendarSync } from "../../components/calendar/GoogleCalendarSync";
 import { IS_APP_BUILD } from "@lib/platform";
+import { useLocalReminderSettings } from "@hooks/useLocalReminders";
+import { ReminderPromptSheet } from "../../components/app-start/ReminderPromptSheet";
+import { findDuplicateSubscription } from "@lib/duplicate-subscription";
+import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { isWideScreen } from "@lib/wide-screen";
 import { subscriptionDetailHref } from "@lib/routes";
@@ -108,6 +112,24 @@ function SelectedSubSync({ onChange }: { onChange: (id: string | null) => void }
   return null;
 }
 
+// 앱에서는 구독을 하나 등록한 뒤 같은 창에서 이번 달 사용 횟수를 묻는다. 웹 번들에는 넣지 않는다.
+const AppDuplicateDialog = IS_APP_BUILD
+  ? dynamic(
+      () =>
+        import("../../components/subscription/app/AppDuplicateDialog").then(
+          (m) => m.AppDuplicateDialog,
+        ),
+      { ssr: false },
+    )
+  : null;
+
+const AppAddCheckIn = IS_APP_BUILD
+  ? dynamic(
+      () => import("../../components/subscription/app/AppAddCheckIn").then((m) => m.AppAddCheckIn),
+      { ssr: false },
+    )
+  : null;
+
 export default function SubscriptionsPage() {
   const {
     subscriptions,
@@ -129,6 +151,19 @@ export default function SubscriptionsPage() {
   const mounted = useIsClient();
   const [tab, setTab] = useState<"active" | "killed">("active");
   const [isAddOpen, setIsAddOpen] = useState(false);
+  // 앱: 방금 등록한 구독. 있으면 등록 창이 사용 횟수 묻기로 바뀐다.
+  const [addedSub, setAddedSub] = useState<Subscription | null>(null);
+  // 앱: 같은 서비스를 또 등록하려 할 때 한 번 묻는다. data는 확인하면 그대로 등록할 폼 값이다.
+  const [duplicate, setDuplicate] = useState<{
+    data: SubscriptionFormData;
+    existing: Subscription;
+  } | null>(null);
+  // 앱: 등록 직후 체크인이 이 사람의 첫 체크인인지. 맞으면 결제 알림을 한 번 묻는다.
+  const [firstEverCheckIn, setFirstEverCheckIn] = useState(false);
+  // 앱: 체크인·불러오기 창이 닫히면 결제 알림을 물을 구독(처음 한 번만). false면 묻지 않는다.
+  const [pendingReminder, setPendingReminder] = useState<Subscription | null | false>(false);
+  const [reminderSettings] = useLocalReminderSettings();
+  const [reminderPromptSub, setReminderPromptSub] = useState<Subscription | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<ServicePreset | null>(null);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   const [checkInSub, setCheckInSub] = useState<Subscription | null>(null);
@@ -241,8 +276,28 @@ export default function SubscriptionsPage() {
     }
   };
 
+  const flushPendingReminder = () => {
+    if (pendingReminder === false) return;
+    markReminderPrompted();
+    setReminderPromptSub(pendingReminder);
+    setPendingReminder(false);
+  };
+
+  // 불러오기로 구독을 처음 등록했을 때도 창이 닫히면 한 번 묻는다. 대표로 가장 최근 구독을 보여준다.
+  const handleImportRegistered = () => {
+    if (!shouldPromptReminder(reminderSettings.enabled)) return;
+    const latest = [...useStore.getState().subscriptions]
+      .filter((sub) => sub.status === "active")
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    setPendingReminder(latest ?? null);
+  };
+
   const handleCheckInSubmit = (count: number) => {
     if (!checkInSub) return;
+    // 이 사람의 첫 체크인이면 체크인 창을 닫을 때 결제 알림을 한 번 묻는다(결과 화면을 가리지 않게).
+    if (usageLogs.length === 0 && shouldPromptReminder(reminderSettings.enabled)) {
+      setPendingReminder(checkInSub);
+    }
     try {
       const res = checkIn(checkInSub.id, count);
       setCheckInResult(res);
@@ -291,8 +346,20 @@ export default function SubscriptionsPage() {
     setConfirmAction(null);
   };
 
-  const handleAddSubmit = (data: SubscriptionFormData) => {
-    addSubscription(data);
+  const handleAddSubmit = (data: SubscriptionFormData, allowDuplicate = false) => {
+    if (AppDuplicateDialog && !allowDuplicate) {
+      const existing = findDuplicateSubscription(subscriptions, data);
+      if (existing) {
+        setDuplicate({ data, existing });
+        return;
+      }
+    }
+    const added = addSubscription(data);
+    if (AppAddCheckIn) {
+      setFirstEverCheckIn(usageLogs.length === 0);
+      setAddedSub(added);
+      return;
+    }
     setIsAddOpen(false);
     showToast(`${data.name} 등록 완료`);
   };
@@ -613,32 +680,89 @@ export default function SubscriptionsPage() {
         open={isAddOpen}
         onOpenChange={(open) => {
           setIsAddOpen(open);
-          if (!open) setSelectedPreset(null);
+          if (!open) {
+            setSelectedPreset(null);
+            setAddedSub(null);
+          }
         }}
       >
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedPreset ? `${selectedPreset.nameKo} 등록` : "새 구독 추가"}
-            </DialogTitle>
-            <DialogDescription>서비스를 고르거나 직접 입력하세요.</DialogDescription>
-          </DialogHeader>
-          <div className="py-2">
-            <SubForm
-              popularServices={POPULAR_SERVICES}
-              initialData={selectedPreset ? presetFormData(selectedPreset) : undefined}
-              onSubmit={handleAddSubmit}
+          {addedSub && AppAddCheckIn ? (
+            <AppAddCheckIn
+              subscription={addedSub}
+              onDone={(recorded) => {
+                setIsAddOpen(false);
+                setSelectedPreset(null);
+                setAddedSub(null);
+                // 이 사람의 첫 체크인이면 결제 알림을 한 번만 묻는다(대시보드 첫 체크인과 같은 흐름).
+                if (
+                  recorded !== undefined &&
+                  firstEverCheckIn &&
+                  shouldPromptReminder(reminderSettings.enabled)
+                ) {
+                  markReminderPrompted();
+                  setReminderPromptSub(addedSub);
+                }
+                showToast(
+                  recorded === undefined
+                    ? `${addedSub.name} 등록 완료`
+                    : `${addedSub.name} 등록 · ${recorded}회 기록`,
+                );
+              }}
             />
-          </div>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {selectedPreset ? `${selectedPreset.nameKo} 등록` : "새 구독 추가"}
+                </DialogTitle>
+                <DialogDescription>서비스를 고르거나 직접 입력하세요.</DialogDescription>
+              </DialogHeader>
+              <div className="py-2">
+                <SubForm
+                  popularServices={POPULAR_SERVICES}
+                  initialData={selectedPreset ? presetFormData(selectedPreset) : undefined}
+                  onSubmit={(data) => handleAddSubmit(data)}
+                />
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
+
+      {IS_APP_BUILD && (
+        <ReminderPromptSheet
+          open={reminderPromptSub !== null}
+          subscription={reminderPromptSub ?? undefined}
+          onClose={() => setReminderPromptSub(null)}
+          onEnabled={() => {
+            setReminderPromptSub(null);
+            showToast("결제 알림을 켰어요. 몇 초 뒤 시험 알림이 떠요.");
+          }}
+        />
+      )}
+
+      {duplicate && AppDuplicateDialog && (
+        <AppDuplicateDialog
+          existing={duplicate.existing}
+          onCancel={() => setDuplicate(null)}
+          onAddAnyway={() => {
+            const data = duplicate.data;
+            setDuplicate(null);
+            handleAddSubmit(data, true);
+          }}
+        />
+      )}
 
       {/* CheckIn Modal */}
       {checkInSub && (
         <CheckInModal
           subscription={checkInSub}
           isOpen={!!checkInSub}
-          onClose={() => setCheckInSub(null)}
+          onClose={() => {
+            setCheckInSub(null);
+            flushPendingReminder();
+          }}
           onSubmit={handleCheckInSubmit}
           onKill={handleKill}
           result={checkInResult}
@@ -646,7 +770,14 @@ export default function SubscriptionsPage() {
       )}
 
       {/* Auto Import Hub Modal */}
-      <AutoImportModal isOpen={isAutoImportOpen} onClose={() => setIsAutoImportOpen(false)} />
+      <AutoImportModal
+        isOpen={isAutoImportOpen}
+        onClose={() => {
+          setIsAutoImportOpen(false);
+          flushPendingReminder();
+        }}
+        onRegistered={handleImportRegistered}
+      />
 
       {/* Cancel Guide Modal (Issue 14) */}
       <CancelGuideModal
