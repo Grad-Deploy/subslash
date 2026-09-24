@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, PiggyBank } from "lucide-react";
+import { Bell, ChevronDown, PiggyBank } from "lucide-react";
 import {
   type Subscription,
   formatKRW,
@@ -31,6 +31,8 @@ import { AppDefenseChart } from "./AppDefenseChart";
 import { AppIncomeRate } from "./AppIncomeRate";
 
 const DAY = 24 * 60 * 60 * 1000;
+/** 목록이 이보다 길면 앞의 몇 개만 보이고 '더 보기'로 펼친다. */
+const LIST_LIMIT = 5;
 
 /** 해지한 구독 하나가 한 번 결제될 때의 내 몫. 연간은 1년치 한 번이다. */
 function perChargeKRW(sub: Subscription, rate: number): number {
@@ -57,6 +59,8 @@ export function AppSavings() {
   const [reviveTarget, setReviveTarget] = useState<Subscription | null>(null);
   const [chargedTarget, setChargedTarget] = useState<Subscription | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showAllBreakdown, setShowAllBreakdown] = useState(false);
+  const [showAllKilled, setShowAllKilled] = useState(false);
 
   if (!mounted) {
     return (
@@ -229,35 +233,44 @@ export function AppSavings() {
                 <span className="text-[11px] font-semibold text-muted-foreground">1년 기준</span>
               </div>
               <ul className="mt-2.5 space-y-2.5">
-                {breakdown.map(({ sub, annual }) => (
-                  <li key={sub.id} className="grid grid-cols-[28px_1fr_auto] items-center gap-2">
-                    <ServiceLogo
-                      name={sub.name}
-                      cancelUrl={sub.cancelUrl}
-                      fallbackEmoji={sub.iconUrl}
-                      fallbackColor={sub.iconColor}
-                      size={28}
-                    />
-                    <div className="min-w-0">
-                      <p className="flex justify-between gap-2 text-[12.5px] font-bold">
-                        <span className="truncate">{sub.name}</span>
-                        <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
-                          {Math.round((annual / tiers.annualRunRate) * 100)}%
-                        </span>
-                      </p>
-                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary">
-                        <span
-                          className="block h-full rounded-full bg-emerald-700 dark:bg-emerald-400"
-                          style={{ width: `${(annual / topAnnual) * 100}%` }}
-                        />
+                {(showAllBreakdown ? breakdown : breakdown.slice(0, LIST_LIMIT)).map(
+                  ({ sub, annual }) => (
+                    <li key={sub.id} className="grid grid-cols-[28px_1fr_auto] items-center gap-2">
+                      <ServiceLogo
+                        name={sub.name}
+                        cancelUrl={sub.cancelUrl}
+                        fallbackEmoji={sub.iconUrl}
+                        fallbackColor={sub.iconColor}
+                        size={28}
+                      />
+                      <div className="min-w-0">
+                        <p className="flex justify-between gap-2 text-[12.5px] font-bold">
+                          <span className="truncate">{sub.name}</span>
+                          <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
+                            {Math.round((annual / tiers.annualRunRate) * 100)}%
+                          </span>
+                        </p>
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary">
+                          <span
+                            className="block h-full rounded-full bg-emerald-700 dark:bg-emerald-400"
+                            style={{ width: `${(annual / topAnnual) * 100}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <span className="text-[12.5px] font-extrabold tabular-nums">
-                      {formatKRW(annual)}
-                    </span>
-                  </li>
-                ))}
+                      <span className="text-[12.5px] font-extrabold tabular-nums">
+                        {formatKRW(annual)}
+                      </span>
+                    </li>
+                  ),
+                )}
               </ul>
+              {breakdown.length > LIST_LIMIT && (
+                <MoreToggle
+                  open={showAllBreakdown}
+                  hidden={breakdown.length - LIST_LIMIT}
+                  onToggle={() => setShowAllBreakdown((v) => !v)}
+                />
+              )}
             </section>
           )}
 
@@ -336,7 +349,7 @@ export function AppSavings() {
               해지한 구독 {killed.length}
             </h2>
             <ul className="mt-1">
-              {killed.map((sub) => {
+              {(showAllKilled ? killed : killed.slice(0, LIST_LIMIT)).map((sub) => {
                 const state = getKillCheckStatus(sub, now)?.state;
                 return (
                   <li
@@ -371,6 +384,13 @@ export function AppSavings() {
                 );
               })}
             </ul>
+            {killed.length > LIST_LIMIT && (
+              <MoreToggle
+                open={showAllKilled}
+                hidden={killed.length - LIST_LIMIT}
+                onToggle={() => setShowAllKilled((v) => !v)}
+              />
+            )}
             <button
               type="button"
               onClick={() => void handleShare()}
@@ -414,5 +434,31 @@ export function AppSavings() {
         />
       )}
     </div>
+  );
+}
+
+/** 긴 목록 아래의 'N개 더 보기 / 접기'. */
+function MoreToggle({
+  open,
+  hidden,
+  onToggle,
+}: {
+  open: boolean;
+  hidden: number;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
+    >
+      {open ? "접기" : `${hidden}개 더 보기`}
+      <ChevronDown
+        className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`}
+        aria-hidden
+      />
+    </button>
   );
 }
