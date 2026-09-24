@@ -88,7 +88,12 @@ export function AppIncomeRate({
           </button>
         </div>
       ) : (
-        <Rate income={income} activeMonthly={activeMonthly} killedMonthly={killedMonthly} />
+        <Rate
+          income={income}
+          activeMonthly={activeMonthly}
+          killedMonthly={killedMonthly}
+          onEditIncome={() => setOpen(true)}
+        />
       )}
 
       <IncomeSheet
@@ -108,11 +113,16 @@ function Rate({
   income,
   activeMonthly,
   killedMonthly,
+  onEditIncome,
 }: {
   income: number;
   activeMonthly: number;
   killedMonthly: number;
+  onEditIncome: () => void;
 }) {
+  // 구독비가 월 수입을 넘으면 원은 꽉 찬 채 주황으로 칠하고, 비율보다 할 일을 먼저 보여준다.
+  // 대개 수입을 잘못 넣었거나(자릿수·단위) 정말 구독이 많은 경우라, 둘 다 고를 수 있게 한다.
+  const over = activeMonthly > income;
   const before = activeMonthly + killedMonthly;
   // 원은 둘레 100을 기준으로 그린다. 조각 사이에 표면색 틈을 둔다.
   const spendLen = Math.min(100, (activeMonthly / income) * 100);
@@ -145,7 +155,7 @@ function Rate({
                 strokeWidth="3.6"
                 pathLength={100}
                 strokeDasharray={`${spendLen} ${100 - spendLen}`}
-                className={SPEND}
+                className={over ? "stroke-amber-500 dark:stroke-amber-400" : SPEND}
               />
             )}
             {savedLen > gap && (
@@ -183,6 +193,25 @@ function Rate({
           />
         </dl>
       </div>
+
+      {over && (
+        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs dark:border-amber-800 dark:bg-amber-950/40">
+          <p className="font-bold text-amber-800 dark:text-amber-300">
+            구독비가 월 수입보다 {formatKRW(activeMonthly - income)} 많아요
+          </p>
+          <p className="mt-1 leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+            수입을 잘못 넣었다면 고쳐 주세요. 맞다면 대시보드 계산서의 &lsquo;쉬어가도 될
+            구독&rsquo;부터 정리해 보세요.
+          </p>
+          <button
+            type="button"
+            onClick={onEditIncome}
+            className="mt-2 rounded-lg border border-amber-300 bg-background px-2.5 py-1 font-bold text-amber-900 dark:border-amber-700 dark:text-amber-200"
+          >
+            수입 다시 넣기
+          </button>
+        </div>
+      )}
 
       {killedMonthly > 0 && before > 0 && (
         <>
