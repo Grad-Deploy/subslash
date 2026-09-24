@@ -20,6 +20,7 @@ import {
   getDetoxLevel,
   getNextBillingHint,
   getSavingsTiers,
+  getMyMonthlyAmountKRW,
 } from "@subslash/shared";
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { OnboardingTourCard } from "../../components/dashboard/OnboardingTourCard";
@@ -52,6 +53,34 @@ import { ReminderPromptSheet } from "../../components/app-start/ReminderPromptSh
 const AppValueReceipt = IS_APP_BUILD
   ? dynamic(
       () => import("../../components/dashboard/app/AppValueReceipt").then((m) => m.AppValueReceipt),
+      { ssr: false },
+    )
+  : null;
+
+const AppKillConfirmDialog = IS_APP_BUILD
+  ? dynamic(
+      () =>
+        import("../../components/dashboard/app/AppKillConfirmDialog").then(
+          (m) => m.AppKillConfirmDialog,
+        ),
+      { ssr: false },
+    )
+  : null;
+
+const AppKillCelebration = IS_APP_BUILD
+  ? dynamic(
+      () =>
+        import("../../components/dashboard/app/AppKillCelebration").then(
+          (m) => m.AppKillCelebration,
+        ),
+      { ssr: false },
+    )
+  : null;
+
+const AppNextKillDialog = IS_APP_BUILD
+  ? dynamic(
+      () =>
+        import("../../components/dashboard/app/AppNextKillDialog").then((m) => m.AppNextKillDialog),
       { ssr: false },
     )
   : null;
@@ -101,6 +130,19 @@ export default function Dashboard() {
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
   const [killTarget, setKillTarget] = useState<Subscription | null>(null);
+  // 앱 계산서에서 '쉬어가도 될 구독'을 이어서 해지할 때의 순서. current는 지금 해지 안내를 연 구독,
+  // rest는 그 뒤에 물어볼 구독이다. 계산서가 아닌 곳에서 연 해지 안내에는 쓰지 않는다.
+  const [killSeries, setKillSeries] = useState<{
+    current: string;
+    rest: string[];
+    /** 이번에 이어서 해지한 구독들의 월 내 몫. 다 끝나면 축하 화면에 합계를 보여준다. */
+    done: number[];
+  } | null>(null);
+  const [celebration, setCelebration] = useState<{ count: number; monthlyKRW: number } | null>(
+    null,
+  );
+  const [nextKill, setNextKill] = useState<Subscription | null>(null);
+
   const [chargedTarget, setChargedTarget] = useState<Subscription | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -171,6 +213,38 @@ export default function Dashboard() {
   const handleCancelGuide = (id: string) => {
     const sub = findSub(id);
     if (sub) setGuideTarget(sub);
+  };
+
+  // 계산서에서 해지 안내를 열 때. 뒤에 남은 구독을 기억해 두었다가 해지를 마치면 다음 것을 묻는다.
+  const handleReceiptCancelGuide = (id: string, rest: string[] = []) => {
+    setKillSeries({ current: id, rest, done: [] });
+    handleCancelGuide(id);
+  };
+
+  // 해지를 기록한 뒤 이어서 물어볼 다음 구독. 그 사이 이미 해지했거나 지운 구독은 건너뛴다.
+  // 마지막 하나까지 해지하면 축하 화면을 띄운다. 중간에 그만두면 띄우지 않는다.
+  const advanceKillSeries = (killed: Subscription) => {
+    if (!killSeries || killSeries.current !== killed.id) return;
+    const done = [...killSeries.done, getMyMonthlyAmountKRW(killed, rate)];
+    const remaining = killSeries.rest.filter((id) => {
+      const sub = findSub(id);
+      return sub && sub.status === "active";
+    });
+    const next = remaining[0] ? findSub(remaining[0]) : undefined;
+    if (next) {
+      setKillSeries({ current: next.id, rest: remaining.slice(1), done });
+      setNextKill(next);
+    } else {
+      setKillSeries(null);
+      setCelebration({ count: done.length, monthlyKRW: done.reduce((a, b) => a + b, 0) });
+    }
+  };
+
+  const confirmKill = (target: Subscription) => {
+    killSubscription(target.id);
+    showToast(`${target.name} 해지 완료로 기록`);
+    setKillTarget(null);
+    advanceKillSeries(target);
   };
 
   const handleConfirmKilled = (id: string) => {
@@ -324,7 +398,7 @@ export default function Dashboard() {
               subscriptions={activeSubs}
               usageLogs={usageLogs}
               now={now}
-              onCancelGuide={handleCancelGuide}
+              onCancelGuide={handleReceiptCancelGuide}
               onCheckIn={handleOpenCheckIn}
             />
           ) : (
@@ -430,22 +504,51 @@ export default function Dashboard() {
         onConfirmKilled={handleConfirmKilled}
       />
 
-      {killTarget && (
-        <ConfirmDialog
-          isOpen={!!killTarget}
-          onClose={() => setKillTarget(null)}
-          onConfirm={() => {
-            if (killTarget) {
-              killSubscription(killTarget.id);
-              showToast(`${killTarget.name} 해지 완료로 기록`);
+      {killTarget &&
+        (AppKillConfirmDialog ? (
+          <AppKillConfirmDialog
+            subscription={killTarget}
+            onConfirm={() => confirmKill(killTarget)}
+            onCancel={() => {
               setKillTarget(null);
-            }
+              setKillSeries(null);
+            }}
+          />
+        ) : (
+          <ConfirmDialog
+            isOpen={!!killTarget}
+            onClose={() => setKillTarget(null)}
+            onConfirm={() => confirmKill(killTarget)}
+            title="구독 해지 완료 처리"
+            description={`'${killTarget.name}'을(를) 해지 완료로 기록할까요?\n결제일이 지나면 지킨 돈으로 쌓여요.`}
+            confirmText="해지 완료"
+            cancelText="취소"
+            variant="destructive"
+          />
+        ))}
+
+      {/* 앱 계산서에서 이어서 해지할 때만 뜬다(killSeries는 계산서에서만 채운다). */}
+      {nextKill && AppNextKillDialog && (
+        <AppNextKillDialog
+          subscription={nextKill}
+          remaining={killSeries?.rest.length ?? 0}
+          onContinue={() => {
+            const next = nextKill;
+            setNextKill(null);
+            setGuideTarget(next);
           }}
-          title="구독 해지 완료 처리"
-          description={`'${killTarget.name}'을(를) 해지 완료로 기록할까요?\n결제일이 지나면 지킨 돈으로 쌓여요.`}
-          confirmText="해지 완료"
-          cancelText="취소"
-          variant="destructive"
+          onStop={() => {
+            setNextKill(null);
+            setKillSeries(null);
+          }}
+        />
+      )}
+
+      {celebration && AppKillCelebration && (
+        <AppKillCelebration
+          count={celebration.count}
+          monthlyKRW={celebration.monthlyKRW}
+          onDone={() => setCelebration(null)}
         />
       )}
 

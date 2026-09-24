@@ -22,6 +22,7 @@ import { Spinner } from "../../ui/spinner";
 import { AppCopyCode } from "./AppCopyCode";
 import { AppImportFlow } from "./AppImportFlow";
 import { AppStepper, StepTip, type AppStep } from "./AppStepper";
+import { lockBodyScroll } from "@lib/scroll-lock";
 
 type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 
@@ -431,11 +432,10 @@ function PcInstallSheet({
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
+      unlockScroll();
     };
   }, [open, onClose]);
 
