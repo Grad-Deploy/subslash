@@ -1,0 +1,53 @@
+.full {
+  flex: 1;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.mark {
+  width: 76px;
+  aspect-ratio: 1;
+  position: relative;
+  will-change: transform;
+}
+
+.mark svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.cards {
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.wrap {
+  position: absolute;
+  left: 50%;
+  top: 51.17%;
+  width: 99.45%;
+  height: 9.96%;
+  transform: translate(-50%, -50%) rotate(-44.29deg);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #ef4444;
+  will-change: transform;
+}
+
+.full p {
+  margin: 0;
+  font-size: 13px;
+  color: #71717a;
+}

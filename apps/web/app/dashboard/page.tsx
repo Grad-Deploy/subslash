@@ -3,12 +3,17 @@
 import React, { useState } from "react";
 import { useIsClient } from "@hooks/useIsClient";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { IS_APP_BUILD } from "@lib/platform";
+import { useLocalReminderSettings } from "@hooks/useLocalReminders";
 import { useStore } from "../../lib/store";
 import {
   Subscription,
   SubscriptionFormData,
   CheckInResponse,
   POPULAR_SERVICES,
+  presetFormData,
+  type ServicePreset,
   formatCurrency,
   formatKRW,
   getActionQueue,
@@ -37,6 +42,10 @@ import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { Spinner } from "../../components/ui/spinner";
+import { AppStartChecklist } from "../../components/app-start/AppStartChecklist";
+import { AppServicePicker } from "../../components/app-start/AppServicePicker";
+import { FirstCheckInCard } from "../../components/app-start/FirstCheckInCard";
+import { ReminderPromptSheet } from "../../components/app-start/ReminderPromptSheet";
 
 /**
  * 대시보드는 "지금 무엇을 결정할까"에만 답한다.
@@ -61,12 +70,24 @@ export default function Dashboard() {
     getKilledSubscriptions,
     getDashboardStats,
     startDemo,
+    demo,
   } = useStore();
+  const router = useRouter();
+  const [reminderSettings] = useLocalReminderSettings();
   const rate = useExchangeRate();
 
   const mounted = useIsClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
+  // 등록 창을 여는 방식(앱의 빈 대시보드에서 서비스를 눌렀는지, '직접 입력'을 눌렀는지).
+  // 열 때마다 key를 바꿔 SubForm을 새로 그린다 — 앞서 연 창의 입력이 남지 않게.
+  const [addInitial, setAddInitial] = useState<Partial<SubscriptionFormData> | undefined>();
+  const [addCustom, setAddCustom] = useState(false);
+  const [addKey, setAddKey] = useState(0);
+  // 앱: 결제 알림을 켜기 전에 앱 안에서 먼저 묻는 시트. 누구의 결제일로 안내할지 함께 둔다.
+  const [reminderPromptSub, setReminderPromptSub] = useState<Subscription | null | undefined>(
+    undefined,
+  );
   const [checkInSub, setCheckInSub] = useState<Subscription | null>(null);
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
@@ -99,6 +120,22 @@ export default function Dashboard() {
   const detoxLevel = getDetoxLevel(tiers.confirmed, stats.killedCount);
 
   const findSub = (id: string) => subscriptions.find((s) => s.id === id);
+
+  const openAdd = (options?: { preset?: ServicePreset; custom?: boolean }) => {
+    setAddInitial(options?.preset ? presetFormData(options.preset) : undefined);
+    setAddCustom(options?.custom ?? false);
+    setAddKey((k) => k + 1);
+    setIsAddOpen(true);
+  };
+
+  // 앱의 첫 사용 안내. 체험(샘플) 중에는 보이지 않는다 — 샘플은 사용자의 기록이 아니다.
+  const appStart = IS_APP_BUILD && !demo;
+  // 첫 체크인은 기록이 하나도 없을 때만, 가장 최근에 등록한 구독으로 묻는다. 그다음부터는
+  // 할 일 목록(ActionQueue)이 체크인할 구독을 알려준다.
+  const firstCheckInSub =
+    appStart && usageLogs.length === 0
+      ? [...activeSubs].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+      : undefined;
 
   const handleOpenCheckIn = (id: string) => {
     const sub = findSub(id);
@@ -183,22 +220,27 @@ export default function Dashboard() {
           <p className="text-sm text-muted-foreground">결정이 필요한 구독만 모았어요.</p>
         </div>
         <div className="flex items-center gap-2">
-          {activeSubs.length === 0 && (
-            <Button variant="outline" size="sm" onClick={handleLoadDemo}>
-              샘플 불러오기
-            </Button>
+          {/* 앱에서 구독이 없을 때는 이 버튼들 대신 아래 빈 화면이 할 일을 보여준다. */}
+          {!(appStart && activeSubs.length === 0) && (
+            <>
+              {activeSubs.length === 0 && (
+                <Button variant="outline" size="sm" onClick={handleLoadDemo}>
+                  샘플 불러오기
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAutoImportOpen(true)}
+                className="font-semibold border-primary/30 text-primary hover:bg-primary/10 gap-1.5"
+              >
+                자동 불러오기
+              </Button>
+              <Button size="sm" onClick={() => openAdd()} className="font-bold">
+                + 새 구독 등록
+              </Button>
+            </>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsAutoImportOpen(true)}
-            className="font-semibold border-primary/30 text-primary hover:bg-primary/10 gap-1.5"
-          >
-            자동 불러오기
-          </Button>
-          <Button size="sm" onClick={() => setIsAddOpen(true)} className="font-bold">
-            + 새 구독 등록
-          </Button>
         </div>
       </div>
 
@@ -208,23 +250,57 @@ export default function Dashboard() {
       */}
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
         <div className="min-w-0 space-y-6">
-          <OnboardingTourCard
-            onStartAdd={() => setIsAddOpen(true)}
-            activeCount={activeSubs.length}
-          />
+          {appStart ? (
+            <AppStartChecklist
+              hasSubscription={activeSubs.length > 0}
+              hasCheckIn={usageLogs.length > 0}
+              remindersOn={reminderSettings.enabled}
+              onAdd={() => openAdd()}
+              onCheckIn={() => {
+                const target = firstCheckInSub ?? activeSubs[0];
+                if (target) handleOpenCheckIn(target.id);
+              }}
+              onReminders={() => setReminderPromptSub(activeSubs[0] ?? null)}
+            />
+          ) : (
+            <OnboardingTourCard onStartAdd={() => openAdd()} activeCount={activeSubs.length} />
+          )}
+
+          {firstCheckInSub && (
+            <FirstCheckInCard
+              key={firstCheckInSub.id}
+              subscription={firstCheckInSub}
+              onSubmit={(count) => {
+                checkIn(firstCheckInSub.id, count);
+                showToast(`${firstCheckInSub.name} 사용 횟수를 기록했습니다.`);
+                // 체크리스트의 다음 단계(결제 알림)를 바로 이어서 묻는다. 이미 켰으면 묻지 않는다.
+                if (!reminderSettings.enabled) setReminderPromptSub(firstCheckInSub);
+              }}
+            />
+          )}
 
           {/* 지금 결정할 것 — 이 화면의 본체 */}
-          <ActionQueue
-            items={queue}
-            nextBilling={nextBilling}
-            activeCount={activeSubs.length}
-            onCheckIn={handleOpenCheckIn}
-            onCancelGuide={handleCancelGuide}
-            onConfirmPrice={handleConfirmPrice}
-            onKillNotCharged={handleKillNotCharged}
-            onKillCharged={handleKillCharged}
-            onAddFirst={() => setIsAddOpen(true)}
-          />
+          {appStart && activeSubs.length === 0 ? (
+            <AppServicePicker
+              onPick={(preset) => openAdd({ preset })}
+              onMore={() => openAdd()}
+              onEmail={() => router.push("/import")}
+              onCustom={() => openAdd({ custom: true })}
+              onPaste={() => setIsAutoImportOpen(true)}
+            />
+          ) : (
+            <ActionQueue
+              items={queue}
+              nextBilling={nextBilling}
+              activeCount={activeSubs.length}
+              onCheckIn={handleOpenCheckIn}
+              onCancelGuide={handleCancelGuide}
+              onConfirmPrice={handleConfirmPrice}
+              onKillNotCharged={handleKillNotCharged}
+              onKillCharged={handleKillCharged}
+              onAddFirst={() => openAdd()}
+            />
+          )}
 
           {/*
             이번 달 어느 날에 무엇이 빠져나가는지. '다가오는 결제' 목록을 대신한다 — 목록은 다음
@@ -289,7 +365,13 @@ export default function Dashboard() {
             <DialogDescription>서비스를 고르거나 직접 입력하세요.</DialogDescription>
           </DialogHeader>
           <div className="py-2">
-            <SubForm popularServices={POPULAR_SERVICES} onSubmit={handleAddSubmit} />
+            <SubForm
+              key={addKey}
+              popularServices={POPULAR_SERVICES}
+              initialData={addInitial}
+              openCustom={addCustom}
+              onSubmit={handleAddSubmit}
+            />
           </div>
         </DialogContent>
       </Dialog>
@@ -302,6 +384,18 @@ export default function Dashboard() {
           onSubmit={handleCheckInSubmit}
           onKill={handleCancelGuide}
           result={checkInResult}
+        />
+      )}
+
+      {appStart && (
+        <ReminderPromptSheet
+          open={reminderPromptSub !== undefined}
+          subscription={reminderPromptSub ?? undefined}
+          onClose={() => setReminderPromptSub(undefined)}
+          onEnabled={() => {
+            setReminderPromptSub(undefined);
+            showToast("결제 알림을 켰어요. 몇 초 뒤 시험 알림이 떠요.");
+          }}
         />
       )}
 

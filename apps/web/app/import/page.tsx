@@ -19,6 +19,16 @@ import { GmailAutoImportSetup } from "../../components/gmail/GmailAutoImportSetu
 import { Button } from "../../components/ui/button";
 import { Spinner } from "../../components/ui/spinner";
 import { Inbox, SearchX } from "lucide-react";
+import { IS_APP_BUILD } from "@lib/platform";
+import dynamic from "next/dynamic";
+
+// 앱에서만 쓰는 안내. 웹 사용자가 이 코드를 받지 않도록 앱 빌드에서만 불러온다.
+const AppImportGuide = IS_APP_BUILD
+  ? dynamic(
+      () => import("../../components/gmail/app/AppImportGuide").then((m) => m.AppImportGuide),
+      { ssr: false },
+    )
+  : null;
 
 type ImportState =
   | { kind: "checking" }
@@ -35,6 +45,9 @@ function LoadingScreen() {
 }
 
 function Guide() {
+  // 앱에서는 짧은 안내(고를 방법 → 한 단계씩)를 쓴다. 웹의 직접 실행 방법은 가져온 구독이 웹
+  // 브라우저에 저장돼 앱에 담기지 않으므로, 앱은 계정으로 받는 자동 가져오기만 안내한다.
+  if (AppImportGuide) return <AppImportGuide />;
   const script = gmailAppsScript(webUrl("/import"));
 
   return (
