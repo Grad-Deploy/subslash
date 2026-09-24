@@ -26,6 +26,7 @@ import { OnboardingTourCard } from "../../components/dashboard/OnboardingTourCar
 import { ActionQueue } from "../../components/dashboard/ActionQueue";
 import { BillingCalendar } from "../../components/dashboard/BillingCalendar";
 import { MonthlyValueReport } from "../../components/dashboard/MonthlyValueReport";
+import dynamic from "next/dynamic";
 import { SubForm } from "../../components/subscription/SubForm";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
@@ -46,6 +47,14 @@ import { AppStartChecklist } from "../../components/app-start/AppStartChecklist"
 import { AppServicePicker } from "../../components/app-start/AppServicePicker";
 import { FirstCheckInCard } from "../../components/app-start/FirstCheckInCard";
 import { ReminderPromptSheet } from "../../components/app-start/ReminderPromptSheet";
+
+// 앱에서는 가성비 리포트와 월 고정지출을 계산서 카드 하나로 보여준다. 웹 사용자가 이 코드를 받지 않도록 앱 빌드에서만 불러온다.
+const AppValueReceipt = IS_APP_BUILD
+  ? dynamic(
+      () => import("../../components/dashboard/app/AppValueReceipt").then((m) => m.AppValueReceipt),
+      { ssr: false },
+    )
+  : null;
 
 /**
  * 대시보드는 "지금 무엇을 결정할까"에만 답한다.
@@ -310,51 +319,64 @@ export default function Dashboard() {
           <BillingCalendar subscriptions={activeSubs} now={now} />
 
           {/* 월간 구독 가성비 리포트 (손익 영수증) */}
-          <MonthlyValueReport
-            subscriptions={activeSubs}
-            usageLogs={usageLogs}
-            now={now}
-            onCancelGuide={handleCancelGuide}
-            onCheckIn={handleOpenCheckIn}
-          />
+          {AppValueReceipt ? (
+            <AppValueReceipt
+              subscriptions={activeSubs}
+              usageLogs={usageLogs}
+              now={now}
+              onCancelGuide={handleCancelGuide}
+              onCheckIn={handleOpenCheckIn}
+            />
+          ) : (
+            <MonthlyValueReport
+              subscriptions={activeSubs}
+              usageLogs={usageLogs}
+              now={now}
+              onCancelGuide={handleCancelGuide}
+              onCheckIn={handleOpenCheckIn}
+            />
+          )}
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-20" aria-label="이번 달 요약">
-          {/* 지출 한 줄 */}
-          <TotalSpend subscriptions={activeSubs} />
-          <ExchangeRateNote />
+        {/* 앱은 월 고정지출을 가성비 계산서 카드가, 절약 성과를 아래 탭의 절약 현황이 맡는다. */}
+        {!IS_APP_BUILD && (
+          <aside className="space-y-4 lg:sticky lg:top-20" aria-label="이번 달 요약">
+            {/* 지출 한 줄 */}
+            <TotalSpend subscriptions={activeSubs} />
+            <ExchangeRateNote />
 
-          {/*
-            절약 성과는 /savings가 전담한다. 여기서는 이번 달 실제로 막은 금액과
-            레벨만 한 줄로 보여주고 넘긴다 — 같은 위젯을 두 화면에 두면 어느 쪽이
-            본체인지 알 수 없게 된다.
-          */}
-          {killedSubs.length > 0 && (
-            <Link
-              href="/savings"
-              className="flex items-center justify-between gap-3 p-4 border rounded-2xl bg-card hover:bg-muted transition-colors"
-            >
-              <div className="min-w-0">
-                {/* 머리 숫자는 결제가 멈춘 것을 확인한 돈뿐이다. 1년치 요금은 아끼는 속도로 적는다. */}
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  지킨 돈
-                </p>
-                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                  {formatKRW(tiers.confirmed)}
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {tiers.pending > 0 && `⏳ 확인 대기 ${formatKRW(tiers.pending)} · `}연{" "}
-                  {formatKRW(tiers.annualRunRate)} 아끼는 중 · {detoxLevel.emoji}{" "}
-                  {detoxLevel.levelLabel} {detoxLevel.title}
-                  {tiers.unknownCount > 0 && ` · 결제 월 미설정 ${tiers.unknownCount}건 제외`}
-                </p>
-              </div>
-              <span className="text-sm font-semibold text-muted-foreground shrink-0">
-                절약 현황 →
-              </span>
-            </Link>
-          )}
-        </aside>
+            {/*
+              절약 성과는 /savings가 전담한다. 여기서는 이번 달 실제로 막은 금액과
+              레벨만 한 줄로 보여주고 넘긴다 — 같은 위젯을 두 화면에 두면 어느 쪽이
+              본체인지 알 수 없게 된다.
+            */}
+            {killedSubs.length > 0 && (
+              <Link
+                href="/savings"
+                className="flex items-center justify-between gap-3 p-4 border rounded-2xl bg-card hover:bg-muted transition-colors"
+              >
+                <div className="min-w-0">
+                  {/* 머리 숫자는 결제가 멈춘 것을 확인한 돈뿐이다. 1년치 요금은 아끼는 속도로 적는다. */}
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    지킨 돈
+                  </p>
+                  <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                    {formatKRW(tiers.confirmed)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {tiers.pending > 0 && `⏳ 확인 대기 ${formatKRW(tiers.pending)} · `}연{" "}
+                    {formatKRW(tiers.annualRunRate)} 아끼는 중 · {detoxLevel.emoji}{" "}
+                    {detoxLevel.levelLabel} {detoxLevel.title}
+                    {tiers.unknownCount > 0 && ` · 결제 월 미설정 ${tiers.unknownCount}건 제외`}
+                  </p>
+                </div>
+                <span className="text-sm font-semibold text-muted-foreground shrink-0">
+                  절약 현황 →
+                </span>
+              </Link>
+            )}
+          </aside>
+        )}
       </div>
 
       {/* SubForm Modal for Adding */}
