@@ -467,9 +467,15 @@ var FIRST_SCAN_MAX_MESSAGES = 200;
 var MAX_MESSAGES = 100;
 var MAX_BODY_CHARS = 1500;
 
+// SubSlash 앱(모바일)에서 왔는지. 앱은 이 화면을 인앱 브라우저로 열고, 창을 닫으면 앱으로 돌아간다.
+// 그래서 앱에서 왔을 때는 '돌아가기' 링크를 두지 않는다 — 인앱 브라우저 안에서 웹사이트가 열려,
+// 웹에 로그인돼 있으면 찾은 구독을 웹이 먼저 받아 가고 앱에는 오지 않는다.
+var FROM_APP = false;
+
 function doGet(e) {
   var params = (e && e.parameter) || {};
   var origin = String(params.origin || "");
+  FROM_APP = String(params.client || "") === "app";
   if (ALLOWED_ORIGINS.indexOf(origin) === -1) {
     return connectPage(
       "연결할 수 없습니다",
@@ -694,11 +700,13 @@ function clearBillingEvents(calendarId) {
 
 // backPath는 '돌아가기'가 열 SubSlash 화면이다. 캘린더는 버튼이 있던 '내 구독'으로 돌려보낸다.
 function connectPage(title, message, origin, backPath) {
-  var back = origin
-    ? '<p><a href="' + escapeHtml(origin + (backPath || "/import")) + '" target="_top" ' +
-      'style="display:inline-block;padding:12px 20px;border-radius:10px;background:#18181b;color:#fff;text-decoration:none;font-weight:700">' +
-      "SubSlash로 돌아가기</a></p>"
-    : "";
+  var back = FROM_APP
+    ? '<p style="font-weight:700">이 창을 닫으면 SubSlash 앱으로 돌아갑니다.</p>'
+    : origin
+      ? '<p><a href="' + escapeHtml(origin + (backPath || "/import")) + '" target="_top" ' +
+        'style="display:inline-block;padding:12px 20px;border-radius:10px;background:#18181b;color:#fff;text-decoration:none;font-weight:700">' +
+        "SubSlash로 돌아가기</a></p>"
+      : "";
   return HtmlService.createHtmlOutput(
     '<div style="font-family:sans-serif;line-height:1.6;padding:8px">' +
       "<h2>" + escapeHtml(title) + "</h2><p>" + escapeHtml(message) + "</p>" + back +
