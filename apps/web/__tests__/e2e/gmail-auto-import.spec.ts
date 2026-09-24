@@ -131,6 +131,39 @@ test.describe("Gmail 자동 가져오기 (E2E)", () => {
     await expect(page.getByRole("status").filter({ hasText: "Gmail 결제 메일" })).toHaveCount(0);
   });
 
+  test("Gmail 연결에서 돌아오면 화면을 다시 열지 않아도 찾은 구독을 받는다", async ({ page }) => {
+    // 앱은 인앱 브라우저를 닫아도 화면이 새로 열리지 않는다. 처음 열 때만 받았더니, 연결을 마쳐도
+    // 앱을 껐다 켤 때까지 아무것도 등록되지 않았다.
+    await seed(page);
+    await mockLoggedIn(page);
+    let connected = false;
+    let requests = 0;
+    await page.route("**/api/gmail/discoveries", (route) => {
+      if (route.request().method() === "DELETE") return route.fulfill({ json: { deleted: 1 } });
+      requests += 1;
+      return route.fulfill({
+        json: {
+          discoveries: connected
+            ? [discovery({ id: "d-netflix", name: "넷플릭스", presetId: "netflix", tier: "auto" })]
+            : [],
+        },
+      });
+    });
+
+    await page.goto("/dashboard");
+    await expect.poll(() => requests, { timeout: 30_000 }).toBe(1);
+
+    // 연결 화면(Apps Script 웹 앱)이 첫 검사를 마치고 닫혔다. 연결 화면이 부르는 것과 같은 신호다.
+    connected = true;
+    await page.evaluate(() =>
+      window.dispatchEvent(new Event("subslash:gmail-discoveries-requested")),
+    );
+
+    const banner = page.getByRole("status").filter({ hasText: "Gmail 결제 메일" });
+    await expect(banner.getByText(/구독 1건을 등록했습니다/)).toBeVisible();
+    await expect.poll(() => storedNames(page)).toEqual(["티빙", "넷플릭스"]);
+  });
+
   test("로그인하지 않으면 후보를 받지 않는다", async ({ page }) => {
     await seed(page);
     let requested = false;
