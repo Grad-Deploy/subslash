@@ -84,6 +84,68 @@ export async function shareText({ title, text, url }: SharePayload): Promise<boo
   }
 }
 
+/**
+ * 글자를 클립보드에 복사한다. 복사했으면 true, 못 했으면 false — 못 했을 때 '복사됨'을 띄우지 않고
+ * 글자를 화면에 보여주는 것은 부른 쪽이 한다.
+ *
+ * 앱에서는 네이티브 클립보드를 쓴다. 웹뷰의 `navigator.clipboard`는 출처(`capacitor://`)나 웹뷰
+ * 버전에 따라 없거나 거절되어, 앱에서만 복사 버튼이 아무것도 하지 않았다.
+ */
+export async function copyText(text: string): Promise<boolean> {
+  if (IS_APP_BUILD) {
+    try {
+      const { Clipboard } = await import("@capacitor/clipboard");
+      await Clipboard.write({ string: text });
+      return true;
+    } catch (error) {
+      console.error("[native] 복사하지 못했습니다", error);
+      return false;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 파일을 사용자에게 넘긴다(백업 파일 등). 넘겼으면 true, 사용자가 공유 창을 닫았으면 false.
+ *
+ * 웹에서는 브라우저가 내려받는다. 앱의 웹뷰는 내려받기를 처리하지 않아 `<a download>`가 아무
+ * 일도 하지 않는다 — 그래서 앱은 파일을 기기의 임시 폴더에 쓰고 네이티브 공유 창을 연다. 사용자가
+ * 그 창에서 저장할 곳(파일 앱·드라이브·메일 등)을 고른다.
+ */
+export async function saveFile(name: string, content: string, mimeType: string): Promise<boolean> {
+  if (IS_APP_BUILD) {
+    const [{ Filesystem, Directory, Encoding }, { Share }] = await Promise.all([
+      import("@capacitor/filesystem"),
+      import("@capacitor/share"),
+    ]);
+    const { uri } = await Filesystem.writeFile({
+      path: name,
+      data: content,
+      directory: Directory.Cache,
+      encoding: Encoding.UTF8,
+    });
+    try {
+      await Share.share({ title: name, files: [uri], dialogTitle: name });
+      return true;
+    } catch (error) {
+      if (/cancel/i.test(String((error as Error)?.message))) return false;
+      throw error;
+    }
+  }
+  const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+  return true;
+}
+
 /** 막대 뒤 창 배경색. layout의 themeColor와 같은 값이다. */
 const WINDOW_COLORS = { light: "#ffffff", dark: "#09090b" } as const;
 
