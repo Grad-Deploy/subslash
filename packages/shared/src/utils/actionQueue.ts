@@ -60,6 +60,8 @@ export interface ActionItem {
   subscriptionId: string;
   name: string;
   iconEmoji: string;
+  /** 직접 등록한 구독의 아이콘 타일 색(`Subscription.iconColor`). */
+  iconColor?: string;
   kind: ActionKind;
   /** 왜 이 줄이 떴는지, 한 문장. */
   reason: string;
@@ -189,6 +191,7 @@ export function getActionQueue(
         subscriptionId: sub.id,
         name: sub.name,
         iconEmoji: sub.iconUrl || "📦",
+        iconColor: sub.iconColor,
         kind: "trial-ending",
         reason:
           `${formatDday(trialDays)} · 무료 체험이 ${sub.trialEndsAt}에 끝납니다. ` +
@@ -275,6 +278,7 @@ export function getActionQueue(
       subscriptionId: sub.id,
       name: sub.name,
       iconEmoji: sub.iconUrl || "📦",
+      iconColor: sub.iconColor,
       kind,
       reason,
       verb: VERB[kind],
@@ -298,6 +302,7 @@ export function getActionQueue(
       subscriptionId: sub.id,
       name: sub.name,
       iconEmoji: sub.iconUrl || "📦",
+      iconColor: sub.iconColor,
       kind: "charged-after-kill",
       reason:
         `해지로 기록한 뒤인 ${sub.chargedAfterKillAt}에 결제 메일이 왔습니다` +
@@ -323,6 +328,7 @@ export function getActionQueue(
       subscriptionId: sub.id,
       name: sub.name,
       iconEmoji: sub.iconUrl || "📦",
+      iconColor: sub.iconColor,
       kind: "verify-kill",
       reason:
         `해지 후 첫 결제일 ${formatKillCheckDate(check.billingDate, now)}이 지났습니다. ` +

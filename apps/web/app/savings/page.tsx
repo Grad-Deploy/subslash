@@ -199,6 +199,7 @@ export default function SavingsDashboard() {
                       name={sub.name}
                       cancelUrl={sub.cancelUrl}
                       fallbackEmoji={sub.iconUrl}
+                      fallbackColor={sub.iconColor}
                       size={28}
                     />
                     <div className="min-w-0">

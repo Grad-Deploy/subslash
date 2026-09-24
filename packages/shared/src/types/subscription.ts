@@ -38,6 +38,12 @@ export interface Subscription {
   cancelGuide?: string;
   iconUrl?: string;
   /**
+   * 목록에 없는 서비스를 직접 등록할 때 고른 아이콘 타일 색. 정해진 색 이름(`gray`·`red` 등,
+   * apps/web/lib/custom-icon.ts) 중 하나다. 알려진 서비스는 실제 브랜드 마크를 쓰므로 없다.
+   * 없으면 중립 회색 타일로 그린다.
+   */
+  iconColor?: string;
+  /**
    * 요금제가 여럿인 서비스에서 고른 요금제(ServicePlan.id). 가격 확인이 이 요금제의 요금과
    * 비교한다. 요금제를 고르지 않았거나 요금제가 없는 서비스면 없다.
    */

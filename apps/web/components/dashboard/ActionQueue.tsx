@@ -129,7 +129,12 @@ export function ActionQueue({
               TONE[item.kind] ?? "bg-card"
             }`}
           >
-            <ServiceLogo name={item.name} fallbackEmoji={item.iconEmoji} size={28} />
+            <ServiceLogo
+              name={item.name}
+              fallbackEmoji={item.iconEmoji}
+              fallbackColor={item.iconColor}
+              size={28}
+            />
 
             <div className="flex-1 min-w-0 space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">

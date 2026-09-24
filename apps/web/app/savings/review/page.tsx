@@ -212,6 +212,7 @@ function YearInReviewContent() {
                 <ServiceLogo
                   name={sub.name}
                   fallbackEmoji={sub.iconUrl}
+                  fallbackColor={sub.iconColor}
                   size={14}
                   className="align-text-bottom"
                 />{" "}
