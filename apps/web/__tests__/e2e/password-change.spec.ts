@@ -77,7 +77,7 @@ test.describe("비밀번호 변경 (E2E)", () => {
   test("로그인하지 않으면 비밀번호 변경 칸이 없다", async ({ page }) => {
     await page.route("**/api/auth/me", (route) => route.fulfill({ json: { account: null } }));
     await page.goto("/me");
-    await expect(page.getByText(/로그인한 계정에만 있는 화면입니다/)).toBeVisible({
+    await expect(page.getByText(/로그인하지 않아도 모든 기록을 쓸 수 있어요/)).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.getByRole("region", { name: "비밀번호 변경" })).toHaveCount(0);
