@@ -97,7 +97,10 @@ var SUBSLASH_IMPORT_URL = __IMPORT_URL__;
 
 // 찾을 메일. Gmail 검색창과 같은 문법입니다.
 //
-// 세 갈래로 나눠 찾고 합칩니다. 한 갈래에 다 맡기면 상한을 그 갈래가 다 써 버리기 때문입니다.
+// 네 갈래로 나눠 찾고 합칩니다. 한 갈래에 다 맡기면 상한을 그 갈래가 다 써 버리기 때문입니다.
+// ⓪ 앱스토어·구글 플레이 영수증 — 한 통으로 여러 앱을 청구하고, 연간 구독은 1년에 한 번만
+//    옵니다. 수가 적어 따로 찾으면 다른 메일에 밀리지 않습니다(반년 전 굿노트 영수증이
+//    아래 갈래들의 상한 밖으로 밀려 아예 읽히지 않았습니다).
 // ① '구매' 분류 안에서 구독을 가리키는 말 — 구독 영수증에 가장 가깝습니다.
 // ② '구매' 분류 전체 — 주문·영수증만 모여 광고가 거의 없지만, 쇼핑 주문이 대부분이라
 //    이것만 보면 1년에 한 번 오는 연간 구독 영수증이 상한 밖으로 밀립니다.
@@ -105,6 +108,7 @@ var SUBSLASH_IMPORT_URL = __IMPORT_URL__;
 //    SubSlash가 결제한 증거가 없는 메일은 버립니다.
 // 빠지는 결제 메일이 있으면 ③에 단어를 더하세요.
 var SEARCH_QUERIES = [
+  "from:(apple.com OR google.com) (영수증 OR receipt OR 주문) newer_than:400d",
   "category:purchases (구독 OR 멤버십 OR 정기결제 OR 자동결제 OR 이용권 OR subscription OR membership OR renewal) newer_than:400d",
   "category:purchases newer_than:400d",
   "(영수증 OR 결제 OR 청구 OR 정기결제 OR 구독 OR 멤버십 OR receipt OR invoice OR subscription OR payment) newer_than:400d",
@@ -153,7 +157,9 @@ const MAIL_HELPERS = String.raw`function collectReceiptEmails(queries, maxMessag
     // 쿼리마다 자리를 나눠 씁니다. 앞 쿼리에 상한을 다 주면 뒤 쿼리는 아예 돌지 못합니다.
     var room = Math.ceil((maxMessages - refs.length) / (queries.length - q));
     if (room < 1) break;
-    var list = Gmail.Users.Messages.list("me", { q: queries[q], maxResults: room });
+    var list = withGmailQuota(function () {
+      return Gmail.Users.Messages.list("me", { q: queries[q], maxResults: room });
+    });
     var found = list.messages || [];
     for (var i = 0; i < found.length; i++) {
       if (seen[found[i].id]) continue;
@@ -162,7 +168,9 @@ const MAIL_HELPERS = String.raw`function collectReceiptEmails(queries, maxMessag
     }
   }
   return refs.map(function (ref) {
-    var message = Gmail.Users.Messages.get("me", ref.id, { format: "full" });
+    var message = withGmailQuota(function () {
+      return Gmail.Users.Messages.get("me", ref.id, { format: "full" });
+    });
     var headers = message.payload.headers || [];
     return {
       from: headerValue(headers, "From"),
@@ -171,6 +179,23 @@ const MAIL_HELPERS = String.raw`function collectReceiptEmails(queries, maxMessag
       body: messageText(message.payload).slice(0, MAX_BODY_CHARS),
     };
   });
+}
+
+// Gmail API는 사람마다 1분에 쓸 수 있는 양이 정해져 있습니다(메일 한 통 읽기가 20, 한도 6,000).
+// 첫 검사는 200통을 읽어 그 3분의 2를 쓰므로, 1분 안에 다시 연결하면 한도에 걸립니다. 걸리면
+// 포기하지 않고 한도가 풀릴 때까지 기다렸다가 다시 부릅니다. 다른 오류는 그대로 올립니다.
+var GMAIL_QUOTA_WAITS_MS = [10000, 30000, 65000];
+
+function withGmailQuota(call) {
+  for (var attempt = 0; ; attempt++) {
+    try {
+      return call();
+    } catch (error) {
+      var quota = /quota|rate ?limit|too many requests|429/i.test(String(error && error.message));
+      if (!quota || attempt >= GMAIL_QUOTA_WAITS_MS.length) throw error;
+      Utilities.sleep(GMAIL_QUOTA_WAITS_MS[attempt]);
+    }
+  }
 }
 
 function headerValue(headers, name) {
@@ -300,7 +325,10 @@ var SUBSLASH_TOKEN = __TOKEN__;
 
 // 찾을 메일. Gmail 검색창과 같은 문법입니다.
 //
-// 세 갈래로 나눠 찾고 합칩니다. 한 갈래에 다 맡기면 상한을 그 갈래가 다 써 버리기 때문입니다.
+// 네 갈래로 나눠 찾고 합칩니다. 한 갈래에 다 맡기면 상한을 그 갈래가 다 써 버리기 때문입니다.
+// ⓪ 앱스토어·구글 플레이 영수증 — 한 통으로 여러 앱을 청구하고, 연간 구독은 1년에 한 번만
+//    옵니다. 수가 적어 따로 찾으면 다른 메일에 밀리지 않습니다(반년 전 굿노트 영수증이
+//    아래 갈래들의 상한 밖으로 밀려 아예 읽히지 않았습니다).
 // ① '구매' 분류 안에서 구독을 가리키는 말 — 구독 영수증에 가장 가깝습니다.
 // ② '구매' 분류 전체 — 주문·영수증만 모여 광고가 거의 없지만, 쇼핑 주문이 대부분이라
 //    이것만 보면 1년에 한 번 오는 연간 구독 영수증이 상한 밖으로 밀립니다.
@@ -308,6 +336,7 @@ var SUBSLASH_TOKEN = __TOKEN__;
 //    SubSlash가 결제한 증거가 없는 메일은 버립니다.
 // 빠지는 결제 메일이 있으면 ③에 단어를 더하세요.
 var SEARCH_QUERIES = [
+  "from:(apple.com OR google.com) (영수증 OR receipt OR 주문)",
   "category:purchases (구독 OR 멤버십 OR 정기결제 OR 자동결제 OR 이용권 OR subscription OR membership OR renewal)",
   "category:purchases",
   "(영수증 OR 결제 OR 청구 OR 정기결제 OR 구독 OR 멤버십 OR receipt OR invoice OR subscription OR payment)",
@@ -417,7 +446,10 @@ var ALLOWED_ORIGINS = __ORIGINS__;
 
 // 찾을 메일. Gmail 검색창과 같은 문법입니다.
 //
-// 세 갈래로 나눠 찾고 합칩니다. 한 갈래에 다 맡기면 상한을 그 갈래가 다 써 버리기 때문입니다.
+// 네 갈래로 나눠 찾고 합칩니다. 한 갈래에 다 맡기면 상한을 그 갈래가 다 써 버리기 때문입니다.
+// ⓪ 앱스토어·구글 플레이 영수증 — 한 통으로 여러 앱을 청구하고, 연간 구독은 1년에 한 번만
+//    옵니다. 수가 적어 따로 찾으면 다른 메일에 밀리지 않습니다(반년 전 굿노트 영수증이
+//    아래 갈래들의 상한 밖으로 밀려 아예 읽히지 않았습니다).
 // ① '구매' 분류 안에서 구독을 가리키는 말 — 구독 영수증에 가장 가깝습니다.
 // ② '구매' 분류 전체 — 주문·영수증만 모여 광고가 거의 없지만, 쇼핑 주문이 대부분이라
 //    이것만 보면 1년에 한 번 오는 연간 구독 영수증이 상한 밖으로 밀립니다.
@@ -425,6 +457,7 @@ var ALLOWED_ORIGINS = __ORIGINS__;
 //    SubSlash가 결제한 증거가 없는 메일은 버립니다.
 // 빠지는 결제 메일이 있으면 ③에 단어를 더하세요.
 var SEARCH_QUERIES = [
+  "from:(apple.com OR google.com) (영수증 OR receipt OR 주문)",
   "category:purchases (구독 OR 멤버십 OR 정기결제 OR 자동결제 OR 이용권 OR subscription OR membership OR renewal)",
   "category:purchases",
   "(영수증 OR 결제 OR 청구 OR 정기결제 OR 구독 OR 멤버십 OR receipt OR invoice OR subscription OR payment)",
