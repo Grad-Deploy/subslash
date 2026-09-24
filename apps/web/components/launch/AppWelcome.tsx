@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Clapperboard, Headphones, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@lib/store";
 import { markWelcomeSeen } from "@lib/welcome";
@@ -164,7 +165,7 @@ export function AppWelcome({ onDone }: { onDone: () => void }) {
               dimmableRefs.current[0] = el;
             }}
           >
-            🎬
+            <Clapperboard size={17} aria-hidden="true" />
           </div>
           <div className={styles.meta}>
             <div className={styles.name}>
@@ -197,7 +198,7 @@ export function AppWelcome({ onDone }: { onDone: () => void }) {
           }}
         >
           <div className={styles.ico} style={{ background: "#14202A" }}>
-            🎧
+            <Headphones size={17} aria-hidden="true" />
           </div>
           <div className={styles.meta}>
             <div className={styles.name}>음악</div>
@@ -245,7 +246,10 @@ export function AppWelcome({ onDone }: { onDone: () => void }) {
           inRefs.current[8] = el;
         }}
       >
-        <span className={styles.lock}>🔒 로그인 없이 이 기기에만 저장돼요</span>
+        <span className={styles.lock}>
+          <Lock size={12} aria-hidden="true" />
+          로그인 없이 이 기기에만 저장돼요
+        </span>
         <br />
         이미 계정이 있나요?{" "}
         <button type="button" onClick={() => void finish(() => router.push("/login"))}>
