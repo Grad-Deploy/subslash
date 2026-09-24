@@ -202,7 +202,7 @@ export function AppImportGuide() {
               위쪽 함수 목록에서 <b className="text-foreground">setup</b>을 골라 실행하고, 권한
               화면에서 허용해요.
             </p>
-            <StepTip title="⚠️ '확인되지 않은 앱' 경고가 나와도 괜찮아요">
+            <StepTip title="'확인되지 않은 앱' 경고가 나와도 괜찮아요">
               내가 직접 만든 스크립트라 Google이 검사하지 않았다는 뜻이에요. <b>고급 › 계속</b>을
               누르면 돼요.
             </StepTip>
