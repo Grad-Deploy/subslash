@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  안드로이드 12 이상의 백업 규칙. Google 클라우드 백업에서 Preferences 파일(CapacitorStorage.xml)을 뺀다.
+  그 파일에는 로그인 세션 토큰(apps/web/lib/session-token)이 있어, 백업에 들어가면 Google 계정만으로
+  다른 기기에서 SubSlash에 로그인된 채 복원된다. 같은 파일의 구독 기록 사본은 웹뷰 저장소의 원본이
+  백업에 남으므로 잃지 않는다. 기기끼리 직접 옮길 때(device-transfer)는 주인이 두 기기를 쥐고 있으므로
+  그대로 옮긴다.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="CapacitorStorage.xml" />
+    </cloud-backup>
+</data-extraction-rules>
