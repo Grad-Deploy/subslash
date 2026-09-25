@@ -23,6 +23,7 @@ import { isAnonymousStatsOpen } from "@lib/privacy";
 import { fetchStatsSummary, useStatsSharing, withdrawContribution } from "@lib/stats-client";
 import { STATS_MIN_PARTICIPANTS, type StatsSummary } from "@lib/stats";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
+import { MeasuredUsageSection } from "@components/usage/MeasuredUsage";
 import { subscriptionDetailHref } from "@lib/routes";
 import { Button } from "../../components/ui/button";
 import { Spinner } from "../../components/ui/spinner";
@@ -173,6 +174,8 @@ export default function ReportPage() {
               </p>
             )}
           </section>
+
+          <MeasuredUsageSection subscriptions={active} />
         </>
       )}
 
