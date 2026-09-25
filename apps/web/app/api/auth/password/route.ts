@@ -11,6 +11,18 @@ import {
   sessionCookieOptions,
   sessionTokenForApp,
 } from "@lib/auth-server";
+import {
+  hit,
+  retryAfterSeconds,
+  tooManyRequestsMessage,
+  type RateLimitRule,
+} from "@lib/rate-limit";
+
+/**
+ * 로그인한 세션으로 지금 비밀번호를 거듭 대입하지 못하게 한다(자리를 비운 사이 누가 쓰는 경우).
+ * 비밀번호 변경·회원 탈퇴가 같은 칸을 나눠 센다.
+ */
+const PASSWORD_CHECK_FAILURES: RateLimitRule = { limit: 10, windowMs: 15 * 60 * 1000 };
 
 type FieldErrors = { currentPassword?: string; password?: string; passwordConfirm?: string };
 
@@ -49,7 +61,16 @@ export async function PUT(request: NextRequest) {
     }
     // 지금 비밀번호부터 본다. 틀린 채로 새 비밀번호 규칙을 먼저 알려주면, 고쳐 보내도
     // 결국 바꿀 수 없다는 것을 한 번 더 제출한 뒤에야 알게 된다.
+    const checkKey = `password-check:${account.id}`;
+    const wait = retryAfterSeconds(checkKey, PASSWORD_CHECK_FAILURES);
+    if (wait > 0) {
+      return NextResponse.json(
+        { error: tooManyRequestsMessage(wait) },
+        { status: 429, headers: { "Retry-After": String(wait) } },
+      );
+    }
     if (!(await verifyPassword(currentPassword, account.passwordHash))) {
+      hit(checkKey, PASSWORD_CHECK_FAILURES);
       const message = "지금 비밀번호가 맞지 않습니다.";
       return NextResponse.json(
         { error: message, fieldErrors: { currentPassword: message } },
