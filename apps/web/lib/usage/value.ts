@@ -55,9 +55,9 @@ export interface SubUsage {
   monthlyKRW: number;
   /** 기록이 있는 날만큼의 구독료 ÷ 사용 시간. 안 썼으면 null. */
   hourlyKRW: number | null;
-  /** 30일로 환산한 연 횟수 기준 1회 단가. 안 열었으면 null. */
+  /** 30일로 환산한 쓴 횟수 기준 1회 단가. 안 열었으면 null. */
   perOpenKRW: number | null;
-  /** 30일로 환산한 연 횟수로 매긴 색. 안 열었으면 null. */
+  /** 30일로 환산한 쓴 횟수로 매긴 색. 안 열었으면 null. */
   level: RiskLevel | null;
 }
 
@@ -126,7 +126,7 @@ export function rangeDates(range: UsageRange, now: Date): string[] {
   return lastDays(now, RANGE_DAYS[range]);
 }
 
-/** 최근 30일 연 횟수(체크인 미리 맞추기용). 잴 수 없으면 null. */
+/** 최근 30일 쓴 횟수(체크인 미리 맞추기용). 잴 수 없으면 null. */
 export function recentOpens(
   sub: Subscription,
   history: UsageHistory,

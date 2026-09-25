@@ -9,13 +9,13 @@ import { openPhoneUsageSettings, usePhoneUsage } from "@hooks/usePhoneUsage";
 const POINTS = [
   {
     icon: Check,
-    title: "구독한 서비스 앱의 사용 시간과 연 횟수만 읽어요",
+    title: "구독한 서비스 앱의 사용 시간과 쓴 횟수만 읽어요",
     body: "다른 앱의 기록과 화면 내용은 쓰지 않아요",
   },
   {
     icon: Smartphone,
     title: "이 폰 안에서만 계산해요",
-    body: "서버나 계정으로 보내지 않아요",
+    body: "서버나 계정으로 보내지 않아요. 여러 기기 합산은 설정에서 따로 켤 때만 올려요",
   },
   {
     icon: Info,

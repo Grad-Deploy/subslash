@@ -123,7 +123,7 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
 
           <div className="grid grid-cols-2 gap-2">
             <StatTile label="사용 시간" value={formatDuration(period.totals.ms)} />
-            <StatTile label="연 횟수" value={String(period.totals.opens)} unit="회" />
+            <StatTile label="쓴 횟수" value={String(period.totals.opens)} unit="회" />
           </div>
 
           <div>

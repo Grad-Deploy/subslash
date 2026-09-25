@@ -6,7 +6,7 @@
  * 칸이 없는 날은 **모른다** — 0으로 읽지 않는다(앱을 안 연 날과 기록이 지워진 날은 다르다).
  */
 
-/** 날짜 → 패키지 → [사용 시간(ms), 연 횟수] */
+/** 날짜 → 패키지 → [사용 시간(ms), 쓴 횟수] */
 export type UsageDays = Record<string, Record<string, [number, number]>>;
 
 export interface UsageHistory {
