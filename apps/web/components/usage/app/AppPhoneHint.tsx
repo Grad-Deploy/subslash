@@ -5,9 +5,9 @@ import { Smartphone } from "lucide-react";
 import { type Subscription } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
-import { formatDuration } from "@lib/usage/history";
+import { formatDuration, lastDays } from "@lib/usage/history";
 import { packagesFor } from "@lib/usage/packages";
-import { recentOpens } from "@lib/usage/value";
+import { recentOpens, subUsage } from "@lib/usage/value";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 
 /**
@@ -59,6 +59,18 @@ export function AppPhoneHint({
         )}
         <p className="text-muted-foreground">TV·PC·태블릿에서 본 건 빠져 있어요.</p>
       </div>
+    );
+  }
+
+  // 켰는데 숫자가 없으면 이유를 말한다. 말없이 줄을 치우면 켠 직후의 사람은 켜진 줄도 모른다.
+  if (status === "on" && packagesFor(subscription)) {
+    const state = subUsage(subscription, history, installed, lastDays(new Date(), 30), rate).state;
+    return (
+      <p className="mt-3 rounded-2xl bg-secondary/60 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
+        {state === "not-installed"
+          ? "이 폰에는 이 서비스의 앱이 없어요. 다른 기기에서 썼다면 막대로 골라 주세요."
+          : "이 폰의 사용 기록은 오늘부터 쌓여요. 내일부터 여기서 채울 수 있어요."}
+      </p>
     );
   }
 
