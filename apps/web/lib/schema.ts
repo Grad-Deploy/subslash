@@ -150,8 +150,8 @@ export const accounts = sqliteTable(
      */
     passwordHash: text("password_hash").notNull(),
     /**
-     * 선택 항목. 가입 때 묻지 않고 '내 정보'에서 원할 때만 적는다. 적지 않았으면
-     * null이다. 예전에는 가입 필수 항목이어서, 그때 가입한 계정에는 값이 남아 있다.
+     * 선택 항목. 가입 화면과 '내 정보'에서 원할 때만 적는다. 적지 않았으면 null이다.
+     * 필수로 받지 않는다 — 서비스에 꼭 필요한 정보가 아니다(개인정보 보호법 제16조).
      */
     age: integer("age"),
     /** male | female | other | undisclosed. 선택 항목이라 적지 않았으면 null. */
@@ -387,3 +387,49 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
 export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
+
+/**
+ * 익명 구독 통계에 참여한 기기(lib/stats). 로그인 계정·알림 구독자와 묶지 않는다 — 누가 보낸 것인지
+ * 알 수 없어야 익명이다. 기기는 토큰을 쥐고 자기 기록을 바꾸거나 지울 뿐이고, 서버는 해시만 둔다.
+ * STATS_RETENTION_DAYS 동안 갱신되지 않으면 크론이 지운다.
+ */
+export const statsContributors = sqliteTable(
+  "stats_contributors",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    tokenHash: text("token_hash").notNull(),
+    /** 한 달 구독 지출(내 몫) 합계, 1,000원 단위. */
+    totalMonthlyKrw: integer("total_monthly_krw").notNull(),
+    activeCount: integer("active_count").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    tokenIdx: uniqueIndex("stats_contributors_token_idx").on(table.tokenHash),
+    updatedIdx: index("stats_contributors_updated_idx").on(table.updatedAt),
+  }),
+);
+
+/** 참여자의 알려진 서비스 하나. 서비스 이름이 아니라 서비스 목록의 id만 둔다. */
+export const statsItems = sqliteTable(
+  "stats_items",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    contributorId: text("contributor_id")
+      .notNull()
+      .references(() => statsContributors.id, { onDelete: "cascade" }),
+    presetId: text("preset_id").notNull(),
+    /** 내 몫의 한 달 금액, 100원 단위. */
+    monthlyKrw: integer("monthly_krw").notNull(),
+    /** 마지막 체크인의 이용 횟수. 최근 체크인이 없으면 null. */
+    usageCount: integer("usage_count"),
+  },
+  (table) => ({
+    contributorIdx: index("stats_items_contributor_idx").on(table.contributorId),
+    presetIdx: index("stats_items_preset_idx").on(table.presetId),
+  }),
+);

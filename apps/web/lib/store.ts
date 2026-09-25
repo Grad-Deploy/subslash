@@ -46,7 +46,13 @@ const SEEDED_DEMO_ACCOUNTS: ReadonlyArray<Pick<LinkedAccount, "id" | "name" | "e
 
 type PersistedState = Pick<
   SubSlashStore,
-  "subscriptions" | "usageLogs" | "accounts" | "notify" | "exchangeRate" | "accountSync"
+  | "subscriptions"
+  | "usageLogs"
+  | "accounts"
+  | "notify"
+  | "exchangeRate"
+  | "accountSync"
+  | "recordsOwner"
 >;
 
 /**
@@ -136,12 +142,22 @@ export function migrateRetiredCategories(state: Partial<PersistedState>): Partia
  * remember.
  */
 export function mergePersistedState(persisted: unknown, current: SubSlashStore): SubSlashStore {
+  const saved = (persisted ?? {}) as Partial<PersistedState>;
   return {
     ...current,
-    ...migrateRetiredCategories(
-      migrateLegacyCancelUrls((persisted ?? {}) as Partial<PersistedState>),
-    ),
+    ...migrateRetiredCategories(migrateLegacyCancelUrls(saved)),
+    recordsOwner: legacyRecordsOwner(saved),
   };
+}
+
+/**
+ * 주인 칸이 생기기 전의 저장소는 로그아웃해도 계정의 기록을 그대로 두었다. 이 기기가 맞춰 온
+ * 계정이 있으면 지금 기록은 그 계정의 것이다 — 비로그인 기록으로 읽으면 로그아웃한 화면에 계정의
+ * 기록이 계속 보인다.
+ */
+function legacyRecordsOwner(saved: Partial<PersistedState>): string | null {
+  if (saved.recordsOwner !== undefined) return saved.recordsOwner;
+  return saved.accountSync?.accountId ?? null;
 }
 
 /**
@@ -260,6 +276,11 @@ interface SubSlashStore {
   notify: NotifySettings;
   exchangeRate: ExchangeRateSetting;
   accountSync: AccountSyncState;
+  /**
+   * 지금 화면의 기록이 누구의 것인지. 비로그인이면 null, 로그인했으면 그 계정 ID다. 로그인·로그아웃할
+   * 때 기록을 주인별 칸으로 바꿔 끼운다(lib/records-owner).
+   */
+  recordsOwner: string | null;
   /** 샘플 체험 중이면 그 상태. 저장소에 저장하지 않는다 — 새로고침하면 체험이 끝난다. */
   demo: DemoSession | null;
   /** 샘플로 체험을 시작한다. 이미 체험 중이면 그대로 둔다. */
@@ -343,6 +364,7 @@ export function toPersistedState(state: SubSlashStore): PersistedState {
     notify: state.notify,
     exchangeRate: state.exchangeRate,
     accountSync: state.accountSync,
+    recordsOwner: state.recordsOwner,
   };
 }
 
@@ -356,6 +378,7 @@ export const useStore = create<SubSlashStore>()(
       exchangeRate: DEFAULT_EXCHANGE_RATE_SETTING,
       demo: null,
       accountSync: DEFAULT_ACCOUNT_SYNC,
+      recordsOwner: null,
 
       addSubscription: (data) => {
         const newSub: Subscription = {

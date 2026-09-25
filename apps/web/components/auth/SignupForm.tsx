@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { X } from "lucide-react";
 import {
+  GENDER_OPTIONS,
+  MAX_AGE,
   MIN_AGE,
   PASSWORD_MIN,
   USERNAME_MAX,
@@ -14,6 +16,7 @@ import {
   type FieldErrors,
 } from "@subslash/shared";
 import { Input } from "@components/ui/input";
+import { Select } from "@components/ui/select";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
@@ -71,6 +74,9 @@ export function SignupForm() {
   const router = useRouter();
   const [form, setForm] = useState(EMPTY);
   const [isOver14, setIsOver14] = useState(false);
+  // 선택 항목. 비워도 가입된다.
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
   // 입력했거나 거쳐 간 칸. 이 칸들만 입력하는 동안 판정한다.
   const [touched, setTouched] = useState<Partial<Record<TextField, boolean>>>({});
   // 제출 때 받은 칸별 오류(이미 쓰는 아이디 등). 그 칸을 고치면 치운다.
@@ -137,13 +143,18 @@ export function SignupForm() {
     event.preventDefault();
     setFormError(null);
 
-    const { errors: localErrors, value } = validateSignup({ ...form, isOver14 });
+    const { errors: localErrors, value } = validateSignup({ ...form, isOver14, age, gender });
     if (!value) {
       // 칸별 문구는 입력 중 판정이 그대로 보여준다(같은 검증 함수를 쓴다). 모든
       // 칸을 손댄 것으로 치고, 글자를 치지 않는 체크박스 오류만 따로 둔다.
       setTouched(ALL_TOUCHED);
       checkEmailNow();
-      setErrors((prev) => ({ ...prev, isOver14: localErrors.isOver14 }));
+      setErrors((prev) => ({
+        ...prev,
+        isOver14: localErrors.isOver14,
+        age: localErrors.age,
+        gender: localErrors.gender,
+      }));
       return;
     }
 
@@ -160,6 +171,8 @@ export function SignupForm() {
           password: form.password,
           passwordConfirm: form.passwordConfirm,
           isOver14,
+          age: age.trim() === "" ? null : age,
+          gender: gender === "" ? null : gender,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -301,9 +314,69 @@ export function SignupForm() {
         />
       </Field>
 
-      {/* 나이·성별은 가입 때 묻지 않는다. 칸이 늘수록 가입을 포기하는 사람이 늘어서,
-          가입 뒤 '내 정보'에서 원할 때만 적는다. 만 14세 확인만은 법정대리인
-          동의 문제 때문에 필수로 남긴다. */}
+      {/*
+        나이·성별은 선택이다. 서비스에 꼭 필요한 정보가 아니라 필수로 받으면 개인정보 보호법
+        제16조(최소 수집)에 어긋나고, 비웠다고 가입을 막을 수도 없다. 만 14세 확인만은 법정대리인
+        동의 문제 때문에 필수로 남긴다.
+      */}
+      <fieldset className="space-y-2 rounded-xl border px-3.5 py-3">
+        <legend className="px-1 text-xs font-bold text-foreground">
+          나이·성별 <span className="font-normal text-muted-foreground">(선택)</span>
+        </legend>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <label htmlFor="signup-age" className="sr-only">
+              나이
+            </label>
+            <Input
+              id="signup-age"
+              name="age"
+              type="number"
+              inputMode="numeric"
+              min={MIN_AGE}
+              max={MAX_AGE}
+              placeholder="만 나이"
+              value={age}
+              onChange={(e) => {
+                setAge(e.target.value);
+                setErrors((prev) => (prev.age ? { ...prev, age: undefined } : prev));
+              }}
+              aria-invalid={Boolean(errors.age)}
+            />
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="signup-gender" className="sr-only">
+              성별
+            </label>
+            <Select
+              id="signup-gender"
+              name="gender"
+              value={gender}
+              onChange={(e) => {
+                setGender(e.target.value);
+                setErrors((prev) => (prev.gender ? { ...prev, gender: undefined } : prev));
+              }}
+              aria-invalid={Boolean(errors.gender)}
+            >
+              <option value="">성별 선택 안 함</option>
+              {GENDER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+        {(errors.age || errors.gender) && (
+          <p className="text-[11px] font-medium text-destructive" role="alert">
+            {errors.age ?? errors.gender}
+          </p>
+        )}
+        <p className="text-[11px] text-muted-foreground">
+          비워도 가입돼요. &lsquo;내 정보&rsquo;에서 언제든 바꾸거나 지울 수 있어요.
+        </p>
+      </fieldset>
+
       <div className="space-y-1.5">
         <label
           htmlFor="isOver14"
@@ -338,10 +411,6 @@ export function SignupForm() {
             {errors.isOver14}
           </p>
         )}
-        <p className="text-[11px] text-muted-foreground">
-          나이·성별은 가입 때 묻지 않습니다. 가입 후 &lsquo;내 정보&rsquo;에서 원할 때만 적을 수
-          있습니다.
-        </p>
       </div>
 
       {formError && (

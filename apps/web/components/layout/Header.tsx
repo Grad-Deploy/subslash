@@ -9,6 +9,7 @@ import { NotifySettingsModal } from "../notify/NotifySettingsModal";
 import { AccountMenu } from "./AccountMenu";
 import { useStore } from "@lib/store";
 import { useMirrorSync } from "@hooks/useMirrorSync";
+import { useStatsContribution } from "@hooks/useStatsContribution";
 import { useAccountSync } from "@hooks/useAccountSync";
 import { AccountSyncConflictDialog } from "../account/AccountSyncConflictDialog";
 import { useAuth } from "@hooks/useAuth";
@@ -19,7 +20,7 @@ import { IS_APP_BUILD } from "@lib/platform";
 const navLinks = [
   { name: "대시보드", href: "/dashboard" },
   { name: "내 구독", href: "/subs" },
-  { name: "절약 현황", href: "/savings" },
+  { name: "리포트", href: "/report" },
 ] as const;
 
 /**
@@ -44,6 +45,8 @@ export function Header() {
   // The header is mounted on every route, so the mirror stays in step wherever
   // the user edits their subscriptions.
   useMirrorSync();
+  // 익명 통계에 참여한 기기면 구독이 바뀔 때 요약을 다시 보낸다.
+  useStatsContribution();
   // 로그인한 기기끼리 구독 기록을 자동으로 맞춘다. 양쪽이 따로 바뀌었으면 어느 쪽을 쓸지 묻는다.
   const accountSync = useAccountSync();
 
@@ -85,7 +88,10 @@ export function Header() {
             {/* 좁은 화면에서는 하단 탭(BottomNav)이 같은 역할을 한다. */}
             <nav className="hidden h-full items-center gap-6 md:flex" aria-label="주요 메뉴">
               {navLinks.map((link) => {
-                const isActive = pathname?.startsWith(link.href);
+                // 절약 기록(/savings)은 리포트에서 들어가는 화면이라 리포트 탭에 불을 켠다.
+                const isActive =
+                  pathname?.startsWith(link.href) ||
+                  (link.href === "/report" && pathname?.startsWith("/savings"));
                 return (
                   <Link
                     key={link.href}

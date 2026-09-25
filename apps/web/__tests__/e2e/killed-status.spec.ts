@@ -58,8 +58,8 @@ test.describe("해지한 구독의 상태 (E2E)", () => {
     });
     await expect(page.getByText(/구독 중 \d+개/)).toHaveCount(0);
 
-    await page.getByRole("button", { name: /절약 현황 →/ }).click();
-    await expect(page).toHaveURL(/\/savings/, { timeout: 30_000 });
+    await page.getByRole("button", { name: /리포트 →/ }).click();
+    await expect(page).toHaveURL(/\/report/, { timeout: 30_000 });
   });
 
   test("구독 중과 해지한 구독이 섞여 있으면 구독 중인 것만 센다", async ({ page }) => {
@@ -69,7 +69,7 @@ test.describe("해지한 구독의 상태 (E2E)", () => {
     await expect(page.getByText("구독 중 1개")).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByText(/해지한 1개는 절약 현황에 있어요/)).toBeVisible();
+    await expect(page.getByText(/해지한 1개는 리포트에 있어요/)).toBeVisible();
   });
 
   test("해지한 구독의 상세에서는 다시 해지로 기록하거나 체크인할 수 없다", async ({ page }) => {

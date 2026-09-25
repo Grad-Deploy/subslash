@@ -39,7 +39,7 @@ test.describe("Dashboard (E2E)", () => {
     await page.goto("/");
 
     await expect(page.getByRole("link", { name: /구독 관리/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /절약 현황/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /리포트/ })).toBeVisible();
   });
 
   test("샘플 체험은 내 구독과 섞이지 않고, 끝내면 내 구독으로 돌아온다", async ({ page }) => {
@@ -108,8 +108,8 @@ test.describe("Dashboard (E2E)", () => {
     });
 
     await page.reload();
-    // 구독이 하나도 없을 때만 보이는 버튼이 다시 나온다 — 샘플이 저장되지 않았다.
-    await expect(page.getByRole("button", { name: /샘플 불러오기/ })).toBeVisible({
+    // 구독이 하나도 없을 때만 보이는 서비스 고르기가 다시 나온다 — 샘플이 저장되지 않았다.
+    await expect(page.getByRole("button", { name: /샘플로 둘러보기/ })).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.getByText("샘플로 체험하는 중입니다.")).toHaveCount(0);

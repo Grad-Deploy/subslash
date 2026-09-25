@@ -17,7 +17,7 @@ interface AppStartChecklistProps {
 
 /**
  * 앱 대시보드의 '시작하기' 체크리스트. 설명 카드를 읽게 하는 대신 해야 할 일 세 가지와 진행만
- * 보여준다. 화면을 막지 않고, 닫으면 다시 나오지 않는다. 웹은 기존 안내 카드(OnboardingTourCard)를 쓴다.
+ * 보여준다. 화면을 막지 않고, 닫으면 다시 나오지 않는다. 기기 알림이 앱에만 있어 웹에는 없다.
  */
 export function AppStartChecklist({
   hasSubscription,

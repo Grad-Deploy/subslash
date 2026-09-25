@@ -151,7 +151,8 @@ test.describe("Gmail 자동 가져오기 (E2E)", () => {
     });
 
     await page.goto("/dashboard");
-    await expect.poll(() => requests, { timeout: 30_000 }).toBe(1);
+    // 개발 모드는 effect를 두 번 돌려, 받는 중에 온 두 번째 요청을 끝난 뒤 한 번 더 받을 수 있다.
+    await expect.poll(() => requests, { timeout: 30_000 }).toBeGreaterThanOrEqual(1);
 
     // 연결 화면(Apps Script 웹 앱)이 첫 검사를 마치고 닫혔다. 연결 화면이 부르는 것과 같은 신호다.
     connected = true;
