@@ -7,6 +7,7 @@ import {
   findAccountByEmail,
   sendAccountVerification,
 } from "@lib/account-verification";
+import { logError } from "@lib/log";
 
 /**
  * 확인 메일 다시 보내기.
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
       { status: httpStatus },
     );
   } catch (error) {
-    console.error("[api/auth/verification-email]", error);
+    logError("api/auth/verification-email", error);
     return NextResponse.json({ error: "확인 메일을 보내지 못했습니다." }, { status: 500 });
   }
 }

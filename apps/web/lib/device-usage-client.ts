@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { apiFetch } from "./api";
+import { apiFetch, readApiError } from "./api";
 import { IS_APP_BUILD } from "./platform";
 import {
   ANDROID_PACKAGES,
@@ -127,15 +127,6 @@ export async function collectUpload(now: number = Date.now()): Promise<UsageUplo
   };
 }
 
-async function readError(response: Response, fallback: string): Promise<string> {
-  try {
-    const body = await response.json();
-    return typeof body?.error === "string" ? body.error : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 /** 이 기기가 잰 것을 계정에 올린다. 잴 수 없거나 꺼져 있으면 아무것도 하지 않고 false. */
 export async function uploadThisDevice(): Promise<boolean> {
   if (!useDeviceUsage.getState().enabled) return false;
@@ -146,7 +137,7 @@ export async function uploadThisDevice(): Promise<boolean> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(upload),
   });
-  if (!response.ok) throw new Error(await readError(response, "사용 기록을 올리지 못했습니다."));
+  if (!response.ok) throw new Error(await readApiError(response, "사용 기록을 올리지 못했습니다."));
   useDeviceUsage.getState().markUploaded(upload.until);
   return true;
 }
@@ -154,7 +145,7 @@ export async function uploadThisDevice(): Promise<boolean> {
 /** 계정의 모든 기기를 모아 센 최근 `days`일. */
 export async function fetchDeviceUsage(days = 30): Promise<DeviceUsageView> {
   const response = await apiFetch(`/api/usage?days=${days}`);
-  if (!response.ok) throw new Error(await readError(response, "사용 기록을 읽지 못했습니다."));
+  if (!response.ok) throw new Error(await readApiError(response, "사용 기록을 읽지 못했습니다."));
   return (await response.json()) as DeviceUsageView;
 }
 
@@ -167,7 +158,8 @@ export async function stopMeasuringThisDevice(): Promise<void> {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ deviceKey }),
     });
-    if (!response.ok) throw new Error(await readError(response, "사용 기록을 지우지 못했습니다."));
+    if (!response.ok)
+      throw new Error(await readApiError(response, "사용 기록을 지우지 못했습니다."));
   }
   useDeviceUsage.setState({ enabled: false, uploadedUntil: null });
 }

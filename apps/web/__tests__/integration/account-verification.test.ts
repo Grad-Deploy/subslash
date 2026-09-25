@@ -41,6 +41,7 @@ vi.stubGlobal(
 const { getDb, closeDb } = await import("../../lib/db");
 const { accounts, sessions, verificationMailLog } = await import("../../lib/schema");
 const { SESSION_COOKIE } = await import("../../lib/auth-server");
+const { resetAllRateLimits } = await import("../../lib/rate-limit");
 const { signLink, emailFingerprint } = await import("../../lib/tokens");
 
 const { POST: signupRoute } = await import("../../app/api/auth/signup/route");
@@ -178,6 +179,7 @@ async function withEnv<T>(changes: Record<string, string | undefined>, run: () =
 }
 
 beforeEach(async () => {
+  resetAllRateLimits();
   outbox.length = 0;
   resendStatus = 200;
   await resetDatabase();

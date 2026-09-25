@@ -202,7 +202,8 @@ export default function PrivacyPage() {
           </li>
           <li>
             결제 알림: 알림 설정에서 끄거나 알림 메일의 수신 거부 링크를 누르면, 알림 정보와 서버에
-            복사한 구독을 지웁니다.
+            복사한 구독을 지웁니다. 신청하고 3일 안에 확인 메일의 링크를 누르지 않으면 그 신청을
+            자동으로 지웁니다.
           </li>
           {GMAIL_AUTO_IMPORT_STARTS_ON && (
             <li>

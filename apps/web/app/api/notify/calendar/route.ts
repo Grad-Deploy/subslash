@@ -5,6 +5,7 @@ import { notificationSubscribers } from "@lib/schema";
 import { generateSyncToken, hashSyncToken } from "@lib/tokens";
 import { userFromRequest } from "@lib/notify-server";
 import { appUrl } from "@lib/email";
+import { logError } from "@lib/log";
 
 function feedUrl(token: string): string {
   return `${appUrl()}/api/calendar/${token}.ics`;
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: feedUrl(token), reminderDays: user.reminderDays });
   } catch (error) {
-    console.error("[api/notify/calendar]", error);
+    logError("api/notify/calendar", error);
     return NextResponse.json({ error: "캘린더 주소를 만들지 못했습니다." }, { status: 500 });
   }
 }
@@ -56,7 +57,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[api/notify/calendar]", error);
+    logError("api/notify/calendar", error);
     return NextResponse.json({ error: "캘린더 구독 해제에 실패했습니다." }, { status: 500 });
   }
 }

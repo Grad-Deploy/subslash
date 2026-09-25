@@ -98,7 +98,7 @@ describe("0006: users → notification_subscribers", () => {
     }
   });
 
-  it("renames the unique indexes and still enforces them", async () => {
+  it("renames the unique indexes and still enforces the token ones", async () => {
     const indexes = await names(client, "index");
     expect(indexes.filter((name) => name.startsWith("users_"))).toEqual([]);
     expect(indexes).toEqual(
@@ -112,9 +112,19 @@ describe("0006: users → notification_subscribers", () => {
     await expect(
       client.execute({
         sql: "INSERT INTO notification_subscribers (id, email, sync_token_hash) VALUES (?, ?, ?)",
-        args: ["sub-2", "reader@example.com", "other-hash"],
+        args: ["sub-2", "other@example.com", "sync-hash"],
       }),
     ).rejects.toThrow(/UNIQUE/);
+  });
+
+  it("0013부터 같은 주소의 확인 전 신청을 예전 기록과 함께 둔다", async () => {
+    // 이메일 인덱스는 이름은 그대로 두고 고유 제약만 푼다(api/notify/verify가 하나로 정리한다).
+    await client.execute({
+      sql: "INSERT INTO notification_subscribers (id, email, sync_token_hash) VALUES (?, ?, ?)",
+      args: ["sub-pending", "reader@example.com", "pending-hash"],
+    });
+    expect(await count(client, "notification_subscribers")).toBe(2);
+    await client.execute("DELETE FROM notification_subscribers WHERE id = 'sub-pending'");
   });
 
   it("still clears the mirror and the log when someone unsubscribes", async () => {
