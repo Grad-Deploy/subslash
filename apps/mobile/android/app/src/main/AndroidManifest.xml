@@ -43,4 +43,34 @@
          (apps/web/lib/native-reminders), 이 권한은 안드로이드 14부터 사용자가 따로 켜야 하며
          스토어에서도 쓰는 이유를 요구한다. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
+
+    <!-- 폰 사용 기록(UsageStatsPlugin). 앱이 요청 창을 띄울 수 없는 특별 권한이라 사용자가 설정에서
+         직접 켠다. 읽은 기록은 기기 안에서만 쓴다(apps/web/lib/usage). -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
+
+    <!-- 사용 기록을 재는 서비스 앱이 설치됐는지 확인하려면 안드로이드 11부터 여기에 적어야 한다.
+         apps/web/lib/usage/packages.ts의 연결표와 같아야 한다(테스트가 맞춰 본다). -->
+    <queries>
+        <package android:name="com.netflix.mediaclient" />
+        <package android:name="net.cj.cjhv.gs.tving" />
+        <package android:name="kr.co.captv.pooqV2" />
+        <package android:name="com.frograms.wplay" />
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.google.android.apps.youtube.music" />
+        <package android:name="com.disney.disneyplus" />
+        <package android:name="com.apple.atve.androidtv.appletv" />
+        <package android:name="com.amazon.avod.thirdpartyclient" />
+        <package android:name="laftel.net.laftel" />
+        <package android:name="com.spotify.music" />
+        <package android:name="com.iloen.melon" />
+        <package android:name="com.apple.android.music" />
+        <package android:name="com.naver.vibe" />
+        <package android:name="com.google.android.apps.bard" />
+        <package android:name="notion.id" />
+        <package android:name="com.openai.chatgpt" />
+        <package android:name="com.anthropic.claude" />
+        <package android:name="ai.perplexity.app.android" />
+        <package android:name="kr.co.millie.millieshelf" />
+        <package android:name="com.initialcoms.ridi" />
+    </queries>
 </manifest>

@@ -96,6 +96,13 @@ const AppKillCelebration = IS_APP_BUILD
     )
   : null;
 
+// 폰 사용 기록으로 본 알림(안드로이드 앱 전용).
+const AppUnusedAlerts = IS_APP_BUILD
+  ? dynamic(
+      () => import("../../components/usage/app/AppUnusedAlerts").then((m) => m.AppUnusedAlerts),
+      { ssr: false },
+    )
+  : null;
 const AppNextKillDialog = IS_APP_BUILD
   ? dynamic(
       () =>
@@ -445,17 +452,26 @@ export default function Dashboard() {
               onSample={IS_APP_BUILD ? undefined : handleLoadDemo}
             />
           ) : (
-            <ActionQueue
-              items={queue}
-              nextBilling={nextBilling}
-              activeCount={activeSubs.length}
-              onCheckIn={handleOpenCheckIn}
-              onCancelGuide={handleCancelGuide}
-              onConfirmPrice={handleConfirmPrice}
-              onKillNotCharged={handleKillNotCharged}
-              onKillCharged={handleKillCharged}
-              onAddFirst={() => openAdd()}
-            />
+            <>
+              {AppUnusedAlerts && (
+                <AppUnusedAlerts
+                  subscriptions={activeSubs}
+                  usageLogs={usageLogs}
+                  onCancelGuide={handleCancelGuide}
+                />
+              )}
+              <ActionQueue
+                items={queue}
+                nextBilling={nextBilling}
+                activeCount={activeSubs.length}
+                onCheckIn={handleOpenCheckIn}
+                onCancelGuide={handleCancelGuide}
+                onConfirmPrice={handleConfirmPrice}
+                onKillNotCharged={handleKillNotCharged}
+                onKillCharged={handleKillCharged}
+                onAddFirst={() => openAdd()}
+              />
+            </>
           )}
 
           {/*
