@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "../../lib/store";
@@ -105,15 +105,38 @@ function SelectedSubSync({ onChange }: { onChange: (id: string | null) => void }
 const APP_LIST_LIMIT = 8;
 
 /** 앱의 긴 구독 목록 아래 '더 보기'. 펼친 뒤에는 목록이 그대로 이어지므로 접기는 두지 않는다. */
-function ListMoreToggle({ hidden, onOpen }: { hidden: number; onOpen: () => void }) {
+/**
+ * 앱 목록의 '더 보기 / 접기'. 접으면 목록이 짧아져 화면이 목록 아래 빈 곳에 남으므로, 접은 뒤 이 버튼을
+ * 화면 가운데로 데려온다(다시 펼치기 쉬운 자리).
+ */
+function ListMoreToggle({
+  open,
+  hidden,
+  onToggle,
+}: {
+  open: boolean;
+  hidden: number;
+  onToggle: () => void;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
   return (
     <button
+      ref={ref}
       type="button"
-      onClick={onOpen}
+      aria-expanded={open}
+      onClick={() => {
+        onToggle();
+        if (open) {
+          requestAnimationFrame(() => ref.current?.scrollIntoView({ block: "center" }));
+        }
+      }}
       className="flex w-full items-center justify-center gap-1 rounded-xl border py-2.5 text-sm font-bold text-muted-foreground"
     >
-      {hidden}개 더 보기
-      <ChevronDown className="size-4" aria-hidden />
+      {open ? "접기" : `${hidden}개 더 보기`}
+      <ChevronDown
+        className={`size-4 transition-transform ${open ? "rotate-180" : ""}`}
+        aria-hidden
+      />
     </button>
   );
 }
@@ -577,10 +600,11 @@ export default function SubscriptionsPage() {
                       />
                     ))}
                   </div>
-                  {filteredActive.length > limit && (
+                  {IS_APP_BUILD && filteredActive.length > APP_LIST_LIMIT && (
                     <ListMoreToggle
-                      hidden={filteredActive.length - limit}
-                      onOpen={() => setShowAllCards(true)}
+                      open={showAllCards}
+                      hidden={filteredActive.length - APP_LIST_LIMIT}
+                      onToggle={() => setShowAllCards((shown) => !shown)}
                     />
                   )}
                 </>
@@ -643,10 +667,11 @@ export default function SubscriptionsPage() {
                       />
                     ))}
                   </div>
-                  {filteredKilled.length > limit && (
+                  {IS_APP_BUILD && filteredKilled.length > APP_LIST_LIMIT && (
                     <ListMoreToggle
-                      hidden={filteredKilled.length - limit}
-                      onOpen={() => setShowAllCards(true)}
+                      open={showAllCards}
+                      hidden={filteredKilled.length - APP_LIST_LIMIT}
+                      onToggle={() => setShowAllCards((shown) => !shown)}
                     />
                   )}
                 </div>
