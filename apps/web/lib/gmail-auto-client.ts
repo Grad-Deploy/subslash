@@ -11,7 +11,7 @@ import {
   type SubscriptionCategory,
   type SubscriptionFormData,
 } from "@subslash/shared";
-import { apiFetch } from "./api";
+import { apiFetch, readApiError } from "./api";
 
 /**
  * Gmail 자동 가져오기의 브라우저 쪽.
@@ -51,18 +51,9 @@ export type GmailLinkState =
       pendingCount: number;
     };
 
-async function readError(response: Response, fallback: string): Promise<string> {
-  try {
-    const body = await response.json();
-    return typeof body?.error === "string" ? body.error : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 export async function fetchGmailLink(): Promise<GmailLinkState> {
   const response = await apiFetch("/api/gmail/link");
-  if (!response.ok) throw new Error(await readError(response, "연결 상태를 읽지 못했습니다."));
+  if (!response.ok) throw new Error(await readApiError(response, "연결 상태를 읽지 못했습니다."));
   return (await response.json()) as GmailLinkState;
 }
 
@@ -71,7 +62,7 @@ export async function createGmailLink(): Promise<string> {
   const response = await apiFetch("/api/gmail/link", {
     method: "POST",
   });
-  if (!response.ok) throw new Error(await readError(response, "연결 토큰을 만들지 못했습니다."));
+  if (!response.ok) throw new Error(await readApiError(response, "연결 토큰을 만들지 못했습니다."));
   return ((await response.json()) as { token: string }).token;
 }
 
@@ -83,7 +74,8 @@ export async function startGmailConnect(): Promise<string> {
   const response = await apiFetch("/api/gmail/connect", {
     method: "POST",
   });
-  if (!response.ok) throw new Error(await readError(response, "Gmail 연결을 시작하지 못했습니다."));
+  if (!response.ok)
+    throw new Error(await readApiError(response, "Gmail 연결을 시작하지 못했습니다."));
   return ((await response.json()) as { url: string }).url;
 }
 
@@ -91,7 +83,7 @@ export async function deleteGmailLink(): Promise<void> {
   const response = await apiFetch("/api/gmail/link", {
     method: "DELETE",
   });
-  if (!response.ok) throw new Error(await readError(response, "연결을 끊지 못했습니다."));
+  if (!response.ok) throw new Error(await readApiError(response, "연결을 끊지 못했습니다."));
 }
 
 const DISCOVERIES_REQUESTED = "subslash:gmail-discoveries-requested";
@@ -114,7 +106,8 @@ export function onGmailDiscoveriesRequested(listener: () => void): () => void {
 
 export async function fetchGmailDiscoveries(): Promise<GmailDiscovery[]> {
   const response = await apiFetch("/api/gmail/discoveries");
-  if (!response.ok) throw new Error(await readError(response, "찾아 둔 구독을 읽지 못했습니다."));
+  if (!response.ok)
+    throw new Error(await readApiError(response, "찾아 둔 구독을 읽지 못했습니다."));
   return ((await response.json()) as { discoveries: GmailDiscovery[] }).discoveries;
 }
 
@@ -126,7 +119,8 @@ export async function acknowledgeGmailDiscoveries(ids: string[]): Promise<void> 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ids }),
   });
-  if (!response.ok) throw new Error(await readError(response, "찾아 둔 구독을 지우지 못했습니다."));
+  if (!response.ok)
+    throw new Error(await readApiError(response, "찾아 둔 구독을 지우지 못했습니다."));
 }
 
 function sameService(

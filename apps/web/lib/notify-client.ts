@@ -1,5 +1,5 @@
 import { currentCancelUrl, getBilledAmount, isInTrial, type Subscription } from "@subslash/shared";
-import { apiUrl } from "./api";
+import { apiUrl, readApiError } from "./api";
 
 /**
  * Browser side of the reminder mirror.
@@ -48,15 +48,6 @@ export class SyncTokenRejectedError extends Error {
   }
 }
 
-async function readError(response: Response, fallback: string): Promise<string> {
-  try {
-    const body = await response.json();
-    return typeof body?.error === "string" ? body.error : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 export async function requestReminders(email: string, reminderDays: number) {
   const response = await fetch(apiUrl("/api/notify/subscribe"), {
     method: "POST",
@@ -65,7 +56,7 @@ export async function requestReminders(email: string, reminderDays: number) {
   });
 
   if (!response.ok) {
-    throw new Error(await readError(response, "알림 신청에 실패했습니다."));
+    throw new Error(await readApiError(response, "알림 신청에 실패했습니다."));
   }
 
   return (await response.json()) as {
@@ -88,7 +79,7 @@ export async function pushMirror(syncToken: string, subscriptions: Subscription[
 
   if (response.status === 401) throw new SyncTokenRejectedError();
   if (!response.ok) {
-    throw new Error(await readError(response, "동기화에 실패했습니다."));
+    throw new Error(await readApiError(response, "동기화에 실패했습니다."));
   }
 
   return (await response.json()) as { synced: number; skipped: number; verified: boolean };
@@ -99,7 +90,7 @@ export async function fetchNotifyStatus(syncToken: string): Promise<NotifyStatus
     headers: { Authorization: `Bearer ${syncToken}` },
   });
   if (response.status === 401) return null;
-  if (!response.ok) throw new Error(await readError(response, "상태를 불러오지 못했습니다."));
+  if (!response.ok) throw new Error(await readApiError(response, "상태를 불러오지 못했습니다."));
   return (await response.json()) as NotifyStatus;
 }
 
@@ -117,7 +108,7 @@ export async function enableCalendarFeed(syncToken: string): Promise<string> {
 
   if (response.status === 401) throw new SyncTokenRejectedError();
   if (!response.ok) {
-    throw new Error(await readError(response, "캘린더 주소를 만들지 못했습니다."));
+    throw new Error(await readApiError(response, "캘린더 주소를 만들지 못했습니다."));
   }
 
   const body = (await response.json()) as { url: string };
@@ -146,7 +137,7 @@ export async function disableCalendarFeed(syncToken: string) {
     headers: { Authorization: `Bearer ${syncToken}` },
   });
   if (!response.ok && response.status !== 401) {
-    throw new Error(await readError(response, "캘린더 구독 해제에 실패했습니다."));
+    throw new Error(await readApiError(response, "캘린더 구독 해제에 실패했습니다."));
   }
 }
 
@@ -156,6 +147,6 @@ export async function stopReminders(syncToken: string) {
     headers: { Authorization: `Bearer ${syncToken}` },
   });
   if (!response.ok && response.status !== 401) {
-    throw new Error(await readError(response, "알림 해제에 실패했습니다."));
+    throw new Error(await readApiError(response, "알림 해제에 실패했습니다."));
   }
 }
