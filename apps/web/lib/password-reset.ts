@@ -18,6 +18,7 @@ import {
   verificationWaitSeconds,
   type SendOutcome,
 } from "./account-verification";
+import { logError } from "./log";
 
 /**
  * 비밀번호 재설정.
@@ -63,7 +64,7 @@ export async function sendPasswordReset(account: Account): Promise<SendOutcome> 
     await recordAccountMailSent(account.email);
     return { status: "sent" };
   } catch (error) {
-    console.error("[password-reset] send failed:", error);
+    logError("password-reset send failed", error);
     return { status: "not_sent", reason: "failed" };
   }
 }

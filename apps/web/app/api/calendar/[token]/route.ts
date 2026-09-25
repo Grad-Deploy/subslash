@@ -5,6 +5,7 @@ import { mirroredSubscriptions, notificationSubscribers } from "@lib/schema";
 import { hashSyncToken } from "@lib/tokens";
 import { buildBillingCalendar } from "@lib/ics";
 import { appUrl } from "@lib/email";
+import { logError } from "@lib/log";
 
 /**
  * The calendar feed a calendar app polls.
@@ -65,7 +66,7 @@ export async function GET(_request: Request, context: { params: Promise<{ token:
       },
     });
   } catch (error) {
-    console.error("[api/calendar]", error);
+    logError("api/calendar", error);
     return new NextResponse("Internal error", { status: 500 });
   }
 }

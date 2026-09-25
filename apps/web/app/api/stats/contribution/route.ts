@@ -15,6 +15,7 @@ import {
   tooManyRequestsMessage,
   type RateLimitRule,
 } from "@lib/rate-limit";
+import { logError } from "@lib/log";
 
 /**
  * 익명 구독 통계에 참여한 기기가 요약을 보내는 곳. 토큰이 없으면 새 참여자로 만들고 토큰을 돌려주고,
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
     hit(key, NEW_PER_IP);
     return NextResponse.json({ token: await createContribution(contribution) }, { status: 201 });
   } catch (error) {
-    console.error("[api/stats/contribution]", error);
+    logError("api/stats/contribution", error);
     return NextResponse.json({ error: "통계에 보내지 못했습니다." }, { status: 500 });
   }
 }
@@ -82,7 +83,7 @@ export async function DELETE(request: NextRequest) {
     await deleteContribution(token);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("[api/stats/contribution]", error);
+    logError("api/stats/contribution", error);
     return NextResponse.json({ error: "기록을 지우지 못했습니다." }, { status: 500 });
   }
 }

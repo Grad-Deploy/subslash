@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyLink } from "@lib/tokens";
 import { deleteUserCompletely } from "@lib/notify-server";
 import { appUrl } from "@lib/email";
+import { logError } from "@lib/log";
 
 /**
  * Unsubscribe link from the reminder footer. Deletes the user outright — the
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
     await deleteUserCompletely(payload.uid);
     return NextResponse.redirect(`${appUrl()}/subs?notify=unsubscribed`);
   } catch (error) {
-    console.error("[api/notify/unsubscribe]", error);
+    logError("api/notify/unsubscribe", error);
     return NextResponse.redirect(`${appUrl()}/subs?notify=error`);
   }
 }

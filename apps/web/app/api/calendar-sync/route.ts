@@ -6,6 +6,7 @@ import { appUrl } from "@lib/email";
 import { isAppOrigin } from "@lib/app-origins";
 import { gmailConnectWebAppUrl } from "@lib/gmail-auto-import";
 import { createCalendarSyncPlan, parseCalendarPlan } from "@lib/calendar-sync";
+import { logError } from "@lib/log";
 
 /**
  * '구글 캘린더에 등록'을 시작한다. 브라우저가 지금 구독의 결제일을 맡기면, SubSlash Apps Script
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
     if (isAppOrigin(request.headers.get("origin"))) url.searchParams.set("client", "app");
     return NextResponse.json({ url: url.toString() });
   } catch (error) {
-    console.error("[api/calendar-sync]", error);
+    logError("api/calendar-sync", error);
     return NextResponse.json({ error: "캘린더 등록을 시작하지 못했습니다." }, { status: 500 });
   }
 }

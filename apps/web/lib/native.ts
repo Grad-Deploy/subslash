@@ -7,11 +7,31 @@
 import { IS_APP_BUILD } from "./platform";
 
 /**
+ * 밖으로 열어도 되는 주소인지. http(s)만 연다.
+ *
+ * 해지 주소는 사용자가 적거나 백업 파일·계정 기록에서 들어오고, 백업은 문자열이면 받는다. 누가 만든
+ * 백업을 불러오면 '해지하러 가기'에 `javascript:`(웹에서 이 사이트의 권한으로 실행)나 `intent:`(앱에서
+ * 다른 앱을 실행) 주소가 들어갈 수 있다. 들어오는 곳이 여럿이라 여는 곳에서 막는다.
+ */
+export function isSafeExternalUrl(url: string | undefined | null): url is string {
+  if (!url) return false;
+  try {
+    const { protocol } = new URL(url);
+    return protocol === "https:" || protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+/**
  * 외부 사이트(해지 페이지 등)를 연다. 앱에서는 인앱 브라우저(안드로이드 Custom Tabs, iOS
  * SFSafariViewController)로 열어, 해지를 마치고 닫으면 곧바로 앱으로 돌아온다.
  */
 export function openExternal(url: string | undefined): void {
-  if (!url) return;
+  if (!isSafeExternalUrl(url)) {
+    if (url) console.warn("[native] http(s)가 아닌 주소는 열지 않습니다");
+    return;
+  }
   if (IS_APP_BUILD) {
     void import("@capacitor/browser")
       .then(({ Browser }) => Browser.open({ url }))
@@ -31,7 +51,7 @@ export function openExternal(url: string | undefined): void {
  * 돌아온 뒤 `onReturn`으로 화면을 다시 맞춘다.
  */
 export function leaveForExternal(url: string, onReturn?: () => void): void {
-  if (!url) return;
+  if (!isSafeExternalUrl(url)) return;
   if (IS_APP_BUILD) {
     void import("@capacitor/browser")
       .then(async ({ Browser }) => {

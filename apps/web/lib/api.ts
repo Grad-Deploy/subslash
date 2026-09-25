@@ -42,3 +42,16 @@ export function webUrl(path: `/${string}`): string {
   const origin = WEB_ORIGIN || window.location.origin;
   return `${origin}${path}`;
 }
+
+/**
+ * 실패한 API 응답에서 화면에 보여 줄 문장을 꺼낸다. 서버는 `{ error: "..." }`로 이유를 적고, 본문이
+ * 없거나 JSON이 아니면 `fallback`을 쓴다.
+ */
+export async function readApiError(response: Response, fallback: string): Promise<string> {
+  try {
+    const body = await response.json();
+    return typeof body?.error === "string" ? body.error : fallback;
+  } catch {
+    return fallback;
+  }
+}

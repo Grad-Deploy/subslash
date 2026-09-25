@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { apiUrl } from "./api";
+import { apiUrl, readApiError } from "./api";
 import type { StatsContribution, StatsSummary } from "./stats";
 
 /**
@@ -35,15 +35,6 @@ export const useStatsSharing = create<StatsSharingState>()(
   ),
 );
 
-async function readError(response: Response, fallback: string): Promise<string> {
-  try {
-    const body = await response.json();
-    return typeof body?.error === "string" ? body.error : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 /** 요약을 보낸다. 새 참여자면 서버가 만든 토큰을, 기존 참여자면 그 토큰을 돌려준다. */
 export async function sendContribution(
   token: string | null,
@@ -59,7 +50,7 @@ export async function sendContribution(
   });
   // 서버에서 기록이 지워졌다. 토큰 없이 새로 참여한다.
   if (response.status === 401 && token) return sendContribution(null, contribution);
-  if (!response.ok) throw new Error(await readError(response, "통계에 보내지 못했습니다."));
+  if (!response.ok) throw new Error(await readApiError(response, "통계에 보내지 못했습니다."));
   if (token) return token;
   return ((await response.json()) as { token: string }).token;
 }
@@ -71,12 +62,12 @@ export async function withdrawContribution(token: string): Promise<void> {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok && response.status !== 401) {
-    throw new Error(await readError(response, "기록을 지우지 못했습니다."));
+    throw new Error(await readApiError(response, "기록을 지우지 못했습니다."));
   }
 }
 
 export async function fetchStatsSummary(): Promise<StatsSummary> {
   const response = await fetch(apiUrl("/api/stats/summary"));
-  if (!response.ok) throw new Error(await readError(response, "통계를 읽지 못했습니다."));
+  if (!response.ok) throw new Error(await readApiError(response, "통계를 읽지 못했습니다."));
   return (await response.json()) as StatsSummary;
 }
