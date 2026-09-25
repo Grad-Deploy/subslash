@@ -47,9 +47,9 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
 
     <!-- 사용 정보 접근(PACKAGE_USAGE_STATS). 앱이 요청 창을 띄울 수 없는 특별 권한이라, 무엇을 재는지
-         먼저 보여 준 뒤 사용자가 기기 설정에서 직접 허용한다. 두 플러그인이 같은 권한을 쓴다.
-         - UsageStatsPlugin: 폰 사용 기록. 읽은 기록은 기기 안에서만 쓴다(apps/web/lib/usage).
-         - DeviceUsagePlugin: 여러 기기 사용 측정. 사용자가 따로 켜면 로그인한 계정에 올린다
+         먼저 보여 준 뒤 사용자가 기기 설정에서 직접 허용한다. UsageStatsPlugin 하나가 두 기능에 쓴다.
+         - 폰 사용 기록: 읽은 기록은 기기 안에서만 쓴다(apps/web/lib/usage).
+         - 여러 기기 사용 측정: 사용자가 따로 켜면 로그인한 계정에 올린다
            (apps/web/lib/device-usage, 설정의 '여러 기기 사용 측정').
          이 권한을 넣은 빌드를 스토어에 올리기 전에 Play Console의 데이터 보안 항목과 권한 신고서를 고친다. -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />

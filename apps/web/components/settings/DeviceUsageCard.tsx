@@ -21,9 +21,10 @@ import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { Spinner } from "../ui/spinner";
 
-const MEASURED_SERVICE_NAMES = Object.keys(ANDROID_PACKAGES).map(
-  (id) => POPULAR_SERVICES.find((service) => service.id === id)?.name ?? id,
-);
+const MEASURED_SERVICE_NAMES = Object.keys(ANDROID_PACKAGES).map((id) => {
+  const service = POPULAR_SERVICES.find((preset) => preset.id === id);
+  return service?.nameKo ?? service?.name ?? id;
+});
 
 function shortDate(epochMs: number): string {
   return new Date(epochMs).toLocaleDateString("ko-KR", { month: "long", day: "numeric" });

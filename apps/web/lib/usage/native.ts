@@ -23,11 +23,23 @@ export interface NativeUsageResult {
   days: NativeUsageDay[];
 }
 
+export interface NativeForegroundResult {
+  /** 앱이 화면 맨 앞에 있던 구간(epoch ms). 요청한 기간 안으로 잘려 있다. */
+  intervals: { packageName: string; start: number; end: number }[];
+  /** 받은 기록 중 가장 이른 시각. 요청한 시작보다 늦으면 그 앞은 운영체제가 지운 것이다. */
+  firstEventAt: number | null;
+}
+
 interface UsageStatsPlugin {
   status(): Promise<{ granted: boolean }>;
   openSettings(): Promise<void>;
   installed(options: { packages: string[] }): Promise<{ packages: string[] }>;
   query(options: { packages: string[]; days: number }): Promise<NativeUsageResult>;
+  queryForeground(options: {
+    packages: string[];
+    from: number;
+    to: number;
+  }): Promise<NativeForegroundResult>;
 }
 
 // 플러그인 프록시는 { plugin }으로 한 번 감싸서 넘긴다. Capacitor 플러그인 프록시는 어떤 속성이든
@@ -96,6 +108,25 @@ export async function queryUsage(
     return await p.query({ packages: [...packages], days });
   } catch (error) {
     console.warn("[usage] 사용 기록을 읽지 못했습니다", error);
+    return null;
+  }
+}
+
+/**
+ * from~to 동안 packages의 앱이 앞에 있던 구간(여러 기기 사용 측정). 날짜별 합계(queryUsage)와 같은
+ * 판단으로 잰다. 읽지 못하면 null — 빈 구간(안 썼다)과 구분한다.
+ */
+export async function queryForeground(
+  packages: readonly string[],
+  from: number,
+  to: number,
+): Promise<NativeForegroundResult | null> {
+  const p = (await load())?.plugin;
+  if (!p) return null;
+  try {
+    return await p.queryForeground({ packages: [...packages], from, to });
+  } catch (error) {
+    console.warn("[usage] 사용 구간을 읽지 못했습니다", error);
     return null;
   }
 }
