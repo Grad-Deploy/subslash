@@ -11,7 +11,7 @@ import { recentOpens } from "@lib/usage/value";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 
 /**
- * 체크인 막대 아래의 폰 기록 한 줄(안드로이드 앱). 최근 30일 동안 이 폰에서 연 횟수를 알려 주고
+ * 체크인 막대 아래의 폰 기록 한 줄(안드로이드 앱). 최근 30일 동안 이 폰에서 쓴 횟수를 알려 주고
  * onOpens로 넘겨 막대를 미리 맞추게 한다. 기록을 켜지 않았으면 '폰 사용 기록으로 채우기'를 둔다.
  *
  * 체크인 막대(AppUsageCountPicker)는 웹의 첫 체크인 카드도 쓰므로, 폰 기록 코드는 이 파일로 떼어
@@ -74,7 +74,7 @@ export function AppPhoneHint({
         <Smartphone className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         <span className="min-w-0 flex-1">
           <span className="block font-bold">폰 사용 기록으로 채우기</span>
-          <span className="block text-muted-foreground">이 폰에서 몇 번 열었는지 불러와요</span>
+          <span className="block text-muted-foreground">이 폰에서 몇 번 썼는지 불러와요</span>
         </span>
       </button>
       <AppUsageAccessSheet open={accessOpen} onClose={() => setAccessOpen(false)} />

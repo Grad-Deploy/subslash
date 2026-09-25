@@ -151,7 +151,8 @@ export function DeviceUsageCard({ onMessage }: { onMessage: (message: string) =>
         <ul className="list-disc space-y-1 pl-4 text-muted-foreground">
           <li>
             이 기기에서 아래 서비스의 앱이 화면 맨 앞에 있던 시작·끝 시각을 로그인한 계정에 올려요.
-            다른 앱과 앱 안에서 본 콘텐츠는 올리지 않아요.
+            다른 앱과 앱 안에서 본 콘텐츠는 올리지 않아요. (리포트의 &lsquo;이 폰&rsquo; 사용 기록은
+            켜지 않아도 이 폰 안에만 있어요.)
           </li>
           <li>
             같은 계정의 기기끼리 이어서 세요. 휴대폰에서 보다가 30분 안에 태블릿에서 이어 보면

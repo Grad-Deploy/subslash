@@ -36,14 +36,21 @@ import org.json.JSONException;
  * 기기마다 묶는 방식이 달라 '연 횟수'를 주지 않는다. 이벤트 기록은 오래 보관되지 않으므로(기기마다
  * 다르다) 화면 쪽이 하루에 한 번씩 읽어 기기에 쌓는다.
  *
- * 화면에 넘기는 것은 요청한 패키지(서비스 → 앱 연결표에 있는 것)의 날짜별 사용 시간과 연 횟수뿐이다.
+ * 화면에 넘기는 것은 요청한 패키지(서비스 → 앱 연결표에 있는 것)의 날짜별 사용 시간과 쓴 횟수뿐이다.
+ * 쓴 횟수(opens)는 세션 수다 — 기준은 SESSION_GAP_MS·MIN_SESSION_MS에 있다.
  * 다른 앱의 기록은 세는 데만 쓰고 넘기지 않는다.
  */
 @CapacitorPlugin(name = "UsageStats")
 public class UsageStatsPlugin extends Plugin {
 
-    /** 앱을 나갔다가 이 시간 안에 다시 열면 한 번으로 센다(메신저에 답장하고 돌아오는 것 등). */
-    private static final long MERGE_REOPEN_MS = 2 * 60 * 1000L;
+    /**
+     * '한 번 썼다'의 기준. 여러 기기 사용 측정(@subslash/shared의 linkSessions)과 같게 둔다 — 같은 리포트에
+     * 이 폰의 횟수와 모든 기기의 횟수가 함께 나오므로, 기준이 다르면 같은 사용이 두 숫자로 읽힌다.
+     * 앞 사용이 끝나고 SESSION_GAP_MS 안에 다시 쓰면 이어서 한 번이고, 모두 합쳐 MIN_SESSION_MS보다 짧으면
+     * (알림을 눌러 잠깐 열린 것) 세지 않는다. 시간은 짧아도 그대로 더한다.
+     */
+    private static final long SESSION_GAP_MS = 30 * 60 * 1000L;
+    private static final long MIN_SESSION_MS = 60 * 1000L;
 
     // UsageEvents.Event 상수. 뒤의 셋은 API 28·29에서 생겨 옛 기기에서는 오지 않는다.
     private static final int ACTIVITY_RESUMED = 1;
@@ -164,6 +171,7 @@ public class UsageStatsPlugin extends Plugin {
             }
         }
         if (current != null) tally.close(current, sessionStart, pausedAt >= 0 ? pausedAt : end);
+        tally.finish();
 
         JSObject result = new JSObject();
         result.put("from", start);
@@ -204,8 +212,9 @@ public class UsageStatsPlugin extends Plugin {
     private static final class Tally {
 
         private final Set<String> wanted;
-        private final Map<String, long[]> byKey = new HashMap<>(); // "날짜|패키지" → [ms, 연 횟수]
-        private final Map<String, Long> lastLeft = new HashMap<>();
+        private final Map<String, long[]> byKey = new HashMap<>(); // "날짜|패키지" → [ms, 쓴 횟수(세션)]
+        /** 패키지 → 아직 닫지 않은 세션 [시작 시각, 사용한 ms, 마지막으로 나간 시각]. */
+        private final Map<String, long[]> pending = new HashMap<>();
         private final SimpleDateFormat dayFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
 
         Tally(Set<String> wanted) {
@@ -214,14 +223,30 @@ public class UsageStatsPlugin extends Plugin {
 
         void open(String pkg, long t) {
             if (!wanted.contains(pkg)) return;
-            Long left = lastLeft.get(pkg);
-            if (left != null && t - left <= MERGE_REOPEN_MS) return;
-            entry(dayFormat.format(t), pkg)[1] += 1;
+            long[] session = pending.get(pkg);
+            if (session != null && t - session[2] <= SESSION_GAP_MS) return;
+            if (session != null) countSession(pkg, session);
+            pending.put(pkg, new long[] { t, 0, t });
+        }
+
+        /** 남은 세션을 모두 센다. 이벤트를 다 읽은 뒤 한 번 부른다. */
+        void finish() {
+            for (Map.Entry<String, long[]> e : pending.entrySet()) countSession(e.getKey(), e.getValue());
+            pending.clear();
+        }
+
+        /** 세션은 시작한 날의 한 번으로 센다. */
+        private void countSession(String pkg, long[] session) {
+            if (session[1] >= MIN_SESSION_MS) entry(dayFormat.format(session[0]), pkg)[1] += 1;
         }
 
         void close(String pkg, long from, long to) {
             if (!wanted.contains(pkg)) return;
-            lastLeft.put(pkg, to);
+            long[] session = pending.get(pkg);
+            if (session != null) {
+                session[2] = Math.max(session[2], to);
+                if (to > from) session[1] += to - from;
+            }
             if (to <= from) return;
             // 자정을 넘긴 사용은 날짜별로 나눈다.
             Calendar cal = Calendar.getInstance();

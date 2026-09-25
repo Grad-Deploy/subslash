@@ -28,7 +28,7 @@ type SortKey = "hourly" | "time" | "opens";
 const SORT_LABEL: Record<SortKey, string> = {
   hourly: "시간당 단가",
   time: "사용 시간",
-  opens: "연 횟수",
+  opens: "쓴 횟수",
 };
 
 /** 잰 것 → 안 쓴 것 → 앱 없음/기록 없음 순. 같은 무리 안에서는 고른 기준으로. */
@@ -48,7 +48,7 @@ function compare(sort: SortKey) {
  * 리포트 › 구독 사용 현황(안드로이드 앱). 폰 기록으로 구독마다 얼마나 썼고 시간당 얼마였는지를
  * 기간별로 보여준다. 막대 길이는 사용 시간, 색은 돈값(체크인과 같은 getRiskLevel)이다.
  *
- * 시간당 단가 = 기록이 있는 날만큼의 구독료 ÷ 사용 시간. 연 횟수보다 OTT·음악에 공정하다(한 번 열고
+ * 시간당 단가 = 기록이 있는 날만큼의 구독료 ÷ 사용 시간. 쓴 횟수보다 OTT·음악에 공정하다(한 번 열고
  * 두 시간 보는 경우).
  */
 export function AppUsageReport({ active }: { active: Subscription[] }) {
@@ -130,7 +130,7 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
 
       <div className="grid grid-cols-2 gap-2">
         <StatTile label="구독 앱 사용 시간" value={formatDuration(totalMs)} />
-        <StatTile label="구독 앱 연 횟수" value={totalOpens.toLocaleString("ko-KR")} unit="회" />
+        <StatTile label="구독 앱 쓴 횟수" value={totalOpens.toLocaleString("ko-KR")} unit="회" />
       </div>
 
       {covered === 0 ? (
@@ -259,7 +259,7 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
 }
 
 /**
- * 리포트에 펼쳐 두는 요약 카드. 최근 30일 사용 시간·연 횟수와 많이 쓴 구독 세 개의 짧은 막대, 비쌈·안 씀
+ * 리포트에 펼쳐 두는 요약 카드. 최근 30일 사용 시간·쓴 횟수와 많이 쓴 구독 세 개의 짧은 막대, 비쌈·안 씀
  * 개수만 보여 주고, 누르면 전체(기간 탭·정렬·목록·1년 추이)를 시트로 연다 — 리포트 스크롤을 늘리지 않게.
  */
 function UsageCard({ usages, onOpen }: { usages: SubUsage[]; onOpen: () => void }) {
@@ -298,7 +298,7 @@ function UsageCard({ usages, onOpen }: { usages: SubUsage[]; onOpen: () => void 
               </span>
             </span>
             <span>
-              <span className="block text-[11px] text-muted-foreground">연 횟수</span>
+              <span className="block text-[11px] text-muted-foreground">쓴 횟수</span>
               <span className="text-xl font-black tracking-tight tabular-nums">
                 {totalOpens.toLocaleString("ko-KR")}
                 <span className="ml-0.5 text-xs font-bold">회</span>

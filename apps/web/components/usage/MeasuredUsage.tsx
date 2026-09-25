@@ -96,7 +96,7 @@ export function MeasuredUsageSection({ subscriptions }: { subscriptions: Subscri
   return (
     <section className="space-y-3">
       <div className="space-y-0.5">
-        <h2 className="text-base font-bold">측정한 기기에서 쓴 횟수</h2>
+        <h2 className="text-base font-bold">모든 기기 합쳐서 쓴 횟수</h2>
         <p className="text-xs text-muted-foreground">
           최근 30일 · 기기 {view.summary.measuredDeviceCount}대 · 30분 안에 이어 쓰면 기기가 달라도
           1번
@@ -131,6 +131,8 @@ export function MeasuredUsageSection({ subscriptions }: { subscriptions: Subscri
       <PartialNote view={view} />
       <p className="text-xs text-muted-foreground">
         TV·PC·iPhone에서 본 것은 들어 있지 않아요. 1회 단가는 체크인한 횟수로 계산해요.
+        {IS_APP_BUILD &&
+          " 위의 '이 폰' 숫자와 다를 수 있어요 — 휴대폰과 태블릿을 오가며 이어 쓴 것은 한 번으로 세요."}
       </p>
     </section>
   );
