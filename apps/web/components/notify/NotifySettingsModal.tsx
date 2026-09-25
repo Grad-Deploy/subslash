@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { realRecords, useStore } from "../../lib/store";
+import { openExternal } from "../../lib/native";
 import {
   SyncTokenRejectedError,
   fetchNotifyStatus,
@@ -17,6 +18,7 @@ import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { Select } from "../ui/select";
 import { EmailDomainInput } from "../ui/email-domain-input";
 import { InlineConfirm } from "../ui/inline-confirm";
+import { copyText } from "../../lib/native";
 
 /** 되돌리기 어려워 한 번 더 묻는 동작. */
 type PendingConfirm = "rotate" | "calendar-off" | "disable";
@@ -139,12 +141,11 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
 
   const copyFeedUrl = async () => {
     if (!notify.calendarUrl) return;
-    try {
-      await navigator.clipboard.writeText(notify.calendarUrl);
+    if (await copyText(notify.calendarUrl)) {
       setCopyFeedFailed(false);
       setCopiedFeed(true);
       setTimeout(() => setCopiedFeed(false), 2000);
-    } catch {
+    } else {
       // Clipboard access can be refused; the URL is on screen either way, but
       // a button that silently does nothing would look broken.
       setCopyFeedFailed(true);
@@ -306,9 +307,7 @@ export function NotifySettingsModal({ isOpen, onClose }: NotifySettingsModalProp
                         size="sm"
                         variant="outline"
                         className={WRAPPING_BUTTON}
-                        onClick={() =>
-                          window.open(calendarLinks.google, "_blank", "noopener,noreferrer")
-                        }
+                        onClick={() => openExternal(calendarLinks.google)}
                       >
                         Google 캘린더에 추가 (새 창)
                       </Button>

@@ -13,6 +13,7 @@ import {
   createGmailLink,
   deleteGmailLink,
   fetchGmailLink,
+  requestGmailDiscoveries,
   startGmailConnect,
   type GmailLinkState,
 } from "@lib/gmail-auto-client";
@@ -87,6 +88,9 @@ export function AppImportGuide() {
       leaveForExternal(await startGmailConnect(), () => {
         setBusy(false);
         void refresh();
+        // 웹 앱이 연결하면서 첫 검사까지 마쳤다. 앱은 화면이 새로 열리지 않으므로 찾은 구독을
+        // 받으라고 알려야 한다 — 알리지 않으면 앱을 껐다 켤 때까지 등록되지 않았다.
+        requestGmailDiscoveries();
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gmail 연결을 시작하지 못했어요.");

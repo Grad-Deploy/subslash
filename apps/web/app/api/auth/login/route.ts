@@ -13,6 +13,22 @@ import {
   sessionTokenForApp,
   toPublicAccount,
 } from "@lib/auth-server";
+import {
+  clientIp,
+  hit,
+  reset,
+  retryAfterSeconds,
+  tooManyRequestsMessage,
+  type RateLimitRule,
+} from "@lib/rate-limit";
+
+/**
+ * 비밀번호 대입을 늦춘다. 실패만 센다 — 제대로 로그인하는 사람은 막히지 않는다. 아이디 기준은 한
+ * 계정을 노리는 것을, IP 기준은 여러 계정을 번갈아 노리는 것을 막는다. 계정을 잠그지 않고 잠시
+ * 기다리게 할 뿐이라, 남이 일부러 틀려도 주인은 곧 다시 들어올 수 있다.
+ */
+const FAILURES_PER_ACCOUNT: RateLimitRule = { limit: 10, windowMs: 15 * 60 * 1000 };
+const FAILURES_PER_IP: RateLimitRule = { limit: 30, windowMs: 15 * 60 * 1000 };
 
 /**
  * 아이디(또는 이메일) + 비밀번호로 로그인.
@@ -40,6 +56,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const accountKey = `login:account:${value.identifier.trim().toLowerCase()}`;
+    const ipKey = `login:ip:${clientIp(request.headers)}`;
+    const wait = Math.max(
+      retryAfterSeconds(accountKey, FAILURES_PER_ACCOUNT),
+      retryAfterSeconds(ipKey, FAILURES_PER_IP),
+    );
+    if (wait > 0) {
+      return NextResponse.json(
+        { error: tooManyRequestsMessage(wait) },
+        { status: 429, headers: { "Retry-After": String(wait) } },
+      );
+    }
+
     const account = await findAccountByIdentifier(value.identifier);
 
     // 계정이 없어도 해시 계산을 한 번 수행한다. 없는 아이디만 빨리 실패하면
@@ -50,12 +79,15 @@ export async function POST(request: NextRequest) {
     const ok = await verifyPassword(value.password, storedHash);
 
     if (!account || !ok) {
+      hit(accountKey, FAILURES_PER_ACCOUNT);
+      hit(ipKey, FAILURES_PER_IP);
       return NextResponse.json(
         { error: "아이디 또는 비밀번호가 올바르지 않습니다." },
         { status: 401 },
       );
     }
 
+    reset(accountKey);
     const db = getDb();
 
     // 해시 비용을 올린 뒤라면, 평문을 손에 쥔 이 순간이 다시 해시할 유일한 기회다.

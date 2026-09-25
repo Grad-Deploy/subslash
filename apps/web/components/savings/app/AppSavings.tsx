@@ -22,7 +22,7 @@ import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { useStore } from "@lib/store";
 import { webUrl } from "@lib/api";
-import { shareText } from "@lib/native";
+import { copyText, shareText } from "@lib/native";
 import { buildShareSearchParams } from "@lib/share-savings";
 import { ServiceLogo } from "../../subscription/ServiceLogo";
 import { ConfirmDialog } from "../../ui/confirm-dialog";
@@ -110,11 +110,12 @@ export function AppSavings() {
         : `구독을 해지해 1년에 ${formatKRW(tiers.annualRunRate)}을 아낄 예정입니다!`;
     const text = `SubSlash 구독 디톡스 ${level.levelLabel} ${level.title} ${level.emoji}\n${savingsLine} ${headline}\n결과 보기: ${shareUrl}`;
     if (await shareText({ title: "SubSlash 구독 디톡스 결과", text, url: shareUrl })) return;
-    try {
-      await navigator.clipboard.writeText(text);
+    // 앱 웹뷰에서는 navigator.clipboard가 막혀 있어 네이티브 복사(copyText)를 쓴다. 실패하면
+    // '복사했어요'를 띄우지 않는다(#114와 같은 기준).
+    if (await copyText(text)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
-    } catch {}
+    }
   };
 
   return (

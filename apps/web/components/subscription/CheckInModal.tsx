@@ -17,6 +17,7 @@ import { UsageMetaphorCard } from "./UsageMetaphorCard";
 import { CostEfficiencyGauge } from "./CostEfficiencyGauge";
 import { cn } from "@lib/utils";
 import { openExternal } from "@lib/native";
+import { copyText } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import dynamic from "next/dynamic";
 
@@ -84,8 +85,9 @@ export function CheckInModal({
       ? `${subscription.name} 해지 페이지 바로가기 (새 창)`
       : `${subscription.name} 열기 (새 창)`;
 
-  const handleCopyId = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const handleCopyId = async (text: string) => {
+    // 복사하지 못했으면 '복사했어요'를 띄우지 않는다. ID는 화면에 그대로 보인다.
+    if (!(await copyText(text))) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -212,7 +214,7 @@ export function CheckInModal({
                 {subscription.linkedAccountName && (
                   <button
                     onClick={() =>
-                      handleCopyId(
+                      void handleCopyId(
                         subscription.linkedAccountName!.split("(")[1]?.replace(")", "") ||
                           subscription.linkedAccountName!,
                       )

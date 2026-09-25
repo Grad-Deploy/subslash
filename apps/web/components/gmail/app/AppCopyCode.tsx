@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@lib/utils";
+import { copyText } from "@lib/native";
 
 /**
  * 앱의 가져오기 단계에서 붙여 넣을 코드. 코드는 늘어놓지 않고 이름과 복사 버튼만 보여준다.
@@ -12,11 +13,10 @@ export function AppCopyCode({ label, code }: { label: string; code: string }) {
   const [expanded, setExpanded] = useState(false);
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(code);
+    if (await copyText(code)) {
       setStatus("copied");
       setTimeout(() => setStatus("idle"), 1800);
-    } catch {
+    } else {
       setStatus("failed");
       setExpanded(true);
     }
