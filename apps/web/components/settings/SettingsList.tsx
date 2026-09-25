@@ -5,6 +5,7 @@ import { Bell, CalendarDays, ChevronRight, HardDrive, Trash2 } from "lucide-reac
 import { useStore } from "@lib/store";
 import { isGmailAutoImportOpen } from "@lib/privacy";
 import { useLocalReminderSettings } from "@hooks/useLocalReminders";
+import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
 import { LocalReminderCard } from "./LocalReminderCard";
@@ -38,7 +39,15 @@ export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
   const [reminder] = useLocalReminderSettings();
   const subscriptionCount = useStore((state) => state.subscriptions.length);
   const demo = useStore((state) => Boolean(state.demo));
-  const syncOn = useStore((state) => state.accountSync.enabled);
+  const { account } = useAuth();
+  // 동기화 설정의 기본값은 켜짐이라, 로그인하지 않았거나 멈춘 기기에 '맞추는 중'이라고 쓰면 사실이 아니다.
+  const syncOn = useStore(
+    (state) =>
+      Boolean(account) &&
+      state.accountSync.enabled &&
+      state.accountSync.stoppedReason === null &&
+      state.accountSync.accountId === account?.id,
+  );
   const calendarOpen = isGmailAutoImportOpen();
   const close = () => setSheet(null);
 

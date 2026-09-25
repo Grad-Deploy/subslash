@@ -1,9 +1,8 @@
 import { useEffect, useRef } from "react";
-import { DEFAULT_EXCHANGE_RATE } from "@subslash/shared";
 import { realRecords, useStore } from "../lib/store";
 import { isAnonymousStatsOpen } from "../lib/privacy";
 import { buildContribution } from "../lib/stats";
-import { sendContribution, useStatsSharing } from "../lib/stats-client";
+import { sendContribution, useStatsSharing, withdrawContribution } from "../lib/stats-client";
 
 const DEBOUNCE_MS = 2000;
 
@@ -31,7 +30,7 @@ export function useStatsContribution() {
       const contribution = buildContribution(
         records.subscriptions,
         records.usageLogs,
-        state.exchangeRate.rate ?? DEFAULT_EXCHANGE_RATE,
+        state.getExchangeRate(),
       );
       const payload = JSON.stringify(contribution);
       if (payload === lastPayload.current && sharing.token) return;
@@ -42,6 +41,12 @@ export function useStatsContribution() {
         if (!useStatsSharing.getState().enabled) return;
         try {
           const token = await sendContribution(useStatsSharing.getState().token, contribution);
+          if (!useStatsSharing.getState().enabled) {
+            // 보내는 사이 참여를 그만뒀다. 그만두기가 지운 뒤에 도착했으면 이 요청이 기록을 새로
+            // 만들었을 수 있으니 한 번 더 지운다.
+            await withdrawContribution(token).catch(() => undefined);
+            return;
+          }
           lastPayload.current = payload;
           useStatsSharing.getState().setToken(token);
           useStatsSharing.getState().markSent();

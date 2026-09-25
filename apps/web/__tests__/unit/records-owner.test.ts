@@ -77,6 +77,8 @@ describe("로그인·로그아웃할 때 기록을 주인별로 나눈다", () =
     switchRecordsOwner(null, storage);
     expect(names()).toEqual(["로그인 전 넷플릭스"]);
     expect(useStore.getState().recordsOwner).toBeNull();
+    // 로그인한 채 남은 다른 탭이 덮어써도 되찾을 수 있게 비로그인 칸은 남긴다.
+    expect(storage.map.get(slotKey(null))).toContain("로그인 전 넷플릭스");
   });
 
   it("계정에 올라간 기록은 기기에 남기지 않고, 다시 로그인하면 빈 기록에서 받아 오게 한다", () => {
