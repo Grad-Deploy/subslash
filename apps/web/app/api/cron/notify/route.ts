@@ -11,7 +11,8 @@ import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { mirroredSubscriptions, notificationLog, notificationSubscribers } from "@lib/schema";
 import { signLink } from "@lib/tokens";
 import { pruneStaleContributions } from "@lib/stats-server";
-import { isAnonymousStatsOpen } from "@lib/privacy";
+import { isAnonymousStatsOpen, isDeviceUsageOpen } from "@lib/privacy";
+import { pruneDeviceUsage } from "@lib/device-usage-server";
 import { appUrl, reminderEmail, sendEmail, type ReminderItem } from "@lib/email";
 
 const UNSUBSCRIBE_TTL_SECONDS = 60 * 60 * 24 * 90;
@@ -154,9 +155,18 @@ export async function GET(request: NextRequest) {
         })
       : null;
 
+    // 기기 간 사용 측정의 보관 기간(40일)이 지난 구간도 함께 치운다. 열기 전에는 표가 없을 수 있다.
+    const prunedUsage = isDeviceUsageOpen(now)
+      ? await pruneDeviceUsage(now.getTime()).catch((error: unknown) => {
+          console.error("[cron/notify] usage prune failed", error);
+          return null;
+        })
+      : null;
+
     return NextResponse.json({
       success: failures.length === 0,
       prunedStats,
+      prunedUsage,
       recipients: recipients.length,
       considered,
       notified,

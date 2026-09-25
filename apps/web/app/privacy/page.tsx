@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ANONYMOUS_STATS_STARTS_ON,
+  DEVICE_USAGE_STARTS_ON,
   GMAIL_AUTO_IMPORT_STARTS_ON,
   PRIVACY_EFFECTIVE_DATE,
   PRIVACY_OFFICER,
@@ -73,7 +74,8 @@ export default function PrivacyPage() {
           SubSlash는 구독 기록을 기본적으로 이 기기 안에만 저장합니다. 서버에 개인정보가 저장되는
           것은 로그인, 계정에 저장, 결제 알림
           {GMAIL_AUTO_IMPORT_STARTS_ON && ", Gmail 자동 가져오기"}
-          {ANONYMOUS_STATS_STARTS_ON && ", 익명 구독 통계"}처럼 직접 고른 기능을 쓸 때뿐입니다.
+          {ANONYMOUS_STATS_STARTS_ON && ", 익명 구독 통계"}
+          {DEVICE_USAGE_STARTS_ON && ", 여러 기기 사용 측정"}처럼 직접 고른 기능을 쓸 때뿐입니다.
           로그인하면 구독 기록이 계정에 자동으로 저장됩니다(기기마다 끌 수 있음). 아래에 무엇을, 왜,
           얼마나 저장하는지 적습니다.
         </p>
@@ -139,6 +141,25 @@ export default function PrivacyPage() {
             </Item>
           </div>
         )}
+        {/*
+          여러 기기 사용 측정도 저장 항목이 늘어나는 변경이라 시작일을 정하면 먼저 게시된다
+          (lib/privacy.ts의 DEVICE_USAGE_STARTS_ON, lib/device-usage).
+        */}
+        {DEVICE_USAGE_STARTS_ON && (
+          <div id="device-usage">
+            <Item
+              title={`여러 기기 사용 측정 (선택, 로그인 시, ${koreanDate(DEVICE_USAGE_STARTS_ON)}부터)`}
+            >
+              안드로이드 앱에서 &lsquo;사용 측정 켜기&rsquo;를 누르고 기기 설정의 &lsquo;사용 정보
+              접근&rsquo;을 직접 허용한 기기만, 서비스 목록에 있는 서비스의 앱(넷플릭스·스포티파이
+              등)이 화면 맨 앞에 있던 시작·끝 시각을 서비스 종류와 함께 로그인한 계정에 저장합니다.
+              기기마다 SubSlash가 만든 무작위 기기 번호와 측정한 기간, 이용자가 붙인 기기 이름을
+              함께 저장합니다. 목록에 없는 앱, 앱 안에서 본 콘텐츠, 재생 배속, 위치, 기기 모델·광고
+              ID는 저장하지 않습니다. 같은 계정의 여러 기기 기록을 이어, 휴대폰에서 보다가 30분 안에
+              태블릿에서 이어 본 것을 한 번으로 셉니다. 목적: 구독별 이용 횟수와 1회 사용 단가 계산.
+            </Item>
+          </div>
+        )}
         <Item title="회원가입·로그인 (선택)">
           아이디, 이메일, 비밀번호(되돌릴 수 없는 해시로만 저장하며 원문은 저장하지 않음), 이메일
           확인 시각, 가입·마지막 로그인 시각을 저장합니다. 나이·성별은 선택 항목으로, 가입할 때나
@@ -196,6 +217,12 @@ export default function PrivacyPage() {
               구글 캘린더에 결제일 등록: 맡아 둔 구독 목록은 웹 앱이 받아 가면 곧바로 지우고, 받아
               가지 않아도 10분이 지나면 쓸 수 없으며 다음 등록 때 지웁니다. 캘린더에 들어간 일정은
               구글 캘린더에서 &lsquo;SubSlash 결제일&rsquo; 캘린더를 지워야 없어집니다.
+            </li>
+          )}
+          {DEVICE_USAGE_STARTS_ON && (
+            <li>
+              여러 기기 사용 측정: 40일이 지난 기록은 자동으로 지웁니다. 기기에서 측정을 끄면 그
+              기기의 기록을, 회원 탈퇴하면 모든 기기의 기록을 곧바로 지웁니다.
             </li>
           )}
           {ANONYMOUS_STATS_STARTS_ON && (
@@ -281,7 +308,8 @@ export default function PrivacyPage() {
             있습니다. 다만 거부하면 로그인, 계정에 저장, 여러 기기 동기화, 결제 알림 메일과 캘린더
             구독
             {GMAIL_AUTO_IMPORT_STARTS_ON && ", Gmail 자동 가져오기, 구글 캘린더에 결제일 등록"}
-            {ANONYMOUS_STATS_STARTS_ON && ", 익명 구독 통계 참여"}은 쓸 수 없습니다.
+            {ANONYMOUS_STATS_STARTS_ON && ", 익명 구독 통계 참여"}
+            {DEVICE_USAGE_STARTS_ON && ", 여러 기기 사용 측정"}은 쓸 수 없습니다.
           </p>
         </div>
       </Section>

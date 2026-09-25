@@ -433,3 +433,79 @@ export const statsItems = sqliteTable(
     presetIdx: index("stats_items_preset_idx").on(table.presetId),
   }),
 );
+
+/**
+ * 기기 간 사용 측정(lib/device-usage)에 참여한 기기. 로그인 계정의 것이다 — 같은 사람의 휴대폰과
+ * 태블릿을 이어 세려면 계정이라는 공통 식별자가 있어야 한다. 알림 구독자·익명 통계와는 묶지 않는다.
+ *
+ * `deviceKey`는 기기가 처음 켤 때 만든 무작위 값이고 기기 모델·광고 ID 같은 하드웨어 식별자가 아니다.
+ * `measuredFrom`~`measuredUntil`은 이 기기가 실제로 잰 기간이다 — 그 밖의 시간은 '안 썼다'가 아니라
+ * '모른다'라서, 화면이 부분 측정임을 말할 때 쓴다.
+ */
+export const usageDevices = sqliteTable(
+  "usage_devices",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    deviceKey: text("device_key").notNull(),
+    /** 지금은 "android"뿐이다. iOS는 앱 밖으로 사용 시간을 내주지 않는다. */
+    platform: text("platform").notNull(),
+    /** 사용자가 붙인 이름("출근용 폰"). 없으면 화면이 '기기 1'처럼 부른다. */
+    label: text("label"),
+    /** epoch ms. */
+    measuredFrom: integer("measured_from").notNull(),
+    measuredUntil: integer("measured_until").notNull(),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => ({
+    accountDeviceIdx: uniqueIndex("usage_devices_account_device_idx").on(
+      table.accountId,
+      table.deviceKey,
+    ),
+    updatedIdx: index("usage_devices_updated_idx").on(table.updatedAt),
+  }),
+);
+
+/**
+ * 한 기기에서 서비스 목록에 있는 앱이 화면 맨 앞에 있던 구간. 앱 이름·패키지 이름이 아니라 서비스
+ * 목록의 id만 둔다(목록에 없는 앱은 기기가 보내지도 않는다). 무엇을 봤는지·배속·위치는 없다.
+ * 세션으로 잇는 것은 읽을 때 한다(@subslash/shared의 linkSessions) — 저장은 기기가 잰 그대로다.
+ */
+export const usageIntervals = sqliteTable(
+  "usage_intervals",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    /** 기기를 거치지 않고 계정 단위로 읽고 지우려고 함께 둔다. */
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    deviceId: text("device_id")
+      .notNull()
+      .references(() => usageDevices.id, { onDelete: "cascade" }),
+    serviceId: text("service_id").notNull(),
+    /** epoch ms. */
+    startedAt: integer("started_at").notNull(),
+    endedAt: integer("ended_at").notNull(),
+  },
+  (table) => ({
+    deviceStartIdx: uniqueIndex("usage_intervals_device_start_idx").on(
+      table.deviceId,
+      table.serviceId,
+      table.startedAt,
+    ),
+    accountStartIdx: index("usage_intervals_account_start_idx").on(
+      table.accountId,
+      table.startedAt,
+    ),
+  }),
+);
+
+export type UsageDeviceRow = typeof usageDevices.$inferSelect;
+export type UsageIntervalRow = typeof usageIntervals.$inferSelect;
