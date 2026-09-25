@@ -9,6 +9,8 @@
  * 음악, 배속은 없다. 그래서 결과는 "측정한 기기에서 최소 N회"이고 체크인을 대신하지 않는다.
  */
 
+import { USAGE_PACKAGES } from "./usage/packages";
+
 /** 서버에 두는 기간. 체크인이 묻는 '지난 30일'에 경계 여유를 더했다. 지난 것은 크론이 지운다. */
 export const USAGE_RETENTION_DAYS = 40;
 
@@ -19,29 +21,12 @@ export const MAX_INTERVALS_PER_UPLOAD = 5000;
 export const MAX_INTERVAL_MS = 12 * 60 * 60 * 1000;
 
 /**
- * 서비스 목록 id → 안드로이드 패키지 이름. **Play 스토어에서 그 서비스의 공식 앱임을 확인한 것만**
- * 적는다(2026-09-25 확인). 모르는 서비스는 비워 둔다 — 비슷한 이름의 앱을 넣으면 남의 앱 사용이 이
- * 구독의 사용으로 세진다.
- *
- * 앱을 여는 것이 곧 그 구독을 쓰는 것이 아닌 서비스는 넣지 않는다: 쿠팡 와우(쇼핑·배달 멤버십이라
- * 쿠팡플레이만 재면 적게 센다), 네이버 웹툰(무료 회차를 보는 것도 앱 사용이다) 등.
+ * 서비스 목록 id → 안드로이드 패키지 이름. 폰 사용 기록(lib/usage)과 **같은 표**를 쓴다 — 표가 둘이면
+ * 같은 서비스가 이 폰 기록에는 있고 여러 기기 측정에는 없는 식으로 어긋난다. 무엇을 넣고 빼는지의
+ * 기준은 그 파일에 있다(Play 스토어에서 공식 앱임을 확인한 것만, 앱을 여는 것이 곧 그 구독을 쓰는
+ * 것인 서비스만).
  */
-export const ANDROID_PACKAGES: Readonly<Record<string, readonly string[]>> = {
-  netflix: ["com.netflix.mediaclient"],
-  tving: ["net.cj.cjhv.gs.tving"],
-  wavve: ["kr.co.captv.pooqV2"],
-  watcha: ["com.frograms.wplay"],
-  "youtube-premium": ["com.google.android.youtube", "com.google.android.apps.youtube.music"],
-  "disney-plus": ["com.disney.disneyplus"],
-  "prime-video": ["com.amazon.avod.thirdpartyclient"],
-  spotify: ["com.spotify.music"],
-  melon: ["com.iloen.melon"],
-  "apple-music": ["com.apple.android.music"],
-  "naver-vibe": ["com.naver.vibe"],
-  notion: ["notion.id"],
-  "chatgpt-plus": ["com.openai.chatgpt"],
-  "claude-pro": ["com.anthropic.claude"],
-};
+export const ANDROID_PACKAGES: Readonly<Record<string, readonly string[]>> = USAGE_PACKAGES;
 
 const PACKAGE_TO_SERVICE = new Map(
   Object.entries(ANDROID_PACKAGES).flatMap(([serviceId, packages]) =>

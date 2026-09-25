@@ -66,7 +66,7 @@ export function isAnonymousStatsOpen(now: Date = new Date()): boolean {
  * 사생활에 가까운 정보라, 날짜를 정하기 전에 스토어 정책(사용 정보 접근 권한)도 확인한다. null이면
  * 닫혀 있다.
  */
-export const DEVICE_USAGE_STARTS_ON: string | null = null;
+export const DEVICE_USAGE_STARTS_ON: string | null = "2026-09-25";
 
 /** 기기 간 사용 측정이 열렸는지. */
 export function isDeviceUsageOpen(now: Date = new Date()): boolean {
