@@ -3,6 +3,14 @@ import { normalizeEmailAddress, validateEmail } from "@subslash/shared";
 import { databaseUnavailableResponse } from "@lib/db";
 import { findAccountByEmail } from "@lib/account-verification";
 import { describeResetOutcome, sendPasswordReset } from "@lib/password-reset";
+import { logError } from "@lib/log";
+import {
+  clientIp,
+  hit,
+  retryAfterSeconds,
+  tooManyRequestsMessage,
+  type RateLimitRule,
+} from "@lib/rate-limit";
 
 /**
  * 비밀번호 재설정 메일 요청. 본문: `{ email }`
@@ -13,8 +21,11 @@ import { describeResetOutcome, sendPasswordReset } from "@lib/password-reset";
  *
  * 가입된 주소가 아니면 그렇다고 말한다. 가입 폼이 이미 "이미 가입된 이메일"을 알려주므로
  * 여기서 숨겨도 가입 여부는 감춰지지 않고, 주소를 잘못 적은 사람만 오지 않을 메일을
- * 기다리게 된다.
+ * 기다리게 된다. 대신 가입 폼과 같이 IP당 횟수를 제한해, 남의 주소를 대량으로 넣어 가입 여부를
+ * 알아내는 것을 막는다.
  */
+const LOOKUPS_PER_IP: RateLimitRule = { limit: 20, windowMs: 60 * 60 * 1000 };
+
 export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
@@ -29,6 +40,16 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+
+    const ipKey = `password-reset:ip:${clientIp(request.headers)}`;
+    const blocked = retryAfterSeconds(ipKey, LOOKUPS_PER_IP);
+    if (blocked > 0) {
+      return NextResponse.json(
+        { error: tooManyRequestsMessage(blocked) },
+        { status: 429, headers: { "Retry-After": String(blocked) } },
+      );
+    }
+    hit(ipKey, LOOKUPS_PER_IP);
 
     const account = await findAccountByEmail(email);
     if (!account) {
@@ -52,7 +73,7 @@ export async function POST(request: NextRequest) {
       { status: httpStatus },
     );
   } catch (error) {
-    console.error("[api/auth/password-reset]", error);
+    logError("api/auth/password-reset", error);
     return NextResponse.json({ error: "재설정 메일을 보내지 못했습니다." }, { status: 500 });
   }
 }

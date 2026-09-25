@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isDatabaseConfigured } from "@lib/db";
 import { SESSION_COOKIE, destroySession, readSessionToken } from "@lib/auth-server";
+import { logError } from "@lib/log";
 
 /**
  * 로그아웃.
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
       await destroySession(token);
     }
   } catch (error) {
-    console.error("[api/auth/logout]", error);
+    logError("api/auth/logout", error);
     // 세션 삭제가 실패해도 브라우저 쿠키는 반드시 지운다.
   }
 

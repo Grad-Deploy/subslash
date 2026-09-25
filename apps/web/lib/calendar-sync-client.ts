@@ -1,5 +1,5 @@
 import { currentCancelUrl, getBilledAmount, isInTrial, type Subscription } from "@subslash/shared";
-import { apiFetch } from "./api";
+import { apiFetch, readApiError } from "./api";
 
 /**
  * '구글 캘린더에 등록'의 브라우저 쪽.
@@ -45,15 +45,6 @@ export function toCalendarPlanEntries(subscriptions: Subscription[]): CalendarPl
   );
 }
 
-async function readError(response: Response, fallback: string): Promise<string> {
-  try {
-    const body = await response.json();
-    return typeof body?.error === "string" ? body.error : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 /**
  * 결제일을 맡기고, 갈 주소(SubSlash의 Apps Script 웹 앱)를 받는다. 그 주소로 가면 Google이 권한을
  * 묻고, 허용하면 그 자리에서 이 사람의 캘린더에 결제일이 들어간다.
@@ -68,7 +59,7 @@ export async function startCalendarSync(
     body: JSON.stringify({ entries, reminderDays }),
   });
   if (!response.ok) {
-    throw new Error(await readError(response, "캘린더 등록을 시작하지 못했습니다."));
+    throw new Error(await readApiError(response, "캘린더 등록을 시작하지 못했습니다."));
   }
   return ((await response.json()) as { url: string }).url;
 }

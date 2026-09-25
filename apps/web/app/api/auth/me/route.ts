@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isDatabaseConfigured } from "@lib/db";
 import { getAccountBySessionToken, readSessionToken, toPublicAccount } from "@lib/auth-server";
+import { logError } from "@lib/log";
 
 /**
  * 지금 로그인된 계정.
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const account = await getAccountBySessionToken(token);
     return NextResponse.json({ account: account ? toPublicAccount(account) : null });
   } catch (error) {
-    console.error("[api/auth/me]", error);
+    logError("api/auth/me", error);
     return NextResponse.json({ account: null });
   }
 }

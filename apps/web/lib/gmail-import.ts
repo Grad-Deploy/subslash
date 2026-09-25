@@ -117,6 +117,9 @@ var SEARCH_QUERIES = [
 // 적게 읽습니다.
 var MAX_MESSAGES = 150;
 var MAX_BODY_CHARS = 1500;
+// 이 스크립트는 메일 읽기 권한 하나만 씁니다. 여러 통을 한꺼번에 받으려면 외부 요청 권한이 더
+// 필요해서, 한 통씩 받습니다(150통이면 1분쯤 걸립니다).
+var PARALLEL_FETCH = false;
 
 function doGet() {
   var emails = collectReceiptEmails(SEARCH_QUERIES, MAX_MESSAGES);
@@ -167,10 +170,17 @@ const MAIL_HELPERS = String.raw`function collectReceiptEmails(queries, maxMessag
       refs.push(found[i]);
     }
   }
-  return refs.map(function (ref) {
-    var message = withGmailQuota(function () {
-      return Gmail.Users.Messages.get("me", ref.id, { format: "full" });
-    });
+  var ids = refs.map(function (ref) {
+    return ref.id;
+  });
+  var messages = PARALLEL_FETCH
+    ? fetchMessagesParallel(ids)
+    : ids.map(function (id) {
+        return withGmailQuota(function () {
+          return Gmail.Users.Messages.get("me", id, { format: "full" });
+        });
+      });
+  return messages.map(function (message) {
     var headers = message.payload.headers || [];
     return {
       from: headerValue(headers, "From"),
@@ -196,6 +206,60 @@ function withGmailQuota(call) {
       Utilities.sleep(GMAIL_QUOTA_WAITS_MS[attempt]);
     }
   }
+}
+
+// 메일을 한 통씩 받으면 200통에 200번을 차례로 왕복해 1분 넘게 걸립니다(받은 메일을 읽는 것은
+// 1초도 안 걸립니다). 외부 요청 권한이 있는 스크립트는 Gmail API를 여러 통씩 한꺼번에 부릅니다.
+// Gmail은 사람마다 1초에 쓸 수 있는 양도 정해 두어(메일 한 통 읽기가 5, 한도 250), 한 번에
+// 너무 많이 부르면 거절합니다. 그래서 묶음을 작게 두고, 거절된 것만 기다렸다가 다시 부릅니다.
+var PARALLEL_CHUNK = 25;
+
+function fetchMessagesParallel(ids) {
+  var token = ScriptApp.getOAuthToken();
+  var byId = {};
+  var pending = ids.slice();
+  for (var attempt = 0; pending.length > 0; attempt++) {
+    var retry = [];
+    for (var start = 0; start < pending.length; start += PARALLEL_CHUNK) {
+      var chunk = pending.slice(start, start + PARALLEL_CHUNK);
+      var responses = UrlFetchApp.fetchAll(
+        chunk.map(function (id) {
+          return {
+            url:
+              "https://gmail.googleapis.com/gmail/v1/users/me/messages/" +
+              encodeURIComponent(id) +
+              "?format=full",
+            headers: { Authorization: "Bearer " + token },
+            muteHttpExceptions: true,
+          };
+        }),
+      );
+      for (var i = 0; i < responses.length; i++) {
+        var code = responses[i].getResponseCode();
+        var text = responses[i].getContentText();
+        if (code === 200) {
+          byId[chunk[i]] = JSON.parse(text);
+        } else if (code === 429 || (code === 403 && /rate ?limit|quota/i.test(text))) {
+          retry.push(chunk[i]);
+        } else if (code !== 404) {
+          // 404는 찾은 뒤 받기 전에 지운 메일입니다. 그 밖의 오류는 그대로 알립니다.
+          throw new Error("Gmail에서 메일을 읽지 못했습니다(" + code + ")");
+        }
+      }
+    }
+    if (retry.length === 0) break;
+    if (attempt >= GMAIL_QUOTA_WAITS_MS.length) throw new Error("Gmail 사용 한도에 걸렸습니다.");
+    Utilities.sleep(GMAIL_QUOTA_WAITS_MS[attempt]);
+    pending = retry;
+  }
+  // 찾은 순서를 지킵니다 — 쿼리 순서가 곧 우선순위입니다.
+  return ids
+    .filter(function (id) {
+      return byId[id];
+    })
+    .map(function (id) {
+      return byId[id];
+    });
 }
 
 function headerValue(headers, name) {
@@ -347,6 +411,8 @@ var FIRST_SCAN_DAYS = 400;
 var FIRST_SCAN_MAX_MESSAGES = 200;
 var MAX_MESSAGES = 100;
 var MAX_BODY_CHARS = 1500;
+// SubSlash로 보내려고 외부 요청 권한이 이미 있어, 메일을 여러 통씩 한꺼번에 받습니다.
+var PARALLEL_FETCH = true;
 
 function setup() {
   ScriptApp.getProjectTriggers().forEach(function (trigger) {
@@ -466,6 +532,9 @@ var FIRST_SCAN_DAYS = 400;
 var FIRST_SCAN_MAX_MESSAGES = 200;
 var MAX_MESSAGES = 100;
 var MAX_BODY_CHARS = 1500;
+// 연결 코드를 바꾸려고 외부 요청 권한이 이미 있어, 메일을 여러 통씩 한꺼번에 받습니다. 사용자가
+// 연결 화면에서 첫 검사가 끝나기를 기다리므로 여기가 가장 중요합니다.
+var PARALLEL_FETCH = true;
 
 // SubSlash 앱(모바일)에서 왔는지. 앱은 이 화면을 인앱 브라우저로 열고, 창을 닫으면 앱으로 돌아간다.
 // 그래서 앱에서 왔을 때는 '돌아가기' 링크를 두지 않는다 — 인앱 브라우저 안에서 웹사이트가 열려,

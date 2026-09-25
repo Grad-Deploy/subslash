@@ -184,6 +184,22 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 비밀값 비교(크론 `CRON_SECRET` 등)는 `timingSafeEqual`로 한다. 웹 응답의 보안 헤더(틀 넣기 금지 등)는
 `next.config.ts`의 `headers()`에 있다.
 
+## 서버 로그와 외부 링크
+
+서버 코드는 `console.error(scope, error)`로 오류 객체를 넘기지 않고 `logError`(`lib/log`)를 쓴다. Drizzle은
+쿼리가 실패하면 메시지에 바인딩한 값을 싣는다(`params: 이메일,비밀번호 해시,...`) — 그대로 넘기면 DB 오류
+한 번에 개인정보가 배포 로그에 남는다. UNIQUE 충돌도 `cause` 안에 있으므로 메시지가 아니라
+`isUniqueViolation`으로 가린다.
+
+결제 알림은 같은 주소로 다시 신청해도 확인된 기록을 지우지 않는다. 새 신청은 확인 전 기록으로 따로 두고,
+주인이 확인 링크를 누를 때에만 예전 기록을 대신한다(`confirmSubscriber`). 신청만으로 지우면 남의 주소만
+알아도 그 사람의 알림을 끊을 수 있었다. 확인하지 않은 신청은 3일 뒤 크론이 지운다.
+
+외부 주소는 `openExternal`·`leaveForExternal`만 열고, 둘은 http(s)만 연다. 해지 주소는 입력·백업·계정 기록
+여러 곳에서 들어와 `javascript:`·`intent:`가 섞일 수 있어서, 들어오는 곳이 아니라 여는 곳에서 막는다.
+안드로이드는 세션 토큰이 든 Preferences(`CapacitorStorage.xml`)를 Google 클라우드 백업에서 뺀다
+(`res/xml/data_extraction_rules.xml`) — Preferences에 새 비밀값을 두면 이 규칙이 함께 지킨다.
+
 ## 구독 리포트와 익명 통계
 
 하단 탭의 세 번째는 '리포트'(`/report`)다. 예전 '절약 현황'은 해지한 구독이 없으면 빈 화면이라, 해지
@@ -203,6 +219,46 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 DB는 정보 종류별로 나누지 않는다. 같은 서버가 모든 접속 키를 쥐므로 나눠도 막아 주는 것이 거의 없고,
 회원 탈퇴처럼 여러 표를 함께 지우는 일이 DB 사이에서는 한 번에 되지 않아 방침의 '곧바로 지운다'를
 지키기 어려워진다. 대신 표끼리 묶지 않고(알림 ↔ 계정, 통계 ↔ 누구도), 토큰은 해시로, 필요한 칸만 둔다.
+
+## 폰 사용 기록과 여러 기기 사용 측정
+
+안드로이드 앱은 '사용 정보 접근'(PACKAGE_USAGE_STATS) 하나로 두 기능을 한다. 권한은 하나지만 저장하는
+곳이 달라 동의를 따로 받는다.
+
+- **폰 사용 기록**(`UsageStatsPlugin` → `lib/usage`, 화면은 `components/usage/app`): 이 폰에서 구독 앱의
+  날짜별 사용 시간과 쓴 횟수를 기기 안에만 쌓는다(400일). 서버·백업·동기화·익명 통계에 넣지 않는다. 체크인
+  막대를 미리 맞추고, 리포트의 '구독 사용 현황'(이 폰), 한 번에 체크인, 안 쓰는 구독 알림에 쓴다. 로그인이
+  필요 없다. 기록이 없는 날은 0이 아니라 모른다.
+- **여러 기기 사용 측정**(아래): 로그인한 사용자가 설정에서 따로 켜면 사용 구간을 계정에 올려 기기끼리 잇는다.
+
+두 기능은 같은 표와 같은 기준을 쓴다. 서비스 → 패키지 표는 `lib/usage/packages.ts`의 `USAGE_PACKAGES` 한
+곳이고(`ANDROID_PACKAGES`는 그 이름이다), 매니페스트 `<queries>`와 테스트로 맞춘다. '한 번 썼다'는 30분 안에
+이어 쓰면 한 번, 1분 미만은 세지 않음이다 — `linkSessions`의 `SESSION_GAP_MS`·`MIN_SESSION_MS`와
+`UsageStatsPlugin`의 같은 이름 상수를 함께 고친다. 기준이 다르면 같은 리포트에 이 폰의 횟수와 모든 기기의
+횟수가 서로 다른 뜻으로 나온다. 모든 기기 쪽이 이 폰보다 적을 수 있다(기기를 오가며 이어 쓴 것은 한 번).
+
+### 여러 기기 사용 측정
+
+체크인(사용자가 센 횟수)과 별개로, 안드로이드 앱이 '사용 정보 접근'으로 서비스 앱이 화면 맨 앞에 있던
+구간을 재 로그인 계정에 올린다(`DeviceUsagePlugin` → `lib/device-usage-client` → `/api/usage`, 표
+`usage_devices`·`usage_intervals`). 기기마다 자기 구간만 기간 단위로 통째로 바꿔 올리므로 기기끼리
+충돌하지 않고, 읽을 때 계정의 모든 기기 구간을 `linkSessions`(@subslash/shared)로 잇는다 — 앞 사용이
+끝나고 30분 안에 다시 쓰면 기기가 달라도 한 번, 1분 미만은 세지 않는다. 잴 수 있는 것은 '앱이 앞에
+있었다'뿐이라 TV·PC·iPhone·화면 끈 재생·배속은 없다. 그래서 값은 "측정한 기기에서 최소 N회"이고
+체크인을 덮어쓰지 않으며, 측정 기간(`measuredFrom`~`measuredUntil`) 밖은 '안 썼다'가 아니라 모른다
+(이전 업로드와 사이가 비면 측정 기간을 이어 붙이지 않는다). 패키지 이름(`ANDROID_PACKAGES`)은 Play
+스토어에서 확인한 것만 적는다. 보관 40일(크론이 지움), 회원 탈퇴는 `deleteAllDeviceUsage`.
+`DEVICE_USAGE_STARTS_ON`(null이면 닫힘)을 정하기 전에 두 배포 DB에 `drizzle/0012_device_usage.sql`을
+적용하고, 사용 정보 접근 권한에 대한 스토어 정책을 확인한다.
+
+측정은 설정 목록의 '여러 기기 사용 측정'(`DeviceUsageCard`, 로그인했을 때만)에서 켠다. 켜기 전에 무엇을
+재는지 보여 주고, 권한은 기기 설정에서 허용하고 돌아오면 이어서 켠다. 켜짐은 **켠 계정**(`accountId`)에
+묶는다 — 같은 기기에 다른 사람이 로그인하면 켠 적 없는 계정으로 올라가지 않는다. 앱을 열 때·돌아올 때
+헤더의 `useDeviceUsageUpload`가 올리고, 리포트(`MeasuredUsageSection`)와 구독 상세(`MeasuredUsageLine`)가
+`useAccountDeviceUsage`로 받아 보여 준다. 1회 단가 순위는 여전히 체크인으로 계산한다. 측정한 기기가 없으면
+숫자를 쓰지 않는다(0회가 아니라 모름). 매니페스트에 `PACKAGE_USAGE_STATS`가 있으므로, 이 빌드를 스토어에
+올리기 전에 Play Console의 데이터 보안 항목과 권한 신고서를 고친다. 플러그인을 async 함수에서 돌려줄 때는
+프록시를 보통 객체로 감싼다 — 프록시는 `then`도 네이티브 메서드로 만들어 `await`가 끝나지 않는다.
 
 ## 파일 경계
 
@@ -317,6 +373,13 @@ CocoaPods 대신 SPM을 쓰므로 Windows에서도 만들어지지만, **빌드�
 (`AppWindowPlugin`), 플러그인을 부르는 코드는 `Capacitor.getPlatform()`으로 가른다 — iOS에서 부르면
 거절당해 경고만 쌓인다.
 
+안드로이드 릴리스 빌드는 R8로 코드를 줄이고 최적화·난독화한다(AGP 9, `minifyEnabled`·`shrinkResources`).
+AGP 9는 최적화를 끄는 `proguard-android.txt`를 받지 않으므로 `proguard-android-optimize.txt`를 쓴다. 웹 화면이
+네이티브를 이름으로 부르므로, 이름이 바뀌면 빌드는 되는데 앱에서만 기능이 조용히 멈춘다. 플러그인
+(`@CapacitorPlugin`·`@PluginMethod`)은 Capacitor가 함께 주는 keep 규칙이, 웹뷰 브리지(`@JavascriptInterface`)는
+기본 규칙이 지킨다. 리플렉션으로 찾는 코드를 새로 넣으면 `app/proguard-rules.pro`에 규칙을 더하고, 릴리스
+빌드의 `mapping/release/seeds.txt`에 그 이름이 남는지 확인한다. 난독화를 풀 매핑은 AAB에 들어가 Play가 쓴다.
+
 앱의 구독 기록은 웹처럼 localStorage가 원본이고, 쓸 때마다 기기 저장소(Preferences)에 사본을
 적는다(`lib/mirrored-storage`). 앱을 열 때 localStorage가 비어 있었으면 사본으로 되살린다 — 운영체제가
 웹뷰 저장소를 비워도 기록이 남게 하려는 것이다. 저장소를 통째로 Preferences로 옮기지 않는 이유는 그
@@ -355,6 +418,10 @@ pnpm build
   대화형으로 묻는다. 마이그레이션 SQL과 스냅샷을 직접 쓰고, 생성 뒤
   `pnpm db:generate`가 "No schema changes"를 내는지로 스냅샷을 확인한다. 배포 DB에는
   push가 아니라 그 SQL로 적용한다 — push에서 '만들기'를 고르면 기존 테이블이 지워진다.
+- 배포 DB에 SQL을 적용할 때는 `pnpm --filter @subslash/web db:apply`(`scripts/db-migrate/apply.ts`)를 쓴다.
+  인자 없이 돌리면 적용 여부만 보여 주고, `-- --apply 0012`처럼 번호를 줘야 한 트랜잭션으로 적용한다.
+  이미 적용됐거나 일부만 있거나 앞선 테이블이 없으면 적용하지 않는다. 새 마이그레이션을 만들면 이
+  스크립트의 `MIGRATIONS`에 확인 방법을 더한다. 먼저 `file:` 사본으로 시험해 볼 수 있다.
 - 배포 DB는 두 개이고 데이터를 섞지 않는다. `subslash`는 leesean2/subslash(Vercel
   `subslash-web-qki1`), `subslash-grad`는 Grad-Deploy/subslash 미러(Vercel `subslash-web`)가
   쓴다. 미러가 병합 즉시 새 레포로 옮겨 곧바로 배포되므로, 스키마를 바꾸는 PR은 병합

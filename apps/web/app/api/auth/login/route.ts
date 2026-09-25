@@ -21,6 +21,7 @@ import {
   tooManyRequestsMessage,
   type RateLimitRule,
 } from "@lib/rate-limit";
+import { logError } from "@lib/log";
 
 /**
  * 비밀번호 대입을 늦춘다. 실패만 센다 — 제대로 로그인하는 사람은 막히지 않는다. 아이디 기준은 한
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
     return response;
   } catch (error) {
-    console.error("[api/auth/login]", error);
+    logError("api/auth/login", error);
     return NextResponse.json({ error: "로그인을 처리하지 못했습니다." }, { status: 500 });
   }
 }

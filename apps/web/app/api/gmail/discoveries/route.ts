@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
 import { acknowledgeDiscoveries, listDiscoveries } from "@lib/gmail-auto-import";
+import { logError } from "@lib/log";
 
 /**
  * 결제 메일에서 찾아 둔 구독 후보 — 받기(GET), 받은 것 지우기(DELETE).
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (!account) return LOGIN_REQUIRED();
     return NextResponse.json({ discoveries: await listDiscoveries(account.id) });
   } catch (error) {
-    console.error("[api/gmail/discoveries GET]", error);
+    logError("api/gmail/discoveries GET", error);
     return NextResponse.json({ error: "찾아 둔 구독을 읽지 못했습니다." }, { status: 500 });
   }
 }
@@ -44,7 +45,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ deleted: await acknowledgeDiscoveries(account.id, ids) });
   } catch (error) {
-    console.error("[api/gmail/discoveries DELETE]", error);
+    logError("api/gmail/discoveries DELETE", error);
     return NextResponse.json({ error: "찾아 둔 구독을 지우지 못했습니다." }, { status: 500 });
   }
 }

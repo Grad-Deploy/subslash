@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useCallback, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import dynamic from "next/dynamic";
 import {
   type Subscription,
   calculateCostPerUse,
@@ -8,6 +9,14 @@ import {
   getMyMonthlyShareAmount,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
+import { IS_APP_BUILD } from "@lib/platform";
+
+// 폰 기록 한 줄(안드로이드 앱 전용). 이 막대는 웹의 첫 체크인 카드도 쓰므로 앱 빌드에서만 불러온다.
+const AppPhoneHint = IS_APP_BUILD
+  ? dynamic(() => import("../../usage/app/AppPhoneHint").then((m) => m.AppPhoneHint), {
+      ssr: false,
+    })
+  : null;
 
 const MAX_STEP = 10;
 
@@ -25,6 +34,10 @@ function spaced(text: string): string {
  * 큰 숫자와 회당 단가, 0~10을 1회씩 고르는 단계 막대(누르기·끌기·키보드 화살표, 화면 낭독기는
  * 슬라이더)를 보여준다. 10보다 많으면 '직접 입력'으로 숫자를 친다. value가 null이면 아직 고르지 않은
  * 상태라 숫자를 흐리게 둔다.
+ *
+ * 안드로이드에서 폰 사용 기록을 켰고 연결표에 있는 구독이면, 최근 30일 동안 이 폰에서 쓴 횟수로
+ * 막대를 미리 맞춰 두고 그 자리를 표시한다. 저장은 여전히 사용자가 누를 때만 한다 — TV·PC에서 본
+ * 것은 폰 기록에 없다. 0회면 미리 맞추지 않는다('안 썼어요'로 저장되면 해지 권유로 이어진다).
  */
 export function AppUsageCountPicker({
   subscription,
@@ -36,9 +49,25 @@ export function AppUsageCountPicker({
   onChange: (count: number) => void;
 }) {
   const [exact, setExact] = useState((value ?? 0) > MAX_STEP);
+  // 10보다 큰 값(폰 기록으로 채운 값 등)은 막대로 나타낼 수 없어 입력 칸으로 바꾼다. 한 번 바꾸면
+  // 고치는 동안 숫자가 10 아래로 내려가도 입력 칸을 유지한다(렌더 중 상태 맞추기).
+  if (!exact && (value ?? 0) > MAX_STEP) setExact(true);
   const trackRef = useRef<HTMLDivElement>(null);
   const count = value ?? 0;
   const monthly = getMyMonthlyShareAmount(subscription);
+
+  // 폰 기록이 오면 한 번만 미리 맞춘다. 사용자가 이미 골랐거나 0회면 건드리지 않는다.
+  const [phoneOpens, setPhoneOpens] = useState<number | null>(null);
+  const prefilled = useRef(false);
+  const handlePhoneOpens = useCallback(
+    (opens: number | null) => {
+      setPhoneOpens(opens);
+      if (prefilled.current || value !== null || !opens) return;
+      prefilled.current = true;
+      onChange(Math.min(999, opens));
+    },
+    [value, onChange],
+  );
 
   const pick = (clientX: number) => {
     const rect = trackRef.current?.getBoundingClientRect();
@@ -123,6 +152,15 @@ export function AppUsageCountPicker({
               className="absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full bg-primary"
               style={{ width: `${value === null ? 0 : (shown / MAX_STEP) * 100}%` }}
             />
+            {phoneOpens !== null && phoneOpens > 0 && (
+              <span
+                aria-hidden
+                className="absolute -top-1 -translate-x-1/2 rounded bg-foreground px-1 text-[9px] font-bold leading-4 text-background"
+                style={{ left: `${(Math.min(phoneOpens, MAX_STEP) / MAX_STEP) * 100}%` }}
+              >
+                폰
+              </span>
+            )}
             {Array.from({ length: MAX_STEP + 1 }, (_, i) => (
               <span
                 key={i}
@@ -159,6 +197,8 @@ export function AppUsageCountPicker({
           10번 넘게 썼다면 직접 입력
         </button>
       )}
+
+      {AppPhoneHint && <AppPhoneHint subscription={subscription} onOpens={handlePhoneOpens} />}
     </div>
   );
 }
