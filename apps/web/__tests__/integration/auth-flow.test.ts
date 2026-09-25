@@ -189,14 +189,36 @@ describe("회원가입", () => {
     expect(await getDb().select().from(accounts)).toHaveLength(0);
   });
 
-  it("가입 요청에 나이·성별을 넣어 보내도 저장하지 않는다", async () => {
+  it("나이·성별은 선택이다 — 적으면 저장하고, 비우면 null로 가입된다", async () => {
     const res = await signupRoute(
       json("http://localhost/api/auth/signup", { ...VALID_SIGNUP, age: 30, gender: "male" }),
     );
     expect(res.status).toBe(201);
     const [row] = await getDb().select().from(accounts);
-    expect(row.age).toBeNull();
-    expect(row.gender).toBeNull();
+    expect(row.age).toBe(30);
+    expect(row.gender).toBe("male");
+
+    const blank = await signupRoute(
+      json("http://localhost/api/auth/signup", {
+        ...VALID_SIGNUP,
+        username: "no_profile",
+        email: "noprofile@gmail.com",
+      }),
+    );
+    expect(blank.status).toBe(201);
+    const rows = await getDb().select().from(accounts);
+    const saved = rows.find((account) => account.username === "no_profile");
+    expect(saved?.age).toBeNull();
+    expect(saved?.gender).toBeNull();
+  });
+
+  it("나이가 규칙에 맞지 않으면 가입하지 않고 그 칸을 알려준다", async () => {
+    const res = await signupRoute(
+      json("http://localhost/api/auth/signup", { ...VALID_SIGNUP, age: 10 }),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).fieldErrors.age).toBeDefined();
+    expect(await getDb().select().from(accounts)).toHaveLength(0);
   });
 
   it(

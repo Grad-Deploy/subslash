@@ -33,7 +33,7 @@ import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
-import { GoogleCalendarSync } from "../../components/calendar/GoogleCalendarSync";
+import { SettingsList } from "../../components/settings/SettingsList";
 import { IS_APP_BUILD } from "@lib/platform";
 import { useLocalReminderSettings } from "@hooks/useLocalReminders";
 import { ReminderPromptSheet } from "../../components/app-start/ReminderPromptSheet";
@@ -42,21 +42,9 @@ import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { isWideScreen } from "@lib/wide-screen";
 import { subscriptionDetailHref } from "@lib/routes";
-import { isGmailAutoImportOpen } from "@lib/privacy";
 import { useIsClient } from "@hooks/useIsClient";
 import { Spinner } from "../../components/ui/spinner";
 import { ChevronDown, Receipt, ShieldCheck } from "lucide-react";
-
-/**
- * 앱에서만 쓰는 아래쪽 설정 목록. 웹 번들에 들어가지 않도록 앱 빌드에서만 불러온다 —
- * 웹은 지금처럼 카드를 늘어놓는다.
- */
-const AppSettingsList = IS_APP_BUILD
-  ? dynamic(
-      () => import("../../components/settings/app/AppSettingsList").then((m) => m.AppSettingsList),
-      { ssr: false },
-    )
-  : null;
 
 /** 카드/표 중 고른 보기. 이 브라우저의 취향일 뿐이라 백업·동기화에 넣지 않는다. */
 const VIEW_KEY = "subslash-subs-view";
@@ -426,59 +414,35 @@ export default function SubscriptionsPage() {
         </div>
       )}
 
-      {/* Header and Add Button */}
-      {/* 앱: 긴 부제와 혼자 튀던 '전체 초기화'를 빼고 불러오기 두 개만 같은 크기로 둔다.
-          새 구독은 오른쪽 아래 + 버튼, 전체 초기화는 아래 설정 목록의 데이터 묶음에 있다. */}
-      {IS_APP_BUILD ? (
-        <div className="space-y-3">
+      {/*
+        제목과 불러오기 두 개. 앱에서 먼저 줄인 모양을 웹도 쓴다 — 긴 부제와 혼자 빨갛게 튀던 '전체
+        초기화'를 뺐다(전체 초기화는 아래 설정 목록의 데이터 묶음에 있다). 넓은 화면에는 떠 있는 +
+        버튼이 없으므로 '구독 추가'를 함께 둔다.
+      */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-black tracking-tight">구독 관리</h1>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              onClick={() => router.push("/import")}
-              className="font-semibold"
-            >
-              결제 메일에서 찾기
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setIsAutoImportOpen(true)}
-              className="font-semibold"
-            >
-              문자 붙여넣기
-            </Button>
-          </div>
+          <Button onClick={() => setIsAddOpen(true)} className="hidden font-bold md:inline-flex">
+            + 구독 추가
+          </Button>
         </div>
-      ) : (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-black tracking-tight">구독 관리</h1>
-            <p className="text-sm text-muted-foreground">1회 단가를 보고 해지할 구독을 고르세요.</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {subscriptions.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setConfirmClearAll(true)}
-                className="font-medium text-xs text-rose-600 dark:text-rose-400 border-rose-500/30 hover:bg-rose-500/10 gap-1"
-              >
-                전체 초기화
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              onClick={() => setIsAutoImportOpen(true)}
-              className="font-semibold border-primary/30 text-primary hover:bg-primary/10 gap-1.5"
-            >
-              자동 불러오기
-            </Button>
-            <Button onClick={() => setIsAddOpen(true)} className="font-bold shadow-md">
-              + 구독 추가
-            </Button>
-          </div>
+        <div className="grid grid-cols-2 gap-2 md:max-w-md">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/import")}
+            className="font-semibold"
+          >
+            결제 메일에서 찾기
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setIsAutoImportOpen(true)}
+            className="font-semibold"
+          >
+            문자 붙여넣기
+          </Button>
         </div>
-      )}
+      </div>
 
       <ExchangeRateNote />
 
@@ -705,15 +669,8 @@ export default function SubscriptionsPage() {
         </aside>
       </div>
 
-      {AppSettingsList ? (
-        // 앱: 알림·연동·데이터를 한 줄씩 묶은 목록. 누르면 아래 카드들을 시트로 연다.
-        <AppSettingsList onMessage={showToast} onClearAll={() => setConfirmClearAll(true)} />
-      ) : (
-        <>
-          {/* 구독을 확인한 뒤, 결제일을 내 구글 캘린더에 넣는 곳 */}
-          {isGmailAutoImportOpen() && <GoogleCalendarSync />}
-        </>
-      )}
+      {/* 알림·연동·데이터를 한 줄씩 묶은 목록(웹·앱). 누르면 카드를 시트로 연다. */}
+      <SettingsList onMessage={showToast} onClearAll={() => setConfirmClearAll(true)} />
 
       {/* Floating Action Button for Mobile */}
       <button

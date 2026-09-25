@@ -7,6 +7,7 @@ import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { ConfirmDialog } from "@components/ui/confirm-dialog";
 import { apiFetch } from "@lib/api";
+import { releaseRecordsToGuest } from "@lib/records-owner";
 import { HydratedForm } from "@components/ui/hydrated-form";
 
 /**
@@ -64,6 +65,8 @@ export function DeleteAccountSection() {
       // 사라진 순간 이 칸이 통째로 없어져, 결과를 알려줄 곳이 없다.
       setDeleted(true);
       setPassword("");
+      // 안내대로 이 기기의 기록은 지우지 않는다. 로그아웃처럼 로그인 전 기록으로 바꾸지 않고 남긴다.
+      releaseRecordsToGuest();
       await refreshAuth();
     } catch {
       setError("네트워크에 문제가 있어 탈퇴하지 못했습니다. 잠시 후 다시 시도해주세요.");

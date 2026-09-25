@@ -53,12 +53,14 @@ export interface SignupInput {
   password: string;
   passwordConfirm: string;
   /**
-   * "만 14세 이상입니다" 확인. 나이 자체는 가입 때 묻지 않는다 — 가입 단계의
-   * 칸이 늘수록 가입을 포기하는 사람이 늘어서, 나이·성별은 가입 뒤 '내 정보'에서
-   * 원할 때만 적는다. 다만 만 14세 미만의 개인정보는 법정대리인 동의 없이 받을
-   * 수 없으므로 이 확인만은 필수로 남긴다.
+   * "만 14세 이상입니다" 확인. 만 14세 미만의 개인정보는 법정대리인 동의 없이 받을 수
+   * 없으므로 이 확인만은 필수다.
    */
   isOver14: boolean;
+  /** 선택. 가입 화면의 나이 칸(만 나이). */
+  age?: number | string | null;
+  /** 선택. 가입 화면의 성별 칸. */
+  gender?: string | null;
 }
 
 /** 필드명 → 사용자에게 보여줄 오류 메시지. 통과하면 빈 객체다. */
@@ -68,6 +70,10 @@ export interface NormalizedSignup {
   username: string;
   email: string;
   password: string;
+  /** 선택. 비우면 null. */
+  age: number | null;
+  /** 선택. 비우면 null. */
+  gender: Gender | null;
 }
 
 /** 아이디·이메일은 대소문자 차이로 같은 사람이 두 계정을 만들지 않도록 낮춘다. */
@@ -257,9 +263,24 @@ export function validateSignup(input: Partial<SignupInput>): {
     errors.isOver14 = `만 ${MIN_AGE}세 이상인지 확인해주세요.`;
   }
 
+  // 나이·성별은 가입 화면에서도 묻지만 **선택**이다. 서비스에 꼭 필요한 정보가 아니라, 필수로
+  // 받거나 비웠다고 가입을 막으면 개인정보 보호법 제16조(최소 수집)에 어긋난다. 적었다면 '내 정보'와
+  // 같은 규칙으로 검사한다.
+  const profile = validateProfile({ age: input.age, gender: input.gender });
+  Object.assign(errors, profile.errors);
+
   if (Object.keys(errors).length > 0) return { errors, value: null };
 
-  return { errors, value: { username, email, password } };
+  return {
+    errors,
+    value: {
+      username,
+      email,
+      password,
+      age: profile.value?.age ?? null,
+      gender: profile.value?.gender ?? null,
+    },
+  };
 }
 
 export interface ProfileInput {

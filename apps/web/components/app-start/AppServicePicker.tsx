@@ -18,11 +18,13 @@ interface AppServicePickerProps {
   onEmail: () => void;
   onCustom: () => void;
   onPaste: () => void;
+  /** 샘플로 둘러보기. 웹 첫 화면에서만 준다 — 앱은 환영 화면에서 고른다. */
+  onSample?: () => void;
 }
 
 /**
- * 앱에서 구독이 하나도 없을 때의 대시보드. "아직 없습니다" 대신 지금 할 일 하나(쓰고 있는
- * 구독 고르기)를 크게 보여준다. 웹은 ActionQueue의 빈 상태를 그대로 쓴다.
+ * 구독이 하나도 없을 때의 대시보드(웹·앱). "아직 없습니다" 대신 지금 할 일 하나(쓰고 있는
+ * 구독 고르기)를 크게 보여준다.
  */
 export function AppServicePicker({
   onPick,
@@ -30,6 +32,7 @@ export function AppServicePicker({
   onEmail,
   onCustom,
   onPaste,
+  onSample,
 }: AppServicePickerProps) {
   const tile =
     "flex flex-col items-center gap-1.5 rounded-2xl border bg-card px-1 pt-3 pb-2.5 text-[11px] font-semibold transition active:scale-[.97] hover:bg-muted";
@@ -75,6 +78,16 @@ export function AppServicePicker({
         <button type="button" onClick={onPaste} className="underline underline-offset-4">
           문자 붙여넣기
         </button>
+        {onSample && (
+          <>
+            <span className="mx-2" aria-hidden>
+              |
+            </span>
+            <button type="button" onClick={onSample} className="underline underline-offset-4">
+              샘플로 둘러보기
+            </button>
+          </>
+        )}
       </p>
     </section>
   );

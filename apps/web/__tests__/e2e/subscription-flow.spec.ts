@@ -81,7 +81,8 @@ test.describe("Subscription Flow (E2E)", () => {
     await page.goto("/dashboard");
 
     await page.getByRole("button", { name: "체크인" }).first().click();
-    await page.getByRole("button", { name: "1회" }).click();
+    // 첫 체크인 카드(대시보드 본문)에도 횟수 버튼이 있어, 연 창 안의 것을 누른다.
+    await page.getByRole("dialog").getByRole("button", { name: "1회" }).click();
     await page.getByRole("button", { name: /가성비 분석 결과 보기/ }).click();
 
     // Cost-per-use shock message for a single use.

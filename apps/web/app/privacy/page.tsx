@@ -1,7 +1,12 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { GMAIL_AUTO_IMPORT_STARTS_ON, PRIVACY_EFFECTIVE_DATE, PRIVACY_OFFICER } from "@lib/privacy";
+import {
+  ANONYMOUS_STATS_STARTS_ON,
+  GMAIL_AUTO_IMPORT_STARTS_ON,
+  PRIVACY_EFFECTIVE_DATE,
+  PRIVACY_OFFICER,
+} from "@lib/privacy";
 import { siteOpenGraph } from "@lib/site-metadata";
 
 /** "2026-10-01" → "2026년 10월 1일". */
@@ -67,9 +72,10 @@ export default function PrivacyPage() {
         <p className="text-muted-foreground">
           SubSlash는 구독 기록을 기본적으로 이 기기 안에만 저장합니다. 서버에 개인정보가 저장되는
           것은 로그인, 계정에 저장, 결제 알림
-          {GMAIL_AUTO_IMPORT_STARTS_ON && ", Gmail 자동 가져오기"}처럼 직접 고른 기능을 쓸
-          때뿐입니다. 로그인하면 구독 기록이 계정에 자동으로 저장됩니다(기기마다 끌 수 있음). 아래에
-          무엇을, 왜, 얼마나 저장하는지 적습니다.
+          {GMAIL_AUTO_IMPORT_STARTS_ON && ", Gmail 자동 가져오기"}
+          {ANONYMOUS_STATS_STARTS_ON && ", 익명 구독 통계"}처럼 직접 고른 기능을 쓸 때뿐입니다.
+          로그인하면 구독 기록이 계정에 자동으로 저장됩니다(기기마다 끌 수 있음). 아래에 무엇을, 왜,
+          얼마나 저장하는지 적습니다.
         </p>
       </header>
 
@@ -115,11 +121,31 @@ export default function PrivacyPage() {
             캘린더에 반복 일정으로 넣기.
           </Item>
         )}
+        {/*
+          익명 구독 통계도 저장 항목이 늘어나는 변경이라 시작일을 정하면 먼저 게시된다
+          (lib/privacy.ts의 ANONYMOUS_STATS_STARTS_ON). 비교 화면의 '무엇을 모으나요?'가 이 항목을 가리킨다.
+        */}
+        {ANONYMOUS_STATS_STARTS_ON && (
+          <div id="anonymous-stats">
+            <Item title={`익명 구독 통계 (선택, ${koreanDate(ANONYMOUS_STATS_STARTS_ON)}부터)`}>
+              리포트에서 &lsquo;익명으로 참여하기&rsquo;를 누른 기기만, 한 달 구독 지출 합계(1,000원
+              단위)와 구독 개수, 그리고 서비스 목록에 있는 서비스마다 서비스 종류·내 몫의 한 달
+              금액(100원 단위)·마지막 체크인의 이용 횟수를 서버에 보냅니다. 구독 이름을 직접 적은
+              서비스, 메모, 결제일, 이메일, 계정은 보내지 않고, 로그인 계정·알림 정보·IP와 묶지
+              않습니다. 기기는 기록을 고치고 지울 때 쓰는 토큰을 갖고, 서버는 그 토큰의 되돌릴 수
+              없는 해시만 저장합니다. 비교는 참여자가 충분할 때(전체 20명, 서비스마다 10명 이상)만
+              가운데 값으로 보여 주어 한 사람의 값이 드러나지 않게 합니다. 목적: 다른 사용자와 구독
+              지출·이용 횟수 비교.
+            </Item>
+          </div>
+        )}
         <Item title="회원가입·로그인 (선택)">
           아이디, 이메일, 비밀번호(되돌릴 수 없는 해시로만 저장하며 원문은 저장하지 않음), 이메일
-          확인 시각, 가입·마지막 로그인 시각을 저장합니다. 나이·성별은 &lsquo;내 정보&rsquo;에서
-          직접 적었을 때만 저장합니다. 가입할 때 묻는 만 14세 이상 여부는 확인에만 쓰고 저장하지
-          않습니다. 목적: 본인 식별, 로그인 유지, 가입 확인·비밀번호 재설정 메일 발송.
+          확인 시각, 가입·마지막 로그인 시각을 저장합니다. 나이·성별은 선택 항목으로, 가입할 때나
+          &lsquo;내 정보&rsquo;에서 직접 적었을 때만 저장하고 적지 않아도 가입과 모든 기능을 쓸 수
+          있습니다. 지금은 어떤 계산이나 통계에도 쓰지 않습니다. 가입할 때 묻는 만 14세 이상 여부는
+          확인에만 쓰고 저장하지 않습니다. 목적: 본인 식별, 로그인 유지, 가입 확인·비밀번호 재설정
+          메일 발송.
         </Item>
         <Item title="계정 동기화 (로그인 시)">
           로그인하면 이 기기의 구독·체크인·연동 계정·환율 기록 한 벌을 계정에 저장하고, 기록이 바뀔
@@ -170,6 +196,12 @@ export default function PrivacyPage() {
               구글 캘린더에 결제일 등록: 맡아 둔 구독 목록은 웹 앱이 받아 가면 곧바로 지우고, 받아
               가지 않아도 10분이 지나면 쓸 수 없으며 다음 등록 때 지웁니다. 캘린더에 들어간 일정은
               구글 캘린더에서 &lsquo;SubSlash 결제일&rsquo; 캘린더를 지워야 없어집니다.
+            </li>
+          )}
+          {ANONYMOUS_STATS_STARTS_ON && (
+            <li>
+              익명 구독 통계: 리포트에서 &lsquo;그만두기&rsquo;를 누르면 곧바로 지우고, 180일 동안
+              갱신되지 않은 기록은 자동으로 지웁니다.
             </li>
           )}
           <li>
@@ -248,8 +280,8 @@ export default function PrivacyPage() {
             지우기&rsquo;, Gmail 연결의 &lsquo;연결 끊기&rsquo;로 보낸 정보를 지우고 멈출 수
             있습니다. 다만 거부하면 로그인, 계정에 저장, 여러 기기 동기화, 결제 알림 메일과 캘린더
             구독
-            {GMAIL_AUTO_IMPORT_STARTS_ON && ", Gmail 자동 가져오기, 구글 캘린더에 결제일 등록"}은 쓸
-            수 없습니다.
+            {GMAIL_AUTO_IMPORT_STARTS_ON && ", Gmail 자동 가져오기, 구글 캘린더에 결제일 등록"}
+            {ANONYMOUS_STATS_STARTS_ON && ", 익명 구독 통계 참여"}은 쓸 수 없습니다.
           </p>
         </div>
       </Section>

@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { apiFetch } from "@lib/api";
+import { switchRecordsOwner } from "@lib/records-owner";
 import { clearSessionToken } from "@lib/session-token";
+import { useStore } from "@lib/store";
 
 export interface AuthAccount {
   id: string;
@@ -72,6 +74,30 @@ function subscribe(listener: () => void) {
   };
 }
 
+/**
+ * 화면의 기록을 이 로그인 상태의 것으로 바꾼다(lib/records-owner). 서버가 답한 상태로만 부른다 —
+ * 네트워크가 끊겨 묻지 못한 것을 로그아웃으로 읽으면 계정의 기록이 화면에서 사라진다.
+ */
+function syncRecordsOwner(accountId: string | null) {
+  const run = () => {
+    try {
+      switchRecordsOwner(accountId);
+    } catch (error) {
+      console.warn("[auth] 기록을 로그인 상태에 맞추지 못했습니다", error);
+    }
+  };
+  // 저장소를 읽기 전에 바꾸면, 읽어 들인 기록이 바꾼 것을 덮는다. 저장소를 쓸 수 없는 곳에서는
+  // persist가 붙지 않아 읽을 것도 없다.
+  const persist = useStore.persist as typeof useStore.persist | undefined;
+  if (!persist || persist.hasHydrated()) run();
+  else {
+    const unsubscribe = persist.onFinishHydration(() => {
+      unsubscribe();
+      run();
+    });
+  }
+}
+
 function getSnapshot(): AuthState {
   return cache;
 }
@@ -94,6 +120,7 @@ export async function refreshAuth(): Promise<void> {
       const res = await apiFetch("/api/auth/me");
       const data = await res.json();
       cache = { account: data?.account ?? null, loading: false };
+      if (res.ok) syncRecordsOwner(cache.account?.id ?? null);
     } catch {
       cache = { account: null, loading: false };
     } finally {
@@ -105,7 +132,7 @@ export async function refreshAuth(): Promise<void> {
   return inflight;
 }
 
-/** 로그아웃하고 공유 상태를 즉시 비운다. */
+/** 로그아웃하고 공유 상태를 즉시 비운다. 화면의 기록도 로그인 전 기록으로 돌아간다. */
 export async function logoutAuth(): Promise<void> {
   try {
     await apiFetch("/api/auth/logout", { method: "POST" });
@@ -113,6 +140,7 @@ export async function logoutAuth(): Promise<void> {
     // 서버에 닿지 못했어도 이 기기에서는 로그아웃한다.
     await clearSessionToken().catch(() => {});
     cache = { account: null, loading: false };
+    syncRecordsOwner(null);
     emit();
   }
 }
