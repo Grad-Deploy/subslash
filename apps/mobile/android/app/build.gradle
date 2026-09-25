@@ -18,8 +18,12 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // R8로 쓰지 않는 코드를 빼고 최적화·난독화한다. 플러그인은 Capacitor가 함께 주는 keep 규칙
+            // (@CapacitorPlugin·@PluginMethod)이 지키고, 웹뷰에 노출하는 @JavascriptInterface는 아래
+            // 기본 규칙이 지킨다. 앱에서만 쓰는 규칙은 proguard-rules.pro에 둔다.
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
