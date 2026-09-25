@@ -78,6 +78,28 @@ const MESSAGES = [
   }),
 ];
 
+/**
+ * 외부 요청 권한이 있는 스크립트가 메일을 여러 통씩 받을 때 부르는 Gmail REST API. 부른 묶음의 크기를
+ * 남기고, `rateLimited`만큼은 한도 초과(429)로 거절한다.
+ */
+function gmailRest(options: { rateLimited?: number } = {}) {
+  let rateLimited = options.rateLimited ?? 0;
+  const batches: number[] = [];
+  const fetchAll = (requests: { url: string; headers: Record<string, string> }[]) => {
+    batches.push(requests.length);
+    return requests.map(({ url, headers }) => {
+      const id = decodeURIComponent(url.split("/messages/")[1].split("?")[0]);
+      const ok = headers.Authorization === "Bearer oauth-token" && rateLimited-- <= 0;
+      const body = ok ? MESSAGES.find((m) => m.id === id) : { error: { code: 429 } };
+      return {
+        getResponseCode: () => (ok ? 200 : 429),
+        getContentText: () => JSON.stringify(body),
+      };
+    });
+  };
+  return { fetchAll, batches, getOAuthToken: () => "oauth-token" };
+}
+
 function runScript(messages: typeof MESSAGES, importUrl = "https://subslash.me/import") {
   const html: string[] = [];
   const blob = (bytes: Buffer) => ({
@@ -211,9 +233,12 @@ describe("자동 가져오기 스크립트", () => {
       lastScanAt?: string;
       quotaErrors?: number;
       otherError?: string;
+      rateLimited?: number;
     } = {},
   ) {
     let quotaErrors = options.quotaErrors ?? 0;
+    const rest = gmailRest({ rateLimited: options.rateLimited });
+    const singleGets: string[] = [];
     const slept: number[] = [];
     const triggers: { handler: string; weeks?: number; day?: string; hour?: number }[] = [];
     const deleted: string[] = [];
@@ -241,6 +266,7 @@ describe("자동 가져오기 스크립트", () => {
       ],
       deleteTrigger: (trigger: { id: string }) => deleted.push(trigger.id),
       newTrigger: builder,
+      getOAuthToken: rest.getOAuthToken,
     };
     const PropertiesService = {
       getScriptProperties: () => ({
@@ -253,6 +279,7 @@ describe("자동 가져오기 스크립트", () => {
         fetched.push({ url, options: init });
         return { getResponseCode: () => options.status ?? 200 };
       },
+      fetchAll: rest.fetchAll,
     };
     const Gmail = {
       Users: {
@@ -268,7 +295,10 @@ describe("자동 가져오기 스크립트", () => {
             queries.push(q);
             return { messages: MESSAGES.map((m) => ({ id: m.id })) };
           },
-          get: (_user: string, id: string) => MESSAGES.find((m) => m.id === id),
+          get: (_user: string, id: string) => {
+            singleGets.push(id);
+            return MESSAGES.find((m) => m.id === id);
+          },
         },
       },
     };
@@ -295,7 +325,7 @@ return { setup: setup, scan: scan };`,
       setup: () => void;
       scan: () => void;
     };
-    return { api, triggers, deleted, properties, fetched, queries, slept };
+    return { api, triggers, deleted, properties, fetched, queries, slept, rest, singleGets };
   }
 
   it("setup은 예전 검사 트리거만 지우고 2주마다 도는 트리거를 건 뒤 바로 한 번 검사한다", () => {
@@ -358,6 +388,24 @@ return { setup: setup, scan: scan };`,
     const other = runAutoScript({ otherError: "Invalid query" });
     expect(() => other.api.scan()).toThrow("Invalid query");
     expect(other.slept).toEqual([]);
+  });
+
+  it("메일을 한 통씩이 아니라 여러 통씩 한꺼번에 받는다", () => {
+    // 200통을 한 통씩 받으면 200번을 차례로 왕복해 1분 넘게 걸렸다(받은 메일을 읽는 것은 15ms).
+    const run = runAutoScript();
+    run.api.scan();
+    expect(run.singleGets).toEqual([]);
+    expect(run.rest.batches).toEqual([MESSAGES.length]);
+  });
+
+  it("한꺼번에 받다 한도에 걸린 메일만 기다렸다가 다시 받는다", () => {
+    const run = runAutoScript({ rateLimited: 1 });
+    run.api.scan();
+    expect(run.slept).toEqual([10000]);
+    expect(run.rest.batches).toEqual([MESSAGES.length, 1]);
+    const emails = readReceiptEmails(JSON.parse(run.fetched[0].options.payload));
+    // 다시 받은 메일도 찾은 순서대로 들어간다.
+    expect(emails?.map((e) => e.subject)).toEqual(["넷플릭스 결제 안내", "티빙 정기결제 안내"]);
   });
 
   it("처음에는 400일을 보고, 그 뒤로는 지난 검사 이후 메일만 본다", () => {
@@ -431,6 +479,7 @@ describe("원클릭 연결 웹 앱", () => {
     const insertedEvents: Record<string, unknown>[] = [];
     const removedEvents: string[] = [];
     const listedEvents: Record<string, unknown>[] = [];
+    const rest = gmailRest();
 
     const builder = (handler: string) => {
       const trigger: (typeof triggers)[number] = { handler };
@@ -468,6 +517,7 @@ describe("원클릭 연결 웹 앱", () => {
         getProjectTriggers: () => [{ getHandlerFunction: () => "scan", id: "old-scan" }],
         deleteTrigger: (trigger: { id: string }) => deleted.push(trigger.id),
         newTrigger: builder,
+        getOAuthToken: rest.getOAuthToken,
       },
       PropertiesService: {
         getUserProperties: () => ({
@@ -499,6 +549,7 @@ describe("원클릭 연결 웹 앱", () => {
           }
           return response(options.ingestStatus ?? 200, { received: 2, candidates: 2 });
         },
+        fetchAll: rest.fetchAll,
       },
       Calendar: {
         Calendars: {
@@ -552,6 +603,7 @@ describe("원클릭 연결 웹 앱", () => {
       insertedEvents,
       removedEvents,
       listedEvents,
+      rest,
     };
   }
 
@@ -583,6 +635,9 @@ describe("원클릭 연결 웹 앱", () => {
     expect(run.triggers).toEqual([{ handler: "scan", weeks: 2 }]);
     expect(run.html.join("")).toContain("Gmail을 연결했습니다");
     expect(run.html.join("")).toContain(`href="${ORIGIN}/import"`);
+    // 사용자가 이 화면에서 첫 검사를 기다리므로 메일을 한꺼번에 받는다.
+    expect(run.rest.batches).toEqual([MESSAGES.length]);
+    expect(JSON.parse(ingest.options.payload).emails).toHaveLength(MESSAGES.length);
   });
 
   it("앱에서 왔으면 웹사이트로 가는 '돌아가기' 대신 창을 닫으라고 한다", () => {
