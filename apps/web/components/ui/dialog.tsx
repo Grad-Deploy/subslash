@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { cn } from "@lib/utils";
 import { useIsClient } from "@hooks/useIsClient";
 import { X } from "lucide-react";
+import { lockBodyScroll } from "@lib/scroll-lock";
 
 interface DialogProps {
   open?: boolean;
@@ -32,12 +33,11 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
     };
     document.addEventListener("keydown", onKeyDown);
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockBodyScroll();
 
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
+      unlockScroll();
     };
   }, [open, onOpenChange]);
 

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Lock } from "lucide-react";
+import { ChevronDown, Lock, X } from "lucide-react";
+import { useIsClient } from "@hooks/useIsClient";
 import { useAuth } from "@hooks/useAuth";
 import { webUrl } from "@lib/api";
 import { GMAIL_AUTO_SCRIPT_MANIFEST, gmailAutoScript } from "@lib/gmail-import";
@@ -19,7 +21,9 @@ import { isGmailAutoImportOpen } from "@lib/privacy";
 import { InlineConfirm } from "../../ui/inline-confirm";
 import { Spinner } from "../../ui/spinner";
 import { AppCopyCode } from "./AppCopyCode";
+import { AppImportFlow } from "./AppImportFlow";
 import { AppStepper, StepTip, type AppStep } from "./AppStepper";
+import { lockBodyScroll } from "@lib/scroll-lock";
 
 type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 
@@ -60,6 +64,7 @@ export function AppImportGuide() {
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [manual, setManual] = useState(false);
+  const [pcSheet, setPcSheet] = useState(false);
 
   useEffect(() => {
     if (!account) return;
@@ -155,7 +160,7 @@ export function AppImportGuide() {
         next: "열었어요",
         body: (
           <>
-            <p>내 Google 계정에 스크립트를 담을 새 프로젝트를 만들어요.</p>
+            <p>내 Google 계정에 새 프로젝트를 만들어요.</p>
             <button
               type="button"
               onClick={() => openExternal("https://script.new")}
@@ -163,10 +168,6 @@ export function AppImportGuide() {
             >
               Apps Script 열기
             </button>
-            <StepTip title="이 스크립트는 지금만 보여요">
-              내 계정의 연결 토큰이 들어 있어요. 다른 사람과 공유하지 마세요. 잃어버리면 새로 받으면
-              돼요.
-            </StepTip>
           </>
         ),
       },
@@ -175,11 +176,8 @@ export function AppImportGuide() {
         next: "켰어요",
         body: (
           <p>
-            왼쪽 <b className="text-foreground">톱니바퀴(프로젝트 설정)</b>에서{" "}
-            <b className="text-foreground">
-              &lsquo;appsscript.json 매니페스트 파일을 편집기에 표시&rsquo;
-            </b>
-            를 켜요.
+            왼쪽 <b className="text-foreground">톱니바퀴</b>에서{" "}
+            <b className="text-foreground">&lsquo;appsscript.json … 표시&rsquo;</b>를 켜요.
           </p>
         ),
       },
@@ -188,12 +186,13 @@ export function AppImportGuide() {
         next: "붙여 넣었어요",
         body: (
           <>
-            <p>편집기에서 각 파일 내용을 지우고, 아래 코드를 복사해 붙여 넣은 뒤 저장해요.</p>
+            <p>각 파일 내용을 지우고 붙여 넣은 뒤 저장해요.</p>
             <AppCopyCode label="appsscript.json" code={GMAIL_AUTO_SCRIPT_MANIFEST} />
             <AppCopyCode
               label="Code.gs"
               code={gmailAutoScript(webUrl("/api/gmail/ingest"), token)}
             />
+            <StepTip title="공유하지 마세요">코드에 내 연결 토큰이 들어 있어요.</StepTip>
           </>
         ),
       },
@@ -203,12 +202,10 @@ export function AppImportGuide() {
         body: (
           <>
             <p>
-              위쪽 함수 목록에서 <b className="text-foreground">setup</b>을 골라 실행하고, 권한
-              화면에서 허용해요.
+              위쪽 함수 목록에서 <b className="text-foreground">setup</b>을 골라 실행하고 허용해요.
             </p>
             <StepTip title="'확인되지 않은 앱' 경고가 나와도 괜찮아요">
-              내가 직접 만든 스크립트라 Google이 검사하지 않았다는 뜻이에요. <b>고급 › 계속</b>을
-              누르면 돼요.
+              내가 만든 스크립트라 나와요. <b>고급 › 계속</b>을 누르면 돼요.
             </StepTip>
           </>
         ),
@@ -218,14 +215,13 @@ export function AppImportGuide() {
         next: "완료",
         body: (
           <p>
-            지금 한 번 검사하고, 그 뒤로 2주마다 월요일 오전 9시대에 새 결제 메일을 찾아요. 찾은
-            구독은 SubSlash를 열 때 확인 창으로 보여드려요.
+            지금 한 번, 그 뒤로 2주마다 월요일 오전에 검사해요. 찾은 구독은 앱을 열 때 보여드려요.
           </p>
         ),
       },
     ];
     return (
-      <article className="mx-auto max-w-md py-4">
+      <article className="mx-auto w-full max-w-md min-w-0 py-4">
         <AppStepper
           steps={steps}
           index={stepIndex}
@@ -243,12 +239,12 @@ export function AppImportGuide() {
   const linked = link?.open && link.linked ? link : null;
 
   return (
-    <article className="mx-auto max-w-md space-y-4 py-4 text-sm">
+    <article className="mx-auto w-full max-w-md min-w-0 space-y-4 py-4 text-sm">
       <header className="space-y-2">
         <h1 className="text-[22px] leading-tight font-black tracking-tight">
-          Gmail 결제 메일로
+          Gmail로
           <br />
-          구독을 한 번에 찾아요
+          구독을 찾아요
         </h1>
         <p className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-[11.5px] font-semibold">
           <Lock className="size-3" aria-hidden />
@@ -333,65 +329,59 @@ export function AppImportGuide() {
         </>
       ) : (
         <>
-          <section className="rounded-2xl border border-primary bg-card p-4 ring-1 ring-primary">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[15px] font-extrabold tracking-tight">자동으로 가져오기</h2>
-              <span className="rounded-full bg-primary px-2 py-0.5 text-[10.5px] font-extrabold text-primary-foreground">
-                추천
-              </span>
-            </div>
-            <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground">
-              2주마다 새 결제 메일을 찾아 등록 후보로 모아둬요.
-            </p>
-            <p className="mt-2 text-[11.5px] text-muted-foreground">1분 · 로그인 필요</p>
-            {!account ? (
-              <button
-                type="button"
-                onClick={() => router.push("/login")}
-                className="mt-3 h-11 w-full rounded-xl bg-primary text-sm font-bold text-primary-foreground"
-              >
-                로그인하고 연결하기
-              </button>
-            ) : link?.open && link.connectAvailable ? (
+          <AppImportFlow />
+          {!account ? (
+            <button
+              type="button"
+              onClick={() => router.push("/login")}
+              className="h-12 w-full rounded-xl bg-primary text-sm font-extrabold text-primary-foreground"
+            >
+              로그인하고 연결하기
+            </button>
+          ) : link?.open && link.connectAvailable ? (
+            <>
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void connect()}
-                className="mt-3 h-11 w-full rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-50"
+                className="h-12 w-full rounded-xl bg-primary text-sm font-extrabold text-primary-foreground disabled:opacity-50"
               >
                 {busy ? "연결하는 중…" : "Gmail 연결하기"}
               </button>
-            ) : null}
-            {account && link?.open && link.connectAvailable && (
-              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                권한 화면에서 &lsquo;확인되지 않은 앱&rsquo; 경고가 나오면 &lsquo;고급 ›
-                계속&rsquo;을 눌러요.
+              <p className="px-0.5 text-[11px] leading-relaxed text-muted-foreground">
+                &lsquo;확인되지 않은 앱&rsquo; 경고가 나오면{" "}
+                <b className="text-foreground">고급 › 계속</b>을 눌러요.
               </p>
-            )}
-          </section>
-
-          {account && link?.open && (
-            <section className="rounded-2xl border bg-card p-4">
-              <h2 className="text-[15px] font-extrabold tracking-tight">
-                {link.connectAvailable ? "경고 없이 직접 설치하기" : "직접 설치해서 연결하기"}
-              </h2>
-              <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground">
-                내 계정에 내가 만든 스크립트라 Google 심사 대상이 아니에요. 코드를 붙여 넣고 한 번
-                실행해요.
-              </p>
-              <p className="mt-2 text-[11.5px] text-muted-foreground">약 5분</p>
               <button
                 type="button"
-                disabled={busy}
-                onClick={() => void issueToken()}
-                className="mt-3 h-10 w-full rounded-xl border text-[13px] font-bold disabled:opacity-50"
+                onClick={() => setPcSheet(true)}
+                className="mx-auto block pt-1 text-[12.5px] font-semibold text-muted-foreground underline underline-offset-4"
               >
-                단계별로 따라하기
+                경고 없이 직접 설치하기 · PC 권장
               </button>
-            </section>
-          )}
+            </>
+          ) : link?.open ? (
+            // 서버에서 계정 연결을 열지 않았으면 직접 설치가 유일한 방법이다.
+            <button
+              type="button"
+              onClick={() => setPcSheet(true)}
+              className="h-12 w-full rounded-xl bg-primary text-sm font-extrabold text-primary-foreground"
+            >
+              직접 설치해서 연결하기
+            </button>
+          ) : null}
         </>
       )}
+
+      <PcInstallSheet
+        open={pcSheet}
+        onClose={() => setPcSheet(false)}
+        busy={busy}
+        onPhone={() => {
+          setPcSheet(false);
+          void issueToken();
+        }}
+      />
 
       <details className="group border-t pt-3">
         <summary className="flex cursor-pointer list-none items-center justify-between text-[13px] font-bold">
@@ -401,16 +391,127 @@ export function AppImportGuide() {
             aria-hidden
           />
         </summary>
-        <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-muted-foreground">
-          <li>결제 메일에서 서비스·금액·결제일·보낸 사람만 구독 후보로 남겨요.</li>
+        <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed break-words text-muted-foreground">
+          <li>서비스·금액·결제일·보낸 사람만 후보로 남겨요.</li>
           <li>메일 제목과 본문은 저장하지 않아요.</li>
-          <li>알려진 서비스의 최근 결제는 바로 등록되고, 확실하지 않은 것은 확인을 받아요.</li>
-          <li>메일마다 형식이 달라 금액·결제일이 틀릴 수 있어요. 등록한 뒤에도 고칠 수 있어요.</li>
+          <li>알려진 서비스의 최근 결제는 바로 등록되고, 나머지는 확인을 받아요.</li>
+          <li>금액·결제일이 틀릴 수 있어요. 등록한 뒤에도 고칠 수 있어요.</li>
           <li>
             허용한 권한은 Google 계정의 &lsquo;타사 앱 및 서비스&rsquo;에서 언제든 없앨 수 있어요.
           </li>
         </ul>
       </details>
     </article>
+  );
+}
+
+const PC_STEPS = [
+  ["PC에서 아래 주소 열기", "결제 메일 불러오기 화면이 바로 열려요"],
+  ["같은 계정으로 로그인", "\u2018경고 없이 직접 설치하기\u2019를 따라해요"],
+  ["끝나면 앱에 자동으로 반영", "같은 계정이라 따로 옮길 필요 없어요"],
+] as const;
+
+/**
+ * '직접 설치하기'를 누르면 먼저 PC를 권한다. Apps Script 편집기는 PC용이라 폰의 인앱 브라우저에서는
+ * 설정 켜기·파일 두 개 붙여넣기·setup 실행이 불편하다. 연결은 계정 단위로 서버에 있으므로 PC 웹에서
+ * 같은 계정으로 설치해도 앱에 그대로 반영된다. 그래도 폰에서 하겠다면 단계 안내로 넘어간다.
+ */
+function PcInstallSheet({
+  open,
+  onClose,
+  onPhone,
+  busy,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onPhone: () => void;
+  busy: boolean;
+}) {
+  const isClient = useIsClient();
+  const address = webUrl("/import");
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    const unlockScroll = lockBodyScroll();
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      unlockScroll();
+    };
+  }, [open, onClose]);
+
+  if (!open || !isClient) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex h-[100dvh] items-end">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pc-install-title"
+        className="relative flex max-h-[88dvh] w-full flex-col rounded-t-3xl border-t bg-background shadow-2xl animate-in slide-in-from-bottom-8 fade-in"
+      >
+        <div className="flex h-6 shrink-0 items-center justify-center">
+          <span className="h-1 w-9 rounded-full bg-border" aria-hidden />
+        </div>
+        <header className="flex shrink-0 items-start justify-between gap-3 px-5 pb-2">
+          <div>
+            <h2 id="pc-install-title" className="text-lg font-black tracking-tight">
+              PC에서 하면 편해요
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              코드를 붙여 넣고 한 번 실행하는 방법이에요. 약 5분.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="-mr-1.5 rounded-full p-1.5 text-muted-foreground hover:bg-secondary"
+          >
+            <X className="size-5" />
+            <span className="sr-only">닫기</span>
+          </button>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-3">
+          <ol>
+            {PC_STEPS.map(([title, sub], i) => (
+              <li key={title} className="flex items-center gap-3 py-2">
+                <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-secondary text-[13px] font-extrabold">
+                  {i + 1}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[13.5px] font-bold">{title}</span>
+                  <span className="block text-[11px] text-muted-foreground">{sub}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-2">
+            <AppCopyCode label="웹 주소" code={address} />
+          </div>
+        </div>
+        <div className="grid shrink-0 gap-2 border-t px-5 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-12 w-full rounded-xl bg-primary text-sm font-extrabold text-primary-foreground"
+          >
+            알겠어요
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onPhone}
+            className="h-11 w-full rounded-xl border text-[13px] font-bold disabled:opacity-50"
+          >
+            그래도 폰에서 할게요
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }

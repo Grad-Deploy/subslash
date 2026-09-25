@@ -13,10 +13,10 @@ import {
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { RiskBadge } from "@components/dashboard/RiskBadge";
 import { useStoredFlag } from "@hooks/useStoredFlag";
-import { cn } from "@lib/utils";
-
-/** 체크인 창(CheckInModal)과 같은 빠른 선택. 0회는 −로 내리거나 직접 적는다. */
-const QUICK_COUNTS = [1, 3, 5, 10, 20, 30];
+import {
+  APP_CHECK_IN_QUESTION,
+  AppUsageCountPicker,
+} from "@components/subscription/app/AppUsageCountPicker";
 
 /** 신호 색의 뜻. 색마다 처음 나올 때 한 번만 보여준다(getRiskLevel 기준). */
 const HINTS: Record<RiskLevel, string> = {
@@ -44,8 +44,6 @@ export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardPro
   const [hintSeen, markHintSeen] = useStoredFlag(`subslash_app_hint_${risk ?? "none"}`, true);
   const showHint = risk !== null && !hintSeen;
 
-  const setSafe = (n: number) => setCount(Math.max(0, Math.min(999, n)));
-
   const planLine = [subscription.planName, `월 ${formatCurrency(monthly, subscription.currency)}`]
     .filter(Boolean)
     .join(" · ");
@@ -69,72 +67,14 @@ export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardPro
         </div>
       </div>
 
-      <p className="mt-3 mb-2 text-[13px] font-bold">지난 30일 동안 몇 번 썼나요?</p>
+      <p className="mt-3 mb-2 text-[13px] font-bold">{APP_CHECK_IN_QUESTION}</p>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          aria-label="줄이기"
-          onClick={() => setSafe((count ?? 1) - 1)}
-          className="grid size-10 shrink-0 place-items-center rounded-xl border bg-background text-lg font-bold"
-        >
-          −
-        </button>
-        <div className="relative min-w-0 flex-1">
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            placeholder="0"
-            aria-label="사용 횟수"
-            value={count ?? ""}
-            onChange={(e) => {
-              const n = parseInt(e.target.value, 10);
-              setCount(Number.isNaN(n) ? null : Math.max(0, Math.min(999, n)));
-            }}
-            className="h-10 w-full rounded-xl border bg-background pr-8 text-center text-xl font-black tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
-          />
-          <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold text-muted-foreground">
-            번
-          </span>
-        </div>
-        <button
-          type="button"
-          aria-label="늘리기"
-          onClick={() => setSafe((count ?? 0) + 1)}
-          className="grid size-10 shrink-0 place-items-center rounded-xl border bg-background text-lg font-bold"
-        >
-          +
-        </button>
-      </div>
-
-      <div className="mt-2 grid grid-cols-6 gap-1.5">
-        {QUICK_COUNTS.map((n) => (
-          <button
-            key={n}
-            type="button"
-            aria-pressed={count === n}
-            onClick={() => setCount(n)}
-            className={cn(
-              "rounded-lg border py-1.5 text-[11.5px] font-bold tabular-nums transition-colors",
-              count === n ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted",
-            )}
-          >
-            {n}회
-          </button>
-        ))}
-      </div>
+      {/* 입력은 앱의 다른 체크인(등록 직후·체크인 창)과 같은 단계 막대다. */}
+      <AppUsageCountPicker subscription={subscription} value={count} onChange={setCount} />
 
       {count !== null && risk && (
         <div className="mt-3 flex items-center justify-between rounded-xl bg-secondary px-3 py-2.5">
-          <div>
-            <p className="text-[11px] text-muted-foreground">1회당 실제 단가</p>
-            <p className="text-lg font-black tracking-tight tabular-nums">
-              {count === 0
-                ? "한 번도 안 씀"
-                : formatCurrency(calculateCostPerUse(monthly, count), subscription.currency)}
-            </p>
-          </div>
+          <p className="text-[11.5px] text-muted-foreground">이 정도면</p>
           <RiskBadge level={risk} />
         </div>
       )}
