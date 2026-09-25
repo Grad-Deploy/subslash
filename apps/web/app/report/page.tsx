@@ -26,6 +26,16 @@ import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { subscriptionDetailHref } from "@lib/routes";
 import { Button } from "../../components/ui/button";
 import { Spinner } from "../../components/ui/spinner";
+import { IS_APP_BUILD } from "@lib/platform";
+import dynamic from "next/dynamic";
+
+// 폰 사용 기록(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
+const AppUsageReport = IS_APP_BUILD
+  ? dynamic(
+      () => import("../../components/usage/app/AppUsageReport").then((m) => m.AppUsageReport),
+      { ssr: false },
+    )
+  : null;
 
 /** 체크인이 이보다 오래됐으면 1회 단가를 모른다고 본다(일). 통계에 보내는 기준과 같다. */
 const USAGE_FRESH_DAYS = 45;
@@ -127,6 +137,9 @@ export default function ReportPage() {
             <SummaryTile label="1년이면" value={formatKRW(annual)} />
             <SummaryTile label="구독" value={`${active.length}개`} />
           </section>
+
+          {/* 폰 사용 기록 요약 카드(안드로이드 앱). 누르면 전체를 시트로 연다. */}
+          {AppUsageReport && <AppUsageReport active={active} />}
 
           <section className="space-y-3">
             <h2 className="text-base font-bold">1회 단가 순위</h2>

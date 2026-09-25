@@ -129,6 +129,16 @@ const AppDuplicateDialog = IS_APP_BUILD
     )
   : null;
 
+// 폰 기록으로 체크인(안드로이드 앱 전용).
+const AppPhoneCheckInButton = IS_APP_BUILD
+  ? dynamic(
+      () =>
+        import("../../components/usage/app/AppPhoneCheckInButton").then(
+          (m) => m.AppPhoneCheckInButton,
+        ),
+      { ssr: false },
+    )
+  : null;
 const AppAddCheckIn = IS_APP_BUILD
   ? dynamic(
       () => import("../../components/subscription/app/AppAddCheckIn").then((m) => m.AppAddCheckIn),
@@ -442,6 +452,12 @@ export default function SubscriptionsPage() {
             문자 붙여넣기
           </Button>
         </div>
+        {AppPhoneCheckInButton && (
+          <AppPhoneCheckInButton
+            subscriptions={activeSubs}
+            onDone={(count) => showToast(`${count}개 체크인했어요`)}
+          />
+        )}
       </div>
 
       <ExchangeRateNote />
