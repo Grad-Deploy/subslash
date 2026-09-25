@@ -167,6 +167,15 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 다시 배포해야 반영된다. 허용할 SubSlash 주소(`ALLOWED_ORIGINS`)와 `GMAIL_CONNECT_WEB_APP_URL`(두 Vercel
 프로젝트)이 서로 맞아야 한다.
 
+## 요청 수 제한
+
+로그인 없이 메일을 보내는 곳(`/api/notify/subscribe`)과 비밀번호를 확인하는 곳(로그인, 비밀번호 변경,
+회원 탈퇴)은 `lib/rate-limit`으로 횟수를 제한한다. 로그인은 실패만 세고(아이디·IP 기준), 계정을 잠그지
+않고 잠시 기다리게 한다 — 잠그면 남이 일부러 틀려 주인을 못 들어오게 할 수 있다. 서버 인스턴스
+메모리에 세므로 대량 공격을 완전히 막지는 못한다. 그건 Vercel 방화벽(WAF)의 속도 제한이 맡는다.
+비밀값 비교(크론 `CRON_SECRET` 등)는 `timingSafeEqual`로 한다. 웹 응답의 보안 헤더(틀 넣기 금지 등)는
+`next.config.ts`의 `headers()`에 있다.
+
 ## 파일 경계
 
 화면에 보이는 결제 내역은 전부 사용자가 실제로 넘긴 것이다. 지어낸 영수증을 만드는
@@ -235,10 +244,21 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
   자동 가져오기가 로그인한 앱에서 '로그인이 필요합니다'를 냈다).
 - 외부 사이트는 `openExternal()`, 공유는 `shareText()`(`lib/native`)로 연다. 앱에서는 인앱 브라우저와
   네이티브 공유 창이 된다. `window.open`·`navigator.share`를 직접 부르지 않는다.
+- 복사는 `copyText()`, 파일 내려받기는 `saveFile()`(`lib/native`)로 한다. 앱의 웹뷰는 `<a download>`를
+  처리하지 않고(백업 파일 저장이 앱에서 아무것도 만들지 않으면서 '저장'이라고 떴다), `navigator.clipboard`는
+  출처·웹뷰에 따라 없거나 거절된다. 앱에서는 네이티브 클립보드와, 임시 폴더에 쓴 파일을 넘기는 공유 창이
+  된다. 둘 다 성공 여부를 돌려주므로 실패했을 때 '복사됨'·'저장'을 띄우지 않는다. 네이티브 플러그인을
+  더하면 `apps/web`과 `apps/mobile` 양쪽 의존성에 넣고 `npx cap sync`로 네이티브 프로젝트를 갱신한다.
 - 외부 사이트에서 무언가를 마치고 **돌아와야 하는** 흐름(Google 권한 화면 등)은 `leaveForExternal()`을
   쓴다. 웹에서는 이 탭이 그대로 가고(돌아오면 화면이 다시 그려진다), 앱에서는 인앱 브라우저로 열고
   닫힐 때 `onReturn`으로 상태를 다시 읽는다. 앱에서 `window.location.assign`으로 나가면 앱 웹뷰가
   통째로 외부 사이트가 되어, 담아 둔 화면을 잃고 그 사이트의 '돌아가기'는 앱이 아니라 웹사이트를 연다.
+  `onReturn`은 **그 화면 밖에서** 페이지를 새로 열 때만 받던 것까지 다시 받게 해야 한다 — 웹은
+  돌아오면 모든 컴포넌트가 처음부터 돌지만 앱은 아니다. Gmail 연결은 링크 상태만 다시 읽어, 찾은
+  구독(`GmailDiscoveryInbox`)이 앱을 껐다 켤 때까지 등록되지 않았다(`requestGmailDiscoveries`로 알린다).
+  인앱 브라우저에 띄우는 외부 화면(Apps Script 웹 앱)도 웹사이트로 가는 링크를 두지 않는다 — 서버가
+  앱 출처의 요청에 `client=app`을 붙이면 웹 앱은 '창을 닫으면 앱으로 돌아갑니다'를 띄운다. 링크를 두면
+  인앱 브라우저에 웹이 열리고, 웹에 로그인돼 있으면 찾은 구독을 웹이 먼저 받아 가 앱에는 오지 않는다.
 - 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은
   `capacitor://localhost`(iOS)나 `https://localhost`(안드로이드)다.
 - 페이지에 동적 경로(`[id]`)를 새로 만들지 않는다. 브라우저에서 만든 ID로는 페이지를 미리
@@ -316,5 +336,12 @@ pnpm build
   부른다. 웹과 다른 배포를 부르게 하면 DB가 달라져, 웹 계정으로 앱에 로그인할 수 없다.
 - E2E는 CI와 같게 `--workers=1`로 돌린다. 기본 병렬로는 샘플 데이터 테스트가
   30초 테스트 타임아웃에 걸리는 기존 flake가 있다.
+- Claude Code 훅(`.claude/settings.json`, 스크립트는 `scripts/claude-hooks/`)이 붙어 있다. 파일을
+  고치면 그 파일에 prettier·eslint를 돌리고(`post-edit.mjs`), 작업을 마칠 때 커밋하지 않은 TypeScript
+  변경이 있으면 타입 검사와 `vitest related`를 돌린다(`on-stop.mjs`). 실패하면 exit 2로 돌려보내 고치게
+  한다. 저장소 경로에 공백('바탕 화면')이 있어 셸로 넘기는 경로는 상대 경로로 쓴다.
+- PR마다 Claude가 리뷰 댓글을 남긴다(`.github/workflows/claude-review.yml`). 병합을 막지 않는 피드백이고,
+  저장소 시크릿 `ANTHROPIC_API_KEY`(또는 `CLAUDE_CODE_OAUTH_TOKEN`)가 없으면 건너뛴다. 미러 저장소와
+  포크 PR에서는 돌지 않는다.
 - 커밋 메시지는 한국어로, "무엇을 왜"를 쓴다. 무엇이 잘못돼 있었고 사용자에게
   어떻게 보였는지가 핵심이다.

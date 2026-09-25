@@ -24,6 +24,7 @@ import { isWideScreen } from "@lib/wide-screen";
 import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ServiceLogo } from "./ServiceLogo";
+import { copyText } from "@lib/native";
 
 interface SubCardProps {
   subscription: Subscription;
@@ -53,11 +54,10 @@ export function SubCard({
   const shared = isShared(subscription);
 
   const copySettlementMessage = async () => {
-    try {
-      await navigator.clipboard.writeText(formatSettlementMessage(subscription));
+    if (await copyText(formatSettlementMessage(subscription))) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
+    } else {
       // Clipboard access can be refused (insecure context, denied permission);
       // saying nothing would look like the copy silently worked.
       setCopied(false);
