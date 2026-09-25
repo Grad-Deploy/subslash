@@ -27,7 +27,8 @@ import java.util.Set;
 import org.json.JSONException;
 
 /**
- * 구독한 서비스 앱을 이 폰에서 얼마나 썼는지 읽는다(apps/web/lib/usage/native.ts가 부른다).
+ * 구독한 서비스 앱을 이 폰에서 얼마나 썼는지 읽는다(apps/web/lib/usage/native.ts가 부른다). 폰 사용
+ * 기록(query, 날짜별 합계)과 여러 기기 사용 측정(queryForeground, 구간)이 같은 플러그인·같은 판단을 쓴다.
  *
  * 안드로이드의 '사용 기록 액세스'(PACKAGE_USAGE_STATS)는 앱이 요청 창을 띄울 수 없고, 사용자가 설정
  * 화면에서 직접 켜야 한다. 그래서 여기서는 켜졌는지 확인하고 그 설정 화면을 열어 주기만 한다.
@@ -134,43 +135,11 @@ public class UsageStatsPlugin extends Plugin {
         cal.add(Calendar.DAY_OF_MONTH, -(days - 1));
         long start = cal.getTimeInMillis();
 
-        UsageStatsManager usm = (UsageStatsManager) getContext().getSystemService(Context.USAGE_STATS_SERVICE);
-        UsageEvents events = usm.queryEvents(start, end);
-        UsageEvents.Event event = new UsageEvents.Event();
-
         Tally tally = new Tally(wanted);
-        long dataFrom = -1;
-        String current = null;
-        long sessionStart = 0;
-        long pausedAt = -1;
-
-        while (events.hasNextEvent()) {
-            events.getNextEvent(event);
-            long t = event.getTimeStamp();
-            if (dataFrom < 0) dataFrom = t;
-            int type = event.getEventType();
-            String pkg = event.getPackageName();
-
-            if (type == ACTIVITY_RESUMED) {
-                if (pkg.equals(current)) {
-                    // 같은 앱 안에서 화면만 바뀐 것
-                    pausedAt = -1;
-                    continue;
-                }
-                if (current != null) tally.close(current, sessionStart, pausedAt >= 0 ? pausedAt : t);
-                current = pkg;
-                sessionStart = t;
-                pausedAt = -1;
-                tally.open(pkg, t);
-            } else if (type == ACTIVITY_PAUSED || type == ACTIVITY_STOPPED) {
-                if (pkg.equals(current) && pausedAt < 0) pausedAt = t;
-            } else if (type == SCREEN_NON_INTERACTIVE || type == KEYGUARD_SHOWN || type == DEVICE_SHUTDOWN) {
-                if (current != null) tally.close(current, sessionStart, pausedAt >= 0 ? pausedAt : t);
-                current = null;
-                pausedAt = -1;
-            }
-        }
-        if (current != null) tally.close(current, sessionStart, pausedAt >= 0 ? pausedAt : end);
+        long dataFrom = walkForeground(start, end, wanted, (pkg, from, to) -> {
+            tally.open(pkg, from);
+            tally.close(pkg, from, to);
+        });
         tally.finish();
 
         JSObject result = new JSObject();
@@ -178,6 +147,115 @@ public class UsageStatsPlugin extends Plugin {
         result.put("dataFrom", dataFrom >= 0 ? dataFrom : JSObject.NULL);
         result.put("days", tally.toJSArray());
         call.resolve(result);
+    }
+
+    /** 여러 기기 측정이 조금 앞에서부터 읽는 시간. 기간 시작 전에 이미 앞에 있던 앱을 잡는다. */
+    private static final long LOOK_BEHIND_MS = 3L * 60 * 60 * 1000;
+
+    /**
+     * from~to(epoch ms) 동안 packages의 앱이 앞에 있던 구간(여러 기기 사용 측정, apps/web/lib/device-usage-client).
+     * 날짜별 합계(query)와 같은 판단(walkForeground)을 쓴다 — 같은 사용이 두 기능에서 다른 시간으로 잡히지
+     * 않게. 운영체제가 이벤트를 며칠만 남기므로 실제로 이벤트가 있던 가장 이른 시각(firstEventAt)도 돌려준다.
+     */
+    @PluginMethod
+    public void queryForeground(PluginCall call) {
+        if (!isGranted()) {
+            call.reject("사용 기록 액세스가 꺼져 있습니다", "NOT_GRANTED");
+            return;
+        }
+        Long from = call.getLong("from");
+        Long to = call.getLong("to");
+        if (from == null || to == null || to <= from) {
+            call.reject("from·to가 필요합니다");
+            return;
+        }
+        Set<String> wanted = readPackages(call);
+        if (wanted == null) return;
+
+        long rangeFrom = from;
+        long rangeTo = to;
+        JSArray intervals = new JSArray();
+        long firstEventAt = walkForeground(rangeFrom - LOOK_BEHIND_MS, rangeTo, wanted, (pkg, start, end) -> {
+            long clippedStart = Math.max(start, rangeFrom);
+            long clippedEnd = Math.min(end, rangeTo);
+            if (clippedEnd <= clippedStart) return;
+            JSObject interval = new JSObject();
+            interval.put("packageName", pkg);
+            interval.put("start", clippedStart);
+            interval.put("end", clippedEnd);
+            intervals.put(interval);
+        });
+
+        JSObject result = new JSObject();
+        result.put("intervals", intervals);
+        result.put("firstEventAt", firstEventAt >= 0 ? firstEventAt : JSObject.NULL);
+        call.resolve(result);
+    }
+
+    private interface IntervalSink {
+        void accept(String pkg, long start, long end);
+    }
+
+    /**
+     * 이벤트 기록을 읽어 wanted 앱이 화면 맨 앞에 있던 구간을 sink로 넘긴다. 받은 기록 중 가장 이른 시각을
+     * 돌려준다(없으면 -1).
+     *
+     * 한 번에 앞에 있는 앱은 하나다. 다른 앱이 열리거나 화면이 꺼지거나 잠기면 앞의 앱을 닫는다. 같은 앱
+     * 안에서 화면만 바뀐 것은 이어지고, 잠깐 멈췄다(PAUSED) 다른 앱이 열리면 멈춘 시각에서 닫는다. 다른
+     * 앱의 이벤트는 '누가 앞에 있나'를 아는 데만 쓰고 넘기지 않는다.
+     *
+     * 멈춤은 **지금 앞에 있는 화면(액티비티)**의 것만 본다. 화면이 여럿인 앱은 새 화면이 열린 뒤에 뒤로
+     * 밀린 옛 화면의 STOPPED가 온다 — 앱 이름만 보고 그것을 멈춤으로 읽으면 마지막으로 화면이 바뀐
+     * 시각에서 사용이 잘린다(에뮬레이터의 유튜브 94초가 32초로 잡혔다).
+     */
+    private long walkForeground(long start, long end, Set<String> wanted, IntervalSink sink) {
+        UsageStatsManager usm = (UsageStatsManager) getContext().getSystemService(Context.USAGE_STATS_SERVICE);
+        UsageEvents events = usm.queryEvents(start, end);
+        UsageEvents.Event event = new UsageEvents.Event();
+
+        long firstEventAt = -1;
+        String current = null;
+        String currentActivity = null;
+        long sessionStart = 0;
+        long pausedAt = -1;
+
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event);
+            long t = event.getTimeStamp();
+            if (firstEventAt < 0) firstEventAt = t;
+            int type = event.getEventType();
+            String pkg = event.getPackageName();
+            String activity = event.getClassName() == null ? "" : event.getClassName();
+
+            if (type == ACTIVITY_RESUMED) {
+                if (pkg.equals(current)) {
+                    // 같은 앱 안에서 화면만 바뀐 것
+                    currentActivity = activity;
+                    pausedAt = -1;
+                    continue;
+                }
+                if (current != null && wanted.contains(current)) {
+                    sink.accept(current, sessionStart, pausedAt >= 0 ? pausedAt : t);
+                }
+                current = pkg;
+                currentActivity = activity;
+                sessionStart = t;
+                pausedAt = -1;
+            } else if (type == ACTIVITY_PAUSED || type == ACTIVITY_STOPPED) {
+                if (pkg.equals(current) && activity.equals(currentActivity) && pausedAt < 0) pausedAt = t;
+            } else if (type == SCREEN_NON_INTERACTIVE || type == KEYGUARD_SHOWN || type == DEVICE_SHUTDOWN) {
+                if (current != null && wanted.contains(current)) {
+                    sink.accept(current, sessionStart, pausedAt >= 0 ? pausedAt : t);
+                }
+                current = null;
+                currentActivity = null;
+                pausedAt = -1;
+            }
+        }
+        if (current != null && wanted.contains(current)) {
+            sink.accept(current, sessionStart, pausedAt >= 0 ? pausedAt : end);
+        }
+        return firstEventAt;
     }
 
     private boolean isGranted() {
