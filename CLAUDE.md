@@ -418,6 +418,10 @@ pnpm build
   대화형으로 묻는다. 마이그레이션 SQL과 스냅샷을 직접 쓰고, 생성 뒤
   `pnpm db:generate`가 "No schema changes"를 내는지로 스냅샷을 확인한다. 배포 DB에는
   push가 아니라 그 SQL로 적용한다 — push에서 '만들기'를 고르면 기존 테이블이 지워진다.
+- 배포 DB에 SQL을 적용할 때는 `pnpm --filter @subslash/web db:apply`(`scripts/db-migrate/apply.ts`)를 쓴다.
+  인자 없이 돌리면 적용 여부만 보여 주고, `-- --apply 0012`처럼 번호를 줘야 한 트랜잭션으로 적용한다.
+  이미 적용됐거나 일부만 있거나 앞선 테이블이 없으면 적용하지 않는다. 새 마이그레이션을 만들면 이
+  스크립트의 `MIGRATIONS`에 확인 방법을 더한다. 먼저 `file:` 사본으로 시험해 볼 수 있다.
 - 배포 DB는 두 개이고 데이터를 섞지 않는다. `subslash`는 leesean2/subslash(Vercel
   `subslash-web-qki1`), `subslash-grad`는 Grad-Deploy/subslash 미러(Vercel `subslash-web`)가
   쓴다. 미러가 병합 즉시 새 레포로 옮겨 곧바로 배포되므로, 스키마를 바꾸는 PR은 병합
