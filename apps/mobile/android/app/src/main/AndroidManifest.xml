@@ -43,4 +43,7 @@
          (apps/web/lib/native-reminders), 이 권한은 안드로이드 14부터 사용자가 따로 켜야 하며
          스토어에서도 쓰는 이유를 요구한다. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
+    <!-- 기기 간 사용 측정(DeviceUsagePlugin). 설치할 때 주는 권한이 아니라 사용자가 설정의 '사용 정보
+         접근'에서 직접 켜야 하고, 켜기 전에는 아무것도 재지 않는다. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
 </manifest>
