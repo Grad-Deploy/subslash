@@ -14,14 +14,18 @@ import {
   sumMyAnnualKRW,
   sumMyMonthlyKRW,
   type Subscription,
-  type UsageLog,
 } from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { isAnonymousStatsOpen } from "@lib/privacy";
 import { fetchStatsSummary, useStatsSharing, withdrawContribution } from "@lib/stats-client";
-import { STATS_MIN_PARTICIPANTS, type StatsSummary } from "@lib/stats";
+import {
+  STATS_MIN_PARTICIPANTS,
+  latestFreshUsage,
+  type ServiceStats,
+  type StatsSummary,
+} from "@lib/stats";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { MeasuredUsageSection } from "@components/usage/MeasuredUsage";
 import { subscriptionDetailHref } from "@lib/routes";
@@ -38,9 +42,6 @@ const AppUsageReport = IS_APP_BUILD
     )
   : null;
 
-/** 체크인이 이보다 오래됐으면 1회 단가를 모른다고 본다(일). 통계에 보내는 기준과 같다. */
-const USAGE_FRESH_DAYS = 45;
-
 interface ValueRow {
   sub: Subscription;
   monthlyKRW: number;
@@ -48,12 +49,13 @@ interface ValueRow {
   costPerUse: number | null;
 }
 
-function latestUsage(logs: UsageLog[], subId: string, now: Date): number | null {
-  const freshAfter = now.getTime() - USAGE_FRESH_DAYS * 24 * 60 * 60 * 1000;
-  const latest = logs
-    .filter((log) => log.subscriptionId === subId && Date.parse(log.checkedAt) >= freshAfter)
-    .sort((a, b) => Date.parse(b.checkedAt) - Date.parse(a.checkedAt))[0];
-  return latest ? latest.usageCount : null;
+/**
+ * 순위의 기준. 한 번도 쓰지 않은 구독이 가장 아깝다 — calculateCostPerUse는 0회에 한 달 요금을
+ * 돌려줘서, 그대로 두면 1번 쓴 더 비싼 구독보다 뒤로 밀렸다. 모르는 것(체크인 전)은 맨 뒤다.
+ */
+function rankKey(row: ValueRow): number {
+  if (row.usageCount === 0) return Number.POSITIVE_INFINITY;
+  return row.costPerUse ?? -1;
 }
 
 function presetName(presetId: string): string {
@@ -87,7 +89,7 @@ export default function ReportPage() {
       active
         .map((sub) => {
           const monthlyKRW = getMyMonthlyAmountKRW(sub, rate);
-          const usageCount = latestUsage(usageLogs, sub.id, now);
+          const usageCount = latestFreshUsage(usageLogs, sub.id, now);
           return {
             sub,
             monthlyKRW,
@@ -96,7 +98,7 @@ export default function ReportPage() {
           };
         })
         // 1회 단가가 비싼 것부터. 모르는 것은 뒤로 — 모름을 싸다고 읽지 않는다.
-        .sort((a, b) => (b.costPerUse ?? -1) - (a.costPerUse ?? -1)),
+        .sort((a, b) => rankKey(b) - rankKey(a)),
     [active, usageLogs, rate, now],
   );
 
@@ -168,6 +170,9 @@ export default function ReportPage() {
                     <div className="text-right">
                       {row.costPerUse === null ? (
                         <span className="text-xs text-muted-foreground">체크인 전</span>
+                      ) : row.usageCount === 0 ? (
+                        // 0번 쓴 구독에 '1회 ₩17,000'을 적으면 한 번은 쓴 것처럼 읽힌다.
+                        <span className="text-xs font-bold text-destructive">안 썼어요</span>
                       ) : (
                         <>
                           <p className="font-bold tabular-nums">{formatKRW(row.costPerUse)}</p>
@@ -255,11 +260,15 @@ function PeerComparison({
   const join = () => useStatsSharing.getState().setEnabled(true);
   const leave = async () => {
     setBusy(true);
+    setError(null);
+    // 먼저 끈다. 지우는 사이 요약을 보내면(useStatsContribution) 지운 기록이 새 참여자로 되살아난다.
+    useStatsSharing.getState().setEnabled(false);
     try {
       if (token) await withdrawContribution(token);
-      useStatsSharing.getState().setEnabled(false);
       useStatsSharing.getState().setToken(null);
     } catch {
+      // 서버에 기록이 남았다. 참여 중으로 되돌려 다시 누를 수 있게 한다.
+      useStatsSharing.getState().setEnabled(true);
       setError("참여를 그만두지 못했어요. 잠시 뒤에 다시 시도해 주세요.");
     } finally {
       setBusy(false);
@@ -267,16 +276,12 @@ function PeerComparison({
   };
 
   // 내 구독 중 비교할 수 있는 서비스.
-  const myServices = rows
-    .map((row) => ({ row, preset: findPresetForSubscription(row.sub) }))
-    .filter((entry): entry is { row: ValueRow; preset: NonNullable<typeof entry.preset> } =>
-      Boolean(entry.preset),
-    )
-    .map(({ row, preset }) => ({
-      row,
-      stats: summary?.services.find((service) => service.presetId === preset.id) ?? null,
-    }))
-    .filter((entry) => entry.stats);
+  const myServices: { row: ValueRow; stats: ServiceStats }[] = [];
+  for (const row of rows) {
+    const presetId = findPresetForSubscription(row.sub)?.id;
+    const stats = summary?.services.find((service) => service.presetId === presetId);
+    if (stats) myServices.push({ row, stats });
+  }
 
   return (
     <section className="space-y-3 rounded-2xl border p-4">
@@ -329,14 +334,14 @@ function PeerComparison({
             <ul className="space-y-2">
               {myServices.map(({ row, stats }) => (
                 <li key={row.sub.id} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="truncate">{presetName(stats!.presetId)}</span>
+                  <span className="truncate">{presetName(stats.presetId)}</span>
                   <span className="shrink-0 text-muted-foreground tabular-nums">
-                    {stats!.medianUsage === null
-                      ? `보통 ${formatKRW(stats!.medianMonthlyKRW)}`
-                      : `보통 ${stats!.medianUsage}번`}
+                    {stats.medianUsage === null
+                      ? `보통 ${formatKRW(stats.medianMonthlyKRW)}`
+                      : `보통 ${stats.medianUsage}번`}
                     {" · "}
                     <b className="text-foreground">
-                      {stats!.medianUsage === null
+                      {stats.medianUsage === null
                         ? `나 ${formatKRW(row.monthlyKRW)}`
                         : row.usageCount === null
                           ? "나 체크인 전"

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Subscription, UsageLog } from "@subslash/shared";
-import { buildContribution, median, parseContribution, summarize } from "../../lib/stats";
+import {
+  buildContribution,
+  latestFreshUsage,
+  median,
+  parseContribution,
+  summarize,
+} from "../../lib/stats";
 
 const NOW = new Date("2026-09-24T12:00:00+09:00");
 
@@ -78,5 +84,18 @@ describe("요약 집계", () => {
     const [netflix] = summarize(rows).services;
     expect(netflix.participants).toBe(10);
     expect(netflix.medianUsage).toBeNull();
+  });
+});
+
+describe("최근 체크인 이용 횟수", () => {
+  it("가장 최근의 것을, 45일 안의 것만 쓴다", () => {
+    const logs = [log("s1", 3, 10), log("s1", 7, 2), log("s2", 9, 1), log("s1", 5, 60)];
+    expect(latestFreshUsage(logs, "s1", NOW)).toBe(7);
+    expect(latestFreshUsage([log("s1", 5, 60)], "s1", NOW)).toBeNull();
+    expect(latestFreshUsage([], "s1", NOW)).toBeNull();
+  });
+
+  it("0회는 0으로 둔다 — 모름(null)과 다르다", () => {
+    expect(latestFreshUsage([log("s1", 0, 1)], "s1", NOW)).toBe(0);
   });
 });
