@@ -43,7 +43,9 @@
          (apps/web/lib/native-reminders), 이 권한은 안드로이드 14부터 사용자가 따로 켜야 하며
          스토어에서도 쓰는 이유를 요구한다. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" tools:node="remove" />
-    <!-- 기기 간 사용 측정(DeviceUsagePlugin). 설치할 때 주는 권한이 아니라 사용자가 설정의 '사용 정보
-         접근'에서 직접 켜야 하고, 켜기 전에는 아무것도 재지 않는다. -->
-    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
+    <!-- 기기 간 사용 측정(DeviceUsagePlugin)은 PACKAGE_USAGE_STATS(사용 정보 접근)가 있어야 잰다.
+         측정을 켜는 화면이 생기기 전에는 쓰지 않는 민감 권한을 스토어 심사에 내지 않도록 넣지 않는다 —
+         그동안 플러그인은 hasAccess가 false라 아무것도 재지 않는다. 화면을 만들 때 아래 줄을 넣고
+         Play Console의 데이터 보안 항목도 함께 고친다.
+         <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" /> -->
 </manifest>
