@@ -42,6 +42,9 @@ export function GmailDiscoveryInbox() {
   // 한 번에 하나만 받는다. 개발 모드의 StrictMode가 effect를 두 번 돌리거나, 돌아온 신호가 겹쳐도
   // 같은 후보를 두 번 등록하지 않는다.
   const pulling = useRef(false);
+  // 받는 중에 온 신호. 버리면 연결을 마치고 돌아온 신호가 첫 받기와 겹칠 때 새 후보를 놓친다 — 끝난
+  // 뒤 한 번 더 받는다.
+  const pullAgain = useRef(false);
   const lastPulledAt = useRef(0);
   // 확인 창은 연 순간의 후보로 그린다. 창이 열린 동안 목록을 바꾸지 않는다.
   const reviewOpenRef = useRef(false);
@@ -56,7 +59,11 @@ export function GmailDiscoveryInbox() {
     if (!accountId || demo) return;
 
     const pull = async () => {
-      if (pulling.current || reviewOpenRef.current) return;
+      if (reviewOpenRef.current) return;
+      if (pulling.current) {
+        pullAgain.current = true;
+        return;
+      }
       pulling.current = true;
       lastPulledAt.current = Date.now();
       try {
@@ -99,6 +106,10 @@ export function GmailDiscoveryInbox() {
         ).catch(() => undefined);
       } finally {
         pulling.current = false;
+        if (pullAgain.current) {
+          pullAgain.current = false;
+          void pull();
+        }
       }
     };
 
