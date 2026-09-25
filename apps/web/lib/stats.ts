@@ -26,8 +26,8 @@ export const STATS_MIN_PARTICIPANTS = 20;
 export const STATS_MIN_PER_SERVICE = 10;
 /** 이만큼 갱신되지 않은 참여 기록은 지운다(일). */
 export const STATS_RETENTION_DAYS = 180;
-/** 체크인이 이보다 오래됐으면 이용 횟수를 모른다고 보낸다(일). */
-const USAGE_FRESH_DAYS = 45;
+/** 체크인이 이보다 오래됐으면 이용 횟수를 모른다고 본다(일). 리포트의 1회 단가도 같은 기준을 쓴다. */
+export const USAGE_FRESH_DAYS = 45;
 
 export interface StatsItem {
   presetId: string;
@@ -45,6 +45,26 @@ export interface StatsContribution {
 
 const roundTo = (value: number, unit: number) => Math.round(value / unit) * unit;
 
+/**
+ * 이 구독의 최근 체크인 이용 횟수. 체크인이 없거나 `USAGE_FRESH_DAYS`보다 오래됐으면 null이다 —
+ * 오래된 횟수를 지금 것으로, 모름을 0회로 읽지 않는다.
+ */
+export function latestFreshUsage(
+  usageLogs: UsageLog[],
+  subscriptionId: string,
+  now: Date = new Date(),
+): number | null {
+  const freshAfter = now.getTime() - USAGE_FRESH_DAYS * 24 * 60 * 60 * 1000;
+  let latest: UsageLog | null = null;
+  for (const log of usageLogs) {
+    if (log.subscriptionId !== subscriptionId) continue;
+    const checkedAt = Date.parse(log.checkedAt);
+    if (checkedAt < freshAfter) continue;
+    if (!latest || checkedAt > Date.parse(latest.checkedAt)) latest = log;
+  }
+  return latest ? latest.usageCount : null;
+}
+
 /** 지금 구독에서 보낼 요약을 만든다. 체험 중인 구독은 돈이 나가지 않으므로 뺀다. */
 export function buildContribution(
   subscriptions: Subscription[],
@@ -53,7 +73,6 @@ export function buildContribution(
   now: Date = new Date(),
 ): StatsContribution {
   const active = subscriptions.filter((sub) => sub.status === "active" && !isInTrial(sub, now));
-  const freshAfter = now.getTime() - USAGE_FRESH_DAYS * 24 * 60 * 60 * 1000;
 
   const items: StatsItem[] = [];
   const seen = new Set<string>();
@@ -62,14 +81,10 @@ export function buildContribution(
     if (!preset || seen.has(preset.id)) continue;
     seen.add(preset.id);
 
-    const latest = usageLogs
-      .filter((log) => log.subscriptionId === sub.id && Date.parse(log.checkedAt) >= freshAfter)
-      .sort((a, b) => Date.parse(b.checkedAt) - Date.parse(a.checkedAt))[0];
-
     items.push({
       presetId: preset.id,
       monthlyKRW: roundTo(getMyMonthlyAmountKRW(sub, rate), 100),
-      usageCount: latest ? latest.usageCount : null,
+      usageCount: latestFreshUsage(usageLogs, sub.id, now),
     });
   }
 
