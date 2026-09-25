@@ -94,6 +94,24 @@ export async function deleteGmailLink(): Promise<void> {
   if (!response.ok) throw new Error(await readError(response, "연결을 끊지 못했습니다."));
 }
 
+const DISCOVERIES_REQUESTED = "subslash:gmail-discoveries-requested";
+
+/**
+ * 찾아 둔 구독을 지금 받아 오라고 알린다. Gmail 연결 화면에서 돌아왔을 때 부른다.
+ *
+ * 웹은 Google 권한 화면에서 돌아오면 페이지가 새로 열려 `GmailDiscoveryInbox`가 처음부터 받는다.
+ * 앱은 인앱 브라우저를 닫아도 화면이 그대로라, 알리지 않으면 앱을 껐다 켤 때까지 받지 않는다.
+ */
+export function requestGmailDiscoveries(): void {
+  window.dispatchEvent(new Event(DISCOVERIES_REQUESTED));
+}
+
+/** `requestGmailDiscoveries`를 듣는다. 듣기를 멈추는 함수를 돌려준다. */
+export function onGmailDiscoveriesRequested(listener: () => void): () => void {
+  window.addEventListener(DISCOVERIES_REQUESTED, listener);
+  return () => window.removeEventListener(DISCOVERIES_REQUESTED, listener);
+}
+
 export async function fetchGmailDiscoveries(): Promise<GmailDiscovery[]> {
   const response = await apiFetch("/api/gmail/discoveries");
   if (!response.ok) throw new Error(await readError(response, "찾아 둔 구독을 읽지 못했습니다."));
