@@ -5,8 +5,8 @@ import { cn } from "@lib/utils";
 import { copyText } from "@lib/native";
 
 /**
- * 앱의 가져오기 단계에서 붙여 넣을 코드. 코드 전체를 늘어놓지 않고 앞부분만 흐리게 보여주고,
- * 복사 버튼으로 가져가게 한다. 복사가 막힌 기기에서는 펼쳐서 직접 고를 수 있다.
+ * 앱의 가져오기 단계에서 붙여 넣을 코드. 코드는 늘어놓지 않고 이름과 복사 버튼만 보여준다.
+ * 복사가 막힌 기기에서만 펼쳐서 직접 고를 수 있게 한다.
  */
 export function AppCopyCode({ label, code }: { label: string; code: string }) {
   const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
@@ -24,8 +24,8 @@ export function AppCopyCode({ label, code }: { label: string; code: string }) {
 
   return (
     <div className="overflow-hidden rounded-2xl border bg-muted/40">
-      <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
-        <span className="font-mono text-xs font-bold">{label}</span>
+      <div className="flex items-center justify-between gap-2 px-3 py-2.5">
+        <span className="min-w-0 truncate font-mono text-xs font-bold">{label}</span>
         <button
           type="button"
           onClick={() => void copy()}
@@ -39,16 +39,11 @@ export function AppCopyCode({ label, code }: { label: string; code: string }) {
           {status === "copied" ? "복사됨" : "복사"}
         </button>
       </div>
-      <pre
-        className={cn(
-          "overflow-auto px-3 py-2 font-mono text-[10.5px] leading-relaxed text-muted-foreground select-all",
-          expanded
-            ? "max-h-56"
-            : "max-h-20 overflow-hidden [mask-image:linear-gradient(#000_50%,transparent)]",
-        )}
-      >
-        {code}
-      </pre>
+      {expanded && (
+        <pre className="max-h-56 overflow-auto px-3 py-2 font-mono text-[10.5px] leading-relaxed break-all whitespace-pre-wrap text-muted-foreground select-all">
+          {code}
+        </pre>
+      )}
       {status === "failed" && (
         <p className="px-3 pb-2 text-xs text-amber-700 dark:text-amber-300" role="status">
           자동으로 복사하지 못했어요. 위 코드를 길게 눌러 직접 복사해 주세요.
