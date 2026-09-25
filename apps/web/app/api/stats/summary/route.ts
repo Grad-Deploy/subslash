@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { isAnonymousStatsOpen } from "@lib/privacy";
 import { loadSummary } from "@lib/stats-server";
+import { logError } from "@lib/log";
 
 /**
  * 익명 구독 통계의 요약. 누구나 읽을 수 있다 — 모자란 칸은 비워 두므로(lib/stats의 summarize) 한두
@@ -18,7 +19,7 @@ export async function GET() {
       headers: { "Cache-Control": "public, s-maxage=600, stale-while-revalidate=3600" },
     });
   } catch (error) {
-    console.error("[api/stats/summary]", error);
+    logError("api/stats/summary", error);
     return NextResponse.json({ error: "통계를 읽지 못했습니다." }, { status: 500 });
   }
 }

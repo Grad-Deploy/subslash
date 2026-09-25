@@ -184,6 +184,22 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 비밀값 비교(크론 `CRON_SECRET` 등)는 `timingSafeEqual`로 한다. 웹 응답의 보안 헤더(틀 넣기 금지 등)는
 `next.config.ts`의 `headers()`에 있다.
 
+## 서버 로그와 외부 링크
+
+서버 코드는 `console.error(scope, error)`로 오류 객체를 넘기지 않고 `logError`(`lib/log`)를 쓴다. Drizzle은
+쿼리가 실패하면 메시지에 바인딩한 값을 싣는다(`params: 이메일,비밀번호 해시,...`) — 그대로 넘기면 DB 오류
+한 번에 개인정보가 배포 로그에 남는다. UNIQUE 충돌도 `cause` 안에 있으므로 메시지가 아니라
+`isUniqueViolation`으로 가린다.
+
+결제 알림은 같은 주소로 다시 신청해도 확인된 기록을 지우지 않는다. 새 신청은 확인 전 기록으로 따로 두고,
+주인이 확인 링크를 누를 때에만 예전 기록을 대신한다(`confirmSubscriber`). 신청만으로 지우면 남의 주소만
+알아도 그 사람의 알림을 끊을 수 있었다. 확인하지 않은 신청은 3일 뒤 크론이 지운다.
+
+외부 주소는 `openExternal`·`leaveForExternal`만 열고, 둘은 http(s)만 연다. 해지 주소는 입력·백업·계정 기록
+여러 곳에서 들어와 `javascript:`·`intent:`가 섞일 수 있어서, 들어오는 곳이 아니라 여는 곳에서 막는다.
+안드로이드는 세션 토큰이 든 Preferences(`CapacitorStorage.xml`)를 Google 클라우드 백업에서 뺀다
+(`res/xml/data_extraction_rules.xml`) — Preferences에 새 비밀값을 두면 이 규칙이 함께 지킨다.
+
 ## 구독 리포트와 익명 통계
 
 하단 탭의 세 번째는 '리포트'(`/report`)다. 예전 '절약 현황'은 해지한 구독이 없으면 빈 화면이라, 해지

@@ -46,7 +46,11 @@ export const notificationSubscribers = sqliteTable(
     lastSyncedAt: text("last_synced_at"),
   },
   (table) => ({
-    emailIdx: uniqueIndex("notification_subscribers_email_idx").on(table.email),
+    // 고유 인덱스가 아니다. 같은 주소로 다시 신청하면 확인 링크를 누르기 전까지 새 신청(확인 전)과
+    // 예전 기록(확인됨)이 함께 있고, 링크를 누를 때 새 것이 예전 것을 대신한다(api/notify/verify).
+    // 예전에는 한 줄만 허용해 신청하자마자 예전 기록을 지웠고, 그래서 남의 주소만 알면 그 사람의
+    // 알림을 끊을 수 있었다.
+    emailIdx: index("notification_subscribers_email_idx").on(table.email),
     syncTokenIdx: uniqueIndex("notification_subscribers_sync_token_idx").on(table.syncTokenHash),
     calendarTokenIdx: uniqueIndex("notification_subscribers_calendar_token_idx").on(
       table.calendarTokenHash,

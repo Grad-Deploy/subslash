@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { isGmailAutoImportOpen } from "@lib/privacy";
 import { exchangeConnectCode } from "@lib/gmail-auto-import";
+import { logError } from "@lib/log";
 
 /**
  * SubSlash 웹 앱(Apps Script)이 사용자의 권한으로 돌면서 연결 코드를 연결 토큰으로 바꾸는 곳.
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ token });
   } catch (error) {
-    console.error("[api/gmail/connect/exchange]", error);
+    logError("api/gmail/connect/exchange", error);
     return NextResponse.json({ error: "연결하지 못했습니다." }, { status: 500 });
   }
 }

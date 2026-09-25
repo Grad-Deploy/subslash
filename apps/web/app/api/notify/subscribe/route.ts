@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
 import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { notificationSubscribers } from "@lib/schema";
 import { generateSyncToken, hashSyncToken, signLink } from "@lib/tokens";
 import { appUrl, sendEmail, verificationEmail } from "@lib/email";
-import { deleteUserCompletely, normalizeEmail } from "@lib/notify-server";
+import { deletePendingSubscribers, normalizeEmail } from "@lib/notify-server";
 import {
   clientIp,
   hit,
@@ -12,6 +11,7 @@ import {
   tooManyRequestsMessage,
   type RateLimitRule,
 } from "@lib/rate-limit";
+import { logError } from "@lib/log";
 
 const VERIFY_TTL_SECONDS = 60 * 60 * 24 * 3;
 
@@ -58,19 +58,13 @@ export async function POST(request: NextRequest) {
     const db = getDb();
     const syncToken = generateSyncToken();
 
-    // 이미 있는 주소로 다시 신청하면 처음부터 다시 시작한다. 예전에는 토큰만
-    // 새로 주고 확인 상태와 서버 사본을 그대로 넘겨서, 남의 주소만 알면 그
-    // 사람의 구독 사본을 캘린더 피드로 읽거나, 사본을 바꿔 그 사람에게 가는
-    // 알림 메일의 내용을 정할 수 있었다. 주소의 주인임을 다시 확인하기
-    // 전에는 이전 기록을 아무것도 넘겨받지 않는다.
-    const existing = await db
-      .select({ id: notificationSubscribers.id })
-      .from(notificationSubscribers)
-      .where(eq(notificationSubscribers.email, email))
-      .limit(1);
-    if (existing[0]) {
-      await deleteUserCompletely(existing[0].id);
-    }
+    // 이미 있는 주소로 다시 신청하면 새 기록을 '확인 전'으로 따로 만든다. 예전에는 토큰만 새로
+    // 주고 확인 상태와 서버 사본을 그대로 넘겨서, 남의 주소만 알면 그 사람의 구독 사본을 캘린더
+    // 피드로 읽거나 알림 메일의 내용을 정할 수 있었다. 그 뒤로는 확인된 기록을 곧바로 지웠는데,
+    // 그러면 남의 주소만 알아도 그 사람의 알림과 캘린더 피드를 끊을 수 있었다. 이제 새 기록은
+    // 아무것도 넘겨받지 않고, 예전 기록은 주인이 메일의 확인 링크를 누를 때에만 새 기록으로
+    // 바뀐다(api/notify/verify). 지우는 것은 같은 주소의 확인 전 신청뿐이다.
+    await deletePendingSubscribers(email);
 
     const inserted = await db
       .insert(notificationSubscribers)
@@ -85,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ syncToken, email, reminderDays, verified: false });
   } catch (error) {
-    console.error("[api/notify/subscribe]", error);
+    logError("api/notify/subscribe", error);
     return NextResponse.json({ error: "알림 신청을 처리하지 못했습니다." }, { status: 500 });
   }
 }

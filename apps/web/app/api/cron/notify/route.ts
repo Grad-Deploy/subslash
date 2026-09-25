@@ -13,7 +13,9 @@ import { signLink } from "@lib/tokens";
 import { pruneStaleContributions } from "@lib/stats-server";
 import { isAnonymousStatsOpen, isDeviceUsageOpen } from "@lib/privacy";
 import { pruneDeviceUsage } from "@lib/device-usage-server";
+import { prunePendingSubscribers } from "@lib/notify-server";
 import { appUrl, reminderEmail, sendEmail, type ReminderItem } from "@lib/email";
+import { logError } from "@lib/log";
 
 const UNSUBSCRIBE_TTL_SECONDS = 60 * 60 * 24 * 90;
 
@@ -150,7 +152,7 @@ export async function GET(request: NextRequest) {
     // 기능을 열기 전에는 표가 없을 수 있다(마이그레이션은 시작일을 정할 때 적용한다).
     const prunedStats = isAnonymousStatsOpen(now)
       ? await pruneStaleContributions(now).catch((error: unknown) => {
-          console.error("[cron/notify] stats prune failed", error);
+          logError("cron/notify stats prune failed", error);
           return null;
         })
       : null;
@@ -158,13 +160,20 @@ export async function GET(request: NextRequest) {
     // 기기 간 사용 측정의 보관 기간(40일)이 지난 구간도 함께 치운다. 열기 전에는 표가 없을 수 있다.
     const prunedUsage = isDeviceUsageOpen(now)
       ? await pruneDeviceUsage(now.getTime()).catch((error: unknown) => {
-          console.error("[cron/notify] usage prune failed", error);
+          logError("cron/notify usage prune failed", error);
           return null;
         })
       : null;
 
+    // 확인 링크를 누르지 않은 알림 신청(3일)도 치운다. 확인되지 않은 주소를 서버에 남기지 않는다.
+    const prunedPending = await prunePendingSubscribers(now).catch((error: unknown) => {
+      logError("cron/notify pending prune failed", error);
+      return null;
+    });
+
     return NextResponse.json({
       success: failures.length === 0,
+      prunedPending,
       prunedStats,
       prunedUsage,
       recipients: recipients.length,
@@ -175,7 +184,7 @@ export async function GET(request: NextRequest) {
       timestamp: now.toISOString(),
     });
   } catch (error) {
-    console.error("[cron/notify]", error);
+    logError("cron/notify", error);
     return NextResponse.json({ error: "Reminder sweep failed" }, { status: 500 });
   }
 }

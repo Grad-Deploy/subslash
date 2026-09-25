@@ -16,6 +16,14 @@ import {
   sendAccountVerification,
   verificationWaitSeconds,
 } from "@lib/account-verification";
+import { isUniqueViolation, logError } from "@lib/log";
+import {
+  clientIp,
+  hit,
+  retryAfterSeconds,
+  tooManyRequestsMessage,
+  type RateLimitRule,
+} from "@lib/rate-limit";
 
 /**
  * 회원가입.
@@ -29,6 +37,13 @@ import {
  * 붙지 않고 파라미터로 분리돼 전달되므로, 입력에 따옴표나 `--`, `DROP TABLE`
  * 이 들어있어도 그것은 한 칸의 데이터로 저장될 뿐 명령이 되지 않는다.
  */
+/**
+ * 가입 시도는 IP당 한 시간에 20번까지. 중복 확인이 '이미 가입된 이메일입니다'를 알려 주므로, 막지
+ * 않으면 남의 주소를 대량으로 넣어 누가 SubSlash를 쓰는지 알아낼 수 있다(구독 관리 앱을 쓴다는
+ * 것 자체가 개인정보다). 사람이 가입하다 틀리는 횟수로는 닿지 않는 값이다.
+ */
+const ATTEMPTS_PER_IP: RateLimitRule = { limit: 20, windowMs: 60 * 60 * 1000 };
+
 export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
@@ -49,6 +64,16 @@ export async function POST(request: NextRequest) {
     // 이메일 도메인은 validateSignup이 자주 쓰는 메일 서비스 목록으로 거른다.
     // 예전에는 DNS로 "메일을 받는 도메인"인지만 봐서 `exampl.com` 같은 오타가
     // 통과했고, DNS 조회가 흔들리면 멀쩡한 gmail 가입까지 503으로 막혔다.
+
+    const ipKey = `signup:ip:${clientIp(request.headers)}`;
+    const blocked = retryAfterSeconds(ipKey, ATTEMPTS_PER_IP);
+    if (blocked > 0) {
+      return NextResponse.json(
+        { error: tooManyRequestsMessage(blocked) },
+        { status: 429, headers: { "Retry-After": String(blocked) } },
+      );
+    }
+    hit(ipKey, ATTEMPTS_PER_IP);
 
     const conflicts = await findConflicts(value.username, value.email);
     if (conflicts.username || conflicts.email) {
@@ -128,10 +153,10 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     // 유니크 인덱스가 막은 경우 — 동시에 같은 아이디로 두 번 가입한 상황이다.
-    if (error instanceof Error && /UNIQUE constraint failed/i.test(error.message)) {
+    if (isUniqueViolation(error)) {
       return NextResponse.json({ error: "이미 사용 중인 정보가 있습니다." }, { status: 409 });
     }
-    console.error("[api/auth/signup]", error);
+    logError("api/auth/signup", error);
     return NextResponse.json({ error: "가입을 처리하지 못했습니다." }, { status: 500 });
   }
 }

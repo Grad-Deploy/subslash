@@ -9,6 +9,7 @@ import {
   sessionTokenForApp,
 } from "@lib/auth-server";
 import { applyPasswordReset, resolveResetLink } from "@lib/password-reset";
+import { logError } from "@lib/log";
 
 /**
  * 재설정 메일의 링크가 여는 `/reset-password` 페이지가 부르는 곳.
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       email: state.account.email,
     });
   } catch (error) {
-    console.error("[api/auth/password-reset/confirm]", error);
+    logError("api/auth/password-reset/confirm", error);
     return NextResponse.json({ error: "재설정 링크를 처리하지 못했습니다." }, { status: 500 });
   }
 }
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
     return response;
   } catch (error) {
-    console.error("[api/auth/password-reset/confirm]", error);
+    logError("api/auth/password-reset/confirm", error);
     return NextResponse.json({ error: "비밀번호를 바꾸지 못했습니다." }, { status: 500 });
   }
 }

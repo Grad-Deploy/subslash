@@ -7,6 +7,7 @@ import {
   toPublicAccount,
   updateAccountProfile,
 } from "@lib/auth-server";
+import { logError } from "@lib/log";
 
 /**
  * '내 정보' 저장. 나이·성별 두 값을 통째로 바꾼다 — 비워서 보내면 지운다.
@@ -43,7 +44,7 @@ export async function PUT(request: NextRequest) {
     }
     return NextResponse.json({ account: toPublicAccount(updated) });
   } catch (error) {
-    console.error("[api/auth/profile]", error);
+    logError("api/auth/profile", error);
     return NextResponse.json({ error: "내 정보를 저장하지 못했습니다." }, { status: 500 });
   }
 }
