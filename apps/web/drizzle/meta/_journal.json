@@ -78,6 +78,13 @@
       "when": 1789710115688,
       "tag": "0010_mirror_cancel_url",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1790260086652,
+      "tag": "0011_anonymous_stats",
+      "breakpoints": true
     }
   ]
 }

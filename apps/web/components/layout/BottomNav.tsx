@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, PiggyBank, Receipt } from "lucide-react";
+import { BarChart3, House, Receipt } from "lucide-react";
 import { cn } from "@lib/utils";
 
 export function BottomNav() {
@@ -12,14 +12,17 @@ export function BottomNav() {
   const navItems = [
     { name: "대시보드", href: "/dashboard", Icon: House },
     { name: "구독 관리", href: "/subs", Icon: Receipt },
-    { name: "절약 현황", href: "/savings", Icon: PiggyBank },
+    { name: "리포트", href: "/report", Icon: BarChart3 },
   ] as const;
 
   return (
     <nav className="md:hidden fixed bottom-0 w-full border-t bg-background z-40 pb-safe">
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {
-          const isActive = pathname?.startsWith(item.href);
+          // 절약 기록(/savings)은 리포트에서 들어가는 화면이라 리포트 탭에 불을 켠다.
+          const isActive =
+            pathname?.startsWith(item.href) ||
+            (item.href === "/report" && pathname?.startsWith("/savings"));
           return (
             <Link
               key={item.href}

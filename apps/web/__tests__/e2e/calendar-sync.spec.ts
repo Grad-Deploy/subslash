@@ -85,6 +85,8 @@ test.describe("구글 캘린더에 결제일 등록 (E2E)", () => {
       );
 
     await page.goto("/subs");
+    // 캘린더 연동은 설정 목록의 한 줄이다. 누르면 창이 열린다.
+    await page.getByRole("button", { name: /구글 캘린더 연동/ }).click();
     // 결제 월을 모르는 연간 구독은 빼고 센다.
     await expect(page.getByText(/지금 올릴 결제일/)).toContainText("1건", { timeout: 30_000 });
     await expect(page.getByText(/지금 올릴 결제일/)).toContainText("연간 구독 1건은 뺍니다");
@@ -104,6 +106,7 @@ test.describe("구글 캘린더에 결제일 등록 (E2E)", () => {
     await mockLoggedIn(page, false);
 
     await page.goto("/subs");
+    await page.getByRole("button", { name: /구글 캘린더 연동/ }).click();
     await expect(
       page.getByText(/이 서버에는 구글 캘린더 등록이 설정되어 있지 않습니다/),
     ).toBeVisible({ timeout: 30_000 });

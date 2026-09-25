@@ -10,6 +10,8 @@ import {
 import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { mirroredSubscriptions, notificationLog, notificationSubscribers } from "@lib/schema";
 import { signLink } from "@lib/tokens";
+import { pruneStaleContributions } from "@lib/stats-server";
+import { isAnonymousStatsOpen } from "@lib/privacy";
 import { appUrl, reminderEmail, sendEmail, type ReminderItem } from "@lib/email";
 
 const UNSUBSCRIBE_TTL_SECONDS = 60 * 60 * 24 * 90;
@@ -142,8 +144,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 익명 통계의 오래된 참여 기록도 같은 하루 한 번에 치운다(방침의 보관 기간). 실패해도 알림 결과는
+    // 그대로 돌려준다 — 다음 날 다시 치운다.
+    // 기능을 열기 전에는 표가 없을 수 있다(마이그레이션은 시작일을 정할 때 적용한다).
+    const prunedStats = isAnonymousStatsOpen(now)
+      ? await pruneStaleContributions(now).catch((error: unknown) => {
+          console.error("[cron/notify] stats prune failed", error);
+          return null;
+        })
+      : null;
+
     return NextResponse.json({
       success: failures.length === 0,
+      prunedStats,
       recipients: recipients.length,
       considered,
       notified,
