@@ -1,7 +1,12 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { apiFetch, readApiError } from "./api";
-import { IS_APP_BUILD } from "./platform";
+import {
+  isUsageGranted,
+  isUsageSupported,
+  openUsageSettings,
+  queryForeground,
+} from "./usage/native";
 import {
   ANDROID_PACKAGES,
   USAGE_RETENTION_DAYS,
@@ -74,52 +79,21 @@ export function isMeasuringFor(
   return Boolean(accountId) && state.enabled && state.accountId === accountId;
 }
 
-interface DeviceUsagePlugin {
-  hasAccess(): Promise<{ granted: boolean }>;
-  openAccessSettings(): Promise<void>;
-  queryForeground(options: { from: number; to: number; packages: string[] }): Promise<{
-    intervals: { packageName: string; start: number; end: number }[];
-    firstEventAt: number | null;
-  }>;
-}
-
-let plugin: DeviceUsagePlugin | null = null;
-
 /**
- * 네이티브 플러그인. 안드로이드 앱에서만 있다 — iOS는 다른 앱의 사용 시간을 앱 밖으로 내주지 않고
- * (Screen Time 보고서는 화면에 그리기만 한다), 웹은 다른 앱을 볼 수 없다.
- *
- * `registerPlugin`이 주는 프록시를 그대로 돌려주지 않고 보통 객체로 감싼다. 프록시는 모르는 속성을
- * 전부 네이티브 메서드로 만들어서 `then`도 있는 것처럼 보이고, async 함수가 그것을 돌려주면 Promise가
- * 네이티브 `then`을 불러 영원히 끝나지 않는다(`await loadPlugin()`이 멈춘다).
+ * 잴 수 있는 곳은 안드로이드 앱뿐이다 — iOS는 다른 앱의 사용 시간을 앱 밖으로 내주지 않고(Screen Time
+ * 보고서는 화면에 그리기만 한다), 웹은 다른 앱을 볼 수 없다. 네이티브는 폰 사용 기록과 같은
+ * 플러그인(lib/usage/native, UsageStatsPlugin)을 쓴다.
  */
-async function loadPlugin(): Promise<DeviceUsagePlugin | null> {
-  if (!IS_APP_BUILD) return null;
-  const { Capacitor, registerPlugin } = await import("@capacitor/core");
-  if (Capacitor.getPlatform() !== "android") return null;
-  if (!plugin) {
-    const native = registerPlugin<DeviceUsagePlugin>("DeviceUsage");
-    plugin = {
-      hasAccess: () => native.hasAccess(),
-      openAccessSettings: () => native.openAccessSettings(),
-      queryForeground: (options) => native.queryForeground(options),
-    };
-  }
-  return plugin;
-}
-
-/** 이 기기에서 잴 수 있는지(안드로이드 앱). 화면이 측정 켜기를 보여 줄지 정한다. */
 export async function canMeasureOnThisDevice(): Promise<boolean> {
-  return (await loadPlugin()) !== null;
+  return isUsageSupported();
 }
 
 export async function hasUsageAccess(): Promise<boolean> {
-  const native = await loadPlugin();
-  return native ? (await native.hasAccess()).granted : false;
+  return isUsageGranted();
 }
 
 export async function openUsageAccessSettings(): Promise<void> {
-  await (await loadPlugin())?.openAccessSettings();
+  if (!(await openUsageSettings())) throw new Error("사용 정보 접근 설정을 열지 못했습니다.");
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -130,18 +104,16 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * 기간이다 — 비어 있는 앞부분을 '안 썼다'로 올리지 않는다.
  */
 export async function collectUpload(now: number = Date.now()): Promise<UsageUpload | null> {
-  const native = await loadPlugin();
-  if (!native || !(await native.hasAccess()).granted) return null;
+  if (!(await isUsageGranted())) return null;
   const state = useDeviceUsage.getState();
   const earliest = now - (USAGE_RETENTION_DAYS - 1) * DAY_MS;
   let from = Math.max(state.uploadedUntil ?? earliest, earliest);
   if (from >= now) return null;
 
-  const { intervals, firstEventAt } = await native.queryForeground({
-    from,
-    to: now,
-    packages: Object.values(ANDROID_PACKAGES).flat(),
-  });
+  const result = await queryForeground(Object.values(ANDROID_PACKAGES).flat(), from, now);
+  // 읽지 못했으면 올리지 않는다. 빈 구간으로 올리면 그 기간을 '안 썼다'로 적는다.
+  if (!result) return null;
+  const { intervals, firstEventAt } = result;
   if (firstEventAt !== null && firstEventAt > from) from = firstEventAt;
 
   return {
