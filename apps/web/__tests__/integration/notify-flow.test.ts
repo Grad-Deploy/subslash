@@ -237,7 +237,7 @@ describe("알림 옵트인", () => {
     expect(await getDb().select().from(notificationSubscribers)).toHaveLength(0);
   });
 
-  it("확인된 주소로 다시 신청하면 확인 상태와 서버 사본을 넘겨주지 않고 처음부터 시작한다", async () => {
+  it("확인된 주소로 다시 신청해도 주인이 확인 링크를 누르기 전에는 아무것도 바뀌지 않는다", async () => {
     const ownerToken = await optIn("owner@example.com");
     const [owner] = await getDb().select().from(notificationSubscribers);
     await markVerified(owner.id);
@@ -259,16 +259,54 @@ describe("알림 옵트인", () => {
         body: JSON.stringify({ email: "owner@example.com" }),
       }),
     );
-    expect((await response.json()).verified).toBe(false);
+    const { syncToken: newToken, verified } = await response.json();
+    expect(verified).toBe(false);
 
+    // 예전에는 여기서 주인의 기록을 지워, 주소만 알면 남의 알림을 끊을 수 있었다.
+    const rows = await getDb().select().from(notificationSubscribers);
+    expect(rows).toHaveLength(2);
+    expect(rows.find((row) => row.id === owner.id)?.verifiedAt).not.toBeNull();
+    expect((await putMirror(ownerToken, [])).status).toBe(200);
+    // 새 토큰으로는 주인의 구독 사본에 닿을 수 없다.
+    const status = await statusRoute(
+      request("http://localhost:3000/api/notify/sync", {
+        headers: { authorization: `Bearer ${newToken}` },
+      }),
+    );
+    expect((await status.json()).verified).toBe(false);
+
+    // 주인이 새 신청의 확인 링크를 누르면 그때 새 기록이 예전 기록을 대신한다.
+    const pending = rows.find((row) => row.id !== owner.id)!;
+    const link = signLink({ uid: pending.id, act: "verify" }, 60);
+    await verifyRoute(request(`http://localhost:3000/api/notify/verify?token=${link}`));
+    const after = await getDb().select().from(notificationSubscribers);
+    expect(after.map((row) => row.id)).toEqual([pending.id]);
+    expect(after[0].verifiedAt).not.toBeNull();
+    expect((await putMirror(ownerToken, [])).status).toBe(401);
+    expect(await getDb().select().from(mirroredSubscriptions)).toHaveLength(0);
+  });
+
+  it("다시 신청하면 같은 주소의 확인 전 신청만 지운다", async () => {
+    await optIn("owner@example.com");
+    await optIn("owner@example.com");
     const rows = await getDb().select().from(notificationSubscribers);
     expect(rows).toHaveLength(1);
-    // 주인이 메일로 다시 확인하기 전에는 알림이 나가지 않는다.
-    expect(rows[0].verifiedAt).toBeNull();
-    // 새 토큰으로는 원래 주인의 구독 사본에 닿을 수 없다(캘린더 피드로도).
-    expect(await getDb().select().from(mirroredSubscriptions)).toHaveLength(0);
-    // 원래 기기의 토큰은 더 이상 통하지 않는다.
-    expect((await putMirror(ownerToken, [])).status).toBe(401);
+  });
+
+  it("확인 링크를 3일 동안 누르지 않은 신청은 크론이 지운다", async () => {
+    const { prunePendingSubscribers } = await import("../../lib/notify-server");
+    await optIn("stale@example.com");
+    const verifiedToken = await optIn("kept@example.com");
+    const kept = (await getDb().select().from(notificationSubscribers)).find(
+      (row) => row.email === "kept@example.com",
+    )!;
+    await markVerified(kept.id);
+
+    expect(await prunePendingSubscribers(new Date())).toBe(0);
+    expect(await prunePendingSubscribers(new Date(Date.now() + 4 * 24 * 60 * 60 * 1000))).toBe(1);
+    const left = await getDb().select().from(notificationSubscribers);
+    expect(left.map((row) => row.email)).toEqual(["kept@example.com"]);
+    expect((await putMirror(verifiedToken, [])).status).toBe(200);
   });
 });
 

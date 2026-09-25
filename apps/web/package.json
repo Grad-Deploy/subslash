@@ -15,6 +15,7 @@
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "db:apply": "tsx scripts/db-migrate/apply.ts",
     "check:cancel-links": "tsx scripts/cancel-links/run.ts",
     "gmail:web-app": "tsx scripts/gmail-web-app/write.ts"
   },

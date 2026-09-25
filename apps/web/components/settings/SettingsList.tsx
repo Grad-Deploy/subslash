@@ -1,19 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
-import { Bell, CalendarDays, ChevronRight, HardDrive, Trash2 } from "lucide-react";
+import { Activity, Bell, CalendarDays, ChevronRight, HardDrive, Trash2 } from "lucide-react";
 import { useStore } from "@lib/store";
-import { isGmailAutoImportOpen } from "@lib/privacy";
-import { useLocalReminderSettings } from "@hooks/useLocalReminders";
+import { isDeviceUsageOpen, isGmailAutoImportOpen } from "@lib/privacy";
 import { useAuth } from "@hooks/useAuth";
+import { isMeasuringFor, useDeviceUsage } from "@lib/device-usage-client";
+import { useLocalReminderSettings } from "@hooks/useLocalReminders";
 import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
 import { LocalReminderCard } from "./LocalReminderCard";
 import { DataBackupCard } from "./DataBackupCard";
+import { DeviceUsageCard } from "./DeviceUsageCard";
 import { GoogleCalendarSync } from "../calendar/GoogleCalendarSync";
 import { AppSheet } from "./app/AppSheet";
 
-type SheetKey = "reminder" | "calendar" | "backup";
+type SheetKey = "reminder" | "calendar" | "backup" | "usage";
 
 interface SettingsListProps {
   onMessage: (message: string) => void;
@@ -49,6 +51,9 @@ export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
       state.accountSync.accountId === account?.id,
   );
   const calendarOpen = isGmailAutoImportOpen();
+  // 여러 기기 사용 측정은 로그인한 계정에 모으는 기능이라 로그인했을 때만 보인다.
+  const usageOpen = isDeviceUsageOpen() && Boolean(account);
+  const measuring = useDeviceUsage((state) => isMeasuringFor(state, account?.id ?? null));
   const close = () => setSheet(null);
 
   return (
@@ -73,6 +78,19 @@ export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
             title="구글 캘린더 연동"
             detail="결제일을 반복 일정으로"
             onClick={() => setSheet("calendar")}
+          />
+        </Group>
+      )}
+
+      {usageOpen && (
+        <Group title="측정">
+          <Row
+            icon={<Activity className="size-4" />}
+            title="여러 기기 사용 측정"
+            detail="기기를 오가며 쓴 구독을 이어서 세요"
+            status={IS_APP_BUILD ? (measuring ? "켜짐" : "꺼짐") : undefined}
+            statusOn={measuring}
+            onClick={() => setSheet("usage")}
           />
         </Group>
       )}
@@ -107,6 +125,11 @@ export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
       {calendarOpen && (
         <AppSheet open={sheet === "calendar"} onClose={close} label="구글 캘린더 연동">
           <GoogleCalendarSync />
+        </AppSheet>
+      )}
+      {usageOpen && (
+        <AppSheet open={sheet === "usage"} onClose={close} label="여러 기기 사용 측정">
+          <DeviceUsageCard onMessage={onMessage} />
         </AppSheet>
       )}
       <AppSheet open={sheet === "backup"} onClose={close} label="백업 · 계정 저장">

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from "@lib/log";
 
 /**
  * Latest published USD → KRW reference rate.
@@ -44,7 +45,7 @@ export async function GET() {
       source: "ecb" as const,
     });
   } catch (error) {
-    console.error("[api/fx]", error);
+    logError("api/fx", error);
     return NextResponse.json({ error: "upstream_unavailable" }, { status: 502 });
   }
 }

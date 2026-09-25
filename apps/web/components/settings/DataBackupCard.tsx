@@ -13,7 +13,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { requestAccountSync } from "../../hooks/useAccountSync";
 import { Button } from "../ui/button";
 import { ConfirmDialog } from "../ui/confirm-dialog";
-import { apiFetch } from "@lib/api";
+import { apiFetch, readApiError } from "@lib/api";
 import { saveFile } from "@lib/native";
 
 type ParsedBackup = Extract<BackupParseResult, { ok: true }>;
@@ -52,11 +52,6 @@ function formatSavedAt(iso: string): string {
   return `${formatBackupDate(iso)} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-async function readError(res: Response, fallback: string): Promise<string> {
-  const data = await res.json().catch(() => null);
-  return typeof data?.error === "string" ? data.error : fallback;
-}
-
 /** 계정에 저장된 기록의 요약. 화면 상태는 바꾸지 않고 보여줄 결과만 돌려준다. */
 async function fetchSnapshotSummary(): Promise<AccountSnapshotState> {
   try {
@@ -65,7 +60,7 @@ async function fetchSnapshotSummary(): Promise<AccountSnapshotState> {
     if (!res.ok) {
       return {
         kind: "error",
-        message: await readError(res, "계정에 저장된 기록을 확인하지 못했습니다."),
+        message: await readApiError(res, "계정에 저장된 기록을 확인하지 못했습니다."),
       };
     }
     const data = await res.json();
@@ -195,7 +190,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
         body: JSON.stringify(currentBackup()),
       });
       if (!res.ok) {
-        setAccountError(await readError(res, "계정에 저장하지 못했습니다."));
+        setAccountError(await readApiError(res, "계정에 저장하지 못했습니다."));
         return;
       }
       const data = await res.json();
@@ -220,7 +215,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     try {
       const res = await apiFetch("/api/account/snapshot");
       if (!res.ok) {
-        setAccountError(await readError(res, "계정에 저장된 기록을 불러오지 못했습니다."));
+        setAccountError(await readApiError(res, "계정에 저장된 기록을 불러오지 못했습니다."));
         if (res.status === 404) setSnapshot({ kind: "none" });
         return;
       }
@@ -247,7 +242,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
         method: "DELETE",
       });
       if (!res.ok) {
-        setAccountError(await readError(res, "계정에 저장된 기록을 지우지 못했습니다."));
+        setAccountError(await readApiError(res, "계정에 저장된 기록을 지우지 못했습니다."));
         return;
       }
       setSnapshot({ kind: "none" });
