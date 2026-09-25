@@ -41,10 +41,17 @@ export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
   const [reminder] = useLocalReminderSettings();
   const subscriptionCount = useStore((state) => state.subscriptions.length);
   const demo = useStore((state) => Boolean(state.demo));
-  const syncOn = useStore((state) => state.accountSync.enabled);
+  const { account } = useAuth();
+  // 동기화 설정의 기본값은 켜짐이라, 로그인하지 않았거나 멈춘 기기에 '맞추는 중'이라고 쓰면 사실이 아니다.
+  const syncOn = useStore(
+    (state) =>
+      Boolean(account) &&
+      state.accountSync.enabled &&
+      state.accountSync.stoppedReason === null &&
+      state.accountSync.accountId === account?.id,
+  );
   const calendarOpen = isGmailAutoImportOpen();
   // 여러 기기 사용 측정은 로그인한 계정에 모으는 기능이라 로그인했을 때만 보인다.
-  const { account } = useAuth();
   const usageOpen = isDeviceUsageOpen() && Boolean(account);
   const measuring = useDeviceUsage((state) => isMeasuringFor(state, account?.id ?? null));
   const close = () => setSheet(null);

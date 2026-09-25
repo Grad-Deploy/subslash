@@ -138,8 +138,10 @@ export function switchRecordsOwner(
       ...sample,
     }),
   });
-  // 꺼낸 칸은 지운다. 화면의 기록이 원본이 되고, 남겨 두면 다음에 바꿀 때 오래된 사본이 된다.
-  if (saved) storage.removeItem(slotKey(next));
+  // 꺼낸 계정 칸은 지운다 — 계정의 기록을 공용 기기에 필요 이상 남기지 않는다. 비로그인 칸은 남긴다.
+  // 로그인한 채 남은 다른 탭이 저장하면 이 탭이 꺼낸 비로그인 기록을 덮어쓰는데, 칸마저 지웠으면 되찾을
+  // 곳이 없다. 다음에 비로그인에서 떠날 때 새 기록으로 덮으므로 남겨도 오래된 사본이 쓰이지 않는다.
+  if (saved && next !== null) storage.removeItem(slotKey(next));
   return true;
 }
 
