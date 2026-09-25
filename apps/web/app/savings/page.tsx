@@ -34,8 +34,21 @@ import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { Spinner } from "../../components/ui/spinner";
 import { PiggyBank } from "lucide-react";
 import { copyText } from "@lib/native";
+import { IS_APP_BUILD } from "@lib/platform";
+import dynamic from "next/dynamic";
 
-export default function SavingsDashboard() {
+// 앱에서는 좁은 화면용 절약 현황을 쓴다. 웹 사용자가 이 코드를 받지 않도록 앱 빌드에서만 불러온다.
+const AppSavings = IS_APP_BUILD
+  ? dynamic(() => import("../../components/savings/app/AppSavings").then((m) => m.AppSavings), {
+      ssr: false,
+    })
+  : null;
+
+export default function SavingsPage() {
+  return AppSavings ? <AppSavings /> : <SavingsDashboard />;
+}
+
+function SavingsDashboard() {
   const router = useRouter();
   const { getKilledSubscriptions, reviveSubscription } = useStore();
   const rate = useExchangeRate();
