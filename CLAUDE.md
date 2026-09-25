@@ -332,6 +332,13 @@ CocoaPods 대신 SPM을 쓰므로 Windows에서도 만들어지지만, **빌드�
 (`AppWindowPlugin`), 플러그인을 부르는 코드는 `Capacitor.getPlatform()`으로 가른다 — iOS에서 부르면
 거절당해 경고만 쌓인다.
 
+안드로이드 릴리스 빌드는 R8로 코드를 줄이고 최적화·난독화한다(AGP 9, `minifyEnabled`·`shrinkResources`).
+AGP 9는 최적화를 끄는 `proguard-android.txt`를 받지 않으므로 `proguard-android-optimize.txt`를 쓴다. 웹 화면이
+네이티브를 이름으로 부르므로, 이름이 바뀌면 빌드는 되는데 앱에서만 기능이 조용히 멈춘다. 플러그인
+(`@CapacitorPlugin`·`@PluginMethod`)은 Capacitor가 함께 주는 keep 규칙이, 웹뷰 브리지(`@JavascriptInterface`)는
+기본 규칙이 지킨다. 리플렉션으로 찾는 코드를 새로 넣으면 `app/proguard-rules.pro`에 규칙을 더하고, 릴리스
+빌드의 `mapping/release/seeds.txt`에 그 이름이 남는지 확인한다. 난독화를 풀 매핑은 AAB에 들어가 Play가 쓴다.
+
 앱의 구독 기록은 웹처럼 localStorage가 원본이고, 쓸 때마다 기기 저장소(Preferences)에 사본을
 적는다(`lib/mirrored-storage`). 앱을 열 때 localStorage가 비어 있었으면 사본으로 되살린다 — 운영체제가
 웹뷰 저장소를 비워도 기록이 남게 하려는 것이다. 저장소를 통째로 Preferences로 옮기지 않는 이유는 그
