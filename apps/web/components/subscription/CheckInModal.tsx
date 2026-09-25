@@ -29,6 +29,13 @@ const AppUsageCountPicker = IS_APP_BUILD
     })
   : null;
 
+// 앱의 체크인 결과(한 화면에 한 가지 말만). 웹 결과 화면은 그대로 둔다.
+const AppCheckInResult = IS_APP_BUILD
+  ? dynamic(() => import("./app/AppCheckInResult").then((m) => m.AppCheckInResult), {
+      ssr: false,
+    })
+  : null;
+
 interface CheckInModalProps {
   subscription: Subscription;
   isOpen: boolean;
@@ -97,7 +104,10 @@ export function CheckInModal({
       <DialogContent
         className={cn(
           "sm:max-w-md max-h-[90vh] overflow-y-auto",
-          isRed && "bg-gradient-to-b from-red-50 to-background dark:from-red-950/40",
+          // 앱 결과는 상태를 글자와 점으로 말하므로 창 전체를 붉게 칠하지 않는다.
+          isRed &&
+            !AppCheckInResult &&
+            "bg-gradient-to-b from-red-50 to-background dark:from-red-950/40",
         )}
       >
         <DialogHeader>
@@ -172,6 +182,26 @@ export function CheckInModal({
               가성비 분석 결과 보기
             </Button>
           </div>
+        ) : AppCheckInResult ? (
+          <AppCheckInResult
+            subscription={subscription}
+            count={count}
+            result={result}
+            onCancelGuide={
+              onKill
+                ? () => {
+                    onKill(subscription.id);
+                    onClose();
+                  }
+                : undefined
+            }
+            fallbackLink={
+              directUrl
+                ? { label: cancelButtonLabel, open: () => openExternal(directUrl) }
+                : undefined
+            }
+            onClose={onClose}
+          />
         ) : (
           <div className="py-4 space-y-5 flex flex-col items-center">
             <div className="text-center space-y-2">
