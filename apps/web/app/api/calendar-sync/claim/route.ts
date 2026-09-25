@@ -3,6 +3,7 @@ import { databaseUnavailableResponse } from "@lib/db";
 import { isGmailAutoImportOpen } from "@lib/privacy";
 import { appUrl } from "@lib/email";
 import { CALENDAR_NAME, buildCalendarEvents, claimCalendarSyncPlan } from "@lib/calendar-sync";
+import { logError } from "@lib/log";
 
 /**
  * SubSlash 웹 앱(Apps Script)이 사용자의 권한으로 돌면서 코드를 결제일 일정으로 바꾸는 곳.
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
       events: buildCalendarEvents(plan, { appUrl: appUrl() }),
     });
   } catch (error) {
-    console.error("[api/calendar-sync/claim]", error);
+    logError("api/calendar-sync/claim", error);
     return NextResponse.json({ error: "결제일을 읽지 못했습니다." }, { status: 500 });
   }
 }

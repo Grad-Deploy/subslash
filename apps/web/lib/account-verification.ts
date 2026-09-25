@@ -7,6 +7,7 @@ import { VERIFY_ACCOUNT_TTL_DAYS } from "./verification-config";
 import { deleteGmailImportData } from "./gmail-auto-import";
 import { deleteCalendarSyncPlan } from "./calendar-sync";
 import { deleteAllDeviceUsage } from "./device-usage-server";
+import { logError } from "./log";
 
 /**
  * 가입한 이메일이 그 사람 것인지 확인하기.
@@ -115,7 +116,7 @@ export async function sendAccountVerification(account: Account): Promise<SendOut
     await recordAccountMailSent(account.email);
     return { status: "sent" };
   } catch (error) {
-    console.error("[account-verification] send failed:", error);
+    logError("account-verification send failed", error);
     return { status: "not_sent", reason: "failed" };
   }
 }

@@ -8,6 +8,7 @@ import {
   saveSnapshot,
 } from "@lib/account-snapshot";
 import type { SaveCondition } from "@lib/account-snapshot";
+import { logError } from "@lib/log";
 
 /**
  * 계정에 저장한 기록 — 저장(PUT), 불러오기(GET), 지우기(DELETE).
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
       backup: snapshot.backup,
     });
   } catch (error) {
-    console.error("[api/account/snapshot GET]", error);
+    logError("api/account/snapshot GET", error);
     return NextResponse.json({ error: "계정에 저장된 기록을 읽지 못했습니다." }, { status: 500 });
   }
 }
@@ -99,7 +100,7 @@ export async function PUT(request: NextRequest) {
     }
     return NextResponse.json({ status: "saved", summary: result.summary });
   } catch (error) {
-    console.error("[api/account/snapshot PUT]", error);
+    logError("api/account/snapshot PUT", error);
     return NextResponse.json({ error: "계정에 저장하지 못했습니다." }, { status: 500 });
   }
 }
@@ -114,7 +115,7 @@ export async function DELETE(request: NextRequest) {
     const deleted = await deleteSnapshot(account.id);
     return NextResponse.json({ status: deleted ? "deleted" : "none" });
   } catch (error) {
-    console.error("[api/account/snapshot DELETE]", error);
+    logError("api/account/snapshot DELETE", error);
     return NextResponse.json({ error: "계정에 저장된 기록을 지우지 못했습니다." }, { status: 500 });
   }
 }

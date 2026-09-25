@@ -1,4 +1,5 @@
 import { formatCurrency, type Currency } from "@subslash/shared";
+import { logError } from "./log";
 
 /**
  * Resend is called over its REST API rather than through the SDK: one less
@@ -88,7 +89,7 @@ export async function sendEmail(params: {
 
     return { delivered: true };
   } catch (error) {
-    console.error("[email] Failed to reach Resend:", error);
+    logError("email Failed to reach Resend", error);
     return { delivered: false, error: "network" };
   }
 }

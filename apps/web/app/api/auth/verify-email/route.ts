@@ -6,6 +6,7 @@ import {
   resolveVerificationLink,
   type LinkState,
 } from "@lib/account-verification";
+import { logError } from "@lib/log";
 
 /**
  * 가입 확인 메일의 링크가 여는 `/verify-email` 페이지가 부르는 곳.
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
     const state = await resolveVerificationLink(request.nextUrl.searchParams.get("token"));
     return NextResponse.json(describe(state));
   } catch (error) {
-    console.error("[api/auth/verify-email]", error);
+    logError("api/auth/verify-email", error);
     return NextResponse.json({ error: "확인 링크를 처리하지 못했습니다." }, { status: 500 });
   }
 }
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ status: "declined" });
   } catch (error) {
-    console.error("[api/auth/verify-email]", error);
+    logError("api/auth/verify-email", error);
     return NextResponse.json({ error: "확인 링크를 처리하지 못했습니다." }, { status: 500 });
   }
 }

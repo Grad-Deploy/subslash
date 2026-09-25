@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { mirroredSubscriptions, notificationSubscribers } from "@lib/schema";
 import { deleteUserCompletely, userFromRequest } from "@lib/notify-server";
+import { logError } from "@lib/log";
 
 /** Only the fields the reminder and the calendar feed need — no guides, categories or icons. */
 interface MirrorInput {
@@ -112,7 +113,7 @@ export async function PUT(request: NextRequest) {
       verified: Boolean(user.verifiedAt),
     });
   } catch (error) {
-    console.error("[api/notify/sync]", error);
+    logError("api/notify/sync", error);
     return NextResponse.json({ error: "동기화에 실패했습니다." }, { status: 500 });
   }
 }
@@ -133,7 +134,7 @@ export async function GET(request: NextRequest) {
       lastSyncedAt: user.lastSyncedAt,
     });
   } catch (error) {
-    console.error("[api/notify/sync]", error);
+    logError("api/notify/sync", error);
     return NextResponse.json({ error: "상태를 불러오지 못했습니다." }, { status: 500 });
   }
 }
@@ -150,7 +151,7 @@ export async function DELETE(request: NextRequest) {
     await deleteUserCompletely(user.id);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("[api/notify/sync]", error);
+    logError("api/notify/sync", error);
     return NextResponse.json({ error: "알림 해제에 실패했습니다." }, { status: 500 });
   }
 }
