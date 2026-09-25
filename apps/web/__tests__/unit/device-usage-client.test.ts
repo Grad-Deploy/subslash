@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * 기기 간 사용 측정의 기기 쪽(`lib/device-usage-client`).
+ * 기기 간 사용 측정의 기기 쪽(`lib/device-usage-client`). 네이티브는 폰 사용 기록과 같은 UsageStats
+ * 플러그인(`lib/usage/native`)이다.
  *
  * - 네이티브 플러그인 프록시는 `then`까지 네이티브 메서드로 만든다. async 함수가 프록시를 그대로
  *   돌려주면 `await`가 끝나지 않아, 측정 화면이 '확인 중'에서 멈춘다.
@@ -16,8 +17,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@capacitor/core", () => {
   const methods: Record<string, (...args: unknown[]) => Promise<unknown>> = {
-    hasAccess: async () => ({ granted: mocks.granted }),
-    openAccessSettings: async () => undefined,
+    status: async () => ({ granted: mocks.granted }),
+    openSettings: async () => undefined,
     queryForeground: async () => ({
       intervals: [
         { packageName: "com.netflix.mediaclient", start: Date.now() - 60_000, end: Date.now() },

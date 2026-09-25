@@ -223,7 +223,9 @@ DB는 정보 종류별로 나누지 않는다. 같은 서버가 모든 접속 �
 ## 폰 사용 기록과 여러 기기 사용 측정
 
 안드로이드 앱은 '사용 정보 접근'(PACKAGE_USAGE_STATS) 하나로 두 기능을 한다. 권한은 하나지만 저장하는
-곳이 달라 동의를 따로 받는다.
+곳이 달라 동의를 따로 받는다. 네이티브도 `UsageStatsPlugin` 하나이고 JS는 `lib/usage/native`로만 부른다 —
+날짜별 합계(`query`)와 구간(`queryForeground`)이 같은 이벤트 판단(`walkForeground`)을 쓰므로, 무엇이
+'앞에 있었다'인지를 고치면 두 기능에 함께 반영된다(예전에는 플러그인이 둘이라 잠금 화면을 한쪽만 닫았다).
 
 - **폰 사용 기록**(`UsageStatsPlugin` → `lib/usage`, 화면은 `components/usage/app`): 이 폰에서 구독 앱의
   날짜별 사용 시간과 쓴 횟수를 기기 안에만 쌓는다(400일). 서버·백업·동기화·익명 통계에 넣지 않는다. 체크인
@@ -240,7 +242,7 @@ DB는 정보 종류별로 나누지 않는다. 같은 서버가 모든 접속 �
 ### 여러 기기 사용 측정
 
 체크인(사용자가 센 횟수)과 별개로, 안드로이드 앱이 '사용 정보 접근'으로 서비스 앱이 화면 맨 앞에 있던
-구간을 재 로그인 계정에 올린다(`DeviceUsagePlugin` → `lib/device-usage-client` → `/api/usage`, 표
+구간을 재 로그인 계정에 올린다(`UsageStatsPlugin.queryForeground` → `lib/device-usage-client` → `/api/usage`, 표
 `usage_devices`·`usage_intervals`). 기기마다 자기 구간만 기간 단위로 통째로 바꿔 올리므로 기기끼리
 충돌하지 않고, 읽을 때 계정의 모든 기기 구간을 `linkSessions`(@subslash/shared)로 잇는다 — 앞 사용이
 끝나고 30분 안에 다시 쓰면 기기가 달라도 한 번, 1분 미만은 세지 않는다. 잴 수 있는 것은 '앱이 앞에
@@ -257,8 +259,9 @@ DB는 정보 종류별로 나누지 않는다. 같은 서버가 모든 접속 �
 헤더의 `useDeviceUsageUpload`가 올리고, 리포트(`MeasuredUsageSection`)와 구독 상세(`MeasuredUsageLine`)가
 `useAccountDeviceUsage`로 받아 보여 준다. 1회 단가 순위는 여전히 체크인으로 계산한다. 측정한 기기가 없으면
 숫자를 쓰지 않는다(0회가 아니라 모름). 매니페스트에 `PACKAGE_USAGE_STATS`가 있으므로, 이 빌드를 스토어에
-올리기 전에 Play Console의 데이터 보안 항목과 권한 신고서를 고친다. 플러그인을 async 함수에서 돌려줄 때는
-프록시를 보통 객체로 감싼다 — 프록시는 `then`도 네이티브 메서드로 만들어 `await`가 끝나지 않는다.
+올리기 전에 Play Console의 데이터 보안 항목과 권한 신고서를 고친다. 플러그인을 Promise로 넘길 때는
+프록시를 보통 객체로 감싼다(`lib/usage/native`의 `{ plugin }`) — 프록시는 `then`도 네이티브 메서드로 만들어
+`await`가 끝나지 않는다.
 
 ## 파일 경계
 
