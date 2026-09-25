@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-hooks/post-edit.mjs\"",
+            "timeout": 90,
+            "statusMessage": "고친 파일을 prettier·eslint로 확인하는 중"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-hooks/on-stop.mjs\"",
+            "timeout": 300,
+            "statusMessage": "타입 검사와 관련 테스트를 돌리는 중"
+          }
+        ]
+      }
+    ]
+  }
+}
