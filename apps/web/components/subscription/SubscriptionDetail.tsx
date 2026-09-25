@@ -19,6 +19,7 @@ import { SubForm } from "./SubForm";
 import { CheckInModal } from "./CheckInModal";
 import { CancelGuideModal } from "./CancelGuideModal";
 import { CheckInEvidence } from "./CheckInEvidence";
+import { MeasuredUsageLine } from "../usage/MeasuredUsage";
 import { RiskBadge } from "../dashboard/RiskBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button, WRAPPING_BUTTON } from "../ui/button";
@@ -404,6 +405,8 @@ export function SubscriptionDetail({
         </div>
 
         <CheckInEvidence logs={subLogs} currency={sub.currency} />
+
+        {!isKilled && <MeasuredUsageLine sub={sub} />}
 
         {subLogs.length === 0 ? (
           <div className="text-center py-10 border border-dashed rounded-xl text-xs text-muted-foreground">
