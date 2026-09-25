@@ -35,14 +35,26 @@ describe("validateSignup", () => {
       username: "sean_lee",
       email: "sean@gmail.com",
       password: "hunter2-hunter2",
+      age: null,
+      gender: null,
     });
   });
 
-  it("나이·성별은 가입 값에 들어가지 않는다", () => {
-    // 가입 단계의 칸을 줄이려고 '내 정보'로 옮겼다. 보내도 저장 값에 섞이지 않는다.
-    const { value } = validateSignup({ ...VALID, age: 30, gender: "male" } as never);
-    expect(value).not.toHaveProperty("age");
-    expect(value).not.toHaveProperty("gender");
+  it("나이·성별은 선택이다 — 비워도 통과하고, 적으면 '내 정보'와 같은 규칙으로 검사한다", () => {
+    // 필수로 받거나 비웠다고 가입을 막으면 개인정보 보호법 제16조(최소 수집)에 어긋난다.
+    expect(validateSignup({ ...VALID, age: "", gender: "" }).value).toMatchObject({
+      age: null,
+      gender: null,
+    });
+    expect(validateSignup({ ...VALID, age: "30", gender: "female" }).value).toMatchObject({
+      age: 30,
+      gender: "female",
+    });
+
+    const young = validateSignup({ ...VALID, age: 10 });
+    expect(young.value).toBeNull();
+    expect(young.errors.age).toBe(`만 ${MIN_AGE}세 이상만 이용할 수 있습니다.`);
+    expect(validateSignup({ ...VALID, gender: "robot" }).errors.gender).toBeDefined();
   });
 
   it(`만 ${MIN_AGE}세 이상 확인은 체크한 값(true)만 인정한다`, () => {

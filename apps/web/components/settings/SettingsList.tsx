@@ -6,14 +6,15 @@ import { useStore } from "@lib/store";
 import { isGmailAutoImportOpen } from "@lib/privacy";
 import { useLocalReminderSettings } from "@hooks/useLocalReminders";
 import { cn } from "@lib/utils";
-import { LocalReminderCard } from "../LocalReminderCard";
-import { DataBackupCard } from "../DataBackupCard";
-import { GoogleCalendarSync } from "../../calendar/GoogleCalendarSync";
-import { AppSheet } from "./AppSheet";
+import { IS_APP_BUILD } from "@lib/platform";
+import { LocalReminderCard } from "./LocalReminderCard";
+import { DataBackupCard } from "./DataBackupCard";
+import { GoogleCalendarSync } from "../calendar/GoogleCalendarSync";
+import { AppSheet } from "./app/AppSheet";
 
 type SheetKey = "reminder" | "calendar" | "backup";
 
-interface AppSettingsListProps {
+interface SettingsListProps {
   onMessage: (message: string) => void;
   /** 전체 초기화 확인 창을 연다. 확인 창과 삭제는 구독 관리 화면이 그대로 맡는다. */
   onClearAll: () => void;
@@ -25,14 +26,14 @@ function reminderSummary(enabled: boolean, daysBefore: number) {
 }
 
 /**
- * 앱의 구독 관리 화면 아래에 모은 설정 목록.
+ * 구독 관리 화면 아래에 모은 설정 목록(웹·앱).
  *
- * 웹은 알림·캘린더·백업을 설명이 긴 카드로 차례로 늘어놓는데, 휴대폰에서는 글이 너무 많아
- * 지저분해 보였다. 앱에서는 알림 / 연동 / 데이터로 묶어 한 줄 제목과 지금 상태만 보여주고,
- * 줄을 누르면 기존 카드를 시트에 그대로 연다. 위쪽 버튼 줄에서 혼자 작고 빨갛게 튀던 전체
- * 초기화는 데이터 묶음 맨 아래의 같은 크기 줄로 옮긴다.
+ * 예전 웹은 캘린더·백업을 설명이 긴 카드로 늘어놓고, 전체 초기화를 위쪽 버튼 줄에 혼자 빨갛게
+ * 두었다. 앱에서 먼저 바꾼 대로 알림 / 연동 / 데이터로 묶어 한 줄 제목과 지금 상태만 보여 주고,
+ * 줄을 누르면 기존 카드를 시트에 그대로 연다. 기기 결제 알림은 앱에만 있다(웹의 결제 알림 메일은
+ * 상단 종 아이콘에서 켠다).
  */
-export function AppSettingsList({ onMessage, onClearAll }: AppSettingsListProps) {
+export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
   const [sheet, setSheet] = useState<SheetKey | null>(null);
   const [reminder] = useLocalReminderSettings();
   const subscriptionCount = useStore((state) => state.subscriptions.length);
@@ -43,16 +44,18 @@ export function AppSettingsList({ onMessage, onClearAll }: AppSettingsListProps)
 
   return (
     <div className="space-y-4">
-      <Group title="알림">
-        <Row
-          icon={<Bell className="size-4" />}
-          title="이 기기 결제 알림"
-          detail="결제일 전에 이 휴대폰으로 알려요"
-          status={reminderSummary(reminder.enabled, reminder.daysBefore)}
-          statusOn={reminder.enabled}
-          onClick={() => setSheet("reminder")}
-        />
-      </Group>
+      {IS_APP_BUILD && (
+        <Group title="알림">
+          <Row
+            icon={<Bell className="size-4" />}
+            title="이 기기 결제 알림"
+            detail="결제일 전에 이 휴대폰으로 알려요"
+            status={reminderSummary(reminder.enabled, reminder.daysBefore)}
+            statusOn={reminder.enabled}
+            onClick={() => setSheet("reminder")}
+          />
+        </Group>
+      )}
 
       {calendarOpen && (
         <Group title="연동">
@@ -87,9 +90,11 @@ export function AppSettingsList({ onMessage, onClearAll }: AppSettingsListProps)
         )}
       </Group>
 
-      <AppSheet open={sheet === "reminder"} onClose={close} label="이 기기 결제 알림">
-        <LocalReminderCard onMessage={onMessage} />
-      </AppSheet>
+      {IS_APP_BUILD && (
+        <AppSheet open={sheet === "reminder"} onClose={close} label="이 기기 결제 알림">
+          <LocalReminderCard onMessage={onMessage} />
+        </AppSheet>
+      )}
       {calendarOpen && (
         <AppSheet open={sheet === "calendar"} onClose={close} label="구글 캘린더 연동">
           <GoogleCalendarSync />
@@ -132,7 +137,7 @@ function Row({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors active:bg-secondary"
+      className="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors hover:bg-muted/60 active:bg-secondary"
     >
       <span
         className={cn(

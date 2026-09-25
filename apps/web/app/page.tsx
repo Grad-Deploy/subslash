@@ -29,22 +29,9 @@ import { ServiceLogo } from "@components/subscription/ServiceLogo";
  * 순서대로 적는다. 앱이 대신 해주지 않는 일(해지 자체)은 대신 해준다고 쓰지 않는다.
  */
 const HOW_IT_WORKS = [
-  {
-    title: "구독 등록",
-    body: "서비스를 고르면 요금과 해지 방법이 채워져요.",
-  },
-  {
-    title: "한 달에 한 번 체크인",
-    body: "몇 번 썼는지 답하면 1회당 단가가 나와요.",
-  },
-  {
-    title: "해지 방법 안내",
-    body: "해지 화면이나 메뉴 경로를 알려 드려요. 해지는 서비스에서 직접 해요.",
-  },
-  {
-    title: "지킨 돈 기록",
-    body: "해지 후 결제가 멈춘 걸 확인하면 절약액으로 쌓여요.",
-  },
+  { title: "구독 고르기", body: "요금·해지 방법이 채워져요." },
+  { title: "한 달 사용 횟수 체크", body: "1회당 얼마인지 나와요." },
+  { title: "안 쓰면 해지", body: "해지 경로를 알려 드려요." },
 ] as const;
 
 export default function Home() {
@@ -103,7 +90,7 @@ export default function Home() {
                 <p className="font-bold text-sm">구독 중 {activeCount}개</p>
                 {killedCount > 0 && (
                   <p className="text-xs text-muted-foreground">
-                    해지한 {killedCount}개는 절약 현황에 있어요.
+                    해지한 {killedCount}개는 리포트에 있어요.
                   </p>
                 )}
               </>
@@ -111,7 +98,7 @@ export default function Home() {
               <>
                 <p className="font-bold text-sm">구독 중인 서비스 없음</p>
                 <p className="text-xs text-muted-foreground">
-                  해지한 {killedCount}개는 절약 현황에 있어요.
+                  해지한 {killedCount}개는 리포트에 있어요.
                 </p>
               </>
             )}
@@ -121,29 +108,12 @@ export default function Home() {
               대시보드 →
             </Button>
           ) : (
-            <Button onClick={() => router.push("/savings")} variant="default">
-              절약 현황 →
+            <Button onClick={() => router.push("/report")} variant="default">
+              리포트 →
             </Button>
           )}
         </div>
       )}
-
-      {/* SubSlash가 하는 일 */}
-      <section className="w-full space-y-4" aria-labelledby="how-it-works">
-        <h2 id="how-it-works" className="text-xl font-bold tracking-tight">
-          이렇게 써요
-        </h2>
-        <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {HOW_IT_WORKS.map((step, i) => (
-            <li key={step.title} className="space-y-2 rounded-2xl border bg-card p-5 shadow-sm">
-              {/* 순서는 1단계라는 글자가 말한다. 앞에 붙던 이모지는 같은 말을 되풀이했다. */}
-              <span className="text-xs font-semibold text-muted-foreground">{i + 1}단계</span>
-              <h3 className="text-base font-bold">{step.title}</h3>
-              <p className="text-xs leading-relaxed text-muted-foreground">{step.body}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
 
       {/* Quick Add Presets */}
       <section className="w-full space-y-3" aria-labelledby="quick-add">
@@ -166,6 +136,29 @@ export default function Home() {
             </button>
           ))}
         </div>
+      </section>
+
+      {/*
+        SubSlash가 하는 일. 처음 온 사람이 읽고 떠나지 않게 세 줄로 줄였다 — 예전에는 네 장의 카드에
+        설명 문장이 붙어 있었다. '바로 등록'을 위로 올려, 읽기 전에 누를 수 있게 한다.
+      */}
+      <section className="w-full space-y-3" aria-labelledby="how-it-works">
+        <h2 id="how-it-works" className="text-base font-bold tracking-tight">
+          이렇게 써요
+        </h2>
+        <ol className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {HOW_IT_WORKS.map((step, i) => (
+            <li key={step.title} className="flex items-center gap-3 rounded-2xl border bg-card p-4">
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                {i + 1}
+              </span>
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold">{step.title}</h3>
+                <p className="text-xs text-muted-foreground">{step.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* Subscription Form Modal */}

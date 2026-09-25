@@ -22,7 +22,6 @@ import {
   getSavingsTiers,
 } from "@subslash/shared";
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
-import { OnboardingTourCard } from "../../components/dashboard/OnboardingTourCard";
 import { ActionQueue } from "../../components/dashboard/ActionQueue";
 import { BillingCalendar } from "../../components/dashboard/BillingCalendar";
 import { MonthlyValueReport } from "../../components/dashboard/MonthlyValueReport";
@@ -128,12 +127,18 @@ export default function Dashboard() {
     setIsAddOpen(true);
   };
 
-  // 앱의 첫 사용 안내. 체험(샘플) 중에는 보이지 않는다 — 샘플은 사용자의 기록이 아니다.
-  const appStart = IS_APP_BUILD && !demo;
+  // 첫 사용 안내(서비스 고르기 → 첫 체크인). 웹과 앱이 같다. 체험(샘플) 중에는 보이지 않는다 —
+  // 샘플은 사용자의 기록이 아니다. 기기 알림 체크리스트는 앱에만 있다(알림이 기기 기능이라).
+  const startFlow = !demo;
+  const appStart = IS_APP_BUILD && startFlow;
+  const isEmpty = activeSubs.length === 0;
+  // 서비스 고르기는 기록이 하나도 없을 때만 띄운다. 해지한 구독만 남은 사람에게는 '결제가 멈췄나요'
+  // 같은 할 일이 남아 있어, 할 일 목록을 가리면 안 된다.
+  const isFirstVisit = isEmpty && killedSubs.length === 0;
   // 첫 체크인은 기록이 하나도 없을 때만, 가장 최근에 등록한 구독으로 묻는다. 그다음부터는
   // 할 일 목록(ActionQueue)이 체크인할 구독을 알려준다.
   const firstCheckInSub =
-    appStart && usageLogs.length === 0
+    startFlow && usageLogs.length === 0
       ? [...activeSubs].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
       : undefined;
 
@@ -220,14 +225,12 @@ export default function Dashboard() {
           <p className="text-sm text-muted-foreground">결정이 필요한 구독만 모았어요.</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* 앱에서 구독이 없을 때는 이 버튼들 대신 아래 빈 화면이 할 일을 보여준다. */}
-          {!(appStart && activeSubs.length === 0) && (
+          {/*
+            구독이 없을 때는 이 버튼들 대신 아래 서비스 고르기가 할 일 하나를 보여준다. 처음 온
+            사람에게 버튼 세 개와 안내 카드를 한꺼번에 내밀면 어디서 시작할지 모른다.
+          */}
+          {!(startFlow && isFirstVisit) && (
             <>
-              {activeSubs.length === 0 && (
-                <Button variant="outline" size="sm" onClick={handleLoadDemo}>
-                  샘플 불러오기
-                </Button>
-              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -262,9 +265,7 @@ export default function Dashboard() {
               }}
               onReminders={() => setReminderPromptSub(activeSubs[0] ?? null)}
             />
-          ) : (
-            <OnboardingTourCard onStartAdd={() => openAdd()} activeCount={activeSubs.length} />
-          )}
+          ) : null}
 
           {firstCheckInSub && (
             <FirstCheckInCard
@@ -280,13 +281,14 @@ export default function Dashboard() {
           )}
 
           {/* 지금 결정할 것 — 이 화면의 본체 */}
-          {appStart && activeSubs.length === 0 ? (
+          {startFlow && isFirstVisit ? (
             <AppServicePicker
               onPick={(preset) => openAdd({ preset })}
               onMore={() => openAdd()}
               onEmail={() => router.push("/import")}
               onCustom={() => openAdd({ custom: true })}
               onPaste={() => setIsAutoImportOpen(true)}
+              onSample={IS_APP_BUILD ? undefined : handleLoadDemo}
             />
           ) : (
             <ActionQueue
@@ -321,8 +323,13 @@ export default function Dashboard() {
 
         <aside className="space-y-4 lg:sticky lg:top-20" aria-label="이번 달 요약">
           {/* 지출 한 줄 */}
-          <TotalSpend subscriptions={activeSubs} />
-          <ExchangeRateNote />
+          {/* 구독이 없을 때 '월 고정지출 ₩0'은 할 일을 가리기만 한다. */}
+          {!isEmpty && (
+            <>
+              <TotalSpend subscriptions={activeSubs} />
+              <ExchangeRateNote />
+            </>
+          )}
 
           {/*
             절약 성과는 /savings가 전담한다. 여기서는 이번 달 실제로 막은 금액과
