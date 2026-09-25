@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useIsClient } from "@hooks/useIsClient";
+import { lockBodyScroll } from "@lib/scroll-lock";
 
 interface AppSheetProps {
   open: boolean;
@@ -29,11 +30,10 @@ export function AppSheet({ open, onClose, label, children }: AppSheetProps) {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockBodyScroll();
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
+      unlockScroll();
     };
   }, [open, onClose]);
 

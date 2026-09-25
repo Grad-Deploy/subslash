@@ -18,6 +18,16 @@ import { CostEfficiencyGauge } from "./CostEfficiencyGauge";
 import { cn } from "@lib/utils";
 import { openExternal } from "@lib/native";
 import { copyText } from "@lib/native";
+import { IS_APP_BUILD } from "@lib/platform";
+import dynamic from "next/dynamic";
+
+// 앱에서는 체크인 입력을 다른 앱 체크인(등록 직후·첫 체크인 카드)과 같은 단계 막대로 받는다.
+// 웹 사용자가 이 코드를 받지 않도록 앱 빌드에서만 불러온다.
+const AppUsageCountPicker = IS_APP_BUILD
+  ? dynamic(() => import("./app/AppUsageCountPicker").then((m) => m.AppUsageCountPicker), {
+      ssr: false,
+    })
+  : null;
 
 interface CheckInModalProps {
   subscription: Subscription;
@@ -98,49 +108,62 @@ export function CheckInModal({
 
         {!result ? (
           <div className="py-4 space-y-6">
-            <h3 className="text-base text-center font-medium leading-relaxed [overflow-wrap:anywhere]">
-              지난 30일 동안 <strong className="text-primary">{subscription.name}</strong>을(를)
-              <br />몇 번 썼나요?
-            </h3>
+            {AppUsageCountPicker ? (
+              <>
+                <h3 className="text-center text-base font-bold">최근 30일 동안 몇 번 썼어요?</h3>
+                <AppUsageCountPicker
+                  subscription={subscription}
+                  value={count}
+                  onChange={setCount}
+                />
+              </>
+            ) : (
+              <>
+                <h3 className="text-base text-center font-medium leading-relaxed [overflow-wrap:anywhere]">
+                  지난 30일 동안 <strong className="text-primary">{subscription.name}</strong>을(를)
+                  <br />몇 번 썼나요?
+                </h3>
 
-            <div className="flex items-center justify-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-11 w-11 rounded-xl text-lg font-bold"
-                onClick={() => setCount(Math.max(0, count - 1))}
-              >
-                -
-              </Button>
-              <Input
-                type="number"
-                className="w-24 text-center text-2xl font-black h-12 rounded-xl"
-                value={count}
-                onChange={(e) => setCount(Math.max(0, parseInt(e.target.value) || 0))}
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-11 w-11 rounded-xl text-lg font-bold"
-                onClick={() => setCount(count + 1)}
-              >
-                +
-              </Button>
-            </div>
+                <div className="flex items-center justify-center gap-4">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 rounded-xl text-lg font-bold"
+                    onClick={() => setCount(Math.max(0, count - 1))}
+                  >
+                    -
+                  </Button>
+                  <Input
+                    type="number"
+                    className="w-24 text-center text-2xl font-black h-12 rounded-xl"
+                    value={count}
+                    onChange={(e) => setCount(Math.max(0, parseInt(e.target.value) || 0))}
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 rounded-xl text-lg font-bold"
+                    onClick={() => setCount(count + 1)}
+                  >
+                    +
+                  </Button>
+                </div>
 
-            <div className="flex flex-wrap justify-center gap-2">
-              {presets.map((p) => (
-                <Button
-                  key={p}
-                  variant={count === p ? "default" : "outline"}
-                  size="sm"
-                  className="rounded-lg text-xs"
-                  onClick={() => setCount(p)}
-                >
-                  {p}회
-                </Button>
-              ))}
-            </div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {presets.map((p) => (
+                    <Button
+                      key={p}
+                      variant={count === p ? "default" : "outline"}
+                      size="sm"
+                      className="rounded-lg text-xs"
+                      onClick={() => setCount(p)}
+                    >
+                      {p}회
+                    </Button>
+                  ))}
+                </div>
+              </>
+            )}
 
             <Button
               className="w-full h-12 font-bold text-base rounded-xl"
