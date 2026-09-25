@@ -11,6 +11,7 @@ import { useStore } from "@lib/store";
 import { useMirrorSync } from "@hooks/useMirrorSync";
 import { useStatsContribution } from "@hooks/useStatsContribution";
 import { useAccountSync } from "@hooks/useAccountSync";
+import { useDeviceUsageUpload } from "@hooks/useDeviceUsageUpload";
 import { AccountSyncConflictDialog } from "../account/AccountSyncConflictDialog";
 import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
@@ -47,6 +48,8 @@ export function Header() {
   useMirrorSync();
   // 익명 통계에 참여한 기기면 구독이 바뀔 때 요약을 다시 보낸다.
   useStatsContribution();
+  // 이 기기에서 여러 기기 사용 측정을 켰으면 앱을 열 때·돌아올 때 잰 것을 계정에 올린다.
+  useDeviceUsageUpload();
   // 로그인한 기기끼리 구독 기록을 자동으로 맞춘다. 양쪽이 따로 바뀌었으면 어느 쪽을 쓸지 묻는다.
   const accountSync = useAccountSync();
 

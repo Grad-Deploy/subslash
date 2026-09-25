@@ -19,6 +19,7 @@ import { SubForm } from "./SubForm";
 import { CheckInModal } from "./CheckInModal";
 import { CancelGuideModal } from "./CancelGuideModal";
 import { CheckInEvidence } from "./CheckInEvidence";
+import { MeasuredUsageLine } from "../usage/MeasuredUsage";
 import { RiskBadge } from "../dashboard/RiskBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button, WRAPPING_BUTTON } from "../ui/button";
@@ -29,6 +30,15 @@ import { cn } from "@lib/utils";
 import { openExternal } from "@lib/native";
 import { ServiceLogo } from "./ServiceLogo";
 import { copyText } from "@lib/native";
+import { IS_APP_BUILD } from "@lib/platform";
+import dynamic from "next/dynamic";
+
+// 폰 사용 기록(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
+const AppUsageDetail = IS_APP_BUILD
+  ? dynamic(() => import("../usage/app/AppUsageDetail").then((m) => m.AppUsageDetail), {
+      ssr: false,
+    })
+  : null;
 
 interface SubscriptionDetailProps {
   id: string;
@@ -391,6 +401,8 @@ export function SubscriptionDetail({
         )}
       </div>
 
+      {AppUsageDetail && !isKilled && <AppUsageDetail subscription={sub} />}
+
       {/* Usage History / Check-In Logs */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -404,6 +416,8 @@ export function SubscriptionDetail({
         </div>
 
         <CheckInEvidence logs={subLogs} currency={sub.currency} />
+
+        {!isKilled && <MeasuredUsageLine sub={sub} />}
 
         {subLogs.length === 0 ? (
           <div className="text-center py-10 border border-dashed rounded-xl text-xs text-muted-foreground">
