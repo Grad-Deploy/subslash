@@ -38,7 +38,7 @@ import { IS_APP_BUILD } from "@lib/platform";
 import { useLocalReminderSettings } from "@hooks/useLocalReminders";
 import { ReminderPromptSheet } from "../../components/app-start/ReminderPromptSheet";
 import { findDuplicateSubscription } from "@lib/duplicate-subscription";
-import { APP_SUBS_SORT_LABEL, sortSubsForApp, type AppSubsSort } from "@lib/subs-order";
+import { sortSubsForApp, type AppSubsSort } from "@lib/subs-order";
 import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { isWideScreen } from "@lib/wide-screen";
@@ -120,6 +120,13 @@ const AppPhoneCheckInButton = IS_APP_BUILD
         import("../../components/usage/app/AppPhoneCheckInButton").then(
           (m) => m.AppPhoneCheckInButton,
         ),
+      { ssr: false },
+    )
+  : null;
+// 목록 개수와 순서 고르기(앱 전용). 카테고리 칩과 겹치지 않게 글자 버튼 + 시트.
+const AppSortSelect = IS_APP_BUILD
+  ? dynamic(
+      () => import("../../components/subscription/app/AppSortSelect").then((m) => m.AppSortSelect),
       { ssr: false },
     )
   : null;
@@ -541,24 +548,12 @@ export default function SubscriptionsPage() {
                 </div>
               ) : (
                 <>
-                  {IS_APP_BUILD && (
-                    <div className="flex gap-1.5" role="group" aria-label="순서">
-                      {(Object.keys(APP_SUBS_SORT_LABEL) as AppSubsSort[]).map((key) => (
-                        <button
-                          key={key}
-                          type="button"
-                          aria-pressed={appSort === key}
-                          onClick={() => setAppSort(key)}
-                          className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                            appSort === key
-                              ? "border-foreground bg-foreground text-background"
-                              : "text-muted-foreground"
-                          }`}
-                        >
-                          {APP_SUBS_SORT_LABEL[key]}
-                        </button>
-                      ))}
-                    </div>
+                  {AppSortSelect && (
+                    <AppSortSelect
+                      count={filteredActive.length}
+                      value={appSort}
+                      onChange={setAppSort}
+                    />
                   )}
                   {view === "table" && (
                     <div className="hidden md:block">
