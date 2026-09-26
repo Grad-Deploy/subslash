@@ -247,6 +247,7 @@ function ValueTiles({ view, usage }: { view: MetricView; usage: SubUsage }) {
                     : `최근 ${days}일 동안 안 썼어요`
                 : measured}
             {style && !view.short && view.unitKRW !== null && ` · ${style.label}`}
+            {view.pendingDays > 0 && ` · 평가까지 ${view.pendingDays}일`}
           </p>
         </div>
         <div className="rounded-2xl bg-secondary/60 px-3 py-2.5">
