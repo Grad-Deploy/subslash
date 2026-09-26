@@ -10,6 +10,7 @@ import {
   type Subscription,
   type SubscriptionCategory,
   type SubscriptionFormData,
+  coveredServices,
 } from "@subslash/shared";
 import { apiFetch, readApiError } from "./api";
 
@@ -207,7 +208,20 @@ export function planDiscoveries(
       plan.chargedAfterKill.push({ subscriptionId: killed.id, discovery });
     }
 
-    if (discovery.tier === "auto" && matches.length === 0) {
+    // 결합 상품으로 이미 받는 서비스의 영수증이다(배민클럽 + 유튜브 프리미엄을 쓰는데 유튜브 프리미엄
+    // 영수증이 왔다). 두 번 내고 있다는 증거일 수 있어 조용히 등록하지 않고 확인 목록에 둔다.
+    // 자기 자신(같은 서비스)은 위에서 걸렀다. 결합 상품이 '포함'하는 서비스만 본다.
+    const coveredByBundle =
+      discovery.presetId !== null &&
+      subscriptions.some(
+        (sub) =>
+          sub.status === "active" &&
+          coveredServices(sub)
+            .slice(1)
+            .includes(discovery.presetId as string),
+      );
+
+    if (discovery.tier === "auto" && matches.length === 0 && !coveredByBundle) {
       plan.register.push(discovery);
     } else {
       plan.review.push(discovery);

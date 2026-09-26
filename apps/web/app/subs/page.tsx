@@ -792,6 +792,7 @@ export default function SubscriptionsPage() {
       {duplicate && AppDuplicateDialog && (
         <AppDuplicateDialog
           existing={duplicate.existing}
+          candidate={duplicate.data}
           onCancel={() => setDuplicate(null)}
           onAddAnyway={() => {
             const data = duplicate.data;
