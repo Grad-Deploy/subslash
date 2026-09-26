@@ -9,7 +9,7 @@ import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import { firstRecordedDay, formatDuration, monthlyTotals } from "@lib/usage/history";
-import { ALL_USAGE_PACKAGES, packagesFor } from "@lib/usage/packages";
+import { ALL_USAGE_PACKAGES, packageBreakdown, packagesFor } from "@lib/usage/packages";
 import {
   LEVEL_STYLE,
   RANGE_DAYS,
@@ -34,11 +34,11 @@ const SORT_LABEL: Record<SortKey, string> = {
 /** 잰 것 → 안 쓴 것 → 앱 없음/기록 없음 순. 같은 무리 안에서는 고른 기준으로. */
 function compare(sort: SortKey) {
   const group = (u: SubUsage) =>
-    u.state !== "measured" ? 2 : u.totals.opens === 0 && u.totals.ms === 0 ? 1 : 0;
+    u.state !== "measured" ? 2 : u.totals.opens === 0 && u.totals.usedMs === 0 ? 1 : 0;
   return (a: SubUsage, b: SubUsage) => {
     const g = group(a) - group(b);
     if (g !== 0) return g;
-    if (sort === "time") return b.totals.ms - a.totals.ms;
+    if (sort === "time") return b.totals.usedMs - a.totals.usedMs;
     if (sort === "opens") return b.totals.opens - a.totals.opens;
     return (b.hourlyKRW ?? -1) - (a.hourlyKRW ?? -1);
   };
@@ -105,14 +105,14 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
   }
 
   const measured = usages.filter((u) => u.state === "measured");
-  const totalMs = measured.reduce((sum, u) => sum + u.totals.ms, 0);
+  const totalMs = measured.reduce((sum, u) => sum + u.totals.usedMs, 0);
   const totalOpens = measured.reduce((sum, u) => sum + u.totals.opens, 0);
-  const maxMs = Math.max(1, ...measured.map((u) => u.totals.ms));
+  const maxMs = Math.max(1, ...measured.map((u) => u.totals.usedMs));
   const covered = Math.max(0, ...usages.map((u) => u.totals.coveredDays));
   const since = firstRecordedDay(history);
   const unmappedCount = active.length - mapped.length;
   const hasYear = months.some((m) => m.totals.coveredDays > 0);
-  const maxMonthMs = Math.max(1, ...months.map((m) => m.totals.ms));
+  const maxMonthMs = Math.max(1, ...months.map((m) => m.totals.usedMs));
 
   const detail = (
     <section className="space-y-4 pt-1" aria-labelledby="usage-heading">
@@ -176,18 +176,26 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
                         ? "이 폰에 앱이 없어요"
                         : u.state === "no-data"
                           ? "이 기간에는 기록이 없어요"
-                          : u.totals.opens === 0 && u.totals.ms === 0
+                          : u.totals.opens === 0 && u.totals.usedMs === 0
                             ? "0회 · 이 폰에서는 안 열었어요"
-                            : `${u.totals.opens}회 · ${formatDuration(u.totals.ms)}`}
+                            : `${u.totals.opens}회 · ${formatDuration(u.totals.usedMs)}`}
                     </p>
-                    {u.state === "measured" && u.totals.ms > 0 && (
+                    {u.state === "measured" &&
+                      packageBreakdown(packagesFor(u.sub) ?? [], u.totals.byPackage).length > 0 && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {packageBreakdown(packagesFor(u.sub) ?? [], u.totals.byPackage)
+                            .map((row) => `${row.label} ${formatDuration(row.usedMs)}`)
+                            .join(" · ")}
+                        </p>
+                      )}
+                    {u.state === "measured" && u.totals.usedMs > 0 && (
                       <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
                         <div
                           className={cn(
                             "h-full rounded-full",
                             u.level ? LEVEL_STYLE[u.level].bar : "bg-muted-foreground/40",
                           )}
-                          style={{ width: `${Math.max(3, (u.totals.ms / maxMs) * 100)}%` }}
+                          style={{ width: `${Math.max(3, (u.totals.usedMs / maxMs) * 100)}%` }}
                         />
                       </div>
                     )}
@@ -222,7 +230,7 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
                 {m.totals.coveredDays > 0 ? (
                   <div
                     className="w-full rounded-t-md bg-foreground/80"
-                    style={{ height: `${Math.max(2, (m.totals.ms / maxMonthMs) * 100)}%` }}
+                    style={{ height: `${Math.max(2, (m.totals.usedMs / maxMonthMs) * 100)}%` }}
                   />
                 ) : (
                   <div className="h-1 w-full rounded-full border border-dashed border-border" />
@@ -234,7 +242,8 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
           <ul className="sr-only">
             {months.map((m) => (
               <li key={m.month}>
-                {m.label}: {m.totals.coveredDays > 0 ? formatDuration(m.totals.ms) : "기록 없음"}
+                {m.label}:{" "}
+                {m.totals.coveredDays > 0 ? formatDuration(m.totals.usedMs) : "기록 없음"}
               </li>
             ))}
           </ul>
@@ -264,12 +273,12 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
  */
 function UsageCard({ usages, onOpen }: { usages: SubUsage[]; onOpen: () => void }) {
   const covered = Math.max(0, ...usages.map((u) => u.totals.coveredDays));
-  const totalMs = usages.reduce((sum, u) => sum + u.totals.ms, 0);
+  const totalMs = usages.reduce((sum, u) => sum + u.totals.usedMs, 0);
   const totalOpens = usages.reduce((sum, u) => sum + u.totals.opens, 0);
-  const top = [...usages].sort((a, b) => b.totals.ms - a.totals.ms).slice(0, 3);
-  const maxMs = Math.max(1, ...top.map((u) => u.totals.ms));
-  const pricey = usages.filter((u) => u.level === "red" && u.totals.ms > 0).length;
-  const unused = usages.filter((u) => u.totals.opens === 0 && u.totals.ms === 0).length;
+  const top = [...usages].sort((a, b) => b.totals.usedMs - a.totals.usedMs).slice(0, 3);
+  const maxMs = Math.max(1, ...top.map((u) => u.totals.usedMs));
+  const pricey = usages.filter((u) => u.level === "red" && u.totals.usedMs > 0).length;
+  const unused = usages.filter((u) => u.totals.opens === 0 && u.totals.usedMs === 0).length;
 
   return (
     <button
@@ -306,7 +315,7 @@ function UsageCard({ usages, onOpen }: { usages: SubUsage[]; onOpen: () => void 
             </span>
           </span>
 
-          {top.some((u) => u.totals.ms > 0) && (
+          {top.some((u) => u.totals.usedMs > 0) && (
             <span className="mt-3 grid gap-2">
               {top.map((u) => (
                 <span
@@ -321,19 +330,19 @@ function UsageCard({ usages, onOpen }: { usages: SubUsage[]; onOpen: () => void 
                         u.level ? LEVEL_STYLE[u.level].bar : "bg-muted-foreground/40",
                       )}
                       style={{
-                        width: `${u.totals.ms > 0 ? Math.max(3, (u.totals.ms / maxMs) * 100) : 0}%`,
+                        width: `${u.totals.usedMs > 0 ? Math.max(3, (u.totals.usedMs / maxMs) * 100) : 0}%`,
                       }}
                     />
                   </span>
                   <span
                     className={cn(
                       "text-[11px] font-semibold",
-                      u.level && u.totals.ms > 0
+                      u.level && u.totals.usedMs > 0
                         ? LEVEL_STYLE[u.level].text
                         : "text-muted-foreground",
                     )}
                   >
-                    {u.totals.ms === 0 && u.totals.opens === 0
+                    {u.totals.usedMs === 0 && u.totals.opens === 0
                       ? "안 씀"
                       : u.level
                         ? LEVEL_STYLE[u.level].label
@@ -369,7 +378,7 @@ function UsageCard({ usages, onOpen }: { usages: SubUsage[]; onOpen: () => void 
 
 function UsageValue({ usage }: { usage: SubUsage }) {
   if (usage.state !== "measured") return null;
-  if (usage.totals.opens === 0 && usage.totals.ms === 0) {
+  if (usage.totals.opens === 0 && usage.totals.usedMs === 0) {
     return <span className="shrink-0 text-xs font-semibold text-muted-foreground">안 씀</span>;
   }
   return (

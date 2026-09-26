@@ -6,6 +6,7 @@ import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
 import { formatKillCheckDate, getKillCheckStatus } from "./killCheck";
 import { getLowUsageBillingMessage } from "./metaphor";
+import { describeCheckIn } from "./valueMetric";
 
 /**
  * 대시보드의 행동 큐.
@@ -213,7 +214,8 @@ export function getActionQueue(
     const stake = days === null ? null : chargeAtStakeKRW(sub, rate);
     // 체크인의 1회당 단가는 구독 자체의 통화로 기록된다. 달러 구독에 ₩를
     // 붙이면 $10이 "₩10"으로 읽힌다.
-    const perUse = log ? formatAmount(log.costPerUse, sub.currency) : "";
+    // 마지막 체크인 한 줄. 지표마다 말이 다르다('3회 이용 · 1회당 ₩5,000', '30일 중 2일 사용 · 하루당 …').
+    const checkInText = log ? describeCheckIn(log, sub.currency) : "";
 
     let kind: ActionKind;
     let reason: string;
@@ -226,13 +228,15 @@ export function getActionQueue(
     if (billingSoon && isRisky) {
       kind = "billing-soon-risky";
       reason =
-        `${formatDday(days!)} · 마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${perUse})` +
+        `${formatDday(days!)} · 마지막 체크인: ${checkInText}` +
         (stake !== null ? `. 결제 전에 끊으면 ${formatKRW(stake)}을 지킵니다.` : ".");
     } else if (
       billingSoon &&
       days !== null &&
       days <= 3 &&
       log &&
+      // 비유 문구가 '이번 달 N회'로 말하므로 횟수 체크인에만 쓴다.
+      (log.metric ?? "uses") === "uses" &&
       log.usageCount <= 2 &&
       !isRisky
     ) {
@@ -252,7 +256,7 @@ export function getActionQueue(
         `등록된 청구액은 ${formatAmount(getBilledAmount(sub), sub.currency)}입니다. 어느 쪽이 맞는지 확인해 주세요.`;
     } else if (isRisky) {
       kind = "risky";
-      reason = `마지막 체크인에서 ${log!.usageCount}회 사용 (1회당 ${perUse}). 돈값을 못 하고 있습니다.`;
+      reason = `마지막 체크인: ${checkInText}. 돈값을 못 하고 있습니다.`;
     } else if (sub.billingCycle === "yearly" && typeof sub.billingMonth !== "number") {
       kind = "missing-billing-month";
       reason = "연간 결제인데 결제 월이 없어 D-day도, 지킨 금액도 계산할 수 없습니다.";

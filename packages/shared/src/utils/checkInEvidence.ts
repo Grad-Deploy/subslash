@@ -1,6 +1,6 @@
 import type { UsageLog } from "../types";
 
-type CheckInLog = Pick<UsageLog, "usageCount" | "costPerUse" | "checkedAt">;
+type CheckInLog = Pick<UsageLog, "usageCount" | "costPerUse" | "checkedAt" | "metric">;
 
 /** 평균을 낼 최근 체크인 수. */
 export const CHECK_IN_EVIDENCE_WINDOW = 3;
@@ -59,9 +59,13 @@ export function getCheckInEvidence<T extends CheckInLog>(logs: T[]): CheckInEvid
     })
     .map(({ log }) => log);
 
-  const recent = ordered.slice(0, CHECK_IN_EVIDENCE_WINDOW);
+  // 재는 것이 바뀐 적이 있으면(예전 횟수 체크인 → 시간) 최근 것과 같은 지표끼리만 평균·비교한다.
+  // 12회와 12시간을 한 평균에 넣으면 어느 쪽의 사실도 아니다.
+  const metricOf = (log: CheckInLog) => log.metric ?? "uses";
+  const sameMetric = ordered.filter((log) => metricOf(log) === metricOf(ordered[0]));
+  const recent = sameMetric.slice(0, CHECK_IN_EVIDENCE_WINDOW);
   const averageUsage = recent.reduce((sum, log) => sum + log.usageCount, 0) / recent.length;
-  const [latest, previous] = ordered;
+  const [latest, previous] = sameMetric;
 
   if (!previous) return { recent, averageUsage, latest, change: null };
 

@@ -10,9 +10,12 @@ import type {
   LinkedAccount,
 } from "@subslash/shared";
 import {
-  calculateCostPerUse,
-  getRiskLevel,
-  formatShockMessage,
+  clampQuantity,
+  evaluateMetric,
+  metricForSubscription,
+  type ValueMetric,
+  type OrderCount,
+  findPresetForSubscription,
   getMyMonthlyShareAmount,
   sumMonthlyKRW,
   sumMyMonthlyKRW,
@@ -325,8 +328,22 @@ interface SubSlashStore {
    * 요금을 확인해 주거나 금액을 고치면 지워진다.
    */
   markObservedAmount: (id: string, receiptDate: string, amount: number) => void;
+  /**
+   * Gmail 가져오기에서 센 멤버십 주문 메일 수를 그 멤버십 구독에 적는다(utils/orderEvidence). 혜택 금액을
+   * 적을 때 옆에 보이는 근거일 뿐 체크인이 아니다. 체험 중에는 적지 않는다(화면의 목록이 샘플이다).
+   */
+  recordOrderEvidence: (counts: OrderCount[]) => void;
   deleteSubscription: (id: string) => void;
-  checkIn: (subscriptionId: string, usageCount: number) => CheckInResponse;
+  /**
+   * 체크인을 적는다. `source: "phone"`은 폰 사용 기록으로 자동으로 적는 것이고(useAutoCheckIn만
+   * 부른다), `replaceLogId`를 주면 새 줄을 더하지 않고 그 줄을 바꾼다 — 같은 달의 자동 체크인을
+   * 날마다 새로 쌓지 않으려는 것이다.
+   */
+  checkIn: (
+    subscriptionId: string,
+    usageCount: number,
+    options?: { source?: "phone"; replaceLogId?: string; metric?: ValueMetric },
+  ) => CheckInResponse;
   getActiveSubscriptions: () => Subscription[];
   getKilledSubscriptions: () => Subscription[];
   getDashboardStats: () => DashboardStats;
@@ -545,6 +562,20 @@ export const useStore = create<SubSlashStore>()(
           ),
         }));
       },
+      recordOrderEvidence: (counts) => {
+        if (get().demo || counts.length === 0) return;
+        const checkedAt = new Date().toISOString();
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) => {
+            if (sub.status !== "active" || sub.currency !== "KRW") return sub;
+            const presetId = findPresetForSubscription(sub)?.id;
+            const found = counts.find((count) => count.presetId === presetId);
+            return found
+              ? { ...sub, orderEvidence: { count: found.count, since: found.since, checkedAt } }
+              : sub;
+          }),
+        }));
+      },
       markObservedAmount: (id, receiptDate, amount) => {
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
@@ -585,7 +616,7 @@ export const useStore = create<SubSlashStore>()(
           usageLogs: state.usageLogs.filter((log) => log.subscriptionId !== id),
         }));
       },
-      checkIn: (subscriptionId, usageCount) => {
+      checkIn: (subscriptionId, usageCount, options) => {
         const state = get();
         const sub = state.subscriptions.find((s) => s.id === subscriptionId);
         if (!sub) throw new Error("Subscription not found");
@@ -595,9 +626,17 @@ export const useStore = create<SubSlashStore>()(
         // pays. Feeding it the raw `amount` reported a yearly plan's per-use
         // cost twelve times too high, and ignored every shared plan's split.
         const monthlyShare = getMyMonthlyShareAmount(sub);
-        const costPerUse = calculateCostPerUse(monthlyShare, usageCount);
-        const riskLevel = getRiskLevel(costPerUse, monthlyShare, usageCount);
-        const shockMessage = formatShockMessage(sub.name, monthlyShare, usageCount, sub.currency);
+        // 무엇을 세었는지는 구독마다 다르다(음악은 시간, 멤버십은 혜택 금액 — utils/valueMetric). 부르는
+        // 쪽이 다른 지표로 물었으면(메일의 'N회' 버튼) 그 지표를 넘긴다.
+        const metric = options?.metric ?? metricForSubscription(sub);
+        const quantity = clampQuantity(metric, usageCount);
+        const { costPerUse, riskLevel, shockMessage } = evaluateMetric(
+          metric,
+          sub.name,
+          monthlyShare,
+          quantity,
+          sub.currency,
+        );
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -605,13 +644,24 @@ export const useStore = create<SubSlashStore>()(
           id: crypto.randomUUID(),
           subscriptionId,
           month: monthStr,
-          usageCount,
+          usageCount: quantity,
           costPerUse,
           riskLevel,
           checkedAt: now.toISOString(),
+          // 횟수는 적지 않는다 — 이 기능 전의 기록과 같은 모양으로 남아 예전 앱도 읽는다.
+          ...(metric !== "uses" ? { metric } : {}),
+          ...(options?.source ? { source: options.source } : {}),
         };
 
-        set((s) => ({ usageLogs: [...s.usageLogs, newLog] }));
+        const replaceId = options?.replaceLogId;
+        set((s) => ({
+          usageLogs:
+            replaceId && s.usageLogs.some((log) => log.id === replaceId)
+              ? s.usageLogs.map((log) =>
+                  log.id === replaceId ? { ...newLog, id: replaceId } : log,
+                )
+              : [...s.usageLogs, newLog],
+        }));
         return { shockMessage, riskLevel, costPerUse };
       },
       getActiveSubscriptions: () => {

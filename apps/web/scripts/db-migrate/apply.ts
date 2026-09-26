@@ -90,6 +90,12 @@ const MIGRATIONS: Migration[] = [
         : { state: "applied", detail: "이메일 인덱스가 일반 인덱스" };
     },
   },
+  {
+    id: "0014",
+    file: "0014_social_login.sql",
+    check: (schema) =>
+      tablesState(schema, ["account_identities", "oauth_app_claims"], ["accounts"]),
+  },
 ];
 
 const STATE_LABEL: Record<State, string> = {

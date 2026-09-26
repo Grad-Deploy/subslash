@@ -178,6 +178,49 @@ export const accounts = sqliteTable(
 );
 
 /**
+ * 구글·카카오·네이버 계정으로 로그인(lib/oauth). 한 SubSlash 계정에 제공자 계정을 잇는다.
+ *
+ * 제공자의 회원 번호는 되돌릴 수 없는 해시(`subjectHash`, 제공자 이름을 섞은 SHA-256)로만 둔다 —
+ * 로그인할 때 같은 사람인지 알아보는 데만 쓰고, 번호 자체가 필요한 일은 없다. 제공자에게서 받는
+ * 이메일은 계정(accounts.email)에만 적는다.
+ */
+export const accountIdentities = sqliteTable(
+  "account_identities",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** google | kakao | naver */
+    provider: text("provider").notNull(),
+    subjectHash: text("subject_hash").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (table) => ({
+    subjectIdx: uniqueIndex("account_identities_subject_idx").on(table.provider, table.subjectHash),
+    accountIdx: index("account_identities_account_idx").on(table.accountId),
+  }),
+);
+
+/**
+ * 앱(Capacitor)의 소셜 로그인 넘겨받기. 앱은 인앱 브라우저에서 로그인하므로 쿠키가 앱으로 오지
+ * 않는다. 앱이 비밀값(verifier)을 만들고 그 해시(`challenge`)만 주소에 실어 보내면, 로그인을 마친
+ * 서버가 challenge에 계정을 적어 두고, 앱이 돌아와 verifier를 내밀 때 세션을 만든다(PKCE와 같은
+ * 방식). 세션 토큰은 여기 두지 않는다. 한 번 쓰면 지우고, 10분이 지나면 쓸 수 없다.
+ */
+export const oauthAppClaims = sqliteTable("oauth_app_claims", {
+  challenge: text("challenge").primaryKey(),
+  accountId: text("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  createdAt: text("created_at").notNull(),
+});
+
+export type AccountIdentity = typeof accountIdentities.$inferSelect;
+
+/**
  * 계정 메일(가입 확인·비밀번호 재설정)을 보낸 기록. 주소마다 보내는 횟수를 제한하는
  * 데만 쓴다. 두 메일이 한도를 함께 쓴다 — 어느 쪽이든 한 사람의 받은편지함과 같은
  * Resend 한도를 쓴다. 테이블 이름은 가입 확인 메일만 있던 때의 것이다.

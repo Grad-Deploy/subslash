@@ -2,7 +2,12 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { parseReceiptEmails, type DiscoveredSubscription } from "@subslash/shared";
+import {
+  countMembershipOrders,
+  parseReceiptEmails,
+  type DiscoveredSubscription,
+} from "@subslash/shared";
+import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
 import { webUrl } from "@lib/api";
 import {
@@ -134,9 +139,12 @@ export default function ImportPage() {
     // 메일 내용이 주소창과 방문 기록에 남지 않게 곧바로 지운다.
     window.history.replaceState(null, "", window.location.pathname);
     decodeGmailImport(hash.slice(GMAIL_HASH_PREFIX.length))
-      .then((emails) =>
-        setState({ kind: "ready", emailCount: emails.length, items: parseReceiptEmails(emails) }),
-      )
+      .then((emails) => {
+        // 멤버십 혜택을 적을 때 볼 근거(최근 30일 주문 메일 수)를 이미 등록한 멤버십에 적는다. 메일
+        // 내용은 여기서만 읽고 수만 남긴다.
+        useStore.getState().recordOrderEvidence(countMembershipOrders(emails, new Date()));
+        setState({ kind: "ready", emailCount: emails.length, items: parseReceiptEmails(emails) });
+      })
       .catch((error: unknown) =>
         setState({
           kind: "error",

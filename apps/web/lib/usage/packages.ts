@@ -51,3 +51,25 @@ export function packagesFor(sub: Subscription): readonly string[] | null {
   const preset = findPresetForSubscription(sub);
   return (preset && USAGE_PACKAGES[preset.id]) ?? null;
 }
+
+/**
+ * 앱이 여럿인 구독에서 앱을 나눠 보여 줄 때의 이름. 여기 없는 앱은 서비스 이름으로 보인다(나눌 일이 없다).
+ */
+export const PACKAGE_LABELS: Readonly<Record<string, string>> = {
+  "com.google.android.youtube": "유튜브",
+  "com.google.android.apps.youtube.music": "유튜브 뮤직",
+};
+
+/** 구독의 앱별 사용 시간을 보여 줄 줄들. 앱이 하나뿐이면 빈 배열(나눌 것이 없다). */
+export function packageBreakdown(
+  packages: readonly string[],
+  byPackage: Record<string, { usedMs: number; opens: number }>,
+): { pkg: string; label: string; usedMs: number; opens: number }[] {
+  if (packages.length < 2) return [];
+  return packages.map((pkg) => ({
+    pkg,
+    label: PACKAGE_LABELS[pkg] ?? pkg,
+    usedMs: byPackage[pkg]?.usedMs ?? 0,
+    opens: byPackage[pkg]?.opens ?? 0,
+  }));
+}

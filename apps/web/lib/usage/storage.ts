@@ -80,3 +80,18 @@ export function readSnooze(): SnoozeMap {
     return {};
   }
 }
+
+export const AUTO_CHECKIN_KEY = "subslash-usage-auto-checkin";
+
+/**
+ * 폰 기록으로 자동 체크인할지. 기기마다 다르다(폰 기록이 이 기기의 것이라). 켜 두는 것이 기본이다 —
+ * '사용 기록 액세스'를 허용한 것이 이미 폰 기록을 쓰겠다는 뜻이고, 적는 숫자는 기기 안의 체크인
+ * 기록에만 들어간다.
+ */
+export function readAutoCheckIn(): boolean {
+  return readLocal(AUTO_CHECKIN_KEY) !== "off";
+}
+
+export function writeAutoCheckIn(on: boolean): void {
+  writeDeviceValue(AUTO_CHECKIN_KEY, on ? "on" : "off");
+}

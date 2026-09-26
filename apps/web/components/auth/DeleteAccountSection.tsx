@@ -46,6 +46,8 @@ export function DeleteAccountSection() {
   }
 
   if (loading || !account) return null;
+  // 소셜 로그인으로만 가입한 계정은 비밀번호가 없어, 서버가 비밀번호 대신 확인 글자를 받는다.
+  const noPassword = account.hasPassword === false;
 
   const submit = async () => {
     setDeleting(true);
@@ -54,11 +56,16 @@ export function DeleteAccountSection() {
       const res = await apiFetch("/api/auth/account", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify(noPassword ? { confirmText: password } : { password }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data?.fieldErrors?.password ?? data?.error ?? "탈퇴를 처리하지 못했습니다.");
+        setError(
+          data?.fieldErrors?.password ??
+            data?.fieldErrors?.confirmText ??
+            data?.error ??
+            "탈퇴를 처리하지 못했습니다.",
+        );
         return;
       }
       // 먼저 '탈퇴했습니다'로 바꾼 뒤 로그인 상태를 다시 묻는다. 순서가 바뀌면 계정이
@@ -104,19 +111,19 @@ export function DeleteAccountSection() {
         onSubmit={(event) => {
           event.preventDefault();
           if (!password) {
-            setError("비밀번호를 입력해주세요.");
+            setError(noPassword ? "'탈퇴'를 입력해주세요." : "비밀번호를 입력해주세요.");
             return;
           }
           setConfirmOpen(true);
         }}
       >
         <label htmlFor="delete-password" className="text-xs font-bold text-foreground">
-          비밀번호 확인
+          {noPassword ? "확인을 위해 '탈퇴'를 입력하세요" : "비밀번호 확인"}
         </label>
         <Input
           id="delete-password"
-          type="password"
-          autoComplete="current-password"
+          type={noPassword ? "text" : "password"}
+          autoComplete={noPassword ? "off" : "current-password"}
           value={password}
           onChange={(e) => {
             setPassword(e.target.value);

@@ -90,6 +90,13 @@ export interface Subscription {
   observedAmountAt?: string;
 
   /**
+   * 멤버십 혜택을 적을 때 기댈 근거: Gmail 가져오기에서 찾은 최근 30일 주문 메일 수
+   * (utils/orderEvidence). 가져온 메일 안에서 센 것이라 **최소**이고, 금액으로 바꾸지 않는다 — 주문마다
+   * 받은 혜택(배송비·할인)은 사용자가 안다. 다시 가져오면 바뀐다.
+   */
+  orderEvidence?: { count: number; since: string; checkedAt: string };
+
+  /**
    * 사용자가 "이 금액이 지금도 맞다"고 마지막으로 확인해 준 시각.
    *
    * 없으면 등록 이후 한 번도 확인한 적이 없다는 뜻이다. 앱은 이 값을
@@ -140,6 +147,7 @@ export type SubscriptionFormData = Omit<
   | "chargedAfterKillAmount"
   | "observedAmount"
   | "observedAmountAt"
+  | "orderEvidence"
 >;
 
 export type EmailType = "payment" | "cancellation" | "refund" | "onetime";

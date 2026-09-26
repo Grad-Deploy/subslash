@@ -6,7 +6,7 @@ import {
   UsageLog,
   getMonthlyValueSummary,
   formatKRW,
-  formatCurrency,
+  describeCheckIn,
 } from "@subslash/shared";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { Button } from "../ui/button";
@@ -61,8 +61,7 @@ export function MonthlyValueReport({
                 >
                   <span>{item.sub.name}</span>
                   <span>
-                    (회당{" "}
-                    {item.costPerUse ? formatCurrency(item.costPerUse, item.sub.currency) : "₩0"})
+                    ({item.log ? describeCheckIn(item.log, item.sub.currency) : "기록 없음"})
                   </span>
                 </div>
               ))}

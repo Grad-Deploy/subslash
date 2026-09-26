@@ -16,6 +16,8 @@ import {
   isShared,
   sumMonthlyKRW,
   sumMyMonthlyKRW,
+  describeCheckIn,
+  metricOfLog,
 } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { useIsClient } from "@hooks/useIsClient";
@@ -71,6 +73,8 @@ function wasteOrder(items: ValueReportItem[], firstId: string): string[] {
 function detail(item: ValueReportItem): string {
   if (item.status === "unknown") return "얼마나 썼는지 몰라요";
   const count = item.log?.usageCount ?? 0;
+  if (!item.log) return "얼마나 썼는지 몰라요";
+  if (metricOfLog(item.log) !== "uses") return describeCheckIn(item.log, item.sub.currency);
   if (count === 0) return "이번 달 미사용";
   return `${count}회 · 회당 ${spaced(formatCurrency(item.costPerUse ?? 0, item.sub.currency))}`;
 }

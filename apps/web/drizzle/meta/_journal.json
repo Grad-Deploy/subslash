@@ -99,6 +99,13 @@
       "when": 1790312238773,
       "tag": "0013_notify_email_not_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1790392449553,
+      "tag": "0014_social_login",
+      "breakpoints": true
     }
   ]
 }
