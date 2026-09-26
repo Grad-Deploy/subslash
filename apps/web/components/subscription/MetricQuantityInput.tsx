@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
+import dynamic from "next/dynamic";
 import {
   METRIC_SPECS,
   type Subscription,
@@ -11,8 +12,16 @@ import {
   getMyMonthlyShareAmount,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
+import { IS_APP_BUILD } from "@lib/platform";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+
+// 폰 기록 한 줄(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
+const AppPhoneMetricHint = IS_APP_BUILD
+  ? dynamic(() => import("../usage/app/AppPhoneMetricHint").then((m) => m.AppPhoneMetricHint), {
+      ssr: false,
+    })
+  : null;
 
 /** 빠른 선택 버튼의 글자. 혜택은 '1만'처럼 줄인다. */
 function presetLabel(metric: ValueMetric, value: number): string {
@@ -53,7 +62,23 @@ export function MetricQuantityInput({
           quantity,
           subscription.currency,
         );
-  const set = (next: number) => onChange(clampQuantity(metric, next));
+  // 사용자가 손댄 뒤에는 폰 기록으로 덮지 않는다.
+  const touched = useRef(false);
+  const set = (next: number) => {
+    touched.current = true;
+    onChange(clampQuantity(metric, next));
+  };
+  // 폰 기록(리포트와 같은 계산)이 오면 한 번만 미리 채운다. 비어 있거나 0일 때만, 0시간은 채우지 않는다.
+  const prefilled = useRef(false);
+  const handleMeasured = useCallback(
+    (measured: number | null) => {
+      if (prefilled.current || touched.current || !measured) return;
+      if (value !== null && value !== 0) return;
+      prefilled.current = true;
+      onChange(clampQuantity(metric, measured));
+    },
+    [value, onChange, metric],
+  );
   // 45일이 지난 근거는 '최근 30일'이 아니게 되어 보이지 않는다.
   const openedAt = useMemo(() => new Date().getTime(), []);
   const evidence =
@@ -129,6 +154,14 @@ export function MetricQuantityInput({
 
       {spec.hint && (
         <p className="text-center text-[11px] leading-relaxed text-muted-foreground">{spec.hint}</p>
+      )}
+
+      {AppPhoneMetricHint && (metric === "days" || metric === "hours") && (
+        <AppPhoneMetricHint
+          subscription={subscription}
+          metric={metric}
+          onMeasured={handleMeasured}
+        />
       )}
 
       {/* 멤버십: Gmail 가져오기에서 센 최근 주문 메일 수. 금액으로 바꾸지 않고 근거로만 보여 준다. */}

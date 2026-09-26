@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Subscription, UsageLog } from "@subslash/shared";
 import { lastDays, type UsageHistory } from "@lib/usage/history";
-import { daysUntilAutoCheckIn, planAutoCheckIns } from "@lib/usage/auto-checkin";
+import { daysUntilAutoCheckIn, measuredQuantity, planAutoCheckIns } from "@lib/usage/auto-checkin";
 
 const NOW = new Date(2026, 8, 25, 15, 0, 0); // 2026-09-25 15:00 (기기 시간대)
 const PKG = "com.netflix.mediaclient";
@@ -168,5 +168,13 @@ describe("daysUntilAutoCheckIn", () => {
     expect(daysUntilAutoCheckIn(history(0, 0), NOW)).toBeNull();
     expect(daysUntilAutoCheckIn(history(12, 0), NOW)).toBe(18);
     expect(daysUntilAutoCheckIn(history(30, 0), NOW)).toBe(0);
+  });
+});
+
+describe("체크인 칸에 채울 폰 측정값", () => {
+  it("쓴 날은 쓴 날 수, 시간은 1시간 단위로 내린다(리포트와 같은 사용 시간)", () => {
+    expect(measuredQuantity("days", { activeDays: 8, usedMs: 5_400_000 })).toBe(8);
+    expect(measuredQuantity("hours", { activeDays: 8, usedMs: 5_400_000 })).toBe(1);
+    expect(measuredQuantity("hours", { activeDays: 1, usedMs: 1_800_000 })).toBe(0);
   });
 });
