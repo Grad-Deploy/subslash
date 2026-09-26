@@ -98,6 +98,15 @@ export function requestGmailDiscoveries(): void {
   window.dispatchEvent(new Event(DISCOVERIES_REQUESTED));
 }
 
+/**
+ * 연결 화면에서 돌아왔을 때. 웹 앱은 최근 메일만 보고 화면을 돌려준 뒤, 1분쯤 지나 나머지 1년 치(연간
+ * 결제)를 이어서 보낸다(scanOlder). 그래서 지금 한 번 받고, 이어서 올 것을 90초·3분 뒤에 다시 받는다.
+ */
+export function requestGmailDiscoveriesAfterConnect(): void {
+  requestGmailDiscoveries();
+  for (const delay of [90_000, 180_000]) window.setTimeout(requestGmailDiscoveries, delay);
+}
+
 /** `requestGmailDiscoveries`를 듣는다. 듣기를 멈추는 함수를 돌려준다. */
 export function onGmailDiscoveriesRequested(listener: () => void): () => void {
   window.addEventListener(DISCOVERIES_REQUESTED, listener);
