@@ -531,6 +531,12 @@ var SEARCH_QUERIES = [
 var FIRST_SCAN_DAYS = 400;
 var FIRST_SCAN_MAX_MESSAGES = 200;
 var MAX_MESSAGES = 100;
+// 연결 화면에서는 최근 메일만 바로 본다 — 월 결제는 한 달 안에 영수증이 오므로 여기서 거의 다
+// 잡힌다. 400일치 200통을 다 보는 동안 사용자가 빈 화면에서 기다렸다. 나머지(연간 결제)는
+// 화면을 돌려준 뒤 1분 뒤에 한 번 도는 트리거(scanOlder)가 이어서 본다.
+var RECENT_DAYS = 40;
+var RECENT_MAX_MESSAGES = 60;
+var OLDER_MAX_MESSAGES = 160;
 var MAX_BODY_CHARS = 1500;
 // 연결 코드를 바꾸려고 외부 요청 권한이 이미 있어, 메일을 여러 통씩 한꺼번에 받습니다. 사용자가
 // 연결 화면에서 첫 검사가 끝나기를 기다리므로 여기가 가장 중요합니다.
@@ -583,11 +589,15 @@ function doGet(e) {
     .create();
 
   try {
-    var sent = scan();
+    // 검사 시각은 나머지까지 다 보낸 뒤(scanOlder)에 남긴다. 그 전에 끊기면 2주 검사가 처음부터 본다.
+    properties.setProperty("firstScanStartedAt", String(Date.now()));
+    var sent = sendRange(" newer_than:" + RECENT_DAYS + "d", RECENT_MAX_MESSAGES);
+    ScriptApp.newTrigger("scanOlder").timeBased().after(60 * 1000).create();
     return connectPage(
       "Gmail을 연결했습니다",
-      "최근 메일 " + sent + "통을 확인했습니다. SubSlash로 돌아가면 찾은 구독이 등록됩니다. " +
-        "앞으로 2주마다 새 결제 메일을 확인합니다.",
+      "최근 " + RECENT_DAYS + "일 메일 " + sent + "통을 확인했습니다. SubSlash로 돌아가면 찾은 구독이 " +
+        "등록됩니다. 1년 치 나머지(연간 결제)는 몇 분 안에 이어서 확인하고, 앞으로 2주마다 새 결제 " +
+        "메일을 확인합니다.",
       origin,
     );
   } catch (error) {
@@ -599,28 +609,40 @@ function doGet(e) {
   }
 }
 
-// 2주마다 트리거가 부른다. 보낸 메일 수를 돌려준다.
-function scan() {
+// 연결한 직후 한 번 도는 트리거. 첫 검사의 나머지(최근 며칠 앞 ~ 400일)를 보내고 검사 시각을 남긴다.
+// 서버는 같은 서비스의 더 최근 영수증을 옛 영수증으로 덮지 않으므로 나눠 보내도 된다.
+function scanOlder() {
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    if (trigger.getHandlerFunction() === "scanOlder") ScriptApp.deleteTrigger(trigger);
+  });
+  var properties = PropertiesService.getUserProperties();
+  var startedAt = Number(properties.getProperty("firstScanStartedAt") || 0);
+  if (!startedAt || properties.getProperty("lastScanAt")) return;
+  var sent = sendRange(
+    " newer_than:" + FIRST_SCAN_DAYS + "d older_than:" + RECENT_DAYS + "d",
+    OLDER_MAX_MESSAGES,
+  );
+  if (sent < 0) return;
+  properties.setProperty("lastScanAt", String(startedAt));
+  properties.deleteProperty("firstScanStartedAt");
+}
+
+// 기간 조건(range)을 붙여 찾은 메일을 SubSlash로 보낸다. 보낸 메일 수를 돌려주고, 연결이 끊겼으면
+// 검사를 멈추고 -1을 돌려준다. 그 밖의 실패는 던진다.
+function sendRange(range, maxMessages) {
   var properties = PropertiesService.getUserProperties();
   var token = properties.getProperty("token");
   var origin = properties.getProperty("origin");
   if (!token || ALLOWED_ORIGINS.indexOf(origin) === -1) {
     removeScanTriggers();
-    return 0;
+    return -1;
   }
-
-  var lastScanAt = Number(properties.getProperty("lastScanAt") || 0);
-  var startedAt = Date.now();
-  var range = lastScanAt
-    ? " after:" + Math.floor(lastScanAt / 1000)
-    : " newer_than:" + FIRST_SCAN_DAYS + "d";
   var emails = collectReceiptEmails(
     SEARCH_QUERIES.map(function (query) {
       return query + range;
     }),
-    lastScanAt ? MAX_MESSAGES : FIRST_SCAN_MAX_MESSAGES,
+    maxMessages,
   );
-
   var response = UrlFetchApp.fetch(origin + "/api/gmail/ingest", {
     method: "post",
     contentType: "application/json",
@@ -633,19 +655,33 @@ function scan() {
     // SubSlash에서 연결을 끊었다. 이 사람의 검사를 멈추고 저장값을 지운다.
     removeScanTriggers();
     properties.deleteAllProperties();
-    return 0;
+    return -1;
   }
-  if (status !== 200) {
-    // 검사 시각을 남기지 않아, 다음 실행 때 같은 기간을 다시 본다.
-    throw new Error("SubSlash에 보내지 못했습니다(" + status + ")");
-  }
-  properties.setProperty("lastScanAt", String(startedAt));
+  if (status !== 200) throw new Error("SubSlash에 보내지 못했습니다(" + status + ")");
   return emails.length;
+}
+
+// 2주마다 트리거가 부른다. 보낸 메일 수를 돌려준다. 첫 검사를 다 끝내지 못했으면(scanOlder가
+// 돌지 못함) 400일치를 처음부터 본다.
+function scan() {
+  var properties = PropertiesService.getUserProperties();
+  var lastScanAt = Number(properties.getProperty("lastScanAt") || 0);
+  var startedAt = Date.now();
+  var range = lastScanAt
+    ? " after:" + Math.floor(lastScanAt / 1000)
+    : " newer_than:" + FIRST_SCAN_DAYS + "d";
+  // 실패하면 던져서 검사 시각을 남기지 않는다 — 다음 실행 때 같은 기간을 다시 본다.
+  var sent = sendRange(range, lastScanAt ? MAX_MESSAGES : FIRST_SCAN_MAX_MESSAGES);
+  if (sent < 0) return 0;
+  properties.setProperty("lastScanAt", String(startedAt));
+  properties.deleteProperty("firstScanStartedAt");
+  return sent;
 }
 
 function removeScanTriggers() {
   ScriptApp.getProjectTriggers().forEach(function (trigger) {
-    if (trigger.getHandlerFunction() === "scan") ScriptApp.deleteTrigger(trigger);
+    var handler = trigger.getHandlerFunction();
+    if (handler === "scan" || handler === "scanOlder") ScriptApp.deleteTrigger(trigger);
   });
 }
 
