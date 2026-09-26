@@ -557,7 +557,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* 앱은 월 고정지출을 가성비 계산서 카드가, 절약 성과를 아래 탭의 절약 현황이 맡는다. */}
+        {/* 앱은 월 고정지출과 지킨 돈 한 줄을 가성비 계산서 카드가 맡고, 자세한 절약은 절약 현황으로 넘긴다. */}
         {!IS_APP_BUILD && (
           <aside className="space-y-4 lg:sticky lg:top-20" aria-label="이번 달 요약">
             {/* 지출 한 줄 */}

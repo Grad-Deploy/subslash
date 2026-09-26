@@ -439,12 +439,13 @@ export default function SubscriptionsPage() {
             </Button>
           </div>
         )}
-        {/* 앱: 자동 체크인 켜기/끄기는 설정 탭으로 옮기고, 여기에는 '폰 기록으로 체크인' 버튼만 둔다. */}
+        {/* 앱: 자동 체크인 켜기/끄기는 설정 탭에 두고, 여기에는 상태 한 줄과 '폰 기록으로 체크인' 버튼을 둔다. */}
         {AppPhoneCheckInButton && (
           <AppPhoneCheckInButton
             subscriptions={activeSubs}
             onDone={(count) => showToast(`${count}개 체크인했어요`)}
             autoSwitch={false}
+            autoStatus
           />
         )}
       </div>
@@ -613,11 +614,15 @@ export default function SubscriptionsPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300">
-                    {/* 해지를 유지하면 아낄 금액이다. 이미 지킨 돈은 절약 현황이 따로 센다. */}
-                    해지한 구독 {filteredKilled.length}개 · 해지를 유지하면 매달{" "}
-                    <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 아껴요.
-                  </div>
+                  {/* 앱은 이 자리에 '지킨 돈 · 절약 현황' 한 줄(AppKilledList 맨 위)을 둔다. 두 줄이 같이 있으면
+                      '매달 아껴요'와 '지켰어요'가 같은 돈처럼 보인다. */}
+                  {!AppKilledList && (
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300">
+                      {/* 해지를 유지하면 아낄 금액이다. 이미 지킨 돈은 절약 현황이 따로 센다. */}
+                      해지한 구독 {filteredKilled.length}개 · 해지를 유지하면 매달{" "}
+                      <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 아껴요.
+                    </div>
+                  )}
 
                   {AppKilledList ? (
                     <AppKilledList
