@@ -5,6 +5,7 @@ import {
   ANONYMOUS_STATS_STARTS_ON,
   DEVICE_USAGE_STARTS_ON,
   GMAIL_AUTO_IMPORT_STARTS_ON,
+  SOCIAL_LOGIN_STARTS_ON,
   PRIVACY_EFFECTIVE_DATE,
   PRIVACY_OFFICER,
 } from "@lib/privacy";
@@ -75,9 +76,10 @@ export default function PrivacyPage() {
           것은 로그인, 계정에 저장, 결제 알림
           {GMAIL_AUTO_IMPORT_STARTS_ON && ", Gmail 자동 가져오기"}
           {ANONYMOUS_STATS_STARTS_ON && ", 익명 구독 통계"}
-          {DEVICE_USAGE_STARTS_ON && ", 여러 기기 사용 측정"}처럼 직접 고른 기능을 쓸 때뿐입니다.
-          로그인하면 구독 기록이 계정에 자동으로 저장됩니다(기기마다 끌 수 있음). 아래에 무엇을, 왜,
-          얼마나 저장하는지 적습니다.
+          {DEVICE_USAGE_STARTS_ON && ", 여러 기기 사용 측정"}
+          {SOCIAL_LOGIN_STARTS_ON && ", 구글·카카오·네이버로 로그인"}처럼 직접 고른 기능을 쓸
+          때뿐입니다. 로그인하면 구독 기록이 계정에 자동으로 저장됩니다(기기마다 끌 수 있음). 아래에
+          무엇을, 왜, 얼마나 저장하는지 적습니다.
         </p>
       </header>
 
@@ -92,6 +94,23 @@ export default function PrivacyPage() {
           담겨 브라우저 안에서만 읽히고 SubSlash 서버로 전송되거나 저장되지 않습니다. 등록한 구독은
           위와 같이 브라우저에 저장됩니다.
         </Item>
+        {/*
+          소셜 로그인도 저장 항목이 늘어나는 변경이라 시작일을 정하면 먼저 게시된다
+          (lib/privacy.ts의 SOCIAL_LOGIN_STARTS_ON, lib/oauth).
+        */}
+        {SOCIAL_LOGIN_STARTS_ON && (
+          <Item
+            title={`구글·카카오·네이버로 로그인 (선택, ${koreanDate(SOCIAL_LOGIN_STARTS_ON)}부터)`}
+          >
+            로그인·회원가입 화면에서 &lsquo;구글로 계속하기&rsquo; 등을 누르면, 그 회사의 로그인
+            화면에서 이용자가 동의한 이메일 주소와 그 회사의 회원 번호를 받습니다. 회원 번호는
+            되돌릴 수 없는 해시로만 저장해 다음 로그인 때 같은 사람인지 알아보는 데 쓰고, 이메일은
+            계정의 이메일로 저장합니다. 처음이면 무작위 아이디로 계정을 만들며 비밀번호는 저장하지
+            않습니다. 이름·프로필 사진·전화번호는 받지 않고, 그 회사가 준 접속 토큰은 이메일을 한 번
+            읽는 데만 쓰고 저장하지 않습니다. 앱에서 로그인하면 앱으로 로그인을 넘기는 1회용 기록을
+            최대 10분 저장합니다. 목적: 비밀번호 없이 로그인·회원가입.
+          </Item>
+        )}
         {/*
           저장 항목이 늘어나는 변경이라 시행 전에 알린다. 시작일을 정하면 이 항목이 먼저 게시되고,
           그날부터 기능이 열린다(lib/privacy.ts의 GMAIL_AUTO_IMPORT_STARTS_ON).
@@ -232,6 +251,13 @@ export default function PrivacyPage() {
               갱신되지 않은 기록은 자동으로 지웁니다.
             </li>
           )}
+          {SOCIAL_LOGIN_STARTS_ON && (
+            <li>
+              구글·카카오·네이버로 로그인: 회원 번호의 해시는 회원 탈퇴하면 계정과 함께 곧바로
+              지웁니다. 앱으로 넘기는 1회용 기록은 앱이 받아 가면 곧바로 지우고, 받아 가지 않아도
+              10분이 지나면 쓸 수 없으며 다음 로그인 때 지웁니다.
+            </li>
+          )}
           <li>
             계정 메일 발송 기록: 24시간이 지난 기록은 같은 주소로 다음 메일을 보낼 때 지웁니다.
           </li>
@@ -282,6 +308,16 @@ export default function PrivacyPage() {
                     이름·금액·결제일을 받아 이용자의 캘린더에 일정으로 씀
                   </td>
                   <td className="px-3 py-2">국외(Google 데이터센터)</td>
+                </tr>
+              )}
+              {SOCIAL_LOGIN_STARTS_ON && (
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-medium">Google·카카오·네이버</td>
+                  <td className="px-3 py-2">
+                    해당 회사로 로그인을 고른 경우, 그 회사가 이용자를 확인하고 이메일과 회원 번호를
+                    SubSlash에 알려 줌(SubSlash가 보내는 개인정보는 없음)
+                  </td>
+                  <td className="px-3 py-2">각 회사의 처리 위치(Google은 국외)</td>
                 </tr>
               )}
               <tr className="border-t">

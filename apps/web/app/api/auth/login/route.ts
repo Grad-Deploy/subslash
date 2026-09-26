@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { validateLogin } from "@subslash/shared";
 import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { accounts } from "@lib/schema";
-import { hashPassword, needsRehash, verifyPassword } from "@lib/password";
+import { hasPassword, hashPassword, needsRehash, verifyPassword } from "@lib/password";
 import {
   SESSION_COOKIE,
   createSession,
@@ -74,12 +74,14 @@ export async function POST(request: NextRequest) {
 
     // 계정이 없어도 해시 계산을 한 번 수행한다. 없는 아이디만 빨리 실패하면
     // 응답 시간 차이로 가입 여부가 드러난다.
+    // 소셜 로그인으로만 가입한 계정(비밀번호 없음)도 같은 시간이 걸리게 가짜 해시로 계산한다.
+    const usable = account && hasPassword(account.passwordHash) ? account : null;
     const storedHash =
-      account?.passwordHash ??
+      usable?.passwordHash ??
       "scrypt$131072$8$1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
     const ok = await verifyPassword(value.password, storedHash);
 
-    if (!account || !ok) {
+    if (!account || !usable || !ok) {
       hit(accountKey, FAILURES_PER_ACCOUNT);
       hit(ipKey, FAILURES_PER_IP);
       return NextResponse.json(

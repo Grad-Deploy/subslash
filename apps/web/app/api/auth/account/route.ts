@@ -6,7 +6,7 @@ import {
   getAccountBySessionToken,
   readSessionToken,
 } from "@lib/auth-server";
-import { verifyPassword } from "@lib/password";
+import { hasPassword, verifyPassword } from "@lib/password";
 import {
   hit,
   retryAfterSeconds,
@@ -20,6 +20,22 @@ import { logError } from "@lib/log";
  * 비밀번호 변경·회원 탈퇴가 같은 칸을 나눠 센다.
  */
 const PASSWORD_CHECK_FAILURES: RateLimitRule = { limit: 10, windowMs: 15 * 60 * 1000 };
+
+/** 비밀번호가 없는 계정이 탈퇴할 때 입력하는 글자. 화면(DeleteAccountSection)과 같아야 한다. */
+const DELETE_CONFIRM_TEXT = "탈퇴";
+
+async function deleteAndSignOut(accountId: string) {
+  await deleteAccount(accountId);
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(SESSION_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+  return response;
+}
 
 /**
  * 회원 탈퇴.
@@ -38,7 +54,24 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
     }
 
-    const body = (await request.json().catch(() => null)) as { password?: unknown } | null;
+    const body = (await request.json().catch(() => null)) as {
+      password?: unknown;
+      confirmText?: unknown;
+    } | null;
+
+    // 소셜 로그인으로만 가입해 비밀번호가 없는 계정은 확인 글자를 받는다. 비밀번호를 먼저 만들게 하면
+    // 탈퇴하려는 사람을 메일 한 통 더 거치게 한다(개인정보 보호법 — 가입보다 어렵게 하지 않는다).
+    if (!hasPassword(account.passwordHash)) {
+      if (body?.confirmText !== DELETE_CONFIRM_TEXT) {
+        const message = `확인을 위해 '${DELETE_CONFIRM_TEXT}'를 입력해주세요.`;
+        return NextResponse.json(
+          { error: message, fieldErrors: { confirmText: message } },
+          { status: 400 },
+        );
+      }
+      return deleteAndSignOut(account.id);
+    }
+
     const password = typeof body?.password === "string" ? body.password : "";
     if (!password) {
       return NextResponse.json(
@@ -69,17 +102,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await deleteAccount(account.id);
-
-    const response = NextResponse.json({ ok: true });
-    response.cookies.set(SESSION_COOKIE, "", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: 0,
-    });
-    return response;
+    return deleteAndSignOut(account.id);
   } catch (error) {
     logError("api/auth/account", error);
     return NextResponse.json(
