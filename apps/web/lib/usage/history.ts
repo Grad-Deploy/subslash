@@ -155,12 +155,19 @@ export function mergeUsage(
   };
 }
 
+/**
+ * '쓴 날'로 쳐 주는 하루 최소 사용 시간(앱이 앞에 있던 시간과 재생 시간 중 큰 쪽, 그날 합계). 예전에는 1분만
+ * 열어도 하루로 쳐서, 매일 잠깐 켜 보기만 해도 AI 구독(쓴 날로 재는 구독)이 '잘 씀'이 될 수 있었다. 5분은
+ * 근거가 있는 값이 아니라 팀이 정한 기준이다 — 바꾸면 화면의 안내 문구와 테스트도 함께 바꾼다.
+ */
+export const ACTIVE_DAY_MS = 5 * 60_000;
+
 export interface UsageTotals {
   ms: number;
   opens: number;
   /** 이 기간 중 기록이 있는 날 수. 0이면 모른다. */
   coveredDays: number;
-  /** 한 번이라도 쓴 날 수(1분 이상 앞에 있었거나 한 번 이상 열었다). */
+  /** 쓴 날 수. 그날 모두 합쳐 ACTIVE_DAY_MS(5분) 이상 쓴 날만 센다. */
   activeDays: number;
   /**
    * 앱마다·날마다 max(앞에 있던 시간, 재생 알림 시간)을 더한 것. 재생 시간을 모르는 날이 하나라도 있으면
@@ -213,8 +220,8 @@ export function totalsFor(
     ms += dayMs;
     opens += dayOpens;
     usedMs += dayUsed;
-    // 화면을 끄고 1분 넘게 들은 날도 쓴 날이다.
-    if (dayOpens > 0 || dayUsed >= 60_000) activeDays += 1;
+    // 화면을 끄고 들은 시간도 더한다. 연 횟수와 관계없이 그날 쓴 시간만 본다.
+    if (dayUsed >= ACTIVE_DAY_MS) activeDays += 1;
     if (listenMs !== null) listenMs += dayUsed;
   }
   return { ms, opens, coveredDays, activeDays, listenMs, usedMs, byPackage };
