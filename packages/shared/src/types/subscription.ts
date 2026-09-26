@@ -68,6 +68,11 @@ export interface Subscription {
   createdAt: string;
   killedAt?: string;
   /**
+   * 해지한 구독을 '구독 관리 › 해지 완료' 목록에서 숨긴 시각(앱). 목록에서만 빠지고 절약 현황에는
+   * 그대로 남는다 — 목록을 비우려고 지우면 지킨 돈까지 사라졌다. 다시 보이면 지운다. 해지한 구독에만 쓴다.
+   */
+  hiddenAt?: string;
+  /**
    * 해지로 기록한 뒤에 결제 메일이 온 사실. 결제가 멈추지 않았다는 **증거**다.
    *
    * `killVerifiedAt`(사용자가 "안 나갔다"고 답한 것)과 다르다. 그쪽은 기억이고 이쪽은 영수증이다.
@@ -141,6 +146,7 @@ export type SubscriptionFormData = Omit<
   | "status"
   | "createdAt"
   | "killedAt"
+  | "hiddenAt"
   | "lastPriceCheckedAt"
   | "killVerifiedAt"
   | "chargedAfterKillAt"

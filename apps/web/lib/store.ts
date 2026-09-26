@@ -334,6 +334,11 @@ interface SubSlashStore {
    */
   recordOrderEvidence: (counts: OrderCount[]) => void;
   deleteSubscription: (id: string) => void;
+  /** 여러 구독을 한 번에 지운다(체크인 기록도). 절약 현황에서도 빠진다. */
+  deleteSubscriptions: (ids: string[]) => void;
+  /** 해지한 구독을 해지 목록에서 숨긴다. 절약 현황에는 남는다. */
+  hideSubscriptions: (ids: string[]) => void;
+  unhideSubscriptions: (ids: string[]) => void;
   /**
    * 체크인을 적는다. `source: "phone"`은 폰 사용 기록으로 자동으로 적는 것이고(useAutoCheckIn만
    * 부른다), `replaceLogId`를 주면 새 줄을 더하지 않고 그 줄을 바꾼다 — 같은 달의 자동 체크인을
@@ -554,6 +559,8 @@ export const useStore = create<SubSlashStore>()(
                   status: "active",
                   killedAt: undefined,
                   killVerifiedAt: undefined,
+                  // 되살린 구독은 구독 중 목록에 보여야 한다.
+                  hiddenAt: undefined,
                   // 다시 구독 중이면 "해지했는데 결제됐다"는 더 이상 이상한 일이 아니다.
                   chargedAfterKillAt: undefined,
                   chargedAfterKillAmount: undefined,
@@ -614,6 +621,31 @@ export const useStore = create<SubSlashStore>()(
         set((state) => ({
           subscriptions: state.subscriptions.filter((sub) => sub.id !== id),
           usageLogs: state.usageLogs.filter((log) => log.subscriptionId !== id),
+        }));
+      },
+      deleteSubscriptions: (ids) => {
+        const drop = new Set(ids);
+        set((state) => ({
+          subscriptions: state.subscriptions.filter((sub) => !drop.has(sub.id)),
+          usageLogs: state.usageLogs.filter((log) => !drop.has(log.subscriptionId)),
+        }));
+      },
+      hideSubscriptions: (ids) => {
+        const hide = new Set(ids);
+        const at = new Date().toISOString();
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            // 해지한 구독만 숨긴다 — 구독 중인 것이 목록에서 사라지면 결제를 놓친다.
+            hide.has(sub.id) && sub.status === "killed" ? { ...sub, hiddenAt: at } : sub,
+          ),
+        }));
+      },
+      unhideSubscriptions: (ids) => {
+        const show = new Set(ids);
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            show.has(sub.id) && sub.hiddenAt ? { ...sub, hiddenAt: undefined } : sub,
+          ),
         }));
       },
       checkIn: (subscriptionId, usageCount, options) => {
