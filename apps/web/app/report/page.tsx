@@ -17,6 +17,8 @@ import {
   describeCheckIn,
   metricForSubscription,
   type UsageLog,
+  findBundleOverlaps,
+  serviceNameOf,
 } from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
@@ -103,6 +105,8 @@ export default function ReportPage() {
 
   // 횟수가 아닌 것(시간·쓴 날·혜택·용량)으로 재는 구독은 1회 단가 순위에 넣지 않는다. 시간당 ₩500과
   // 1회 ₩500은 같은 줄에 세울 수 없다. 대신 색(돈값 기준 — utils/valueMetric)으로 따로 줄 세운다.
+  const overlaps = useMemo(() => findBundleOverlaps(subscriptions), [subscriptions]);
+
   const otherRows = useMemo(
     () =>
       active
@@ -164,6 +168,23 @@ export default function ReportPage() {
         </section>
       ) : (
         <>
+          {/* 결합 상품에 든 서비스를 따로도 내고 있으면 먼저 알린다 — 증거가 있는 절약 기회다. */}
+          {overlaps.length > 0 && (
+            <section
+              aria-label="결합 상품과 겹치는 구독"
+              className="space-y-1.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm"
+            >
+              <p className="font-bold">두 번 내고 있을 수 있어요</p>
+              {overlaps.map(({ bundle, other, serviceIds }) => (
+                <p key={`${bundle.id}-${other.id}`} className="text-xs leading-relaxed">
+                  <b>{bundle.name}</b>에 {serviceIds.map(serviceNameOf).join(", ")}이(가) 들어
+                  있는데 <b>{other.name}</b>도 따로 구독 중이에요. 다른 계정으로 쓰는 게 아니라면 한
+                  쪽을 해지해도 돼요.
+                </p>
+              ))}
+            </section>
+          )}
+
           <section aria-label="지출 요약" className="grid grid-cols-3 gap-2">
             <SummaryTile label="한 달" value={formatKRW(monthly)} />
             <SummaryTile label="1년이면" value={formatKRW(annual)} />
