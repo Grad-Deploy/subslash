@@ -131,6 +131,22 @@ describe("parseBackup — 앱이 만든 것은 모두 통과한다", () => {
     });
   });
 
+  it("해지 목록에서 숨긴 구독(hiddenAt)도 그대로 되돌아온다 — 숨긴 것이 복원에서 다시 보이면 안 된다", () => {
+    const file = withData((data) => {
+      const [, killed] = data.subscriptions as Record<string, unknown>[];
+      killed.hiddenAt = "2026-09-20T00:00:00.000Z";
+    });
+    const result = roundTrip(file);
+    expect(result.ok && result.data.subscriptions[1]).toMatchObject({
+      hiddenAt: "2026-09-20T00:00:00.000Z",
+    });
+    const broken = withData((data) => {
+      const [, killed] = data.subscriptions as Record<string, unknown>[];
+      killed.hiddenAt = "언젠가";
+    });
+    expect(roundTrip(broken).ok).toBe(false);
+  });
+
   it("세금 비율이 있는 구독도 그대로 되돌아온다", () => {
     const file = withData((data) => {
       (data.subscriptions as Record<string, unknown>[])[1].taxRate = 10;
