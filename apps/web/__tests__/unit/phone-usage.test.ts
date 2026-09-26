@@ -15,7 +15,15 @@ import {
   type UsageHistory,
 } from "@lib/usage/history";
 import { ALL_USAGE_PACKAGES, packageBreakdown, packagesFor } from "@lib/usage/packages";
-import { MIN_HOURLY_MS, median, metricView, subUsage } from "@lib/usage/value";
+import {
+  GOOD_AT,
+  MIN_HOURLY_MS,
+  VERDICT_DAYS,
+  compareValue,
+  median,
+  metricView,
+  subUsage,
+} from "@lib/usage/value";
 
 const NOW = new Date(2026, 8, 25, 15, 0, 0); // 2026-09-25 15:00 (기기 시간대)
 const at = (date: string, hour = 0) => {
@@ -313,7 +321,34 @@ describe("subUsage", () => {
     expect(view.quantity).toBe(5);
     // 15일 중 5일 → 30일이면 10일 → 17,000 ÷ 10
     expect(view.unitKRW).toBeCloseTo(1700);
-    expect(view.level).toBe("green");
+    // 기록이 30일이 안 되면 평가는 미룬다(숫자는 보인다). 이틀에 한 번 연 것이 '잘 씀'이 되던 것.
+    expect(view.level).toBeNull();
+    expect(view.pendingDays).toBe(15);
+  });
+
+  it("기록이 30일 쌓이면 평가하고, '잘 씀' 기준(GOOD_AT)에 닿으면 초록이다", () => {
+    const make = (opens: number) => {
+      const days: Record<string, Record<string, [number, number]>> = {};
+      for (const date of dates) days[date] = {};
+      for (const date of dates.slice(0, opens)) {
+        days[date] = { "com.netflix.mediaclient": [3_600_000, 1] };
+      }
+      return subUsage(
+        sub(),
+        { v: 1, days, syncedAt: null },
+        ["com.netflix.mediaclient"],
+        dates,
+        1350,
+      );
+    };
+    expect(dates.length).toBe(VERDICT_DAYS);
+    // getRiskLevel은 1회 단가가 요금의 25% 이하면 초록 — 막대의 '잘 씀' 기준과 같아야 한다.
+    expect(metricView(make(GOOD_AT.uses), "uses").level).toBe("green");
+    expect(metricView(make(GOOD_AT.uses - 1), "uses").level).not.toBe("green");
+    expect(metricView(make(0), "uses").level).toBe("red");
+    // 가성비 순서는 안 좋은 것부터
+    const views = [make(6), make(0), make(2)].map((u) => metricView(u, "uses"));
+    expect([...views].sort(compareValue).map((v) => v.have)).toEqual([0, 2, 6]);
   });
 });
 

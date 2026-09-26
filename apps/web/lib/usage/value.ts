@@ -170,20 +170,48 @@ export function median(values: number[]): number | null {
 }
 
 /**
- * 구독 상세의 가성비 한 칸. 체크인과 같은 지표(`metricForSubscription`)로 말한다 — Gemini처럼 '쓴 날'로 재는
- * 구독에 시간당 금액을 보이면 체크인의 '하루당'과 다른 숫자가 나온다. 기록이 30일이 안 되면 30일로 늘려
- * 체크인과 같은 크기로 맞춘다(색 기준도 30일 기준이다).
+ * 폰 기록으로 '잘 씀/비쌈'을 말하려면 기록이 이만큼 있어야 한다. 짧은 기록을 30일로 늘려 말하면 이틀에 한 번 연
+ * 구독이 '잘 씀'이 된다(Claude 2회·5분이 잘 씀으로 떴다). 자동 체크인(AUTO_CHECKIN_DAYS)과 같은 30일이다.
+ * 숫자(시간·횟수·단가)는 그 전에도 보여 준다 — 평가만 미룬다.
+ */
+export const VERDICT_DAYS = 30;
+
+/**
+ * '잘 씀'이 되는 30일 동안의 양. 체크인의 색 기준과 같은 값이다 — 기준을 바꾸면 여기도 바꾼다.
+ * - 횟수: getRiskLevel은 8회 이상 **또는** 1회 단가가 한 달 요금의 25% 이하면 초록이라, 실제로는 4회부터다.
+ * - 쓴 날·시간: metricRiskLevel의 10일·10시간.
+ */
+export const GOOD_AT: Record<"uses" | "days" | "hours", number> = { uses: 4, days: 10, hours: 10 };
+export const GOAL_UNIT: Record<"uses" | "days" | "hours", string> = {
+  uses: "회",
+  days: "일",
+  hours: "시간",
+};
+
+/**
+ * 구독의 가성비 한 줄. 체크인과 같은 지표(`metricForSubscription`)로 말한다 — Gemini처럼 '쓴 날'로 재는
+ * 구독에 시간당 금액을 보이면 체크인의 '하루당'과 다른 숫자가 나온다.
  */
 export interface MetricView {
-  metric: ValueMetric;
+  metric: "uses" | "days" | "hours";
   /** '1회당' · '하루당' · '시간당' */
   perLabel: string;
-  /** 단가. 안 썼거나(0) 시간이 1시간도 안 되면 null. */
+  /** 단가. 안 썼거나(0) 시간이 1시간도 안 되면 null. 기록이 30일이 안 되면 30일로 늘려 계산한다. */
   unitKRW: number | null;
   /** 시간 지표인데 1시간도 안 썼다 — 단가 대신 쓴 시간과 낸 돈(periodCostKRW)을 보인다. */
   short: boolean;
   /** 이 기간에 이 폰에서 잰 양. 1회당이면 연 횟수, 하루당이면 쓴 날, 시간당이면 쓴 ms. */
   quantity: number;
+  /** 기록에서 잰 양(목표 단위: 회·일·시간). 늘리지 않은 값. */
+  have: number;
+  /** 30일로 늘린 양(목표 단위). */
+  have30: number;
+  /** '잘 씀'이 되는 30일 동안의 양(목표 단위). */
+  goal: number;
+  goalUnit: string;
+  /** 평가까지 남은 날. 0이면 평가가 나왔다. */
+  pendingDays: number;
+  /** 평가. 기록이 VERDICT_DAYS가 안 되면 null(보류). */
   level: RiskLevel | null;
 }
 
@@ -191,35 +219,63 @@ export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {
   const { totals, monthlyKRW } = usage;
   const covered = totals.coveredDays;
   const scale = covered > 0 ? 30 / covered : 0;
+  const pendingDays = Math.max(0, VERDICT_DAYS - covered);
+  const judge = (level: RiskLevel | null) => (pendingDays > 0 ? null : level);
   if (metric === "uses") {
+    const have = totals.opens;
     return {
       metric,
       perLabel: "1회당",
       unitKRW: usage.perOpenKRW,
       short: false,
-      quantity: totals.opens,
-      level: usage.level,
+      quantity: have,
+      have,
+      have30: have * scale,
+      goal: GOOD_AT.uses,
+      goalUnit: GOAL_UNIT.uses,
+      pendingDays,
+      // 연 적이 없으면(perOpenKRW null) subUsage가 색을 매기지 않는다 — 0회는 비쌈이다.
+      level: judge(usage.level ?? "red"),
     };
   }
   if (metric === "days") {
-    const per30 = totals.activeDays * scale;
+    const have = totals.activeDays;
+    const per30 = have * scale;
     return {
       metric,
       perLabel: "하루당",
       unitKRW: per30 > 0 ? monthlyKRW / per30 : null,
       short: false,
-      quantity: totals.activeDays,
-      level: covered > 0 ? metricRiskLevel("days", monthlyKRW, Math.round(per30)) : null,
+      quantity: have,
+      have,
+      have30: per30,
+      goal: GOOD_AT.days,
+      goalUnit: GOAL_UNIT.days,
+      pendingDays,
+      level: judge(metricRiskLevel("days", monthlyKRW, Math.round(per30))),
     };
   }
   // 시간(음악·독서). 혜택·용량은 폰 기록으로 재지 않으므로 여기 오지 않는다 — 오면 시간으로 본다.
-  const hoursPer30 = (totals.usedMs / 3_600_000) * scale;
+  const have = totals.usedMs / 3_600_000;
+  const hoursPer30 = have * scale;
   return {
     metric: "hours",
     perLabel: "시간당",
     unitKRW: usage.hourlyKRW,
     short: totals.usedMs > 0 && totals.usedMs < MIN_HOURLY_MS,
     quantity: totals.usedMs,
-    level: covered > 0 ? metricRiskLevel("hours", monthlyKRW, hoursPer30) : null,
+    have,
+    have30: hoursPer30,
+    goal: GOOD_AT.hours,
+    goalUnit: GOAL_UNIT.hours,
+    pendingDays,
+    level: judge(metricRiskLevel("hours", monthlyKRW, hoursPer30)),
   };
+}
+
+/** 가성비 순서: 안 좋은 것부터. 평가가 나왔으면 비쌈 → 애매 → 잘 씀, 같은 무리는 '잘 씀'까지 먼 순. */
+export function compareValue(a: MetricView, b: MetricView): number {
+  const order = (v: MetricView) =>
+    v.level === null ? 0 : { red: 0, yellow: 1, green: 2 }[v.level];
+  return order(a) - order(b) || a.have30 / a.goal - b.have30 / b.goal;
 }
