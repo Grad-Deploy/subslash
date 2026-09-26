@@ -36,7 +36,7 @@ test.describe("Subscription Flow (E2E)", () => {
 
     const dialog = page.getByRole("dialog");
     await dialog.getByPlaceholder(/서비스 이름 검색/).fill("넷플");
-    await dialog.getByRole("button", { name: /넷플릭스/ }).click();
+    await dialog.getByRole("button", { name: /^넷플릭스/ }).click();
 
     // 요금제가 여럿이라 하나를 미리 고르지 않는다. 고르기 전에는 요금도 비어 있다.
     await expect(dialog.locator('input[name="planId"]:checked')).toHaveCount(0);
