@@ -87,7 +87,7 @@ export function isDeviceUsageOpen(now: Date = new Date()): boolean {
  * 방침에 항목을 먼저 알리고 그날부터 연다. null이면 닫혀 있다. 열려도 제공자마다 앱 키(환경 변수)가
  * 있어야 그 버튼이 보인다.
  */
-export const SOCIAL_LOGIN_STARTS_ON: string | null = null;
+export const SOCIAL_LOGIN_STARTS_ON: string | null = "2026-10-03";
 
 /** 소셜 로그인이 열렸는지. */
 export function isSocialLoginOpen(now: Date = new Date()): boolean {
