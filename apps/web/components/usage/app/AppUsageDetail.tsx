@@ -2,19 +2,28 @@
 
 import React, { useMemo, useState } from "react";
 import { Smartphone } from "lucide-react";
-import { type Subscription } from "@subslash/shared";
+import { metricForSubscription, type Subscription } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import {
   formatDuration,
+  formatDurationPrecise,
   lastDays,
   monthlyTotals,
   totalsFor,
   type UsageHistory,
 } from "@lib/usage/history";
 import { packageBreakdown, packagesFor } from "@lib/usage/packages";
-import { LEVEL_STYLE, RANGE_DAYS, subUsage, type UsageRange } from "@lib/usage/value";
+import {
+  LEVEL_STYLE,
+  RANGE_DAYS,
+  metricView,
+  subUsage,
+  type MetricView,
+  type SubUsage,
+  type UsageRange,
+} from "@lib/usage/value";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 import { RangeTabs, StatTile, won } from "./parts";
 
@@ -184,42 +193,77 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
           </div>
 
           {month.state === "measured" && (
-            <div className="space-y-2">
-              <p className="text-sm font-bold">이 구독의 가성비</p>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-2xl bg-secondary/60 px-3 py-2.5">
-                  <p className="text-[11px] text-muted-foreground">시간당</p>
-                  <p className="font-mono text-lg font-black tabular-nums">
-                    {month.hourlyKRW === null ? "—" : won(month.hourlyKRW)}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    최근 {Math.min(30, month.totals.coveredDays)}일{" "}
-                    {formatDuration(month.totals.usedMs)} 기준
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-secondary/60 px-3 py-2.5">
-                  <p className="text-[11px] text-muted-foreground">회당</p>
-                  <p className="font-mono text-lg font-black tabular-nums">
-                    {month.perOpenKRW === null ? "—" : won(month.perOpenKRW)}
-                  </p>
-                  <p
-                    className={cn(
-                      "text-[11px]",
-                      month.level ? LEVEL_STYLE[month.level].text : "text-muted-foreground",
-                    )}
-                  >
-                    최근 {Math.min(30, month.totals.coveredDays)}일 {month.totals.opens}회
-                    {month.level && ` · ${LEVEL_STYLE[month.level].label}`}
-                  </p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                TV·PC에서 본 건 빠져 있어요. 체크인은 이 숫자를 채워 두고 고칠 수 있게 해요.
-              </p>
-            </div>
+            <ValueTiles
+              view={metricView(month, metricForSubscription(subscription))}
+              usage={month}
+            />
           )}
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * 이 구독의 가성비(최근 30일, 이 폰). 체크인과 같은 지표로 단가를 말하고, 옆 칸에는 잰 것을 그대로 둔다.
+ *
+ * 시간으로 재는 구독인데 1시간도 안 썼으면 시간당 금액을 내지 않는다 — 몇 초로 한 달 요금을 나눠 한 시간으로
+ * 늘리면 '시간당 5,400만 원'처럼 쓴 적 없는 크기의 숫자가 된다. 그때는 쓴 시간과 그동안 낸 돈을 그대로 보인다.
+ */
+function ValueTiles({ view, usage }: { view: MetricView; usage: SubUsage }) {
+  const days = Math.min(30, usage.totals.coveredDays);
+  const style = view.level ? LEVEL_STYLE[view.level] : null;
+  const used = formatDurationPrecise(usage.totals.usedMs);
+  const measured =
+    view.metric === "uses"
+      ? `최근 ${days}일 ${usage.totals.opens}회`
+      : view.metric === "days"
+        ? `최근 ${days}일 중 ${usage.totals.activeDays}일`
+        : `최근 ${days}일 ${used}`;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-bold">이 구독의 가성비</p>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-2xl bg-secondary/60 px-3 py-2.5">
+          <p className="text-[11px] text-muted-foreground">
+            {view.short ? "쓴 시간 동안 낸 돈" : view.perLabel}
+          </p>
+          <p className="text-lg font-black tracking-tight tabular-nums">
+            {view.short
+              ? won(usage.periodCostKRW)
+              : view.unitKRW === null
+                ? "—"
+                : won(view.unitKRW)}
+          </p>
+          <p className={cn("text-[11px]", style ? style.text : "text-muted-foreground")}>
+            {view.short
+              ? `${used}만 써서 시간당은 계산하지 않았어요`
+              : view.unitKRW === null
+                ? view.metric === "uses"
+                  ? `최근 ${days}일 동안 1분 넘게 연 적이 없어요`
+                  : view.metric === "days"
+                    ? `최근 ${days}일 동안 쓴 날이 없어요`
+                    : `최근 ${days}일 동안 안 썼어요`
+                : measured}
+            {style && !view.short && view.unitKRW !== null && ` · ${style.label}`}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-secondary/60 px-3 py-2.5">
+          <p className="text-[11px] text-muted-foreground">
+            {view.metric === "hours" ? "쓴 날" : "사용 시간"}
+          </p>
+          <p className="text-lg font-black tracking-tight tabular-nums">
+            {view.metric === "hours" ? `${usage.totals.activeDays}일` : used}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            최근 {days}일 · {usage.totals.opens}회 열었어요
+          </p>
+        </div>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        TV·PC에서 쓴 건 빠져 있어요. 체크인은 이 숫자를 채워 두고 고칠 수 있게 해요.
+      </p>
+    </div>
   );
 }

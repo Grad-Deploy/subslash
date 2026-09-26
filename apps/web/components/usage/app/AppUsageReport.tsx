@@ -392,7 +392,7 @@ function UsageValue({ usage }: { usage: SubUsage }) {
           usage.level ? LEVEL_STYLE[usage.level].text : "text-muted-foreground",
         )}
       >
-        {usage.hourlyKRW !== null ? "시간당" : "1분 미만"}
+        {usage.hourlyKRW !== null ? "시간당" : `${formatDuration(usage.totals.usedMs)} 사용`}
         {usage.level && ` · ${LEVEL_STYLE[usage.level].label}`}
       </span>
     </span>

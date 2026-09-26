@@ -22,7 +22,18 @@ export interface UsageHistory {
    * 없으면(안드로이드 9 이하, 또는 이 기능 전의 기록뿐) 재생 시간은 모른다.
    */
   playbackFrom?: string;
+  /**
+   * 이 기록을 잰 방식의 판. 재는 방식을 고쳐 지난 기록이 틀렸다면 MEASURE_VERSION을 올린다 — 판이 다른
+   * 기록은 다음에 운영체제가 남겨 둔 만큼(최대 35일)을 다시 읽어 덮는다. 그보다 오래된 날은 고칠 수 없다.
+   */
+  measureVersion?: number;
 }
+
+/**
+ * 2: Gemini를 Google 앱의 Gemini 화면으로도 잰다(UsageStatsPlugin.effectivePackage). 그 전 기록은 Gemini
+ *    앱이 화면을 넘기는 0.5초만 잡았다.
+ */
+export const MEASURE_VERSION = 2;
 
 export const EMPTY_HISTORY: UsageHistory = { v: 1, days: {}, syncedAt: null };
 
@@ -59,15 +70,21 @@ export function parseHistory(raw: string | null): UsageHistory {
       days: parsed.days,
       syncedAt: parsed.syncedAt ?? null,
       ...(typeof parsed.playbackFrom === "string" ? { playbackFrom: parsed.playbackFrom } : {}),
+      ...(typeof parsed.measureVersion === "number"
+        ? { measureVersion: parsed.measureVersion }
+        : {}),
     };
   } catch {
     return EMPTY_HISTORY;
   }
 }
 
-/** 다음에 읽을 날 수. 처음이면 운영체제가 남겨 둔 만큼(최대 35일), 아니면 지난번 이후 + 하루. */
+/**
+ * 다음에 읽을 날 수. 처음이거나 재는 방식이 바뀌었으면(MEASURE_VERSION) 운영체제가 남겨 둔 만큼(최대 35일),
+ * 아니면 지난번 이후 + 하루.
+ */
 export function daysToQuery(history: UsageHistory, now: Date): number {
-  if (!history.syncedAt) return 35;
+  if (!history.syncedAt || history.measureVersion !== MEASURE_VERSION) return 35;
   const since = (now.getTime() - Date.parse(history.syncedAt)) / 86_400_000;
   return Math.max(2, Math.min(35, Math.ceil(since) + 1));
 }
@@ -134,6 +151,7 @@ export function mergeUsage(
     days,
     syncedAt: now.toISOString(),
     ...(playbackFrom ? { playbackFrom } : {}),
+    measureVersion: MEASURE_VERSION,
   };
 }
 
@@ -231,6 +249,12 @@ export function monthlyTotals(
     });
   }
   return months;
+}
+
+/** '12시간 10분', '40분', 1분이 안 되면 '12초'. 가성비처럼 짧은 시간이 곧 근거인 자리에 쓴다. */
+export function formatDurationPrecise(ms: number): string {
+  if (ms > 0 && ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))}초`;
+  return formatDuration(ms);
 }
 
 /** '12시간 10분', '40분', '1분 미만'. */
