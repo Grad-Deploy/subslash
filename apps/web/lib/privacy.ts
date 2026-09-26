@@ -80,3 +80,24 @@ export function isDeviceUsageOpen(now: Date = new Date()): boolean {
   if (!DEVICE_USAGE_STARTS_ON) return false;
   return now.getTime() >= new Date(`${DEVICE_USAGE_STARTS_ON}T00:00:00+09:00`).getTime();
 }
+
+/**
+ * 구글·카카오·네이버 계정으로 로그인(lib/oauth)을 시작하는 날(YYYY-MM-DD, 한국 시간 0시). 제공자에게서
+ * 받는 정보(회원 번호의 해시, 이메일)를 새로 저장하고 로그인 과정에서 그 회사들이 개인정보를 처리하므로,
+ * 방침에 항목을 먼저 알리고 그날부터 연다. null이면 닫혀 있다. 열려도 제공자마다 앱 키(환경 변수)가
+ * 있어야 그 버튼이 보인다.
+ */
+export const SOCIAL_LOGIN_STARTS_ON: string | null = null;
+
+/** 소셜 로그인이 열렸는지. */
+export function isSocialLoginOpen(now: Date = new Date()): boolean {
+  // 테스트 서버만 시작 전에 여는 스위치. 운영 빌드에서는 이 줄이 빠진다.
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_SOCIAL_LOGIN_TEST_OPEN === "true"
+  ) {
+    return true;
+  }
+  if (!SOCIAL_LOGIN_STARTS_ON) return false;
+  return now.getTime() >= new Date(`${SOCIAL_LOGIN_STARTS_ON}T00:00:00+09:00`).getTime();
+}

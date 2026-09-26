@@ -51,6 +51,19 @@ function derive(password: string, salt: Buffer, n: number, r: number, p: number)
   });
 }
 
+/**
+ * 비밀번호 없이 만든 계정(소셜 로그인으로 가입)의 해시 칸. `scrypt$…` 모양이 아니라 어떤 비밀번호와도
+ * 맞지 않는다(verifyPassword가 false). 칸을 비워 두지 않는 이유는 accounts.password_hash가 NOT NULL이고,
+ * 그것을 바꾸려면 SQLite에서 계정 표를 통째로 다시 만들어야 해서다. 비밀번호 재설정 메일로 비밀번호를
+ * 만들면 이 값이 진짜 해시로 바뀐다.
+ */
+export const NO_PASSWORD = "!no-password";
+
+/** 비밀번호로 로그인할 수 있는 계정인지. */
+export function hasPassword(stored: string): boolean {
+  return stored !== NO_PASSWORD;
+}
+
 /** 저장할 해시 문자열을 만든다. 같은 비밀번호라도 매번 다른 값이 나온다. */
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(SALT_LENGTH);
