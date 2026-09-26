@@ -142,8 +142,8 @@ export function AppBatchCheckIn({
             <h2 className="text-lg font-black tracking-tight">폰 기록으로 한 번에 체크인</h2>
             <p className="text-sm text-muted-foreground">
               {covered < 30 ? `기록이 있는 최근 ${covered}일 동안` : "최근 30일 동안"} 이 폰에서 잰
-              값이에요. OTT는 연 횟수, AI는 쓴 날, 음악·독서는 들은 시간이에요. 확인하고 고쳐
-              주세요.
+              값이에요. OTT는 연 횟수, AI는 5분 넘게 쓴 날, 음악·독서는 들은 시간이에요. 확인하고
+              고쳐 주세요.
             </p>
           </div>
 

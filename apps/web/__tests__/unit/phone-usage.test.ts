@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { Subscription } from "@subslash/shared";
 import {
+  ACTIVE_DAY_MS,
   EMPTY_HISTORY,
   MEASURE_VERSION,
   daysToQuery,
@@ -226,7 +227,8 @@ describe("totalsFor · monthlyTotals", () => {
       ms: 180_000,
       opens: 3,
       coveredDays: 4,
-      activeDays: 2,
+      // 두 날 모두 5분(ACTIVE_DAY_MS)이 안 돼 쓴 날로 치지 않는다.
+      activeDays: 0,
       listenMs: null,
       usedMs: 180_000,
       byPackage: {
@@ -234,6 +236,21 @@ describe("totalsFor · monthlyTotals", () => {
         "com.google.android.apps.youtube.music": { usedMs: 120_000, opens: 2 },
       },
     });
+  });
+
+  it("쓴 날은 그날 5분 이상 쓴 날만 센다(잠깐 켜 본 날은 빼고)", () => {
+    const pkg = "com.netflix.mediaclient";
+    const days = lastDays(NOW, 3);
+    const h: UsageHistory = {
+      v: 1,
+      syncedAt: null,
+      days: {
+        [days[0]]: { [pkg]: [ACTIVE_DAY_MS - 1_000, 1] },
+        [days[1]]: { [pkg]: [ACTIVE_DAY_MS, 1] },
+        [days[2]]: { [pkg]: [3 * 60_000, 1], "com.google.android.youtube": [0, 0] },
+      },
+    };
+    expect(totalsFor(h, [pkg], days).activeDays).toBe(1);
   });
 
   it("달별 합계는 12칸이고, 기록 없는 달은 coveredDays 0", () => {

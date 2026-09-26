@@ -243,7 +243,7 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
 
           <p className="text-xs text-muted-foreground">
             {sort === "value"
-              ? "막대가 꽉 차면 '잘 씀'이에요(한 달에 OTT 4회 · AI 10일 · 음악 10시간, 체크인과 같은 기준). 평가는 기록이 30일 쌓이면 나와요."
+              ? "막대가 꽉 차면 '잘 씀'이에요(한 달에 OTT 4회 · AI 10일(하루 5분 이상) · 음악 10시간, 체크인과 같은 기준). 평가는 기록이 30일 쌓이면 나와요."
               : "막대를 모두 더하면 100%예요. 색은 가성비 평가예요."}{" "}
             TV·PC에서 본 건 빠져 있어요.
             {unmappedCount > 0 &&
