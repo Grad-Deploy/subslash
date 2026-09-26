@@ -55,24 +55,32 @@ export function AppUsageCountPicker({
   const count = value ?? 0;
   const monthly = getMyMonthlyShareAmount(subscription);
 
-  // 폰 기록이 오면 한 번만 미리 맞춘다. 사용자가 이미 골랐거나 0회면 건드리지 않는다.
+  // 폰 기록이 오면 한 번만 미리 맞춘다. 사용자가 이미 골랐거나 폰에서 0회면 건드리지 않는다.
+  // 체크인 창은 0에서 시작하므로(null이 아니다) 0도 '아직 안 고름'으로 본다 — 예전에는 창에서 열면
+  // 채워지지 않았다. 사용자가 손댔는지는 touched로 가린다.
   const [phoneOpens, setPhoneOpens] = useState<number | null>(null);
   const prefilled = useRef(false);
+  const touched = useRef(false);
   const handlePhoneOpens = useCallback(
     (opens: number | null) => {
       setPhoneOpens(opens);
-      if (prefilled.current || value !== null || !opens) return;
+      if (prefilled.current || touched.current || !opens) return;
+      if (value !== null && value !== 0) return;
       prefilled.current = true;
       onChange(Math.min(999, opens));
     },
     [value, onChange],
   );
+  const choose = (next: number) => {
+    touched.current = true;
+    onChange(next);
+  };
 
   const pick = (clientX: number) => {
     const rect = trackRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0) return;
     const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    onChange(Math.round(ratio * MAX_STEP));
+    choose(Math.round(ratio * MAX_STEP));
   };
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -84,10 +92,10 @@ export function AppUsageCountPicker({
   };
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const step = Math.min(count, MAX_STEP);
-    if (e.key === "ArrowRight" || e.key === "ArrowUp") onChange(Math.min(MAX_STEP, step + 1));
-    else if (e.key === "ArrowLeft" || e.key === "ArrowDown") onChange(Math.max(0, step - 1));
-    else if (e.key === "Home") onChange(0);
-    else if (e.key === "End") onChange(MAX_STEP);
+    if (e.key === "ArrowRight" || e.key === "ArrowUp") choose(Math.min(MAX_STEP, step + 1));
+    else if (e.key === "ArrowLeft" || e.key === "ArrowDown") choose(Math.max(0, step - 1));
+    else if (e.key === "Home") choose(0);
+    else if (e.key === "End") choose(MAX_STEP);
     else return;
     e.preventDefault();
   };
@@ -136,7 +144,7 @@ export function AppUsageCountPicker({
             autoFocus
             value={count ? String(count) : ""}
             onChange={(e) =>
-              onChange(Math.min(999, Number(e.target.value.replace(/[^0-9]/g, "")) || 0))
+              choose(Math.min(999, Number(e.target.value.replace(/[^0-9]/g, "")) || 0))
             }
             placeholder="0"
             aria-label="사용 횟수"
