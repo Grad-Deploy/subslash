@@ -4,8 +4,10 @@ import { describe, expect, it } from "vitest";
 import type { Subscription } from "@subslash/shared";
 import {
   EMPTY_HISTORY,
+  MEASURE_VERSION,
   daysToQuery,
   formatDuration,
+  formatDurationPrecise,
   lastDays,
   mergeUsage,
   monthlyTotals,
@@ -13,7 +15,7 @@ import {
   type UsageHistory,
 } from "@lib/usage/history";
 import { ALL_USAGE_PACKAGES, packageBreakdown, packagesFor } from "@lib/usage/packages";
-import { median, subUsage } from "@lib/usage/value";
+import { MIN_HOURLY_MS, median, metricView, subUsage } from "@lib/usage/value";
 
 const NOW = new Date(2026, 8, 25, 15, 0, 0); // 2026-09-25 15:00 (기기 시간대)
 const at = (date: string, hour = 0) => {
@@ -270,17 +272,75 @@ describe("subUsage", () => {
     expect(u.perOpenKRW).toBeCloseTo(1700);
     expect(u.level).toBe("green");
   });
+
+  // Gemini 앱이 Google 앱으로 화면을 넘기는 0.5초만 잡혔을 때 '시간당 5,400만 원'이 나왔다.
+  it("1시간도 안 썼으면 시간당 금액을 내지 않고, 그동안 낸 돈은 남긴다", () => {
+    const days: Record<string, Record<string, [number, number]>> = {};
+    for (const date of dates) days[date] = {};
+    days[dates[29]] = { "com.netflix.mediaclient": [500, 0] };
+    const u = subUsage(
+      sub(),
+      { v: 1, days, syncedAt: null },
+      ["com.netflix.mediaclient"],
+      dates,
+      1350,
+    );
+    expect(u.state).toBe("measured");
+    expect(u.hourlyKRW).toBeNull();
+    expect(u.periodCostKRW).toBeCloseTo(17000);
+    const view = metricView(u, "hours");
+    expect(view.short).toBe(true);
+    expect(view.unitKRW).toBeNull();
+    expect(formatDurationPrecise(500)).toBe("1초");
+    expect(formatDurationPrecise(12_400)).toBe("12초");
+    expect(formatDurationPrecise(MIN_HOURLY_MS)).toBe("1시간");
+  });
+
+  it("쓴 날로 재는 구독은 하루당 금액으로 말하고, 기록이 30일이 안 되면 30일로 늘린다", () => {
+    const recent = dates.slice(15); // 15일치 기록
+    const days: Record<string, Record<string, [number, number]>> = {};
+    for (const date of recent) days[date] = {};
+    for (const date of recent.slice(0, 5)) days[date] = { "com.netflix.mediaclient": [600_000, 1] };
+    const u = subUsage(
+      sub(),
+      { v: 1, days, syncedAt: null },
+      ["com.netflix.mediaclient"],
+      dates,
+      1350,
+    );
+    const view = metricView(u, "days");
+    expect(view.perLabel).toBe("하루당");
+    expect(view.quantity).toBe(5);
+    // 15일 중 5일 → 30일이면 10일 → 17,000 ÷ 10
+    expect(view.unitKRW).toBeCloseTo(1700);
+    expect(view.level).toBe("green");
+  });
 });
 
 describe("helpers", () => {
   it("daysToQuery: 처음이면 35일, 어제 읽었으면 이틀", () => {
     expect(daysToQuery(EMPTY_HISTORY, NOW)).toBe(35);
+    const yesterday = new Date(NOW.getTime() - 86_400_000).toISOString();
     expect(
-      daysToQuery(
-        { ...EMPTY_HISTORY, syncedAt: new Date(NOW.getTime() - 86_400_000).toISOString() },
-        NOW,
-      ),
+      daysToQuery({ ...EMPTY_HISTORY, syncedAt: yesterday, measureVersion: MEASURE_VERSION }, NOW),
     ).toBe(2);
+  });
+
+  it("daysToQuery: 재는 방식이 바뀐 기록은 어제 읽었어도 35일을 다시 읽는다", () => {
+    const yesterday = new Date(NOW.getTime() - 86_400_000).toISOString();
+    // 판이 없는 기록(Gemini를 bard 앱으로만 재던 때)
+    expect(daysToQuery({ ...EMPTY_HISTORY, syncedAt: yesterday }, NOW)).toBe(35);
+    expect(daysToQuery({ ...EMPTY_HISTORY, syncedAt: yesterday, measureVersion: 1 }, NOW)).toBe(35);
+  });
+
+  it("mergeUsage: 다시 읽은 기록에 지금 판을 적어 다음부터는 하루치만 읽는다", () => {
+    const merged = mergeUsage(
+      EMPTY_HISTORY,
+      { from: at("2026-09-24"), dataFrom: at("2026-09-24"), days: [] },
+      2,
+      NOW,
+    );
+    expect(merged.measureVersion).toBe(MEASURE_VERSION);
   });
 
   it("formatDuration", () => {

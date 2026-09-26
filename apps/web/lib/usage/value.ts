@@ -5,8 +5,10 @@
 import {
   getMyMonthlyAmountKRW,
   getRiskLevel,
+  metricRiskLevel,
   type RiskLevel,
   type Subscription,
+  type ValueMetric,
 } from "@subslash/shared";
 import { lastDays, totalsFor, type UsageHistory, type UsageTotals } from "./history";
 import { packagesFor } from "./packages";
@@ -53,13 +55,21 @@ export interface SubUsage {
   totals: UsageTotals;
   /** 한 달치 내 몫(원). */
   monthlyKRW: number;
-  /** 기록이 있는 날만큼의 구독료 ÷ 사용 시간. 안 썼으면 null. */
+  /** 기록이 있는 날만큼의 구독료(원). 한 달치 내 몫 × 기록이 있는 날 ÷ 30. */
+  periodCostKRW: number;
+  /**
+   * 기록이 있는 날만큼의 구독료 ÷ 사용 시간. 1시간(MIN_HOURLY_MS)도 안 썼으면 null — 몇 초로 한 달 요금을
+   * 나누면 '시간당 5,400만 원'이 나온다(Gemini가 0.5초로 잡혔을 때). 그때는 쓴 시간과 낸 돈을 그대로 보인다.
+   */
   hourlyKRW: number | null;
   /** 30일로 환산한 쓴 횟수 기준 1회 단가. 안 열었으면 null. */
   perOpenKRW: number | null;
   /** 30일로 환산한 쓴 횟수로 매긴 색. 안 열었으면 null. */
   level: RiskLevel | null;
 }
+
+/** 이보다 적게 썼으면 시간당 금액을 내지 않는다. 한 시간으로 늘려 말하면 쓴 시간보다 큰 숫자가 된다. */
+export const MIN_HOURLY_MS = 3_600_000;
 
 export function subUsage(
   sub: Subscription,
@@ -85,6 +95,7 @@ export function subUsage(
       state: "unmapped",
       totals: empty,
       monthlyKRW,
+      periodCostKRW: 0,
       hourlyKRW: null,
       perOpenKRW: null,
       level: null,
@@ -99,6 +110,7 @@ export function subUsage(
       state: "not-installed",
       totals,
       monthlyKRW,
+      periodCostKRW: 0,
       hourlyKRW: null,
       perOpenKRW: null,
       level: null,
@@ -110,6 +122,7 @@ export function subUsage(
       state: "no-data",
       totals,
       monthlyKRW,
+      periodCostKRW: 0,
       hourlyKRW: null,
       perOpenKRW: null,
       level: null,
@@ -125,7 +138,8 @@ export function subUsage(
     state: "measured",
     totals,
     monthlyKRW,
-    hourlyKRW: hours > 0 ? periodCost / hours : null,
+    periodCostKRW: periodCost,
+    hourlyKRW: totals.usedMs >= MIN_HOURLY_MS ? periodCost / hours : null,
     perOpenKRW,
     level: perOpenKRW === null ? null : getRiskLevel(perOpenKRW, monthlyKRW, opensPer30),
   };
@@ -153,4 +167,59 @@ export function median(values: number[]): number | null {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * 구독 상세의 가성비 한 칸. 체크인과 같은 지표(`metricForSubscription`)로 말한다 — Gemini처럼 '쓴 날'로 재는
+ * 구독에 시간당 금액을 보이면 체크인의 '하루당'과 다른 숫자가 나온다. 기록이 30일이 안 되면 30일로 늘려
+ * 체크인과 같은 크기로 맞춘다(색 기준도 30일 기준이다).
+ */
+export interface MetricView {
+  metric: ValueMetric;
+  /** '1회당' · '하루당' · '시간당' */
+  perLabel: string;
+  /** 단가. 안 썼거나(0) 시간이 1시간도 안 되면 null. */
+  unitKRW: number | null;
+  /** 시간 지표인데 1시간도 안 썼다 — 단가 대신 쓴 시간과 낸 돈(periodCostKRW)을 보인다. */
+  short: boolean;
+  /** 이 기간에 이 폰에서 잰 양. 1회당이면 연 횟수, 하루당이면 쓴 날, 시간당이면 쓴 ms. */
+  quantity: number;
+  level: RiskLevel | null;
+}
+
+export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {
+  const { totals, monthlyKRW } = usage;
+  const covered = totals.coveredDays;
+  const scale = covered > 0 ? 30 / covered : 0;
+  if (metric === "uses") {
+    return {
+      metric,
+      perLabel: "1회당",
+      unitKRW: usage.perOpenKRW,
+      short: false,
+      quantity: totals.opens,
+      level: usage.level,
+    };
+  }
+  if (metric === "days") {
+    const per30 = totals.activeDays * scale;
+    return {
+      metric,
+      perLabel: "하루당",
+      unitKRW: per30 > 0 ? monthlyKRW / per30 : null,
+      short: false,
+      quantity: totals.activeDays,
+      level: covered > 0 ? metricRiskLevel("days", monthlyKRW, Math.round(per30)) : null,
+    };
+  }
+  // 시간(음악·독서). 혜택·용량은 폰 기록으로 재지 않으므로 여기 오지 않는다 — 오면 시간으로 본다.
+  const hoursPer30 = (totals.usedMs / 3_600_000) * scale;
+  return {
+    metric: "hours",
+    perLabel: "시간당",
+    unitKRW: usage.hourlyKRW,
+    short: totals.usedMs > 0 && totals.usedMs < MIN_HOURLY_MS,
+    quantity: totals.usedMs,
+    level: covered > 0 ? metricRiskLevel("hours", monthlyKRW, hoursPer30) : null,
+  };
 }

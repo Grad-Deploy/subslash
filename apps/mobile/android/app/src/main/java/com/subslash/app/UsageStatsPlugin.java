@@ -65,6 +65,26 @@ public class UsageStatsPlugin extends Plugin {
     private static final int FOREGROUND_SERVICE_START = 19;
     private static final int FOREGROUND_SERVICE_STOP = 20;
 
+    /**
+     * Gemini는 앱(bard)을 눌러도 그 앱이 곧바로 Google 앱의 Gemini 화면으로 넘긴다. 실제 대화는 Google 앱
+     * (googlequicksearchbox)의 `…assistant.surfaces.voice.robin.…` 화면에서 하고, bard 앱은 넘기는 0.5초만
+     * 앞에 있다 — 그래서 한 달 사용이 1초도 안 되게 잡혀 '시간당 5,400만 원'이 나왔다(삼성 폰에서 adb로 확인,
+     * 2026-09-26). Google 앱을 통째로 세면 검색·Discover가 섞이므로, 화면 이름에 robin(구글이 Gemini를 부르는
+     * 이름)이 든 것만 bard 앱의 사용으로 읽는다. 구글이 이 이름을 바꾸면 Gemini가 다시 짧게 잡힌다 — 그때는
+     * `adb shell dumpsys window | grep mCurrentFocus`로 Gemini를 켠 화면의 이름을 보고 여기를 고친다.
+     */
+    private static final String GOOGLE_APP = "com.google.android.googlequicksearchbox";
+    private static final String GEMINI_APP = "com.google.android.apps.bard";
+    private static final String GEMINI_SCREEN_MARK = ".robin.";
+
+    /** 이벤트의 앱을 연결표의 앱으로 읽는다. Google 앱 안의 Gemini 화면만 Gemini 앱으로 바꾼다. */
+    static String effectivePackage(String pkg, String activity) {
+        if (GOOGLE_APP.equals(pkg) && activity != null && activity.contains(GEMINI_SCREEN_MARK)) {
+            return GEMINI_APP;
+        }
+        return pkg;
+    }
+
     @PluginMethod
     public void status(PluginCall call) {
         JSObject result = new JSObject();
@@ -232,8 +252,10 @@ public class UsageStatsPlugin extends Plugin {
             long t = event.getTimeStamp();
             if (firstEventAt < 0) firstEventAt = t;
             int type = event.getEventType();
-            String pkg = event.getPackageName();
             String activity = event.getClassName() == null ? "" : event.getClassName();
+            // Google 앱의 Gemini 화면은 Gemini 앱으로 읽는다. 같은 Google 앱이어도 검색 화면으로 넘어가면
+            // 다른 앱이 열린 것으로 보고 Gemini 사용을 닫는다.
+            String pkg = effectivePackage(event.getPackageName(), activity);
 
             if (type == ACTIVITY_RESUMED) {
                 if (pkg.equals(current)) {
