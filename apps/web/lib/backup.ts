@@ -127,6 +127,14 @@ function checkSubscription(v: unknown): string | null {
   if (!optional(v.linkedAccountId, isString)) return "연동 계정";
   if (!optional(v.linkedAccountName, isString)) return "연동 계정 이름";
   if (!optional(v.accountMemo, isString)) return "메모";
+  if (
+    !optional(
+      v.orderEvidence,
+      (e) => isObject(e) && isAmount(e.count) && isString(e.since) && isDateText(e.checkedAt),
+    )
+  ) {
+    return "주문 메일 근거";
+  }
   return null;
 }
 

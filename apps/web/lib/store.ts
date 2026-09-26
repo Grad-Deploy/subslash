@@ -14,6 +14,8 @@ import {
   evaluateMetric,
   metricForSubscription,
   type ValueMetric,
+  type OrderCount,
+  findPresetForSubscription,
   getMyMonthlyShareAmount,
   sumMonthlyKRW,
   sumMyMonthlyKRW,
@@ -326,6 +328,11 @@ interface SubSlashStore {
    * 요금을 확인해 주거나 금액을 고치면 지워진다.
    */
   markObservedAmount: (id: string, receiptDate: string, amount: number) => void;
+  /**
+   * Gmail 가져오기에서 센 멤버십 주문 메일 수를 그 멤버십 구독에 적는다(utils/orderEvidence). 혜택 금액을
+   * 적을 때 옆에 보이는 근거일 뿐 체크인이 아니다. 체험 중에는 적지 않는다(화면의 목록이 샘플이다).
+   */
+  recordOrderEvidence: (counts: OrderCount[]) => void;
   deleteSubscription: (id: string) => void;
   /**
    * 체크인을 적는다. `source: "phone"`은 폰 사용 기록으로 자동으로 적는 것이고(useAutoCheckIn만
@@ -553,6 +560,20 @@ export const useStore = create<SubSlashStore>()(
                 }
               : sub,
           ),
+        }));
+      },
+      recordOrderEvidence: (counts) => {
+        if (get().demo || counts.length === 0) return;
+        const checkedAt = new Date().toISOString();
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) => {
+            if (sub.status !== "active" || sub.currency !== "KRW") return sub;
+            const presetId = findPresetForSubscription(sub)?.id;
+            const found = counts.find((count) => count.presetId === presetId);
+            return found
+              ? { ...sub, orderEvidence: { count: found.count, since: found.since, checkedAt } }
+              : sub;
+          }),
         }));
       },
       markObservedAmount: (id, receiptDate, amount) => {
