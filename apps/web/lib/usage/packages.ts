@@ -49,7 +49,11 @@ export const ALL_USAGE_PACKAGES: readonly string[] = [
 /** 이 구독을 폰 기록으로 잴 수 있으면 그 앱 패키지들, 아니면 null(직접 체크인). */
 export function packagesFor(sub: Subscription): readonly string[] | null {
   const preset = findPresetForSubscription(sub);
-  return (preset && USAGE_PACKAGES[preset.id]) ?? null;
+  if (!preset) return null;
+  // 결합 상품은 포함된 서비스의 앱으로 잰다(배민클럽 + 유튜브 프리미엄 → 유튜브·유튜브 뮤직).
+  const ids = [preset.id, ...(preset.includes ?? [])];
+  const packages = [...new Set(ids.flatMap((id) => USAGE_PACKAGES[id] ?? []))];
+  return packages.length > 0 ? packages : null;
 }
 
 /**

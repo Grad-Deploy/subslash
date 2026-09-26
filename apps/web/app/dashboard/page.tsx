@@ -594,6 +594,7 @@ export default function Dashboard() {
       {duplicate && AppDuplicateDialog && (
         <AppDuplicateDialog
           existing={duplicate.existing}
+          candidate={duplicate.data}
           onCancel={() => setDuplicate(null)}
           onAddAnyway={() => {
             const data = duplicate.data;

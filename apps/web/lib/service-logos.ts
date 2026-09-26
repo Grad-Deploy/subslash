@@ -138,6 +138,9 @@ export const BRAND_LOGOS: Record<string, BrandLogo> = {
     path: "M16.273 12.845 7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845Z",
     title: "Naver",
   },
+  // 결합 상품은 브랜드 마크가 따로 없어 이니셜에 중립 회색이다(두 회사 로고를 섞어 지어내지 않는다).
+  "baemin-youtube-premium": { initial: "배+Y" },
+  "uplus-double-streaming": { initial: "U+" },
   "baemin-club": {
     image: "/logos/baemin-club.png",
     source: "baemin.com 파비콘 180x180",

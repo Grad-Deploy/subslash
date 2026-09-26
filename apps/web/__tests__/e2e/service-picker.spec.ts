@@ -18,11 +18,11 @@ test.describe("새 구독 등록 — 서비스 고르기 (E2E)", () => {
     // AI 탭에서는 AI 서비스만 보인다.
     await tabs.getByRole("button", { name: /AI/ }).click();
     await expect(dialog.getByRole("button", { name: /GitHub Copilot/ })).toBeVisible();
-    await expect(dialog.getByRole("button", { name: /넷플릭스/ })).toHaveCount(0);
+    await expect(dialog.getByRole("button", { name: /^넷플릭스/ })).toHaveCount(0);
 
     // AI 탭을 켠 채 검색해도 OTT인 넷플릭스를 찾는다.
     await dialog.getByPlaceholder(/서비스 이름 검색/).fill("넷플");
-    await expect(dialog.getByRole("button", { name: /넷플릭스/ })).toBeVisible();
+    await expect(dialog.getByRole("button", { name: /^넷플릭스/ })).toBeVisible();
     await expect(tabs.getByRole("button", { name: /AI/ })).toHaveAttribute("aria-pressed", "false");
   });
 
