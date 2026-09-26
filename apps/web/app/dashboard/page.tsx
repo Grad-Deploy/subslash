@@ -103,6 +103,19 @@ const AppUnusedAlerts = IS_APP_BUILD
       { ssr: false },
     )
   : null;
+// 결제 달력(앱은 상단 아이콘 + 여기 '다음 결제' 한 줄), 구독 추가 + 버튼(앱 전용).
+const AppNextBilling = IS_APP_BUILD
+  ? dynamic(
+      () =>
+        import("../../components/dashboard/app/AppBillingCalendar").then((m) => m.AppNextBilling),
+      { ssr: false },
+    )
+  : null;
+const AppAddButton = IS_APP_BUILD
+  ? dynamic(() => import("../../components/layout/app/AppAddButton").then((m) => m.AppAddButton), {
+      ssr: false,
+    })
+  : null;
 // '지금 결정할 것'을 접었다 펴기(앱 전용). 접으면 아래 결제 달력이 바로 보인다.
 const AppDecisionFold = IS_APP_BUILD
   ? dynamic(
@@ -383,6 +396,10 @@ export default function Dashboard() {
         </div>
       )}
 
+      {AppAddButton && !(startFlow && isFirstVisit) && (
+        <AppAddButton onManual={() => openAdd()} onPaste={() => setIsAutoImportOpen(true)} />
+      )}
+
       {/* Action Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         <div>
@@ -394,7 +411,8 @@ export default function Dashboard() {
             구독이 없을 때는 이 버튼들 대신 아래 서비스 고르기가 할 일 하나를 보여준다. 처음 온
             사람에게 버튼 세 개와 안내 카드를 한꺼번에 내밀면 어디서 시작할지 모른다.
           */}
-          {!(startFlow && isFirstVisit) && (
+          {/* 앱은 이 두 버튼 대신 떠 있는 + 하나로 추가 방법을 고른다(AppAddButton). */}
+          {!(startFlow && isFirstVisit) && !AppAddButton && (
             <>
               <Button
                 variant="outline"
@@ -513,7 +531,11 @@ export default function Dashboard() {
             다섯 건만 보여줘서 결제가 몰린 주가 보이지 않았다. 좁은 aside에는 7열 그리드가 들어가지
             않아 본문에 둔다.
           */}
-          <BillingCalendar subscriptions={activeSubs} now={now} />
+          {AppNextBilling ? (
+            <AppNextBilling />
+          ) : (
+            <BillingCalendar subscriptions={activeSubs} now={now} />
+          )}
 
           {/* 월간 구독 가성비 리포트 (손익 영수증) */}
           {AppValueReceipt ? (

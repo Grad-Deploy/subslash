@@ -26,6 +26,13 @@ const AppAutoCheckIn = IS_APP_BUILD
     })
   : null;
 
+// 결제 달력 아이콘(앱 전용). 대시보드 가운데 있던 달력을 상단으로 옮겼다.
+const AppCalendarButton = IS_APP_BUILD
+  ? dynamic(() => import("../dashboard/app/AppBillingCalendar").then((m) => m.AppCalendarButton), {
+      ssr: false,
+    })
+  : null;
+
 const navLinks = [
   { name: "대시보드", href: "/dashboard" },
   { name: "내 구독", href: "/subs" },
@@ -162,6 +169,7 @@ export function Header() {
               <div className="hidden h-5 w-px bg-border sm:block" aria-hidden="true" />
             )}
 
+            {AppCalendarButton && <AppCalendarButton />}
             <AccountMenu
               onOpenLinkedAccounts={() => setIsAccountsOpen(true)}
               onOpenNotify={() => setIsNotifyOpen(true)}

@@ -20,9 +20,15 @@ import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 export function AppPhoneCheckInButton({
   subscriptions,
   onDone,
+  autoSwitch = true,
+  batchButton = true,
 }: {
   subscriptions: Subscription[];
   onDone?: (count: number) => void;
+  /** 자동 체크인 켜기/끄기 카드. 설정 탭에 두고 구독 관리에서는 뺀다. */
+  autoSwitch?: boolean;
+  /** '폰 기록으로 체크인' 버튼. 구독 관리에 두고 설정 탭에서는 뺀다. */
+  batchButton?: boolean;
 }) {
   const { status, history } = usePhoneUsage();
   const [autoOn, setAutoOn] = useState(readAutoCheckIn);
@@ -45,7 +51,7 @@ export function AppPhoneCheckInButton({
 
   return (
     <>
-      {status === "on" && (
+      {autoSwitch && status === "on" && (
         <div className="flex w-full items-start gap-3 rounded-2xl border px-3 py-2.5 md:max-w-md">
           <div className="min-w-0 flex-1 text-xs leading-relaxed">
             <p className="font-bold">폰 기록으로 자동 체크인</p>
@@ -61,7 +67,8 @@ export function AppPhoneCheckInButton({
               <>
                 <p className="mt-0.5 font-bold text-foreground">{remaining}일 남았어요</p>
                 <p className="text-muted-foreground">
-                  지금 바로 하려면 아래 &lsquo;폰 기록으로 체크인&rsquo;을 눌러 주세요.
+                  지금 바로 하려면 {batchButton ? "아래" : "구독 관리의"} &lsquo;폰 기록으로
+                  체크인&rsquo;을 눌러 주세요.
                 </p>
               </>
             )}
@@ -110,7 +117,7 @@ export function AppPhoneCheckInButton({
           </button>
         </div>
       )}
-      {autoable && (
+      {batchButton && (
         <Button
           variant="outline"
           className="w-full font-semibold md:max-w-md"
