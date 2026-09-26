@@ -28,6 +28,10 @@ interface ActionQueueProps {
   /** 해지 뒤 첫 결제일에 결제가 됐다고 답했을 때. */
   onKillCharged: (subscriptionId: string) => void;
   onAddFirst: () => void;
+  /** 제목 줄 오른쪽에 더 둘 것(앱의 접기 버튼). 웹은 넘기지 않는다. */
+  headerAction?: React.ReactNode;
+  /** 제목과 목록 사이에 둘 것(앱의 폰 사용 기록 알림). 웹은 넘기지 않는다. */
+  lead?: React.ReactNode;
 }
 
 const VERB_LABEL: Record<ActionVerb, string> = {
@@ -65,6 +69,8 @@ export function ActionQueue({
   onKillNotCharged,
   onKillCharged,
   onAddFirst,
+  headerAction,
+  lead,
 }: ActionQueueProps) {
   const router = useRouter();
 
@@ -116,8 +122,9 @@ export function ActionQueue({
     <section className="space-y-3">
       <div className="flex items-baseline justify-between">
         <h2 className="text-xl font-bold tracking-tight">지금 결정할 것 ({items.length})</h2>
-        <span className="text-xs text-muted-foreground">급한 순</span>
+        {headerAction ?? <span className="text-xs text-muted-foreground">급한 순</span>}
       </div>
+      {lead}
 
       <ul className="space-y-2">
         {items.map((item) => (

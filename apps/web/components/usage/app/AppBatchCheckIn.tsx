@@ -2,28 +2,48 @@
 
 import React, { useMemo, useState } from "react";
 import { Check, Minus, Plus } from "lucide-react";
-import { type Subscription, metricForSubscription } from "@subslash/shared";
+import {
+  METRIC_SPECS,
+  type Subscription,
+  type ValueMetric,
+  metricForSubscription,
+} from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useStore } from "@lib/store";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import { formatDuration, lastDays } from "@lib/usage/history";
+import { measuredQuantity } from "@lib/usage/auto-checkin";
 import { subUsage } from "@lib/usage/value";
 import { AppSheet } from "../../settings/app/AppSheet";
 import { Button } from "../../ui/button";
 import { SubLogo } from "./parts";
 
+/** 폰 기록으로 잴 수 있는 지표. 혜택 금액·용량은 폰으로 알 수 없다. */
+const PHONE_METRICS: readonly ValueMetric[] = ["uses", "days", "hours"];
+
 interface Row {
   sub: Subscription;
-  opens: number;
-  ms: number;
+  metric: ValueMetric;
+  /** 폰 기록으로 잰 이 지표의 수량(연 횟수·쓴 날·시간). */
+  quantity: number;
+  usedMs: number;
   coveredDays: number;
   kind: "measured" | "not-installed";
 }
 
+/** 폰 기록이 0일 때 줄 아래에 적는 말. */
+const ZERO_NOTE: Partial<Record<ValueMetric, string>> = {
+  uses: "폰에서는 안 열었어요 · 다른 기기에서 봤나요?",
+  days: "폰에서는 안 썼어요 · 다른 기기에서 썼나요?",
+  hours: "폰에서는 안 들었어요 · 다른 기기에서 썼나요?",
+};
+
 /**
- * 폰 기록으로 한 번에 체크인. 연결표에 있는 구독을 한 화면에 모아, 최근 30일 동안 이 폰에서 연
- * 횟수를 채워 둔다. 저장은 사용자가 확인한 줄만 한다 — 폰 기록은 TV·PC에서 본 것을 모른다.
+ * 폰 기록으로 한 번에 체크인. 연결표에 있는 구독을 한 화면에 모아, 최근 30일 동안 이 폰에서 잰 값을
+ * 구독마다 체크인과 같은 지표로 채워 둔다 — OTT는 연 횟수, AI는 쓴 날, 음악·독서는 시간. 예전에는 연
+ * 횟수만 넣어서 Claude·Gemini가 목록에 없었고, '폰 기록으로 다 체크인된다'고 읽혔다. 저장은 사용자가
+ * 확인한 줄만 한다 — 폰 기록은 TV·PC에서 본 것을 모른다.
  *
  * 0회는 기본으로 체크를 빼고 '다른 기기에서 봤나요?'로 묻는다. 실수로 '안 씀'이 기록되면 해지
  * 권유로 이어진다. 이 폰에 앱이 없는 구독은 고를 수 없게 두고 이유를 적는다.
@@ -50,19 +70,21 @@ export function AppBatchCheckIn({
     let skipped = 0;
     for (const sub of subscriptions) {
       const usage = subUsage(sub, history, installed, dates, rate);
-      // 폰에서 연 횟수는 횟수로 재는 구독에만 넣는다. 음악(시간)·AI(쓴 날)는 구독마다 따로 체크인한다.
+      const metric = metricForSubscription(sub);
       if (
         usage.state === "unmapped" ||
         usage.state === "no-data" ||
-        metricForSubscription(sub) !== "uses"
+        !PHONE_METRICS.includes(metric)
       ) {
         skipped += 1;
         continue;
       }
       list.push({
         sub,
-        opens: usage.totals.opens,
-        ms: usage.totals.ms,
+        metric,
+        // 체크인 칸을 미리 채우는 값과 같다(시간은 1시간 단위로 내린다).
+        quantity: metric === "uses" ? usage.totals.opens : measuredQuantity(metric, usage.totals),
+        usedMs: usage.totals.usedMs,
         coveredDays: usage.totals.coveredDays,
         kind: usage.state === "not-installed" ? "not-installed" : "measured",
       });
@@ -75,7 +97,7 @@ export function AppBatchCheckIn({
     Object.fromEntries(
       rows.map((row) => [
         row.sub.id,
-        { checked: row.kind === "measured" && row.opens > 0, count: row.opens },
+        { checked: row.kind === "measured" && row.quantity > 0, count: row.quantity },
       ]),
     ),
   );
@@ -119,8 +141,9 @@ export function AppBatchCheckIn({
           <div className="space-y-1">
             <h2 className="text-lg font-black tracking-tight">폰 기록으로 한 번에 체크인</h2>
             <p className="text-sm text-muted-foreground">
-              {covered < 30 ? `기록이 있는 최근 ${covered}일 동안` : "최근 30일 동안"} 이 폰에서 연
-              횟수예요. 확인하고 고쳐 주세요.
+              {covered < 30 ? `기록이 있는 최근 ${covered}일 동안` : "최근 30일 동안"} 이 폰에서 잰
+              값이에요. OTT는 연 횟수, AI는 쓴 날, 음악·독서는 들은 시간이에요. 확인하고 고쳐
+              주세요.
             </p>
           </div>
 
@@ -133,6 +156,7 @@ export function AppBatchCheckIn({
               {rows.map((row) => {
                 const pick = picks[row.sub.id] ?? { checked: false, count: 0 };
                 const disabled = row.kind === "not-installed";
+                const { unit, max } = METRIC_SPECS[row.metric];
                 return (
                   <li key={row.sub.id} className="flex items-center gap-3 px-3 py-3">
                     <button
@@ -158,16 +182,18 @@ export function AppBatchCheckIn({
                       <p className="text-xs text-muted-foreground">
                         {disabled
                           ? "이 폰에 앱이 없어요 · 따로 체크인"
-                          : row.opens === 0
-                            ? "폰에서는 안 열었어요 · 다른 기기에서 봤나요?"
-                            : `${formatDuration(row.ms)} 사용`}
+                          : row.quantity === 0 && row.usedMs > 0 && row.metric === "hours"
+                            ? `${formatDuration(row.usedMs)} 사용 · 1시간이 안 돼요`
+                            : row.quantity === 0
+                              ? ZERO_NOTE[row.metric]
+                              : `${formatDuration(row.usedMs)} 사용`}
                       </p>
                     </div>
                     {!disabled && (
                       <div className="flex shrink-0 items-center gap-1">
                         <button
                           type="button"
-                          aria-label={`${row.sub.name} 한 번 빼기`}
+                          aria-label={`${row.sub.name} 1${unit} 빼기`}
                           onClick={() =>
                             update(row.sub.id, {
                               count: Math.max(0, pick.count - 1),
@@ -178,15 +204,16 @@ export function AppBatchCheckIn({
                         >
                           <Minus className="size-3.5" aria-hidden />
                         </button>
-                        <span className="w-8 text-center text-base font-black tabular-nums">
+                        <span className="w-12 text-center text-base font-black tabular-nums">
                           {pick.count}
+                          <span className="ml-0.5 text-xs font-bold">{unit}</span>
                         </span>
                         <button
                           type="button"
-                          aria-label={`${row.sub.name} 한 번 더하기`}
+                          aria-label={`${row.sub.name} 1${unit} 더하기`}
                           onClick={() =>
                             update(row.sub.id, {
-                              count: Math.min(999, pick.count + 1),
+                              count: Math.min(max, pick.count + 1),
                               checked: true,
                             })
                           }
