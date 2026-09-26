@@ -336,7 +336,7 @@ function UsageLine({
   const verdict = verdictOf(view, unused, month.totals.coveredDays);
   const barColor =
     view.pendingDays > 0 || !view.level
-      ? "bg-muted-foreground/40"
+      ? "bg-foreground/70"
       : LEVEL_STYLE[unused ? "red" : view.level].bar;
 
   let value: React.ReactNode;
@@ -492,7 +492,7 @@ function UsageCard({
                 <span className="truncate font-semibold">{row.usage.sub.name}</span>
                 <span className="h-1.5 overflow-hidden rounded-full bg-secondary">
                   <span
-                    className="block h-full rounded-full bg-muted-foreground/40"
+                    className="block h-full rounded-full bg-foreground/70"
                     style={{ width: `${Math.max(3, (row.usage.totals.usedMs / totalMs) * 100)}%` }}
                   />
                 </span>
