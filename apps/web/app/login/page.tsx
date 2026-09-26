@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { LoginForm } from "@components/auth/LoginForm";
+import { SocialLoginButtons } from "@components/auth/SocialLoginButtons";
 
 export const metadata = {
   title: "로그인 · SubSlash",
@@ -16,7 +17,8 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <div className="p-5 sm:p-6 border rounded-2xl bg-card shadow-sm">
+      <div className="p-5 sm:p-6 border rounded-2xl bg-card shadow-sm space-y-4">
+        <SocialLoginButtons mode="login" />
         <LoginForm />
       </div>
 

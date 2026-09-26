@@ -6,14 +6,22 @@
  * 칸이 없는 날은 **모른다** — 0으로 읽지 않는다(앱을 안 연 날과 기록이 지워진 날은 다르다).
  */
 
-/** 날짜 → 패키지 → [사용 시간(ms), 쓴 횟수] */
-export type UsageDays = Record<string, Record<string, [number, number]>>;
+/**
+ * 날짜 → 패키지 → [사용 시간(ms), 쓴 횟수, 재생 알림 시간(ms)]. 세 번째 칸은 재생 시간을 잴 수 있게 된
+ * 뒤(`playbackFrom`)부터 있다 — 그 앞의 날은 재생 시간을 모른다.
+ */
+export type UsageDays = Record<string, Record<string, [number, number] | [number, number, number]>>;
 
 export interface UsageHistory {
   v: 1;
   days: UsageDays;
   /** 마지막으로 읽은 시각(ISO). 다음에 며칠을 읽을지 정한다. */
   syncedAt: string | null;
+  /**
+   * 재생 알림 시간(포그라운드 서비스)을 재기 시작한 날. 이날부터 기록이 있는 날은 재생 시간도 안다.
+   * 없으면(안드로이드 9 이하, 또는 이 기능 전의 기록뿐) 재생 시간은 모른다.
+   */
+  playbackFrom?: string;
 }
 
 export const EMPTY_HISTORY: UsageHistory = { v: 1, days: {}, syncedAt: null };
@@ -46,7 +54,12 @@ export function parseHistory(raw: string | null): UsageHistory {
     if (parsed.v !== 1 || typeof parsed.days !== "object" || parsed.days === null) {
       return EMPTY_HISTORY;
     }
-    return { v: 1, days: parsed.days, syncedAt: parsed.syncedAt ?? null };
+    return {
+      v: 1,
+      days: parsed.days,
+      syncedAt: parsed.syncedAt ?? null,
+      ...(typeof parsed.playbackFrom === "string" ? { playbackFrom: parsed.playbackFrom } : {}),
+    };
   } catch {
     return EMPTY_HISTORY;
   }
@@ -70,7 +83,14 @@ export function mergeUsage(
   result: {
     from: number;
     dataFrom: number | null;
-    days: { date: string; pkg: string; foregroundMs: number; opens: number }[];
+    serviceSupported?: boolean;
+    days: {
+      date: string;
+      pkg: string;
+      foregroundMs: number;
+      opens: number;
+      serviceMs?: number;
+    }[];
   },
   queriedDays: number,
   now: Date,
@@ -87,19 +107,34 @@ export function mergeUsage(
     firstComplete = index < 0 ? requested.length : index + 1;
   }
 
+  const complete = requested.slice(firstComplete);
+  const withService = result.serviceSupported === true;
   const days: UsageDays = { ...history.days };
-  for (const date of requested.slice(firstComplete)) days[date] = {};
+  for (const date of complete) days[date] = {};
   for (const row of result.days) {
     const day = days[row.date];
     // 온전하지 않은 날(위에서 칸을 만들지 않은 날)은 버린다.
-    if (!day || !requested.slice(firstComplete).includes(row.date)) continue;
-    day[row.pkg] = [row.foregroundMs, row.opens];
+    if (!day || !complete.includes(row.date)) continue;
+    day[row.pkg] = withService
+      ? [row.foregroundMs, row.opens, row.serviceMs ?? 0]
+      : [row.foregroundMs, row.opens];
   }
 
   const oldest = dayKey(addDays(now, -KEEP_DAYS));
   for (const date of Object.keys(days)) if (date < oldest) delete days[date];
 
-  return { v: 1, days, syncedAt: now.toISOString() };
+  // 재생 시간을 처음 잰 날을 적는다. 기기가 재지 못하게 되면(드문 일) 지운다 — 그 뒤의 빈 칸을 0으로
+  // 읽지 않게.
+  let playbackFrom = history.playbackFrom;
+  if (!withService) playbackFrom = undefined;
+  else if (!playbackFrom && complete.length > 0) playbackFrom = complete[0];
+
+  return {
+    v: 1,
+    days,
+    syncedAt: now.toISOString(),
+    ...(playbackFrom ? { playbackFrom } : {}),
+  };
 }
 
 export interface UsageTotals {
@@ -107,6 +142,21 @@ export interface UsageTotals {
   opens: number;
   /** 이 기간 중 기록이 있는 날 수. 0이면 모른다. */
   coveredDays: number;
+  /** 한 번이라도 쓴 날 수(1분 이상 앞에 있었거나 한 번 이상 열었다). */
+  activeDays: number;
+  /**
+   * 앱마다·날마다 max(앞에 있던 시간, 재생 알림 시간)을 더한 것. 재생 시간을 모르는 날이 하나라도 있으면
+   * null. 둘을 더하지 않고 큰 쪽을 쓴다 — 앱을 켜 두고 들으면 두 시간이 겹친다. 앱마다 따로 고르는 것은
+   * 유튜브(영상)와 유튜브 뮤직(재생)처럼 한 구독의 두 앱이 각자 다른 방식으로 쓰이기 때문이다.
+   */
+  listenMs: number | null;
+  /**
+   * 화면에 보일 사용 시간. listenMs와 같게 재되, 재생 시간을 모르는 날은 앞에 있던 시간만 더한다(적게
+   * 잡히는 쪽). 리포트·시간당 단가는 이것을 쓴다.
+   */
+  usedMs: number;
+  /** 앱별 합계. 앱이 여럿인 구독(유튜브 프리미엄)을 나눠 보여 줄 때 쓴다. */
+  byPackage: Record<string, { usedMs: number; opens: number }>;
 }
 
 /** 날짜 목록 동안 패키지들의 사용 합계. */
@@ -118,18 +168,38 @@ export function totalsFor(
   let ms = 0;
   let opens = 0;
   let coveredDays = 0;
+  let activeDays = 0;
+  let listenMs: number | null = 0;
+  let usedMs = 0;
+  const byPackage: Record<string, { usedMs: number; opens: number }> = {};
   for (const date of dates) {
     const day = history.days[date];
     if (!day) continue;
     coveredDays += 1;
+    const playbackKnown = !!history.playbackFrom && date >= history.playbackFrom;
+    if (!playbackKnown) listenMs = null;
+    let dayMs = 0;
+    let dayOpens = 0;
+    let dayUsed = 0;
     for (const pkg of packages) {
       const entry = day[pkg];
       if (!entry) continue;
-      ms += entry[0];
-      opens += entry[1];
+      const used = playbackKnown ? Math.max(entry[0], entry[2] ?? 0) : entry[0];
+      dayMs += entry[0];
+      dayOpens += entry[1];
+      dayUsed += used;
+      const row = (byPackage[pkg] ??= { usedMs: 0, opens: 0 });
+      row.usedMs += used;
+      row.opens += entry[1];
     }
+    ms += dayMs;
+    opens += dayOpens;
+    usedMs += dayUsed;
+    // 화면을 끄고 1분 넘게 들은 날도 쓴 날이다.
+    if (dayOpens > 0 || dayUsed >= 60_000) activeDays += 1;
+    if (listenMs !== null) listenMs += dayUsed;
   }
-  return { ms, opens, coveredDays };
+  return { ms, opens, coveredDays, activeDays, listenMs, usedMs, byPackage };
 }
 
 /** 기록이 있는 가장 이른 날(없으면 null). */

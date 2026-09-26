@@ -2,6 +2,7 @@ import { Currency, Subscription, UsageLog } from "../types";
 import { calculateCostPerUse, getRiskLevel } from "./cost-per-use";
 import { formatAmount, formatKRW, toKRW } from "./currency";
 import { getMyMonthlyShareAmount, getMyMonthlyAmountKRW } from "./sharing";
+import { describeCheckIn, metricOfLog } from "./valueMetric";
 
 // ─────────────────────────────────────────────────────────
 // 1. 실체감 환산 메타포
@@ -257,7 +258,7 @@ export function getMonthlyValueSummary(
         monthlyAmountKRW: krw,
         status: "worth-it",
         costPerUse: cpu,
-        reason: `${log.usageCount}회 이용 · 회당 ${formatAmount(cpu, sub.currency)}`,
+        reason: describeCheckIn(log, sub.currency),
       });
     } else {
       wastedItems.push({
@@ -267,9 +268,9 @@ export function getMonthlyValueSummary(
         status: "wasted",
         costPerUse: cpu,
         reason:
-          log.usageCount === 0
+          log.usageCount === 0 && metricOfLog(log) !== "storage"
             ? "이번 달 미사용 · 쉬어가기 추천"
-            : `${log.usageCount}회 이용 · 지출 다이어트 추천 (회당 ${formatAmount(cpu, sub.currency)})`,
+            : `${describeCheckIn(log, sub.currency)} · 지출 다이어트 추천`,
       });
     }
   }

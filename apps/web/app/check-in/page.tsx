@@ -54,7 +54,9 @@ function CheckInReceiver() {
     // 않고, 해지 가이드를 다시 열어 해지일을 덮어쓰지도 않는다.
     if (found.status === "killed") return;
     try {
-      setResult(checkIn(found.id, count));
+      // 메일의 버튼은 'N회'로 묻는다. 음악(시간)처럼 다른 것을 재는 구독이어도 횟수로 적는다 —
+      // 3회를 3시간으로 읽으면 사용자가 답하지 않은 숫자가 된다.
+      setResult(checkIn(found.id, count, { metric: "uses" }));
     } catch (error) {
       console.error("Failed to record check-in from email link:", error);
     }

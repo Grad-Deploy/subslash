@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { create } from "zustand";
 import { apiFetch } from "@lib/api";
 import { createBackup, parseBackup } from "@lib/backup";
 import {
@@ -176,6 +177,14 @@ async function syncOnce(accountId: string): Promise<SyncConflict | null> {
 
 let requestRun: (() => void) | null = null;
 
+/**
+ * 이번에 앱을 연 뒤 계정과 마지막으로 맞춘 시각(물을 것 없이 끝났을 때만). 기기가 스스로 기록을 바꾸는
+ * 일(폰 기록 자동 체크인)은 이것을 기다린다 — 받아 오기 전에 바꾸면 다른 기기의 변경과 부딪친다.
+ */
+export const useAccountSyncRound = create<{ settledAt: number | null }>(() => ({
+  settledAt: null,
+}));
+
 /** 화면에서 동기화를 켜거나 끈 뒤 곧바로 한 번 맞추게 한다. */
 export function requestAccountSync() {
   requestRun?.();
@@ -209,6 +218,7 @@ export function useAccountSync() {
       try {
         const next = await syncOnce(accountId);
         if (next) setConflict(next);
+        else useAccountSyncRound.setState({ settledAt: Date.now() });
       } catch (error) {
         // 로그아웃됐거나 네트워크가 끊겼다. 다음 변경이나 화면 복귀 때 다시 맞춘다.
         if (!(error instanceof Unauthorized)) console.warn("[account-sync]", error);

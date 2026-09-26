@@ -70,7 +70,15 @@ export function subUsage(
 ): SubUsage {
   const packages = packagesFor(sub);
   const monthlyKRW = getMyMonthlyAmountKRW(sub, rate);
-  const empty = { ms: 0, opens: 0, coveredDays: 0 };
+  const empty = {
+    ms: 0,
+    opens: 0,
+    coveredDays: 0,
+    activeDays: 0,
+    listenMs: null,
+    usedMs: 0,
+    byPackage: {},
+  };
   if (!packages) {
     return {
       sub,
@@ -108,7 +116,8 @@ export function subUsage(
     };
   }
   const periodCost = (monthlyKRW * totals.coveredDays) / 30;
-  const hours = totals.ms / 3_600_000;
+  // 화면을 끄고 들은 재생도 넣는다(유튜브 뮤직·음악 앱). 재생 시간을 모르면 앞에 있던 시간만.
+  const hours = totals.usedMs / 3_600_000;
   const opensPer30 = (totals.opens * 30) / totals.coveredDays;
   const perOpenKRW = opensPer30 > 0 ? monthlyKRW / opensPer30 : null;
   return {

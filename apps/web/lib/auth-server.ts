@@ -7,6 +7,8 @@ import { isAppOrigin } from "./app-origins";
 import { deleteGmailImportData } from "./gmail-auto-import";
 import { deleteCalendarSyncPlan } from "./calendar-sync";
 import { deleteAllDeviceUsage } from "./device-usage-server";
+import { deleteOAuthData } from "./oauth-cleanup";
+import { hasPassword } from "./password";
 
 /**
  * 로그인 세션.
@@ -39,6 +41,11 @@ export interface PublicAccount {
   gender: string | null;
   /** 확인 메일에서 본인이 맞다고 답했는지. 이 기능 전에 가입한 계정은 false다. */
   emailVerified: boolean;
+  /**
+   * 비밀번호로 로그인할 수 있는지. 소셜 로그인으로 가입한 계정은 비밀번호 재설정 메일로 만들기 전까지
+   * false다 — 화면은 비밀번호 변경 대신 만드는 방법을, 회원 탈퇴에는 비밀번호 대신 확인 글자를 받는다.
+   */
+  hasPassword: boolean;
   createdAt: string;
 }
 
@@ -50,6 +57,7 @@ export function toPublicAccount(account: Account): PublicAccount {
     age: account.age,
     gender: account.gender,
     emailVerified: account.emailVerifiedAt !== null,
+    hasPassword: hasPassword(account.passwordHash),
     createdAt: account.createdAt,
   };
 }
@@ -137,6 +145,7 @@ export async function deleteAccount(accountId: string): Promise<boolean> {
   await deleteGmailImportData(accountId);
   await deleteCalendarSyncPlan(accountId);
   await deleteAllDeviceUsage(accountId);
+  await deleteOAuthData(accountId);
   const deleted = await db
     .delete(accounts)
     .where(eq(accounts.id, accountId))

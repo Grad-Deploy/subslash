@@ -7,7 +7,9 @@ import {
   calculateCostPerUse,
   formatCurrency,
   getMyMonthlyShareAmount,
+  metricForSubscription,
 } from "@subslash/shared";
+import { MetricQuantityInput } from "../MetricQuantityInput";
 import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
 
@@ -19,9 +21,6 @@ const AppPhoneHint = IS_APP_BUILD
   : null;
 
 const MAX_STEP = 10;
-
-/** 앱의 체크인 질문. 체크인은 최근 30일 동안의 횟수로 계산하므로(store.checkIn) 어디서나 이 말로 묻는다. */
-export const APP_CHECK_IN_QUESTION = "최근 30일 동안 몇 번 썼어요?";
 
 /** '₩ 17,000'처럼 기호 뒤를 한 칸 띄운다(계산서와 같은 표기). */
 function spaced(text: string): string {
@@ -94,6 +93,20 @@ export function AppUsageCountPicker({
   };
 
   const shown = Math.min(count, MAX_STEP);
+
+  // 횟수로 재지 않는 구독(음악은 시간, 멤버십은 혜택 금액)은 그 지표의 입력을 쓴다. 폰 기록 한 줄도
+  // 연 횟수라 붙이지 않는다.
+  const metric = metricForSubscription(subscription);
+  if (metric !== "uses") {
+    return (
+      <MetricQuantityInput
+        subscription={subscription}
+        metric={metric}
+        value={value}
+        onChange={onChange}
+      />
+    );
+  }
 
   return (
     <div>

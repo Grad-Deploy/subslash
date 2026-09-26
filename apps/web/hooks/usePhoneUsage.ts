@@ -116,18 +116,23 @@ export const usePhoneUsageStore = create<PhoneUsageState>((set, get) => ({
 export function usePhoneUsage(): PhoneUsageState {
   const state = usePhoneUsageStore();
   useEffect(() => {
-    if (started) return;
-    started = true;
-    void usePhoneUsageStore.getState().refresh(true);
-    const onVisible = () => {
-      if (document.visibilityState === "visible") void usePhoneUsageStore.getState().refresh();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    // Capacitor는 앱이 앞으로 돌아올 때 document에 'resume'도 보낸다. 웹뷰에 따라 visibilitychange가
-    // 늦거나 오지 않아도 설정에서 돌아온 것을 알아채게 둘 다 듣는다(60초 안의 중복은 refresh가 거른다).
-    document.addEventListener("resume", onVisible);
+    startPhoneUsage();
   }, []);
   return state;
+}
+
+/** 처음 한 번 읽고, 앱으로 돌아올 때마다 다시 확인하게 건다. 여러 번 불러도 한 번만 건다. */
+export function startPhoneUsage(): void {
+  if (started) return;
+  started = true;
+  void usePhoneUsageStore.getState().refresh(true);
+  const onVisible = () => {
+    if (document.visibilityState === "visible") void usePhoneUsageStore.getState().refresh();
+  };
+  document.addEventListener("visibilitychange", onVisible);
+  // Capacitor는 앱이 앞으로 돌아올 때 document에 'resume'도 보낸다. 웹뷰에 따라 visibilitychange가
+  // 늦거나 오지 않아도 설정에서 돌아온 것을 알아채게 둘 다 듣는다(60초 안의 중복은 refresh가 거른다).
+  document.addEventListener("resume", onVisible);
 }
 
 /** 설정 화면을 연다. 돌아오면 visibilitychange가 다시 확인한다. */

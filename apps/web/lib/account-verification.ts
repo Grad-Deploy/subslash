@@ -7,6 +7,7 @@ import { VERIFY_ACCOUNT_TTL_DAYS } from "./verification-config";
 import { deleteGmailImportData } from "./gmail-auto-import";
 import { deleteCalendarSyncPlan } from "./calendar-sync";
 import { deleteAllDeviceUsage } from "./device-usage-server";
+import { deleteOAuthData } from "./oauth-cleanup";
 import { logError } from "./log";
 
 /**
@@ -198,6 +199,7 @@ export async function deleteUnverifiedAccount(accountId: string): Promise<boolea
   await deleteGmailImportData(accountId);
   await deleteCalendarSyncPlan(accountId);
   await deleteAllDeviceUsage(accountId);
+  await deleteOAuthData(accountId);
   return true;
 }
 

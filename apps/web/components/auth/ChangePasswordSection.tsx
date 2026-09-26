@@ -48,6 +48,31 @@ export function ChangePasswordSection() {
 
   if (loading || !account) return null;
 
+  // 소셜 로그인으로만 가입한 계정은 바꿀 비밀번호가 없다. 재설정 메일로 새로 만든다.
+  if (account.hasPassword === false) {
+    return (
+      <section
+        aria-labelledby="change-password"
+        className="p-5 sm:p-6 border rounded-2xl bg-card shadow-sm space-y-2"
+      >
+        <h2 id="change-password" className="text-sm font-bold">
+          비밀번호
+        </h2>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          간편 로그인으로 가입해 아직 비밀번호가 없어요. 아이디({account.username})로도 로그인하고
+          싶다면{" "}
+          <Link
+            href="/forgot-password"
+            className="font-semibold text-primary underline underline-offset-4"
+          >
+            비밀번호 찾기
+          </Link>
+          에서 {account.email}로 메일을 받아 비밀번호를 만드세요.
+        </p>
+      </section>
+    );
+  }
+
   const passwordStatus = shownStatus(
     submitErrors.password,
     touched.password ? newPasswordStatusOf(password, current) : null,

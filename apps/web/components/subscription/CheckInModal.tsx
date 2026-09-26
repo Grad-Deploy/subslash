@@ -5,9 +5,13 @@ import {
   Subscription,
   CheckInResponse,
   PAYMENT_METHOD_OPTIONS,
+  METRIC_SPECS,
+  describeCheckIn,
   getCancelUrlKind,
   getMyMonthlyShareAmount,
+  metricForSubscription,
 } from "@subslash/shared";
+import { MetricQuantityInput } from "./MetricQuantityInput";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
 import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { Input } from "../ui/input";
@@ -73,6 +77,10 @@ export function CheckInModal({
   }
 
   const presets = [0, 1, 3, 5, 10, 20, 30];
+  // 무엇을 세는지는 구독마다 다르다(음악은 시간, 멤버십은 혜택 금액 — utils/valueMetric). 횟수가
+  // 아니면 횟수 전용 화면(단계 막대·비유 카드·본전 게이지)을 쓰지 않는다.
+  const metric = metricForSubscription(subscription);
+  const byUses = metric === "uses";
   const isRed = result?.riskLevel === "red";
 
   // Match direct cancel URL based on payment method or service cancelUrl
@@ -118,7 +126,17 @@ export function CheckInModal({
 
         {!result ? (
           <div className="py-4 space-y-6">
-            {AppUsageCountPicker ? (
+            {!byUses ? (
+              <>
+                <h3 className="text-center text-base font-bold">{METRIC_SPECS[metric].question}</h3>
+                <MetricQuantityInput
+                  subscription={subscription}
+                  metric={metric}
+                  value={count}
+                  onChange={setCount}
+                />
+              </>
+            ) : AppUsageCountPicker ? (
               <>
                 <h3 className="text-center text-base font-bold">최근 30일 동안 몇 번 썼어요?</h3>
                 <AppUsageCountPicker
@@ -182,7 +200,7 @@ export function CheckInModal({
               가성비 분석 결과 보기
             </Button>
           </div>
-        ) : AppCheckInResult ? (
+        ) : AppCheckInResult && byUses ? (
           <AppCheckInResult
             subscription={subscription}
             count={count}
@@ -213,29 +231,40 @@ export function CheckInModal({
               </div>
             </div>
 
-            {/* 1. 실체감 환산 지표: 커피/영화 티켓 메타포 */}
-            <UsageMetaphorCard
-              subscription={subscription}
-              usageCount={count}
-              costPerUse={result.costPerUse}
-            />
-
-            {/* 2. 게이미피케이션: 가성비 게이지 (본전선) + 1회당 비용 */}
-            <div className="w-full p-4 bg-muted/70 rounded-2xl border space-y-4 flex flex-col items-center">
-              <CostEfficiencyGauge
-                subscription={subscription}
-                usageCount={count}
-                costPerUse={result.costPerUse}
-              />
-              <div className="w-full border-t border-border/50 pt-3">
-                <CostPerUseBar
-                  costPerUse={result.costPerUse}
-                  monthlyAmount={getMyMonthlyShareAmount(subscription)}
-                  currency={subscription.currency}
-                  usageCount={count}
-                />
+            {!byUses ? (
+              <div className="w-full p-4 bg-muted/70 rounded-2xl border text-center text-sm font-bold">
+                {describeCheckIn(
+                  { metric, usageCount: count, costPerUse: result.costPerUse },
+                  subscription.currency,
+                )}
               </div>
-            </div>
+            ) : (
+              <>
+                {/* 1. 실체감 환산 지표: 커피/영화 티켓 메타포 */}
+                <UsageMetaphorCard
+                  subscription={subscription}
+                  usageCount={count}
+                  costPerUse={result.costPerUse}
+                />
+
+                {/* 2. 게이미피케이션: 가성비 게이지 (본전선) + 1회당 비용 */}
+                <div className="w-full p-4 bg-muted/70 rounded-2xl border space-y-4 flex flex-col items-center">
+                  <CostEfficiencyGauge
+                    subscription={subscription}
+                    usageCount={count}
+                    costPerUse={result.costPerUse}
+                  />
+                  <div className="w-full border-t border-border/50 pt-3">
+                    <CostPerUseBar
+                      costPerUse={result.costPerUse}
+                      monthlyAmount={getMyMonthlyShareAmount(subscription)}
+                      currency={subscription.currency}
+                      usageCount={count}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Smart Cancellation Navigator with Linked Account Info */}
             <div className="w-full p-4 border rounded-2xl bg-card space-y-3 text-xs">
