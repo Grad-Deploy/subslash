@@ -26,6 +26,7 @@ import { copyText, shareText } from "@lib/native";
 import { buildShareSearchParams } from "@lib/share-savings";
 import { ServiceLogo } from "../../subscription/ServiceLogo";
 import { ConfirmDialog } from "../../ui/confirm-dialog";
+import { SubjectChip } from "../../subscription/SubjectChip";
 import { Spinner } from "../../ui/spinner";
 import { AppDefenseChart } from "./AppDefenseChart";
 import { AppIncomeRate } from "./AppIncomeRate";
@@ -411,8 +412,10 @@ export function AppSavings() {
             reviveSubscription(reviveTarget.id);
             setReviveTarget(null);
           }}
-          title="구독 다시 살리기"
-          description={`'${reviveTarget.name}' 구독을 다시 활성화할까요?\n구독 중 목록으로 돌아가고, 절약 금액에서 빠져요.`}
+          centered
+          subject={<SubjectChip sub={reviveTarget} />}
+          title="다시 살릴까요?"
+          description={"구독 중으로 돌아가고,\n절약 기록에서는 빠져요."}
           confirmText="다시 살리기"
           cancelText="취소"
         />
@@ -428,8 +431,12 @@ export function AppSavings() {
             setChargedTarget(null);
             router.push("/subs");
           }}
-          title="해지가 아직 안 됐을 수 있어요"
-          description={`'${chargedTarget.name}' 해지 후 첫 결제일에 결제가 됐다면 해지가 끝나지 않았을 수 있어요.\n구독 중으로 되돌릴게요. 해지를 마친 뒤 다시 '해지 완료'를 누르면 그날부터 절약으로 셉니다.`}
+          centered
+          subject={<SubjectChip sub={chargedTarget} />}
+          title="해지가 안 됐을 수 있어요"
+          description={
+            "첫 결제일에 결제가 됐다면\n구독 중으로 되돌릴게요.\n해지를 마친 뒤 다시 '해지 완료'를\n누르면 그날부터 절약으로 세요."
+          }
           confirmText="되돌리기"
           cancelText="취소"
         />
