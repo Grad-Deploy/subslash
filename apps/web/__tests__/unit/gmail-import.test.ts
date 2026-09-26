@@ -471,8 +471,9 @@ describe("원클릭 연결 웹 앱", () => {
       url: string;
       options: { headers?: Record<string, string>; payload: string };
     }[] = [];
-    const triggers: { handler: string; weeks?: number }[] = [];
+    const triggers: { handler: string; weeks?: number; afterMs?: number }[] = [];
     const deleted: string[] = [];
+    const queries: string[] = [];
     const properties = new Map<string, string>(Object.entries(options.stored ?? {}));
     const calendarList = options.calendars ?? [];
     const insertedCalendars: { summary: string }[] = [];
@@ -486,6 +487,7 @@ describe("원클릭 연결 웹 앱", () => {
       const chain = {
         timeBased: () => chain,
         everyWeeks: (n: number) => ((trigger.weeks = n), chain),
+        after: (ms: number) => ((trigger.afterMs = ms), chain),
         onWeekDay: () => chain,
         atHour: () => chain,
         create: () => triggers.push(trigger),
@@ -500,7 +502,10 @@ describe("원클릭 연결 웹 앱", () => {
       Gmail: {
         Users: {
           Messages: {
-            list: () => ({ messages: MESSAGES.map((m) => ({ id: m.id })) }),
+            list: (_user: string, { q }: { q: string }) => {
+              queries.push(q);
+              return { messages: MESSAGES.map((m) => ({ id: m.id })) };
+            },
             get: (_user: string, id: string) => MESSAGES.find((m) => m.id === id),
           },
         },
@@ -526,6 +531,7 @@ describe("원클릭 연결 웹 앱", () => {
           setProperties: (values: Record<string, string>) => {
             for (const [key, value] of Object.entries(values)) properties.set(key, value);
           },
+          deleteProperty: (key: string) => properties.delete(key),
           deleteAllProperties: () => properties.clear(),
         }),
       },
@@ -587,16 +593,18 @@ describe("원클릭 연결 웹 앱", () => {
 
     const api = new Function(
       ...Object.keys(globals),
-      `${gmailConnectWebApp([ORIGIN])}\nreturn { doGet: doGet, scan: scan };`,
+      `${gmailConnectWebApp([ORIGIN])}\nreturn { doGet: doGet, scan: scan, scanOlder: scanOlder };`,
     )(...Object.values(globals)) as {
       doGet: (e: { parameter: Record<string, string> }) => unknown;
       scan: () => number;
+      scanOlder: () => void;
     };
     return {
       api,
       html,
       fetched,
       triggers,
+      queries,
       deleted,
       properties,
       insertedCalendars,
@@ -616,7 +624,7 @@ describe("원클릭 연결 웹 앱", () => {
     expect(run.html.join("")).not.toContain("evil.example");
   });
 
-  it("코드를 토큰으로 바꿔 이 사람의 저장소에 두고, 트리거를 새로 건 뒤 바로 검사한다", () => {
+  it("코드를 토큰으로 바꿔 이 사람의 저장소에 두고, 트리거를 새로 건 뒤 최근 메일부터 바로 검사한다", () => {
     const run = runWebApp({ stored: { lastScanAt: "1000", token: "old" } });
     run.api.doGet({ parameter: { code: "signed-code", origin: ORIGIN } });
 
@@ -629,15 +637,39 @@ describe("원클릭 연결 웹 앱", () => {
 
     expect(run.properties.get("token")).toBe("issued-token");
     expect(run.properties.get("origin")).toBe(ORIGIN);
-    // 다시 연결하면 처음부터(400일) 본다.
-    expect(Number(run.properties.get("lastScanAt"))).toBeGreaterThan(1000);
+    // 연결 화면에서는 최근 40일만 보고 바로 돌려준다. 나머지는 1분 뒤 scanOlder가 본다.
+    expect(run.queries.every((q) => q.endsWith(" newer_than:40d"))).toBe(true);
+    // 검사 시각은 나머지까지 보낸 뒤에 남긴다. 다시 연결하면 예전 검사 시각은 지운다.
+    expect(run.properties.get("lastScanAt")).toBeUndefined();
+    expect(Number(run.properties.get("firstScanStartedAt"))).toBeGreaterThan(0);
     expect(run.deleted).toEqual(["old-scan"]);
-    expect(run.triggers).toEqual([{ handler: "scan", weeks: 2 }]);
+    expect(run.triggers).toEqual([
+      { handler: "scan", weeks: 2 },
+      { handler: "scanOlder", afterMs: 60_000 },
+    ]);
     expect(run.html.join("")).toContain("Gmail을 연결했습니다");
     expect(run.html.join("")).toContain(`href="${ORIGIN}/import"`);
     // 사용자가 이 화면에서 첫 검사를 기다리므로 메일을 한꺼번에 받는다.
     expect(run.rest.batches).toEqual([MESSAGES.length]);
     expect(JSON.parse(ingest.options.payload).emails).toHaveLength(MESSAGES.length);
+  });
+
+  it("1분 뒤 나머지 1년 치를 보내고 나서야 검사 시각을 남긴다", () => {
+    const run = runWebApp();
+    run.api.doGet({ parameter: { code: "signed-code", origin: ORIGIN } });
+    const startedAt = run.properties.get("firstScanStartedAt");
+    run.queries.length = 0;
+
+    run.api.scanOlder();
+
+    expect(run.queries.every((q) => q.endsWith(" newer_than:400d older_than:40d"))).toBe(true);
+    expect(run.fetched.filter((f) => f.url.endsWith("/api/gmail/ingest"))).toHaveLength(2);
+    expect(run.properties.get("lastScanAt")).toBe(startedAt);
+    expect(run.properties.get("firstScanStartedAt")).toBeUndefined();
+
+    // 두 번 돌아도 다시 보내지 않는다.
+    run.api.scanOlder();
+    expect(run.fetched.filter((f) => f.url.endsWith("/api/gmail/ingest"))).toHaveLength(2);
   });
 
   it("앱에서 왔으면 웹사이트로 가는 '돌아가기' 대신 창을 닫으라고 한다", () => {
