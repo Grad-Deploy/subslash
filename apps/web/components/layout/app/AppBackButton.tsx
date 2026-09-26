@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 /** 하단 탭의 첫 화면. 여기서 뒤로가기를 누르면 앞 화면으로 돌아가지 않고 종료를 묻는다. */
-const TAB_ROOTS = ["/dashboard", "/subs", "/report"];
+const TAB_ROOTS = ["/dashboard", "/subs", "/report", "/settings"];
 
 /** 첫 번째 뒤로가기 뒤 이 시간 안에 한 번 더 누르면 종료한다. */
 const EXIT_WINDOW_MS = 2000;
@@ -16,7 +16,7 @@ const EXIT_WINDOW_MS = 2000;
  * 누르면 이 순서로 하나만 한다.
  * 1. 열린 창(시트·다이얼로그)이 있으면 닫는다. 앱의 창은 모두 `aria-modal`을 달고 Escape로 닫히므로,
  *    창마다 뒤로가기를 따로 붙이지 않고 Escape를 보낸다.
- * 2. 하단 탭의 첫 화면(대시보드·구독 관리·리포트)이면 '한 번 더 누르면 종료돼요'를 띄우고, 2초 안에 다시
+ * 2. 하단 탭의 첫 화면(대시보드·구독 관리·리포트·설정)이면 '한 번 더 누르면 종료돼요'를 띄우고, 2초 안에 다시
  *    누르면 종료한다. 탭을 오간 기록을 끝없이 거슬러 올라가지 않게 탭 첫 화면에서 멈춘다. 확인 창 대신
  *    두 번 누르기로 한 것은 토스 같은 앱의 익숙한 방식이라서다.
  * 3. 그 밖의 화면(구독 상세 등)은 앞 화면으로 간다. 앞 화면이 없으면(알림을 눌러 바로 연 경우) 대시보드로.

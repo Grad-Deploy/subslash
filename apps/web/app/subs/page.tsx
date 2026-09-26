@@ -130,6 +130,12 @@ const AppKilledList = IS_APP_BUILD
       { ssr: false },
     )
   : null;
+// 구독 추가 + 버튼(앱 전용) — 직접 등록·결제 메일·결제 문자 중 고른다.
+const AppAddButton = IS_APP_BUILD
+  ? dynamic(() => import("../../components/layout/app/AppAddButton").then((m) => m.AppAddButton), {
+      ssr: false,
+    })
+  : null;
 const AppAddCheckIn = IS_APP_BUILD
   ? dynamic(
       () => import("../../components/subscription/app/AppAddCheckIn").then((m) => m.AppAddCheckIn),
@@ -414,31 +420,37 @@ export default function SubscriptionsPage() {
             + 구독 추가
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-2 md:max-w-md">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/import")}
-            className="font-semibold"
-          >
-            결제 메일에서 찾기
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setIsAutoImportOpen(true)}
-            className="font-semibold"
-          >
-            문자 붙여넣기
-          </Button>
-        </div>
+        {/* 앱은 이 두 버튼 대신 떠 있는 + 하나로 고른다(AppAddButton). */}
+        {!AppAddButton && (
+          <div className="grid grid-cols-2 gap-2 md:max-w-md">
+            <Button
+              variant="outline"
+              onClick={() => router.push("/import")}
+              className="font-semibold"
+            >
+              결제 메일에서 찾기
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsAutoImportOpen(true)}
+              className="font-semibold"
+            >
+              문자 붙여넣기
+            </Button>
+          </div>
+        )}
+        {/* 앱: 자동 체크인 켜기/끄기는 설정 탭으로 옮기고, 여기에는 '폰 기록으로 체크인' 버튼만 둔다. */}
         {AppPhoneCheckInButton && (
           <AppPhoneCheckInButton
             subscriptions={activeSubs}
             onDone={(count) => showToast(`${count}개 체크인했어요`)}
+            autoSwitch={false}
           />
         )}
       </div>
 
-      <ExchangeRateNote />
+      {/* 앱은 환율을 설정 탭(화면)에 둔다. */}
+      {!IS_APP_BUILD && <ExchangeRateNote />}
 
       {/* 넓은 화면(xl)에서는 목록 오른쪽에 고른 구독의 상세 칸을 둔다. */}
       <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_26rem] xl:items-start xl:gap-6 xl:space-y-0">
@@ -683,16 +695,29 @@ export default function SubscriptionsPage() {
       </div>
 
       {/* 알림·연동·데이터를 한 줄씩 묶은 목록(웹·앱). 누르면 카드를 시트로 연다. */}
-      <SettingsList onMessage={showToast} onClearAll={() => setConfirmClearAll(true)} />
+      {/* 앱은 이 설정 목록을 설정 탭으로 옮겼다. */}
+      {!IS_APP_BUILD && (
+        <SettingsList onMessage={showToast} onClearAll={() => setConfirmClearAll(true)} />
+      )}
 
-      {/* Floating Action Button for Mobile */}
-      <button
-        onClick={() => setIsAddOpen(true)}
-        className="md:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-2xl text-2xl font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-30"
-        aria-label="Add Subscription"
-      >
-        +
-      </button>
+      {/* Floating Action Button for Mobile — 앱은 추가 방법을 고르는 AppAddButton */}
+      {AppAddButton ? (
+        // 해지 완료 탭에서는 두지 않는다 — 선택 모드의 아래 버튼 줄과 겹친다.
+        tab === "active" && (
+          <AppAddButton
+            onManual={() => setIsAddOpen(true)}
+            onPaste={() => setIsAutoImportOpen(true)}
+          />
+        )
+      ) : (
+        <button
+          onClick={() => setIsAddOpen(true)}
+          className="md:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-2xl text-2xl font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-30"
+          aria-label="Add Subscription"
+        >
+          +
+        </button>
+      )}
 
       {/* SubForm Modal */}
       <Dialog
