@@ -70,7 +70,7 @@ export function subUsage(
 ): SubUsage {
   const packages = packagesFor(sub);
   const monthlyKRW = getMyMonthlyAmountKRW(sub, rate);
-  const empty = { ms: 0, opens: 0, coveredDays: 0 };
+  const empty = { ms: 0, opens: 0, coveredDays: 0, activeDays: 0, listenMs: null };
   if (!packages) {
     return {
       sub,

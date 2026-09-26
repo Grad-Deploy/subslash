@@ -12,7 +12,7 @@ import { useAccountSyncRound } from "@hooks/useAccountSync";
 /**
  * 폰 사용 기록으로 체크인을 자동으로 적는다(안드로이드 앱). 헤더에 붙어 앱을 열 때와 돌아올 때 폰
  * 기록이 새로 읽히면 돈다. 무엇을 적을지는 planAutoCheckIns가 정한다 — 30일을 온전히 덮고, 이 폰에서
- * 한 번 이상 열었을 때만.
+ * 쓴 것이 있을 때만(횟수·쓴 날·들은 시간 중 구독의 지표로).
  *
  * 샘플 체험 중에는 적지 않는다. 체험 중 화면의 목록은 샘플이라, 적으면 샘플에 체크인이 쌓인다.
  *
@@ -47,8 +47,9 @@ export function useAutoCheckIn() {
     );
     for (const plan of plans) {
       try {
-        store.checkIn(plan.subscriptionId, plan.opens, {
+        store.checkIn(plan.subscriptionId, plan.quantity, {
           source: "phone",
+          metric: plan.metric,
           replaceLogId: plan.replaceLogId,
         });
       } catch (error) {

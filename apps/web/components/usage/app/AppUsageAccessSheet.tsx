@@ -9,8 +9,8 @@ import { openPhoneUsageSettings, usePhoneUsage } from "@hooks/usePhoneUsage";
 const POINTS = [
   {
     icon: Check,
-    title: "구독한 서비스 앱의 사용 시간과 쓴 횟수만 읽어요",
-    body: "다른 앱의 기록과 화면 내용은 쓰지 않아요",
+    title: "구독한 서비스 앱의 사용 시간·쓴 횟수·재생 시간만 읽어요",
+    body: "재생 시간은 음악 앱이 재생 알림을 띄워 둔 시간이에요. 다른 앱의 기록과 화면 내용은 쓰지 않아요",
   },
   {
     icon: Smartphone,
@@ -20,7 +20,7 @@ const POINTS = [
   {
     icon: Info,
     title: "TV·PC에서 본 건 빠져요",
-    body: "불러온 숫자는 저장하기 전에 확인하고 고칠 수 있어요",
+    body: "기록이 30일 쌓이면 체크인을 알아서 적어요. '내 구독'에서 끌 수 있고, 적힌 숫자는 언제든 다시 체크인해 고칠 수 있어요",
   },
   {
     icon: RotateCcw,

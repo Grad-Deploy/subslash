@@ -102,6 +102,50 @@ describe("mergeUsage", () => {
   });
 });
 
+describe("재생 알림 시간", () => {
+  it("잴 수 있는 기기면 세 번째 칸에 적고, 처음 잰 날을 기억한다", () => {
+    const history = mergeUsage(
+      EMPTY_HISTORY,
+      {
+        from: at("2026-09-24"),
+        dataFrom: at("2026-09-24", 1),
+        serviceSupported: true,
+        days: [
+          {
+            date: "2026-09-24",
+            pkg: "com.spotify.music",
+            foregroundMs: 60_000,
+            opens: 1,
+            serviceMs: 3_600_000,
+          },
+        ],
+      },
+      2,
+      NOW,
+    );
+    expect(history.days["2026-09-24"]["com.spotify.music"]).toEqual([60_000, 1, 3_600_000]);
+    expect(history.playbackFrom).toBe("2026-09-24");
+    const totals = totalsFor(history, ["com.spotify.music"], ["2026-09-24", "2026-09-25"]);
+    expect(totals.listenMs).toBe(3_600_000);
+  });
+
+  it("잴 수 없는 기기(안드로이드 9 이하)면 재생 시간을 모른다", () => {
+    const history = mergeUsage(
+      EMPTY_HISTORY,
+      {
+        from: at("2026-09-24"),
+        dataFrom: at("2026-09-24", 1),
+        serviceSupported: false,
+        days: [{ date: "2026-09-24", pkg: "com.spotify.music", foregroundMs: 60_000, opens: 1 }],
+      },
+      2,
+      NOW,
+    );
+    expect(history.playbackFrom).toBeUndefined();
+    expect(totalsFor(history, ["com.spotify.music"], ["2026-09-24"]).listenMs).toBeNull();
+  });
+});
+
 describe("totalsFor · monthlyTotals", () => {
   const history = mergeUsage(
     EMPTY_HISTORY,
@@ -130,7 +174,14 @@ describe("totalsFor · monthlyTotals", () => {
       ) ?? [],
       lastDays(NOW, 7),
     );
-    expect(totals).toEqual({ ms: 180_000, opens: 3, coveredDays: 4 });
+    // 재생 시간을 잰 적이 없는 기록이라 들은 시간은 모른다(null).
+    expect(totals).toEqual({
+      ms: 180_000,
+      opens: 3,
+      coveredDays: 4,
+      activeDays: 2,
+      listenMs: null,
+    });
   });
 
   it("달별 합계는 12칸이고, 기록 없는 달은 coveredDays 0", () => {

@@ -50,7 +50,9 @@ const plan = (logs: UsageLog[], h: UsageHistory, subs = [sub()]) =>
 
 describe("planAutoCheckIns", () => {
   it("30일을 온전히 덮으면 이 폰에서 연 횟수로 적는다", () => {
-    expect(plan([], history(30, 12))).toEqual([{ subscriptionId: "s1", opens: 12 }]);
+    expect(plan([], history(30, 12))).toEqual([
+      { subscriptionId: "s1", metric: "uses", quantity: 12 },
+    ]);
   });
 
   it("기록이 30일보다 짧으면 적지 않는다(짧은 기간의 횟수를 '30일 동안'으로 적지 않는다)", () => {
@@ -68,19 +70,23 @@ describe("planAutoCheckIns", () => {
 
   it("직접 센 숫자보다 폰에서 더 많이 열었으면 새로 적는다", () => {
     const manual = log({ usageCount: 2, checkedAt: "2026-09-10T00:00:00.000Z" });
-    expect(plan([manual], history(30, 12))).toEqual([{ subscriptionId: "s1", opens: 12 }]);
+    expect(plan([manual], history(30, 12))).toEqual([
+      { subscriptionId: "s1", metric: "uses", quantity: 12 },
+    ]);
   });
 
   it("같은 달의 자동 체크인은 새로 쌓지 않고 그 줄을 바꾼다", () => {
     const auto = log({ id: "auto", source: "phone", checkedAt: "2026-09-20T00:00:00.000Z" });
     expect(plan([auto], history(30, 12))).toEqual([
-      { subscriptionId: "s1", opens: 12, replaceLogId: "auto" },
+      { subscriptionId: "s1", metric: "uses", quantity: 12, replaceLogId: "auto" },
     ]);
   });
 
   it("지난달의 자동 체크인은 두고 새 줄을 적는다", () => {
     const auto = log({ id: "auto", source: "phone", checkedAt: "2026-08-31T00:00:00.000Z" });
-    expect(plan([auto], history(30, 12))).toEqual([{ subscriptionId: "s1", opens: 12 }]);
+    expect(plan([auto], history(30, 12))).toEqual([
+      { subscriptionId: "s1", metric: "uses", quantity: 12 },
+    ]);
   });
 
   it("방금 적은 자동 체크인은 다시 맞추지 않는다", () => {
@@ -98,6 +104,62 @@ describe("planAutoCheckIns", () => {
       sub({ id: "coupang", name: "쿠팡 와우", cancelUrl: "https://www.coupang.com" }),
     ];
     expect(plan([], history(30, 12), subs)).toEqual([]);
+  });
+});
+
+describe("쓴 날·시간으로 재는 구독", () => {
+  const CHATGPT = "com.openai.chatgpt";
+  const SPOTIFY = "com.spotify.music";
+
+  function playbackHistory(pkg: string, entry: (index: number) => number[] | null, from?: string) {
+    const result: UsageHistory = { v: 1, days: {}, syncedAt: NOW.toISOString() };
+    lastDays(NOW, 30).forEach((date, index) => {
+      const value = entry(index);
+      result.days[date] = value ? { [pkg]: value as [number, number, number] } : {};
+    });
+    if (from !== undefined) result.playbackFrom = from;
+    return result;
+  }
+
+  it("AI는 이 폰에서 쓴 날 수로 적는다", () => {
+    const chatgpt = sub({
+      name: "ChatGPT",
+      cancelUrl: undefined,
+      category: "ai",
+      currency: "USD",
+      amount: 20,
+    });
+    // 앞 8일 동안 하루 한 번씩, 그중 하루는 30초뿐이라 열었으니 쓴 날이다.
+    const h = playbackHistory(CHATGPT, (i) => (i < 8 ? [i === 0 ? 30_000 : 600_000, 1] : null));
+    expect(planAutoCheckIns([chatgpt], [], h, [CHATGPT], NOW, RATE)).toEqual([
+      { subscriptionId: "s1", metric: "days", quantity: 8 },
+    ]);
+  });
+
+  it("음악은 날마다 앱 시간과 재생 알림 시간 중 긴 쪽을 더한 시간으로 적는다", () => {
+    const spotify = sub({ name: "Spotify", cancelUrl: undefined, category: "music" });
+    const first = lastDays(NOW, 30)[0];
+    // 10일 동안 화면은 6분, 재생 알림은 1시간 → 10시간.
+    const h = playbackHistory(SPOTIFY, (i) => (i < 10 ? [360_000, 1, 3_600_000] : null), first);
+    expect(planAutoCheckIns([spotify], [], h, [SPOTIFY], NOW, RATE)).toEqual([
+      { subscriptionId: "s1", metric: "hours", quantity: 10 },
+    ]);
+  });
+
+  it("재생 시간을 모르는 날이 섞이면 음악은 적지 않는다(화면을 끄고 들은 것이 빠진다)", () => {
+    const spotify = sub({ name: "Spotify", cancelUrl: undefined, category: "music" });
+    const h = playbackHistory(SPOTIFY, (i) => (i < 10 ? [360_000, 1] : null));
+    expect(planAutoCheckIns([spotify], [], h, [SPOTIFY], NOW, RATE)).toEqual([]);
+  });
+
+  it("예전에 횟수로 센 체크인은 시간과 견주지 않고 새로 적는다", () => {
+    const spotify = sub({ name: "Spotify", cancelUrl: undefined, category: "music" });
+    const first = lastDays(NOW, 30)[0];
+    const h = playbackHistory(SPOTIFY, (i) => (i < 10 ? [0, 0, 3_600_000] : null), first);
+    const manual = log({ usageCount: 30, checkedAt: "2026-09-20T00:00:00.000Z" });
+    expect(planAutoCheckIns([spotify], [manual], h, [SPOTIFY], NOW, RATE)).toEqual([
+      { subscriptionId: "s1", metric: "hours", quantity: 10 },
+    ]);
   });
 });
 

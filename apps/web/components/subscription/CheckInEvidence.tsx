@@ -108,7 +108,7 @@ export function CheckInEvidence({ logs, currency }: CheckInEvidenceProps) {
         </p>
       )}
       <p className="text-[11px] text-muted-foreground">
-        숫자는 체크인 때 적은 값입니다. 폰 기록으로 자동 체크인한 것은 이 폰에서 연 횟수라, 다른
+        숫자는 체크인 때 적은 값입니다. 폰 기록으로 자동 체크인한 것은 이 폰의 기록이라, 다른
         기기에서 쓴 것은 빠져 있습니다.
       </p>
     </section>
