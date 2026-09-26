@@ -15,6 +15,7 @@ import {
   getDaysUntilBillingFor,
   getDaysUntilTrialEnd,
   describeCheckIn,
+  type UsageLog,
 } from "@subslash/shared";
 import { SubForm } from "./SubForm";
 import { CheckInModal } from "./CheckInModal";
@@ -51,6 +52,16 @@ interface SubscriptionDetailProps {
   /** 페이지에서는 h1이다. 목록 옆 칸에서는 페이지 제목(구독 관리) 아래라 h2다. */
   headingLevel?: "h1" | "h2";
   className?: string;
+}
+
+/** 폰 기록으로 자동 체크인한 줄에 붙이는 한 마디. 무엇을 쟀는지와 빠진 것을 말한다. */
+function phoneCheckInNote(metric: UsageLog["metric"]): string {
+  if (metric === "hours") {
+    return "폰 기록으로 자동 체크인 · 앱을 쓴 시간과 재생 알림이 떠 있던 시간 중 긴 쪽이에요. 일시정지 시간이 섞일 수 있어요";
+  }
+  if (metric === "days")
+    return "폰 기록으로 자동 체크인 · 이 폰에서 쓴 날이에요. PC에서 쓴 날은 빠져 있어요";
+  return "폰 기록으로 자동 체크인 · 다른 기기에서 쓴 건 빠져 있어요";
 }
 
 /**
@@ -438,7 +449,7 @@ export function SubscriptionDetail({
                   </div>
                   {log.source === "phone" && (
                     <div className="text-[11px] text-muted-foreground">
-                      폰 기록으로 자동 체크인 · 다른 기기에서 쓴 건 빠져 있어요
+                      {phoneCheckInNote(log.metric)}
                     </div>
                   )}
                 </div>

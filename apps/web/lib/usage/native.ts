@@ -13,6 +13,11 @@ export interface NativeUsageDay {
   pkg: string;
   foregroundMs: number;
   opens: number;
+  /**
+   * 이 앱의 포그라운드 서비스(음악 재생 알림 등)가 떠 있던 시간. 화면을 끄고 들은 재생을 잡는다.
+   * 예전 네이티브는 주지 않는다.
+   */
+  serviceMs?: number;
 }
 
 export interface NativeUsageResult {
@@ -20,6 +25,8 @@ export interface NativeUsageResult {
   from: number;
   /** 받은 기록 중 가장 이른 시각. from보다 늦으면 그 앞은 운영체제가 지운 것이다. */
   dataFrom: number | null;
+  /** 이 기기가 서비스 시간을 잴 수 있는지(안드로이드 10 이상). 없거나 false면 재생 시간은 모른다. */
+  serviceSupported?: boolean;
   days: NativeUsageDay[];
 }
 

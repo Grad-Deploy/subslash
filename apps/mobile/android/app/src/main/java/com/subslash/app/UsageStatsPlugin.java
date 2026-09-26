@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.json.JSONException;
 
 /**
@@ -60,6 +61,9 @@ public class UsageStatsPlugin extends Plugin {
     private static final int KEYGUARD_SHOWN = 17;
     private static final int ACTIVITY_STOPPED = 23;
     private static final int DEVICE_SHUTDOWN = 26;
+    // 포그라운드 서비스(API 29부터). 음악 앱은 화면을 꺼도 재생하는 동안 이 서비스를 띄운다.
+    private static final int FOREGROUND_SERVICE_START = 19;
+    private static final int FOREGROUND_SERVICE_STOP = 20;
 
     @PluginMethod
     public void status(PluginCall call) {
@@ -141,10 +145,14 @@ public class UsageStatsPlugin extends Plugin {
             tally.close(pkg, from, to);
         });
         tally.finish();
+        boolean serviceSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
+        if (serviceSupported) walkServices(start, end, wanted, tally::addService);
 
         JSObject result = new JSObject();
         result.put("from", start);
         result.put("dataFrom", dataFrom >= 0 ? dataFrom : JSObject.NULL);
+        // false면(안드로이드 9 이하) 재생 시간은 모른다 — 0이 아니다.
+        result.put("serviceSupported", serviceSupported);
         result.put("days", tally.toJSArray());
         call.resolve(result);
     }
@@ -258,6 +266,52 @@ public class UsageStatsPlugin extends Plugin {
         return firstEventAt;
     }
 
+    /**
+     * wanted 앱의 포그라운드 서비스가 떠 있던 구간을 sink로 넘긴다. 음악 앱은 화면을 끄고 들어도 재생하는
+     * 동안 이 서비스(재생 알림)를 띄우므로, 앱이 앞에 있던 시간(walkForeground)으로는 잡히지 않는 재생을
+     * 잡는다. 일시정지한 뒤에도 알림을 한동안 두는 앱이 있어 실제 재생보다 길 수 있다 — 화면은 '재생
+     * 알림이 떠 있던 시간'이라고 적는다. 한 앱이 서비스를 여럿 띄우면 서비스(클래스)마다 따로 잰다.
+     */
+    private void walkServices(long start, long end, Set<String> wanted, IntervalSink sink) {
+        UsageStatsManager usm = (UsageStatsManager) getContext().getSystemService(Context.USAGE_STATS_SERVICE);
+        UsageEvents events = usm.queryEvents(start, end);
+        UsageEvents.Event event = new UsageEvents.Event();
+        // "패키지|서비스 클래스" → 시작 시각
+        Map<String, Long> running = new HashMap<>();
+
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event);
+            int type = event.getEventType();
+            String pkg = event.getPackageName();
+            long t = event.getTimeStamp();
+            if (type == DEVICE_SHUTDOWN) {
+                for (Map.Entry<String, Long> e : running.entrySet()) {
+                    sink.accept(packageOf(e.getKey()), e.getValue(), t);
+                }
+                running.clear();
+                continue;
+            }
+            if (!wanted.contains(pkg)) continue;
+            String key = pkg + "|" + (event.getClassName() == null ? "" : event.getClassName());
+            if (type == FOREGROUND_SERVICE_START) {
+                running.putIfAbsent(key, t);
+            } else if (type == FOREGROUND_SERVICE_STOP) {
+                Long startedAt = running.remove(key);
+                // 시작을 못 본 멈춤(읽기 시작 전에 켜진 서비스)은 언제부터인지 몰라 세지 않는다.
+                if (startedAt != null) sink.accept(pkg, startedAt, t);
+            }
+        }
+        for (Map.Entry<String, Long> e : running.entrySet()) {
+            sink.accept(packageOf(e.getKey()), e.getValue(), end);
+        }
+    }
+
+    /** "패키지|서비스 클래스" 키의 패키지. */
+    private static String packageOf(String key) {
+        int bar = key.indexOf('|');
+        return bar < 0 ? key : key.substring(0, bar);
+    }
+
     private boolean isGranted() {
         Context context = getContext();
         AppOpsManager appOps = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
@@ -290,7 +344,7 @@ public class UsageStatsPlugin extends Plugin {
     private static final class Tally {
 
         private final Set<String> wanted;
-        private final Map<String, long[]> byKey = new HashMap<>(); // "날짜|패키지" → [ms, 쓴 횟수(세션)]
+        private final Map<String, long[]> byKey = new HashMap<>(); // "날짜|패키지" → [ms, 쓴 횟수(세션), 서비스 ms]
         /** 패키지 → 아직 닫지 않은 세션 [시작 시각, 사용한 ms, 마지막으로 나간 시각]. */
         private final Map<String, long[]> pending = new HashMap<>();
         private final SimpleDateFormat dayFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
@@ -325,8 +379,18 @@ public class UsageStatsPlugin extends Plugin {
                 session[2] = Math.max(session[2], to);
                 if (to > from) session[1] += to - from;
             }
+            addByDay(pkg, from, to, 0);
+        }
+
+        /** 포그라운드 서비스가 떠 있던 구간. 쓴 횟수에는 넣지 않는다. */
+        void addService(String pkg, long from, long to) {
+            if (!wanted.contains(pkg)) return;
+            addByDay(pkg, from, to, 2);
+        }
+
+        /** 자정을 넘긴 구간은 날짜별로 나눠 slot 칸에 더한다. */
+        private void addByDay(String pkg, long from, long to, int slot) {
             if (to <= from) return;
-            // 자정을 넘긴 사용은 날짜별로 나눈다.
             Calendar cal = Calendar.getInstance();
             long cursor = from;
             while (cursor < to) {
@@ -337,7 +401,7 @@ public class UsageStatsPlugin extends Plugin {
                 cal.set(Calendar.MILLISECOND, 0);
                 cal.add(Calendar.DAY_OF_MONTH, 1);
                 long segmentEnd = Math.min(to, cal.getTimeInMillis());
-                entry(dayFormat.format(cursor), pkg)[0] += segmentEnd - cursor;
+                entry(dayFormat.format(cursor), pkg)[slot] += segmentEnd - cursor;
                 cursor = segmentEnd;
             }
         }
@@ -346,7 +410,7 @@ public class UsageStatsPlugin extends Plugin {
             String key = day + "|" + pkg;
             long[] value = byKey.get(key);
             if (value == null) {
-                value = new long[] { 0, 0 };
+                value = new long[] { 0, 0, 0 };
                 byKey.put(key, value);
             }
             return value;
@@ -355,12 +419,13 @@ public class UsageStatsPlugin extends Plugin {
         JSArray toJSArray() {
             JSArray array = new JSArray();
             for (Map.Entry<String, long[]> e : byKey.entrySet()) {
-                String[] parts = e.getKey().split("\\|", 2);
+                String[] parts = e.getKey().split(Pattern.quote("|"), 2);
                 JSObject row = new JSObject();
                 row.put("date", parts[0]);
                 row.put("pkg", parts[1]);
                 row.put("foregroundMs", e.getValue()[0]);
                 row.put("opens", e.getValue()[1]);
+                row.put("serviceMs", e.getValue()[2]);
                 array.put(row);
             }
             return array;
