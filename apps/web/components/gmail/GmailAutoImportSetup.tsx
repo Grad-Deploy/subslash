@@ -10,7 +10,7 @@ import {
   createGmailLink,
   deleteGmailLink,
   fetchGmailLink,
-  requestGmailDiscoveries,
+  requestGmailDiscoveriesAfterConnect,
   startGmailConnect,
   type GmailLinkState,
 } from "@lib/gmail-auto-client";
@@ -87,8 +87,9 @@ export function GmailAutoImportSetup() {
         fetchGmailLink()
           .then(setLink)
           .catch(() => undefined);
-        // 연결하면서 첫 검사가 끝났으니 찾은 구독을 바로 받는다.
-        requestGmailDiscoveries();
+        // 연결하면서 최근 메일 검사가 끝났으니 찾은 구독을 바로 받고, 1분쯤 뒤에 오는 나머지 1년 치도
+        // 이어서 받는다.
+        requestGmailDiscoveriesAfterConnect();
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gmail 연결을 시작하지 못했습니다.");
