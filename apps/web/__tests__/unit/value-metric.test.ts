@@ -29,6 +29,8 @@ function sub(overrides: Partial<Subscription>): Subscription {
 describe("metricForSubscription", () => {
   it("서비스 목록의 서비스는 그 서비스의 지표로 잰다", () => {
     expect(metricForSubscription(sub({ name: "넷플릭스" }))).toBe("uses");
+    // 백그라운드 재생·유튜브 뮤직이 프리미엄의 값이라 시간으로 잰다.
+    expect(metricForSubscription(sub({ name: "유튜브 프리미엄" }))).toBe("hours");
     expect(metricForSubscription(sub({ name: "Spotify", category: "music" }))).toBe("hours");
     expect(metricForSubscription(sub({ name: "ChatGPT Plus", category: "ai" }))).toBe("days");
     expect(

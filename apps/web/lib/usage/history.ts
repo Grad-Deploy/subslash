@@ -145,10 +145,18 @@ export interface UsageTotals {
   /** 한 번이라도 쓴 날 수(1분 이상 앞에 있었거나 한 번 이상 열었다). */
   activeDays: number;
   /**
-   * 날마다 max(앞에 있던 시간, 재생 알림 시간)을 더한 것. 재생 시간을 모르는 날이 하나라도 있으면 null.
-   * 둘을 더하지 않고 큰 쪽을 쓴다 — 앱을 켜 두고 들으면 두 시간이 겹친다.
+   * 앱마다·날마다 max(앞에 있던 시간, 재생 알림 시간)을 더한 것. 재생 시간을 모르는 날이 하나라도 있으면
+   * null. 둘을 더하지 않고 큰 쪽을 쓴다 — 앱을 켜 두고 들으면 두 시간이 겹친다. 앱마다 따로 고르는 것은
+   * 유튜브(영상)와 유튜브 뮤직(재생)처럼 한 구독의 두 앱이 각자 다른 방식으로 쓰이기 때문이다.
    */
   listenMs: number | null;
+  /**
+   * 화면에 보일 사용 시간. listenMs와 같게 재되, 재생 시간을 모르는 날은 앞에 있던 시간만 더한다(적게
+   * 잡히는 쪽). 리포트·시간당 단가는 이것을 쓴다.
+   */
+  usedMs: number;
+  /** 앱별 합계. 앱이 여럿인 구독(유튜브 프리미엄)을 나눠 보여 줄 때 쓴다. */
+  byPackage: Record<string, { usedMs: number; opens: number }>;
 }
 
 /** 날짜 목록 동안 패키지들의 사용 합계. */
@@ -162,6 +170,8 @@ export function totalsFor(
   let coveredDays = 0;
   let activeDays = 0;
   let listenMs: number | null = 0;
+  let usedMs = 0;
+  const byPackage: Record<string, { usedMs: number; opens: number }> = {};
   for (const date of dates) {
     const day = history.days[date];
     if (!day) continue;
@@ -170,20 +180,26 @@ export function totalsFor(
     if (!playbackKnown) listenMs = null;
     let dayMs = 0;
     let dayOpens = 0;
-    let dayService = 0;
+    let dayUsed = 0;
     for (const pkg of packages) {
       const entry = day[pkg];
       if (!entry) continue;
+      const used = playbackKnown ? Math.max(entry[0], entry[2] ?? 0) : entry[0];
       dayMs += entry[0];
       dayOpens += entry[1];
-      dayService += entry[2] ?? 0;
+      dayUsed += used;
+      const row = (byPackage[pkg] ??= { usedMs: 0, opens: 0 });
+      row.usedMs += used;
+      row.opens += entry[1];
     }
     ms += dayMs;
     opens += dayOpens;
-    if (dayOpens > 0 || dayMs >= 60_000) activeDays += 1;
-    if (listenMs !== null) listenMs += Math.max(dayMs, dayService);
+    usedMs += dayUsed;
+    // 화면을 끄고 1분 넘게 들은 날도 쓴 날이다.
+    if (dayOpens > 0 || dayUsed >= 60_000) activeDays += 1;
+    if (listenMs !== null) listenMs += dayUsed;
   }
-  return { ms, opens, coveredDays, activeDays, listenMs };
+  return { ms, opens, coveredDays, activeDays, listenMs, usedMs, byPackage };
 }
 
 /** 기록이 있는 가장 이른 날(없으면 null). */
