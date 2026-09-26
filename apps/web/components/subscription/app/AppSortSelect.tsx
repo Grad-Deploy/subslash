@@ -59,7 +59,7 @@ export function AppSortSelect({
               role="dialog"
               aria-modal="true"
               aria-label="순서"
-              className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-xl border bg-popover py-1 shadow-lg animate-in fade-in zoom-in-95"
+              className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-xl border bg-background py-1 shadow-xl dark:bg-secondary animate-in fade-in zoom-in-95"
             >
               {(Object.keys(APP_SUBS_SORT_LABEL) as AppSubsSort[]).map((key) => (
                 <button
@@ -71,7 +71,7 @@ export function AppSortSelect({
                     setOpen(false);
                   }}
                   className={cn(
-                    "flex w-full items-center justify-between px-3 py-2.5 text-left text-[13px] hover:bg-muted/60",
+                    "flex w-full items-center justify-between px-3 py-2.5 text-left text-[13px] hover:bg-muted/60 dark:hover:bg-white/5",
                     value === key ? "font-black" : "font-medium text-muted-foreground",
                   )}
                 >
