@@ -54,6 +54,19 @@ export function latestFreshUsage(
   subscriptionId: string,
   now: Date = new Date(),
 ): number | null {
+  const latest = latestFreshLog(usageLogs, subscriptionId, now);
+  // 횟수 체크인만 보낸다. 시간·쓴 날·혜택 금액은 '이용 횟수' 비교에 섞이면 안 되고, 방침에 적은 항목도
+  // 이용 횟수뿐이다(utils/valueMetric).
+  if (!latest || (latest.metric ?? "uses") !== "uses") return null;
+  return latest.usageCount;
+}
+
+/** 이 구독의 최근 체크인(지표와 관계없이). `USAGE_FRESH_DAYS`보다 오래됐으면 null. */
+export function latestFreshLog(
+  usageLogs: UsageLog[],
+  subscriptionId: string,
+  now: Date = new Date(),
+): UsageLog | null {
   const freshAfter = now.getTime() - USAGE_FRESH_DAYS * 24 * 60 * 60 * 1000;
   let latest: UsageLog | null = null;
   for (const log of usageLogs) {
@@ -62,7 +75,7 @@ export function latestFreshUsage(
     if (checkedAt < freshAfter) continue;
     if (!latest || checkedAt > Date.parse(latest.checkedAt)) latest = log;
   }
-  return latest ? latest.usageCount : null;
+  return latest;
 }
 
 /** 지금 구독에서 보낼 요약을 만든다. 체험 중인 구독은 돈이 나가지 않으므로 뺀다. */

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bell } from "lucide-react";
@@ -17,6 +18,13 @@ import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
 import { BrandLockup } from "../brand/Brand";
 import { IS_APP_BUILD } from "@lib/platform";
+
+// 폰 사용 기록으로 자동 체크인(안드로이드 앱 전용). 폰 기록 코드가 웹 번들에 들어가지 않게 떼어 부른다.
+const AppAutoCheckIn = IS_APP_BUILD
+  ? dynamic(() => import("../usage/app/AppAutoCheckIn").then((m) => m.AppAutoCheckIn), {
+      ssr: false,
+    })
+  : null;
 
 const navLinks = [
   { name: "대시보드", href: "/dashboard" },
@@ -71,6 +79,7 @@ export function Header() {
 
   return (
     <>
+      {AppAutoCheckIn && <AppAutoCheckIn />}
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 pt-safe backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
           <div className="flex h-full items-center gap-8">

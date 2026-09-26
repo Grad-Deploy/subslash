@@ -163,7 +163,13 @@ export function buildYearInReview(
   const checkIns = reviewed
     .flatMap((sub): CheckInStanding[] => {
       const latest = latestLog(
-        logs.filter((log) => log.subscriptionId === sub.id && yearOf(log.checkedAt) === year),
+        // '1회당 가장 싸게/비싸게'로 줄 세우므로 횟수 체크인만 본다. 시간당·하루당과 섞으면 비교가 안 된다.
+        logs.filter(
+          (log) =>
+            log.subscriptionId === sub.id &&
+            yearOf(log.checkedAt) === year &&
+            (log.metric ?? "uses") === "uses",
+        ),
       );
       if (!latest) return [];
       return [

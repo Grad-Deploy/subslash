@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { Check, Minus, Plus } from "lucide-react";
-import { type Subscription } from "@subslash/shared";
+import { type Subscription, metricForSubscription } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useStore } from "@lib/store";
 import { useExchangeRate } from "@hooks/useExchangeRate";
@@ -50,7 +50,12 @@ export function AppBatchCheckIn({
     let skipped = 0;
     for (const sub of subscriptions) {
       const usage = subUsage(sub, history, installed, dates, rate);
-      if (usage.state === "unmapped" || usage.state === "no-data") {
+      // 폰에서 연 횟수는 횟수로 재는 구독에만 넣는다. 음악(시간)·AI(쓴 날)는 구독마다 따로 체크인한다.
+      if (
+        usage.state === "unmapped" ||
+        usage.state === "no-data" ||
+        metricForSubscription(sub) !== "uses"
+      ) {
         skipped += 1;
         continue;
       }

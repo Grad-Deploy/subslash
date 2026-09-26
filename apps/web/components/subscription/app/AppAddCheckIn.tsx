@@ -2,11 +2,16 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { type Subscription, formatCurrency, getMyMonthlyShareAmount } from "@subslash/shared";
+import {
+  type Subscription,
+  formatCurrency,
+  getMyMonthlyShareAmount,
+  checkInQuestion,
+} from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { ServiceLogo } from "../ServiceLogo";
 import { DialogDescription, DialogTitle } from "../../ui/dialog";
-import { APP_CHECK_IN_QUESTION, AppUsageCountPicker } from "./AppUsageCountPicker";
+import { AppUsageCountPicker } from "./AppUsageCountPicker";
 
 /** '₩ 17,000'처럼 기호 뒤를 한 칸 띄운다(계산서와 같은 표기). */
 function spaced(text: string): string {
@@ -64,7 +69,7 @@ export function AppAddCheckIn({
       <hr className="my-4" />
 
       <DialogTitle className="text-[17px] font-black tracking-tight">
-        {APP_CHECK_IN_QUESTION}
+        {checkInQuestion(subscription)}
       </DialogTitle>
       <DialogDescription className="mt-1 text-xs text-muted-foreground">
         가성비 계산서에 바로 들어가요. 나중에 고칠 수 있어요.
