@@ -66,16 +66,28 @@ export function AppPhoneCheckInButton({
               {!autoOn
                 ? "꺼져 있어요. 체크인은 직접 해 주세요."
                 : remaining === null || remaining > 0
-                  ? `폰 기록이 ${AUTO_CHECKIN_DAYS}일 쌓이면 알아서 체크인해요.`
-                  : "최근 30일 동안의 이 폰 기록으로 알아서 체크인해요. OTT는 연 횟수, AI·업무 도구는 5분 넘게 쓴 날, 음악·독서는 들은(읽은) 시간이에요. 이 폰에서 안 쓴 구독과 직접 센 숫자가 더 큰 구독은 그대로 둬요."}
+                  ? `폰 기록이 ${AUTO_CHECKIN_DAYS}일 쌓이면 알아서 해요.`
+                  : "최근 30일 폰 기록으로 알아서 체크인해요. 이 폰에서 안 쓴 구독과 직접 센 숫자가 더 큰 구독은 그대로 둬요."}
             </p>
-            {/* 남은 날은 문장 괄호에 넣으면 줄이 길어져서 따로 한 줄로 둔다. */}
+            {/* 얼마나 쌓였는지를 막대로. 지금 바로 하는 길은 구독 관리의 상태 줄·버튼이 맡아 여기선 적지 않는다. */}
             {autoOn && remaining !== null && remaining > 0 && (
               <>
-                <p className="mt-0.5 font-bold text-foreground">{remaining}일 남았어요</p>
-                <p className="text-muted-foreground">
-                  지금 바로 하려면 {batchButton ? "아래" : "구독 관리의"} &lsquo;폰 기록으로
-                  체크인&rsquo;을 눌러 주세요.
+                <span
+                  className="mt-2 block h-1.5 overflow-hidden rounded-full bg-secondary"
+                  aria-hidden
+                >
+                  <span
+                    className="block h-full rounded-full bg-emerald-500 dark:bg-emerald-400"
+                    style={{
+                      width: `${((AUTO_CHECKIN_DAYS - remaining) / AUTO_CHECKIN_DAYS) * 100}%`,
+                    }}
+                  />
+                </span>
+                <p className="mt-1 flex justify-between text-[11.5px]">
+                  <span className="text-muted-foreground tabular-nums">
+                    {AUTO_CHECKIN_DAYS - remaining} / {AUTO_CHECKIN_DAYS}일
+                  </span>
+                  <b>{remaining}일 남았어요</b>
                 </p>
               </>
             )}
