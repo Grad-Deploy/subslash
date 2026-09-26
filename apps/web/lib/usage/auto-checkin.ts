@@ -131,3 +131,11 @@ export function daysUntilAutoCheckIn(history: UsageHistory, now: Date): number |
   if (covered === 0) return null;
   return Math.max(0, AUTO_CHECKIN_DAYS - covered);
 }
+
+/** 폰 기록으로 잰 이 지표의 수량(체크인 칸에 채울 값). 시간은 1시간 단위로 내린다. */
+export function measuredQuantity(
+  metric: ValueMetric,
+  totals: { activeDays: number; usedMs: number },
+): number {
+  return metric === "days" ? totals.activeDays : Math.floor(totals.usedMs / 3_600_000);
+}
