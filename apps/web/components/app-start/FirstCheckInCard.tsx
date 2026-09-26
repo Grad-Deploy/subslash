@@ -9,14 +9,12 @@ import {
   getRiskLevel,
   type RiskLevel,
   type Subscription,
+  checkInQuestion,
 } from "@subslash/shared";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { RiskBadge } from "@components/dashboard/RiskBadge";
 import { useStoredFlag } from "@hooks/useStoredFlag";
-import {
-  APP_CHECK_IN_QUESTION,
-  AppUsageCountPicker,
-} from "@components/subscription/app/AppUsageCountPicker";
+import { AppUsageCountPicker } from "@components/subscription/app/AppUsageCountPicker";
 
 /** 신호 색의 뜻. 색마다 처음 나올 때 한 번만 보여준다(getRiskLevel 기준). */
 const HINTS: Record<RiskLevel, string> = {
@@ -67,7 +65,7 @@ export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardPro
         </div>
       </div>
 
-      <p className="mt-3 mb-2 text-[13px] font-bold">{APP_CHECK_IN_QUESTION}</p>
+      <p className="mt-3 mb-2 text-[13px] font-bold">{checkInQuestion(subscription)}</p>
 
       {/* 입력은 앱의 다른 체크인(등록 직후·체크인 창)과 같은 단계 막대다. */}
       <AppUsageCountPicker subscription={subscription} value={count} onChange={setCount} />

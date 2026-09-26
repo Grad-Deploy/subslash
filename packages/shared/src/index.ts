@@ -16,4 +16,5 @@ export * from "./constants/services";
 export * from "./constants/categories";
 export * from "./utils/parser";
 export * from "./utils/metaphor";
+export * from "./utils/valueMetric";
 export * from "./utils/deviceUsage";

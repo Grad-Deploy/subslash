@@ -14,6 +14,9 @@ import {
   sumMyAnnualKRW,
   sumMyMonthlyKRW,
   type Subscription,
+  describeCheckIn,
+  metricForSubscription,
+  type UsageLog,
 } from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
@@ -25,6 +28,7 @@ import {
   latestFreshUsage,
   type ServiceStats,
   type StatsSummary,
+  latestFreshLog,
 } from "@lib/stats";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { MeasuredUsageSection } from "@components/usage/MeasuredUsage";
@@ -58,6 +62,19 @@ function rankKey(row: ValueRow): number {
   return row.costPerUse ?? -1;
 }
 
+/** 빨강이 먼저, 체크인 전은 맨 뒤. */
+function levelRank(log: UsageLog | null): number {
+  if (!log) return -1;
+  return log.riskLevel === "red" ? 2 : log.riskLevel === "yellow" ? 1 : 0;
+}
+
+/** 색만으로 말하지 않게 글자를 붙인다(계산서와 같은 말). */
+const LEVEL_TEXT = {
+  red: { label: "쉬어가도 될 구독", className: "text-destructive" },
+  yellow: { label: "애매해요", className: "text-amber-700 dark:text-amber-400" },
+  green: { label: "뽕 뽑는 중", className: "text-emerald-700 dark:text-emerald-400" },
+} as const;
+
 function presetName(presetId: string): string {
   const preset = POPULAR_SERVICES.find((service) => service.id === presetId);
   return preset?.nameKo ?? preset?.name ?? presetId;
@@ -84,9 +101,21 @@ export default function ReportPage() {
     [subscriptions],
   );
 
+  // 횟수가 아닌 것(시간·쓴 날·혜택·용량)으로 재는 구독은 1회 단가 순위에 넣지 않는다. 시간당 ₩500과
+  // 1회 ₩500은 같은 줄에 세울 수 없다. 대신 색(돈값 기준 — utils/valueMetric)으로 따로 줄 세운다.
+  const otherRows = useMemo(
+    () =>
+      active
+        .filter((sub) => metricForSubscription(sub) !== "uses")
+        .map((sub) => ({ sub, log: latestFreshLog(usageLogs, sub.id, now) }))
+        .sort((a, b) => levelRank(b.log) - levelRank(a.log)),
+    [active, usageLogs, now],
+  );
+
   const rows: ValueRow[] = useMemo(
     () =>
       active
+        .filter((sub) => metricForSubscription(sub) === "uses")
         .map((sub) => {
           const monthlyKRW = getMyMonthlyAmountKRW(sub, rate);
           const usageCount = latestFreshUsage(usageLogs, sub.id, now);
@@ -192,6 +221,48 @@ export default function ReportPage() {
               </p>
             )}
           </section>
+
+          {otherRows.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-base font-bold">횟수 말고 다른 기준으로 재는 구독</h2>
+              <p className="text-xs text-muted-foreground">
+                음악은 들은 시간, AI·업무 도구는 쓴 날, 멤버십은 받은 혜택, 저장 공간은 쓰는
+                용량으로 봐요.
+              </p>
+              <ul className="divide-y rounded-2xl border">
+                {otherRows.map(({ sub, log }) => (
+                  <li key={sub.id}>
+                    <Link
+                      href={subscriptionDetailHref(sub.id)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50"
+                    >
+                      <ServiceLogo
+                        name={sub.name}
+                        cancelUrl={sub.cancelUrl}
+                        fallbackEmoji={sub.iconUrl}
+                        fallbackColor={sub.iconColor}
+                        size={32}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold">{sub.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {log ? describeCheckIn(log, sub.currency) : "체크인 전"}
+                        </p>
+                      </div>
+                      {log && (
+                        <span
+                          className={`text-xs font-bold ${LEVEL_TEXT[log.riskLevel].className}`}
+                        >
+                          {LEVEL_TEXT[log.riskLevel].label}
+                        </span>
+                      )}
+                      <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <MeasuredUsageSection subscriptions={active} />
         </>

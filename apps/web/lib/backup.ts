@@ -1,4 +1,4 @@
-import { currentCategory } from "@subslash/shared";
+import { currentCategory, isValueMetric } from "@subslash/shared";
 import type { LinkedAccount, Subscription, UsageLog } from "@subslash/shared";
 // 스토어 모듈에서는 타입만 가져온다. 이 파일은 서버(계정에 저장한 기록의 검증)도
 // 쓰는데, 스토어 모듈을 실제로 불러오면 브라우저 전용 zustand 스토어가 함께 만들어진다.
@@ -139,6 +139,8 @@ function checkUsageLog(v: unknown): string | null {
   if (!isAmount(v.costPerUse)) return "1회당 비용";
   if (!oneOf(v.riskLevel, RISK_LEVELS)) return "위험도";
   if (!isDateText(v.checkedAt)) return "체크인 시각";
+  if (!optional(v.source, (value) => value === "phone")) return "체크인 출처";
+  if (!optional(v.metric, isValueMetric)) return "체크인 지표";
   return null;
 }
 

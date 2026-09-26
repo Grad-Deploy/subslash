@@ -14,6 +14,7 @@ import {
   getCancelUrlKind,
   getDaysUntilBillingFor,
   getDaysUntilTrialEnd,
+  describeCheckIn,
 } from "@subslash/shared";
 import { SubForm } from "./SubForm";
 import { CheckInModal } from "./CheckInModal";
@@ -433,9 +434,13 @@ export function SubscriptionDetail({
                 <div>
                   <div className="font-bold">{log.month} 사용 기록</div>
                   <div className="text-xs text-muted-foreground">
-                    총 {log.usageCount}회 이용 · 1회당{" "}
-                    {formatCurrency(log.costPerUse, sub.currency)}
+                    {describeCheckIn(log, sub.currency)}
                   </div>
+                  {log.source === "phone" && (
+                    <div className="text-[11px] text-muted-foreground">
+                      폰 기록으로 자동 체크인 · 다른 기기에서 쓴 건 빠져 있어요
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <RiskBadge level={log.riskLevel} size="sm" />

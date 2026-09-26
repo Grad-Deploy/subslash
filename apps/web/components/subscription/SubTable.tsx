@@ -20,6 +20,9 @@ import {
   sumMyMonthlyKRW,
   toKRW,
   type RiskLevel,
+  formatQuantity,
+  metricOfLog,
+  shortUnitCost,
 } from "@subslash/shared";
 import { Button } from "../ui/button";
 import { cn } from "@lib/utils";
@@ -127,7 +130,12 @@ export function SubTable({
       myMonthly: getMyMonthlyAmountKRW(sub, rate),
       days: getDaysUntilBillingFor(sub, now),
       latest,
-      costPerUseKRW: latest ? toKRW(latest.costPerUse, sub.currency, rate) : null,
+      // 단가로 줄 세울 때 횟수 체크인끼리만 비교한다. 시간당·하루당 금액은 1회 단가와 크기가 달라
+      // 섞으면 순서가 뜻이 없다 — 맨 뒤로 보낸다.
+      costPerUseKRW:
+        latest && metricOfLog(latest) === "uses"
+          ? toKRW(latest.costPerUse, sub.currency, rate)
+          : null,
       checkedDaysAgo: Number.isNaN(checkedMs)
         ? null
         : Math.floor((now.getTime() - checkedMs) / MS_PER_DAY),
@@ -198,7 +206,7 @@ export function SubTable({
             {mode === "active" ? (
               <>
                 {sortHeader("nextBilling", "다음 결제")}
-                {sortHeader("costPerUse", "1회 단가")}
+                {sortHeader("costPerUse", "단가")}
               </>
             ) : (
               sortHeader("killedAt", "해지일")
@@ -283,10 +291,10 @@ export function SubTable({
                         <span
                           className={cn("font-semibold tabular-nums", RISK_TEXT[latest.riskLevel])}
                         >
-                          {formatCurrency(latest.costPerUse, sub.currency)}
+                          {shortUnitCost(latest, sub.currency)}
                         </span>
                         <p className="text-[11px] text-muted-foreground">
-                          {latest.usageCount}회
+                          {formatQuantity(metricOfLog(latest), latest.usageCount)}
                           {checkedDaysAgo !== null && ` · ${daysAgoLabel(checkedDaysAgo)}`}
                           {checkedDaysAgo !== null && checkedDaysAgo > STALE_CHECK_IN_DAYS && (
                             <span className="text-amber-600 dark:text-amber-400">
