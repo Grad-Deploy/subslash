@@ -71,6 +71,14 @@ export interface ServicePreset {
   legacyCancelUrls?: string[];
   cancelGuide: string;
   iconEmoji: string;
+  /**
+   * 결합 상품: 이 구독 하나로 함께 받는 서비스(서비스 목록의 id). 공식 발표나 판매 화면에서 확인한
+   * 구성만 적는다. 적어 두면 폰 기록이 포함된 서비스의 앱으로 재고(lib/usage/packages), 같은 서비스를
+   * 따로 구독하고 있으면 두 번 내는 것일 수 있다고 알린다(utils/bundles).
+   */
+  includes?: string[];
+  /** 결합 구성·요금을 확인한 곳. 요금이 바뀌면 여기부터 다시 본다. */
+  sourceUrl?: string;
 }
 
 export interface PaymentMethodOption {
@@ -409,6 +417,52 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "1. 배달의민족 앱 로그인 후 아래 [마이배민]\n2. [배민클럽] 화면으로 이동\n3. 화면 아래쪽 [해지하기] > 해지 사유 선택 후 한 번 더 [해지하기]",
     iconEmoji: "🛵",
+  },
+  {
+    id: "baemin-youtube-premium",
+    name: "Baemin Club + YouTube Premium",
+    nameKo: "배민클럽 + 유튜브 프리미엄",
+    category: "ott",
+    // 2025년 9월 출시 때 발표한 가격(첫 달 할인 제외). 상시 할인가로 파는 중이라 두 값을 다 두고
+    // 등록할 때 고르게 한다 — 할인이 끝났는지는 알 수 없다.
+    defaultAmount: null,
+    plans: [
+      { id: "discounted", name: "상시 할인가", amount: 13990 },
+      { id: "list", name: "정가", amount: 15990 },
+    ],
+    priceNote: "2025년 9월 출시 때 발표한 가격이에요. 결제 화면의 금액과 다르면 고쳐 주세요.",
+    currency: "KRW",
+    // 배민 앱에서 결제하고 해지한다. 결제 메일이 Gmail로 오지 않아 가져오기로는 찾지 못한다.
+    cancelUrl: "https://www.baemin.com/",
+    cancelUrlKind: "entry",
+    cancelGuide:
+      "1. 배달의민족 앱 로그인 후 아래 [마이배민]\n2. [배민클럽] 이용정보 화면으로 이동\n3. [배민클럽 해지하기] — 유튜브 프리미엄 제휴 상품도 함께 해지돼요",
+    iconEmoji: "🛵",
+    includes: ["baemin-club", "youtube-premium"],
+    sourceUrl: "https://zdnet.co.kr/view/?no=20250924105307",
+  },
+  {
+    id: "uplus-double-streaming",
+    name: "LG U+ Udok Double Streaming",
+    nameKo: "유독 더블스트리밍 (넷플릭스 + 유튜브 프리미엄)",
+    category: "ott",
+    // 2026년 5월 발표. 연간권이지만 월 요금으로 발표돼, 한 번에 1년치를 내는지는 확인하지 못했다.
+    // 넷플릭스가 어느 요금제인지도 발표에 없다.
+    defaultAmount: null,
+    plans: [
+      { id: "regular", name: "기본", amount: 18900 },
+      { id: "vip", name: "U+ 멤버십 VIP 쿠폰 적용", amount: 14900 },
+    ],
+    priceNote:
+      "2026년 5월 발표한 연간권의 월 요금이에요. 1년치를 한 번에 냈다면 결제 주기를 연간으로 바꿔 주세요.",
+    currency: "KRW",
+    cancelUrl: "https://www.lguplus.com/pogg/main",
+    cancelUrlKind: "entry",
+    cancelGuide:
+      "1. LG U+ 구독 플랫폼 '유독' 접속 후 로그인\n2. 구독 중인 더블스트리밍 선택\n3. 해지 — 유독은 버튼 한 번으로 해지할 수 있다고 안내해요(연간권은 약정 조건을 확인하세요)",
+    iconEmoji: "📺",
+    includes: ["netflix", "youtube-premium"],
+    sourceUrl: "https://www.newsis.com/view/NISX20260506_0003617774",
   },
   {
     id: "naver-mybox",

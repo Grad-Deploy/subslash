@@ -48,6 +48,9 @@ export const SERVICE_METRICS: Readonly<Record<string, ValueMetric>> = {
   // 프리미엄의 값은 광고 없는 영상과 백그라운드 재생·유튜브 뮤직이다. 연 횟수로는 화면을 끄고 듣는
   // 음악이 빠져서 시간으로 잰다(유튜브 영상 시간 + 유튜브 뮤직 재생 시간).
   "youtube-premium": "hours",
+  // 결합 상품은 포함된 영상 서비스의 시간으로 잰다(배민 무료배달의 값은 폰 기록으로 알 수 없다).
+  "baemin-youtube-premium": "hours",
+  "uplus-double-streaming": "hours",
   spotify: "hours",
   melon: "hours",
   "apple-music": "hours",

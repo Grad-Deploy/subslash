@@ -18,4 +18,5 @@ export * from "./utils/parser";
 export * from "./utils/metaphor";
 export * from "./utils/valueMetric";
 export * from "./utils/orderEvidence";
+export * from "./utils/bundles";
 export * from "./utils/deviceUsage";
