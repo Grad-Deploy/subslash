@@ -358,13 +358,13 @@ function hasPaymentEvidence(text: string): boolean {
 }
 
 /** "Netflix <info@account.netflix.com>"에서 도메인만 꺼낸다. */
-function senderDomainOf(from: string): string {
+export function senderDomainOf(from: string): string {
   const match = /@([A-Za-z0-9.-]+)/.exec(from);
   return match ? match[1].toLowerCase().replace(/[^a-z0-9.-]|\.+$/g, "") : "";
 }
 
 /** 하위 도메인(email.openai.com)도 그 서비스의 것으로 본다. */
-function isDomainOf(domain: string, registrable: string): boolean {
+export function isDomainOf(domain: string, registrable: string): boolean {
   return domain === registrable || domain.endsWith("." + registrable);
 }
 

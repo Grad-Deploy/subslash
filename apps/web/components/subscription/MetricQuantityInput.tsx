@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import {
   METRIC_SPECS,
   type Subscription,
@@ -54,6 +54,13 @@ export function MetricQuantityInput({
           subscription.currency,
         );
   const set = (next: number) => onChange(clampQuantity(metric, next));
+  // 45일이 지난 근거는 '최근 30일'이 아니게 되어 보이지 않는다.
+  const openedAt = useMemo(() => new Date().getTime(), []);
+  const evidence =
+    subscription.orderEvidence &&
+    openedAt - Date.parse(subscription.orderEvidence.checkedAt) < 45 * 24 * 60 * 60 * 1000
+      ? subscription.orderEvidence
+      : null;
 
   return (
     <div className="space-y-3">
@@ -122,6 +129,18 @@ export function MetricQuantityInput({
 
       {spec.hint && (
         <p className="text-center text-[11px] leading-relaxed text-muted-foreground">{spec.hint}</p>
+      )}
+
+      {/* 멤버십: Gmail 가져오기에서 센 최근 주문 메일 수. 금액으로 바꾸지 않고 근거로만 보여 준다. */}
+      {metric === "benefit" && evidence && (
+        <p className="rounded-xl bg-secondary/60 px-3 py-2 text-center text-[11px] leading-relaxed">
+          <b>
+            Gmail에서 {evidence.since.slice(5).replace("-", "월 ")}일 이후 주문 메일{" "}
+            {evidence.count}통
+          </b>
+          을 찾았어요. 가져온 메일 안에서 센 것이라 실제보다 적을 수 있어요. 그 주문에서 받은 무료
+          배송·할인을 더해 주세요.
+        </p>
       )}
     </div>
   );
