@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Smartphone } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Smartphone } from "lucide-react";
 import { type Subscription, isInTrial, metricForSubscription } from "@subslash/shared";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import { packagesFor } from "@lib/usage/packages";
@@ -22,6 +23,7 @@ export function AppPhoneCheckInButton({
   onDone,
   autoSwitch = true,
   batchButton = true,
+  autoStatus = false,
 }: {
   subscriptions: Subscription[];
   onDone?: (count: number) => void;
@@ -29,6 +31,11 @@ export function AppPhoneCheckInButton({
   autoSwitch?: boolean;
   /** '폰 기록으로 체크인' 버튼. 구독 관리에 두고 설정 탭에서는 뺀다. */
   batchButton?: boolean;
+  /**
+   * 스위치 없이 자동 체크인이 켜졌는지만 보이는 한 줄(누르면 설정 탭). 구독 관리에 둔다 — 켜고 끄는 곳은
+   * 설정 한 곳이지만, 여기서 "다 자동으로 되는 줄 알았다"가 생기지 않게 언제부터 자동인지 보여 준다.
+   */
+  autoStatus?: boolean;
 }) {
   const { status, history } = usePhoneUsage();
   const [autoOn, setAutoOn] = useState(readAutoCheckIn);
@@ -116,6 +123,37 @@ export function AppPhoneCheckInButton({
             />
           </button>
         </div>
+      )}
+      {autoStatus && status === "on" && (
+        <Link
+          href="/settings"
+          className="flex w-full items-center gap-2 rounded-xl bg-secondary px-3 py-2 text-xs md:max-w-md"
+        >
+          <span
+            aria-hidden
+            className={cn(
+              "size-1.5 shrink-0 rounded-full",
+              autoOn ? "bg-emerald-500" : "bg-muted-foreground",
+            )}
+          />
+          <span className="min-w-0 flex-1 break-keep">
+            <b>자동 체크인 {autoOn ? "켜짐" : "꺼짐"}</b>
+            <span className="text-muted-foreground">
+              {" · "}
+              {!autoOn
+                ? "직접 체크인해 주세요"
+                : remaining === null
+                  ? `폰 기록이 ${AUTO_CHECKIN_DAYS}일 쌓이면 알아서 해요`
+                  : remaining > 0
+                    ? `${remaining}일 뒤부터 알아서 해요`
+                    : "폰 기록으로 알아서 맞춰요"}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center font-bold text-muted-foreground">
+            {autoOn ? "설정" : "켜기"}
+            <ChevronRight className="size-3.5" aria-hidden />
+          </span>
+        </Link>
       )}
       {batchButton && (
         <Button
