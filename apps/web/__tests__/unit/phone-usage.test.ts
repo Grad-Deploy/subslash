@@ -10,8 +10,9 @@ import {
   mergeUsage,
   monthlyTotals,
   totalsFor,
+  type UsageHistory,
 } from "@lib/usage/history";
-import { ALL_USAGE_PACKAGES, packagesFor } from "@lib/usage/packages";
+import { ALL_USAGE_PACKAGES, packageBreakdown, packagesFor } from "@lib/usage/packages";
 import { median, subUsage } from "@lib/usage/value";
 
 const NOW = new Date(2026, 8, 25, 15, 0, 0); // 2026-09-25 15:00 (기기 시간대)
@@ -146,6 +147,42 @@ describe("재생 알림 시간", () => {
   });
 });
 
+describe("유튜브 프리미엄(유튜브 + 유튜브 뮤직)", () => {
+  const YT = "com.google.android.youtube";
+  const MUSIC = "com.google.android.apps.youtube.music";
+
+  it("앱마다 앱 시간과 재생 알림 시간 중 긴 쪽을 골라 더하고, 앱별로도 나눠 준다", () => {
+    const history: UsageHistory = {
+      v: 1,
+      syncedAt: null,
+      playbackFrom: "2026-09-20",
+      days: {
+        // 유튜브로 영상 2시간(재생 알림 1시간 겹침), 유튜브 뮤직은 화면 5분에 화면 끄고 1시간.
+        "2026-09-24": { [YT]: [7_200_000, 2, 3_600_000], [MUSIC]: [300_000, 1, 3_600_000] },
+      },
+    };
+    const totals = totalsFor(history, [YT, MUSIC], ["2026-09-24"]);
+    expect(totals.usedMs).toBe(10_800_000);
+    expect(totals.listenMs).toBe(10_800_000);
+    expect(packageBreakdown([YT, MUSIC], totals.byPackage)).toEqual([
+      { pkg: YT, label: "유튜브", usedMs: 7_200_000, opens: 2 },
+      { pkg: MUSIC, label: "유튜브 뮤직", usedMs: 3_600_000, opens: 1 },
+    ]);
+  });
+
+  it("재생 시간을 모르는 날은 앱 시간만 더하고, 앱이 하나인 구독은 나누지 않는다", () => {
+    const history: UsageHistory = {
+      v: 1,
+      syncedAt: null,
+      days: { "2026-09-24": { [MUSIC]: [300_000, 1] } },
+    };
+    const totals = totalsFor(history, [MUSIC], ["2026-09-24"]);
+    expect(totals.usedMs).toBe(300_000);
+    expect(totals.listenMs).toBeNull();
+    expect(packageBreakdown([MUSIC], totals.byPackage)).toEqual([]);
+  });
+});
+
 describe("totalsFor · monthlyTotals", () => {
   const history = mergeUsage(
     EMPTY_HISTORY,
@@ -181,6 +218,11 @@ describe("totalsFor · monthlyTotals", () => {
       coveredDays: 4,
       activeDays: 2,
       listenMs: null,
+      usedMs: 180_000,
+      byPackage: {
+        "com.google.android.youtube": { usedMs: 60_000, opens: 1 },
+        "com.google.android.apps.youtube.music": { usedMs: 120_000, opens: 2 },
+      },
     });
   });
 

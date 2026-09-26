@@ -41,9 +41,13 @@ export function isValueMetric(value: unknown): value is ValueMetric {
 /**
  * 서비스 목록의 서비스 → 지표. 여기 없는 서비스는 `uses`다.
  *
- * 적지 않은 것: 웹툰 쿠키·이모티콘(사는 것이라 횟수가 맞다), 앱스토어 묶음(무엇인지 모른다), OTT.
+ * 적지 않은 것: 웹툰 쿠키·이모티콘(사는 것이라 횟수가 맞다), 앱스토어 묶음(무엇인지 모른다), 유튜브를
+ * 뺀 OTT.
  */
 export const SERVICE_METRICS: Readonly<Record<string, ValueMetric>> = {
+  // 프리미엄의 값은 광고 없는 영상과 백그라운드 재생·유튜브 뮤직이다. 연 횟수로는 화면을 끄고 듣는
+  // 음악이 빠져서 시간으로 잰다(유튜브 영상 시간 + 유튜브 뮤직 재생 시간).
+  "youtube-premium": "hours",
   spotify: "hours",
   melon: "hours",
   "apple-music": "hours",

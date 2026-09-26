@@ -13,7 +13,7 @@ import {
   totalsFor,
   type UsageHistory,
 } from "@lib/usage/history";
-import { packagesFor } from "@lib/usage/packages";
+import { packageBreakdown, packagesFor } from "@lib/usage/packages";
 import { LEVEL_STYLE, RANGE_DAYS, subUsage, type UsageRange } from "@lib/usage/value";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 import { RangeTabs, StatTile, won } from "./parts";
@@ -40,7 +40,7 @@ function bars(
       key: m.month,
       label: m.label,
       showLabel: true,
-      ms: m.totals.coveredDays > 0 ? m.totals.ms : null,
+      ms: m.totals.coveredDays > 0 ? m.totals.usedMs : null,
       spoken: m.label,
     }));
   }
@@ -53,7 +53,7 @@ function bars(
       key: date,
       label: range === "week" ? WEEKDAYS[day.getDay()] : `${m}/${d}`,
       showLabel: range === "week" || i === 0 || i === dates.length - 1 || i === 14,
-      ms: totals.coveredDays > 0 ? totals.ms : null,
+      ms: totals.coveredDays > 0 ? totals.usedMs : null,
       spoken: `${m}월 ${d}일`,
     };
   });
@@ -122,9 +122,29 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
           <RangeTabs value={range} onChange={setRange} label="기간" />
 
           <div className="grid grid-cols-2 gap-2">
-            <StatTile label="사용 시간" value={formatDuration(period.totals.ms)} />
+            <StatTile label="사용 시간" value={formatDuration(period.totals.usedMs)} />
             <StatTile label="쓴 횟수" value={String(period.totals.opens)} unit="회" />
           </div>
+
+          {/* 앱이 여럿인 구독(유튜브 프리미엄 = 유튜브 + 유튜브 뮤직)은 앱마다 나눠 보여 준다. */}
+          {packageBreakdown(packages, period.totals.byPackage).length > 0 && (
+            <ul className="space-y-1 rounded-xl bg-secondary/50 px-3 py-2 text-xs">
+              {packageBreakdown(packages, period.totals.byPackage).map((row) => (
+                <li key={row.pkg} className="flex justify-between gap-3">
+                  <span className="font-semibold">{row.label}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {formatDuration(row.usedMs)} · {row.opens}회
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {period.totals.listenMs !== null && (
+            <p className="text-[11px] text-muted-foreground">
+              사용 시간에는 화면을 끄고 들은 재생 시간(재생 알림이 떠 있던 시간)도 들어가요.
+              일시정지 시간이 섞일 수 있어요.
+            </p>
+          )}
 
           <div>
             <div className="flex h-28 items-end gap-[3px]" aria-hidden>
@@ -174,7 +194,7 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
                   </p>
                   <p className="text-[11px] text-muted-foreground">
                     최근 {Math.min(30, month.totals.coveredDays)}일{" "}
-                    {formatDuration(month.totals.ms)} 기준
+                    {formatDuration(month.totals.usedMs)} 기준
                   </p>
                 </div>
                 <div className="rounded-2xl bg-secondary/60 px-3 py-2.5">
