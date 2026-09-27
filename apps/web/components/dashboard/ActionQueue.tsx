@@ -40,6 +40,7 @@ const VERB_LABEL: Record<ActionVerb, string> = {
   "confirm-price": "요금 유지",
   "set-billing-month": "결제 월 입력",
   "verify-kill": "결제 안 됐어요",
+  "review-resubscribe": "살펴보기",
 };
 
 /** 급한 정도를 색으로만 구분한다. 문구는 이유가 이미 말해준다. */
@@ -83,6 +84,7 @@ export function ActionQueue({
       case "confirm-price":
         return onConfirmPrice(item.subscriptionId);
       case "set-billing-month":
+      case "review-resubscribe":
         return router.push(subscriptionDetailHref(item.subscriptionId));
       case "verify-kill":
         return onKillNotCharged(item.subscriptionId);
@@ -147,6 +149,11 @@ export function ActionQueue({
                 {/* 해지한 구독이 활성 구독 사이에 섞여 보이므로 무엇을 묻는지 붙인다. */}
                 {item.kind === "verify-kill" && (
                   <span className="text-[11px] font-semibold text-primary">해지 확인</span>
+                )}
+                {item.kind === "resubscribe-reminder" && (
+                  <span className="text-[11px] font-semibold text-muted-foreground">
+                    다시 살펴볼 날
+                  </span>
                 )}
                 {item.kind === "charged-after-kill" && (
                   <span className="text-[11px] font-black text-destructive">해지 후 결제됨</span>

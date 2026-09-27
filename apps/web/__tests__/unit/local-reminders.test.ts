@@ -3,7 +3,11 @@ import type { Subscription } from "@subslash/shared";
 import {
   MAX_SCHEDULED,
   OCCURRENCES_PER_SUBSCRIPTION,
+  RECEIPT_MONTHS_AHEAD,
+  planAllReminders,
+  planReceiptReminders,
   planReminders,
+  planResubscribeReminders,
   reminderId,
 } from "@lib/local-reminders";
 
@@ -103,5 +107,68 @@ describe("reminderId", () => {
     expect(Number.isInteger(id)).toBe(true);
     expect(id).toBeGreaterThan(0);
     expect(id).toBeLessThanOrEqual(0x7fffffff);
+  });
+});
+
+describe("planReceiptReminders", () => {
+  it("다음 달부터 매달 1일 오전 9시에 지난달 영수증을 연다", () => {
+    const plan = planReceiptReminders([sub()], NOW);
+    expect(plan).toHaveLength(RECEIPT_MONTHS_AHEAD);
+    expect(plan[0].at).toEqual(new Date(2026, 9, 1, 9));
+    expect(plan[0].href).toBe("/report/receipt?month=2026-09");
+    expect(plan[0].title).toBe("9월 구독 영수증이 나왔어요");
+    // 잠금 화면에 금액을 적지 않는다.
+    expect(plan[0].body).not.toMatch(/₩/);
+  });
+
+  it("12월에 걸면 다음 해 1월 1일에 12월 영수증을 연다", () => {
+    const plan = planReceiptReminders([sub()], new Date(2026, 11, 5));
+    expect(plan[0].at).toEqual(new Date(2027, 0, 1, 9));
+    expect(plan[0].href).toBe("/report/receipt?month=2026-12");
+  });
+
+  it("구독이 없으면 걸지 않는다", () => {
+    expect(planReceiptReminders([], NOW)).toEqual([]);
+  });
+});
+
+describe("planResubscribeReminders", () => {
+  const killed = (overrides: Partial<Subscription> = {}) =>
+    sub({ status: "killed", killedAt: "2026-08-01T00:00:00.000Z", ...overrides });
+
+  it("해지한 구독의 다시 살펴볼 날 오전 9시에 그 구독을 연다", () => {
+    const plan = planResubscribeReminders([killed({ resubscribeRemindOn: "2026-12-01" })], NOW);
+    expect(plan.map((r) => [r.at, r.href])).toEqual([
+      [new Date(2026, 11, 1, 9), "/subs/detail?id=sub-1"],
+    ]);
+  });
+
+  it("지난 날, 구독 중인 구독, 날이 없는 구독은 걸지 않는다", () => {
+    expect(
+      planResubscribeReminders(
+        [
+          killed({ resubscribeRemindOn: "2026-09-01" }),
+          sub({ resubscribeRemindOn: "2026-12-01" }),
+          killed(),
+        ],
+        NOW,
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe("planAllReminders", () => {
+  it("결제·영수증·다시 살펴볼 날을 이른 순으로 모은다", () => {
+    const plan = planAllReminders(
+      [sub(), sub({ id: "gone", status: "killed", resubscribeRemindOn: "2026-09-20" })],
+      3,
+      NOW,
+    );
+    const times = plan.map((r) => r.at.getTime());
+    expect(times).toEqual([...times].sort((a, b) => a - b));
+    expect(plan.some((r) => r.href.startsWith("/report/receipt"))).toBe(true);
+    expect(plan.some((r) => r.subscriptionId === "gone")).toBe(true);
+    // 영수증 알림 id가 결제 알림 id와 겹치지 않는다.
+    expect(new Set(plan.map((r) => r.id)).size).toBe(plan.length);
   });
 });

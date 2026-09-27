@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BarChart3, ChevronRight } from "lucide-react";
+import { BarChart3, ChevronRight, ReceiptText } from "lucide-react";
 import {
   POPULAR_SERVICES,
   calculateCostPerUse,
@@ -19,7 +19,9 @@ import {
   type UsageLog,
   findBundleOverlaps,
   serviceNameOf,
+  previousMonth,
 } from "@subslash/shared";
+import { receiptHref } from "@lib/receipt-view";
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
@@ -162,6 +164,9 @@ export default function ReportPage() {
         <h1 className="text-2xl font-black tracking-tight">구독 리포트</h1>
         <p className="text-sm text-muted-foreground">지금 내는 돈과, 제값을 하는지 한눈에.</p>
       </header>
+
+      {/* 매달 1일 앱 알림이 여는 지난달 영수증. 구독이 없어도 해지한 기록이 있으면 볼 것이 있다. */}
+      {subscriptions.length > 0 && <ReceiptLinks now={now} />}
 
       {active.length === 0 ? (
         <section className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-12 text-center">
@@ -330,6 +335,29 @@ export default function ReportPage() {
         </Link>
       )}
     </div>
+  );
+}
+
+/** 지난달 영수증과 올해 결산 영수증으로 가는 칸. */
+function ReceiptLinks({ now }: { now: Date }) {
+  const last = previousMonth(now);
+  return (
+    <section aria-label="구독 영수증" className="grid grid-cols-2 gap-2">
+      <Link
+        href={receiptHref({ kind: "month", ...last })}
+        className="flex items-center gap-2 rounded-2xl border p-3 hover:bg-muted/50"
+      >
+        <ReceiptText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <span className="min-w-0 text-sm font-semibold">{last.month}월 영수증</span>
+      </Link>
+      <Link
+        href={receiptHref({ kind: "year", year: now.getFullYear() })}
+        className="flex items-center gap-2 rounded-2xl border p-3 hover:bg-muted/50"
+      >
+        <ReceiptText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <span className="min-w-0 text-sm font-semibold">{now.getFullYear()}년 결산 영수증</span>
+      </Link>
+    </section>
   );
 }
 

@@ -25,6 +25,7 @@ import {
   DEMO_SUBSCRIPTIONS,
   currentCancelUrl,
   currentCategory,
+  parseDateOnly,
 } from "@subslash/shared";
 import {
   DEFAULT_EXCHANGE_RATE_SETTING,
@@ -320,6 +321,12 @@ interface SubSlashStore {
    */
   confirmKillVerified: (id: string) => void;
   /**
+   * 해지한 구독을 다시 살펴볼 날(`YYYY-MM-DD`)을 적거나(null이면) 지운다. 해지한 구독에만 적힌다.
+   */
+  setResubscribeReminder: (id: string, date: string | null) => void;
+  /** 해지 근거(확인 번호·메모)를 적거나, 둘 다 비었으면 지운다. 해지한 구독에만 적힌다. */
+  setKillEvidence: (id: string, evidence: { reference?: string; memo?: string }) => void;
+  /**
    * 해지로 기록한 구독인데 그 뒤에 결제 메일이 온 사실을 적는다. Gmail 가져오기만 부른다.
    * 사용자의 기억이 아니라 영수증이므로, 이미 '확인'해 둔 구독에도 적는다.
    */
@@ -546,6 +553,9 @@ export const useStore = create<SubSlashStore>()(
                   status: "killed",
                   killedAt: new Date().toISOString(),
                   killVerifiedAt: undefined,
+                  // 앞선 해지에 딸린 기록이 새 해지에 남지 않게 한다.
+                  resubscribeRemindOn: undefined,
+                  killEvidence: undefined,
                 }
               : sub,
           ),
@@ -560,6 +570,9 @@ export const useStore = create<SubSlashStore>()(
                   status: "active",
                   killedAt: undefined,
                   killVerifiedAt: undefined,
+                  // 다시 구독했으니 '다시 살펴볼 날'도, 해지 근거도 더 이상 이 구독의 것이 아니다.
+                  resubscribeRemindOn: undefined,
+                  killEvidence: undefined,
                   // 되살린 구독은 구독 중 목록에 보여야 한다.
                   hiddenAt: undefined,
                   // 다시 구독 중이면 "해지했는데 결제됐다"는 더 이상 이상한 일이 아니다.
@@ -613,6 +626,33 @@ export const useStore = create<SubSlashStore>()(
                   // 다시 확인해 줬으니 예전 영수증 증거는 내린다. 또 오면 다시 적힌다.
                   chargedAfterKillAt: undefined,
                   chargedAfterKillAmount: undefined,
+                }
+              : sub,
+          ),
+        }));
+      },
+      setResubscribeReminder: (id, date) => {
+        const valid = date !== null && parseDateOnly(date) !== null;
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            sub.id === id && sub.status === "killed"
+              ? { ...sub, resubscribeRemindOn: valid ? date : undefined }
+              : sub,
+          ),
+        }));
+      },
+      setKillEvidence: (id, evidence) => {
+        const reference = evidence.reference?.trim() || undefined;
+        const memo = evidence.memo?.trim() || undefined;
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            sub.id === id && sub.status === "killed"
+              ? {
+                  ...sub,
+                  killEvidence:
+                    reference || memo
+                      ? { reference, memo, recordedAt: new Date().toISOString() }
+                      : undefined,
                 }
               : sub,
           ),

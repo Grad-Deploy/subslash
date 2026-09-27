@@ -9,8 +9,11 @@ import {
   formatCurrency,
   getBilledAmount,
   getNextBillingDateFor,
+  parseDateOnly,
   type Subscription,
 } from "@subslash/shared";
+import { subscriptionDetailHref } from "./routes";
+import { receiptHref } from "./receipt-view";
 
 /** 구독마다 미리 걸어 둘 결제 횟수. 앱을 한동안 열지 않아도 다음 몇 번은 알린다. */
 export const OCCURRENCES_PER_SUBSCRIPTION = 3;
@@ -24,7 +27,10 @@ export const REMINDER_HOUR = 9;
 export interface PlannedReminder {
   /** 알림 id. 같은 구독의 같은 결제일이면 늘 같은 값이다(32비트 양의 정수). */
   id: number;
-  subscriptionId: string;
+  /** 구독에 딸린 알림이면 그 구독. 월간 영수증 알림에는 없다. */
+  subscriptionId?: string;
+  /** 알림을 누르면 열 화면. */
+  href: string;
   title: string;
   body: string;
   at: Date;
@@ -65,6 +71,7 @@ export function planReminders(
       planned.push({
         id: reminderId(sub.id, billing),
         subscriptionId: sub.id,
+        href: subscriptionDetailHref(sub.id),
         title: `${sub.name} 결제 ${daysBefore === 0 ? "오늘" : `${daysBefore}일 전`}`,
         body: `${billing.getMonth() + 1}월 ${billing.getDate()}일에 ${formatCurrency(
           getBilledAmount(sub),
@@ -76,6 +83,77 @@ export function planReminders(
   }
 
   return planned.sort((a, b) => a.at.getTime() - b.at.getTime()).slice(0, MAX_SCHEDULED);
+}
+
+/** 앞으로 걸어 둘 월간 영수증 알림 수. 앱을 한동안 열지 않아도 다음 달 1일은 알린다. */
+export const RECEIPT_MONTHS_AHEAD = 2;
+
+/**
+ * 매달 1일 오전 9시, 지난달 구독 영수증을 알린다. 구독이 하나도 없으면 걸지 않는다 — 빈 영수증을
+ * 알리는 것은 소음이다. 금액은 알림에 적지 않는다: 잠금 화면에 보이고, 알림을 거는 때와 여는 때의
+ * 기록이 다를 수 있다.
+ */
+export function planReceiptReminders(
+  subscriptions: readonly Subscription[],
+  now: Date = new Date(),
+): PlannedReminder[] {
+  if (subscriptions.length === 0) return [];
+  const planned: PlannedReminder[] = [];
+  for (let ahead = 1; ahead <= RECEIPT_MONTHS_AHEAD; ahead++) {
+    const at = new Date(now.getFullYear(), now.getMonth() + ahead, 1, REMINDER_HOUR);
+    const last = new Date(at.getFullYear(), at.getMonth() - 1, 1);
+    const period = { kind: "month", year: last.getFullYear(), month: last.getMonth() + 1 } as const;
+    planned.push({
+      id: reminderId("receipt", last),
+      href: receiptHref(period),
+      title: `${period.month}월 구독 영수증이 나왔어요`,
+      body: "지난달 어떤 구독에 얼마를 냈는지, 제값을 했는지 확인해 보세요.",
+      at,
+    });
+  }
+  return planned;
+}
+
+/**
+ * 해지할 때 사용자가 고른 '다시 살펴볼 날' 오전 9시. 그날이 이미 지났으면 걸지 않는다(행동 큐에는
+ * 남는다).
+ */
+export function planResubscribeReminders(
+  subscriptions: readonly Subscription[],
+  now: Date = new Date(),
+): PlannedReminder[] {
+  const planned: PlannedReminder[] = [];
+  for (const sub of subscriptions) {
+    if (sub.status !== "killed") continue;
+    const day = parseDateOnly(sub.resubscribeRemindOn);
+    if (!day) continue;
+    const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), REMINDER_HOUR);
+    if (at.getTime() <= now.getTime()) continue;
+    planned.push({
+      id: reminderId(`resubscribe:${sub.id}`, day),
+      subscriptionId: sub.id,
+      href: subscriptionDetailHref(sub.id),
+      title: `${sub.name} 다시 살펴볼 날이에요`,
+      body: "해지할 때 오늘 알려 달라고 하셨어요. 다시 쓸 때가 됐는지 확인해 보세요.",
+      at,
+    });
+  }
+  return planned;
+}
+
+/** 결제·영수증·다시 살펴볼 날 알림을 모아 이른 순으로, 상한까지. 결제 알림이 먼저 자리를 차지한다. */
+export function planAllReminders(
+  subscriptions: readonly Subscription[],
+  daysBefore: number,
+  now: Date = new Date(),
+): PlannedReminder[] {
+  return [
+    ...planReminders(subscriptions, daysBefore, now),
+    ...planReceiptReminders(subscriptions, now),
+    ...planResubscribeReminders(subscriptions, now),
+  ]
+    .sort((a, b) => a.at.getTime() - b.at.getTime())
+    .slice(0, MAX_SCHEDULED);
 }
 
 /** 구독 id와 결제일로 정하는 알림 id(FNV-1a). 다시 걸어도 같은 알림은 같은 id라 겹치지 않는다. */

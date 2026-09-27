@@ -11,6 +11,7 @@
  */
 import { IS_APP_BUILD } from "./platform";
 import type { PlannedReminder } from "./local-reminders";
+import { subscriptionDetailHref } from "./routes";
 
 export type ReminderPermission = "granted" | "denied" | "prompt" | "unsupported";
 
@@ -93,7 +94,9 @@ export async function replaceScheduledReminders(plan: readonly PlannedReminder[]
       channelId: CHANNEL_ID,
       schedule: { at: reminder.at, allowWhileIdle: true },
       isExactNotification: false,
-      extra: { kind: "billing", subscriptionId: reminder.subscriptionId },
+      // 종류가 달라도(결제·영수증·다시 살펴볼 날) 모두 이 앱이 건 알림이라 kind는 같게 둔다 — 다시 걸
+      // 때 한꺼번에 지운다.
+      extra: { kind: "billing", subscriptionId: reminder.subscriptionId, href: reminder.href },
     })),
   });
 }
@@ -118,16 +121,20 @@ export async function sendTestReminder(): Promise<void> {
   });
 }
 
-/** 결제 알림을 누르면 부른다. 돌려준 함수로 해제한다. */
-export function onReminderTapped(handler: (subscriptionId: string) => void): () => void {
+/** 알림을 누르면 열 화면의 주소로 부른다. 돌려준 함수로 해제한다. */
+export function onReminderTapped(handler: (href: string) => void): () => void {
   if (!IS_APP_BUILD) return () => {};
   let disposed = false;
   let remove: (() => Promise<void>) | null = null;
   void pluginModule()
     .then(({ LocalNotifications }) =>
       LocalNotifications.addListener("localNotificationActionPerformed", (action) => {
-        const id = action.notification.extra?.subscriptionId;
-        if (typeof id === "string") handler(id);
+        const extra = action.notification.extra;
+        // 주소는 앱 안의 경로만 연다. 예전 버전이 건 알림에는 주소가 없고 구독 id만 있다.
+        if (typeof extra?.href === "string" && extra.href.startsWith("/")) handler(extra.href);
+        else if (typeof extra?.subscriptionId === "string") {
+          handler(subscriptionDetailHref(extra.subscriptionId));
+        }
       }),
     )
     .then((handle) => {

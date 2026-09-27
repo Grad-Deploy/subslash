@@ -21,6 +21,8 @@ import { SubForm } from "./SubForm";
 import { CheckInModal } from "./CheckInModal";
 import { CancelGuideModal } from "./CancelGuideModal";
 import { CheckInEvidence } from "./CheckInEvidence";
+import { PlanAlternatives } from "./PlanAlternatives";
+import { KillRecordCard } from "./KillRecordCard";
 import { MeasuredUsageLine } from "../usage/MeasuredUsage";
 import { RiskBadge } from "../dashboard/RiskBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
@@ -299,6 +301,16 @@ export function SubscriptionDetail({
           </div>
         )}
       </div>
+
+      {/*
+        해지 전에는 같은 서비스의 더 싼 요금제를, 해지한 뒤에는 그 해지의 기록(다시 살펴볼 날·근거·환불
+        요청 글)을 보여 준다.
+      */}
+      {isKilled ? (
+        <KillRecordCard key={sub.killedAt} subscription={sub} onMessage={showToast} />
+      ) : (
+        <PlanAlternatives subscription={sub} onChanged={showToast} />
+      )}
 
       {/* 해지 경로 안내 — 계정, 결제 수단, 링크, 단계 안내를 한곳에 */}
       <div className="p-6 border-2 border-primary/20 bg-muted/30 rounded-2xl space-y-5">
