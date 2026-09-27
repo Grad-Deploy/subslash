@@ -23,6 +23,11 @@ import { describeCheckIn } from "./valueMetric";
 export const BILLING_SOON_DAYS = 7;
 /** 체크인이 이만큼 지나면 판단 근거가 낡은 것으로 본다. */
 export const STALE_CHECK_IN_DAYS = 30;
+/**
+ * 이 안에 체크인했으면 결제가 다가와도 체크인을 다시 묻지 않는다. '곧 결제'의 할 일은 체크인이라, 방금
+ * 체크인한 구독에도 결제 7일 전부터 '체크인' 버튼이 다시 떠서 체크인이 안 된 것처럼 보였다.
+ */
+export const RECENT_CHECK_IN_DAYS = 14;
 
 /** 무료 체험 종료를 알리기 시작하는 날. 해지할 시간을 남겨 둔다. */
 export const TRIAL_ENDING_DAYS = 7;
@@ -216,6 +221,8 @@ export function getActionQueue(
     // 붙이면 $10이 "₩10"으로 읽힌다.
     // 마지막 체크인 한 줄. 지표마다 말이 다르다('3회 이용 · 1회당 ₩5,000', '30일 중 2일 사용 · 하루당 …').
     const checkInText = log ? describeCheckIn(log, sub.currency) : "";
+    const sinceCheckIn = log ? daysSince(log.checkedAt, now) : null;
+    const checkedInRecently = sinceCheckIn !== null && sinceCheckIn < RECENT_CHECK_IN_DAYS;
 
     let kind: ActionKind;
     let reason: string;
@@ -243,10 +250,15 @@ export function getActionQueue(
       // 결제 D-3 이내 + 최근 체크인 사용량 2회 이하: 저사용 경고 (메타포 포함)
       kind = "low-usage-billing-soon";
       reason = getLowUsageBillingMessage(sub, log.usageCount, days, rate);
-    } else if (billingSoon) {
+    } else if (billingSoon && !checkedInRecently) {
+      // '곧 결제'의 할 일은 체크인이다. 최근에 체크인했으면 다시 묻지 않고, 아래의 다른 이유(금액이
+      // 달라짐, 요금 확인 등)가 있으면 그쪽을 보인다.
       kind = "billing-soon";
       reason = log
-        ? `${formatDday(days!)} · ${stake !== null ? `${formatKRW(stake)}이 곧 빠져나갑니다.` : "곧 결제됩니다."}`
+        ? `${formatDday(days!)} · ${stake !== null ? `${formatKRW(stake)}이 곧 빠져나갑니다.` : "곧 결제됩니다."}` +
+          (sinceCheckIn !== null
+            ? ` 마지막 체크인이 ${sinceCheckIn}일 전이라 결제 전에 다시 확인해 보세요.`
+            : "")
         : `${formatDday(days!)} · 아직 체크인한 적이 없어, 끊을지 판단할 근거가 없습니다.`;
     } else if (observed !== null) {
       kind = "amount-changed";
@@ -264,10 +276,9 @@ export function getActionQueue(
       kind = "never-checked-in";
       reason = "아직 체크인한 적이 없습니다. 얼마나 썼는지 모르면 끊을지 판단할 수 없습니다.";
     } else {
-      const since = daysSince(log.checkedAt, now);
-      if (since !== null && since >= STALE_CHECK_IN_DAYS) {
+      if (sinceCheckIn !== null && sinceCheckIn >= STALE_CHECK_IN_DAYS) {
         kind = "stale-check-in";
-        reason = `마지막 체크인이 ${since}일 전입니다. 그 사이 사용 습관이 달라졌을 수 있습니다.`;
+        reason = `마지막 체크인이 ${sinceCheckIn}일 전입니다. 그 사이 사용 습관이 달라졌을 수 있습니다.`;
       } else if (priceChecks.has(sub.id)) {
         kind = "price-check";
         // 가격 확인은 요금표 가격끼리 비교한다. 세금이 따로 붙는 구독이면 그렇다고 적는다.

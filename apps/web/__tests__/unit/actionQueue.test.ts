@@ -3,6 +3,7 @@ import {
   getActionQueue,
   getNextBillingHint,
   BILLING_SOON_DAYS,
+  RECENT_CHECK_IN_DAYS,
   STALE_CHECK_IN_DAYS,
   type Subscription,
   type UsageLog,
@@ -52,6 +53,33 @@ function log(subscriptionId: string, overrides: Partial<UsageLog> = {}): UsageLo
 }
 
 describe("getActionQueue", () => {
+  it(`결제가 다가와도 ${RECENT_CHECK_IN_DAYS}일 안에 체크인한 구독에는 체크인을 다시 묻지 않는다`, () => {
+    // 대시보드에서 체크인하자마자 같은 구독에 '체크인' 버튼이 다시 떠 체크인이 안 된 것처럼 보였다.
+    const sub = subDueIn(3);
+    const justNow = [log(sub.id, { riskLevel: "green", usageCount: 10, checkedAt: daysAgo(0) })];
+    expect(getActionQueue([sub], justNow, NOW)).toEqual([]);
+
+    const beforeWindow = [
+      log(sub.id, { riskLevel: "green", usageCount: 10, checkedAt: daysAgo(RECENT_CHECK_IN_DAYS) }),
+    ];
+    const [item] = getActionQueue([sub], beforeWindow, NOW);
+    expect(item.kind).toBe("billing-soon");
+    expect(item.verb).toBe("check-in");
+    expect(item.reason).toContain(`마지막 체크인이 ${RECENT_CHECK_IN_DAYS}일 전`);
+  });
+
+  it("체크인한 적이 없으면 결제 전에 체크인을 묻는다", () => {
+    const [item] = getActionQueue([subDueIn(3)], [], NOW);
+    expect(item.kind).toBe("billing-soon");
+    expect(item.verb).toBe("check-in");
+  });
+
+  it("최근 체크인이 빨강이면 여전히 해지를 권한다", () => {
+    const sub = subDueIn(3);
+    const [item] = getActionQueue([sub], [log(sub.id, { checkedAt: daysAgo(0) })], NOW);
+    expect(item.kind).toBe("billing-soon-risky");
+  });
+
   it("할 일이 없는 구독은 큐에 올리지 않는다", () => {
     // 결제도 멀고, 최근에 체크인했고, 가성비도 괜찮다.
     const sub = subDueIn(20);
@@ -100,7 +128,7 @@ describe("getActionQueue", () => {
     const inside = subDueIn(BILLING_SOON_DAYS, { id: "inside" });
     const outside = subDueIn(BILLING_SOON_DAYS + 3, { id: "outside" });
     const logs = [
-      log("inside", { riskLevel: "green", usageCount: 10, checkedAt: daysAgo(1) }),
+      log("inside", { riskLevel: "green", usageCount: 10, checkedAt: daysAgo(20) }),
       log("outside", { riskLevel: "green", usageCount: 10, checkedAt: daysAgo(1) }),
     ];
     const kinds = getActionQueue([inside, outside], logs, NOW).map((i) => [
@@ -175,7 +203,7 @@ describe("getActionQueue", () => {
 
   it("더 급한 이유가 있으면 요금 확인은 밀린다", () => {
     const sub = subDueIn(2, { lastPriceCheckedAt: undefined, createdAt: daysAgo(200) });
-    const logs = [log(sub.id, { riskLevel: "green", usageCount: 12, checkedAt: daysAgo(1) })];
+    const logs = [log(sub.id, { riskLevel: "green", usageCount: 12, checkedAt: daysAgo(20) })];
     expect(getActionQueue([sub], logs, NOW)[0].kind).toBe("billing-soon");
   });
 
@@ -203,8 +231,8 @@ describe("getActionQueue", () => {
 
     const logs = [
       log("risky"),
-      log("soon-far", { riskLevel: "green", usageCount: 10, checkedAt: daysAgo(1) }),
-      log("soon-near", { riskLevel: "green", usageCount: 10, checkedAt: daysAgo(1) }),
+      log("soon-far", { riskLevel: "green", usageCount: 10, checkedAt: daysAgo(20) }),
+      log("soon-near", { riskLevel: "green", usageCount: 10, checkedAt: daysAgo(20) }),
     ];
 
     const order = getActionQueue([never, soonFar, risky, soonNear], logs, NOW).map(
@@ -371,11 +399,21 @@ describe("결제 메일 금액이 등록된 청구액과 다른 구독", () => {
     const queue = getActionQueue(
       [subDueIn(1, { observedAmount: 99000, observedAmountAt: "2026.09.05" })],
       // 저사용 경고에 걸리지 않게 충분히 쓴 기록으로 둔다.
-      [log("sub-1", { riskLevel: "green", usageCount: 5 })],
+      [log("sub-1", { riskLevel: "green", usageCount: 5, checkedAt: daysAgo(20) })],
       NOW,
     );
 
     expect(queue.map((item) => item.kind)).toEqual(["billing-soon"]);
+  });
+
+  it("최근에 체크인했으면 결제가 코앞이어도 금액이 달라진 것을 보인다", () => {
+    const queue = getActionQueue(
+      [subDueIn(1, { observedAmount: 99000, observedAmountAt: "2026.09.05" })],
+      [log("sub-1", { riskLevel: "green", usageCount: 5, checkedAt: daysAgo(1) })],
+      NOW,
+    );
+
+    expect(queue.map((item) => item.kind)).toEqual(["amount-changed"]);
   });
 
   it("날짜 없이 금액만 있으면 올리지 않는다", () => {
