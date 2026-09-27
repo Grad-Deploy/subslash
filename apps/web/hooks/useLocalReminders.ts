@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { IS_APP_BUILD } from "@lib/platform";
 import { realRecords, useStore } from "@lib/store";
-import { planReminders } from "@lib/local-reminders";
+import { planAllReminders } from "@lib/local-reminders";
 import { checkReminderPermission, replaceScheduledReminders } from "@lib/native-reminders";
 
 /**
@@ -71,7 +71,7 @@ export function useLocalReminderSettings() {
 
 /** 지금 설정과 기록으로 걸 알림 목록. 화면에 개수를 보여줄 때도 쓴다. */
 export function currentPlan(settings: LocalReminderSettings) {
-  return planReminders(realRecords(useStore.getState()).subscriptions, settings.daysBefore);
+  return planAllReminders(realRecords(useStore.getState()).subscriptions, settings.daysBefore);
 }
 
 const DEBOUNCE_MS = 1000;

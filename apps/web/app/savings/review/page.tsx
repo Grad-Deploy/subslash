@@ -158,6 +158,12 @@ function YearInReviewContent() {
               : `${now.getMonth() + 1}월 ${now.getDate()}일까지의 기록입니다. 연말이 지나면 한 해 결산이 됩니다.`}
           </p>
         </div>
+        <Link
+          href={`/report/receipt?year=${year}`}
+          className="text-sm font-semibold underline underline-offset-4"
+        >
+          영수증으로 보기
+        </Link>
         {canShare && (
           <Button size="sm" variant="outline" onClick={handleShare}>
             {copied ? "클립보드에 복사됨!" : "결산 공유하기"}

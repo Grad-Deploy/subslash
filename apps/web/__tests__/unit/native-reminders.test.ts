@@ -43,6 +43,7 @@ const PLAN: PlannedReminder[] = [
   {
     id: 1,
     subscriptionId: "sub-netflix",
+    href: "/subs/detail?id=sub-netflix",
     title: "넷플릭스 결제 3일 전",
     body: "₩17,000이 곧 빠져나갑니다.",
     at: new Date("2026-09-22T00:00:00.000Z"),

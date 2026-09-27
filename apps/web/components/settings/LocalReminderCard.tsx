@@ -85,8 +85,9 @@ export function LocalReminderCard({ onMessage }: LocalReminderCardProps) {
           이 기기 결제 알림
         </h3>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          결제일 전 오전 9시에 이 휴대폰에 알림을 띄웁니다. 서버나 이메일을 거치지 않아 로그인하지
-          않아도 됩니다.
+          결제일 전 오전 9시에 이 휴대폰에 알림을 띄웁니다. 매달 1일에는 지난달 구독 영수증을,
+          해지할 때 정한 &lsquo;다시 살펴볼 날&rsquo;에는 그 구독을 알려 드려요. 서버나 이메일을
+          거치지 않아 로그인하지 않아도 됩니다.
         </p>
       </div>
 
