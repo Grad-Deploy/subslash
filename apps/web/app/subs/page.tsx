@@ -38,7 +38,7 @@ import { IS_APP_BUILD } from "@lib/platform";
 import { useLocalReminderSettings } from "@hooks/useLocalReminders";
 import { ReminderPromptSheet } from "../../components/app-start/ReminderPromptSheet";
 import { findDuplicateSubscription } from "@lib/duplicate-subscription";
-import { APP_SUBS_SORT_LABEL, sortSubsForApp, type AppSubsSort } from "@lib/subs-order";
+import { sortSubsForApp, type AppSubsSort } from "@lib/subs-order";
 import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { isWideScreen } from "@lib/wide-screen";
@@ -123,12 +123,25 @@ const AppPhoneCheckInButton = IS_APP_BUILD
       { ssr: false },
     )
   : null;
+// 목록 개수와 순서 고르기(앱 전용). 카테고리 칩과 겹치지 않게 글자 버튼 + 시트.
+const AppSortSelect = IS_APP_BUILD
+  ? dynamic(
+      () => import("../../components/subscription/app/AppSortSelect").then((m) => m.AppSortSelect),
+      { ssr: false },
+    )
+  : null;
 // 해지 완료 목록 정리(숨기기·삭제·여러 개 선택). 앱 전용.
 const AppKilledList = IS_APP_BUILD
   ? dynamic(
       () => import("../../components/subscription/app/AppKilledList").then((m) => m.AppKilledList),
       { ssr: false },
     )
+  : null;
+// 구독 추가 + 버튼(앱 전용) — 직접 등록·결제 메일·결제 문자 중 고른다.
+const AppAddButton = IS_APP_BUILD
+  ? dynamic(() => import("../../components/layout/app/AppAddButton").then((m) => m.AppAddButton), {
+      ssr: false,
+    })
   : null;
 const AppAddCheckIn = IS_APP_BUILD
   ? dynamic(
@@ -414,31 +427,38 @@ export default function SubscriptionsPage() {
             + 구독 추가
           </Button>
         </div>
-        <div className="grid grid-cols-2 gap-2 md:max-w-md">
-          <Button
-            variant="outline"
-            onClick={() => router.push("/import")}
-            className="font-semibold"
-          >
-            결제 메일에서 찾기
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setIsAutoImportOpen(true)}
-            className="font-semibold"
-          >
-            문자 붙여넣기
-          </Button>
-        </div>
+        {/* 앱은 이 두 버튼 대신 떠 있는 + 하나로 고른다(AppAddButton). */}
+        {!AppAddButton && (
+          <div className="grid grid-cols-2 gap-2 md:max-w-md">
+            <Button
+              variant="outline"
+              onClick={() => router.push("/import")}
+              className="font-semibold"
+            >
+              결제 메일에서 찾기
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setIsAutoImportOpen(true)}
+              className="font-semibold"
+            >
+              문자 붙여넣기
+            </Button>
+          </div>
+        )}
+        {/* 앱: 자동 체크인 켜기/끄기는 설정 탭에 두고, 여기에는 상태 한 줄과 '폰 기록으로 체크인' 버튼을 둔다. */}
         {AppPhoneCheckInButton && (
           <AppPhoneCheckInButton
             subscriptions={activeSubs}
             onDone={(count) => showToast(`${count}개 체크인했어요`)}
+            autoSwitch={false}
+            autoStatus
           />
         )}
       </div>
 
-      <ExchangeRateNote />
+      {/* 앱은 환율을 설정 탭(화면)에 둔다. */}
+      {!IS_APP_BUILD && <ExchangeRateNote />}
 
       {/* 넓은 화면(xl)에서는 목록 오른쪽에 고른 구독의 상세 칸을 둔다. */}
       <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_26rem] xl:items-start xl:gap-6 xl:space-y-0">
@@ -528,24 +548,12 @@ export default function SubscriptionsPage() {
                 </div>
               ) : (
                 <>
-                  {IS_APP_BUILD && (
-                    <div className="flex gap-1.5" role="group" aria-label="순서">
-                      {(Object.keys(APP_SUBS_SORT_LABEL) as AppSubsSort[]).map((key) => (
-                        <button
-                          key={key}
-                          type="button"
-                          aria-pressed={appSort === key}
-                          onClick={() => setAppSort(key)}
-                          className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                            appSort === key
-                              ? "border-foreground bg-foreground text-background"
-                              : "text-muted-foreground"
-                          }`}
-                        >
-                          {APP_SUBS_SORT_LABEL[key]}
-                        </button>
-                      ))}
-                    </div>
+                  {AppSortSelect && (
+                    <AppSortSelect
+                      count={filteredActive.length}
+                      value={appSort}
+                      onChange={setAppSort}
+                    />
                   )}
                   {view === "table" && (
                     <div className="hidden md:block">
@@ -601,11 +609,15 @@ export default function SubscriptionsPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300">
-                    {/* 해지를 유지하면 아낄 금액이다. 이미 지킨 돈은 절약 현황이 따로 센다. */}
-                    해지한 구독 {filteredKilled.length}개 · 해지를 유지하면 매달{" "}
-                    <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 아껴요.
-                  </div>
+                  {/* 앱은 이 자리에 '지킨 돈 · 절약 현황' 한 줄(AppKilledList 맨 위)을 둔다. 두 줄이 같이 있으면
+                      '매달 아껴요'와 '지켰어요'가 같은 돈처럼 보인다. */}
+                  {!AppKilledList && (
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300">
+                      {/* 해지를 유지하면 아낄 금액이다. 이미 지킨 돈은 절약 현황이 따로 센다. */}
+                      해지한 구독 {filteredKilled.length}개 · 해지를 유지하면 매달{" "}
+                      <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 아껴요.
+                    </div>
+                  )}
 
                   {AppKilledList ? (
                     <AppKilledList
@@ -683,16 +695,29 @@ export default function SubscriptionsPage() {
       </div>
 
       {/* 알림·연동·데이터를 한 줄씩 묶은 목록(웹·앱). 누르면 카드를 시트로 연다. */}
-      <SettingsList onMessage={showToast} onClearAll={() => setConfirmClearAll(true)} />
+      {/* 앱은 이 설정 목록을 설정 탭으로 옮겼다. */}
+      {!IS_APP_BUILD && (
+        <SettingsList onMessage={showToast} onClearAll={() => setConfirmClearAll(true)} />
+      )}
 
-      {/* Floating Action Button for Mobile */}
-      <button
-        onClick={() => setIsAddOpen(true)}
-        className="md:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-2xl text-2xl font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-30"
-        aria-label="Add Subscription"
-      >
-        +
-      </button>
+      {/* Floating Action Button for Mobile — 앱은 추가 방법을 고르는 AppAddButton */}
+      {AppAddButton ? (
+        // 해지 완료 탭에서는 두지 않는다 — 선택 모드의 아래 버튼 줄과 겹친다.
+        tab === "active" && (
+          <AppAddButton
+            onManual={() => setIsAddOpen(true)}
+            onPaste={() => setIsAutoImportOpen(true)}
+          />
+        )
+      ) : (
+        <button
+          onClick={() => setIsAddOpen(true)}
+          className="md:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-2xl text-2xl font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-30"
+          aria-label="Add Subscription"
+        >
+          +
+        </button>
+      )}
 
       {/* SubForm Modal */}
       <Dialog

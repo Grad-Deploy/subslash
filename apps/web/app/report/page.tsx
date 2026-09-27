@@ -312,7 +312,8 @@ export default function ReportPage() {
         </section>
       )}
 
-      {killed.length > 0 && (
+      {/* 앱은 지킨 돈을 대시보드 계산서 카드와 해지 완료 탭에서 보여서 여기서는 뺀다. */}
+      {!IS_APP_BUILD && killed.length > 0 && (
         <Link
           href="/savings"
           className="flex items-center justify-between gap-3 rounded-2xl border p-4 hover:bg-muted/50"

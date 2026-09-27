@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { type Subscription, formatKRW, getYearDefendedSeries } from "@subslash/shared";
+import {
+  type Subscription,
+  formatKRW,
+  getMyMonthDefendedAmountKRW,
+  getYearDefendedSeries,
+} from "@subslash/shared";
 import { cn } from "@lib/utils";
 
 /**
@@ -10,6 +15,8 @@ import { cn } from "@lib/utils";
  */
 const DEFENDED = "bg-emerald-700 dark:bg-emerald-400";
 const SCHEDULED = "bg-emerald-500 dark:bg-emerald-600";
+/** 이번 달 중 아직 오지 않은 결제일. 예정과 같은 계열의 옅은 색. */
+const UPCOMING = "bg-emerald-200 dark:bg-emerald-800";
 const DEFENDED_STROKE = "stroke-emerald-700 dark:stroke-emerald-400";
 const SCHEDULED_STROKE = "stroke-emerald-500 dark:stroke-emerald-600";
 
@@ -20,6 +27,26 @@ function niceCeil(value: number): number {
     if (value <= step * base) return step * base;
   }
   return 10 * base;
+}
+
+/**
+ * 이번 달 방어액 중 결제일이 오늘 이후라 아직 막았다고 할 수 없는 몫. 결제일이 '지났다'는 것은
+ * 해지 확인과 같이 결제일 다음 날부터다. `getYearDefendedSeries`는 이번 달을 통째로 지난 달로 세서,
+ * 위 카드는 '지킨 돈 0원'인데 그래프는 '막은 결제'가 있다고 말하던 것을 여기서 나눈다(앱만).
+ */
+function upcomingThisMonthKRW(subs: Subscription[], now: Date, rate: number): number {
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const today = new Date(year, now.getMonth(), now.getDate()).getTime();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  let total = 0;
+  for (const sub of subs) {
+    const amount = getMyMonthDefendedAmountKRW(sub, year, month, rate);
+    if (!amount) continue;
+    const billingDay = Math.min(Math.max(1, sub.billingDay || 1), daysInMonth);
+    if (new Date(year, month - 1, billingDay).getTime() >= today) total += amount;
+  }
+  return total;
 }
 
 /**
@@ -41,13 +68,32 @@ export function AppDefenseChart({
   const [active, setActive] = useState(currentMonth);
 
   const series = getYearDefendedSeries(killedSubscriptions, year, exchangeRate, now);
-  const cumulative = series.months.reduce<number[]>(
-    (acc, m, i) => [...acc, (acc[i - 1] ?? 0) + m.amount],
+  const upcoming = Math.min(
+    upcomingThisMonthKRW(killedSubscriptions, now, exchangeRate),
+    series.months[currentMonth - 1]?.amount ?? 0,
+  );
+  // 달마다 이미 막은 몫(past)과 아직 오지 않은 몫(later). 이번 달만 둘로 나뉜다.
+  const parts = series.months.map((m) =>
+    m.isFuture
+      ? { past: 0, later: m.amount }
+      : m.month === currentMonth
+        ? { past: m.amount - upcoming, later: upcoming }
+        : { past: m.amount, later: 0 },
+  );
+  // 누적: 이번 달 점까지는 막은 돈만, 그 뒤 점선은 남은 결제일과 예정까지 더한다.
+  const cumulative = parts.reduce<number[]>(
+    (acc, p, i) =>
+      i < currentMonth
+        ? [...acc, (acc[i - 1] ?? 0) + p.past]
+        : [...acc, (acc[i - 1] ?? 0) + p.past + p.later + (i === currentMonth ? upcoming : 0)],
     [],
   );
+  const pastTotal = cumulative[currentMonth - 1] ?? 0;
+  const yearEnd = series.pastAmount + series.scheduledAmount;
   const monthMax = niceCeil(Math.max(...series.months.map((m) => m.amount)));
-  const totalMax = niceCeil(cumulative[11] ?? 0);
+  const totalMax = niceCeil(yearEnd);
   const activeMonth = series.months[active - 1];
+  const activePart = parts[active - 1];
 
   return (
     <section className="rounded-2xl border bg-card p-4" aria-labelledby="app-defense-title">
@@ -87,14 +133,16 @@ export function AppDefenseChart({
         <>
           <div className="mt-3 mb-2 flex items-baseline justify-between gap-2">
             <p className="text-xl font-black tracking-tight tabular-nums" aria-live="polite">
-              {formatKRW(
-                mode === "month" ? activeMonth.amount : (cumulative[currentMonth - 1] ?? 0),
-              )}
+              {formatKRW(mode === "month" ? activeMonth.amount : pastTotal)}
             </p>
             <p className="text-right text-[11px] text-muted-foreground">
-              {mode === "month"
-                ? `${active}월 · ${activeMonth.isFuture ? "예정" : "막은 결제"}`
-                : `1~${currentMonth}월 누적 · 연말까지 ${formatKRW(cumulative[11] ?? 0)} 예정`}
+              {mode === "total"
+                ? `1~${currentMonth}월 누적`
+                : activeMonth.isFuture
+                  ? `${active}월 · 예정`
+                  : activePart.later > 0
+                    ? `${active}월 · 막은 결제 ${formatKRW(activePart.past)} · 남은 결제일 ${formatKRW(activePart.later)}`
+                    : `${active}월 · 막은 결제`}
             </p>
           </div>
 
@@ -116,13 +164,24 @@ export function AppDefenseChart({
                     )}
                   >
                     {m.amount > 0 && (
+                      // 이번 달은 막은 몫(진함) 위에 남은 결제일(옅음)을 쌓는다.
                       <span
-                        className={cn(
-                          "w-full max-w-4 rounded-t-[4px]",
-                          m.isFuture ? SCHEDULED : DEFENDED,
-                        )}
+                        className="flex w-full max-w-4 flex-col-reverse overflow-hidden rounded-t-[4px]"
                         style={{ height: `${Math.max((m.amount / monthMax) * 100, 2)}%` }}
-                      />
+                      >
+                        {parts[m.month - 1].past > 0 && (
+                          <span
+                            className={cn("w-full", DEFENDED)}
+                            style={{ height: `${(parts[m.month - 1].past / m.amount) * 100}%` }}
+                          />
+                        )}
+                        {parts[m.month - 1].later > 0 && (
+                          <span
+                            className={cn("w-full", m.isFuture ? SCHEDULED : UPCOMING)}
+                            style={{ height: `${(parts[m.month - 1].later / m.amount) * 100}%` }}
+                          />
+                        )}
+                      </span>
                     )}
                   </button>
                 ))}
@@ -152,11 +211,23 @@ export function AppDefenseChart({
               <span className={cn("size-2.5 rounded-[2px]", DEFENDED)} aria-hidden />
               막은 결제
             </span>
+            {mode === "month" && upcoming > 0 && (
+              <span className="inline-flex items-center gap-1.5">
+                <span className={cn("size-2.5 rounded-[2px]", UPCOMING)} aria-hidden />
+                이번 달 남은 결제일
+              </span>
+            )}
             <span className="inline-flex items-center gap-1.5">
               <span className={cn("size-2.5 rounded-[2px]", SCHEDULED)} aria-hidden />
               예정
             </span>
           </div>
+          {mode === "total" && yearEnd > pastTotal && (
+            <p className="mt-2.5 rounded-lg bg-secondary px-2.5 py-2 text-xs">
+              연말까지 <b className="tabular-nums">+{formatKRW(yearEnd - pastTotal)}</b> 더 막을
+              예정이에요
+            </p>
+          )}
           {series.unknownCount > 0 && (
             <p className="mt-2 text-[11px] text-muted-foreground">
               결제월을 몰라 그래프에 넣지 못한 구독 {series.unknownCount}개가 있어요.

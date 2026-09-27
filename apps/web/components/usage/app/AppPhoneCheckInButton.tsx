@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Smartphone } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Smartphone } from "lucide-react";
 import { type Subscription, isInTrial, metricForSubscription } from "@subslash/shared";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import { packagesFor } from "@lib/usage/packages";
@@ -20,9 +21,21 @@ import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 export function AppPhoneCheckInButton({
   subscriptions,
   onDone,
+  autoSwitch = true,
+  batchButton = true,
+  autoStatus = false,
 }: {
   subscriptions: Subscription[];
   onDone?: (count: number) => void;
+  /** 자동 체크인 켜기/끄기 카드. 설정 탭에 두고 구독 관리에서는 뺀다. */
+  autoSwitch?: boolean;
+  /** '폰 기록으로 체크인' 버튼. 구독 관리에 두고 설정 탭에서는 뺀다. */
+  batchButton?: boolean;
+  /**
+   * 스위치 없이 자동 체크인이 켜졌는지만 보이는 한 줄(누르면 설정 탭). 구독 관리에 둔다 — 켜고 끄는 곳은
+   * 설정 한 곳이지만, 여기서 "다 자동으로 되는 줄 알았다"가 생기지 않게 언제부터 자동인지 보여 준다.
+   */
+  autoStatus?: boolean;
 }) {
   const { status, history } = usePhoneUsage();
   const [autoOn, setAutoOn] = useState(readAutoCheckIn);
@@ -45,7 +58,7 @@ export function AppPhoneCheckInButton({
 
   return (
     <>
-      {status === "on" && (
+      {autoSwitch && status === "on" && (
         <div className="flex w-full items-start gap-3 rounded-2xl border px-3 py-2.5 md:max-w-md">
           <div className="min-w-0 flex-1 text-xs leading-relaxed">
             <p className="font-bold">폰 기록으로 자동 체크인</p>
@@ -53,15 +66,28 @@ export function AppPhoneCheckInButton({
               {!autoOn
                 ? "꺼져 있어요. 체크인은 직접 해 주세요."
                 : remaining === null || remaining > 0
-                  ? `폰 기록이 ${AUTO_CHECKIN_DAYS}일 쌓이면 알아서 체크인해요.`
-                  : "최근 30일 동안의 이 폰 기록으로 알아서 체크인해요. OTT는 연 횟수, AI·업무 도구는 5분 넘게 쓴 날, 음악·독서는 들은(읽은) 시간이에요. 이 폰에서 안 쓴 구독과 직접 센 숫자가 더 큰 구독은 그대로 둬요."}
+                  ? `폰 기록이 ${AUTO_CHECKIN_DAYS}일 쌓이면 알아서 해요.`
+                  : "최근 30일 폰 기록으로 알아서 체크인해요. 이 폰에서 안 쓴 구독과 직접 센 숫자가 더 큰 구독은 그대로 둬요."}
             </p>
-            {/* 남은 날은 문장 괄호에 넣으면 줄이 길어져서 따로 한 줄로 둔다. */}
+            {/* 얼마나 쌓였는지를 막대로. 지금 바로 하는 길은 구독 관리의 상태 줄·버튼이 맡아 여기선 적지 않는다. */}
             {autoOn && remaining !== null && remaining > 0 && (
               <>
-                <p className="mt-0.5 font-bold text-foreground">{remaining}일 남았어요</p>
-                <p className="text-muted-foreground">
-                  지금 바로 하려면 아래 &lsquo;폰 기록으로 체크인&rsquo;을 눌러 주세요.
+                <span
+                  className="mt-2 block h-1.5 overflow-hidden rounded-full bg-secondary"
+                  aria-hidden
+                >
+                  <span
+                    className="block h-full rounded-full bg-emerald-500 dark:bg-emerald-400"
+                    style={{
+                      width: `${((AUTO_CHECKIN_DAYS - remaining) / AUTO_CHECKIN_DAYS) * 100}%`,
+                    }}
+                  />
+                </span>
+                <p className="mt-1 flex justify-between text-[11.5px]">
+                  <span className="text-muted-foreground tabular-nums">
+                    {AUTO_CHECKIN_DAYS - remaining} / {AUTO_CHECKIN_DAYS}일
+                  </span>
+                  <b>{remaining}일 남았어요</b>
                 </p>
               </>
             )}
@@ -110,7 +136,38 @@ export function AppPhoneCheckInButton({
           </button>
         </div>
       )}
-      {autoable && (
+      {autoStatus && status === "on" && (
+        <Link
+          href="/settings"
+          className="flex w-full items-center gap-2 rounded-xl bg-secondary px-3 py-2 text-xs md:max-w-md"
+        >
+          <span
+            aria-hidden
+            className={cn(
+              "size-1.5 shrink-0 rounded-full",
+              autoOn ? "bg-emerald-500" : "bg-muted-foreground",
+            )}
+          />
+          <span className="min-w-0 flex-1 break-keep">
+            <b>자동 체크인 {autoOn ? "켜짐" : "꺼짐"}</b>
+            <span className="text-muted-foreground">
+              {" · "}
+              {!autoOn
+                ? "직접 체크인해 주세요"
+                : remaining === null
+                  ? `폰 기록이 ${AUTO_CHECKIN_DAYS}일 쌓이면 알아서 해요`
+                  : remaining > 0
+                    ? `${remaining}일 뒤부터 알아서 해요`
+                    : "폰 기록으로 알아서 맞춰요"}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center font-bold text-muted-foreground">
+            {autoOn ? "설정" : "켜기"}
+            <ChevronRight className="size-3.5" aria-hidden />
+          </span>
+        </Link>
+      )}
+      {batchButton && (
         <Button
           variant="outline"
           className="w-full font-semibold md:max-w-md"

@@ -25,6 +25,7 @@ import { cn } from "@lib/utils";
 import { ExchangeRateNote } from "../../settings/ExchangeRateNote";
 import styles from "./AppValueReceipt.module.css";
 import { lockBodyScroll } from "@lib/scroll-lock";
+import { AppSavingsLink } from "../../savings/app/AppSavingsLink";
 
 interface AppValueReceiptProps {
   subscriptions: Subscription[];
@@ -132,7 +133,8 @@ export function AppValueReceipt({
   const [open, setOpen] = useState(false);
   const data = useReceipt(subscriptions, usageLogs);
   const { active, summary } = data;
-  if (active.length === 0) return null;
+  // 모두 해지해 구독 중인 게 없어도 지킨 돈은 보이게 한다.
+  if (active.length === 0) return <AppSavingsLink variant="card" standalone />;
 
   const checkedCount = summary.worthItItems.length + summary.wastedItems.length;
 
@@ -183,6 +185,8 @@ export function AppValueReceipt({
           )}
         </div>
       </dl>
+      {/* 절약 현황은 하단 탭에 없어서, 매일 보는 이 카드에 지킨 돈 한 줄을 둔다. */}
+      <AppSavingsLink variant="card" />
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -503,6 +507,9 @@ function Receipt({
           공유 구독 {data.sharedCount}개는 내 몫으로 셌어요 · 카드 청구액 월 {won(data.billedKRW)}
         </p>
       )}
+
+      {/* 위는 앞으로 아낄 돈, 점선 아래는 해지로 이미 지킨 돈. */}
+      <AppSavingsLink variant="receipt" />
 
       <p className="mt-3 text-center text-[11.5px] leading-relaxed text-muted-foreground">
         {summary.wasteSuggestion ??
