@@ -103,6 +103,13 @@ const AppUnusedAlerts = IS_APP_BUILD
       { ssr: false },
     )
   : null;
+// '지금 결정할 것'을 접었다 펴기(앱 전용). 접으면 아래 결제 달력이 바로 보인다.
+const AppDecisionFold = IS_APP_BUILD
+  ? dynamic(
+      () => import("../../components/dashboard/app/AppDecisionFold").then((m) => m.AppDecisionFold),
+      { ssr: false },
+    )
+  : null;
 const AppNextKillDialog = IS_APP_BUILD
   ? dynamic(
       () =>
@@ -451,6 +458,33 @@ export default function Dashboard() {
               onPaste={() => setIsAutoImportOpen(true)}
               onSample={IS_APP_BUILD ? undefined : handleLoadDemo}
             />
+          ) : AppDecisionFold && queue.length > 0 ? (
+            // 앱: 할 일이 있으면 폰 사용 기록 알림까지 한 묶음으로 접는다. 알림은 제목 아래에 둔다.
+            <AppDecisionFold items={queue}>
+              {(foldButton) => (
+                <ActionQueue
+                  items={queue}
+                  nextBilling={nextBilling}
+                  activeCount={activeSubs.length}
+                  onCheckIn={handleOpenCheckIn}
+                  onCancelGuide={handleCancelGuide}
+                  onConfirmPrice={handleConfirmPrice}
+                  onKillNotCharged={handleKillNotCharged}
+                  onKillCharged={handleKillCharged}
+                  onAddFirst={() => openAdd()}
+                  headerAction={foldButton}
+                  lead={
+                    AppUnusedAlerts && (
+                      <AppUnusedAlerts
+                        subscriptions={activeSubs}
+                        usageLogs={usageLogs}
+                        onCancelGuide={handleCancelGuide}
+                      />
+                    )
+                  }
+                />
+              )}
+            </AppDecisionFold>
           ) : (
             <>
               {AppUnusedAlerts && (

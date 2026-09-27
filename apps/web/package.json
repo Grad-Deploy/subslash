@@ -20,6 +20,7 @@
     "gmail:web-app": "tsx scripts/gmail-web-app/write.ts"
   },
   "dependencies": {
+    "@capacitor/app": "^8.0.0",
     "@capacitor/browser": "^8.0.4",
     "@capacitor/clipboard": "^8.0.1",
     "@capacitor/core": "^8.5.2",
