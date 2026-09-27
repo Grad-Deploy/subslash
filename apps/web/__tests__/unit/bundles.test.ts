@@ -38,7 +38,39 @@ describe("결합 상품", () => {
     expect(bundlesIncluding("youtube-premium").map((b) => b.id)).toEqual([
       "baemin-youtube-premium",
       "uplus-double-streaming",
+      "uplus-google-ai-youtube",
     ]);
+  });
+
+  it("티빙 결합 이용권은 포함된 OTT를 따로 내는 것과 겹친다", () => {
+    const pack = sub({ id: "pack", name: "티빙 3 PACK (티빙 + 디즈니+ + 웨이브)", amount: 21500 });
+    const disney = sub({ id: "disney", name: "디즈니플러스", amount: 9900 });
+    const wavve = sub({ id: "wavve", name: "웨이브", amount: 10900 });
+    expect(coveredServices(pack)).toEqual(["tving-3pack", "tving", "disney-plus", "wavve"]);
+    expect(findBundleOverlaps([pack, disney, wavve]).map((o) => o.serviceIds)).toEqual([
+      ["disney-plus"],
+      ["wavve"],
+    ]);
+    // 두 결합 상품이 같은 서비스를 주면 한 번만 알린다.
+    const double = sub({ id: "double", name: "티빙 더블 (티빙 + 디즈니+)", amount: 18000 });
+    expect(findBundleOverlaps([pack, double])).toEqual([
+      { bundle: pack, other: double, serviceIds: ["tving", "disney-plus"] },
+    ]);
+  });
+
+  it("Apple One은 애플 뮤직·TV·아이클라우드를 따로 내는 것과 겹친다", () => {
+    const one = sub({
+      id: "one",
+      name: "Apple One",
+      cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
+    });
+    const music = sub({
+      id: "music",
+      name: "애플 뮤직",
+      cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
+    });
+    expect(coveredServices(one)).toEqual(["apple-one", "apple-music", "apple-tv", "apple-icloud"]);
+    expect(findBundleOverlaps([one, music]).map((o) => o.serviceIds)).toEqual([["apple-music"]]);
   });
 
   it("포함된 서비스의 앱으로 시간을 잰다", () => {
