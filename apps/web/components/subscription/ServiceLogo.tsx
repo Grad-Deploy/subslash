@@ -1,6 +1,12 @@
 import { findPresetForSubscription } from "@subslash/shared";
 
-import { BRAND_LOGOS, foregroundOn, NEUTRAL_LOGO_HEX, type BrandLogo } from "@lib/service-logos";
+import {
+  BRAND_LOGOS,
+  bundleLogosFor,
+  foregroundOn,
+  NEUTRAL_LOGO_HEX,
+  type BrandLogo,
+} from "@lib/service-logos";
 import { cn } from "@lib/utils";
 import { customIconHex } from "@lib/custom-icon";
 
@@ -60,6 +66,9 @@ export function ServiceLogo({
   const preset = presetId ? undefined : findPresetForSubscription({ name, cancelUrl });
   const id = presetId ?? preset?.id;
   const logo: BrandLogo | undefined = id ? BRAND_LOGOS[id] : undefined;
+  const bundle = id && !logo ? bundleLogosFor(id) : undefined;
+
+  if (bundle) return <BundleLogo logos={bundle} size={size} className={className} />;
 
   if (!logo) {
     const tileHex = customIconHex(fallbackColor);
@@ -86,6 +95,58 @@ export function ServiceLogo({
     );
   }
 
+  return <LogoTile logo={logo} size={size} className={className} />;
+}
+
+/**
+ * 결합 상품의 로고. 상품만의 마크가 따로 없어, 포함된 서비스들의 로고를 한 칸 안에 왼쪽 위부터
+ * 오른쪽 아래로 겹쳐 놓는다. 새 마크를 그리지 않으므로 어느 서비스가 들어 있는지 그대로 보인다.
+ */
+function BundleLogo({
+  logos,
+  size,
+  className,
+}: {
+  logos: BrandLogo[];
+  size: number;
+  className?: string;
+}) {
+  // 둘이면 크게, 셋 이상이면 조금 작게 해야 가장 뒤 로고도 절반쯤 보인다.
+  const tileSize = Math.round(size * (logos.length <= 2 ? 0.66 : 0.56));
+  const step = logos.length > 1 ? (size - tileSize) / (logos.length - 1) : 0;
+
+  return (
+    <span
+      className={cn("relative inline-block shrink-0", className)}
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+    >
+      {logos.map((logo, index) => (
+        <LogoTile
+          key={index}
+          logo={logo}
+          size={tileSize}
+          // 겹친 자리의 경계가 보이도록 카드 배경색 테두리를 두른다(목록은 대부분 카드 안에 있다).
+          className="absolute outline outline-2 outline-card"
+          style={{ left: step * index, top: step * index }}
+        />
+      ))}
+    </span>
+  );
+}
+
+/** 로고 하나를 타일로 그린다. 공식 앱 아이콘은 그대로, 글리프·이니셜은 브랜드 색 타일 위에. */
+function LogoTile({
+  logo,
+  size,
+  className,
+  style,
+}: {
+  logo: BrandLogo;
+  size: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   if (logo.image) {
     return (
       // 공식 앱 아이콘은 배경까지 담고 있어 브랜드 색 타일을 깔지 않는다. 다만 배경이 비어 있는
@@ -104,7 +165,7 @@ export function ServiceLogo({
           "shrink-0 rounded-[28%] bg-white object-contain ring-1 ring-black/10 dark:ring-white/15",
           className,
         )}
-        style={{ width: size, height: size }}
+        style={{ ...style, width: size, height: size }}
         aria-hidden="true"
       />
     );
@@ -121,7 +182,13 @@ export function ServiceLogo({
         "ring-1 ring-black/10 dark:ring-white/15",
         className,
       )}
-      style={{ width: size, height: size, backgroundColor: background, color: foreground }}
+      style={{
+        ...style,
+        width: size,
+        height: size,
+        backgroundColor: background,
+        color: foreground,
+      }}
       // 로고 옆에는 늘 서비스 이름이 함께 나온다. 이름을 붙이면 스크린리더가 두 번 읽는다.
       aria-hidden="true"
     >
