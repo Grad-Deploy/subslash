@@ -20,3 +20,4 @@ export * from "./utils/valueMetric";
 export * from "./utils/orderEvidence";
 export * from "./utils/bundles";
 export * from "./utils/deviceUsage";
+export * from "./utils/storagePlan";
