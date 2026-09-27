@@ -141,6 +141,11 @@ export const BRAND_LOGOS: Record<string, BrandLogo> = {
   // 결합 상품은 브랜드 마크가 따로 없어 이니셜에 중립 회색이다(두 회사 로고를 섞어 지어내지 않는다).
   "baemin-youtube-premium": { initial: "배+Y" },
   "uplus-double-streaming": { initial: "U+" },
+  "tving-3pack": { initial: "3P" },
+  "tving-double-disney": { initial: "T+D" },
+  "tving-wavve-double": { initial: "T+W" },
+  "apple-one": { initial: "A1" },
+  "uplus-google-ai-youtube": { initial: "G+Y" },
   "baemin-club": {
     image: "/logos/baemin-club.png",
     source: "baemin.com 파비콘 180x180",
