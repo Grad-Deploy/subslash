@@ -66,3 +66,9 @@ apps/mobile/android/app/src/main/res/xml/config.xml
 *.txt
 /implementation_plan*.md
 /subslash_analysis.md
+
+# 서명 키. `eas credentials`로 내려받은 키와 비밀번호가 저장소에 남지 않게 한다(키는 EAS 서버에 있다).
+# EAS도 .gitignore 기준으로 올리므로 빌드 때 함께 올라가지 않는다.
+*.jks
+*.keystore
+credentials.json
