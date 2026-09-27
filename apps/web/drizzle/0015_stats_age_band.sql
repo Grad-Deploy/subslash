@@ -1,0 +1,1 @@
+ALTER TABLE `stats_contributors` ADD `age_band` text;
