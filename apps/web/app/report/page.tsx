@@ -25,6 +25,7 @@ import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { isAnonymousStatsOpen } from "@lib/privacy";
 import { fetchStatsSummary, useStatsSharing, withdrawContribution } from "@lib/stats-client";
+import { STATS_SAMPLE_ENABLED, sampleStatsSummary } from "@lib/stats-sample";
 import {
   STATS_MIN_PARTICIPANTS,
   latestFreshUsage,
@@ -359,11 +360,15 @@ function PeerComparison({
 }) {
   const enabled = useStatsSharing((state) => state.enabled);
   const token = useStatsSharing((state) => state.token);
-  const [summary, setSummary] = useState<StatsSummary | null>(null);
+  // 테스트 빌드: 서버 통계 대신 가상 참여자로 만든 요약을 보여 준다(lib/stats-sample).
+  const [summary, setSummary] = useState<StatsSummary | null>(() =>
+    STATS_SAMPLE_ENABLED ? sampleStatsSummary() : null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (STATS_SAMPLE_ENABLED) return;
     fetchStatsSummary()
       .then(setSummary)
       .catch(() => setError("비교 통계를 불러오지 못했어요."));
@@ -401,7 +406,9 @@ function PeerComparison({
         <div>
           <h2 className="text-base font-bold">다른 사용자와 비교</h2>
           <p className="text-xs text-muted-foreground">
-            참여한 사용자의 익명 통계예요.{" "}
+            {STATS_SAMPLE_ENABLED
+              ? "가상 사용자와 비교한 미리보기예요."
+              : "참여한 사용자의 익명 통계예요."}{" "}
             <Link href="/privacy#anonymous-stats" className="underline underline-offset-2">
               무엇을 모으나요?
             </Link>
@@ -409,10 +416,19 @@ function PeerComparison({
         </div>
         {summary && (
           <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs">
-            {summary.participants}명 참여
+            {STATS_SAMPLE_ENABLED
+              ? `가상 ${summary.participants}명`
+              : `${summary.participants}명 참여`}
           </span>
         )}
       </div>
+
+      {STATS_SAMPLE_ENABLED && (
+        <p className="rounded-xl border border-dashed px-3 py-2 text-xs text-muted-foreground">
+          테스트 빌드용 가상 데이터예요. 실제 사용자가 아니라, 자주 쓰는 구독을 조합해 만든 가상
+          사용자 {summary?.participants ?? 0}명으로 비교 화면을 보여 드려요.
+        </p>
+      )}
 
       {error && (
         <p className="text-xs text-destructive" role="alert">
