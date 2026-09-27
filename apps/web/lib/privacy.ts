@@ -61,6 +61,20 @@ export function isAnonymousStatsOpen(now: Date = new Date()): boolean {
 }
 
 /**
+ * 익명 구독 통계에 연령대(10대·20대…, lib/stats의 AGE_BANDS)를 더해 받기 시작하는 날(YYYY-MM-DD, 한국 시간
+ * 0시). 이미 연 통계에 저장 항목이 하나 늘어나는 변경이라, 방침에 먼저 게시하고 그날부터 받는다. null이면
+ * 닫혀 있다 — 기기는 연령대를 보내지 않고(고른 값은 기기에만 둔다), 서버는 받아도 버리며, 비교는 전체
+ * 참여자로 한다. 테스트 빌드의 가상 데이터(lib/stats-sample)는 이와 관계없이 연령대로 나눠 보여 준다.
+ */
+export const STATS_AGE_BAND_STARTS_ON: string | null = null;
+
+/** 연령대를 받기 시작했는지. */
+export function isStatsAgeBandOpen(now: Date = new Date()): boolean {
+  if (!isAnonymousStatsOpen(now) || !STATS_AGE_BAND_STARTS_ON) return false;
+  return now.getTime() >= new Date(`${STATS_AGE_BAND_STARTS_ON}T00:00:00+09:00`).getTime();
+}
+
+/**
  * 기기 간 사용 측정(lib/device-usage)을 시작하는 날(YYYY-MM-DD, 한국 시간 0시). 로그인한 계정의 앱
  * 사용 구간을 서버에 새로 저장하는 기능이라 방침에 항목을 먼저 알리고 그날부터 연다. 앱 사용 기록은
  * 사생활에 가까운 정보라, 날짜를 정하기 전에 스토어 정책(사용 정보 접근 권한)도 확인한다. null이면

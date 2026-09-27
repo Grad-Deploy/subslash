@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ANONYMOUS_STATS_STARTS_ON,
+  STATS_AGE_BAND_STARTS_ON,
   DEVICE_USAGE_STARTS_ON,
   GMAIL_AUTO_IMPORT_STARTS_ON,
   SOCIAL_LOGIN_STARTS_ON,
@@ -159,6 +160,8 @@ export default function PrivacyPage() {
               없는 해시만 저장합니다. 비교는 참여자가 충분할 때(전체 20명, 서비스마다 10명 이상)만
               가운데 값으로 보여 주어 한 사람의 값이 드러나지 않게 합니다. 목적: 다른 사용자와 구독
               지출·이용 횟수 비교.
+              {STATS_AGE_BAND_STARTS_ON &&
+                ` ${koreanDate(STATS_AGE_BAND_STARTS_ON)}부터는 참여한 기기가 고른 연령대(10대·20대·30대·40대·50대·60대 이상, 나이는 받지 않음)를 함께 보내, 연령대마다 10명 이상 모였을 때 연령대별 한 달 구독 지출의 가운데 값을 보여 줍니다. 연령대는 고르지 않아도 참여할 수 있습니다.`}
             </Item>
           </div>
         )}

@@ -241,6 +241,10 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 비공개 테스트처럼 참여자가 모자랄 때 화면을 보려면 `eas build --profile closed-test`로 만든다 — 이 빌드만
 `NEXT_PUBLIC_STATS_SAMPLE=1`이라 서버 통계 대신 가상 참여자 40명(`lib/stats-sample`)의 요약을 '가상 데이터'라고
 적어 보여 준다. 가상 참여자를 서버 표에 넣지 않고, 이 빌드를 프로덕션 트랙으로 올리지 않는다.
+비교는 연령대(`AGE_BANDS`, 나이가 아니라 대만)로 나눠 보여 줄 수 있다. 연령대는 기기에만 두고(`useStatsSharing`),
+`STATS_AGE_BAND_STARTS_ON`(`lib/privacy.ts`, null이면 닫힘)을 정해 방침에 먼저 게시한 뒤부터 요약에 실어 보낸다 — 그 전에는
+서버가 받아도 버린다. 연령대마다 `STATS_MIN_PER_AGE_BAND`(10) 명이 모여야 가운데 값을 보여 준다. **열기 전에 두 배포 DB에
+`drizzle/0015_stats_age_band.sql`을 적용한다.** 가상 데이터 빌드는 이와 관계없이 연령대로 나눠 보여 준다.
 저장 항목이 늘어나는 기능이라 `ANONYMOUS_STATS_STARTS_ON`(`lib/privacy.ts`)을 정하면 방침에 항목이 먼저
 게시되고 그날부터 열린다. **열기 전에 두 배포 DB에 `drizzle/0011_anonymous_stats.sql`을 적용한다.**
 

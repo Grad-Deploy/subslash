@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { realRecords, useStore } from "../lib/store";
-import { isAnonymousStatsOpen } from "../lib/privacy";
+import { isAnonymousStatsOpen, isStatsAgeBandOpen } from "../lib/privacy";
 import { buildContribution } from "../lib/stats";
 import { sendContribution, useStatsSharing, withdrawContribution } from "../lib/stats-client";
 
@@ -31,6 +31,9 @@ export function useStatsContribution() {
         records.subscriptions,
         records.usageLogs,
         state.getExchangeRate(),
+        new Date(),
+        // 방침에 연령대를 게시하기 전에는 고른 연령대도 보내지 않는다.
+        isStatsAgeBandOpen() ? sharing.ageBand : null,
       );
       const payload = JSON.stringify(contribution);
       if (payload === lastPayload.current && sharing.token) return;

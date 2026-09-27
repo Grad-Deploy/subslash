@@ -26,6 +26,29 @@ export const STATS_MIN_PARTICIPANTS = 20;
 export const STATS_MIN_PER_SERVICE = 10;
 /** 이만큼 갱신되지 않은 참여 기록은 지운다(일). */
 export const STATS_RETENTION_DAYS = 180;
+/** 연령대별 비교를 보여 주는 최소 참여자 수(연령대마다). 서비스별과 같은 기준이다. */
+export const STATS_MIN_PER_AGE_BAND = 10;
+
+/**
+ * 연령대. 만 14세 이상만 가입하므로 10대는 14~19세다. 나이 대신 대만 받는다 — 나이와 지출·서비스
+ * 목록이 함께 있으면 사람을 알아보기 쉬워진다.
+ */
+export const AGE_BANDS = ["10s", "20s", "30s", "40s", "50s", "60s+"] as const;
+export type AgeBand = (typeof AGE_BANDS)[number];
+
+export const AGE_BAND_LABELS: Record<AgeBand, string> = {
+  "10s": "10대",
+  "20s": "20대",
+  "30s": "30대",
+  "40s": "40대",
+  "50s": "50대",
+  "60s+": "60대 이상",
+};
+
+export function isAgeBand(value: unknown): value is AgeBand {
+  return typeof value === "string" && (AGE_BANDS as readonly string[]).includes(value);
+}
+
 /** 체크인이 이보다 오래됐으면 이용 횟수를 모른다고 본다(일). 리포트의 1회 단가도 같은 기준을 쓴다. */
 export const USAGE_FRESH_DAYS = 45;
 
@@ -40,6 +63,8 @@ export interface StatsContribution {
   v: 1;
   totalMonthlyKRW: number;
   activeCount: number;
+  /** 고른 연령대. 고르지 않았거나 연령대를 받기 전(isStatsAgeBandOpen)이면 적지 않는다. */
+  ageBand?: AgeBand;
   items: StatsItem[];
 }
 
@@ -84,6 +109,7 @@ export function buildContribution(
   usageLogs: UsageLog[],
   rate: number,
   now: Date = new Date(),
+  ageBand: AgeBand | null = null,
 ): StatsContribution {
   const active = subscriptions.filter((sub) => sub.status === "active" && !isInTrial(sub, now));
 
@@ -105,6 +131,7 @@ export function buildContribution(
     v: 1,
     totalMonthlyKRW: roundTo(sumMyMonthlyKRW(active, rate), 1000),
     activeCount: active.length,
+    ...(ageBand ? { ageBand } : {}),
     items,
   };
 }
@@ -121,6 +148,8 @@ export function parseContribution(body: unknown): StatsContribution | null {
   if (value.v !== 1) return null;
   if (!isInt(value.totalMonthlyKRW, 0, 10_000_000)) return null;
   if (!isInt(value.activeCount, 0, 300)) return null;
+  if (value.ageBand !== undefined && value.ageBand !== null && !isAgeBand(value.ageBand))
+    return null;
   if (!Array.isArray(value.items) || value.items.length > 150) return null;
 
   const items: StatsItem[] = [];
@@ -143,6 +172,7 @@ export function parseContribution(body: unknown): StatsContribution | null {
     v: 1,
     totalMonthlyKRW: value.totalMonthlyKRW,
     activeCount: value.activeCount,
+    ...(isAgeBand(value.ageBand) ? { ageBand: value.ageBand } : {}),
     items,
   };
 }
@@ -162,16 +192,29 @@ export interface ServiceStats {
   medianUsage: number | null;
 }
 
+export interface AgeBandStats {
+  ageBand: AgeBand;
+  participants: number;
+  /** 이 연령대 참여자가 모자라면(STATS_MIN_PER_AGE_BAND) null — 몇 명뿐인 가운데 값을 '보통'이라 하지 않는다. */
+  medianMonthlyKRW: number | null;
+}
+
 export interface StatsSummary {
   participants: number;
   /** 참여자가 모자라면 null. */
   overall: { medianMonthlyKRW: number; medianActiveCount: number } | null;
+  /**
+   * 연령대별 한 달 지출. AGE_BANDS 순서로 모든 연령대가 있다(0명이어도). 연령대를 받지 않는 서버의
+   * 응답에는 없을 수 있다.
+   */
+  byAge?: AgeBandStats[];
   services: ServiceStats[];
 }
 
 export interface ContributorRow {
   totalMonthlyKRW: number;
   activeCount: number;
+  ageBand?: AgeBand | null;
   items: StatsItem[];
 }
 
@@ -210,5 +253,14 @@ export function summarize(rows: ContributorRow[]): StatsSummary {
   }
   services.sort((a, b) => b.participants - a.participants);
 
-  return { participants, overall, services };
+  const byAge: AgeBandStats[] = AGE_BANDS.map((ageBand) => {
+    const totals = rows.filter((row) => row.ageBand === ageBand).map((row) => row.totalMonthlyKRW);
+    return {
+      ageBand,
+      participants: totals.length,
+      medianMonthlyKRW: totals.length >= STATS_MIN_PER_AGE_BAND ? median(totals) : null,
+    };
+  });
+
+  return { participants, overall, byAge, services };
 }

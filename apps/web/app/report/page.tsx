@@ -23,7 +23,7 @@ import {
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
-import { isAnonymousStatsOpen } from "@lib/privacy";
+import { isAnonymousStatsOpen, isStatsAgeBandOpen } from "@lib/privacy";
 import { fetchStatsSummary, useStatsSharing, withdrawContribution } from "@lib/stats-client";
 import { STATS_SAMPLE_ENABLED, sampleStatsSummary } from "@lib/stats-sample";
 import {
@@ -35,6 +35,7 @@ import {
 } from "@lib/stats";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { MeasuredUsageSection } from "@components/usage/MeasuredUsage";
+import { AgeComparison } from "@components/report/AgeComparison";
 import { subscriptionDetailHref } from "@lib/routes";
 import { Button } from "../../components/ui/button";
 import { Spinner } from "../../components/ui/spinner";
@@ -360,12 +361,15 @@ function PeerComparison({
 }) {
   const enabled = useStatsSharing((state) => state.enabled);
   const token = useStatsSharing((state) => state.token);
+  const ageBand = useStatsSharing((state) => state.ageBand);
   // 테스트 빌드: 서버 통계 대신 가상 참여자로 만든 요약을 보여 준다(lib/stats-sample).
   const [summary, setSummary] = useState<StatsSummary | null>(() =>
     STATS_SAMPLE_ENABLED ? sampleStatsSummary() : null,
   );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // 연령대로 나눠 비교한다. 테스트 빌드의 가상 데이터는 늘, 실제 통계는 방침에 연령대를 게시한 뒤부터.
+  const byAge = STATS_SAMPLE_ENABLED || isStatsAgeBandOpen() ? summary?.byAge : undefined;
 
   useEffect(() => {
     if (STATS_SAMPLE_ENABLED) return;
@@ -440,7 +444,15 @@ function PeerComparison({
         !error && <Spinner className="size-5" />
       ) : (
         <>
-          {summary.overall ? (
+          {byAge ? (
+            <AgeComparison
+              byAge={byAge}
+              myBand={ageBand}
+              onPickBand={(band) => useStatsSharing.getState().setAgeBand(band)}
+              monthly={monthly}
+              hasSubscriptions={active.length > 0}
+            />
+          ) : summary.overall ? (
             active.length > 0 && (
               <div className="rounded-xl bg-muted/50 p-3">
                 <p className="text-sm">

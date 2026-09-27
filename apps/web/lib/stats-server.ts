@@ -2,7 +2,9 @@ import { eq, inArray, lt } from "drizzle-orm";
 import { getDb } from "./db";
 import { statsContributors, statsItems } from "./schema";
 import { generateSyncToken, hashSyncToken } from "./tokens";
+import { isStatsAgeBandOpen } from "./privacy";
 import {
+  isAgeBand,
   STATS_RETENTION_DAYS,
   summarize,
   type ContributorRow,
@@ -18,6 +20,11 @@ import {
 export function readBearer(header: string | null): string | null {
   const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
   return /^[0-9a-f]{64}$/.test(token) ? token : null;
+}
+
+/** 방침에 연령대를 게시하기 전에는 받아도 저장하지 않는다(lib/privacy의 STATS_AGE_BAND_STARTS_ON). */
+function ageBandToStore(contribution: StatsContribution): string | null {
+  return isStatsAgeBandOpen() ? (contribution.ageBand ?? null) : null;
 }
 
 async function findContributor(token: string) {
@@ -54,6 +61,7 @@ export async function createContribution(contribution: StatsContribution): Promi
       tokenHash: hashSyncToken(token),
       totalMonthlyKrw: contribution.totalMonthlyKRW,
       activeCount: contribution.activeCount,
+      ageBand: ageBandToStore(contribution),
       createdAt: now,
       updatedAt: now,
     })
@@ -74,6 +82,7 @@ export async function replaceContribution(
     .set({
       totalMonthlyKrw: contribution.totalMonthlyKRW,
       activeCount: contribution.activeCount,
+      ageBand: ageBandToStore(contribution),
       updatedAt: new Date().toISOString(),
     })
     .where(eq(statsContributors.id, contributor.id));
@@ -121,6 +130,7 @@ export async function loadSummary(now: Date = new Date()): Promise<StatsSummary>
     byContributor.set(row.id, {
       totalMonthlyKRW: row.totalMonthlyKrw,
       activeCount: row.activeCount,
+      ageBand: isAgeBand(row.ageBand) ? row.ageBand : null,
       items: [],
     });
   }
