@@ -109,7 +109,7 @@ const MIGRATIONS: Migration[] = [
           detail: "stats_contributors가 없어 적용할 수 없습니다(0011 먼저)",
         };
       }
-      return /age_band/.test(sql)
+      return /\bage_band\b/.test(sql)
         ? { state: "applied", detail: "stats_contributors.age_band 있음" }
         : { state: "missing", detail: "stats_contributors.age_band 없음" };
     },
