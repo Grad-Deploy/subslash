@@ -8,8 +8,10 @@ import {
   type ValueMetric,
   clampQuantity,
   calculateCostPerUse,
+  formatStorageGB,
   formatUnitCost,
   getMyMonthlyShareAmount,
+  storagePlanFit,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
@@ -62,6 +64,11 @@ export function MetricQuantityInput({
           quantity,
           subscription.currency,
         );
+  // 저장 공간: 요금제를 알면 비율을 용량으로 바꿔 옆에 보여 준다. 설정 화면에는 GB로 나오기 때문이다.
+  const storageFit = metric === "storage" ? storagePlanFit(subscription, quantity) : null;
+  const storageLine = storageFit
+    ? `${storageFit.planName} 중 ${formatStorageGB(storageFit.usedGB)}`
+    : null;
   // 사용자가 손댄 뒤에는 폰 기록으로 덮지 않는다.
   const touched = useRef(false);
   const set = (next: number) => {
@@ -100,7 +107,7 @@ export function MetricQuantityInput({
           <span className="ml-0.5 text-[15px] font-extrabold">{spec.unit}</span>
         </p>
         <p className="min-h-4 text-xs text-muted-foreground">
-          {value === null ? "골라 주세요" : unitCost}
+          {value === null ? "골라 주세요" : (unitCost ?? storageLine)}
         </p>
       </div>
 
