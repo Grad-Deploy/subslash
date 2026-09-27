@@ -4,12 +4,38 @@ import path from "path";
 import { describe, it, expect } from "vitest";
 import { POPULAR_SERVICES } from "@subslash/shared";
 
-import { BRAND_LOGOS, contrastRatio, foregroundOn, NEUTRAL_LOGO_HEX } from "@lib/service-logos";
+import {
+  BRAND_LOGOS,
+  bundleLogosFor,
+  contrastRatio,
+  foregroundOn,
+  NEUTRAL_LOGO_HEX,
+} from "@lib/service-logos";
 
 describe("서비스 로고", () => {
   it("서비스 목록의 모든 서비스에 로고가 있다", () => {
-    const missing = POPULAR_SERVICES.filter((preset) => !BRAND_LOGOS[preset.id]).map((p) => p.id);
+    const missing = POPULAR_SERVICES.filter(
+      (preset) => !BRAND_LOGOS[preset.id] && !bundleLogosFor(preset.id),
+    ).map((p) => p.id);
     expect(missing).toEqual([]);
+  });
+
+  describe("결합 상품", () => {
+    const bundles = POPULAR_SERVICES.filter((preset) => preset.includes?.length);
+
+    it("상품만의 로고를 따로 두지 않고 포함된 서비스들의 로고를 그린다", () => {
+      for (const preset of bundles) {
+        expect(BRAND_LOGOS[preset.id], `${preset.id}에 따로 적은 로고`).toBeUndefined();
+        expect(bundleLogosFor(preset.id), `${preset.id}의 포함 서비스 로고`).toEqual(
+          preset.includes!.map((id) => BRAND_LOGOS[id]),
+        );
+      }
+    });
+
+    it("결합 상품이 아니면 겹쳐 그리지 않는다", () => {
+      expect(bundleLogosFor("netflix")).toBeUndefined();
+      expect(bundleLogosFor("없는-서비스")).toBeUndefined();
+    });
   });
 
   it("로고 목록에 서비스 목록에 없는 id가 남아 있지 않다", () => {

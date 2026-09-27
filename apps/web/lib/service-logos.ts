@@ -1,3 +1,5 @@
+import { POPULAR_SERVICES } from "@subslash/shared";
+
 /**
  * 서비스 목록(`POPULAR_SERVICES`)에 붙일 브랜드 로고.
  *
@@ -13,6 +15,9 @@
  *   적어, 브랜드가 아이콘을 바꾸면 같은 자리에서 다시 받을 수 있게 한다.
  * - 셋 다 없는 서비스는 이니셜 마크로 두고, 브랜드 색조차 확인하지 못했으면 `hex`를 비워
  *   중립 회색으로 그린다 — 그럴듯한 색을 채우면 그 서비스의 브랜드 색인 것처럼 읽힌다.
+ *
+ * - 결합 상품(`includes`가 있는 프리셋)은 여기 적지 않는다. 상품만의 마크가 따로 없어, 포함된
+ *   서비스들의 로고를 한 타일에 겹쳐 그린다(`bundleLogosFor`). 두 로고를 섞은 새 마크를 만들지 않는다.
  *
  * 아직 이 목록에 없는 서비스를 더할 때도 같은 규칙을 지킨다. 로고를 눈대중으로 그리거나
  * 색을 지어내지 않는다.
@@ -72,7 +77,7 @@ export function foregroundOn(hex: string): string {
   return contrastRatio(hex, LOGO_ON_BRAND) >= 3 ? LOGO_ON_BRAND : LOGO_ON_BRAND_DARK;
 }
 
-/** 프리셋 id → 로고. 여기 없는 서비스는 로고를 확인하지 못했다는 뜻이다. */
+/** 프리셋 id → 로고. 결합 상품이 아닌데 여기 없으면 로고를 확인하지 못했다는 뜻이다. */
 export const BRAND_LOGOS: Record<string, BrandLogo> = {
   netflix: {
     hex: "#E50914",
@@ -138,14 +143,6 @@ export const BRAND_LOGOS: Record<string, BrandLogo> = {
     path: "M16.273 12.845 7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845Z",
     title: "Naver",
   },
-  // 결합 상품은 브랜드 마크가 따로 없어 이니셜에 중립 회색이다(두 회사 로고를 섞어 지어내지 않는다).
-  "baemin-youtube-premium": { initial: "배+Y" },
-  "uplus-double-streaming": { initial: "U+" },
-  "tving-3pack": { initial: "3P" },
-  "tving-double-disney": { initial: "T+D" },
-  "tving-wavve-double": { initial: "T+W" },
-  "apple-one": { initial: "A1" },
-  "uplus-google-ai-youtube": { initial: "G+Y" },
   "baemin-club": {
     image: "/logos/baemin-club.png",
     source: "baemin.com 파비콘 180x180",
@@ -248,3 +245,16 @@ export const BRAND_LOGOS: Record<string, BrandLogo> = {
     title: "App Store",
   },
 };
+
+/**
+ * 결합 상품의 타일에 겹쳐 그릴 포함 서비스들의 로고(서비스 목록 `includes` 순서).
+ *
+ * 결합 상품이 아니거나, 포함된 서비스 중 하나라도 로고가 없으면 `undefined` — 일부만 그리면
+ * 빠진 서비스가 없는 상품처럼 보인다.
+ */
+export function bundleLogosFor(presetId: string): BrandLogo[] | undefined {
+  const includes = POPULAR_SERVICES.find((preset) => preset.id === presetId)?.includes;
+  if (!includes?.length) return undefined;
+  const logos = includes.map((id) => BRAND_LOGOS[id]);
+  return logos.every((logo): logo is BrandLogo => logo !== undefined) ? logos : undefined;
+}
