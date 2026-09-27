@@ -470,6 +470,107 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     sourceUrl: "https://www.newsis.com/view/NISX20260506_0003617774",
   },
   {
+    id: "tving-3pack",
+    name: "TVING 3 PACK",
+    nameKo: "티빙 3 PACK (티빙 + 디즈니+ + 웨이브)",
+    category: "ott",
+    // 2025년 11월 출시 때 발표한 월 요금(세 서비스 모두 스탠다드 기준). 가격이 바뀌면 여기부터 고친다.
+    defaultAmount: 21500,
+    priceNote:
+      "2025년 11월 출시 때 발표한 요금(스탠다드 기준)이에요. 결제 화면과 다르면 고쳐 주세요.",
+    currency: "KRW",
+    // 티빙에서 파는 이용권이다. 티빙 단독 이용권과 같은 해지 주소를 쓰면 주소로 서비스를 찾을 때
+    // 둘을 가를 수 없어, 결합 이용권은 티빙 첫 화면으로 보내고 안내를 따라가게 한다.
+    cancelUrl: "https://www.tving.com/",
+    cancelUrlKind: "entry",
+    cancelGuide:
+      "1. 티빙 웹에서 로그인 후 마이페이지 진입\n2. [나의 이용권] 선택\n3. 이용권 상세 페이지에서 [변경/해지] 클릭\n4. 하단의 [자동결제 해지] 선택",
+    iconEmoji: "📺",
+    includes: ["tving", "disney-plus", "wavve"],
+    sourceUrl:
+      "https://cjnews.cj.net/%ED%8B%B0%EB%B9%99-%EB%94%94%EC%A6%88%EB%8B%88%EC%99%80-%EA%B5%AD%EB%82%B4-%ED%8C%8C%ED%8A%B8%EB%84%88%EC%8B%AD-%EC%B2%B4%EA%B2%B0-%EA%B5%AD%EB%82%B4-%EC%B5%9C%EC%B4%88-3%EC%9E%90-ott-%EA%B2%B0/",
+  },
+  {
+    id: "tving-double-disney",
+    name: "TVING Double (Disney+)",
+    nameKo: "티빙 더블 (티빙 + 디즈니+)",
+    category: "ott",
+    // 3 PACK과 함께 발표한 월 요금(스탠다드 기준).
+    defaultAmount: 18000,
+    priceNote:
+      "2025년 11월 출시 때 발표한 요금(스탠다드 기준)이에요. 결제 화면과 다르면 고쳐 주세요.",
+    currency: "KRW",
+    cancelUrl: "https://www.tving.com/",
+    cancelUrlKind: "entry",
+    cancelGuide:
+      "1. 티빙 웹에서 로그인 후 마이페이지 진입\n2. [나의 이용권] 선택\n3. 이용권 상세 페이지에서 [변경/해지] 클릭\n4. 하단의 [자동결제 해지] 선택",
+    iconEmoji: "📺",
+    includes: ["tving", "disney-plus"],
+    sourceUrl:
+      "https://cjnews.cj.net/%ED%8B%B0%EB%B9%99-%EB%94%94%EC%A6%88%EB%8B%88%EC%99%80-%EA%B5%AD%EB%82%B4-%ED%8C%8C%ED%8A%B8%EB%84%88%EC%8B%AD-%EC%B2%B4%EA%B2%B0-%EA%B5%AD%EB%82%B4-%EC%B5%9C%EC%B4%88-3%EC%9E%90-ott-%EA%B2%B0/",
+  },
+  {
+    id: "tving-wavve-double",
+    name: "TVING x Wavve Double",
+    nameKo: "티빙 x 웨이브 더블 이용권",
+    category: "ott",
+    // 요금제가 여럿인데 공식 발표로 확인한 것은 광고형 스탠다드(월 7,000원)뿐이다. 나머지 요금제의
+    // 값은 판매 페이지를 확인하지 못해 적지 않는다 — 등록할 때 결제 화면의 금액을 적는다.
+    defaultAmount: null,
+    priceNote:
+      "광고형 스탠다드는 월 7,000원이에요(2025년 10월 발표). 다른 요금제는 결제 화면의 금액을 적어 주세요.",
+    currency: "KRW",
+    cancelUrl: "https://www.tving.com/",
+    cancelUrlKind: "entry",
+    cancelGuide:
+      "1. 가입한 곳(티빙 또는 웨이브)에 로그인\n2. 마이페이지의 [나의 이용권]에서 더블 이용권 선택\n3. [변경/해지] 또는 [자동결제 해지]를 눌러 해지",
+    iconEmoji: "📺",
+    includes: ["tving", "wavve"],
+    sourceUrl: "https://www.mediatoday.co.kr/news/articleView.html?idxno=329193",
+  },
+  {
+    id: "apple-one",
+    name: "Apple One",
+    nameKo: "Apple One",
+    category: "ott",
+    // apple.com/kr/apple-one의 요금. 개인은 iCloud+ 50GB, 가족은 200GB이고 Apple Arcade도 들어 있다
+    // (Arcade는 서비스 목록에 없어 includes에 적지 않는다).
+    defaultAmount: null,
+    plans: [
+      { id: "individual", name: "개인", amount: 14900 },
+      { id: "family", name: "가족", amount: 20900 },
+    ],
+    currency: "KRW",
+    cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
+    cancelUrlKind: "direct",
+    cancelGuide:
+      "1. 아이폰 [설정] 앱 > 맨 위 내 이름\n2. [구독] > [Apple One] 선택\n3. [구독 취소] 클릭\n4. 웹에서는 Apple 계정의 구독 관리 화면에서 Apple One을 골라 취소",
+    iconEmoji: "🍎",
+    includes: ["apple-music", "apple-tv", "apple-icloud"],
+    sourceUrl: "https://www.apple.com/kr/apple-one/",
+  },
+  {
+    id: "uplus-google-ai-youtube",
+    name: "LG U+ Udok Google AI Pro + YouTube Premium",
+    nameKo: "유독 구글 AI 프로 + 유튜브 프리미엄",
+    category: "ai",
+    // 2026년 6월 출시 때 발표한 월 요금. U+ 멤버십 VIP 이상은 4,000원 할인 쿠폰을 쓸 수 있다고 발표했다.
+    defaultAmount: null,
+    plans: [
+      { id: "regular", name: "기본", amount: 29000 },
+      { id: "vip", name: "U+ 멤버십 VIP 쿠폰 적용", amount: 25000 },
+    ],
+    priceNote: "2026년 6월 출시 때 발표한 요금이에요. 결제 화면의 금액과 다르면 고쳐 주세요.",
+    currency: "KRW",
+    cancelUrl: "https://www.lguplus.com/pogg/main",
+    cancelUrlKind: "entry",
+    cancelGuide:
+      "1. LG U+ 구독 플랫폼 '유독' 접속 후 로그인\n2. 구독 중인 구글 AI 프로 + 유튜브 프리미엄 선택\n3. 해지",
+    iconEmoji: "✨",
+    includes: ["google-ai-pro", "youtube-premium"],
+    sourceUrl: "https://view.asiae.co.kr/article/2026060108404250306",
+  },
+  {
     id: "naver-mybox",
     name: "Naver MYBOX",
     nameKo: "네이버 MYBOX",
