@@ -110,6 +110,7 @@ function checkSubscription(v: unknown): string | null {
   if (!oneOf(v.status, STATUSES)) return "상태";
   if (!isDateText(v.createdAt)) return "등록일";
   if (!optional(v.killedAt, isDateText)) return "해지일";
+  if (!optional(v.hiddenAt, isDateText)) return "숨긴 날";
   if (!optional(v.lastPriceCheckedAt, isDateText)) return "요금 확인일";
   if (!optional(v.sharingCount, isAmount)) return "함께 쓰는 사람 수";
   if (!optional(v.myShareAmount, isAmount)) return "내 몫";

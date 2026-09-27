@@ -27,6 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { ConfirmDialog } from "../ui/confirm-dialog";
+import { SubjectChip } from "./SubjectChip";
 import Link from "next/link";
 import { cn } from "@lib/utils";
 import { openExternal } from "@lib/native";
@@ -527,21 +528,36 @@ export function SubscriptionDetail({
           isOpen={!!confirmType}
           onClose={() => setConfirmType(null)}
           onConfirm={executeConfirm}
+          // 앱: 제목은 짧게, 이름은 칩으로(ConfirmDialog의 centered). 웹은 그대로.
+          centered={IS_APP_BUILD}
+          subject={IS_APP_BUILD ? <SubjectChip sub={sub} /> : undefined}
           title={
-            confirmType === "kill"
-              ? "구독 해지 완료 처리"
-              : confirmType === "revive"
-                ? "구독 다시 살리기"
-                : "구독 영구 삭제"
+            IS_APP_BUILD
+              ? confirmType === "kill"
+                ? "해지했나요?"
+                : confirmType === "revive"
+                  ? "다시 살릴까요?"
+                  : "삭제할까요?"
+              : confirmType === "kill"
+                ? "구독 해지 완료 처리"
+                : confirmType === "revive"
+                  ? "구독 다시 살리기"
+                  : "구독 영구 삭제"
           }
           description={
-            confirmType === "kill"
-              ? `'${sub.name}'을(를) 해지 완료로 기록할까요?
+            IS_APP_BUILD
+              ? confirmType === "kill"
+                ? "해지 완료로 기록하면\n결제일부터 지킨 돈으로 쌓여요."
+                : confirmType === "revive"
+                  ? "구독 중으로 돌아가고,\n절약 기록에서는 빠져요."
+                  : "절약 현황에서도 빠지고\n되돌릴 수 없어요."
+              : confirmType === "kill"
+                ? `'${sub.name}'을(를) 해지 완료로 기록할까요?
 결제일이 지나면 지킨 돈으로 쌓여요.`
-              : confirmType === "revive"
-                ? `'${sub.name}'을(를) 다시 구독 중으로 바꿀까요?
+                : confirmType === "revive"
+                  ? `'${sub.name}'을(를) 다시 구독 중으로 바꿀까요?
 절약 기록에서 빠져요.`
-                : `'${sub.name}'을(를) 삭제할까요?
+                  : `'${sub.name}'을(를) 삭제할까요?
 되돌릴 수 없어요.`
           }
           confirmText={

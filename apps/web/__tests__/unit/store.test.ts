@@ -124,6 +124,78 @@ describe("Zustand Store", () => {
     expect(state.usageLogs.length).toBe(0);
   });
 
+  describe("해지 목록 정리(앱)", () => {
+    const base = {
+      amount: 9900,
+      currency: "KRW" as const,
+      billingDay: 3,
+      billingCycle: "monthly" as const,
+      category: "ott",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    };
+    beforeEach(() => {
+      useStore.setState({
+        subscriptions: [
+          {
+            ...base,
+            id: "k1",
+            name: "넷플릭스",
+            status: "killed",
+            killedAt: "2026-06-03T00:00:00.000Z",
+          },
+          {
+            ...base,
+            id: "k2",
+            name: "디즈니+",
+            status: "killed",
+            killedAt: "2026-07-12T00:00:00.000Z",
+          },
+          { ...base, id: "a1", name: "왓챠", status: "active" },
+        ] as Subscription[],
+        usageLogs: [
+          {
+            id: "l1",
+            subscriptionId: "k2",
+            month: "2026-06",
+            usageCount: 1,
+            costPerUse: 9900,
+            riskLevel: "red",
+            checkedAt: "2026-06-01T00:00:00.000Z",
+          },
+        ] as UsageLog[],
+      });
+    });
+
+    it("숨기기는 해지한 구독만 숨기고, 해지 기록(절약 현황)은 그대로 둔다", () => {
+      useStore.getState().hideSubscriptions(["k1", "a1"]);
+      const subs = useStore.getState().subscriptions;
+      expect(subs.find((s) => s.id === "k1")?.hiddenAt).toBeDefined();
+      expect(subs.find((s) => s.id === "k1")?.killedAt).toBe("2026-06-03T00:00:00.000Z");
+      // 구독 중인 것은 숨기지 않는다 — 목록에서 사라지면 결제를 놓친다.
+      expect(subs.find((s) => s.id === "a1")?.hiddenAt).toBeUndefined();
+
+      useStore.getState().unhideSubscriptions(["k1"]);
+      expect(
+        useStore.getState().subscriptions.find((s) => s.id === "k1")?.hiddenAt,
+      ).toBeUndefined();
+    });
+
+    it("여러 개 삭제는 체크인 기록까지 함께 지운다", () => {
+      useStore.getState().deleteSubscriptions(["k1", "k2"]);
+      const state = useStore.getState();
+      expect(state.subscriptions.map((s) => s.id)).toEqual(["a1"]);
+      expect(state.usageLogs).toHaveLength(0);
+    });
+
+    it("숨긴 구독을 되살리면 숨김도 풀린다", () => {
+      useStore.getState().hideSubscriptions(["k1"]);
+      useStore.getState().reviveSubscription("k1");
+      const sub = useStore.getState().subscriptions.find((s) => s.id === "k1");
+      expect(sub?.status).toBe("active");
+      expect(sub?.hiddenAt).toBeUndefined();
+    });
+  });
+
   it("checkIn: creates usage log with correct costPerUse and riskLevel", () => {
     useStore.setState({
       subscriptions: [
