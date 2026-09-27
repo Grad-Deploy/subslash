@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { apiUrl, readApiError } from "./api";
-import type { StatsContribution, StatsSummary } from "./stats";
+import type { AgeBand, StatsContribution, StatsSummary } from "./stats";
 
 /**
  * 익명 구독 통계의 브라우저 쪽. 참여 여부와 토큰은 **이 기기**의 것이라 구독 기록 저장소·백업·계정
@@ -12,7 +12,13 @@ interface StatsSharingState {
   enabled: boolean;
   token: string | null;
   lastSentAt: string | null;
+  /**
+   * 고른 연령대. 기기에만 둔다 — 서버로는 연령대를 받기 시작한 뒤(isStatsAgeBandOpen)에, 참여한 기기의
+   * 요약에 실어서만 보낸다.
+   */
+  ageBand: AgeBand | null;
   setEnabled: (enabled: boolean) => void;
+  setAgeBand: (ageBand: AgeBand | null) => void;
   setToken: (token: string | null) => void;
   markSent: () => void;
 }
@@ -23,14 +29,21 @@ export const useStatsSharing = create<StatsSharingState>()(
       enabled: false,
       token: null,
       lastSentAt: null,
+      ageBand: null,
       setEnabled: (enabled) => set({ enabled }),
+      setAgeBand: (ageBand) => set({ ageBand }),
       setToken: (token) => set({ token }),
       markSent: () => set({ lastSentAt: new Date().toISOString() }),
     }),
     {
       name: "subslash-stats-sharing",
       storage: createJSONStorage(() => localStorage),
-      partialize: ({ enabled, token, lastSentAt }) => ({ enabled, token, lastSentAt }),
+      partialize: ({ enabled, token, lastSentAt, ageBand }) => ({
+        enabled,
+        token,
+        lastSentAt,
+        ageBand,
+      }),
     },
   ),
 );

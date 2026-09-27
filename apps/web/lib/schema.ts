@@ -450,6 +450,11 @@ export const statsContributors = sqliteTable(
     /** 한 달 구독 지출(내 몫) 합계, 1,000원 단위. */
     totalMonthlyKrw: integer("total_monthly_krw").notNull(),
     activeCount: integer("active_count").notNull(),
+    /**
+     * 참여자가 고른 연령대('10s'…'60s+', lib/stats의 AGE_BANDS). 고르지 않았거나 연령대 비교를 열기
+     * 전(STATS_AGE_BAND_STARTS_ON)이면 null.
+     */
+    ageBand: text("age_band"),
     createdAt: text("created_at").notNull(),
     updatedAt: text("updated_at").notNull(),
   },

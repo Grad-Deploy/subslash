@@ -33,6 +33,8 @@ interface Migration {
 
 interface Schema {
   tables: Set<string>;
+  /** 테이블 이름 → CREATE 문(칼럼을 더한 마이그레이션을 확인할 때 쓴다). */
+  tableSql: Map<string, string>;
   indexes: Map<string, string>;
 }
 
@@ -96,6 +98,22 @@ const MIGRATIONS: Migration[] = [
     check: (schema) =>
       tablesState(schema, ["account_identities", "oauth_app_claims"], ["accounts"]),
   },
+  {
+    id: "0015",
+    file: "0015_stats_age_band.sql",
+    check: (schema) => {
+      const sql = schema.tableSql.get("stats_contributors");
+      if (sql === undefined) {
+        return {
+          state: "blocked",
+          detail: "stats_contributors가 없어 적용할 수 없습니다(0011 먼저)",
+        };
+      }
+      return /age_band/.test(sql)
+        ? { state: "applied", detail: "stats_contributors.age_band 있음" }
+        : { state: "missing", detail: "stats_contributors.age_band 없음" };
+    },
+  },
 ];
 
 const STATE_LABEL: Record<State, string> = {
@@ -127,11 +145,13 @@ async function readSchema(client: Client): Promise<Schema> {
   const result = await client.execute(
     "SELECT type, name, sql FROM sqlite_master WHERE type IN ('table', 'index')",
   );
-  const schema: Schema = { tables: new Set(), indexes: new Map() };
+  const schema: Schema = { tables: new Set(), tableSql: new Map(), indexes: new Map() };
   for (const row of result.rows) {
     const name = String(row.name);
-    if (row.type === "table") schema.tables.add(name);
-    else schema.indexes.set(name, String(row.sql ?? ""));
+    if (row.type === "table") {
+      schema.tables.add(name);
+      schema.tableSql.set(name, String(row.sql ?? ""));
+    } else schema.indexes.set(name, String(row.sql ?? ""));
   }
   return schema;
 }
