@@ -17,6 +17,7 @@ import { Button } from "../../ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../../ui/dialog";
 import { ServiceLogo } from "../ServiceLogo";
 import { SubjectChip } from "../SubjectChip";
+import { AppSavingsLink } from "../../savings/app/AppSavingsLink";
 
 /** 'YYYY.MM.DD'. 해지일을 모르면 '—'. */
 function killedDate(sub: Subscription): string {
@@ -204,6 +205,8 @@ export function AppKilledList({
 
   return (
     <div className={cn("space-y-3", selecting && "pb-20")}>
+      {/* 해지 내역을 보러 온 김에 지킨 돈으로 넘어가게. 고르는 중에는 가린다. */}
+      {!selecting && <AppSavingsLink variant="banner" />}
       <div className="flex items-center justify-between px-0.5 text-xs">
         {selecting ? (
           <>

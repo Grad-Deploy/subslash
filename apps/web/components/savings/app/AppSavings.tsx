@@ -149,19 +149,22 @@ export function AppSavings() {
           </button>
         </section>
       ) : (
-        <section className="rounded-[20px] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 p-4 text-emerald-900 dark:border-emerald-800 dark:from-emerald-950 dark:to-emerald-900/70 dark:text-emerald-200">
-          <p className="text-xs font-bold">지금까지 지킨 돈</p>
-          <p className="mt-0.5 text-[34px] leading-tight font-black tracking-tight text-foreground tabular-nums">
+        <section className="rounded-[20px] border-[1.5px] border-emerald-300 bg-card p-4 text-muted-foreground shadow-[0_4px_14px_rgba(5,150,105,0.12)] dark:border dark:border-emerald-800 dark:bg-transparent dark:bg-gradient-to-br dark:from-emerald-950 dark:to-emerald-900/70 dark:text-emerald-200 dark:shadow-none">
+          {/* 라이트는 흰 카드에 초록 숫자·테두리(연한 초록 바탕은 흰 화면에 묻혔다). 다크는 예전 초록 바탕 그대로. */}
+          <p className="text-xs font-bold text-emerald-700 dark:text-emerald-200">
+            지금까지 지킨 돈
+          </p>
+          <p className="mt-0.5 text-[34px] leading-tight font-black tracking-tight text-emerald-700 tabular-nums dark:text-foreground">
             {formatKRW(tiers.confirmed)}
           </p>
           <dl className="mt-2.5 grid grid-cols-2 gap-2">
-            <div className="rounded-xl bg-background/55 px-2.5 py-2">
+            <div className="rounded-xl bg-secondary px-2.5 py-2 dark:bg-background/55">
               <dt className="text-[10.5px]">확인 대기</dt>
               <dd className="text-sm font-extrabold text-foreground tabular-nums">
                 {formatKRW(tiers.pending)}
               </dd>
             </div>
-            <div className="rounded-xl bg-background/55 px-2.5 py-2">
+            <div className="rounded-xl bg-secondary px-2.5 py-2 dark:bg-background/55">
               <dt className="text-[10.5px]">해지 유지하면 1년</dt>
               <dd className="text-sm font-extrabold text-foreground tabular-nums">
                 {formatKRW(tiers.annualRunRate)}
@@ -173,7 +176,7 @@ export function AppSavings() {
               {level.emoji} {level.levelLabel} {level.title}
             </span>
             <div className="min-w-0 flex-1">
-              <div className="h-1.5 overflow-hidden rounded-full bg-background/60">
+              <div className="h-1.5 overflow-hidden rounded-full bg-secondary dark:bg-background/60">
                 <span
                   className="block h-full rounded-full bg-emerald-700 dark:bg-emerald-400"
                   style={{ width: `${level.progressPercent}%` }}

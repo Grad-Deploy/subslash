@@ -3,8 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, House, Receipt } from "lucide-react";
+import { BarChart3, House, Receipt, Settings } from "lucide-react";
 import { cn } from "@lib/utils";
+import { IS_APP_BUILD } from "@lib/platform";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -13,7 +14,9 @@ export function BottomNav() {
     { name: "대시보드", href: "/dashboard", Icon: House },
     { name: "구독 관리", href: "/subs", Icon: Receipt },
     { name: "리포트", href: "/report", Icon: BarChart3 },
-  ] as const;
+    // 앱은 켜고 끄는 것을 설정 탭 하나에 모은다(웹은 구독 관리 맨 아래와 계정 메뉴).
+    ...(IS_APP_BUILD ? [{ name: "설정", href: "/settings", Icon: Settings }] : []),
+  ];
 
   return (
     <nav className="md:hidden fixed bottom-0 w-full border-t bg-background z-40 pb-safe">
