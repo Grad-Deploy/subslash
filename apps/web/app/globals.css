@@ -127,3 +127,15 @@ select option {
   background-color: #27272a !important;
   color: #ffffff !important;
 }
+
+/*
+ * 영수증 종이의 아래 가장자리를 톱니 모양으로 자른다(components/report/ReceiptPaper). 그림자는 잘린
+ * 모양을 따라가도록 바깥에서 drop-shadow로 준다 — box-shadow는 mask에 함께 잘린다.
+ */
+.receipt-paper {
+  --tooth: 10px;
+  mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - var(--tooth)) no-repeat,
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom /
+      calc(var(--tooth) * 2) var(--tooth) repeat-x;
+}

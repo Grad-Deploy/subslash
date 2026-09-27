@@ -147,6 +147,29 @@ describe("parseBackup — 앱이 만든 것은 모두 통과한다", () => {
     expect(roundTrip(broken).ok).toBe(false);
   });
 
+  it("해지 기록(다시 살펴볼 날·해지 근거)도 그대로 되돌아오고, 틀린 값은 받지 않는다", () => {
+    const evidence = { reference: "접수번호 A-1", recordedAt: "2026-09-20T00:00:00.000Z" };
+    const file = withData((data) => {
+      const [, killed] = data.subscriptions as Record<string, unknown>[];
+      killed.resubscribeRemindOn = "2026-12-01";
+      killed.killEvidence = evidence;
+    });
+    const result = roundTrip(file);
+    expect(result.ok && result.data.subscriptions[1]).toMatchObject({
+      resubscribeRemindOn: "2026-12-01",
+      killEvidence: evidence,
+    });
+
+    const badDate = withData((data) => {
+      (data.subscriptions as Record<string, unknown>[])[1].resubscribeRemindOn = "2026-02-30";
+    });
+    expect(errorOf(badDate)).toContain("다시 살펴볼 날");
+    const badEvidence = withData((data) => {
+      (data.subscriptions as Record<string, unknown>[])[1].killEvidence = { reference: 3 };
+    });
+    expect(errorOf(badEvidence)).toContain("해지 기록");
+  });
+
   it("세금 비율이 있는 구독도 그대로 되돌아온다", () => {
     const file = withData((data) => {
       (data.subscriptions as Record<string, unknown>[])[1].taxRate = 10;

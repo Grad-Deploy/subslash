@@ -166,6 +166,48 @@ export async function saveFile(name: string, content: string, mimeType: string):
   return true;
 }
 
+/** Blob을 base64 글자로(앞의 `data:...;base64,`는 뺀다). 네이티브 파일 쓰기가 이 형식을 받는다. */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).replace(/^data:[^,]*,/, ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+/**
+ * 그림 파일(영수증 이미지 등)을 사용자에게 넘긴다. `saveFile`과 같다 — 웹은 내려받고, 앱은 임시
+ * 폴더에 써서 공유 창을 연다(갤러리·메신저로 보낼 수 있다). 넘겼으면 true, 창을 닫았으면 false.
+ */
+export async function saveImage(name: string, image: Blob): Promise<boolean> {
+  if (IS_APP_BUILD) {
+    const [{ Filesystem, Directory }, { Share }] = await Promise.all([
+      import("@capacitor/filesystem"),
+      import("@capacitor/share"),
+    ]);
+    const { uri } = await Filesystem.writeFile({
+      path: name,
+      data: await blobToBase64(image),
+      directory: Directory.Cache,
+    });
+    try {
+      await Share.share({ title: name, files: [uri], dialogTitle: name });
+      return true;
+    } catch (error) {
+      if (/cancel/i.test(String((error as Error)?.message))) return false;
+      throw error;
+    }
+  }
+  const url = URL.createObjectURL(image);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+  return true;
+}
+
 /** 막대 뒤 창 배경색. layout의 themeColor와 같은 값이다. */
 const WINDOW_COLORS = { light: "#ffffff", dark: "#09090b" } as const;
 
