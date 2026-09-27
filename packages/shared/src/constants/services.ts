@@ -17,6 +17,11 @@ export interface ServicePlan {
    * 얼마를 덜 내는지 계산해 보여주고, 등록 폼에서 결제 주기를 바꿀 때 짝 요금제로 옮긴다.
    */
   yearlyOf?: string;
+  /**
+   * 저장 공간 요금제의 용량(GB, 1TB = 1,000GB). 요금제 이름에 적힌 용량만 적는다. 적어 두면 체크인한
+   * 사용 비율로 더 작은 요금제에 들어가는지 계산한다(utils/storagePlan).
+   */
+  storageGB?: number;
 }
 
 export interface ServicePreset {
@@ -533,11 +538,11 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // Apple 지원 문서의 대한민국 요금. 한국에서는 달러가 아니라 원화로 청구된다.
     defaultAmount: null,
     plans: [
-      { id: "50gb", name: "50GB", amount: 1100 },
-      { id: "200gb", name: "200GB", amount: 4400 },
-      { id: "2tb", name: "2TB", amount: 14000 },
-      { id: "6tb", name: "6TB", amount: 44000 },
-      { id: "12tb", name: "12TB", amount: 88000 },
+      { id: "50gb", name: "50GB", amount: 1100, storageGB: 50 },
+      { id: "200gb", name: "200GB", amount: 4400, storageGB: 200 },
+      { id: "2tb", name: "2TB", amount: 14000, storageGB: 2000 },
+      { id: "6tb", name: "6TB", amount: 44000, storageGB: 6000 },
+      { id: "12tb", name: "12TB", amount: 88000, storageGB: 12000 },
     ],
     currency: "KRW",
     cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
@@ -555,9 +560,9 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // one.google.com 요금제(한국).
     defaultAmount: null,
     plans: [
-      { id: "basic", name: "베이직 100GB", amount: 2400 },
-      { id: "ai-plus", name: "Google AI Plus 2TB", amount: 11900 },
-      { id: "ai-pro", name: "Google AI Pro 5TB", amount: 29000 },
+      { id: "basic", name: "베이직 100GB", amount: 2400, storageGB: 100 },
+      { id: "ai-plus", name: "Google AI Plus 2TB", amount: 11900, storageGB: 2000 },
+      { id: "ai-pro", name: "Google AI Pro 5TB", amount: 29000, storageGB: 5000 },
     ],
     currency: "KRW",
     cancelUrl: "https://one.google.com/about/plans",

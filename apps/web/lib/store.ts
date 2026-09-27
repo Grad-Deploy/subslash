@@ -12,6 +12,7 @@ import type {
 import {
   clampQuantity,
   evaluateMetric,
+  storagePlanFit,
   metricForSubscription,
   type ValueMetric,
   type OrderCount,
@@ -668,6 +669,7 @@ export const useStore = create<SubSlashStore>()(
           monthlyShare,
           quantity,
           sub.currency,
+          metric === "storage" ? storagePlanFit(sub, quantity) : null,
         );
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
