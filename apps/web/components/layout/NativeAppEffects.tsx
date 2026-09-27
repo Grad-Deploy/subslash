@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { IS_APP_BUILD } from "@lib/platform";
 import { restoreRecords } from "@lib/mirrored-storage";
 import { onReminderTapped } from "@lib/native-reminders";
-import { subscriptionDetailHref } from "@lib/routes";
 import { useStore } from "@lib/store";
 import { useLocalReminderSync } from "@hooks/useLocalReminders";
 
@@ -35,10 +34,7 @@ export function NativeAppEffects() {
 
   useLocalReminderSync();
 
-  useEffect(
-    () => onReminderTapped((subscriptionId) => router.push(subscriptionDetailHref(subscriptionId))),
-    [router],
-  );
+  useEffect(() => onReminderTapped((href) => router.push(href)), [router]);
 
   return AppBackButton ? <AppBackButton /> : null;
 }

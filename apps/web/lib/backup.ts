@@ -1,4 +1,4 @@
-import { currentCategory, isValueMetric } from "@subslash/shared";
+import { currentCategory, isValueMetric, parseDateOnly } from "@subslash/shared";
 import type { LinkedAccount, Subscription, UsageLog } from "@subslash/shared";
 // 스토어 모듈에서는 타입만 가져온다. 이 파일은 서버(계정에 저장한 기록의 검증)도
 // 쓰는데, 스토어 모듈을 실제로 불러오면 브라우저 전용 zustand 스토어가 함께 만들어진다.
@@ -128,6 +128,21 @@ function checkSubscription(v: unknown): string | null {
   if (!optional(v.linkedAccountId, isString)) return "연동 계정";
   if (!optional(v.linkedAccountName, isString)) return "연동 계정 이름";
   if (!optional(v.accountMemo, isString)) return "메모";
+  if (!optional(v.resubscribeRemindOn, (d) => typeof d === "string" && parseDateOnly(d) !== null)) {
+    return "다시 살펴볼 날";
+  }
+  if (
+    !optional(
+      v.killEvidence,
+      (e) =>
+        isObject(e) &&
+        optional(e.reference, isString) &&
+        optional(e.memo, isString) &&
+        isDateText(e.recordedAt),
+    )
+  ) {
+    return "해지 기록";
+  }
   if (
     !optional(
       v.orderEvidence,

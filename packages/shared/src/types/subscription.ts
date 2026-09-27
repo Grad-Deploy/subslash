@@ -119,6 +119,30 @@ export interface Subscription {
   killVerifiedAt?: string;
 
   /**
+   * 해지한 구독을 다시 살펴보라고 알려 달라고 사용자가 고른 날(`YYYY-MM-DD`).
+   *
+   * 스포츠 시즌·새 시즌 공개처럼 다시 쓸 때가 정해진 구독을 부담 없이 끊게 하려는 것이다. 앱이
+   * 날짜를 정하거나 추천하지 않는다 — 사용자가 고른 날에만 행동 큐와 앱 알림에 올린다. 해지한
+   * 구독에만 쓰고, 되살리면 지운다.
+   */
+  resubscribeRemindOn?: string;
+
+  /**
+   * 해지를 마쳤다는 근거로 사용자가 적어 둔 것. 해지 확인 메일의 제목·접수 번호·상담 내용 같은
+   * 글이다. 해지 뒤에 결제되면(`chargedAfterKillAt`) 환불을 요청할 때 그대로 인용한다.
+   *
+   * 앱이 해지를 확인한 것이 아니라 사용자의 기록이다. 해지 한 번에 딸린 기록이라 되살리면 지운다.
+   */
+  killEvidence?: {
+    /** 해지 확인 번호·메일 제목 등 서비스가 준 것. */
+    reference?: string;
+    /** 그 밖의 메모(상담원 이름, 해지한 경로 등). */
+    memo?: string;
+    /** 이 기록을 적은 시각(ISO 8601). */
+    recordedAt: string;
+  };
+
+  /**
    * How many people split this plan, the payer included. Absent or 1 means the
    * user carries the whole bill.
    */
@@ -149,6 +173,8 @@ export type SubscriptionFormData = Omit<
   | "hiddenAt"
   | "lastPriceCheckedAt"
   | "killVerifiedAt"
+  | "resubscribeRemindOn"
+  | "killEvidence"
   | "chargedAfterKillAt"
   | "chargedAfterKillAmount"
   | "observedAmount"

@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { openExternal } from "@lib/native";
 import { ServiceLogo } from "./ServiceLogo";
+import { PlanAlternatives } from "./PlanAlternatives";
 
 interface CancelGuideModalProps {
   subscription: Subscription | null;
@@ -62,6 +63,14 @@ export function CancelGuideModal({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {/*
+            0. 해지 전에 — 같은 서비스의 더 싼 요금제. 대안이 없으면 이 칸은 없다. 요금제를 바꿨다고
+            기록하면 해지할 일이 없어졌으니 창을 닫는다.
+          */}
+          {sub.status === "active" && (
+            <PlanAlternatives subscription={sub} compact onChanged={() => onClose()} />
+          )}
+
           {/* 1. 해지 링크 */}
           <section className="space-y-2">
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">

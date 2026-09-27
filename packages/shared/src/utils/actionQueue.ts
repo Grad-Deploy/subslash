@@ -7,6 +7,7 @@ import { getPriceCheckCandidates } from "./priceCheck";
 import { formatKillCheckDate, getKillCheckStatus } from "./killCheck";
 import { getLowUsageBillingMessage } from "./metaphor";
 import { describeCheckIn } from "./valueMetric";
+import { isResubscribeReminderDue } from "./killRecord";
 
 /**
  * 대시보드의 행동 큐.
@@ -56,11 +57,18 @@ export type ActionKind =
   /** 등록된 금액이 지금도 맞는지 확인이 필요하다. */
   | "price-check"
   /** 연간 구독인데 결제 월을 몰라 D-day도 방어액도 계산할 수 없다. */
-  | "missing-billing-month";
+  | "missing-billing-month"
+  /** 해지할 때 사용자가 고른 '다시 살펴볼 날'이 왔다. 앱이 정한 날이 아니다. */
+  | "resubscribe-reminder";
 
 /** 그 줄에서 사용자가 할 수 있는 일. */
 export type ActionVerb =
-  "cancel-guide" | "check-in" | "confirm-price" | "set-billing-month" | "verify-kill";
+  | "cancel-guide"
+  | "check-in"
+  | "confirm-price"
+  | "set-billing-month"
+  | "verify-kill"
+  | "review-resubscribe";
 
 export interface ActionItem {
   subscriptionId: string;
@@ -115,6 +123,8 @@ const PRIORITY: Record<ActionKind, number> = {
   "stale-check-in": 7,
   "price-check": 8,
   "missing-billing-month": 9,
+  // 사용자가 스스로 정한 알림이라 급하지 않다. 돈이 나가는 일이 아니다.
+  "resubscribe-reminder": 10,
 };
 
 const VERB: Record<ActionKind, ActionVerb> = {
@@ -131,6 +141,7 @@ const VERB: Record<ActionKind, ActionVerb> = {
   "stale-check-in": "check-in",
   "price-check": "confirm-price",
   "missing-billing-month": "set-billing-month",
+  "resubscribe-reminder": "review-resubscribe",
 };
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -354,6 +365,29 @@ export function getActionQueue(
       currency: sub.currency,
       presetAmount: null,
       priority: PRIORITY["verify-kill"],
+    });
+  }
+
+  // 해지할 때 '이날 다시 알려 줘'라고 적어 둔 구독. 해지 확인·해지 후 결제가 먼저라, 그 줄이 이미
+  // 있으면 올리지 않는다(한 구독은 한 줄).
+  const listed = new Set(items.map((item) => item.subscriptionId));
+  for (const sub of subscriptions) {
+    if (listed.has(sub.id) || !isResubscribeReminderDue(sub, now)) continue;
+    items.push({
+      subscriptionId: sub.id,
+      name: sub.name,
+      iconEmoji: sub.iconUrl || "📦",
+      iconColor: sub.iconColor,
+      kind: "resubscribe-reminder",
+      reason:
+        `해지할 때 ${sub.resubscribeRemindOn}에 다시 알려 달라고 하셨어요. ` +
+        "다시 쓸 때가 됐는지 살펴보세요. 필요 없으면 알림만 지우면 돼요.",
+      verb: VERB["resubscribe-reminder"],
+      daysUntilBilling: null,
+      amountAtStake: null,
+      currency: sub.currency,
+      presetAmount: null,
+      priority: PRIORITY["resubscribe-reminder"],
     });
   }
 
