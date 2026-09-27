@@ -52,6 +52,12 @@ export const SERVICE_METRICS: Readonly<Record<string, ValueMetric>> = {
   // 결합 상품은 포함된 영상 서비스의 시간으로 잰다(배민 무료배달의 값은 폰 기록으로 알 수 없다).
   "baemin-youtube-premium": "hours",
   "uplus-double-streaming": "hours",
+  "tving-3pack": "hours",
+  "tving-double-disney": "hours",
+  "tving-wavve-double": "hours",
+  "apple-one": "hours",
+  // 요금이 구글 AI 프로와 같고 유튜브 프리미엄이 덤으로 붙는 상품이라, AI를 쓴 날로 잰다.
+  "uplus-google-ai-youtube": "days",
   spotify: "hours",
   melon: "hours",
   "apple-music": "hours",
