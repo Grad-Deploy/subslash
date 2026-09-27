@@ -6,6 +6,7 @@ import {
   formatShockMessage,
   getRiskLevel,
 } from "./cost-per-use";
+import { formatStorageGB, type StoragePlanFit } from "./storagePlan";
 
 /**
  * 구독의 돈값을 무엇으로 재는지.
@@ -176,12 +177,14 @@ export function clampQuantity(metric: ValueMetric, value: number): number {
  * - 쓴 시간: 2시간 미만 빨강, 10시간 이상 초록.
  * - 혜택: 회비의 절반도 못 돌려받으면 빨강, 회비 이상이면(본전) 초록.
  * - 용량: 0%(아무것도 안 둠)만 빨강, 절반 미만은 노랑(더 작은 요금제로 충분할 수 있다), 절반 이상 초록.
+ *   요금제를 알면(`storageFit`) 추측하지 않는다 — 더 싼 요금제에 들어가면 노랑, 아니면 초록.
  *   적게 써도 해지하라고 하지 않는다 — 사진이 올라가 있으면 끊는 순간 곤란해진다.
  */
 export function metricRiskLevel(
   metric: ValueMetric,
   monthlyShare: number,
   quantity: number,
+  storageFit?: StoragePlanFit | null,
 ): RiskLevel {
   switch (metric) {
     case "uses":
@@ -196,7 +199,9 @@ export function metricRiskLevel(
       return ratio < 0.5 ? "red" : ratio >= 1 ? "green" : "yellow";
     }
     case "storage":
-      return quantity === 0 ? "red" : quantity < 50 ? "yellow" : "green";
+      if (quantity === 0) return "red";
+      if (storageFit) return storageFit.smaller ? "yellow" : "green";
+      return quantity < 50 ? "yellow" : "green";
   }
 }
 
@@ -213,12 +218,14 @@ export function evaluateMetric(
   monthlyShare: number,
   quantity: number,
   currency: Currency,
+  /** 저장 공간 구독의 요금제 계산(utils/storagePlan). 요금제를 모르면 null. */
+  storageFit?: StoragePlanFit | null,
 ): MetricEvaluation {
   const costPerUse = calculateCostPerUse(monthlyShare, quantity);
   return {
     costPerUse,
-    riskLevel: metricRiskLevel(metric, monthlyShare, quantity),
-    shockMessage: metricMessage(metric, serviceName, monthlyShare, quantity, currency),
+    riskLevel: metricRiskLevel(metric, monthlyShare, quantity, storageFit),
+    shockMessage: metricMessage(metric, serviceName, monthlyShare, quantity, currency, storageFit),
   };
 }
 
@@ -228,6 +235,7 @@ function metricMessage(
   monthly: number,
   quantity: number,
   currency: Currency,
+  storageFit?: StoragePlanFit | null,
 ): string {
   const money = (amount: number) => formatCurrency(amount, currency);
   switch (metric) {
@@ -246,11 +254,16 @@ function metricMessage(
         ? `회비 ${money(monthly)}보다 많은 ${money(quantity)}을 혜택으로 돌려받았어요.`
         : `회비 ${money(monthly)} 중 ${money(quantity)}만 혜택으로 돌려받았어요.`;
     case "storage":
-      return quantity === 0
-        ? `${name}에 아무것도 두지 않았다면 요금제가 필요 없을 수 있어요.`
-        : quantity < 50
-          ? `${name} 요금제 용량의 ${quantity}%를 쓰고 있어요. 한 단계 작은 요금제로 충분할 수 있어요.`
-          : `${name} 요금제 용량의 ${quantity}%를 쓰고 있어요.`;
+      if (quantity === 0) return `${name}에 아무것도 두지 않았다면 요금제가 필요 없을 수 있어요.`;
+      if (storageFit) {
+        const used = `${storageFit.planName} 중 ${quantity}%(${formatStorageGB(storageFit.usedGB)})를 쓰고 있어요.`;
+        return storageFit.smaller
+          ? `${name} ${used} ${storageFit.smaller.planName} 요금제(${money(storageFit.smaller.amount)})에도 여유 있게 들어가요.`
+          : `${name} ${used} 더 작은 요금제에는 여유 있게 들어가지 않아요.`;
+      }
+      return quantity < 50
+        ? `${name} 요금제 용량의 ${quantity}%를 쓰고 있어요. 요금제를 골라 두면 더 작은 요금제에 들어가는지 알려 드려요.`
+        : `${name} 요금제 용량의 ${quantity}%를 쓰고 있어요.`;
   }
 }
 
