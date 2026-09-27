@@ -129,10 +129,10 @@ describe("쓴 날·시간으로 재는 구독", () => {
       currency: "USD",
       amount: 20,
     });
-    // 앞 8일 동안 하루 한 번씩, 그중 하루는 30초뿐이라 열었으니 쓴 날이다.
+    // 앞 8일 동안 하루 한 번씩, 그중 하루는 30초뿐이라 쓴 날이 아니다(하루 5분 이상만 센다).
     const h = playbackHistory(CHATGPT, (i) => (i < 8 ? [i === 0 ? 30_000 : 600_000, 1] : null));
     expect(planAutoCheckIns([chatgpt], [], h, [CHATGPT], NOW, RATE)).toEqual([
-      { subscriptionId: "s1", metric: "days", quantity: 8 },
+      { subscriptionId: "s1", metric: "days", quantity: 7 },
     ]);
   });
 

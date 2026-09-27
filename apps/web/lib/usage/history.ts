@@ -22,7 +22,18 @@ export interface UsageHistory {
    * 없으면(안드로이드 9 이하, 또는 이 기능 전의 기록뿐) 재생 시간은 모른다.
    */
   playbackFrom?: string;
+  /**
+   * 이 기록을 잰 방식의 판. 재는 방식을 고쳐 지난 기록이 틀렸다면 MEASURE_VERSION을 올린다 — 판이 다른
+   * 기록은 다음에 운영체제가 남겨 둔 만큼(최대 35일)을 다시 읽어 덮는다. 그보다 오래된 날은 고칠 수 없다.
+   */
+  measureVersion?: number;
 }
+
+/**
+ * 2: Gemini를 Google 앱의 Gemini 화면으로도 잰다(UsageStatsPlugin.effectivePackage). 그 전 기록은 Gemini
+ *    앱이 화면을 넘기는 0.5초만 잡았다.
+ */
+export const MEASURE_VERSION = 2;
 
 export const EMPTY_HISTORY: UsageHistory = { v: 1, days: {}, syncedAt: null };
 
@@ -59,15 +70,21 @@ export function parseHistory(raw: string | null): UsageHistory {
       days: parsed.days,
       syncedAt: parsed.syncedAt ?? null,
       ...(typeof parsed.playbackFrom === "string" ? { playbackFrom: parsed.playbackFrom } : {}),
+      ...(typeof parsed.measureVersion === "number"
+        ? { measureVersion: parsed.measureVersion }
+        : {}),
     };
   } catch {
     return EMPTY_HISTORY;
   }
 }
 
-/** 다음에 읽을 날 수. 처음이면 운영체제가 남겨 둔 만큼(최대 35일), 아니면 지난번 이후 + 하루. */
+/**
+ * 다음에 읽을 날 수. 처음이거나 재는 방식이 바뀌었으면(MEASURE_VERSION) 운영체제가 남겨 둔 만큼(최대 35일),
+ * 아니면 지난번 이후 + 하루.
+ */
 export function daysToQuery(history: UsageHistory, now: Date): number {
-  if (!history.syncedAt) return 35;
+  if (!history.syncedAt || history.measureVersion !== MEASURE_VERSION) return 35;
   const since = (now.getTime() - Date.parse(history.syncedAt)) / 86_400_000;
   return Math.max(2, Math.min(35, Math.ceil(since) + 1));
 }
@@ -134,15 +151,23 @@ export function mergeUsage(
     days,
     syncedAt: now.toISOString(),
     ...(playbackFrom ? { playbackFrom } : {}),
+    measureVersion: MEASURE_VERSION,
   };
 }
+
+/**
+ * '쓴 날'로 쳐 주는 하루 최소 사용 시간(앱이 앞에 있던 시간과 재생 시간 중 큰 쪽, 그날 합계). 예전에는 1분만
+ * 열어도 하루로 쳐서, 매일 잠깐 켜 보기만 해도 AI 구독(쓴 날로 재는 구독)이 '잘 씀'이 될 수 있었다. 5분은
+ * 근거가 있는 값이 아니라 팀이 정한 기준이다 — 바꾸면 화면의 안내 문구와 테스트도 함께 바꾼다.
+ */
+export const ACTIVE_DAY_MS = 5 * 60_000;
 
 export interface UsageTotals {
   ms: number;
   opens: number;
   /** 이 기간 중 기록이 있는 날 수. 0이면 모른다. */
   coveredDays: number;
-  /** 한 번이라도 쓴 날 수(1분 이상 앞에 있었거나 한 번 이상 열었다). */
+  /** 쓴 날 수. 그날 모두 합쳐 ACTIVE_DAY_MS(5분) 이상 쓴 날만 센다. */
   activeDays: number;
   /**
    * 앱마다·날마다 max(앞에 있던 시간, 재생 알림 시간)을 더한 것. 재생 시간을 모르는 날이 하나라도 있으면
@@ -195,8 +220,8 @@ export function totalsFor(
     ms += dayMs;
     opens += dayOpens;
     usedMs += dayUsed;
-    // 화면을 끄고 1분 넘게 들은 날도 쓴 날이다.
-    if (dayOpens > 0 || dayUsed >= 60_000) activeDays += 1;
+    // 화면을 끄고 들은 시간도 더한다. 연 횟수와 관계없이 그날 쓴 시간만 본다.
+    if (dayUsed >= ACTIVE_DAY_MS) activeDays += 1;
     if (listenMs !== null) listenMs += dayUsed;
   }
   return { ms, opens, coveredDays, activeDays, listenMs, usedMs, byPackage };
@@ -231,6 +256,12 @@ export function monthlyTotals(
     });
   }
   return months;
+}
+
+/** '12시간 10분', '40분', 1분이 안 되면 '12초'. 가성비처럼 짧은 시간이 곧 근거인 자리에 쓴다. */
+export function formatDurationPrecise(ms: number): string {
+  if (ms > 0 && ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))}초`;
+  return formatDuration(ms);
 }
 
 /** '12시간 10분', '40분', '1분 미만'. */
