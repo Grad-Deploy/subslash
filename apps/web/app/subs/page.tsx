@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState, useEffect, useRef } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "../../lib/store";
@@ -13,9 +13,9 @@ import {
   formatKRW,
   presetFormData,
   sumMyMonthlyKRW,
-  getNextBillingDateFor,
 } from "@subslash/shared";
 import { SubCard } from "../../components/subscription/SubCard";
+import { SubjectChip } from "../../components/subscription/SubjectChip";
 import { SubTable } from "../../components/subscription/SubTable";
 import { SubForm } from "../../components/subscription/SubForm";
 import { QuickPresetRecommender } from "../../components/subscription/QuickPresetRecommender";
@@ -38,13 +38,14 @@ import { IS_APP_BUILD } from "@lib/platform";
 import { useLocalReminderSettings } from "@hooks/useLocalReminders";
 import { ReminderPromptSheet } from "../../components/app-start/ReminderPromptSheet";
 import { findDuplicateSubscription } from "@lib/duplicate-subscription";
+import { APP_SUBS_SORT_LABEL, sortSubsForApp, type AppSubsSort } from "@lib/subs-order";
 import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { isWideScreen } from "@lib/wide-screen";
 import { subscriptionDetailHref } from "@lib/routes";
 import { useIsClient } from "@hooks/useIsClient";
 import { Spinner } from "../../components/ui/spinner";
-import { ChevronDown, Receipt, ShieldCheck } from "lucide-react";
+import { Receipt, ShieldCheck } from "lucide-react";
 
 /** 카드/표 중 고른 보기. 이 브라우저의 취향일 뿐이라 백업·동기화에 넣지 않는다. */
 const VIEW_KEY = "subslash-subs-view";
@@ -101,46 +102,6 @@ function SelectedSubSync({ onChange }: { onChange: (id: string | null) => void }
   return null;
 }
 
-/** 앱의 구독 목록에서 처음 보여줄 개수. 넘으면 '더 보기'로 펼친다. */
-const APP_LIST_LIMIT = 8;
-
-/** 앱의 긴 구독 목록 아래 '더 보기'. 펼친 뒤에는 목록이 그대로 이어지므로 접기는 두지 않는다. */
-/**
- * 앱 목록의 '더 보기 / 접기'. 접으면 목록이 짧아져 화면이 목록 아래 빈 곳에 남으므로, 접은 뒤 이 버튼을
- * 화면 가운데로 데려온다(다시 펼치기 쉬운 자리).
- */
-function ListMoreToggle({
-  open,
-  hidden,
-  onToggle,
-}: {
-  open: boolean;
-  hidden: number;
-  onToggle: () => void;
-}) {
-  const ref = useRef<HTMLButtonElement>(null);
-  return (
-    <button
-      ref={ref}
-      type="button"
-      aria-expanded={open}
-      onClick={() => {
-        onToggle();
-        if (open) {
-          requestAnimationFrame(() => ref.current?.scrollIntoView({ block: "center" }));
-        }
-      }}
-      className="flex w-full items-center justify-center gap-1 rounded-xl border py-2.5 text-sm font-bold text-muted-foreground"
-    >
-      {open ? "접기" : `${hidden}개 더 보기`}
-      <ChevronDown
-        className={`size-4 transition-transform ${open ? "rotate-180" : ""}`}
-        aria-hidden
-      />
-    </button>
-  );
-}
-
 // 앱에서는 구독을 하나 등록한 뒤 같은 창에서 이번 달 사용 횟수를 묻는다. 웹 번들에는 넣지 않는다.
 const AppDuplicateDialog = IS_APP_BUILD
   ? dynamic(
@@ -159,6 +120,13 @@ const AppPhoneCheckInButton = IS_APP_BUILD
         import("../../components/usage/app/AppPhoneCheckInButton").then(
           (m) => m.AppPhoneCheckInButton,
         ),
+      { ssr: false },
+    )
+  : null;
+// 해지 완료 목록 정리(숨기기·삭제·여러 개 선택). 앱 전용.
+const AppKilledList = IS_APP_BUILD
+  ? dynamic(
+      () => import("../../components/subscription/app/AppKilledList").then((m) => m.AppKilledList),
       { ssr: false },
     )
   : null;
@@ -190,7 +158,8 @@ export default function SubscriptionsPage() {
   const mounted = useIsClient();
   const [tab, setTab] = useState<"active" | "killed">("active");
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [showAllCards, setShowAllCards] = useState(false);
+  // 앱: 구독 중 목록의 순서(결제일·금액·가성비).
+  const [appSort, setAppSort] = useState<AppSubsSort>("billing");
   // 앱: 방금 등록한 구독. 있으면 등록 창이 사용 횟수 묻기로 바뀐다.
   const [addedSub, setAddedSub] = useState<Subscription | null>(null);
   // 앱: 같은 서비스를 또 등록하려 할 때 한 번 묻는다. data는 확인하면 그대로 등록할 폼 값이다.
@@ -252,29 +221,15 @@ export default function SubscriptionsPage() {
 
   const filteredActiveRaw =
     filterCategory === "all" ? activeSubs : activeSubs.filter((s) => s.category === filterCategory);
-  // 앱: 결제일이 가까운 순. 결제월을 모르는 연간 구독은 날짜가 없으니 맨 뒤에 둔다. 웹은 등록 순 그대로.
+  // 앱: 기본은 결제일이 가까운 순(결제월을 모르는 연간 구독은 맨 뒤), 칩으로 금액·가성비 순. 웹은 등록 순 그대로.
   const filteredActive = IS_APP_BUILD
-    ? [...filteredActiveRaw].sort((a, b) => {
-        const now = new Date();
-        const da = getNextBillingDateFor(a, now)?.getTime() ?? Number.POSITIVE_INFINITY;
-        const db = getNextBillingDateFor(b, now)?.getTime() ?? Number.POSITIVE_INFINITY;
-        return da - db;
-      })
+    ? sortSubsForApp(filteredActiveRaw, appSort, usageLogs, rate)
     : filteredActiveRaw;
-  // 앱: 목록이 길면 앞의 몇 개만 보이고 '더 보기'로 펼친다. 탭·분류를 바꾸면 다시 접힌다.
-  const limit = IS_APP_BUILD && !showAllCards ? APP_LIST_LIMIT : Number.POSITIVE_INFINITY;
 
   const filteredKilled =
     filterCategory === "all" ? killedSubs : killedSubs.filter((s) => s.category === filterCategory);
 
   const visibleIds = (tab === "active" ? filteredActive : filteredKilled).map((s) => s.id);
-  const listKey = `${tab}|${filterCategory}`;
-  const [shownFor, setShownFor] = useState(listKey);
-  if (shownFor !== listKey) {
-    // 탭이나 분류를 바꾸면 다시 접는다(렌더 중 상태 맞추기 — effect를 거치지 않는다).
-    setShownFor(listKey);
-    setShowAllCards(false);
-  }
   const visibleOrder = view === "table" && tableOrder.length > 0 ? tableOrder : visibleIds;
   const orderKey = visibleOrder.join("|");
 
@@ -508,7 +463,9 @@ export default function SubscriptionsPage() {
               }`}
               onClick={() => setTab("killed")}
             >
-              해지 완료 ({killedSubs.length})
+              {/* 앱은 숨긴 해지 구독을 목록에서 빼므로 개수도 보이는 것만 센다. */}
+              해지 완료 (
+              {AppKilledList ? killedSubs.filter((s) => !s.hiddenAt).length : killedSubs.length})
             </button>
           </div>
 
@@ -571,6 +528,25 @@ export default function SubscriptionsPage() {
                 </div>
               ) : (
                 <>
+                  {IS_APP_BUILD && (
+                    <div className="flex gap-1.5" role="group" aria-label="순서">
+                      {(Object.keys(APP_SUBS_SORT_LABEL) as AppSubsSort[]).map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          aria-pressed={appSort === key}
+                          onClick={() => setAppSort(key)}
+                          className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                            appSort === key
+                              ? "border-foreground bg-foreground text-background"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          {APP_SUBS_SORT_LABEL[key]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {view === "table" && (
                     <div className="hidden md:block">
                       <SubTable
@@ -589,7 +565,7 @@ export default function SubscriptionsPage() {
                   <div
                     className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4${view === "table" ? " md:hidden" : ""}`}
                   >
-                    {filteredActive.slice(0, limit).map((sub) => (
+                    {filteredActive.map((sub) => (
                       <SubCard
                         key={sub.id}
                         subscription={sub}
@@ -600,13 +576,6 @@ export default function SubscriptionsPage() {
                       />
                     ))}
                   </div>
-                  {IS_APP_BUILD && filteredActive.length > APP_LIST_LIMIT && (
-                    <ListMoreToggle
-                      open={showAllCards}
-                      hidden={filteredActive.length - APP_LIST_LIMIT}
-                      onToggle={() => setShowAllCards((shown) => !shown)}
-                    />
-                  )}
                 </>
               )}
 
@@ -638,41 +607,44 @@ export default function SubscriptionsPage() {
                     <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 아껴요.
                   </div>
 
-                  {view === "table" && (
-                    <div className="hidden md:block">
-                      <SubTable
-                        subscriptions={filteredKilled}
-                        usageLogs={usageLogs}
-                        mode="killed"
-                        onRevive={handleRevive}
-                        onDelete={handleDelete}
-                        selectedId={selectedId}
-                        onSelect={selectSub}
-                        onOrderChange={setTableOrder}
-                        sidePanel
-                      />
-                    </div>
-                  )}
-                  <div
-                    className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4${view === "table" ? " md:hidden" : ""}`}
-                  >
-                    {filteredKilled.slice(0, limit).map((sub) => (
-                      <SubCard
-                        key={sub.id}
-                        subscription={sub}
-                        onRevive={handleRevive}
-                        onDelete={handleDelete}
-                        selected={selectedId === sub.id}
-                        onSelect={selectSub}
-                      />
-                    ))}
-                  </div>
-                  {IS_APP_BUILD && filteredKilled.length > APP_LIST_LIMIT && (
-                    <ListMoreToggle
-                      open={showAllCards}
-                      hidden={filteredKilled.length - APP_LIST_LIMIT}
-                      onToggle={() => setShowAllCards((shown) => !shown)}
+                  {AppKilledList ? (
+                    <AppKilledList
+                      subscriptions={filteredKilled}
+                      onRevive={handleRevive}
+                      onMessage={showToast}
                     />
+                  ) : (
+                    <>
+                      {view === "table" && (
+                        <div className="hidden md:block">
+                          <SubTable
+                            subscriptions={filteredKilled}
+                            usageLogs={usageLogs}
+                            mode="killed"
+                            onRevive={handleRevive}
+                            onDelete={handleDelete}
+                            selectedId={selectedId}
+                            onSelect={selectSub}
+                            onOrderChange={setTableOrder}
+                            sidePanel
+                          />
+                        </div>
+                      )}
+                      <div
+                        className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4${view === "table" ? " md:hidden" : ""}`}
+                      >
+                        {filteredKilled.map((sub) => (
+                          <SubCard
+                            key={sub.id}
+                            subscription={sub}
+                            onRevive={handleRevive}
+                            onDelete={handleDelete}
+                            selected={selectedId === sub.id}
+                            onSelect={selectSub}
+                          />
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
@@ -866,19 +838,34 @@ export default function SubscriptionsPage() {
           isOpen={!!confirmAction}
           onClose={() => setConfirmAction(null)}
           onConfirm={executeConfirmAction}
+          // 앱: 제목은 짧게, 이름은 칩으로, 줄은 뜻이 끊기는 자리에서(ConfirmDialog의 centered).
+          centered={IS_APP_BUILD}
+          subject={IS_APP_BUILD ? <SubjectChip sub={confirmAction.sub} /> : undefined}
           title={
-            confirmAction.type === "kill"
-              ? "구독 해지 완료 처리"
-              : confirmAction.type === "revive"
-                ? "구독 다시 살리기"
-                : "구독 영구 삭제"
+            IS_APP_BUILD
+              ? confirmAction.type === "kill"
+                ? "해지했나요?"
+                : confirmAction.type === "revive"
+                  ? "다시 살릴까요?"
+                  : "삭제할까요?"
+              : confirmAction.type === "kill"
+                ? "구독 해지 완료 처리"
+                : confirmAction.type === "revive"
+                  ? "구독 다시 살리기"
+                  : "구독 영구 삭제"
           }
           description={
-            confirmAction.type === "kill"
-              ? `'${confirmAction.sub.name}'을(를) 해지 완료로 기록할까요?\n결제일이 지나면 지킨 돈으로 쌓여요.`
-              : confirmAction.type === "revive"
-                ? `'${confirmAction.sub.name}'을(를) 다시 구독 중으로 바꿀까요?\n절약 기록에서 빠져요.`
-                : `'${confirmAction.sub.name}'을(를) 삭제할까요?\n되돌릴 수 없어요.`
+            IS_APP_BUILD && confirmAction.type === "kill"
+              ? "해지 완료로 기록하면\n결제일부터 지킨 돈으로 쌓여요."
+              : IS_APP_BUILD && confirmAction.type === "revive"
+                ? "구독 중으로 돌아가고,\n절약 기록에서는 빠져요."
+                : IS_APP_BUILD
+                  ? "절약 현황에서도 빠지고\n되돌릴 수 없어요."
+                  : confirmAction.type === "kill"
+                    ? `'${confirmAction.sub.name}'을(를) 해지 완료로 기록할까요?\n결제일이 지나면 지킨 돈으로 쌓여요.`
+                    : confirmAction.type === "revive"
+                      ? `'${confirmAction.sub.name}'을(를) 다시 구독 중으로 바꿀까요?\n절약 기록에서 빠져요.`
+                      : `'${confirmAction.sub.name}'을(를) 삭제할까요?\n되돌릴 수 없어요.`
           }
           confirmText={
             confirmAction.type === "kill"
