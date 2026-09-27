@@ -32,6 +32,13 @@
     "production": {
       "extends": "base",
       "autoIncrement": true
+    },
+    "closed-test": {
+      "extends": "production",
+      "env": {
+        "NEXT_PUBLIC_WEB_ORIGIN": "https://www.subslash.me",
+        "NEXT_PUBLIC_STATS_SAMPLE": "1"
+      }
     }
   },
   "submit": {
