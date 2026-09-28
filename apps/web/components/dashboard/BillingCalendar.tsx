@@ -73,8 +73,7 @@ export function BillingCalendar({
     setPickedDay(null);
   };
 
-  if (active.length === 0) return null;
-
+  // 구독이 없어도 달력은 그린다. 예전에는 아무것도 그리지 않아, 앱의 달력 아이콘을 누르면 빈 시트만 떴다.
   const firstWeekday = new Date(view.year, view.month, 1).getDay();
   const dayCount = new Date(view.year, view.month + 1, 0).getDate();
 
@@ -185,7 +184,11 @@ export function BillingCalendar({
       )}
 
       <footer className="space-y-1 border-t pt-3 text-xs">
-        {month.billingCount === 0 ? (
+        {active.length === 0 ? (
+          <p className="text-muted-foreground">
+            등록한 구독이 없어요. 구독을 등록하면 결제일이 달력에 찍혀요.
+          </p>
+        ) : month.billingCount === 0 ? (
           <p className="text-muted-foreground">이 달에 청구되는 구독이 없습니다.</p>
         ) : (
           <p className="text-muted-foreground">

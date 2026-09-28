@@ -1,5 +1,10 @@
 import { formatKRW, formatReceiptPeriod, type Receipt } from "@subslash/shared";
-import { describeReceiptLine, receiptFootnotes, receiptNumber } from "./receipt-view";
+import {
+  describeReceiptLine,
+  receiptFootnotes,
+  receiptNumber,
+  receiptPeriodSuffix,
+} from "./receipt-view";
 
 /**
  * 영수증을 PNG로 그린다(공유·저장용). 화면의 영수증을 캡처하지 않고 캔버스에 직접 그린다 — 캡처
@@ -120,7 +125,7 @@ export async function renderReceiptImage(receipt: Receipt, issuedAt: Date): Prom
   y += 22;
   text("구독 영수증", { size: 13, color: MUTED, align: "center" });
   y += 24;
-  text(`${formatReceiptPeriod(receipt.period)}${receipt.isComplete ? "" : " · 오늘까지"}`, {
+  text(`${formatReceiptPeriod(receipt.period)}${receiptPeriodSuffix(receipt)}`, {
     size: 15,
     weight: 700,
     align: "center",
