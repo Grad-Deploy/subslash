@@ -7,13 +7,26 @@ android {
         applicationId "com.subslash.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode 17
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            // 비밀번호는 저장소에 두지 않는다. ~/.gradle/gradle.properties(또는 -P)의 RELEASE_STORE_PASSWORD·
+            // RELEASE_KEY_ALIAS·RELEASE_KEY_PASSWORD로 받는다. 키스토어는 RELEASE_STORE_FILE이 없으면
+            // apps/mobile의 .jks(.gitignore)를 쓴다 — gradle.properties는 ISO-8859-1로 읽혀 한글 경로가 깨진다.
+            if (project.hasProperty('RELEASE_STORE_PASSWORD')) {
+                storeFile file(project.findProperty('RELEASE_STORE_FILE') ?: "${projectDir}/../../@leesean2__subslash-mobile.jks")
+                storePassword RELEASE_STORE_PASSWORD
+                keyAlias RELEASE_KEY_ALIAS
+                keyPassword RELEASE_KEY_PASSWORD
+            }
         }
     }
     buildTypes {
@@ -24,6 +37,9 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (project.hasProperty('RELEASE_STORE_PASSWORD')) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
@@ -55,4 +71,28 @@ try {
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+tasks.register('copyReleaseBundleToDesktop') {
+    doNotTrackState("Copies AAB to Desktop without tracking entire Desktop state")
+    doLast {
+        def desktopDir = file("${System.getProperty('user.home')}/OneDrive/바탕 화면")
+        if (!desktopDir.exists()) {
+            desktopDir = file("${System.getProperty('user.home')}/Desktop")
+        }
+        copy {
+            from layout.buildDirectory.dir("outputs/bundle/release")
+            into desktopDir
+            include "*.aab"
+            rename { String fileName -> "subslash-release-v${android.defaultConfig.versionCode}.aab" }
+        }
+        println "=========================================================="
+        println " [SubSlash] 서명된 AAB 파일이 바탕화면에 복사되었습니다!"
+        println " 위치: ${desktopDir}\\subslash-release-v${android.defaultConfig.versionCode}.aab"
+        println "=========================================================="
+    }
+}
+
+tasks.matching { it.name == "bundleRelease" }.configureEach {
+    finalizedBy("copyReleaseBundleToDesktop")
 }
