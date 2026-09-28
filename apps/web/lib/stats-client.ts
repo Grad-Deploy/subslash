@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { apiUrl, readApiError } from "./api";
+import { apiFetch, apiUrl, readApiError } from "./api";
 import type { AgeBand, StatsContribution, StatsSummary } from "./stats";
 
 /**
@@ -48,31 +48,47 @@ export const useStatsSharing = create<StatsSharingState>()(
   ),
 );
 
-/** 요약을 보낸다. 새 참여자면 서버가 만든 토큰을, 기존 참여자면 그 토큰을 돌려준다. */
+/** 로그인하지 않아 서버가 요약을 받지 않았다. */
+export class StatsLoginRequiredError extends Error {}
+
+/**
+ * 요약을 보낸다. 새 참여자면 서버가 만든 토큰을, 기존 참여자면 그 토큰을 돌려준다. 로그인한 사람만
+ * 보낼 수 있어 세션을 싣는 apiFetch로 보내고, 통계 토큰은 `X-Stats-Token`에 싣는다(앱은
+ * `Authorization`에 세션 토큰을 싣는다).
+ */
 export async function sendContribution(
   token: string | null,
   contribution: StatsContribution,
 ): Promise<string> {
-  const response = await fetch(apiUrl("/api/stats/contribution"), {
+  const response = await apiFetch("/api/stats/contribution", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token ? { "X-Stats-Token": token } : {}),
     },
     body: JSON.stringify(contribution),
   });
   // 서버에서 기록이 지워졌다. 토큰 없이 새로 참여한다.
   if (response.status === 401 && token) return sendContribution(null, contribution);
+  if (response.status === 403) {
+    const body = (await response
+      .clone()
+      .json()
+      .catch(() => null)) as { code?: string } | null;
+    if (body?.code === "login-required") {
+      throw new StatsLoginRequiredError("로그인해야 통계에 참여할 수 있습니다.");
+    }
+  }
   if (!response.ok) throw new Error(await readApiError(response, "통계에 보내지 못했습니다."));
   if (token) return token;
   return ((await response.json()) as { token: string }).token;
 }
 
-/** 참여를 그만두고 서버의 기록을 지운다. */
+/** 참여를 그만두고 서버의 기록을 지운다. 로그인하지 않아도 지울 수 있다. */
 export async function withdrawContribution(token: string): Promise<void> {
   const response = await fetch(apiUrl("/api/stats/contribution"), {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { "X-Stats-Token": token },
   });
   if (!response.ok && response.status !== 401) {
     throw new Error(await readApiError(response, "기록을 지우지 못했습니다."));

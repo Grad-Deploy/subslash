@@ -4,13 +4,15 @@ import { join as joinPath } from "path";
 
 /**
  * 익명 구독 통계를 실제 SQLite로 돌린다: 참여 → 갱신 → 요약 → 그만두기 → 오래된 기록 정리.
+ * 보내기는 로그인한 사람만 된다.
  */
 process.env.TURSO_DATABASE_URL = ":memory:";
 process.env.NEXT_PUBLIC_ANONYMOUS_STATS_TEST_OPEN = "true";
 delete process.env.TURSO_AUTH_TOKEN;
 
 const { getDb, closeDb } = await import("../../lib/db");
-const { statsContributors, statsItems } = await import("../../lib/schema");
+const { accounts, statsContributors, statsItems } = await import("../../lib/schema");
+const { SESSION_COOKIE, createSession } = await import("../../lib/auth-server");
 const { resetAllRateLimits } = await import("../../lib/rate-limit");
 const { pruneStaleContributions } = await import("../../lib/stats-server");
 const { STATS_MIN_PARTICIPANTS, STATS_MIN_PER_SERVICE } = await import("../../lib/stats");
@@ -39,14 +41,43 @@ async function resetDatabase() {
   }
 }
 
-function request(method: string, body?: unknown, token?: string, ip = "10.0.0.1") {
+/** 요청을 보낸 사람. 로그인한 사람의 세션 쿠키, 또는 로그인하지 않았으면 null. */
+let cookie: string | null = null;
+
+async function login() {
+  const [account] = await getDb()
+    .insert(accounts)
+    .values({
+      username: "stats",
+      email: "stats@gmail.com",
+      passwordHash: "scrypt$0$0$0$unused$unused",
+      emailVerifiedAt: new Date().toISOString(),
+    })
+    .returning();
+  const session = await createSession(account.id);
+  cookie = `${SESSION_COOKIE}=${session.token}`;
+}
+
+function request(
+  method: string,
+  body?: unknown,
+  token?: string,
+  ip = "10.0.0.1",
+  tokenHeader = "x-stats-token",
+) {
   const headers = new Headers({ "Content-Type": "application/json", "x-forwarded-for": ip });
-  if (token) headers.set("authorization", `Bearer ${token}`);
-  return new Request("http://localhost/api/stats/contribution", {
+  if (token) headers.set(tokenHeader, tokenHeader === "authorization" ? `Bearer ${token}` : token);
+  if (cookie) headers.set("cookie", cookie);
+  const req = new Request("http://localhost/api/stats/contribution", {
     method,
     headers,
     body: body === undefined ? undefined : JSON.stringify(body),
-  }) as never;
+  }) as Request & { cookies: { get(name: string): { value: string } | undefined } };
+  const sessionToken = cookie?.slice(`${SESSION_COOKIE}=`.length);
+  req.cookies = {
+    get: (name) => (name === SESSION_COOKIE && sessionToken ? { value: sessionToken } : undefined),
+  };
+  return req as never;
 }
 
 const contribution = (monthly: number, usage: number | null = 4) => ({
@@ -71,6 +102,8 @@ async function summary() {
 beforeEach(async () => {
   await resetDatabase();
   resetAllRateLimits();
+  cookie = null;
+  await login();
 });
 
 afterAll(() => closeDb());
@@ -157,5 +190,58 @@ describe("익명 구독 통계", () => {
     const later = new Date(Date.now() + 181 * 24 * 60 * 60 * 1000);
     expect(await pruneStaleContributions(later)).toBe(1);
     expect(await getDb().select().from(statsItems)).toHaveLength(0);
+  });
+
+  it("로그인하지 않으면 새로 참여하지도, 기록을 바꾸지도 못한다", async () => {
+    const token = await participate(contribution(30000));
+    cookie = null;
+    const fresh = await contributionRoute.POST(request("POST", contribution(1000)));
+    expect(fresh.status).toBe(403);
+    expect(await fresh.json()).toMatchObject({ code: "login-required" });
+    const update = await contributionRoute.POST(request("POST", contribution(1000), token));
+    expect(update.status).toBe(403);
+
+    const rows = await getDb().select().from(statsContributors);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].totalMonthlyKrw).toBe(30000);
+  });
+
+  it("로그인하지 않아도 자기 기록은 지울 수 있다", async () => {
+    const token = await participate(contribution(30000));
+    cookie = null;
+    const response = await contributionRoute.DELETE(request("DELETE", undefined, token));
+    expect(response.status).toBe(200);
+    expect(await getDb().select().from(statsContributors)).toHaveLength(0);
+  });
+
+  it("앱처럼 세션을 Authorization에 실어도 통계 토큰과 섞이지 않는다", async () => {
+    const token = await participate(contribution(30000));
+    const sessionToken = cookie!.slice(`${SESSION_COOKIE}=`.length);
+    cookie = null;
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      authorization: `Bearer ${sessionToken}`,
+      "x-stats-token": token,
+    });
+    const req = new Request("http://localhost/api/stats/contribution", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(contribution(52000)),
+    }) as Request & { cookies: { get(name: string): undefined } };
+    req.cookies = { get: () => undefined };
+    expect((await contributionRoute.POST(req as never)).status).toBe(200);
+
+    const rows = await getDb().select().from(statsContributors);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].totalMonthlyKrw).toBe(52000);
+  });
+
+  it("예전 웹 화면이 Authorization에 실은 통계 토큰도 그 기록을 바꾼다", async () => {
+    const token = await participate(contribution(30000));
+    const response = await contributionRoute.POST(
+      request("POST", contribution(52000), token, "10.0.0.1", "authorization"),
+    );
+    expect(response.status).toBe(200);
+    expect(await getDb().select().from(statsContributors)).toHaveLength(1);
   });
 });
