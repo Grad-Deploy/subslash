@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { Subscription } from "@subslash/shared";
+import { POPULAR_SERVICES, type Subscription } from "@subslash/shared";
 import { lastDays, type UsageHistory } from "@lib/usage/history";
+import { ALL_USAGE_PACKAGES, MEASURED_USAGE_PACKAGES, packagesFor } from "@lib/usage/packages";
 import {
   SUGGEST_MIN_COVERED_DAYS,
   dismissUntil,
@@ -11,6 +12,8 @@ const NOW = new Date(2026, 8, 28, 15, 0, 0); // 2026-09-28 15:00 (기기 시간�
 const NETFLIX = "com.netflix.mediaclient";
 const TVING = "net.cj.cjhv.gs.tving";
 const YOUTUBE = "com.google.android.youtube";
+const YOUTUBE_MUSIC = "com.google.android.apps.youtube.music";
+const COUPANG_PLAY = "com.coupang.mobile.play";
 const MIN = 60_000;
 
 /** 최근 n일 모두 기록이 있고, used에 적은 앱을 그날마다 그만큼 쓴 기록. */
@@ -87,6 +90,53 @@ describe("findSubscriptionSuggestions", () => {
   it("무료로도 많이 쓰는 앱(유튜브)은 쓴다는 것으로 묻지 않는다", () => {
     const found = findSubscriptionSuggestions([], history(30, { [YOUTUBE]: 120 * MIN }), {}, NOW);
     expect(found).toEqual([]);
+  });
+
+  it("유튜브 뮤직을 쓰면 유튜브 프리미엄을 묻는다 — 한국에는 뮤직의 무료 요금제가 없다", () => {
+    const found = findSubscriptionSuggestions(
+      [],
+      history(30, { [YOUTUBE]: 120 * MIN, [YOUTUBE_MUSIC]: 30 * MIN }),
+      {},
+      NOW,
+    );
+    expect(ids(found)).toEqual(["youtube-premium"]);
+    expect(found[0]).toMatchObject({ appName: "유튜브 뮤직" });
+    // 유튜브 앱 사용은 세지 않는다(무료로 쓴다).
+    expect(found[0].totals.usedMs).toBe(30 * 30 * MIN);
+
+    // 결합 상품(배민클럽 + 유튜브 프리미엄)으로 받고 있으면 묻지 않는다.
+    const baemin = sub({
+      name: "배민클럽 + 유튜브 프리미엄",
+      cancelUrl: "https://www.youtube.com/paid_memberships",
+    });
+    expect(
+      ids(
+        findSubscriptionSuggestions([baemin], history(30, { [YOUTUBE_MUSIC]: 30 * MIN }), {}, NOW),
+      ),
+    ).not.toContain("youtube-premium");
+  });
+
+  it("쿠팡플레이를 쓰면 쿠팡 와우를 묻되, 무료로도 볼 수 있다고 함께 적는다", () => {
+    const found = findSubscriptionSuggestions(
+      [],
+      history(30, { [COUPANG_PLAY]: 60 * MIN }),
+      {},
+      NOW,
+    );
+    expect(ids(found)).toEqual(["coupang-wow"]);
+    expect(found[0]).toMatchObject({ appName: "쿠팡플레이" });
+    expect(found[0].note).toContain("무료");
+  });
+
+  it("쿠팡플레이는 묻는 데에만 쓰고 와우의 사용 기록으로 재지 않는다", () => {
+    const wow = sub({
+      name: "쿠팡 와우 (쿠팡플레이)",
+      amount: 7890,
+      cancelUrl: POPULAR_SERVICES.find((s) => s.id === "coupang-wow")?.cancelUrl,
+    });
+    expect(packagesFor(wow)).toBeNull();
+    expect(ALL_USAGE_PACKAGES).toContain(COUPANG_PLAY);
+    expect(MEASURED_USAGE_PACKAGES).not.toContain(COUPANG_PLAY);
   });
 
   it("이미 구독 중이면 묻지 않는다 — 결합 상품에 들어 있는 것, 무료 체험 중인 것도", () => {
