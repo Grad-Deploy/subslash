@@ -14,11 +14,19 @@ import {
 /** 줄 아래의 작은 글 — 결제일, 나눠 냄, 해지, 그 기간의 체크인. */
 export function describeReceiptLine(line: ReceiptLine, period: ReceiptPeriod): string {
   const parts: string[] = [];
-  parts.push(
-    period.kind === "month" || line.chargeDates.length === 1
-      ? `${line.chargeDates.map(formatChargeDate).join(", ")} 결제`
-      : `${line.chargeDates.length}회 결제`,
-  );
+  const upcoming = new Set(line.upcomingDates);
+  const paid = line.chargeDates.filter((date) => !upcoming.has(date));
+  if (paid.length > 0) {
+    parts.push(
+      period.kind === "month" || paid.length === 1
+        ? `${paid.map(formatChargeDate).join(", ")} 결제`
+        : `${paid.length}회 결제`,
+    );
+  }
+  // 이번 달에 아직 오지 않은 결제일. 나간 돈과 섞어 적지 않는다.
+  if (line.upcomingDates.length > 0) {
+    parts.push(`${line.upcomingDates.map(formatChargeDate).join(", ")} 결제 예정`);
+  }
   if (line.billingCycle === "yearly") parts.push("연간");
   if (line.shared) parts.push(`나눠 냄 · 카드 ${formatKRW(line.billedKRW)}`);
   if (line.killedOn) parts.push(`${formatChargeDate(line.killedOn)} 해지`);
@@ -35,14 +43,28 @@ export function describeReceiptLine(line: ReceiptLine, period: ReceiptPeriod): s
   return parts.join(" · ");
 }
 
+/** 기간 옆의 표시 — 끝난 기간은 없고, 이번 달 결제 예정이 있으면 '결제 예정 포함', 아니면 '오늘까지'. */
+export function receiptPeriodSuffix(receipt: Receipt): string {
+  if (receipt.isComplete) return "";
+  return receipt.upcomingCount > 0 ? " · 결제 예정 포함" : " · 오늘까지";
+}
+
 /** 영수증 밑의 알림. 빠진 것이 있으면 몇 개가 왜 빠졌는지 말한다. */
 export function receiptFootnotes(receipt: Receipt): string[] {
   const notes = ["등록한 구독 기록으로 계산했어요. 카드 명세서와 다를 수 있어요."];
-  if (!receipt.isComplete) notes.push("아직 끝나지 않은 기간이라 오늘까지 결제된 것만 적었어요.");
+  if (!receipt.isComplete) {
+    notes.push(
+      receipt.upcomingCount > 0
+        ? "아직 끝나지 않은 기간이에요. 지금 구독 중인데 이번 달 결제일이 오지 않은 것은 '결제 예정'으로 넣었어요."
+        : "아직 끝나지 않은 기간이라 오늘까지 결제된 것만 적었어요.",
+    );
+  }
   const { undated, beforeRegistration, trial } = receipt.excluded;
   if (undated > 0) notes.push(`결제 월을 모르는 연간 구독 ${undated}개는 넣지 못했어요.`);
   if (beforeRegistration > 0) {
-    notes.push(`등록하기 전의 결제일은 넣지 않았어요(${beforeRegistration}개).`);
+    notes.push(
+      `등록한 달보다 앞선 달은 구독 중이었는지 몰라 넣지 않았어요(${beforeRegistration}개).`,
+    );
   }
   if (trial > 0) notes.push(`무료 체험 중이던 결제일은 뺐어요(${trial}개).`);
   if (receipt.defendedUnknownCount > 0) {

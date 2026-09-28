@@ -13,15 +13,18 @@ import {
 /**
  * 한 달·한 해의 구독 영수증.
  *
- * 앱은 카드 명세서를 갖고 있지 않다. 그래서 영수증의 줄은 "기록으로 보면 이날 결제됐을 것"이다 —
- * 구독 중이었고, 결제일이 그 기간 안에 있었고, 체험 중이 아니었던 것. 화면은 이것이 카드 명세서가
- * 아니라고 적는다. 그 밖의 것은 줄로 만들지 않고 따로 센다.
+ * 앱은 카드 명세서를 갖고 있지 않다. 그래서 영수증의 줄은 "기록으로 보면 그 달 구독 중이라 결제됐을
+ * 것"이다 — 그 달에 구독 중이었고(해지 전), 결제일이 그 기간 안에 있었고, 체험 중이 아니었던 것. 화면은
+ * 이것이 카드 명세서가 아니라고 적는다. 그 밖의 것은 줄로 만들지 않고 따로 센다.
  *
+ * - 등록한 달의 결제는 결제일이 등록일보다 앞서도 넣는다. 구독 중이라고 등록한 것이라 그 달 결제는 이미
+ *   나갔다고 본다 — 예전에는 결제일 뒤에 등록한 구독이 이번 달 영수증에 하나도 나오지 않았다.
+ * - 등록한 달보다 앞선 달: 그때도 구독 중이었는지 앱은 모른다(`beforeRegistration`). 넣으면 처음 구독한
+ *   사람에게 내지 않은 돈을 청구한다.
  * - 결제 월을 모르는 연간 구독: 어느 달에 결제됐는지 모른다(`undated`).
- * - 등록하기 전의 결제일: 그때도 구독 중이었는지 앱은 모른다(`beforeRegistration`). 넣으면 등록할 때
- *   처음 구독한 사람에게 내지 않은 돈을 청구한다.
  * - 체험 중이던 결제일: 카드에서 나간 돈이 없다(`trial`).
- * - 아직 오지 않은 결제일: 영수증은 이미 일어난 것만 적는다. 이번 달은 '지금까지'다.
+ * - 이번 달에 아직 오지 않은 결제일: 지금 구독 중이면 '결제 예정'으로 넣는다(`upcomingDates`). 다음 달
+ *   이후는 넣지 않는다.
  *
  * 금액은 내 몫(나눠 내면 나눈 뒤, 세금 포함)을 사용자 환율로 원 환산한 값이다. 지출 합계
  * (`sumMyMonthlyKRW`)와 같은 기준이다.
@@ -34,8 +37,10 @@ export interface ReceiptLine {
   subscriptionId: string;
   name: string;
   iconUrl?: string;
-  /** 이 기간에 결제된 날들(`YYYY-MM-DD`), 이른 순. */
+  /** 이 기간의 결제일(`YYYY-MM-DD`), 이른 순. 결제 예정인 날(`upcomingDates`)도 들어 있다. */
   chargeDates: string[];
+  /** 그중 아직 오지 않은 이번 달 결제일. 지금 구독 중인 구독만. */
+  upcomingDates: string[];
   /** 내 몫 합계(원). */
   amountKRW: number;
   /** 카드에 찍힌 금액 합계(원). 나눠 내지 않으면 `amountKRW`와 같다. */
@@ -60,6 +65,8 @@ export interface Receipt {
   totalKRW: number;
   billedTotalKRW: number;
   chargeCount: number;
+  /** 그중 결제 예정(이번 달에 아직 오지 않은 결제일) 수. */
+  upcomingCount: number;
   /** 체크인이 있는 줄 중, 1회 단가가 가장 높은 것. 비교할 줄이 둘 이상일 때만. */
   priciestPerUse: ReceiptLine | null;
   /** 해지 덕분에 이 기간에 나가지 않은 돈(원). 결제일이 지난 것만. */
@@ -71,7 +78,7 @@ export interface Receipt {
   excluded: {
     /** 결제 월을 모르는 연간 구독 수. */
     undated: number;
-    /** 등록하기 전의 결제일이 있던 구독 수. */
+    /** 등록한 달보다 앞선 달의 결제일이 있던 구독 수. */
     beforeRegistration: number;
     /** 체험 중이던 결제일이 있던 구독 수. */
     trial: number;
@@ -153,6 +160,8 @@ export function buildReceipt(
   now: Date = new Date(),
 ): Receipt {
   const today = startOfDay(now);
+  const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
   const lines: ReceiptLine[] = [];
   const excluded = { undated: 0, beforeRegistration: 0, trial: 0 };
 
@@ -167,20 +176,30 @@ export function buildReceipt(
     }
 
     const registered = dayOf(sub.createdAt);
+    // 등록한 달의 1일. 그 달의 결제는 결제일이 등록일보다 앞서도 구독 중이던 것으로 본다.
+    const registeredMonth = registered
+      ? new Date(registered.getFullYear(), registered.getMonth(), 1)
+      : null;
     const killed = sub.status === "killed" ? dayOf(sub.killedAt) : null;
     // 해지했다는데 언제인지 모르면 어느 결제가 해지 뒤였는지 모른다. 줄을 만들지 않는다.
     if (sub.status === "killed" && !killed) continue;
 
     const chargeDates: Date[] = [];
+    const upcomingDates: Date[] = [];
     let hadBeforeRegistration = false;
     let hadTrial = false;
 
     for (const { year, monthIndex } of monthsOf(period)) {
       const charge = chargeDateIn(sub, year, monthIndex);
-      if (!charge || charge > today) continue;
+      if (!charge) continue;
+      // 아직 오지 않은 결제일은 이번 달이고 지금 구독 중일 때만 '결제 예정'으로 넣는다.
+      const upcoming = charge > today;
+      if (upcoming && (sub.status !== "active" || charge < thisMonth || charge >= nextMonth)) {
+        continue;
+      }
       // 해지한 날의 결제일은 지킨 것으로 센다(getMyMonthDefendedAmountKRW와 같은 기준).
       if (killed && killed <= charge) continue;
-      if (registered && charge < registered) {
+      if (registeredMonth && charge < registeredMonth) {
         hadBeforeRegistration = true;
         continue;
       }
@@ -189,6 +208,7 @@ export function buildReceipt(
         continue;
       }
       chargeDates.push(charge);
+      if (upcoming) upcomingDates.push(charge);
     }
 
     if (hadBeforeRegistration) excluded.beforeRegistration += 1;
@@ -207,6 +227,7 @@ export function buildReceipt(
       name: sub.name,
       iconUrl: sub.iconUrl,
       chargeDates: chargeDates.map(dateOnly),
+      upcomingDates: upcomingDates.map(dateOnly),
       amountKRW: perCharge * chargeDates.length,
       billedKRW: billedPerCharge * chargeDates.length,
       shared: isShared(sub),
@@ -258,6 +279,7 @@ export function buildReceipt(
     totalKRW: lines.reduce((total, line) => total + line.amountKRW, 0),
     billedTotalKRW: lines.reduce((total, line) => total + line.billedKRW, 0),
     chargeCount: lines.reduce((total, line) => total + line.chargeDates.length, 0),
+    upcomingCount: lines.reduce((total, line) => total + line.upcomingDates.length, 0),
     priciestPerUse,
     defendedKRW,
     defendedUnknownCount,
@@ -289,13 +311,14 @@ export function formatChargeDate(date: string): string {
  */
 export function formatReceiptText(receipt: Receipt): string {
   const title = `SubSlash 구독 영수증 · ${formatReceiptPeriod(receipt.period)}${
-    receipt.isComplete ? "" : " (오늘까지)"
+    receipt.isComplete ? "" : receipt.upcomingCount > 0 ? " (결제 예정 포함)" : " (오늘까지)"
   }`;
   const lines = [title, "-".repeat(28)];
   if (receipt.lines.length === 0) lines.push("결제된 구독이 없어요");
   for (const line of receipt.lines) {
     const count = line.chargeDates.length > 1 ? ` ×${line.chargeDates.length}` : "";
-    lines.push(`${line.name}${count}  ${formatKRW(line.amountKRW)}`);
+    const upcoming = line.upcomingDates.length > 0 ? " (결제 예정)" : "";
+    lines.push(`${line.name}${count}${upcoming}  ${formatKRW(line.amountKRW)}`);
   }
   lines.push("-".repeat(28));
   lines.push(`합계(내 몫)  ${formatKRW(receipt.totalKRW)}`);
