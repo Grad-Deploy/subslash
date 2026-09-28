@@ -86,13 +86,13 @@ export const usePhoneUsageStore = create<PhoneUsageState>((set, get) => ({
         return;
       }
       const now = new Date();
-      const days = daysToQuery(history, now);
+      const days = daysToQuery(history, now, ALL_USAGE_PACKAGES);
       const [result, installed] = await Promise.all([
         queryUsage(ALL_USAGE_PACKAGES, days),
         installedPackages(ALL_USAGE_PACKAGES),
       ]);
       if (result) {
-        history = mergeUsage(history, result, days, now);
+        history = mergeUsage(history, result, days, now, ALL_USAGE_PACKAGES);
         writeDeviceValue(HISTORY_KEY, JSON.stringify(history));
       }
       set({ status: "on", history, installed, lastCheckedAt: Date.now() });

@@ -27,6 +27,13 @@ export interface UsageHistory {
    * 기록은 다음에 운영체제가 남겨 둔 만큼(최대 35일)을 다시 읽어 덮는다. 그보다 오래된 날은 고칠 수 없다.
    */
   measureVersion?: number;
+  /**
+   * 패키지 → 이날부터 그 앱을 읽었다(YYYY-MM-DD, 처음부터 읽었으면 ""). 연결표에 앱을 더하면 그 앱은 그날까지의
+   * 칸에 없는데, 칸이 있는 날의 빠진 앱은 0으로 읽혀 '안 썼다'가 된다. 그래서 앱마다 읽기 시작한 날을 적고, 그
+   * 앞의 날은 그 앱에 대해 모른다고 본다(totalsFor). 이 칸이 생기기 전의 기록은 LATE_PACKAGES 밖의 앱을 처음부터
+   * 읽은 것으로 본다.
+   */
+  packagesSince?: Record<string, string>;
 }
 
 /**
@@ -36,6 +43,19 @@ export interface UsageHistory {
 export const MEASURE_VERSION = 2;
 
 export const EMPTY_HISTORY: UsageHistory = { v: 1, days: {}, syncedAt: null };
+
+/**
+ * packagesSince가 생기기 전에 연결표에 더해진 앱. 그 전의 기록에는 이 앱이 없으므로, 그런 기록에서는 이 앱을
+ * 새로 더한 앱처럼 다시 읽는다. 앞으로 더하는 앱은 packagesSince가 알아서 다루므로 여기에 적지 않는다.
+ * - 쿠팡플레이(2026-09-28, 쿠팡 와우를 묻는 데에만 쓴다)
+ */
+export const LATE_PACKAGES: readonly string[] = ["com.coupang.mobile.play"];
+
+/** 이 앱을 읽기 시작한 날. 처음부터 읽었으면 "", 아직 읽은 적이 없으면 null. */
+export function packageSince(history: UsageHistory, pkg: string): string | null {
+  if (history.packagesSince) return history.packagesSince[pkg] ?? null;
+  return LATE_PACKAGES.includes(pkg) ? null : "";
+}
 
 /** 이보다 오래된 날은 지운다(1년 추이 + 여유). */
 export const KEEP_DAYS = 400;
@@ -73,6 +93,9 @@ export function parseHistory(raw: string | null): UsageHistory {
       ...(typeof parsed.measureVersion === "number"
         ? { measureVersion: parsed.measureVersion }
         : {}),
+      ...(parsed.packagesSince && typeof parsed.packagesSince === "object"
+        ? { packagesSince: parsed.packagesSince }
+        : {}),
     };
   } catch {
     return EMPTY_HISTORY;
@@ -80,11 +103,16 @@ export function parseHistory(raw: string | null): UsageHistory {
 }
 
 /**
- * 다음에 읽을 날 수. 처음이거나 재는 방식이 바뀌었으면(MEASURE_VERSION) 운영체제가 남겨 둔 만큼(최대 35일),
- * 아니면 지난번 이후 + 하루.
+ * 다음에 읽을 날 수. 처음이거나 재는 방식이 바뀌었거나(MEASURE_VERSION) 아직 읽은 적 없는 앱이 있으면 운영체제가
+ * 남겨 둔 만큼(최대 35일), 아니면 지난번 이후 + 하루.
  */
-export function daysToQuery(history: UsageHistory, now: Date): number {
+export function daysToQuery(
+  history: UsageHistory,
+  now: Date,
+  packages: readonly string[] = [],
+): number {
   if (!history.syncedAt || history.measureVersion !== MEASURE_VERSION) return 35;
+  if (packages.some((pkg) => packageSince(history, pkg) === null)) return 35;
   const since = (now.getTime() - Date.parse(history.syncedAt)) / 86_400_000;
   return Math.max(2, Math.min(35, Math.ceil(since) + 1));
 }
@@ -111,6 +139,8 @@ export function mergeUsage(
   },
   queriedDays: number,
   now: Date,
+  /** 이번에 읽은 앱들. 처음 읽은 앱은 이번에 온전히 읽은 첫날부터 안다고 적는다. */
+  packages: readonly string[] = [],
 ): UsageHistory {
   const requested = lastDays(now, queriedDays);
   let firstComplete = 0;
@@ -146,12 +176,23 @@ export function mergeUsage(
   if (!withService) playbackFrom = undefined;
   else if (!playbackFrom && complete.length > 0) playbackFrom = complete[0];
 
+  let packagesSince = history.packagesSince;
+  if (packages.length > 0) {
+    packagesSince = { ...(packagesSince ?? {}) };
+    for (const pkg of packages) {
+      const since = packageSince(history, pkg);
+      if (since !== null) packagesSince[pkg] = since;
+      else if (complete.length > 0) packagesSince[pkg] = complete[0];
+    }
+  }
+
   return {
     v: 1,
     days,
     syncedAt: now.toISOString(),
     ...(playbackFrom ? { playbackFrom } : {}),
     measureVersion: MEASURE_VERSION,
+    ...(packagesSince ? { packagesSince } : {}),
   };
 }
 
@@ -165,7 +206,7 @@ export const ACTIVE_DAY_MS = 5 * 60_000;
 export interface UsageTotals {
   ms: number;
   opens: number;
-  /** 이 기간 중 기록이 있는 날 수. 0이면 모른다. */
+  /** 이 기간 중 기록이 있는 날 수(모든 앱을 읽은 날만). 0이면 모른다. */
   coveredDays: number;
   /** 쓴 날 수. 그날 모두 합쳐 ACTIVE_DAY_MS(5분) 이상 쓴 날만 센다. */
   activeDays: number;
@@ -197,9 +238,12 @@ export function totalsFor(
   let listenMs: number | null = 0;
   let usedMs = 0;
   const byPackage: Record<string, { usedMs: number; opens: number }> = {};
+  // 앱을 읽기 시작하기 전의 날은 그 앱에 대해 모른다 — 칸이 있어도 0으로 읽지 않고 기록이 없는 날로 둔다.
+  const since = packages.map((pkg) => packageSince(history, pkg));
   for (const date of dates) {
     const day = history.days[date];
     if (!day) continue;
+    if (since.some((from) => from === null || from > date)) continue;
     coveredDays += 1;
     const playbackKnown = !!history.playbackFrom && date >= history.playbackFrom;
     if (!playbackKnown) listenMs = null;
