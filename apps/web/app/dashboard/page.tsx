@@ -44,6 +44,7 @@ import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
+import { usePhoneUsageStore } from "../../hooks/usePhoneUsage";
 import { Spinner } from "../../components/ui/spinner";
 import { AppStartChecklist } from "../../components/app-start/AppStartChecklist";
 import { AppServicePicker } from "../../components/app-start/AppServicePicker";
@@ -113,6 +114,13 @@ const AppSubscriptionSuggestions = IS_APP_BUILD
       { ssr: false },
     )
   : null;
+// 첫 화면의 '폰 사용 기록으로 찾기'(안드로이드 앱 전용). 구독 추가 메뉴(AppAddButton)의 것과 같다.
+const AppUsageFindSheet = IS_APP_BUILD
+  ? dynamic(
+      () => import("../../components/usage/app/AppUsageFindSheet").then((m) => m.AppUsageFindSheet),
+      { ssr: false },
+    )
+  : null;
 // 결제 달력(앱은 상단 아이콘 + 여기 '다음 결제' 한 줄), 구독 추가 + 버튼(앱 전용).
 const AppNextBilling = IS_APP_BUILD
   ? dynamic(
@@ -169,6 +177,9 @@ export default function Dashboard() {
   const router = useRouter();
   const [reminderSettings] = useLocalReminderSettings();
   const rate = useExchangeRate();
+  // 폰 사용 기록을 읽을 수 없는 곳(웹·iOS)에는 '폰 사용 기록으로 찾기'를 두지 않는다.
+  const phoneUsageStatus = usePhoneUsageStore((state) => state.status);
+  const [usageFindOpen, setUsageFindOpen] = useState(false);
 
   const mounted = useIsClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -415,7 +426,11 @@ export default function Dashboard() {
       )}
 
       {AppAddButton && !(startFlow && isFirstVisit) && (
-        <AppAddButton onManual={() => openAdd()} onPaste={() => setIsAutoImportOpen(true)} />
+        <AppAddButton
+          onManual={() => openAdd()}
+          onPaste={() => setIsAutoImportOpen(true)}
+          onPickPreset={(preset) => openAdd({ preset })}
+        />
       )}
 
       {/* Action Bar */}
@@ -495,6 +510,11 @@ export default function Dashboard() {
                 onCustom={() => openAdd({ custom: true })}
                 onPaste={() => setIsAutoImportOpen(true)}
                 onSample={IS_APP_BUILD ? undefined : handleLoadDemo}
+                onUsage={
+                  AppUsageFindSheet && phoneUsageStatus !== "unsupported"
+                    ? () => setUsageFindOpen(true)
+                    : undefined
+                }
               />
             </>
           ) : AppDecisionFold && queue.length > 0 ? (
@@ -627,6 +647,14 @@ export default function Dashboard() {
           </aside>
         )}
       </div>
+
+      {AppUsageFindSheet && (
+        <AppUsageFindSheet
+          open={usageFindOpen}
+          onClose={() => setUsageFindOpen(false)}
+          onPick={(preset) => openAdd({ preset })}
+        />
+      )}
 
       {/* SubForm Modal for Adding */}
       <Dialog open={isAddOpen} onOpenChange={closeAdd}>

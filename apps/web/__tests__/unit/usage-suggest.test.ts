@@ -76,6 +76,14 @@ describe("findSubscriptionSuggestions", () => {
     expect(found).toEqual([]);
   });
 
+  it("사용자가 직접 찾을 때는 기록이 며칠뿐이어도 찾는다", () => {
+    const short = history(3, { [NETFLIX]: 40 * MIN });
+    expect(findSubscriptionSuggestions([], short, {}, NOW)).toEqual([]);
+    const found = findSubscriptionSuggestions([], short, {}, NOW, 1);
+    expect(ids(found)).toEqual(["netflix"]);
+    expect(found[0].totals.coveredDays).toBe(3);
+  });
+
   it("무료로도 많이 쓰는 앱(유튜브)은 쓴다는 것으로 묻지 않는다", () => {
     const found = findSubscriptionSuggestions([], history(30, { [YOUTUBE]: 120 * MIN }), {}, NOW);
     expect(found).toEqual([]);

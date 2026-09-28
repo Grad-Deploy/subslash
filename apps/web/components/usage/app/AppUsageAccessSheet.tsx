@@ -38,11 +38,16 @@ export function AppUsageAccessSheet({
   open,
   onClose,
   onLater,
+  title,
+  description,
 }: {
   open: boolean;
   onClose: () => void;
   /** '직접 입력할게요'. 주지 않으면 닫기와 같다. */
   onLater?: () => void;
+  /** 이 안내를 연 곳에 맞춘 제목·설명. 주지 않으면 체크인을 채우는 안내다. */
+  title?: React.ReactNode;
+  description?: React.ReactNode;
 }) {
   const { status } = usePhoneUsage();
   const [waiting, setWaiting] = useState(false);
@@ -70,13 +75,21 @@ export function AppUsageAccessSheet({
       <div className="space-y-5 pt-1">
         <div className="space-y-2 text-center">
           <h2 className="text-lg font-black leading-snug tracking-tight">
-            폰 사용 기록으로
-            <br />
-            체크인을 채울까요?
+            {title ?? (
+              <>
+                폰 사용 기록으로
+                <br />
+                체크인을 채울까요?
+              </>
+            )}
           </h2>
           <p className="text-sm text-muted-foreground">
-            안드로이드 설정의 &lsquo;사용 기록 액세스&rsquo;를 켜면, 구독한 서비스 앱을 얼마나 열고
-            썼는지 불러와요.
+            {description ?? (
+              <>
+                안드로이드 설정의 &lsquo;사용 기록 액세스&rsquo;를 켜면, 구독한 서비스 앱을 얼마나
+                열고 썼는지 불러와요.
+              </>
+            )}
           </p>
         </div>
 
