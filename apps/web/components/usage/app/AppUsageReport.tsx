@@ -9,7 +9,7 @@ import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import { firstRecordedDay, formatDuration, monthlyTotals } from "@lib/usage/history";
-import { ALL_USAGE_PACKAGES, packageBreakdown, packagesFor } from "@lib/usage/packages";
+import { MEASURED_USAGE_PACKAGES, packageBreakdown, packagesFor } from "@lib/usage/packages";
 import {
   LEVEL_STYLE,
   RANGE_DAYS,
@@ -131,7 +131,7 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
 
   const months = useMemo(() => {
     const packages = [...new Set(mapped.flatMap((sub) => packagesFor(sub) ?? []))];
-    return monthlyTotals(history, packages.length > 0 ? packages : ALL_USAGE_PACKAGES, now);
+    return monthlyTotals(history, packages.length > 0 ? packages : MEASURED_USAGE_PACKAGES, now);
   }, [mapped, history, now]);
 
   // 카드는 기간 탭과 관계없이 늘 최근 30일이다(체크인과 같은 기준).

@@ -106,7 +106,7 @@ export function SuggestionCard({
   /** '내가 내지 않아요'. 주지 않으면 그 버튼과 안내를 두지 않는다(사용자가 직접 찾은 목록). */
   onDismiss?: () => void;
 }) {
-  const { preset, totals, killed, bundles } = suggestion;
+  const { preset, totals, killed, bundles, appName, note } = suggestion;
   const name = preset.nameKo || preset.name;
   // 기록이 30일을 다 덮지 못했으면 덮은 날만큼이라고 적는다.
   const period = totals.coveredDays >= 30 ? "최근 30일" : `최근 ${totals.coveredDays}일`;
@@ -123,9 +123,10 @@ export function SuggestionCard({
             <span className="text-[11px] font-semibold text-muted-foreground">폰 기록</span>
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            {period} 이 폰에서 {formatDuration(totals.usedMs)}, {totals.activeDays}일 썼어요.{" "}
+            {period} 이 폰{appName ? `의 ${appName} 앱` : ""}에서 {formatDuration(totals.usedMs)},{" "}
+            {totals.activeDays}일 썼어요.{" "}
             {killed ? "다시 구독했다면 새로 등록해요." : "등록하지 않은 서비스예요."} 가족·친구와
-            나눠 내면 등록할 때 인원을 적어요.
+            나눠 내면 등록할 때 인원을 적어요.{note ? ` ${note}` : ""}
           </p>
         </div>
       </div>
