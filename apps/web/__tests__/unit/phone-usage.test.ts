@@ -12,10 +12,16 @@ import {
   lastDays,
   mergeUsage,
   monthlyTotals,
+  packageSince,
   totalsFor,
   type UsageHistory,
 } from "@lib/usage/history";
-import { ALL_USAGE_PACKAGES, packageBreakdown, packagesFor } from "@lib/usage/packages";
+import {
+  ALL_USAGE_PACKAGES,
+  MEASURED_USAGE_PACKAGES,
+  packageBreakdown,
+  packagesFor,
+} from "@lib/usage/packages";
 import {
   GOOD_AT,
   MIN_HOURLY_MS,
@@ -254,7 +260,7 @@ describe("totalsFor · monthlyTotals", () => {
   });
 
   it("달별 합계는 12칸이고, 기록 없는 달은 coveredDays 0", () => {
-    const months = monthlyTotals(history, ALL_USAGE_PACKAGES, NOW);
+    const months = monthlyTotals(history, MEASURED_USAGE_PACKAGES, NOW);
     expect(months).toHaveLength(12);
     expect(months[11].month).toBe("2026-09");
     expect(months[11].totals.ms).toBe(180_000);
@@ -383,6 +389,68 @@ describe("helpers", () => {
     // 판이 없는 기록(Gemini를 bard 앱으로만 재던 때)
     expect(daysToQuery({ ...EMPTY_HISTORY, syncedAt: yesterday }, NOW)).toBe(35);
     expect(daysToQuery({ ...EMPTY_HISTORY, syncedAt: yesterday, measureVersion: 1 }, NOW)).toBe(35);
+  });
+
+  describe("연결표에 나중에 더한 앱(쿠팡플레이)", () => {
+    const COUPANG_PLAY = "com.coupang.mobile.play";
+    const NETFLIX_PKG = "com.netflix.mediaclient";
+    const yesterday = new Date(NOW.getTime() - 86_400_000).toISOString();
+    // 쿠팡플레이를 읽기 전에 쌓은 30일치 기록(날짜 칸은 있고 쿠팡플레이는 없다).
+    const legacy: UsageHistory = {
+      v: 1,
+      days: Object.fromEntries(
+        lastDays(NOW, 30).map((date) => [date, { [NETFLIX_PKG]: [60 * 60_000, 1] }]),
+      ),
+      syncedAt: yesterday,
+      measureVersion: MEASURE_VERSION,
+    };
+
+    it("그 앱을 읽기 전의 날은 0이 아니라 모른다", () => {
+      expect(packageSince(legacy, COUPANG_PLAY)).toBeNull();
+      expect(packageSince(legacy, NETFLIX_PKG)).toBe("");
+      expect(totalsFor(legacy, [COUPANG_PLAY], lastDays(NOW, 30)).coveredDays).toBe(0);
+      expect(totalsFor(legacy, [NETFLIX_PKG], lastDays(NOW, 30)).coveredDays).toBe(30);
+    });
+
+    it("어제 읽었어도 처음 보는 앱이 있으면 35일을 다시 읽는다", () => {
+      expect(daysToQuery(legacy, NOW, MEASURED_USAGE_PACKAGES)).toBe(2);
+      expect(daysToQuery(legacy, NOW, ALL_USAGE_PACKAGES)).toBe(35);
+    });
+
+    it("다시 읽으면 온전히 읽은 첫날부터 그 앱을 안다고 적고, 다음부터는 하루치만 읽는다", () => {
+      const from = lastDays(NOW, 35)[0];
+      const merged = mergeUsage(
+        legacy,
+        {
+          from: at(from),
+          dataFrom: at(from),
+          days: lastDays(NOW, 35).map((date) => ({
+            date,
+            pkg: COUPANG_PLAY,
+            foregroundMs: 30 * 60_000,
+            opens: 1,
+          })),
+        },
+        35,
+        NOW,
+        ALL_USAGE_PACKAGES,
+      );
+      expect(merged.packagesSince?.[COUPANG_PLAY]).toBe(from);
+      expect(merged.packagesSince?.[NETFLIX_PKG]).toBe("");
+      const totals = totalsFor(merged, [COUPANG_PLAY], lastDays(NOW, 30));
+      expect(totals.coveredDays).toBe(30);
+      expect(totals.usedMs).toBe(30 * 30 * 60_000);
+      expect(daysToQuery(merged, NOW, ALL_USAGE_PACKAGES)).toBe(2);
+    });
+
+    it("앞으로 연결표에 더하는 앱도 읽은 적이 없으면 모르고 다시 읽는다", () => {
+      const tracked: UsageHistory = {
+        ...legacy,
+        packagesSince: Object.fromEntries(ALL_USAGE_PACKAGES.map((pkg) => [pkg, ""])),
+      };
+      expect(daysToQuery(tracked, NOW, [...ALL_USAGE_PACKAGES, "com.example.new"])).toBe(35);
+      expect(totalsFor(tracked, ["com.example.new"], lastDays(NOW, 30)).coveredDays).toBe(0);
+    });
   });
 
   it("mergeUsage: 다시 읽은 기록에 지금 판을 적어 다음부터는 하루치만 읽는다", () => {
