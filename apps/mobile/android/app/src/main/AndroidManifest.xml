@@ -78,5 +78,7 @@
         <package android:name="ai.perplexity.app.android" />
         <package android:name="kr.co.millie.millieshelf" />
         <package android:name="com.initialcoms.ridi" />
+        <!-- 구독 중인지 묻는 데에만 쓴다(SUGGEST_ONLY_PACKAGES). -->
+        <package android:name="com.coupang.mobile.play" />
     </queries>
 </manifest>
