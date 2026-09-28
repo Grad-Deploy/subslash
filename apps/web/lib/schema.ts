@@ -356,6 +356,12 @@ export const gmailDiscoveries = sqliteTable(
     /** `auto`: 확인 없이 등록해도 되는 후보, `review`: 사용자가 골라야 하는 후보. */
     tier: text("tier").notNull(),
     createdAt: text("created_at").notNull(),
+    /**
+     * 같은 서비스의 결제 메일들(`[{ date: "YYYY-MM-DD", amount }]`의 JSON, 이른 순). 받은 날과 금액만 두고
+     * 제목·본문은 두지 않는다. `GMAIL_CHARGE_HISTORY_STARTS_ON` 전에는 null. 옛 영수증이 나중에 와도
+     * 합친다(`receiptDate`처럼 덮지 않는다).
+     */
+    chargeHistory: text("charge_history"),
   },
   (table) => ({
     accountKeyIdx: uniqueIndex("gmail_discoveries_account_key_idx").on(

@@ -26,6 +26,10 @@ import {
   currentCancelUrl,
   currentCategory,
   parseDateOnly,
+  chargeHistoryTarget,
+  mergeChargeHistory,
+  type ChargeRecord,
+  type Currency,
 } from "@subslash/shared";
 import {
   DEFAULT_EXCHANGE_RATE_SETTING,
@@ -341,6 +345,14 @@ interface SubSlashStore {
    * 적을 때 옆에 보이는 근거일 뿐 체크인이 아니다. 체험 중에는 적지 않는다(화면의 목록이 샘플이다).
    */
   recordOrderEvidence: (counts: OrderCount[]) => void;
+  /**
+   * Gmail 가져오기에서 찾은 결제 메일들을 같은 서비스(이름·통화)의 구독에 날짜별로 합쳐 적는다
+   * (utils/chargeHistory). 이미 등록한 구독에도 적는다 — 영수증이 등록하기 전 달을 채우는 근거다.
+   * 맞는 구독이 없는 후보는 버린다. 체험 중에는 적지 않는다(화면의 목록이 샘플이다).
+   */
+  recordChargeHistory: (
+    found: { name: string; currency: Currency; chargeHistory?: ChargeRecord[] }[],
+  ) => void;
   deleteSubscription: (id: string) => void;
   /** 여러 구독을 한 번에 지운다(체크인 기록도). 절약 현황에서도 빠진다. */
   deleteSubscriptions: (ids: string[]) => void;
@@ -593,6 +605,26 @@ export const useStore = create<SubSlashStore>()(
             const found = counts.find((count) => count.presetId === presetId);
             return found
               ? { ...sub, orderEvidence: { count: found.count, since: found.since, checkedAt } }
+              : sub;
+          }),
+        }));
+      },
+      recordChargeHistory: (found) => {
+        if (get().demo) return;
+        const incoming = new Map<string, ChargeRecord[]>();
+        const subscriptions = get().subscriptions;
+        for (const item of found) {
+          if (!item.chargeHistory?.length) continue;
+          const target = chargeHistoryTarget(subscriptions, item);
+          if (!target) continue;
+          incoming.set(target.id, [...(incoming.get(target.id) ?? []), ...item.chargeHistory]);
+        }
+        if (incoming.size === 0) return;
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) => {
+            const records = incoming.get(sub.id);
+            return records
+              ? { ...sub, chargeHistory: mergeChargeHistory(sub.chargeHistory, records) }
               : sub;
           }),
         }));
