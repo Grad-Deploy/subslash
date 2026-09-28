@@ -707,6 +707,10 @@ export default function SubscriptionsPage() {
           <AppAddButton
             onManual={() => setIsAddOpen(true)}
             onPaste={() => setIsAutoImportOpen(true)}
+            onPickPreset={(preset) => {
+              setSelectedPreset(preset);
+              setIsAddOpen(true);
+            }}
           />
         )
       ) : (
