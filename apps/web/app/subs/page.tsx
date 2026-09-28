@@ -171,6 +171,8 @@ export default function SubscriptionsPage() {
   const mounted = useIsClient();
   const [tab, setTab] = useState<"active" | "killed">("active");
   const [isAddOpen, setIsAddOpen] = useState(false);
+  // 앱의 구독 추가 메뉴(AppAddButton). 빈 목록의 '구독 추가'도 + 버튼과 같은 메뉴를 연다.
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
   // 앱: 구독 중 목록의 순서(결제일·금액·가성비).
   const [appSort, setAppSort] = useState<AppSubsSort>("billing");
   // 앱: 방금 등록한 구독. 있으면 등록 창이 사용 횟수 묻기로 바뀐다.
@@ -542,7 +544,10 @@ export default function SubscriptionsPage() {
                   <Receipt className="mx-auto size-9 text-muted-foreground" aria-hidden />
                   <p className="font-bold">구독 중인 서비스가 없어요</p>
                   <p className="text-xs text-muted-foreground">구독을 등록해 보세요.</p>
-                  <Button size="sm" onClick={() => setIsAddOpen(true)}>
+                  <Button
+                    size="sm"
+                    onClick={() => (AppAddButton ? setAddMenuOpen(true) : setIsAddOpen(true))}
+                  >
                     + 구독 추가
                   </Button>
                 </div>
@@ -711,6 +716,8 @@ export default function SubscriptionsPage() {
               setSelectedPreset(preset);
               setIsAddOpen(true);
             }}
+            menuOpen={addMenuOpen}
+            onMenuOpenChange={setAddMenuOpen}
           />
         )
       ) : (
