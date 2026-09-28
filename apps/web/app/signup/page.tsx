@@ -18,8 +18,8 @@ export default function SignupPage() {
       </div>
 
       <div className="p-5 sm:p-6 border rounded-2xl bg-card shadow-sm space-y-4">
-        <SocialLoginButtons mode="signup" />
         <SignupForm />
+        <SocialLoginButtons mode="signup" />
       </div>
 
       <div className="p-4 border border-dashed rounded-2xl space-y-2 text-xs text-muted-foreground">

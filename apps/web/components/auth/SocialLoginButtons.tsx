@@ -37,6 +37,8 @@ async function makeVerifier(): Promise<{ verifier: string; challenge: string }> 
  *
  * 웹은 이 탭이 제공자로 갔다가 돌아온다. 앱은 인앱 브라우저로 열고, 닫히면 앱이 만든 비밀값으로 세션을
  * 받아 온다(api/auth/oauth/claim) — 인앱 브라우저의 쿠키는 앱으로 오지 않는다.
+ *
+ * 아이디 로그인·가입 폼 **아래**에 둔다. 위의 구분선('또는')도 이 칸의 것이라, 제공자가 없으면 함께 사라진다.
  */
 export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
@@ -125,6 +127,11 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
 
   return (
     <div className="space-y-3">
+      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        또는 간편 {mode === "signup" ? "가입" : "로그인"}
+        <span className="h-px flex-1 bg-border" />
+      </div>
       {mode === "signup" && (
         <label className="flex items-center gap-2 rounded-xl border bg-card px-3.5 py-2.5 text-sm cursor-pointer">
           <input
@@ -165,11 +172,6 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
         처음이면 그 계정으로 가입돼요. 받는 것은 이메일과 회원 번호(되돌릴 수 없는 형태로
         저장)뿐이에요.
       </p>
-      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-        <span className="h-px flex-1 bg-border" />
-        또는 아이디로
-        <span className="h-px flex-1 bg-border" />
-      </div>
     </div>
   );
 }
