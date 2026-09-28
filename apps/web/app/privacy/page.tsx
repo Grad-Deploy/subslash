@@ -6,6 +6,7 @@ import {
   STATS_AGE_BAND_STARTS_ON,
   DEVICE_USAGE_STARTS_ON,
   GMAIL_AUTO_IMPORT_STARTS_ON,
+  GMAIL_CHARGE_HISTORY_STARTS_ON,
   SOCIAL_LOGIN_STARTS_ON,
   PRIVACY_EFFECTIVE_DATE,
   PRIVACY_OFFICER,
@@ -95,7 +96,8 @@ export default function PrivacyPage() {
           담겨 브라우저 안에서만 읽히고 SubSlash 서버로 전송되거나 저장되지 않습니다. 등록한 구독은
           위와 같이 브라우저에 저장됩니다. 이미 등록한 멤버십(쿠팡 와우)이 있으면 최근 30일 주문
           메일의 수만 그 구독 기록에 적어, 혜택을 적을 때 근거로 보여 줍니다(메일 제목·내용은 남기지
-          않습니다).
+          않습니다). 같은 서비스의 이전 결제 메일은 받은 날과 금액만 그 구독 기록에 적어, 등록하기
+          전 달의 구독 영수증을 채우는 데 씁니다.
         </Item>
         {/*
           소셜 로그인도 저장 항목이 늘어나는 변경이라 시작일을 정하면 먼저 게시된다
@@ -129,9 +131,12 @@ export default function PrivacyPage() {
             Script가 2주마다 새 결제 메일의 보낸 사람·제목·받은 시각·본문 앞부분을 SubSlash 서버로
             보냅니다. 서버는 이 메일에서 찾은 구독 후보(서비스 이름·금액·통화·결제일·결제 주기·결제
             월·분류· 결제수단·메일 받은 날·보낸 사람)만 저장하고, 메일 제목과 본문은 저장하지
-            않습니다. 연결 토큰은 되돌릴 수 없는 해시로만, 마지막 검사 시각과 받은 메일 수와 함께
-            저장합니다. 로그인한 브라우저가 열릴 때 후보를 받아 구독으로 등록하거나 확인을 받습니다.
-            목적: 결제 메일에서 구독을 찾아 등록.
+            않습니다.
+            {GMAIL_CHARGE_HISTORY_STARTS_ON &&
+              ` ${koreanDate(GMAIL_CHARGE_HISTORY_STARTS_ON)}부터는 같은 서비스의 이전 결제 메일마다 받은 날과 금액도 후보와 함께 저장해, 등록하기 전 달의 구독 영수증을 채우는 데 씁니다.`}{" "}
+            연결 토큰은 되돌릴 수 없는 해시로만, 마지막 검사 시각과 받은 메일 수와 함께 저장합니다.
+            로그인한 브라우저가 열릴 때 후보를 받아 구독으로 등록하거나 확인을 받습니다. 목적: 결제
+            메일에서 구독을 찾아 등록.
           </Item>
         )}
         {GMAIL_AUTO_IMPORT_STARTS_ON && (

@@ -7,6 +7,7 @@ import {
 } from "../types";
 import { POPULAR_SERVICES, ServicePreset } from "../constants/services";
 import { formatCurrency } from "./cost-per-use";
+import { chargeDateFromReceiptDate, mergeChargeHistory } from "./chargeHistory";
 
 // Known keyword mapping for popular services
 const SERVICE_KEYWORDS: {
@@ -838,8 +839,9 @@ function calendarDate(date: Date, timeZone?: string): CalendarDate {
  * 서비스가 둘 이상 적혀 있으면 항목별로 나눈다 — 그러지 않으면 뒤 항목이 통째로 사라지고,
  * 그 금액이 앞 항목의 이름에 붙는다(`splitPlatformReceipt`).
  *
- * 같은 구독의 영수증은 달마다 쌓이므로 가장 최근 메일 하나만 남기고, 그 메일이 오래됐거나
- * 해지 알림이면 등록 후보에서 기본으로 빼 둔다(사용자가 다시 고를 수 있다).
+ * 같은 구독의 영수증은 달마다 쌓이므로 가장 최근 메일로 후보 하나를 만들고, 그 메일이 오래됐거나
+ * 해지 알림이면 등록 후보에서 기본으로 빼 둔다(사용자가 다시 고를 수 있다). 더 이른 영수증은 버리지
+ * 않고 받은 날과 금액만 후보의 결제 기록(`chargeHistory`)에 남긴다 — 영수증이 등록하기 전 달을 채운다.
  */
 export function parseReceiptEmails(
   emails: ReceiptEmail[],
@@ -857,7 +859,8 @@ export function parseReceiptEmails(
     .filter(({ receivedAt }) => !Number.isNaN(receivedAt.getTime()))
     .sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime());
 
-  const seen = new Set<string>();
+  // 서비스마다 가장 최근 메일로 만든 후보. 같은 서비스의 더 이른 메일은 그 후보의 결제 기록이 된다.
+  const seen = new Map<string, DiscoveredSubscription>();
   const results: DiscoveredSubscription[] = [];
 
   newestFirst.forEach(({ email, receivedAt }, index) => {
@@ -884,15 +887,26 @@ ${piece.body}`;
 
       // 같은 서비스라도 통화가 다르면 다른 구독일 수 있다.
       const key = `${parsed.name}|${parsed.currency}`;
-      if (seen.has(key)) return;
-      seen.add(key);
+      const receiptDate = `${received.year}.${String(received.month).padStart(2, "0")}.${String(received.day).padStart(2, "0")}`;
+      // 해지 알림은 결제가 아니다. 금액이 없는 메일도 결제 기록으로 남기지 않는다.
+      const charge =
+        !parsed.isCanceled && parsed.amount > 0 ? chargeDateFromReceiptDate(receiptDate) : null;
+      const earlier = seen.get(key);
+      if (earlier) {
+        // 더 이른 영수증은 후보를 만들지 않고, 결제 기록으로만 남긴다.
+        if (charge) {
+          earlier.chargeHistory = mergeChargeHistory(earlier.chargeHistory, [
+            { date: charge, amount: parsed.amount },
+          ]);
+        }
+        return;
+      }
 
       const daysAgo = Math.max(0, Math.floor((now.getTime() - receivedAt.getTime()) / DAY_MS));
       const stale = daysAgo > STALE_AFTER_DAYS[parsed.billingCycle];
-      const receiptDate = `${received.year}.${String(received.month).padStart(2, "0")}.${String(received.day).padStart(2, "0")}`;
       const snippet = `${receiptDate} · ${email.from} · ${email.subject}`;
 
-      results.push({
+      const candidate: DiscoveredSubscription = {
         ...parsed,
         id: `gmail-${receivedAt.getTime()}-${index}-${pieceIndex}`,
         source: "gmail",
@@ -908,7 +922,10 @@ ${piece.body}`;
           : stale
             ? `마지막 결제 메일이 ${daysAgo}일 전이라 지금도 결제 중인지 알 수 없습니다`
             : `${daysAgo}일 전 결제 메일 확인됨`,
-      });
+        chargeHistory: charge ? [{ date: charge, amount: parsed.amount }] : [],
+      };
+      seen.set(key, candidate);
+      results.push(candidate);
     });
   });
 

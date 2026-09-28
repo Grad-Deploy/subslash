@@ -195,6 +195,9 @@ function WebAutoImportModal({
 
     startTransition(() => {
       addBatchSubscriptions(dataList, { clearPrevious: replaceExisting });
+      // 결제 메일에서 찾은 후보는 이전 결제 메일들을 방금 등록한 구독에 적는다. 앱이 적는 사실이라
+      // 폼 데이터(SubscriptionFormData)로 넘기지 않는다.
+      useStore.getState().recordChargeHistory(selected);
       onRegistered?.();
       handleClose();
     });

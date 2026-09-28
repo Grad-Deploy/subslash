@@ -1,10 +1,16 @@
 import { createHash } from "crypto";
 import { and, count, eq, inArray, lt, sql } from "drizzle-orm";
-import { parseReceiptEmails, type DiscoveredSubscription } from "@subslash/shared";
+import {
+  mergeChargeHistory,
+  parseReceiptEmails,
+  type ChargeRecord,
+  type DiscoveredSubscription,
+} from "@subslash/shared";
 import { getDb } from "./db";
 import { accounts, gmailDiscoveries, gmailImportLinks, type GmailDiscovery } from "./schema";
 import { canSignLinks, generateSyncToken, hashSyncToken, signLink, verifyLink } from "./tokens";
 import { readReceiptEmails } from "./gmail-import";
+import { isGmailChargeHistoryOpen } from "./privacy";
 
 /**
  * Gmail 자동 가져오기의 서버 쪽.
@@ -45,8 +51,21 @@ export interface DiscoveryDto {
   presetId: string | null;
   paymentMethod: string | null;
   receiptDate: string;
+  /** 같은 서비스의 결제 메일들(이른 순). 저장을 시작하기 전(`GMAIL_CHARGE_HISTORY_STARTS_ON`)에는 비어 있다. */
+  chargeHistory: ChargeRecord[];
   sender: string;
   tier: "auto" | "review";
+}
+
+/** 저장된 결제 기록(JSON)을 읽는다. 없거나 깨졌으면 빈 기록, 형식이 틀린 줄은 버린다. */
+function readChargeHistory(value: string | null): ChargeRecord[] {
+  if (!value) return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed) ? mergeChargeHistory(parsed as ChargeRecord[], []) : [];
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -160,6 +179,8 @@ export async function ingestReceiptEmails(
       ),
     );
 
+  // 방침에 게시한 날부터만 이전 결제 메일(받은 날·금액)을 저장한다.
+  const keepHistory = isGmailChargeHistoryOpen(now);
   const candidates = parseReceiptEmails(emails, { now, timeZone: USER_TIME_ZONE }).flatMap(
     (item) => {
       const tier = discoveryTier(item);
@@ -181,6 +202,7 @@ export async function ingestReceiptEmails(
           sender: item.sender?.slice(0, 120) ?? "",
           tier,
           createdAt,
+          chargeHistory: keepHistory ? mergeChargeHistory(item.chargeHistory, []) : null,
         },
       ];
     },
@@ -188,10 +210,16 @@ export async function ingestReceiptEmails(
 
   // 이미 있는 서비스는 갱신이라 자리를 차지하지 않는다. 새 서비스는 남은 자리만큼만 받는다.
   const existing = await db
-    .select({ dedupeKey: gmailDiscoveries.dedupeKey })
+    .select({
+      dedupeKey: gmailDiscoveries.dedupeKey,
+      chargeHistory: gmailDiscoveries.chargeHistory,
+    })
     .from(gmailDiscoveries)
     .where(eq(gmailDiscoveries.accountId, accountId));
   const existingKeys = new Set(existing.map((row) => row.dedupeKey));
+  const existingHistory = new Map(
+    existing.map((row) => [row.dedupeKey, readChargeHistory(row.chargeHistory)]),
+  );
   let room = MAX_PENDING - existingKeys.size;
   const accepted = candidates.filter((row) => {
     if (existingKeys.has(row.dedupeKey)) return true;
@@ -200,10 +228,15 @@ export async function ingestReceiptEmails(
     return true;
   });
 
-  for (const row of accepted) {
+  for (const { chargeHistory, ...row } of accepted) {
+    // 결제 기록은 옛 영수증이 늦게 와도(1년 치를 나중에 보내는 scanOlder) 합친다. 아래의 덮어쓰기는 더
+    // 최근 영수증일 때만 일어나므로, 합친 기록은 따로 적는다.
+    const history = chargeHistory
+      ? JSON.stringify(mergeChargeHistory(existingHistory.get(row.dedupeKey), chargeHistory))
+      : null;
     await db
       .insert(gmailDiscoveries)
-      .values(row)
+      .values({ ...row, chargeHistory: history })
       .onConflictDoUpdate({
         target: [gmailDiscoveries.accountId, gmailDiscoveries.dedupeKey],
         set: {
@@ -222,6 +255,17 @@ export async function ingestReceiptEmails(
         // 같은 메일을 두 번 보내거나 옛 메일이 늦게 와도 더 최근 결과를 덮지 않는다.
         setWhere: sql`excluded.receipt_date >= ${gmailDiscoveries.receiptDate}`,
       });
+    if (history !== null && existingKeys.has(row.dedupeKey)) {
+      await db
+        .update(gmailDiscoveries)
+        .set({ chargeHistory: history })
+        .where(
+          and(
+            eq(gmailDiscoveries.accountId, accountId),
+            eq(gmailDiscoveries.dedupeKey, row.dedupeKey),
+          ),
+        );
+    }
   }
 
   await db
@@ -245,6 +289,7 @@ function toDto(row: GmailDiscovery): DiscoveryDto {
     presetId: row.presetId,
     paymentMethod: row.paymentMethod,
     receiptDate: row.receiptDate,
+    chargeHistory: readChargeHistory(row.chargeHistory),
     sender: row.sender,
     tier: row.tier === "auto" ? "auto" : "review",
   };

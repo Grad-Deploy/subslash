@@ -150,6 +150,15 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 `NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN`으로 연다. 계정을 지우는 경로는 `deleteGmailImportData`를
 부른다.
 
+결제 메일은 서비스마다 가장 최근 것으로 후보 하나를 만들고, 이전 결제 메일은 받은 날·금액만 결제
+기록(`chargeHistory`, `utils/chargeHistory`)으로 남긴다. 구독 영수증(`buildReceipt`)은 등록한 달보다 앞선
+달을 이 기록이 있는 달만 그 메일의 금액으로 채운다 — 첫 메일과 마지막 메일 사이라도 메일이 없는 달은
+모른다(해지했다 다시 구독했거나 검색 상한에 밀렸을 수 있다). 같은 서비스의 다른 구독(해지 전 예전 구독)이
+이미 센 달은 세지 않는다. 기록은 이미 등록한 구독에도 적는다(`recordChargeHistory`). 서버
+(`gmail_discoveries.charge_history`)는 `GMAIL_CHARGE_HISTORY_STARTS_ON`(null이면 닫힘)부터 저장하고, 옛
+영수증이 늦게 와도(`scanOlder`) 후보는 덮지 않되 기록은 합친다. 칼럼이 스키마에 있으므로 시작일과
+관계없이 **배포 전에 두 배포 DB에 `drizzle/0016_gmail_charge_history.sql`을 적용한다.**
+
 '구글 캘린더에 결제일 등록'도 같은 웹 앱이 한다(`action=calendar`). 버튼은 '내 구독'(`/subs`) 맨
 아래에 둔다 — 목록에서 금액·결제일을 확인하고 고친 뒤 마지막에 누르는 것이라, 가져오기 화면이
 아니라 구독을 보는 화면에 있어야 한다. SubSlash는 캘린더 권한을 받지

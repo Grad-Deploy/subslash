@@ -19,6 +19,12 @@ export interface LinkedAccount {
 export type PaymentMethod =
   "credit_card" | "kakaopay" | "naverpay" | "apple_iap" | "google_play" | "telecom" | "other";
 
+/** 결제 메일 한 통이 보여 주는 결제. `date`는 메일을 받은 날(`YYYY-MM-DD`), `amount`는 구독 통화의 청구액. */
+export interface ChargeRecord {
+  date: string;
+  amount: number;
+}
+
 export interface Subscription {
   id: string;
   name: string;
@@ -102,6 +108,14 @@ export interface Subscription {
   orderEvidence?: { count: number; since: string; checkedAt: string };
 
   /**
+   * Gmail 가져오기에서 찾은 이 서비스의 결제 메일들(utils/chargeHistory). 메일을 받은 날과 그 메일에 적힌
+   * 금액(구독 통화, 카드에 청구된 값)이다. 영수증이 등록한 달보다 앞선 달을 채울 때 이것만 쓴다 — 메일이
+   * 없는 달은 구독 중이었는지 모른다. 가져오기가 찾은 범위(약 1년) 안의 것이라 첫 줄이 처음 구독한 날이
+   * 아니다. 다시 가져오면 날짜별로 합친다.
+   */
+  chargeHistory?: ChargeRecord[];
+
+  /**
    * 사용자가 "이 금액이 지금도 맞다"고 마지막으로 확인해 준 시각.
    *
    * 없으면 등록 이후 한 번도 확인한 적이 없다는 뜻이다. 앱은 이 값을
@@ -180,6 +194,7 @@ export type SubscriptionFormData = Omit<
   | "observedAmount"
   | "observedAmountAt"
   | "orderEvidence"
+  | "chargeHistory"
 >;
 
 export type EmailType = "payment" | "cancellation" | "refund" | "onetime";
@@ -233,6 +248,8 @@ export interface DiscoveredSubscription {
   confidence: "high" | "medium";
   selected: boolean;
   receiptDate?: string;
+  /** 같은 서비스의 결제 메일들(가장 최근 것 포함, 이른 순). 해지 알림은 넣지 않는다. */
+  chargeHistory?: ChargeRecord[];
   daysAgo?: number;
   statusReason?: string;
   /**

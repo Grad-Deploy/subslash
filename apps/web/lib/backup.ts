@@ -1,4 +1,10 @@
-import { currentCategory, isValueMetric, parseDateOnly } from "@subslash/shared";
+import {
+  MAX_CHARGE_HISTORY,
+  currentCategory,
+  isChargeRecord,
+  isValueMetric,
+  parseDateOnly,
+} from "@subslash/shared";
 import type { LinkedAccount, Subscription, UsageLog } from "@subslash/shared";
 // 스토어 모듈에서는 타입만 가져온다. 이 파일은 서버(계정에 저장한 기록의 검증)도
 // 쓰는데, 스토어 모듈을 실제로 불러오면 브라우저 전용 zustand 스토어가 함께 만들어진다.
@@ -150,6 +156,14 @@ function checkSubscription(v: unknown): string | null {
     )
   ) {
     return "주문 메일 근거";
+  }
+  if (
+    !optional(
+      v.chargeHistory,
+      (h) => Array.isArray(h) && h.length <= MAX_CHARGE_HISTORY && h.every(isChargeRecord),
+    )
+  ) {
+    return "결제 메일 기록";
   }
   return null;
 }

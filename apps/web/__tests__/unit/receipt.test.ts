@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildReceipt, previousMonth, type Subscription, type UsageLog } from "@subslash/shared";
+import { describeReceiptLine, receiptFootnotes } from "@lib/receipt-view";
 
 // 2026년 9월 27일 오전 9시(기기 시간대).
 const NOW = new Date(2026, 8, 27, 9, 0);
@@ -214,5 +215,100 @@ describe("buildReceipt — 한 해", () => {
 describe("previousMonth", () => {
   it("1월이면 지난해 12월이다", () => {
     expect(previousMonth(new Date(2027, 0, 3))).toEqual({ year: 2026, month: 12 });
+  });
+});
+
+describe("buildReceipt — 등록하기 전 달의 결제 메일", () => {
+  // 9월 5일에 등록했지만 Gmail에서 7·8월 결제 메일을 찾은 넷플릭스. 6월 메일은 없다.
+  const imported = (overrides: Partial<Subscription> = {}) =>
+    sub({
+      createdAt: new Date(2026, 8, 5).toISOString(),
+      chargeHistory: [
+        { date: "2026-07-10", amount: 12000 },
+        { date: "2026-08-10", amount: 13500 },
+        { date: "2026-09-10", amount: 13500 },
+      ],
+      ...overrides,
+    });
+
+  it("메일이 있는 달은 그 메일의 날짜와 금액으로 넣는다", () => {
+    const august = buildReceipt([imported()], [], AUGUST, RATE, NOW);
+    expect(
+      august.lines.map((line) => [line.chargeDates, line.evidencedDates, line.amountKRW]),
+    ).toEqual([[["2026-08-10"], ["2026-08-10"], 13500]]);
+    expect(august.evidencedCount).toBe(1);
+    expect(august.excluded.beforeRegistration).toBe(0);
+
+    // 요금이 달랐던 달은 지금 금액이 아니라 그 메일의 금액이다.
+    const july = buildReceipt([imported()], [], { kind: "month", year: 2026, month: 7 }, RATE, NOW);
+    expect(july.totalKRW).toBe(12000);
+  });
+
+  it("메일이 없는 달은 여전히 모른다", () => {
+    const june = buildReceipt([imported()], [], { kind: "month", year: 2026, month: 6 }, RATE, NOW);
+    expect(june.lines).toEqual([]);
+    expect(june.excluded.beforeRegistration).toBe(1);
+  });
+
+  it("등록한 달부터는 메일이 아니라 기록으로 계산하고, 한 번만 센다", () => {
+    const september = buildReceipt([imported()], [], SEPTEMBER, RATE, NOW);
+    expect(september.lines[0].chargeDates).toEqual(["2026-09-10"]);
+    expect(september.lines[0].evidencedDates).toEqual([]);
+
+    const year = buildReceipt([imported()], [], { kind: "year", year: 2026 }, RATE, NOW);
+    expect(year.lines[0].chargeDates).toEqual(["2026-07-10", "2026-08-10", "2026-09-10"]);
+    expect(year.lines[0].evidencedDates).toEqual(["2026-07-10", "2026-08-10"]);
+    expect(year.totalKRW).toBe(12000 + 13500 + 13500);
+    // 1~6월은 메일이 없어 모른다.
+    expect(year.excluded.beforeRegistration).toBe(1);
+  });
+
+  it("나눠 내면 메일의 청구액을 지금 나누는 비율로 나눈다", () => {
+    const august = buildReceipt([imported({ sharingCount: 2 })], [], AUGUST, RATE, NOW);
+    expect(august.lines[0].billedKRW).toBe(13500);
+    expect(august.lines[0].amountKRW).toBe(6750);
+  });
+
+  it("해지했다가 다시 등록한 서비스는 예전 구독이 센 달을 메일로 한 번 더 세지 않는다", () => {
+    const before = sub({
+      id: "old",
+      createdAt: new Date(2026, 0, 1).toISOString(),
+      status: "killed",
+      killedAt: new Date(2026, 7, 20).toISOString(),
+    });
+    const august = buildReceipt([before, imported()], [], AUGUST, RATE, NOW);
+    expect(august.lines.map((line) => line.subscriptionId)).toEqual(["old"]);
+    expect(august.evidencedCount).toBe(0);
+  });
+
+  it("결제 월을 모르는 연간 구독도 메일이 있는 달은 넣는다", () => {
+    const goodnotes = sub({
+      name: "굿노트",
+      amount: 13000,
+      billingCycle: "yearly",
+      billingMonth: undefined,
+      createdAt: new Date(2026, 8, 5).toISOString(),
+      chargeHistory: [{ date: "2026-03-12", amount: 13000 }],
+    });
+    const year = buildReceipt([goodnotes], [], { kind: "year", year: 2026 }, RATE, NOW);
+    expect(year.lines.map((line) => [line.chargeDates, line.amountKRW])).toEqual([
+      [["2026-03-12"], 13000],
+    ]);
+    expect(year.excluded.undated).toBe(1);
+  });
+});
+
+describe("영수증 문구 — 결제 메일로 넣은 줄", () => {
+  it("줄에는 메일로 확인했다고, 밑에는 몇 건을 어디서 넣었는지 적는다", () => {
+    const shared = sub({
+      sharingCount: 2,
+      createdAt: new Date(2026, 8, 5).toISOString(),
+      chargeHistory: [{ date: "2026-08-10", amount: 13500 }],
+    });
+    const august = buildReceipt([shared], [], AUGUST, RATE, NOW);
+    expect(describeReceiptLine(august.lines[0], AUGUST)).toContain("08.10 결제 · 결제 메일로 확인");
+    expect(receiptFootnotes(august)).toContain(
+      "등록하기 전 결제 1건은 Gmail에서 찾은 결제 메일의 날짜와 금액으로 넣었어요. 나눠 내는 구독의 내 몫은 지금 나누는 비율로 계산했어요.",
+    );
   });
 });
