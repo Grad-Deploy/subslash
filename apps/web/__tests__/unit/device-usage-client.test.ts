@@ -7,18 +7,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * - 네이티브 플러그인 프록시는 `then`까지 네이티브 메서드로 만든다. async 함수가 프록시를 그대로
  *   돌려주면 `await`가 끝나지 않아, 측정 화면이 '확인 중'에서 멈춘다.
  * - 측정은 켠 계정에 묶는다. 같은 기기에 다른 사람이 로그인하면 그 계정으로 올리지 않는다.
+ * - 기기 키는 앱을 지웠다 다시 설치해도 같다(ANDROID_ID를 계정과 섞은 해시). 같은 폰이 두 기기로 남지 않는다.
  */
 
 const mocks = vi.hoisted(() => ({
   granted: true,
   requests: [] as { url: string; method: string; body: unknown }[],
   failDelete: false,
+  /** 네이티브 기기 식별값. undefined면 deviceId 메서드가 없는 예전 앱(거절한다). */
+  androidId: undefined as string | null | undefined,
 }));
 
 vi.mock("@capacitor/core", () => {
   const methods: Record<string, (...args: unknown[]) => Promise<unknown>> = {
     status: async () => ({ granted: mocks.granted }),
     openSettings: async () => undefined,
+    deviceId: async () => {
+      if (mocks.androidId === undefined) throw new Error("not implemented");
+      return { id: mocks.androidId };
+    },
     queryForeground: async () => ({
       intervals: [
         { packageName: "com.netflix.mediaclient", start: Date.now() - 60_000, end: Date.now() },
@@ -72,6 +79,7 @@ beforeEach(() => {
   mocks.granted = true;
   mocks.requests = [];
   mocks.failDelete = false;
+  mocks.androidId = undefined;
   process.env.NEXT_PUBLIC_BUILD_TARGET = "app";
   vi.resetModules();
 });
@@ -156,5 +164,97 @@ describe("끄기", () => {
     await client.deleteAllDeviceUsage("acc-1");
     expect(mocks.requests.at(-1)).toMatchObject({ method: "DELETE", body: { all: true } });
     expect(client.useDeviceUsage.getState().enabled).toBe(false);
+  });
+});
+
+describe("다시 설치한 기기", () => {
+  it("기기 키는 앱을 다시 설치해도 같고, 계정마다 다르며, 식별값을 그대로 담지 않는다", async () => {
+    mocks.androidId = "a1b2c3d4e5f60718";
+    const client = await load();
+    const first = await client.stableDeviceKey("acc-1");
+    vi.resetModules(); // 다시 설치: 앱 저장소가 비어 있다
+    const again = await (await load()).stableDeviceKey("acc-1");
+    expect(first).toMatch(/^[0-9a-f]{64}$/);
+    expect(again).toBe(first);
+    expect(await client.stableDeviceKey("acc-2")).not.toBe(first);
+    expect(first).not.toContain("a1b2c3d4e5f60718");
+  });
+
+  it("다시 설치한 뒤 켜면 새 기기가 아니라 같은 키로 올린다(서버가 그 기간을 통째로 바꾼다)", async () => {
+    mocks.androidId = "a1b2c3d4e5f60718";
+    const before = await load();
+    before.useDeviceUsage.getState().enableFor("acc-1");
+    await before.uploadThisDevice("acc-1");
+    const firstKey = (mocks.requests.at(-1)?.body as { deviceKey: string }).deviceKey;
+
+    // 앱 삭제 → 다시 설치: 저장소가 비고, 측정을 다시 켠다.
+    localStorage.removeItem("subslash-device-usage");
+    vi.resetModules();
+    mocks.requests = [];
+    const after = await load();
+    after.useDeviceUsage.getState().enableFor("acc-1");
+    expect(await after.uploadThisDevice("acc-1")).toBe(true);
+    expect(mocks.requests.map((r) => r.method)).toEqual(["POST"]);
+    expect(mocks.requests[0].body).toMatchObject({ deviceKey: firstKey });
+  });
+
+  it("예전 무작위 키로 올린 기록은 지우고, 고정 키로 보관 기간 전체를 다시 올린다", async () => {
+    const client = await load();
+    client.useDeviceUsage.getState().enableFor("acc-1");
+    const oldKey = client.useDeviceUsage.getState().ensureDeviceKey();
+    client.useDeviceUsage.getState().markUploaded(Date.now() - 60 * 60_000);
+
+    mocks.androidId = "a1b2c3d4e5f60718"; // 이 메서드가 있는 앱으로 업데이트
+    expect(await client.uploadThisDevice("acc-1")).toBe(true);
+    const stable = await client.stableDeviceKey("acc-1");
+    expect(
+      mocks.requests.map((r) => [r.method, (r.body as { deviceKey: string }).deviceKey]),
+    ).toEqual([
+      ["DELETE", oldKey],
+      ["POST", stable],
+    ]);
+    // 이어 재지 않고 처음부터(보관 기간) 다시 올린다 — 지운 기간이 비지 않게.
+    const from = (mocks.requests[1].body as { from: number }).from;
+    expect(Date.now() - from).toBeGreaterThan(24 * 60 * 60_000);
+    expect(client.useDeviceUsage.getState().deviceKey).toBe(stable);
+
+    mocks.requests = [];
+    await client.uploadThisDevice("acc-1");
+    expect(mocks.requests.map((r) => r.method)).toEqual(["POST"]);
+  });
+
+  it("예전 기록을 지우지 못하면 새 키로 올리지 않는다(두 기기로 남지 않게)", async () => {
+    const client = await load();
+    client.useDeviceUsage.getState().enableFor("acc-1");
+    const oldKey = client.useDeviceUsage.getState().ensureDeviceKey();
+    mocks.androidId = "a1b2c3d4e5f60718";
+    mocks.failDelete = true;
+    await expect(client.uploadThisDevice("acc-1")).rejects.toThrow();
+    expect(mocks.requests.map((r) => r.method)).toEqual(["DELETE"]);
+    expect(client.useDeviceUsage.getState().deviceKey).toBe(oldKey);
+  });
+
+  it("식별값을 읽지 못하는 예전 앱은 지금처럼 무작위 키로 올린다", async () => {
+    const client = await load();
+    client.useDeviceUsage.getState().enableFor("acc-1");
+    expect(await client.uploadThisDevice("acc-1")).toBe(true);
+    expect(mocks.requests.map((r) => r.method)).toEqual(["POST"]);
+    expect((mocks.requests[0].body as { deviceKey: string }).deviceKey).toBe(
+      client.useDeviceUsage.getState().deviceKey,
+    );
+  });
+
+  it("다시 설치한 뒤 끄면 저장된 키가 없어도 이 기기의 고정 키 기록을 지운다", async () => {
+    mocks.androidId = "a1b2c3d4e5f60718";
+    const client = await load();
+    client.useDeviceUsage.getState().enableFor("acc-1");
+    await client.stopMeasuringThisDevice();
+    expect(mocks.requests).toEqual([
+      {
+        url: "/api/usage",
+        method: "DELETE",
+        body: { deviceKey: await client.stableDeviceKey("acc-1") },
+      },
+    ]);
   });
 });

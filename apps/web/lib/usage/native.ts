@@ -39,6 +39,7 @@ export interface NativeForegroundResult {
 
 interface UsageStatsPlugin {
   status(): Promise<{ granted: boolean }>;
+  deviceId(): Promise<{ id: string | null }>;
   openSettings(): Promise<void>;
   installed(options: { packages: string[] }): Promise<{ packages: string[] }>;
   query(options: { packages: string[]; days: number }): Promise<NativeUsageResult>;
@@ -92,6 +93,21 @@ export async function openUsageSettings(): Promise<boolean> {
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * 이 앱이 받는 기기 식별값(ANDROID_ID). 앱을 다시 설치해도 같다. 읽지 못하면(이 메서드가 없던 앱, iOS·웹)
+ * null. 그대로 서버에 보내지 않는다(lib/device-usage-client가 계정과 섞어 해시로 쓴다).
+ */
+export async function nativeDeviceId(): Promise<string | null> {
+  const p = (await load())?.plugin;
+  if (!p) return null;
+  try {
+    const { id } = await p.deviceId();
+    return typeof id === "string" && id.length > 0 ? id : null;
+  } catch {
+    return null;
   }
 }
 

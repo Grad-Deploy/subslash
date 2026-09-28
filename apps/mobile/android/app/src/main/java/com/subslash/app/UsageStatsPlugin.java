@@ -92,6 +92,22 @@ public class UsageStatsPlugin extends Plugin {
         call.resolve(result);
     }
 
+    /**
+     * 이 앱이 받는 기기 식별값(ANDROID_ID). 안드로이드 8부터 앱 서명 키·사용자·기기마다 다르고, 앱을 지웠다
+     * 다시 설치해도 같다(기기를 초기화하면 바뀐다). 여러 기기 사용 측정이 다시 설치한 폰을 새 기기로 올리지
+     * 않게 쓴다 — 웹 쪽(lib/device-usage-client)이 계정과 섞은 해시로만 서버에 보내고, 이 값은 보내지 않는다.
+     */
+    @PluginMethod
+    public void deviceId(PluginCall call) {
+        String id = Settings.Secure.getString(
+            getContext().getContentResolver(),
+            Settings.Secure.ANDROID_ID
+        );
+        JSObject result = new JSObject();
+        result.put("id", id);
+        call.resolve(result);
+    }
+
     @PluginMethod
     public void openSettings(PluginCall call) {
         Context context = getContext();
