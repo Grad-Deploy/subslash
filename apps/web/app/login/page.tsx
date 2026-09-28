@@ -18,8 +18,8 @@ export default function LoginPage() {
       </div>
 
       <div className="p-5 sm:p-6 border rounded-2xl bg-card shadow-sm space-y-4">
-        <SocialLoginButtons mode="login" />
         <LoginForm />
+        <SocialLoginButtons mode="login" />
       </div>
 
       <p className="text-xs text-center text-muted-foreground">
