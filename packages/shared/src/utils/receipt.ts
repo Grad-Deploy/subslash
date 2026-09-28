@@ -1,10 +1,12 @@
-import type { Subscription, UsageLog } from "../types";
+import type { ChargeRecord, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
+import { isSameService } from "./chargeHistory";
 import { formatKRW, getBilledAmount, toKRW } from "./currency";
 import { isInTrial } from "./date";
 import {
   getMyAnnualAmountKRW,
   getMyMonthlyAmountKRW,
+  getMyShareAmount,
   isShared,
   sumMyMonthDefendedKRW,
   sumMyYearDefendedKRW,
@@ -20,7 +22,9 @@ import {
  * - 등록한 달의 결제는 결제일이 등록일보다 앞서도 넣는다. 구독 중이라고 등록한 것이라 그 달 결제는 이미
  *   나갔다고 본다 — 예전에는 결제일 뒤에 등록한 구독이 이번 달 영수증에 하나도 나오지 않았다.
  * - 등록한 달보다 앞선 달: 그때도 구독 중이었는지 앱은 모른다(`beforeRegistration`). 넣으면 처음 구독한
- *   사람에게 내지 않은 돈을 청구한다.
+ *   사람에게 내지 않은 돈을 청구한다. 다만 Gmail 가져오기가 그 달의 결제 메일을 찾았으면
+ *   (`chargeHistory`) 메일의 날짜와 금액으로 넣는다(`evidencedDates`). 메일이 없는 달은 여전히 모른다 —
+ *   첫 메일과 마지막 메일 사이라도 채우지 않는다(해지했다 다시 구독했거나 검색에서 빠졌을 수 있다).
  * - 결제 월을 모르는 연간 구독: 어느 달에 결제됐는지 모른다(`undated`).
  * - 체험 중이던 결제일: 카드에서 나간 돈이 없다(`trial`).
  * - 이번 달에 아직 오지 않은 결제일: 지금 구독 중이면 '결제 예정'으로 넣는다(`upcomingDates`). 다음 달
@@ -41,6 +45,11 @@ export interface ReceiptLine {
   chargeDates: string[];
   /** 그중 아직 오지 않은 이번 달 결제일. 지금 구독 중인 구독만. */
   upcomingDates: string[];
+  /**
+   * 그중 등록하기 전 달이라 결제 메일(`chargeHistory`)로 넣은 날. 금액도 그 메일의 것이다. 나눠 내는
+   * 구독이면 내 몫은 지금 나누는 비율로 계산한다.
+   */
+  evidencedDates: string[];
   /** 내 몫 합계(원). */
   amountKRW: number;
   /** 카드에 찍힌 금액 합계(원). 나눠 내지 않으면 `amountKRW`와 같다. */
@@ -67,6 +76,8 @@ export interface Receipt {
   chargeCount: number;
   /** 그중 결제 예정(이번 달에 아직 오지 않은 결제일) 수. */
   upcomingCount: number;
+  /** 그중 결제 메일로 넣은 등록 전 결제 수. */
+  evidencedCount: number;
   /** 체크인이 있는 줄 중, 1회 단가가 가장 높은 것. 비교할 줄이 둘 이상일 때만. */
   priciestPerUse: ReceiptLine | null;
   /** 해지 덕분에 이 기간에 나가지 않은 돈(원). 결제일이 지난 것만. */
@@ -78,7 +89,7 @@ export interface Receipt {
   excluded: {
     /** 결제 월을 모르는 연간 구독 수. */
     undated: number;
-    /** 등록한 달보다 앞선 달의 결제일이 있던 구독 수. */
+    /** 등록한 달보다 앞선 달의 결제일이 있던 구독 수(결제 메일로 채운 달은 빼고). */
     beforeRegistration: number;
     /** 체험 중이던 결제일이 있던 구독 수. */
     trial: number;
@@ -152,6 +163,50 @@ function lastUsesLogIn(
   return latest;
 }
 
+/** `YYYY-MM-DD`를 그 기기 시간대의 날짜로. */
+function localDate(date: string): Date {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+/**
+ * 같은 서비스의 다른 구독이 그 날 이미 구독 중이었는지. 해지했다가 다시 등록한 서비스에서, 새 구독의
+ * 결제 메일이 예전 구독이 이미 센 달을 한 번 더 세지 않게 한다.
+ */
+function coveredByAnotherRecord(
+  sub: Subscription,
+  date: Date,
+  subscriptions: readonly Subscription[],
+): boolean {
+  return subscriptions.some((other) => {
+    if (other.id === sub.id || !isSameService(other, sub)) return false;
+    const registered = dayOf(other.createdAt);
+    if (!registered || new Date(registered.getFullYear(), registered.getMonth(), 1) > date) {
+      return false;
+    }
+    if (other.status === "active") return true;
+    const killed = dayOf(other.killedAt);
+    return killed !== null && killed > date;
+  });
+}
+
+/** 결제 메일로 확인한 결제 중, 등록한 달보다 앞서고 같은 서비스의 다른 기록이 세지 않은 것. */
+function chargesBeforeRegistration(
+  sub: Subscription,
+  registeredMonth: Date,
+  subscriptions: readonly Subscription[],
+): { date: Date; record: ChargeRecord }[] {
+  return (sub.chargeHistory ?? [])
+    .map((record) => ({ date: localDate(record.date), record }))
+    .filter(
+      ({ date, record }) =>
+        !Number.isNaN(date.getTime()) &&
+        record.amount > 0 &&
+        date < registeredMonth &&
+        !coveredByAnotherRecord(sub, date, subscriptions),
+    );
+}
+
 export function buildReceipt(
   subscriptions: readonly Subscription[],
   logs: readonly UsageLog[],
@@ -166,13 +221,14 @@ export function buildReceipt(
   const excluded = { undated: 0, beforeRegistration: 0, trial: 0 };
 
   for (const sub of subscriptions) {
-    if (sub.billingCycle === "yearly" && typeof sub.billingMonth !== "number") {
+    // 결제 월을 모르는 연간 구독은 어느 달에 결제됐는지 모른다. 결제 메일로 확인한 달만 넣는다.
+    const undated = sub.billingCycle === "yearly" && typeof sub.billingMonth !== "number";
+    if (undated) {
       // 해지한 연간 구독도 그 기간에 결제됐을 수 있지만, 언제인지 모른다.
-      const killed = dayOf(sub.killedAt);
-      if (sub.status === "active" || (killed && killed >= periodStart(period))) {
+      const killedAt = dayOf(sub.killedAt);
+      if (sub.status === "active" || (killedAt && killedAt >= periodStart(period))) {
         excluded.undated += 1;
       }
-      continue;
     }
 
     const registered = dayOf(sub.createdAt);
@@ -181,15 +237,33 @@ export function buildReceipt(
       ? new Date(registered.getFullYear(), registered.getMonth(), 1)
       : null;
     const killed = sub.status === "killed" ? dayOf(sub.killedAt) : null;
-    // 해지했다는데 언제인지 모르면 어느 결제가 해지 뒤였는지 모른다. 줄을 만들지 않는다.
-    if (sub.status === "killed" && !killed) continue;
+    // 해지했다는데 언제인지 모르면 어느 결제가 해지 뒤였는지 모른다. 기록으로 계산하는 줄은 만들지 않는다.
+    const unknownKill = sub.status === "killed" && !killed;
+    const evidence = registeredMonth
+      ? chargesBeforeRegistration(sub, registeredMonth, subscriptions)
+      : [];
 
     const chargeDates: Date[] = [];
     const upcomingDates: Date[] = [];
+    const evidenced: { date: Date; record: ChargeRecord }[] = [];
     let hadBeforeRegistration = false;
     let hadTrial = false;
 
     for (const { year, monthIndex } of monthsOf(period)) {
+      // 등록하기 전 달은 결제 메일이 있으면 그 메일대로 넣는다. 메일이 결제의 증거라 체험·해지를 따지지
+      // 않는다.
+      const inMonth = evidence.filter(
+        ({ date }) => date.getFullYear() === year && date.getMonth() === monthIndex,
+      );
+      if (inMonth.length > 0) {
+        for (const item of inMonth) {
+          chargeDates.push(item.date);
+          evidenced.push(item);
+        }
+        continue;
+      }
+      if (undated || unknownKill) continue;
+
       const charge = chargeDateIn(sub, year, monthIndex);
       if (!charge) continue;
       // 아직 오지 않은 결제일은 이번 달이고 지금 구독 중일 때만 '결제 예정'으로 넣는다.
@@ -220,6 +294,12 @@ export function buildReceipt(
         ? getMyAnnualAmountKRW(sub, rate)
         : getMyMonthlyAmountKRW(sub, rate);
     const billedPerCharge = toKRW(getBilledAmount(sub), sub.currency, rate);
+    const recorded = chargeDates.length - evidenced.length;
+    // 결제 메일의 금액은 카드에 청구된 값이다. 나눠 내면 지금 나누는 비율로 내 몫을 계산한다.
+    const billedNow = getBilledAmount(sub);
+    const myRatio = isShared(sub) && billedNow > 0 ? getMyShareAmount(sub) / billedNow : 1;
+    const evidencedBilled = evidenced.map(({ record }) => toKRW(record.amount, sub.currency, rate));
+    const evidencedMine = evidencedBilled.map((billed) => Math.round(billed * myRatio));
     const log = lastUsesLogIn(sub.id, logs, period);
 
     lines.push({
@@ -228,8 +308,10 @@ export function buildReceipt(
       iconUrl: sub.iconUrl,
       chargeDates: chargeDates.map(dateOnly),
       upcomingDates: upcomingDates.map(dateOnly),
-      amountKRW: perCharge * chargeDates.length,
-      billedKRW: billedPerCharge * chargeDates.length,
+      evidencedDates: evidenced.map(({ date }) => dateOnly(date)),
+      amountKRW: perCharge * recorded + evidencedMine.reduce((total, value) => total + value, 0),
+      billedKRW:
+        billedPerCharge * recorded + evidencedBilled.reduce((total, value) => total + value, 0),
       shared: isShared(sub),
       billingCycle: sub.billingCycle,
       killedOn: killed && inPeriod(killed, period) ? dateOnly(killed) : null,
@@ -280,6 +362,7 @@ export function buildReceipt(
     billedTotalKRW: lines.reduce((total, line) => total + line.billedKRW, 0),
     chargeCount: lines.reduce((total, line) => total + line.chargeDates.length, 0),
     upcomingCount: lines.reduce((total, line) => total + line.upcomingDates.length, 0),
+    evidencedCount: lines.reduce((total, line) => total + line.evidencedDates.length, 0),
     priciestPerUse,
     defendedKRW,
     defendedUnknownCount,

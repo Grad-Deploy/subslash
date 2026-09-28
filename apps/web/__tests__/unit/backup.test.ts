@@ -111,6 +111,34 @@ describe("parseBackup — 앱이 만든 것은 모두 통과한다", () => {
     expect(result).toEqual({ ok: true, data: sampleData(), exportedAt: NOW.toISOString() });
   });
 
+  it("결제 메일 기록(chargeHistory)을 그대로 지나가게 하고, 형식이 틀리면 막는다", () => {
+    const history = [
+      { date: "2026-07-15", amount: 13500 },
+      { date: "2026-08-15", amount: 17000 },
+    ];
+    const ok = roundTrip(
+      withData((data) => {
+        (data.subscriptions as Record<string, unknown>[])[0].chargeHistory = history;
+      }),
+    );
+    expect(ok.ok && ok.data.subscriptions[0].chargeHistory).toEqual(history);
+
+    for (const bad of [
+      [{ date: "2026.07.15", amount: 13500 }],
+      [{ date: "2026-02-30", amount: 13500 }],
+      [{ date: "2026-07-15", amount: 0 }],
+      { date: "2026-07-15", amount: 13500 },
+    ]) {
+      expect(
+        errorOf(
+          withData((data) => {
+            (data.subscriptions as Record<string, unknown>[])[0].chargeHistory = bad;
+          }),
+        ),
+      ).toContain("결제 메일 기록");
+    }
+  });
+
   it("결제일·금액을 비워 둔 구독도 통과한다 — 폼이 '적지 않음'으로 저장한다", () => {
     const file = withData((data) => {
       const [sub] = data.subscriptions as Record<string, unknown>[];

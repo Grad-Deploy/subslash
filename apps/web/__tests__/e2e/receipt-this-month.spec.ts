@@ -71,6 +71,6 @@ test("이번 달 영수증에 지금 구독 중인 구독이 나오고, 결제�
   const august = page.getByRole("article", { name: "2026년 8월 구독 영수증" });
   await expect(august).toContainText("결제된 구독이 없어요");
   await expect(august).toContainText(
-    "등록한 달보다 앞선 달은 구독 중이었는지 몰라 넣지 않았어요(2개)",
+    "등록한 달보다 앞선 달 중 결제 메일을 찾지 못한 달은 구독 중이었는지 몰라 넣지 않았어요(2개)",
   );
 });

@@ -114,6 +114,22 @@ const MIGRATIONS: Migration[] = [
         : { state: "missing", detail: "stats_contributors.age_band 없음" };
     },
   },
+  {
+    id: "0016",
+    file: "0016_gmail_charge_history.sql",
+    check: (schema) => {
+      const sql = schema.tableSql.get("gmail_discoveries");
+      if (sql === undefined) {
+        return {
+          state: "blocked",
+          detail: "gmail_discoveries가 없어 적용할 수 없습니다(0008 먼저)",
+        };
+      }
+      return /\bcharge_history\b/.test(sql)
+        ? { state: "applied", detail: "gmail_discoveries.charge_history 있음" }
+        : { state: "missing", detail: "gmail_discoveries.charge_history 없음" };
+    },
+  },
 ];
 
 const STATE_LABEL: Record<State, string> = {
