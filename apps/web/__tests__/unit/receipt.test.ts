@@ -52,7 +52,7 @@ describe("buildReceipt — 한 달", () => {
     expect(receipt.billedTotalKRW).toBe(13500 + 14900);
   });
 
-  it("이번 달은 결제일이 지난 것만 적는다", () => {
+  it("이번 달은 지금 구독 중인 것을 모두 적고, 결제일이 오지 않은 것은 결제 예정으로 둔다", () => {
     const receipt = buildReceipt(
       [sub({ billingDay: 5 }), sub({ id: "sub-2", name: "왓챠", billingDay: 30 })],
       [],
@@ -61,13 +61,47 @@ describe("buildReceipt — 한 달", () => {
       NOW,
     );
     expect(receipt.isComplete).toBe(false);
-    expect(receipt.lines.map((line) => line.name)).toEqual(["넷플릭스"]);
+    expect(receipt.lines.map((line) => [line.name, line.chargeDates, line.upcomingDates])).toEqual([
+      ["넷플릭스", ["2026-09-05"], []],
+      ["왓챠", ["2026-09-30"], ["2026-09-30"]],
+    ]);
+    expect(receipt.upcomingCount).toBe(1);
+    expect(receipt.totalKRW).toBe(13500 * 2);
   });
 
-  it("등록 전 결제일·체험 중 결제일·결제 월 모르는 연간 구독은 줄로 만들지 않고 센다", () => {
+  it("결제일 뒤에 등록한 구독도 등록한 달에는 구독 중이던 것으로 적는다", () => {
+    // 9월 27일에 등록한 배민클럽 + 유튜브 프리미엄(결제일 10일). 예전에는 '등록하기 전의 결제일'로 빠졌다.
+    const bundle = sub({
+      name: "배민클럽 + 유튜브 프리미엄",
+      createdAt: new Date(2026, 8, 27, 8).toISOString(),
+    });
+    const september = buildReceipt([bundle], [], SEPTEMBER, RATE, NOW);
+    expect(september.lines.map((line) => [line.name, line.chargeDates])).toEqual([
+      ["배민클럽 + 유튜브 프리미엄", ["2026-09-10"]],
+    ]);
+    expect(september.excluded.beforeRegistration).toBe(0);
+    // 등록한 달보다 앞선 달은 구독 중이었는지 모른다.
+    const august = buildReceipt([bundle], [], AUGUST, RATE, NOW);
+    expect(august.lines).toEqual([]);
+    expect(august.excluded.beforeRegistration).toBe(1);
+  });
+
+  it("해지한 구독은 결제 예정으로 적지 않는다", () => {
+    const receipt = buildReceipt(
+      [sub({ billingDay: 30, status: "killed", killedAt: new Date(2026, 8, 20).toISOString() })],
+      [],
+      SEPTEMBER,
+      RATE,
+      NOW,
+    );
+    expect(receipt.lines).toEqual([]);
+    expect(receipt.upcomingCount).toBe(0);
+  });
+
+  it("등록한 달보다 앞선 달·체험 중 결제일·결제 월 모르는 연간 구독은 줄로 만들지 않고 센다", () => {
     const receipt = buildReceipt(
       [
-        sub({ createdAt: new Date(2026, 7, 20).toISOString() }),
+        sub({ createdAt: new Date(2026, 8, 2).toISOString() }),
         sub({ id: "trial", trialEndsAt: "2026-09-01" }),
         sub({ id: "yearly", billingCycle: "yearly", billingMonth: undefined, amount: 99000 }),
       ],
@@ -162,6 +196,18 @@ describe("buildReceipt — 한 해", () => {
     expect(receipt.isComplete).toBe(false);
     expect(receipt.lines[0].chargeDates).toHaveLength(9);
     expect(receipt.totalKRW).toBe(13500 * 9);
+  });
+
+  it("이번 달의 결제 예정은 넣고, 다음 달 이후는 넣지 않는다", () => {
+    const receipt = buildReceipt(
+      [sub({ billingDay: 30 })],
+      [],
+      { kind: "year", year: 2026 },
+      RATE,
+      NOW,
+    );
+    expect(receipt.lines[0].chargeDates).toHaveLength(9); // 1~8월 + 9월 30일(예정)
+    expect(receipt.lines[0].upcomingDates).toEqual(["2026-09-30"]);
   });
 });
 
