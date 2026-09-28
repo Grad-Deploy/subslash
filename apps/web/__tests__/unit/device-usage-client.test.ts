@@ -87,6 +87,7 @@ beforeEach(() => {
 afterEach(() => {
   process.env.NEXT_PUBLIC_BUILD_TARGET = ORIGINAL_TARGET;
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("네이티브 플러그인", () => {
@@ -218,8 +219,11 @@ describe("다시 설치한 기기", () => {
     expect(Date.now() - from).toBeGreaterThan(24 * 60 * 60_000);
     expect(client.useDeviceUsage.getState().deviceKey).toBe(stable);
 
+    // 다음 업로드는 지우지 않고 올리기만 한다. 앱은 15분 넘게 지나야 다시 올리므로 시각을 옮겨 둔다 —
+    // 같은 밀리초에 다시 부르면 올릴 기간이 없어 아무것도 보내지 않는다(CI에서 그렇게 실패했다).
+    vi.setSystemTime(Date.now() + 60_000);
     mocks.requests = [];
-    await client.uploadThisDevice("acc-1");
+    expect(await client.uploadThisDevice("acc-1")).toBe(true);
     expect(mocks.requests.map((r) => r.method)).toEqual(["POST"]);
   });
 
