@@ -48,7 +48,7 @@ export function isGmailAutoImportOpen(now: Date = new Date()): boolean {
  * 정하면 방침에 항목이 나타나므로 `PRIVACY_EFFECTIVE_DATE`도 함께 바꾸고, 그 전에 두 배포 DB에
  * `drizzle/0016_gmail_charge_history.sql`을 적용한다.
  */
-export const GMAIL_CHARGE_HISTORY_STARTS_ON: string | null = null;
+export const GMAIL_CHARGE_HISTORY_STARTS_ON: string | null = "2026-09-28";
 
 /** 자동 가져오기가 이전 결제 메일을 저장하기 시작했는지. */
 export function isGmailChargeHistoryOpen(now: Date = new Date()): boolean {
