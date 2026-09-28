@@ -2,7 +2,10 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Mail, MessageSquareText, PenLine, Plus } from "lucide-react";
+import { ChevronRight, Mail, MessageSquareText, PenLine, Plus, Smartphone } from "lucide-react";
+import type { ServicePreset } from "@subslash/shared";
+import { usePhoneUsage } from "@hooks/usePhoneUsage";
+import { AppUsageFindSheet } from "../../usage/app/AppUsageFindSheet";
 import { AppSheet } from "../../settings/app/AppSheet";
 
 /**
@@ -13,14 +16,20 @@ import { AppSheet } from "../../settings/app/AppSheet";
 export function AppAddButton({
   onManual,
   onPaste,
+  onPickPreset,
 }: {
   /** 직접 등록(서비스 고르기·폼). */
   onManual: () => void;
   /** 결제 문자 붙여넣기. */
   onPaste: () => void;
+  /** 폰 사용 기록에서 찾은 서비스로 등록 폼을 연다(안드로이드). */
+  onPickPreset: (preset: ServicePreset) => void;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
+  // iOS는 폰 사용 기록을 읽을 수 없어 이 방법을 두지 않는다.
+  const { status } = usePhoneUsage();
   const pick = (action: () => void) => () => {
     setOpen(false);
     action();
@@ -45,6 +54,16 @@ export function AppAddButton({
       detail: "카드 결제 문자를 붙여 넣어요",
       onClick: pick(onPaste),
     },
+    ...(status === "unsupported"
+      ? []
+      : [
+          {
+            icon: <Smartphone className="size-5" aria-hidden />,
+            title: "폰 사용 기록에서 찾기",
+            detail: "넷플릭스·티빙 같은 OTT를 이 폰에서 쓴 기록으로 찾아요",
+            onClick: pick(() => setFindOpen(true)),
+          },
+        ]),
   ];
 
   return (
@@ -79,6 +98,7 @@ export function AppAddButton({
           ))}
         </div>
       </AppSheet>
+      <AppUsageFindSheet open={findOpen} onClose={() => setFindOpen(false)} onPick={onPickPreset} />
     </>
   );
 }

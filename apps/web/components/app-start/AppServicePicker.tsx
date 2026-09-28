@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Mail } from "lucide-react";
+import { MoreHorizontal, Mail, Smartphone } from "lucide-react";
 import { POPULAR_SERVICES, type ServicePreset } from "@subslash/shared";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 
@@ -20,6 +20,8 @@ interface AppServicePickerProps {
   onPaste: () => void;
   /** 샘플로 둘러보기. 웹 첫 화면에서만 준다 — 앱은 환영 화면에서 고른다. */
   onSample?: () => void;
+  /** 폰 사용 기록에서 찾기. 폰 기록을 읽을 수 있는 안드로이드 앱에서만 준다. */
+  onUsage?: () => void;
 }
 
 /**
@@ -33,6 +35,7 @@ export function AppServicePicker({
   onCustom,
   onPaste,
   onSample,
+  onUsage,
 }: AppServicePickerProps) {
   const tile =
     "flex flex-col items-center gap-1.5 rounded-2xl border bg-card px-1 pt-3 pb-2.5 text-[11px] font-semibold transition active:scale-[.97] hover:bg-muted";
@@ -67,6 +70,15 @@ export function AppServicePicker({
         <Mail className="size-4" aria-hidden />
         결제 메일에서 한 번에 찾기
       </button>
+      {onUsage && (
+        <button
+          type="button"
+          onClick={onUsage}
+          className="mt-2 flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border text-[13px] font-bold hover:bg-muted"
+        >
+          <Smartphone className="size-4" aria-hidden />폰 사용 기록으로 찾기
+        </button>
+      )}
 
       <p className="mt-3 text-center text-xs font-medium text-muted-foreground">
         <button type="button" onClick={onCustom} className="underline underline-offset-4">
