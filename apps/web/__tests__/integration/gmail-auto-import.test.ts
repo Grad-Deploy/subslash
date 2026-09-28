@@ -243,14 +243,21 @@ describe("Gmail 자동 가져오기", () => {
     expect((await discoveries(cookie)).map((d) => d.amount)).toEqual([20000]);
   });
 
-  it("이전 결제 메일은 저장을 시작하기 전에는 저장하지 않는다", async () => {
+  it("이전 결제 메일은 저장을 시작하기 전에는 저장하지 않고, 시작일 0시부터 저장한다", async () => {
     const { cookie } = await loggedIn("sean");
     const token = await issueToken(cookie);
+    // 저장 시작일(GMAIL_CHARGE_HISTORY_STARTS_ON, 한국 시간 0시) 1분 전.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-27T14:59:00.000Z"));
 
     await ingest(token, [NETFLIX, { ...NETFLIX, date: daysAgo(33) }]);
     expect((await discoveries(cookie))[0].chargeHistory).toEqual([]);
     const [row] = await getDb().select().from(gmailDiscoveries);
     expect(row.chargeHistory).toBeNull();
+
+    vi.setSystemTime(new Date("2026-09-27T15:00:00.000Z"));
+    await ingest(token, [NETFLIX, { ...NETFLIX, date: daysAgo(33) }]);
+    expect((await discoveries(cookie))[0].chargeHistory).toHaveLength(2);
   });
 
   it("저장을 시작하면 이전 결제 메일의 날과 금액을 두고, 늦게 온 옛 메일도 합친다", async () => {
