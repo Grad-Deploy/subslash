@@ -41,9 +41,29 @@ export const USAGE_PACKAGES: Readonly<Record<string, readonly string[]>> = {
   "ridi-select": ["com.initialcoms.ridi"],
 };
 
-/** 연결표의 모든 패키지. 기기는 구독 여부와 관계없이 이 목록을 모두 쌓는다 — 나중에 등록한 구독도 지난 기록을 본다. */
-export const ALL_USAGE_PACKAGES: readonly string[] = [
+/**
+ * 구독을 재지는 않고 '구독 중인가요?'를 묻는 데에만 쓰는 앱(lib/usage/suggest). 구독의 사용 기록(체크인·안 쓰는
+ * 구독 알림·리포트·여러 기기 측정)에는 넣지 않는다.
+ *
+ * - 쿠팡플레이(com.coupang.mobile.play, 2026-09-28 검색 결과의 Play 스토어 주소로 확인): 와우 멤버십의 혜택이라
+ *   앱을 연 것으로 와우를 재면 배송 혜택으로 쓰는 사람이 늘 0회가 된다(위 설명). 다만 이 앱을 꾸준히 쓰면 와우를
+ *   구독 중인지 물어볼 수는 있다. 2025년 6월부터 일반 회원도 광고를 보며 무료로 보므로 묻기만 한다.
+ */
+export const SUGGEST_ONLY_PACKAGES: Readonly<Record<string, readonly string[]>> = {
+  "coupang-wow": ["com.coupang.mobile.play"],
+};
+
+/** 구독의 사용 기록으로 재는 패키지(연결표 전체). */
+export const MEASURED_USAGE_PACKAGES: readonly string[] = [
   ...new Set(Object.values(USAGE_PACKAGES).flat()),
+];
+
+/**
+ * 기기가 쌓는 모든 패키지. 구독 여부와 관계없이 이 목록을 모두 쌓는다 — 나중에 등록한 구독도 지난 기록을 본다.
+ * 묻기에만 쓰는 앱(SUGGEST_ONLY_PACKAGES)도 여기서 함께 쌓는다.
+ */
+export const ALL_USAGE_PACKAGES: readonly string[] = [
+  ...new Set([...MEASURED_USAGE_PACKAGES, ...Object.values(SUGGEST_ONLY_PACKAGES).flat()]),
 ];
 
 /** 이 구독을 폰 기록으로 잴 수 있으면 그 앱 패키지들, 아니면 null(직접 체크인). */
@@ -62,6 +82,7 @@ export function packagesFor(sub: Subscription): readonly string[] | null {
 export const PACKAGE_LABELS: Readonly<Record<string, string>> = {
   "com.google.android.youtube": "유튜브",
   "com.google.android.apps.youtube.music": "유튜브 뮤직",
+  "com.coupang.mobile.play": "쿠팡플레이",
 };
 
 /** 구독의 앱별 사용 시간을 보여 줄 줄들. 앱이 하나뿐이면 빈 배열(나눌 것이 없다). */

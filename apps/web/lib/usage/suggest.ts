@@ -5,7 +5,7 @@ import {
   type ServicePreset,
   type Subscription,
 } from "@subslash/shared";
-import { USAGE_PACKAGES } from "./packages";
+import { SUGGEST_ONLY_PACKAGES, USAGE_PACKAGES } from "./packages";
 import {
   addDays,
   dayKey,
@@ -21,9 +21,8 @@ import {
  * 쓰는 것은 구독하는 것과 다르다 — 가족 계정으로 보거나, 결합 상품으로 받거나, 무료로 볼 수 있다. 그래서
  * 등록하지 않고 묻기만 하고, 요금제·금액·결제일은 등록 폼에서 사용자가 고른다(사용 기록으로는 알 수 없다).
  *
- * 묻는 서비스는 앱으로 볼 것이 거의 다 유료인 OTT만 둔다. 무료로도 많이 쓰는 앱(유튜브·유튜브 뮤직·스포티파이·
- * 챗GPT 같은 AI 앱)은 쓴다는 것이 구독의 근거가 되지 않아 뺐다. 쿠팡플레이는 와우 멤버십의 혜택이라 연결표에도
- * 없다(lib/usage/packages).
+ * 묻는 서비스는 앱으로 볼 것이 거의 다 유료인 OTT와, 앱을 쓰는 것이 구독의 근거가 되는 곳만 둔다. 무료로도 많이
+ * 쓰는 앱(유튜브·스포티파이·챗GPT 같은 AI 앱)은 쓴다는 것이 구독의 근거가 되지 않아 뺐다.
  */
 export const SUGGESTABLE_SERVICES: readonly string[] = [
   "netflix",
@@ -31,7 +30,32 @@ export const SUGGESTABLE_SERVICES: readonly string[] = [
   "tving",
   "wavve",
   "watcha",
+  "youtube-premium",
+  "coupang-wow",
 ];
+
+/**
+ * 서비스의 연결표(USAGE_PACKAGES)가 아닌 다른 앱으로 묻는 서비스. 그 앱의 이름을 카드에 적는다.
+ *
+ * - 유튜브 프리미엄: 유튜브 앱은 무료로 쓰므로 보지 않고, 유튜브 뮤직 앱만 본다. 한국에는 유튜브 뮤직의 무료
+ *   요금제가 없어 이 앱을 쓰면 프리미엄(라이트 제외)이나 뮤직 프리미엄을 누군가 내고 있다.
+ * - 쿠팡 와우: 쿠팡플레이 앱(SUGGEST_ONLY_PACKAGES). 2025년 6월부터 일반 회원도 광고를 보며 무료로 보므로,
+ *   근거가 약하다는 것을 카드에 함께 적는다.
+ */
+export const SUGGEST_SIGNALS: Readonly<
+  Record<string, { packages: readonly string[]; appName: string; note?: string }>
+> = {
+  "youtube-premium": {
+    packages: ["com.google.android.apps.youtube.music"],
+    appName: "유튜브 뮤직",
+    note: "유튜브 뮤직만 따로 내면(뮤직 프리미엄) 직접 입력으로 등록해요.",
+  },
+  "coupang-wow": {
+    packages: SUGGEST_ONLY_PACKAGES["coupang-wow"] ?? [],
+    appName: "쿠팡플레이",
+    note: "쿠팡플레이는 와우 회원이 아니어도 광고를 보며 무료로 볼 수 있어요.",
+  },
+};
 
 /** 이만큼 기록이 쌓여야 묻는다. 며칠치로는 잠깐 열어 본 것과 늘 보는 것을 가르지 못한다. */
 export const SUGGEST_MIN_COVERED_DAYS = 14;
@@ -54,6 +78,10 @@ export interface SubscriptionSuggestion {
   killed: boolean;
   /** 이 서비스를 포함하는 결합 상품(서비스 목록에서). '결합 상품으로 받아요'에 보여 준다. */
   bundles: ServicePreset[];
+  /** 서비스 이름과 다른 앱으로 찾았으면 그 앱 이름(SUGGEST_SIGNALS). */
+  appName?: string;
+  /** 쓴다는 것만으로 구독이라 하기 어려운 까닭. 카드에 함께 적는다. */
+  note?: string;
 }
 
 export function dismissUntil(now: Date): string {
@@ -88,14 +116,22 @@ export function findSubscriptionSuggestions(
   for (const id of SUGGESTABLE_SERVICES) {
     if (covered.has(id) || (dismissed[id] ?? "") > today) continue;
     const preset = POPULAR_SERVICES.find((service) => service.id === id);
-    const packages = USAGE_PACKAGES[id];
-    if (!preset || !packages) continue;
+    const signal = SUGGEST_SIGNALS[id];
+    const packages = signal?.packages ?? USAGE_PACKAGES[id];
+    if (!preset || !packages || packages.length === 0) continue;
     const totals = totalsFor(history, packages, dates);
     if (totals.coveredDays < Math.max(1, minCoveredDays)) continue;
     if (totals.usedMs < SUGGEST_MIN_USED_MS && totals.activeDays < SUGGEST_MIN_ACTIVE_DAYS) {
       continue;
     }
-    suggestions.push({ preset, totals, killed: killed.has(id), bundles: bundlesIncluding(id) });
+    suggestions.push({
+      preset,
+      totals,
+      killed: killed.has(id),
+      bundles: bundlesIncluding(id),
+      appName: signal?.appName,
+      note: signal?.note,
+    });
   }
   return suggestions.sort((a, b) => b.totals.usedMs - a.totals.usedMs);
 }

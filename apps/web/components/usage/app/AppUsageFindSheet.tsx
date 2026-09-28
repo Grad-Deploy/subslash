@@ -8,6 +8,7 @@ import { realRecords, useStore } from "@lib/store";
 import { lastDays } from "@lib/usage/history";
 import {
   SUGGEST_MIN_COVERED_DAYS,
+  SUGGEST_SIGNALS,
   SUGGESTABLE_SERVICES,
   findSubscriptionSuggestions,
 } from "@lib/usage/suggest";
@@ -16,8 +17,12 @@ import { Spinner } from "../../ui/spinner";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 import { SuggestionCard } from "./AppSubscriptionSuggestions";
 
+// 보는 앱의 이름으로 적는다(유튜브 프리미엄은 유튜브 뮤직 앱, 쿠팡 와우는 쿠팡플레이 앱).
 const SERVICE_NAMES = SUGGESTABLE_SERVICES.map(
-  (id) => POPULAR_SERVICES.find((preset) => preset.id === id)?.nameKo ?? id,
+  (id) =>
+    SUGGEST_SIGNALS[id]?.appName ??
+    POPULAR_SERVICES.find((preset) => preset.id === id)?.nameKo ??
+    id,
 ).join("·");
 
 /**
