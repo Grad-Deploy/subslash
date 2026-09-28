@@ -91,7 +91,8 @@ export function AppSubscriptionSuggestions({
   );
 }
 
-function SuggestionCard({
+/** 후보 하나. 대시보드 카드와 '폰 사용 기록에서 찾기'가 함께 쓴다. */
+export function SuggestionCard({
   suggestion,
   showBundles,
   onAdd,
@@ -102,7 +103,8 @@ function SuggestionCard({
   showBundles: boolean;
   onAdd: (preset: ServicePreset) => void;
   onShowBundles: () => void;
-  onDismiss: () => void;
+  /** '내가 내지 않아요'. 주지 않으면 그 버튼과 안내를 두지 않는다(사용자가 직접 찾은 목록). */
+  onDismiss?: () => void;
 }) {
   const { preset, totals, killed, bundles } = suggestion;
   const name = preset.nameKo || preset.name;
@@ -155,15 +157,19 @@ function SuggestionCard({
               결합 상품으로 받아요
             </Button>
           )}
-          <Button size="sm" variant="ghost" className="flex-1 text-xs" onClick={onDismiss}>
-            내가 내지 않아요
-          </Button>
+          {onDismiss && (
+            <Button size="sm" variant="ghost" className="flex-1 text-xs" onClick={onDismiss}>
+              내가 내지 않아요
+            </Button>
+          )}
         </div>
       )}
-      <p className="text-[11px] text-muted-foreground">
-        &lsquo;내가 내지 않아요&rsquo;는 가족 계정·무료 시청·구독 안 함이에요.{" "}
-        {SUGGEST_DISMISS_DAYS}일 동안 묻지 않아요.
-      </p>
+      {onDismiss && (
+        <p className="text-[11px] text-muted-foreground">
+          &lsquo;내가 내지 않아요&rsquo;는 가족 계정·무료 시청·구독 안 함이에요.{" "}
+          {SUGGEST_DISMISS_DAYS}일 동안 묻지 않아요.
+        </p>
+      )}
     </div>
   );
 }

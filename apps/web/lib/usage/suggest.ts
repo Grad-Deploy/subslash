@@ -69,6 +69,11 @@ export function findSubscriptionSuggestions(
   history: UsageHistory,
   dismissed: SuggestDismissMap,
   now: Date,
+  /**
+   * 기록이 이만큼 있어야 묻는다. 대시보드가 먼저 묻는 것은 SUGGEST_MIN_COVERED_DAYS를 쓰고, 사용자가 '폰 사용
+   * 기록에서 찾기'를 눌렀을 때는 권한을 막 켜 기록이 며칠뿐이어도 찾는다 — 몇 일치인지는 화면이 함께 적는다.
+   */
+  minCoveredDays: number = SUGGEST_MIN_COVERED_DAYS,
 ): SubscriptionSuggestion[] {
   const today = dayKey(now);
   const dates = lastDays(now, 30);
@@ -86,7 +91,7 @@ export function findSubscriptionSuggestions(
     const packages = USAGE_PACKAGES[id];
     if (!preset || !packages) continue;
     const totals = totalsFor(history, packages, dates);
-    if (totals.coveredDays < SUGGEST_MIN_COVERED_DAYS) continue;
+    if (totals.coveredDays < Math.max(1, minCoveredDays)) continue;
     if (totals.usedMs < SUGGEST_MIN_USED_MS && totals.activeDays < SUGGEST_MIN_ACTIVE_DAYS) {
       continue;
     }
