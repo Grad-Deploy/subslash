@@ -1,6 +1,11 @@
 import React from "react";
 import { formatKRW, formatReceiptPeriod, type Receipt } from "@subslash/shared";
-import { describeReceiptLine, receiptFootnotes, receiptNumber } from "@lib/receipt-view";
+import {
+  describeReceiptLine,
+  receiptFootnotes,
+  receiptNumber,
+  receiptPeriodSuffix,
+} from "@lib/receipt-view";
 
 /**
  * 영수증 모양으로 그린 한 달·한 해의 구독 결제(utils/receipt).
@@ -22,7 +27,7 @@ export function ReceiptPaper({ receipt, issuedAt }: { receipt: Receipt; issuedAt
         <p className="text-xs text-zinc-500">구독 영수증</p>
         <p className="pt-1 text-base font-bold">
           {formatReceiptPeriod(receipt.period)}
-          {receipt.isComplete ? "" : " · 오늘까지"}
+          {receiptPeriodSuffix(receipt)}
         </p>
         <p className="text-[11px] text-zinc-500 tabular-nums">
           No. {receiptNumber(receipt.period)} · 발행 {issued}
