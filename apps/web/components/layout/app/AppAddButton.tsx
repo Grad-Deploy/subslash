@@ -17,6 +17,8 @@ export function AppAddButton({
   onManual,
   onPaste,
   onPickPreset,
+  menuOpen,
+  onMenuOpenChange,
 }: {
   /** 직접 등록(서비스 고르기·폼). */
   onManual: () => void;
@@ -24,9 +26,17 @@ export function AppAddButton({
   onPaste: () => void;
   /** 폰 사용 기록에서 찾은 서비스로 등록 폼을 연다(안드로이드). */
   onPickPreset: (preset: ServicePreset) => void;
+  /**
+   * 화면의 다른 '구독 추가' 버튼도 같은 메뉴를 열게 할 때 넘긴다(구독 관리의 빈 목록). 주지 않으면 + 버튼만
+   * 연다. 버튼마다 다르게 동작하면 같은 이름의 버튼이 한쪽은 폼, 한쪽은 방법 고르기가 된다.
+   */
+  menuOpen?: boolean;
+  onMenuOpenChange?: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = menuOpen ?? ownOpen;
+  const setOpen = onMenuOpenChange ?? setOwnOpen;
   const [findOpen, setFindOpen] = useState(false);
   // iOS는 폰 사용 기록을 읽을 수 없어 이 방법을 두지 않는다.
   const { status } = usePhoneUsage();
