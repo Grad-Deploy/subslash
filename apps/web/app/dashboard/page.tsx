@@ -103,6 +103,16 @@ const AppUnusedAlerts = IS_APP_BUILD
       { ssr: false },
     )
   : null;
+// 폰 사용 기록으로 찾은 '등록하지 않았는데 쓰고 있는 구독'(안드로이드 앱 전용).
+const AppSubscriptionSuggestions = IS_APP_BUILD
+  ? dynamic(
+      () =>
+        import("../../components/usage/app/AppSubscriptionSuggestions").then(
+          (m) => m.AppSubscriptionSuggestions,
+        ),
+      { ssr: false },
+    )
+  : null;
 // 결제 달력(앱은 상단 아이콘 + 여기 '다음 결제' 한 줄), 구독 추가 + 버튼(앱 전용).
 const AppNextBilling = IS_APP_BUILD
   ? dynamic(
@@ -250,6 +260,14 @@ export default function Dashboard() {
     startFlow && usageLogs.length === 0
       ? [...activeSubs].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
       : undefined;
+
+  // 폰 기록으로 찾은 구독 후보. 샘플 체험 중에는 묻지 않는다 — 화면의 목록이 내 기록이 아니다.
+  const usageSuggestions = AppSubscriptionSuggestions && !demo && (
+    <AppSubscriptionSuggestions
+      subscriptions={subscriptions}
+      onAdd={(preset) => openAdd({ preset })}
+    />
+  );
 
   const handleOpenCheckIn = (id: string) => {
     const sub = findSub(id);
@@ -468,14 +486,17 @@ export default function Dashboard() {
 
           {/* 지금 결정할 것 — 이 화면의 본체 */}
           {startFlow && isFirstVisit ? (
-            <AppServicePicker
-              onPick={(preset) => openAdd({ preset })}
-              onMore={() => openAdd()}
-              onEmail={() => router.push("/import")}
-              onCustom={() => openAdd({ custom: true })}
-              onPaste={() => setIsAutoImportOpen(true)}
-              onSample={IS_APP_BUILD ? undefined : handleLoadDemo}
-            />
+            <>
+              {usageSuggestions}
+              <AppServicePicker
+                onPick={(preset) => openAdd({ preset })}
+                onMore={() => openAdd()}
+                onEmail={() => router.push("/import")}
+                onCustom={() => openAdd({ custom: true })}
+                onPaste={() => setIsAutoImportOpen(true)}
+                onSample={IS_APP_BUILD ? undefined : handleLoadDemo}
+              />
+            </>
           ) : AppDecisionFold && queue.length > 0 ? (
             // 앱: 할 일이 있으면 폰 사용 기록 알림까지 한 묶음으로 접는다. 알림은 제목 아래에 둔다.
             <AppDecisionFold items={queue}>
@@ -492,19 +513,23 @@ export default function Dashboard() {
                   onAddFirst={() => openAdd()}
                   headerAction={foldButton}
                   lead={
-                    AppUnusedAlerts && (
-                      <AppUnusedAlerts
-                        subscriptions={activeSubs}
-                        usageLogs={usageLogs}
-                        onCancelGuide={handleCancelGuide}
-                      />
-                    )
+                    <>
+                      {usageSuggestions}
+                      {AppUnusedAlerts && (
+                        <AppUnusedAlerts
+                          subscriptions={activeSubs}
+                          usageLogs={usageLogs}
+                          onCancelGuide={handleCancelGuide}
+                        />
+                      )}
+                    </>
                   }
                 />
               )}
             </AppDecisionFold>
           ) : (
             <>
+              {usageSuggestions}
               {AppUnusedAlerts && (
                 <AppUnusedAlerts
                   subscriptions={activeSubs}
