@@ -304,7 +304,10 @@ DB는 정보 종류별로 나누지 않는다. 같은 서버가 모든 접속 �
 있었다'뿐이라 TV·PC·iPhone·화면 끈 재생·배속은 없다. 그래서 값은 "측정한 기기에서 최소 N회"이고
 체크인을 덮어쓰지 않으며, 측정 기간(`measuredFrom`~`measuredUntil`) 밖은 '안 썼다'가 아니라 모른다
 (이전 업로드와 사이가 비면 측정 기간을 이어 붙이지 않는다). 패키지 이름(`ANDROID_PACKAGES`)은 Play
-스토어에서 확인한 것만 적는다. 보관 40일(크론이 지움), 회원 탈퇴는 `deleteAllDeviceUsage`.
+스토어에서 확인한 것만 적는다. 보관 40일(크론이 지움), 회원 탈퇴는 `deleteAllDeviceUsage`. 기기 키는 앱이 받는
+기기 식별값(`ANDROID_ID`, `UsageStatsPlugin.deviceId`)을 계정과 섞은 SHA-256(`stableDeviceKey`)이다 — 앱 저장소의
+무작위 값이었을 때는 앱을 다시 설치하면 같은 폰이 새 기기로 올라갔다. 식별값은 서버로 보내지 않는다. 저장된 키가
+고정 키와 다르면(예전 무작위 키) 그 키의 기록을 지운 뒤 보관 기간 전체를 다시 올리고, 지우지 못하면 올리지 않는다.
 `DEVICE_USAGE_STARTS_ON`(null이면 닫힘)을 정하기 전에 두 배포 DB에 `drizzle/0012_device_usage.sql`을
 적용하고, 사용 정보 접근 권한에 대한 스토어 정책을 확인한다.
 

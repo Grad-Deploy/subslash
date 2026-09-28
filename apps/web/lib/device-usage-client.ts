@@ -4,6 +4,7 @@ import { apiFetch, readApiError } from "./api";
 import {
   isUsageGranted,
   isUsageSupported,
+  nativeDeviceId,
   openUsageSettings,
   queryForeground,
 } from "./usage/native";
@@ -17,8 +18,11 @@ import type { DeviceUsageView } from "./device-usage-server";
 
 /**
  * 기기 간 사용 측정의 기기 쪽. 켜짐 여부·기기 키·마지막으로 올린 시각은 **이 기기**의 것이라 구독 기록
- * 저장소·백업·계정 동기화에 넣지 않는다(익명 통계·로컬 알림 설정과 같다). 기기 키는 계정 안에서 이
- * 기기를 가리키는 무작위 값일 뿐이고, 잃으면 새 기기로 올라간다(옛 기기는 보관 기간이 지나면 지워진다).
+ * 저장소·백업·계정 동기화에 넣지 않는다(익명 통계·로컬 알림 설정과 같다).
+ *
+ * 기기 키는 안드로이드가 이 앱에 주는 기기 식별값을 계정과 섞은 해시다(stableDeviceKey). 예전에는 앱
+ * 저장소에 둔 무작위 값이라, 앱을 지웠다 다시 설치하면 같은 폰이 새 기기로 올라가 '측정한 기기'에 두 번
+ * 나왔다. 식별값을 읽지 못하는 앱(이 메서드가 생기기 전 빌드)에서만 무작위 값을 쓴다.
  *
  * 켠 계정(`accountId`)을 함께 적는다. 켜짐만 기억하면, 같은 기기에 다른 사람이 로그인했을 때 그
  * 사람은 켠 적이 없는데 이 기기의 사용이 그 계정으로 올라간다.
@@ -99,11 +103,43 @@ export async function openUsageAccessSettings(): Promise<void> {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
+ * 앱을 지웠다 다시 설치해도 같은 이 기기의 키. 기기 식별값을 그대로 보내지 않고 계정과 섞은 SHA-256만
+ * 쓴다 — 계정마다 달라 서로 다른 계정의 기기를 서버에서 이을 수 없다. 읽지 못하면 null.
+ */
+export async function stableDeviceKey(accountId: string): Promise<string | null> {
+  const id = await nativeDeviceId();
+  if (!id) return null;
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`subslash-device-usage:${accountId}:${id}`),
+  );
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * 이번에 올릴 기기 키를 정한다. 저장된 키가 이 기기의 고정 키와 다르면(예전 무작위 키, 다른 계정으로 쟀던
+ * 키) 이 계정에 그 키로 올린 이 기기의 기록을 먼저 지우고, 고정 키로 보관 기간 전체를 다시 올린다 — 같은
+ * 폰이 두 기기로 남지 않게. 지우지 못하면 올리지 않는다(다음에 다시 한다).
+ */
+async function settleDeviceKey(accountId: string): Promise<string> {
+  const stable = await stableDeviceKey(accountId);
+  const state = useDeviceUsage.getState();
+  if (!stable) return state.ensureDeviceKey();
+  if (state.deviceKey === stable) return stable;
+  if (state.deviceKey) await deleteOnServer({ deviceKey: state.deviceKey });
+  useDeviceUsage.setState({ deviceKey: stable, uploadedUntil: null });
+  return stable;
+}
+
+/**
  * 운영체제가 남긴 사용 이벤트를 읽어 한 번의 업로드로 만든다. 지난번 끝에서 이어 재되, 너무 오래
  * 쉬었으면 보관 기간 안에서만 잰다. 운영체제가 그보다 짧게 남겼으면(firstEventAt) 거기서부터가 잰
  * 기간이다 — 비어 있는 앞부분을 '안 썼다'로 올리지 않는다.
  */
-export async function collectUpload(now: number = Date.now()): Promise<UsageUpload | null> {
+export async function collectUpload(
+  now: number = Date.now(),
+  deviceKey?: string,
+): Promise<UsageUpload | null> {
   if (!(await isUsageGranted())) return null;
   const state = useDeviceUsage.getState();
   const earliest = now - (USAGE_RETENTION_DAYS - 1) * DAY_MS;
@@ -117,7 +153,7 @@ export async function collectUpload(now: number = Date.now()): Promise<UsageUplo
   if (firstEventAt !== null && firstEventAt > from) from = firstEventAt;
 
   return {
-    deviceKey: state.ensureDeviceKey(),
+    deviceKey: deviceKey ?? state.ensureDeviceKey(),
     platform: "android",
     label: null,
     from,
@@ -137,7 +173,9 @@ export async function collectUpload(now: number = Date.now()): Promise<UsageUplo
  */
 export async function uploadThisDevice(accountId: string): Promise<boolean> {
   if (!isMeasuringFor(useDeviceUsage.getState(), accountId)) return false;
-  const upload = await collectUpload();
+  if (!(await isUsageGranted())) return false;
+  const deviceKey = await settleDeviceKey(accountId);
+  const upload = await collectUpload(Date.now(), deviceKey);
   if (!upload) return false;
   const response = await apiFetch("/api/usage", {
     method: "POST",
@@ -177,7 +215,11 @@ export async function stopMeasuringThisDevice(): Promise<void> {
   const { deviceKey, accountId } = before;
   useDeviceUsage.setState({ enabled: false, uploadedUntil: null });
   try {
-    if (deviceKey) await deleteOnServer({ deviceKey });
+    // 다시 설치한 뒤에는 저장된 키가 없어도 서버에 이 기기의 고정 키로 올린 기록이 있을 수 있다.
+    const stable = accountId ? await stableDeviceKey(accountId) : null;
+    for (const key of new Set([deviceKey, stable])) {
+      if (key) await deleteOnServer({ deviceKey: key });
+    }
     useDeviceUsage.setState({ accountId: null });
   } catch (error) {
     useDeviceUsage.setState({
