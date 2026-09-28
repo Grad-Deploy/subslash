@@ -117,15 +117,32 @@ describe("findSubscriptionSuggestions", () => {
   });
 
   it("쿠팡플레이를 쓰면 쿠팡 와우를 묻되, 무료로도 볼 수 있다고 함께 적는다", () => {
-    const found = findSubscriptionSuggestions(
-      [],
-      history(30, { [COUPANG_PLAY]: 60 * MIN }),
-      {},
-      NOW,
-    );
+    // 쿠팡플레이를 처음부터 읽은 기록.
+    const used = {
+      ...history(30, { [COUPANG_PLAY]: 60 * MIN }),
+      packagesSince: { [COUPANG_PLAY]: "" },
+    };
+    const found = findSubscriptionSuggestions([], used, {}, NOW);
     expect(ids(found)).toEqual(["coupang-wow"]);
     expect(found[0]).toMatchObject({ appName: "쿠팡플레이" });
     expect(found[0].note).toContain("무료");
+  });
+
+  it("쿠팡플레이를 읽기 전에 쌓은 기록으로는 묻지 않는다 — 그 앞의 날은 0이 아니라 모른다", () => {
+    // 쿠팡플레이를 연결표에 더하기 전의 30일(칸은 있고 쿠팡플레이는 없다) + 더한 뒤 이틀.
+    const before = history(30, {});
+    const days = { ...before.days };
+    for (const date of lastDays(NOW, 2)) days[date] = { [COUPANG_PLAY]: [60 * MIN, 1] };
+    const found = findSubscriptionSuggestions(
+      [],
+      { ...before, days, packagesSince: { [COUPANG_PLAY]: lastDays(NOW, 2)[0] } },
+      {},
+      NOW,
+      1,
+    );
+    // 이틀치로 찾되(직접 찾기), 기록은 2일치라고 적는다.
+    expect(ids(found)).toEqual(["coupang-wow"]);
+    expect(found[0].totals.coveredDays).toBe(2);
   });
 
   it("쿠팡플레이는 묻는 데에만 쓰고 와우의 사용 기록으로 재지 않는다", () => {
