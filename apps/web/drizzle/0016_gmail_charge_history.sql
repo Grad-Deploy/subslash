@@ -1,0 +1,1 @@
+ALTER TABLE `gmail_discoveries` ADD `charge_history` text;

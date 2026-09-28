@@ -161,6 +161,8 @@ export function AppAutoImportModal({
     }));
     startTransition(() => {
       addBatchSubscriptions(dataList, { clearPrevious: willReplace });
+      // 결제 메일에서 찾은 후보는 이전 결제 메일들을 방금 등록한 구독에 적는다(웹의 등록 창과 같다).
+      useStore.getState().recordChargeHistory(selected);
       onRegistered?.();
       close();
     });

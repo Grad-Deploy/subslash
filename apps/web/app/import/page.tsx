@@ -143,7 +143,11 @@ export default function ImportPage() {
         // 멤버십 혜택을 적을 때 볼 근거(최근 30일 주문 메일 수)를 이미 등록한 멤버십에 적는다. 메일
         // 내용은 여기서만 읽고 수만 남긴다.
         useStore.getState().recordOrderEvidence(countMembershipOrders(emails, new Date()));
-        setState({ kind: "ready", emailCount: emails.length, items: parseReceiptEmails(emails) });
+        const items = parseReceiptEmails(emails);
+        // 이미 등록한 구독에는 찾은 결제 메일들을 곧바로 적는다(영수증이 등록 전 달을 채운다). 새로
+        // 등록하는 후보는 등록 창이 등록한 뒤에 적는다.
+        useStore.getState().recordChargeHistory(items);
+        setState({ kind: "ready", emailCount: emails.length, items });
       })
       .catch((error: unknown) =>
         setState({

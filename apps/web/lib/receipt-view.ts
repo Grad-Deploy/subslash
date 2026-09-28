@@ -27,6 +27,14 @@ export function describeReceiptLine(line: ReceiptLine, period: ReceiptPeriod): s
   if (line.upcomingDates.length > 0) {
     parts.push(`${line.upcomingDates.map(formatChargeDate).join(", ")} 결제 예정`);
   }
+  // 등록 전 달을 기록이 아니라 결제 메일로 넣었다는 것. 금액의 근거가 다르다.
+  if (line.evidencedDates.length > 0) {
+    parts.push(
+      line.evidencedDates.length === paid.length
+        ? "결제 메일로 확인"
+        : `${line.evidencedDates.length}회는 결제 메일로 확인`,
+    );
+  }
   if (line.billingCycle === "yearly") parts.push("연간");
   if (line.shared) parts.push(`나눠 냄 · 카드 ${formatKRW(line.billedKRW)}`);
   if (line.killedOn) parts.push(`${formatChargeDate(line.killedOn)} 해지`);
@@ -52,6 +60,16 @@ export function receiptPeriodSuffix(receipt: Receipt): string {
 /** 영수증 밑의 알림. 빠진 것이 있으면 몇 개가 왜 빠졌는지 말한다. */
 export function receiptFootnotes(receipt: Receipt): string[] {
   const notes = ["등록한 구독 기록으로 계산했어요. 카드 명세서와 다를 수 있어요."];
+  if (receipt.evidencedCount > 0) {
+    const sharedEvidence = receipt.lines.some(
+      (line) => line.shared && line.evidencedDates.length > 0,
+    );
+    notes.push(
+      `등록하기 전 결제 ${receipt.evidencedCount}건은 Gmail에서 찾은 결제 메일의 날짜와 금액으로 넣었어요.${
+        sharedEvidence ? " 나눠 내는 구독의 내 몫은 지금 나누는 비율로 계산했어요." : ""
+      }`,
+    );
+  }
   if (!receipt.isComplete) {
     notes.push(
       receipt.upcomingCount > 0
@@ -63,7 +81,7 @@ export function receiptFootnotes(receipt: Receipt): string[] {
   if (undated > 0) notes.push(`결제 월을 모르는 연간 구독 ${undated}개는 넣지 못했어요.`);
   if (beforeRegistration > 0) {
     notes.push(
-      `등록한 달보다 앞선 달은 구독 중이었는지 몰라 넣지 않았어요(${beforeRegistration}개).`,
+      `등록한 달보다 앞선 달 중 결제 메일을 찾지 못한 달은 구독 중이었는지 몰라 넣지 않았어요(${beforeRegistration}개).`,
     );
   }
   if (trial > 0) notes.push(`무료 체험 중이던 결제일은 뺐어요(${trial}개).`);

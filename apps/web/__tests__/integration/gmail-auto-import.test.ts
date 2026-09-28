@@ -243,6 +243,37 @@ describe("Gmail 자동 가져오기", () => {
     expect((await discoveries(cookie)).map((d) => d.amount)).toEqual([20000]);
   });
 
+  it("이전 결제 메일은 저장을 시작하기 전에는 저장하지 않는다", async () => {
+    const { cookie } = await loggedIn("sean");
+    const token = await issueToken(cookie);
+
+    await ingest(token, [NETFLIX, { ...NETFLIX, date: daysAgo(33) }]);
+    expect((await discoveries(cookie))[0].chargeHistory).toEqual([]);
+    const [row] = await getDb().select().from(gmailDiscoveries);
+    expect(row.chargeHistory).toBeNull();
+  });
+
+  it("저장을 시작하면 이전 결제 메일의 날과 금액을 두고, 늦게 온 옛 메일도 합친다", async () => {
+    process.env.NEXT_PUBLIC_GMAIL_CHARGE_HISTORY_TEST_OPEN = "true";
+    try {
+      const { cookie } = await loggedIn("sean");
+      const token = await issueToken(cookie);
+
+      // 연결 화면이 최근 40일을 먼저 보내고,
+      await ingest(token, [NETFLIX, { ...NETFLIX, date: daysAgo(33) }]);
+      // 1분 뒤 나머지 1년 치를 보낸다(scanOlder). 옛 영수증이라 후보는 덮지 않지만 기록은 합친다.
+      await ingest(token, [{ ...NETFLIX, date: daysAgo(63), body: "결제 금액 : 13,500원" }]);
+
+      const [found] = await discoveries(cookie);
+      expect(found.amount).toBe(17000);
+      const history = found.chargeHistory as Array<{ date: string; amount: number }>;
+      expect(history.map((charge) => charge.amount)).toEqual([13500, 17000, 17000]);
+      expect(history.every((charge) => /^\d{4}-\d{2}-\d{2}$/.test(charge.date))).toBe(true);
+    } finally {
+      delete process.env.NEXT_PUBLIC_GMAIL_CHARGE_HISTORY_TEST_OPEN;
+    }
+  });
+
   it("받은 후보를 지우고, 다른 계정의 후보는 읽지도 지우지도 못한다", async () => {
     const sean = await loggedIn("sean");
     const other = await loggedIn("other");

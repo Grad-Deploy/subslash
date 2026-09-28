@@ -4,6 +4,7 @@ import {
   getBilledAmount,
   isStaleReceipt,
   type BillingCycle,
+  type ChargeRecord,
   type Currency,
   type DiscoveredSubscription,
   type PaymentMethod,
@@ -34,6 +35,12 @@ export interface GmailDiscovery {
   presetId: string | null;
   paymentMethod: string | null;
   receiptDate: string;
+  /**
+   * 같은 서비스의 결제 메일들(가장 최근 것 포함, 이른 순). 서버가 저장을 시작하기 전
+   * (`GMAIL_CHARGE_HISTORY_STARTS_ON`)과 그 전에 배포된 서버는 보내지 않는다. 받은 값은
+   * `mergeChargeHistory`가 형식을 다시 거른다.
+   */
+  chargeHistory?: ChargeRecord[];
   sender: string;
   tier: "auto" | "review";
 }
@@ -279,6 +286,7 @@ export function discoveryToCandidate(
     sender: discovery.sender,
     sourceSnippet: `${discovery.receiptDate} · ${discovery.sender}`,
     receiptDate: discovery.receiptDate,
+    chargeHistory: discovery.chargeHistory,
     daysAgo: daysAgo ?? undefined,
     confidence: discovery.presetId ? "high" : "medium",
     selected: !killed && !stale,

@@ -34,6 +34,7 @@ export function GmailDiscoveryInbox() {
   const deleteSubscription = useStore((state) => state.deleteSubscription);
   const markChargedAfterKill = useStore((state) => state.markChargedAfterKill);
   const markObservedAmount = useStore((state) => state.markObservedAmount);
+  const recordChargeHistory = useStore((state) => state.recordChargeHistory);
 
   const [registered, setRegistered] = useState<{ ids: string[]; names: string[] } | null>(null);
   const [review, setReview] = useState<GmailDiscovery[]>([]);
@@ -87,6 +88,9 @@ export function GmailDiscoveryInbox() {
             names: [...(previous?.names ?? []), ...created.map((sub) => sub.name)],
           }));
         }
+        // 찾은 결제 메일들을 같은 서비스의 구독(방금 등록한 것 포함)에 적는다. 영수증이 등록하기 전
+        // 달을 채운다. 확인 목록의 후보는 사용자가 등록할 때 등록 창이 적는다.
+        recordChargeHistory(discoveries);
         // 해지했는데 결제 메일이 온 것은 그 구독에 적어 둔다. 행동 큐가 가장 위에 올린다.
         for (const { subscriptionId, discovery } of plan.chargedAfterKill) {
           markChargedAfterKill(subscriptionId, discovery.receiptDate, discovery.amount);
@@ -129,7 +133,14 @@ export function GmailDiscoveryInbox() {
       stopListening();
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [accountId, demo, addBatchSubscriptions, markChargedAfterKill, markObservedAmount]);
+  }, [
+    accountId,
+    demo,
+    addBatchSubscriptions,
+    markChargedAfterKill,
+    markObservedAmount,
+    recordChargeHistory,
+  ]);
 
   const acknowledgeReview = () => {
     const ids = review.map((item) => item.id);

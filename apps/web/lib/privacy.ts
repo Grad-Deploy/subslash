@@ -41,6 +41,30 @@ export function isGmailAutoImportOpen(now: Date = new Date()): boolean {
 }
 
 /**
+ * Gmail 자동 가져오기가 구독 후보에 같은 서비스의 이전 결제 메일들(받은 날·금액)을 더해 저장하기 시작하는
+ * 날(YYYY-MM-DD, 한국 시간 0시). 이미 연 기능에 저장 항목이 하나 늘어나는 변경이라, 방침에 먼저 게시하고
+ * 그날부터 저장한다. null이면 닫혀 있다 — 서버는 이전 결제 메일을 저장하지 않고 후보에 싣지 않는다.
+ * 브라우저에서 직접 가져오는 방식(`/import#gmail=…`)은 서버를 거치지 않으므로 이와 관계없다. 날짜를
+ * 정하면 방침에 항목이 나타나므로 `PRIVACY_EFFECTIVE_DATE`도 함께 바꾸고, 그 전에 두 배포 DB에
+ * `drizzle/0016_gmail_charge_history.sql`을 적용한다.
+ */
+export const GMAIL_CHARGE_HISTORY_STARTS_ON: string | null = null;
+
+/** 자동 가져오기가 이전 결제 메일을 저장하기 시작했는지. */
+export function isGmailChargeHistoryOpen(now: Date = new Date()): boolean {
+  if (!isGmailAutoImportOpen(now)) return false;
+  // 테스트 서버만 시작 전에 여는 스위치. 운영 빌드에서는 이 줄이 빠진다.
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_GMAIL_CHARGE_HISTORY_TEST_OPEN === "true"
+  ) {
+    return true;
+  }
+  if (!GMAIL_CHARGE_HISTORY_STARTS_ON) return false;
+  return now.getTime() >= new Date(`${GMAIL_CHARGE_HISTORY_STARTS_ON}T00:00:00+09:00`).getTime();
+}
+
+/**
  * 익명 구독 통계(lib/stats)를 시작하는 날(YYYY-MM-DD, 한국 시간 0시). 동의한 기기의 요약을 서버에
  * 새로 저장하는 기능이라, Gmail 자동 가져오기와 같이 방침에 항목을 먼저 알리고 그날부터 연다.
  * null이면 닫혀 있다 — 리포트 화면은 내 기록만 보여 주고 비교 칸은 '준비 중'이라고 말한다.
