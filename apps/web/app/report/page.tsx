@@ -390,6 +390,8 @@ function PeerComparison({
   const enabled = useStatsSharing((state) => state.enabled);
   const token = useStatsSharing((state) => state.token);
   const ageBand = useStatsSharing((state) => state.ageBand);
+  // 로그인한 동안에만 보탠다(useStatsContribution). 로그인 여부는 기록의 주인으로 본다.
+  const signedIn = useStore((state) => state.recordsOwner !== null);
   // 테스트 빌드: 서버 통계 대신 가상 참여자로 만든 요약을 보여 준다(lib/stats-sample).
   const [summary, setSummary] = useState<StatsSummary | null>(() =>
     STATS_SAMPLE_ENABLED ? sampleStatsSummary() : null,
@@ -523,14 +525,27 @@ function PeerComparison({
         </>
       )}
 
-      {enabled ? (
+      {enabled && signedIn ? (
         <div className="flex items-center justify-between gap-3 border-t pt-3 text-xs text-muted-foreground">
           <span>내 구독 요약을 익명으로 보태는 중이에요.</span>
           <Button variant="ghost" size="sm" disabled={busy} onClick={() => void leave()}>
             그만두기
           </Button>
         </div>
-      ) : (
+      ) : enabled ? (
+        <div className="flex items-center justify-between gap-3 border-t pt-3 text-xs text-muted-foreground">
+          <span>
+            로그인하지 않은 동안은 보태지 않아요.{" "}
+            <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
+              로그인
+            </Link>
+            하면 다시 보태요.
+          </span>
+          <Button variant="ghost" size="sm" disabled={busy} onClick={() => void leave()}>
+            그만두기
+          </Button>
+        </div>
+      ) : signedIn ? (
         <div className="space-y-2 border-t pt-3">
           <p className="text-xs text-muted-foreground">
             서비스·금액·사용 횟수만 이름 없이 보태요. 언제든 그만두면 바로 지워져요.
@@ -539,6 +554,13 @@ function PeerComparison({
             익명으로 참여하기
           </Button>
         </div>
+      ) : (
+        <p className="border-t pt-3 text-xs text-muted-foreground">
+          <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
+            로그인
+          </Link>
+          하면 서비스·금액·사용 횟수만 이름 없이 보탤 수 있어요. 계정과 묶어 저장하지는 않아요.
+        </p>
       )}
     </section>
   );
