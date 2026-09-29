@@ -147,6 +147,8 @@ export default function ImportPage() {
         // 이미 등록한 구독에는 찾은 결제 메일들을 곧바로 적는다(영수증이 등록 전 달을 채운다). 새로
         // 등록하는 후보는 등록 창이 등록한 뒤에 적는다.
         useStore.getState().recordChargeHistory(items);
+        // 구독 중인 서비스의 마지막 메일이 해지 알림이면 대시보드에서 해지했는지 묻는다(해지로 기록하지 않는다).
+        useStore.getState().recordCancelNotices(items);
         setState({ kind: "ready", emailCount: emails.length, items });
       })
       .catch((error: unknown) =>
