@@ -10,6 +10,8 @@ android {
         versionCode 24
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        // 홈 화면·최근 앱에 보이는 이름. 테스트용 빌드(아래 debug)만 바꾼다.
+        manifestPlaceholders = [appLabel: "@string/app_name"]
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -30,6 +32,15 @@ android {
         }
     }
     buildTypes {
+        debug {
+            // 테스트용 빌드(`pnpm --filter @subslash/mobile android:dev`가 -PdevApp으로 만든다)는 스토어 앱과
+            // 다른 ID·이름이라 나란히 설치된다. 스토어 앱을 지우지 않아도 되고(서명이 달라 덮어 설치할 수 없다),
+            // 기록도 따로라 테스트하느라 실제 기록을 건드리지 않는다. 버전을 올릴 필요도 없다.
+            if (project.hasProperty('devApp')) {
+                applicationIdSuffix ".dev"
+                manifestPlaceholders = [appLabel: "SubSlash Dev"]
+            }
+        }
         release {
             // R8로 쓰지 않는 코드를 빼고 최적화·난독화한다. 플러그인은 Capacitor가 함께 주는 keep 규칙
             // (@CapacitorPlugin·@PluginMethod)이 지키고, 웹뷰에 노출하는 @JavascriptInterface는 아래
