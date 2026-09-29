@@ -14,6 +14,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { openExternal } from "@lib/native";
+import { IS_APP_BUILD } from "@lib/platform";
 import { ServiceLogo } from "./ServiceLogo";
 import { PlanAlternatives } from "./PlanAlternatives";
 
@@ -198,6 +199,16 @@ export function CancelGuideModal({
                   </Button>
                 ))}
               </div>
+              {/*
+                서비스 앱이 자기 화면 기록 안에서 열면(유튜브) 뒤로 가기가 그 앱의 첫 화면으로 간다.
+                우리가 바꿀 수 없어 돌아오는 길을 적는다.
+              */}
+              {IS_APP_BUILD && (
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  서비스 앱으로 열리면 뒤로 가기가 그 앱 안에서 움직일 수 있어요. 확인한 뒤 최근 앱
+                  목록에서 SubSlash로 돌아오세요.
+                </p>
+              )}
             </section>
           )}
 
