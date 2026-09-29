@@ -34,6 +34,8 @@ export interface ServerView {
   savedAt: string | null;
   /** 기록을 통째로 받아 왔을 때만 있는 지문. 요약만 받았으면 undefined. */
   hash?: string;
+  /** 계정의 기록에 구독·체크인·연동 계정이 하나도 없다(요약의 개수로 안다). 모르면 undefined. */
+  empty?: boolean;
 }
 
 export type SyncDecision =
@@ -57,6 +59,10 @@ export function decideSync(base: SyncBase, local: LocalView, server: ServerView)
       return local.empty ? { kind: "idle" } : { kind: "push", condition: { kind: "none" } };
     }
     if (local.empty) return { kind: "pull", savedAt: server.savedAt };
+    // 계정에 빈 기록만 있으면 이 기기의 기록을 올려도 잃는 것이 없다. 예전에는 여기서도 '어느 쪽을
+    // 쓸까요'를 물었고, 창을 닫으면 자동 동기화가 꺼져 앱의 구독이 웹에 끝내 나타나지 않았다.
+    if (server.empty)
+      return { kind: "push", condition: { kind: "match", savedAt: server.savedAt } };
     if (server.hash === undefined) return { kind: "need-server-hash" };
     if (server.hash === local.hash) return { kind: "adopt", savedAt: server.savedAt };
     return { kind: "ask", reason: "first", savedAt: server.savedAt };
