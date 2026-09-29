@@ -532,19 +532,17 @@ function PeerComparison({
             그만두기
           </Button>
         </div>
-      ) : enabled ? (
-        <div className="flex items-center justify-between gap-3 border-t pt-3 text-xs text-muted-foreground">
-          <span>
-            로그인하지 않은 동안은 보태지 않아요.{" "}
-            <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
-              로그인
-            </Link>
-            하면 다시 보태요.
-          </span>
-          <Button variant="ghost" size="sm" disabled={busy} onClick={() => void leave()}>
-            그만두기
-          </Button>
-        </div>
+      ) : enabled && !signedIn ? (
+        // 로그아웃하면 서버의 기록은 useStatsContribution이 이미 지웠다 — 이 기기는 비교에 들어 있지 않다.
+        // 남은 것은 '다시 로그인하면 이어 보탠다'는 이 기기의 선택뿐이라, 참여·그만두기 버튼을 두지 않는다.
+        // 그만두기는 로그인한 뒤에 한다.
+        <p className="border-t pt-3 text-xs text-muted-foreground">
+          로그인하지 않은 동안은 보태지 않아요.{" "}
+          <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
+            로그인
+          </Link>
+          하면 다시 보태요.
+        </p>
       ) : signedIn ? (
         <div className="space-y-2 border-t pt-3">
           <p className="text-xs text-muted-foreground">
