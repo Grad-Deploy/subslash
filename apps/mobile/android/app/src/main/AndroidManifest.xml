@@ -83,5 +83,8 @@
         <!-- 해지 경로가 앱 안에 있는 서비스(services.ts의 cancelAndroidApp). 해지 버튼이 이 앱을 연다. -->
         <package android:name="com.sampleapp" />
         <package android:name="com.coupang.mobile" />
+        <package android:name="com.kakao.talk" />
+        <package android:name="com.nhn.android.webtoon" />
+        <package android:name="com.nhn.android.ndrive" />
     </queries>
 </manifest>
