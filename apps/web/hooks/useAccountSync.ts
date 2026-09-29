@@ -32,7 +32,12 @@ export interface SyncConflict {
   local: RecordCounts;
 }
 
-export type SyncChoice = "use-local" | "use-server" | "later";
+/**
+ * `later`는 이 기기의 자동 동기화를 끈다. `dismiss`는 창을 닫기만 한 것이라 끄지 않고, 이번 실행 동안
+ * 같은 판으로는 다시 묻지 않는다 — 예전에는 뒤로 가기로 창을 닫아도 동기화가 꺼져, 켜져 있는 줄 알던
+ * 사람의 기록이 다른 기기에 끝내 오지 않았다.
+ */
+export type SyncChoice = "use-local" | "use-server" | "later" | "dismiss";
 
 const DEBOUNCE_MS = 2000;
 
@@ -40,6 +45,18 @@ const DEBOUNCE_MS = 2000;
 function localData(): BackupData {
   const state = useStore.getState();
   return { ...realRecords(state), accounts: state.accounts, exchangeRate: state.exchangeRate };
+}
+
+/** 이번 실행에서 사용자가 창을 닫아 미뤄 둔 계정 판. 같은 판이면 다시 묻지 않는다. */
+let dismissedServerSavedAt: string | null = null;
+
+function isEmptySummary(summary: SnapshotSummary | null): boolean | undefined {
+  if (!summary) return undefined;
+  return (
+    summary.subscriptionCount === 0 &&
+    summary.usageLogCount === 0 &&
+    summary.linkedAccountCount === 0
+  );
 }
 
 function counts(data: BackupData): RecordCounts {
@@ -129,7 +146,7 @@ async function syncOnce(accountId: string): Promise<SyncConflict | null> {
   const data = localData();
   const local = { hash: recordsHash(data), empty: isEmptyRecords(data) };
   let summary = await fetchSummary();
-  let server: ServerView = { savedAt: summary?.savedAt ?? null };
+  let server: ServerView = { savedAt: summary?.savedAt ?? null, empty: isEmptySummary(summary) };
 
   for (let attempt = 0; attempt < 4; attempt++) {
     const decision = decideSync(sync, local, server);
@@ -151,12 +168,17 @@ async function syncOnce(accountId: string): Promise<SyncConflict | null> {
         });
         return null;
       case "ask":
+        if (decision.savedAt === dismissedServerSavedAt) return null;
         return summary ? { reason: decision.reason, server: summary, local: counts(data) } : null;
       case "need-server-hash": {
         const full = await fetchFull();
         summary = full?.summary ?? null;
         server = full
-          ? { savedAt: full.summary.savedAt, hash: recordsHash(full.data) }
+          ? {
+              savedAt: full.summary.savedAt,
+              hash: recordsHash(full.data),
+              empty: isEmptyRecords(full.data),
+            }
           : { savedAt: null };
         continue;
       }
@@ -167,7 +189,7 @@ async function syncOnce(accountId: string): Promise<SyncConflict | null> {
           return null;
         }
         summary = result.current;
-        server = { savedAt: result.current?.savedAt ?? null };
+        server = { savedAt: result.current?.savedAt ?? null, empty: isEmptySummary(summary) };
         continue;
       }
     }
@@ -266,7 +288,9 @@ export function useAccountSync() {
       setConflict(null);
       if (!current) return;
       try {
-        if (choice === "later") {
+        if (choice === "dismiss") {
+          dismissedServerSavedAt = current.server.savedAt;
+        } else if (choice === "later") {
           useStore.getState().setAccountSync({ enabled: false });
         } else if (choice === "use-server") {
           await pull();
