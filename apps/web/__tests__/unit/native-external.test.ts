@@ -142,3 +142,75 @@ describe("시스템 막대", () => {
     expect(await run("ios")).toEqual([]);
   });
 });
+
+/**
+ * 해지 주소 열기(`openExternal`). 안드로이드는 주소를 맡을 서비스 앱이 있으면 그 앱으로 열고, 없으면
+ * 인앱 브라우저로 연다. 서비스 앱에 로그인돼 있어도 인앱 브라우저에서는 웹에 다시 로그인해야 했다.
+ */
+describe("외부 주소 열기", () => {
+  const CANCEL_URL = "https://play.google.com/store/account/subscriptions";
+
+  beforeEach(() => {
+    process.env.NEXT_PUBLIC_BUILD_TARGET = "app";
+  });
+
+  async function run(platform: string, openInApp: () => Promise<{ opened: boolean }>) {
+    const asked: string[] = [];
+    vi.doMock("@capacitor/core", () => ({
+      Capacitor: { getPlatform: () => platform },
+      registerPlugin: () => ({
+        openInApp: async ({ url }: { url: string }) => {
+          asked.push(url);
+          return openInApp();
+        },
+      }),
+    }));
+    const { openExternal } = await import("../../lib/native");
+    openExternal(CANCEL_URL);
+    return asked;
+  }
+
+  it("안드로이드에서 맡을 앱이 있으면 그 앱으로 열고 인앱 브라우저는 열지 않는다", async () => {
+    const asked = await run("android", async () => ({ opened: true }));
+    await vi.waitFor(() => expect(asked).toEqual([CANCEL_URL]));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mocks.opened).toEqual([]);
+  });
+
+  it("맡을 앱이 없으면 인앱 브라우저로 연다", async () => {
+    await run("android", async () => ({ opened: false }));
+    await vi.waitFor(() => expect(mocks.opened).toEqual([CANCEL_URL]));
+  });
+
+  it("플러그인이 실패해도 인앱 브라우저로 연다", async () => {
+    await run("android", async () => {
+      throw new Error("not implemented");
+    });
+    await vi.waitFor(() => expect(mocks.opened).toEqual([CANCEL_URL]));
+  });
+
+  it("열면 스스로 브라우저로 넘기는 앱(디즈니+)은 거치지 않는다", async () => {
+    const asked: string[] = [];
+    vi.doMock("@capacitor/core", () => ({
+      Capacitor: { getPlatform: () => "android" },
+      registerPlugin: () => ({
+        openInApp: async ({ url }: { url: string }) => {
+          asked.push(url);
+          return { opened: true };
+        },
+      }),
+    }));
+    const { openExternal } = await import("../../lib/native");
+    openExternal("https://www.disneyplus.com/commerce/account");
+    await vi.waitFor(() =>
+      expect(mocks.opened).toEqual(["https://www.disneyplus.com/commerce/account"]),
+    );
+    expect(asked).toEqual([]);
+  });
+
+  it("iOS에서는 안드로이드 플러그인을 부르지 않고 인앱 브라우저로 연다", async () => {
+    const asked = await run("ios", async () => ({ opened: true }));
+    await vi.waitFor(() => expect(mocks.opened).toEqual([CANCEL_URL]));
+    expect(asked).toEqual([]);
+  });
+});

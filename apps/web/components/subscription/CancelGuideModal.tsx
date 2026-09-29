@@ -4,6 +4,7 @@ import React from "react";
 import {
   Subscription,
   PAYMENT_METHOD_OPTIONS,
+  bundleCheckLinks,
   getAccountFallbackUrl,
   getCancelUrlKind,
   getServiceHomeUrl,
@@ -44,6 +45,7 @@ export function CancelGuideModal({
   const accountUrl = getAccountFallbackUrl(sub.cancelUrl);
   const steps = parseCancelGuideSteps(sub.cancelGuide);
   const paymentMethod = PAYMENT_METHOD_OPTIONS.find((p) => p.value === sub.paymentMethod);
+  const checkLinks = bundleCheckLinks(sub);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -102,6 +104,36 @@ export function CancelGuideModal({
               </p>
             )}
           </section>
+
+          {/*
+            결합 상품 — 포함된 서비스마다 끝났는지 볼 곳. 해지 버튼은 두지 않는다: 판매처가 결제해서
+            그 서비스 화면에서는 해지되지 않고, 한쪽만 해지하는 경로는 확인하지 못했다.
+          */}
+          {checkLinks.length > 0 && (
+            <section className="space-y-2">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                함께 받는 서비스
+              </h4>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                결합 상품은 위 해지 화면에서 해지해요. 포함된 서비스만 따로 해지할 수 있는지는
+                확인하지 못했어요. 해지한 뒤 각 서비스에서 구독이 끝났는지 확인하세요.
+              </p>
+              <div className="space-y-2">
+                {checkLinks.map((link) => (
+                  <Button
+                    key={link.serviceId}
+                    variant="outline"
+                    className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
+                    onClick={() => openExternal(link.url)}
+                  >
+                    {link.kind === "direct"
+                      ? `${link.name} 구독 상태 확인하기`
+                      : `${link.name} 열기`}
+                  </Button>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* 2. 폴백 경로 — 실제로 아는 주소만 */}
           {(accountUrl || homeUrl || paymentMethod?.directCancelUrl) && (
