@@ -27,6 +27,7 @@ import {
   currentCategory,
   parseDateOnly,
   chargeHistoryTarget,
+  matchCancelNotices,
   mergeChargeHistory,
   type ChargeRecord,
   type Currency,
@@ -353,6 +354,15 @@ interface SubSlashStore {
   recordChargeHistory: (
     found: { name: string; currency: Currency; chargeHistory?: ChargeRecord[] }[],
   ) => void;
+  /**
+   * Gmail 가져오기에서 찾은 해지·취소 알림을 구독 중인 같은 서비스의 구독에 적는다(utils/cancelNotice).
+   * 해지로 기록하지 않는다 — 행동 큐가 묻는다. 체험 중에는 적지 않는다(화면의 목록이 샘플이다).
+   */
+  recordCancelNotices: (
+    found: { name: string; currency: Currency; isCanceled?: boolean; receiptDate?: string }[],
+  ) => void;
+  /** 해지 알림에 "아직 구독 중"이라고 답했다. 같은 메일로 다시 묻지 않는다. */
+  dismissCancelNotice: (id: string) => void;
   deleteSubscription: (id: string) => void;
   /** 여러 구독을 한 번에 지운다(체크인 기록도). 절약 현황에서도 빠진다. */
   deleteSubscriptions: (ids: string[]) => void;
@@ -568,6 +578,8 @@ export const useStore = create<SubSlashStore>()(
                   // 앞선 해지에 딸린 기록이 새 해지에 남지 않게 한다.
                   resubscribeRemindOn: undefined,
                   killEvidence: undefined,
+                  // 해지 알림에 대한 물음은 해지로 답이 됐다.
+                  cancelNoticeAt: undefined,
                 }
               : sub,
           ),
@@ -590,6 +602,8 @@ export const useStore = create<SubSlashStore>()(
                   // 다시 구독 중이면 "해지했는데 결제됐다"는 더 이상 이상한 일이 아니다.
                   chargedAfterKillAt: undefined,
                   chargedAfterKillAmount: undefined,
+                  // 되살리기 전의 해지 알림은 이 구독에 물을 것이 아니다.
+                  cancelNoticeAt: undefined,
                 }
               : sub,
           ),
@@ -627,6 +641,26 @@ export const useStore = create<SubSlashStore>()(
               ? { ...sub, chargeHistory: mergeChargeHistory(sub.chargeHistory, records) }
               : sub;
           }),
+        }));
+      },
+      recordCancelNotices: (found) => {
+        if (get().demo) return;
+        const matches = matchCancelNotices(get().subscriptions, found);
+        if (matches.length === 0) return;
+        const byId = new Map(matches.map((match) => [match.subscriptionId, match.receiptDate]));
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            byId.has(sub.id) ? { ...sub, cancelNoticeAt: byId.get(sub.id) } : sub,
+          ),
+        }));
+      },
+      dismissCancelNotice: (id) => {
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            sub.id === id && sub.cancelNoticeAt
+              ? { ...sub, cancelNoticeDismissedAt: sub.cancelNoticeAt, cancelNoticeAt: undefined }
+              : sub,
+          ),
         }));
       },
       markObservedAmount: (id, receiptDate, amount) => {

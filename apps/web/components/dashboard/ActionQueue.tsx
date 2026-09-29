@@ -27,6 +27,10 @@ interface ActionQueueProps {
   onKillNotCharged: (subscriptionId: string) => void;
   /** 해지 뒤 첫 결제일에 결제가 됐다고 답했을 때. */
   onKillCharged: (subscriptionId: string) => void;
+  /** 해지 알림 메일이 온 구독을 해지했다고 답했을 때. */
+  onCancelNoticeKilled: (subscriptionId: string) => void;
+  /** 해지 알림 메일이 온 구독이 아직 구독 중이라고 답했을 때. */
+  onCancelNoticeDismissed: (subscriptionId: string) => void;
   onAddFirst: () => void;
   /** 제목 줄 오른쪽에 더 둘 것(앱의 접기 버튼). 웹은 넘기지 않는다. */
   headerAction?: React.ReactNode;
@@ -40,6 +44,7 @@ const VERB_LABEL: Record<ActionVerb, string> = {
   "confirm-price": "요금 유지",
   "set-billing-month": "결제 월 입력",
   "verify-kill": "결제 안 됐어요",
+  "confirm-cancel": "해지했어요",
   "review-resubscribe": "살펴보기",
 };
 
@@ -51,6 +56,7 @@ const TONE: Partial<Record<ActionKind, string>> = {
   "low-usage-billing-soon": "border-orange-500/40 bg-orange-500/5",
   "billing-soon": "border-amber-500/40 bg-amber-500/5",
   "verify-kill": "border-primary/30 bg-primary/5",
+  "cancel-notice": "border-primary/30 bg-primary/5",
   risky: "border-destructive/30 bg-destructive/5",
 };
 
@@ -69,6 +75,8 @@ export function ActionQueue({
   onConfirmPrice,
   onKillNotCharged,
   onKillCharged,
+  onCancelNoticeKilled,
+  onCancelNoticeDismissed,
   onAddFirst,
   headerAction,
   lead,
@@ -88,6 +96,8 @@ export function ActionQueue({
         return router.push(subscriptionDetailHref(item.subscriptionId));
       case "verify-kill":
         return onKillNotCharged(item.subscriptionId);
+      case "confirm-cancel":
+        return onCancelNoticeKilled(item.subscriptionId);
     }
   };
 
@@ -155,6 +165,9 @@ export function ActionQueue({
                     다시 살펴볼 날
                   </span>
                 )}
+                {item.kind === "cancel-notice" && (
+                  <span className="text-[11px] font-semibold text-primary">해지 메일</span>
+                )}
                 {item.kind === "charged-after-kill" && (
                   <span className="text-[11px] font-black text-destructive">해지 후 결제됨</span>
                 )}
@@ -215,6 +228,17 @@ export function ActionQueue({
                   onClick={() => onKillCharged(item.subscriptionId)}
                 >
                   결제됐어요
+                </Button>
+              )}
+
+              {item.verb === "confirm-cancel" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-xs"
+                  onClick={() => onCancelNoticeDismissed(item.subscriptionId)}
+                >
+                  아직 구독 중
                 </Button>
               )}
 
