@@ -444,7 +444,7 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
 `apps/mobile`(Capacitor 8, appId `com.subslash.app`)이 그 폴더를 담는다. 빌드에는 앱이 부를 배포
 주소(`NEXT_PUBLIC_WEB_ORIGIN`)가 꼭 있어야 하고, 없으면 빌드를 멈춘다. 앱에서만 달라지는 동작은
 `IS_APP_BUILD`(`lib/platform`)로 가른다. CI가 이 빌드를 돌려 정적 내보내기를 깨는 코드를 막는다.
-안드로이드 빌드·실행은 README의 '모바일 앱'에 있다.
+안드로이드 빌드·실행은 README의 '모바일 앱'에 있다. 고친 것을 폰에서 확인할 때는 `pnpm --filter @subslash/mobile android:dev`로 테스트용 앱(`com.subslash.app.dev`)을 스토어 앱 옆에 설치한다 — 확인하려고 versionCode를 올리거나 스토어 앱을 지우지 않는다.
 
 `apps/mobile`은 안드로이드(`android/`)와 iOS(`ios/`)를 모두 담는다. iOS 프로젝트는 Capacitor 8이
 CocoaPods 대신 SPM을 쓰므로 Windows에서도 만들어지지만, **빌드는 macOS나 EAS의 macOS 작업 서버에서만**
