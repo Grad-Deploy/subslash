@@ -11,6 +11,7 @@ import {
   formatCurrency,
   formatDday,
   getBilledAmount,
+  getCancelAndroidApp,
   getCancelUrlKind,
   getDaysUntilBillingFor,
   getDaysUntilTrialEnd,
@@ -386,7 +387,9 @@ export function SubscriptionDetail({
                     <Button
                       size="lg"
                       className={`${WRAPPING_BUTTON} min-h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold rounded-xl shadow-md`}
-                      onClick={() => openExternal(sub.cancelUrl)}
+                      onClick={() =>
+                        openExternal(sub.cancelUrl, { androidApp: getCancelAndroidApp(sub) })
+                      }
                     >
                       {cancelUrlKind === "direct"
                         ? `${sub.name} 해지 페이지 바로가기 (새 창)`
