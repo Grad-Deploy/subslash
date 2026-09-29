@@ -34,8 +34,8 @@ function subscription(id: string, name: string) {
 
 type Backup = { exportedAt: string; data: { subscriptions: { id: string; name: string }[] } };
 
-function fakeAccountServer() {
-  let snapshot: Backup | null = null;
+function fakeAccountServer(initial: Backup | null = null) {
+  let snapshot: Backup | null = initial;
   let clock = Date.parse("2026-09-15T00:00:00.000Z");
 
   const summary = () =>
@@ -144,6 +144,45 @@ test.describe("계정 자동 동기화 (E2E)", () => {
     const laptop = await device(browser, server);
     await laptop.goto("/subs");
     await expect(subCard(laptop, "넷플릭스")).toBeVisible();
+  });
+
+  test("계정에 빈 기록만 있으면 묻지 않고 이 기기의 기록을 올린다", async ({ browser }) => {
+    // 다른 기기가 먼저 빈 기록을 올려 둔 계정. 예전에는 '어느 기록을 쓸까요'가 떴고, 창을 닫으면
+    // 자동 동기화가 꺼져 앱의 구독이 웹에 끝내 오지 않았다.
+    const server = fakeAccountServer({
+      exportedAt: "2026-09-29T01:18:57.542Z",
+      data: { subscriptions: [] },
+    });
+
+    const phone = await device(browser, server, [subscription("goodnotes", "굿노트")]);
+    await phone.goto("/subs");
+    await expect.poll(server.names).toEqual(["굿노트"]);
+    await expect(phone.getByText("어느 기록을 쓸까요?")).toHaveCount(0);
+
+    const laptop = await device(browser, server);
+    await laptop.goto("/subs");
+    await expect(subCard(laptop, "굿노트")).toBeVisible();
+  });
+
+  test("묻는 창을 그냥 닫으면 자동 동기화를 끄지 않는다", async ({ browser }) => {
+    const server = fakeAccountServer();
+    const laptop = await device(browser, server, [subscription("netflix", "넷플릭스")]);
+    await laptop.goto("/subs");
+    await expect.poll(server.names).toEqual(["넷플릭스"]);
+
+    const phone = await device(browser, server, [subscription("goodnotes", "굿노트")]);
+    await phone.goto("/subs");
+
+    const dialog = phone.getByRole("dialog").filter({ hasText: "어느 기록을 쓸까요?" });
+    await expect(dialog).toBeVisible({ timeout: 30_000 });
+    await phone.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+
+    const enabled = await phone.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key) ?? "{}").state.accountSync.enabled,
+      STORAGE_KEY,
+    );
+    expect(enabled).toBe(true);
   });
 
   test("양쪽이 따로 바뀌면 묻고, 고른 쪽으로 맞춘다", async ({ browser }) => {
