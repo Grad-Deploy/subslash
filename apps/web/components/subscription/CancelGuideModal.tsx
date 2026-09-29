@@ -6,6 +6,7 @@ import {
   PAYMENT_METHOD_OPTIONS,
   bundleCheckLinks,
   getAccountFallbackUrl,
+  getCancelAndroidApp,
   getCancelUrlKind,
   getServiceHomeUrl,
   parseCancelGuideSteps,
@@ -37,7 +38,38 @@ export function CancelGuideModal({
   onClose,
   onConfirmKilled,
 }: CancelGuideModalProps) {
+  // 해지 화면(다른 앱·인앱 브라우저)에 다녀온 구독. 돌아오면 창 맨 위에서 마쳤는지 묻는다 — '해지
+  // 완료했어요'는 긴 창의 맨 아래라, 돌아와서 그냥 닫으면 해지가 기록되지 않았다.
+  const leftFor = React.useRef<string | null>(null);
+  const [cameBackFor, setCameBackFor] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const onReturn = () => {
+      if (document.visibilityState === "visible" && leftFor.current) {
+        setCameBackFor(leftFor.current);
+      }
+    };
+    document.addEventListener("visibilitychange", onReturn);
+    // Capacitor는 앱이 앞으로 돌아올 때 document에 'resume'도 보낸다.
+    document.addEventListener("resume", onReturn);
+    return () => {
+      document.removeEventListener("visibilitychange", onReturn);
+      document.removeEventListener("resume", onReturn);
+    };
+  }, []);
+
   if (!subscription) return null;
+
+  const close = () => {
+    leftFor.current = null;
+    setCameBackFor(null);
+    onClose();
+  };
+  const leaveTo = (url: string | undefined, options?: { androidApp?: string }) => {
+    leftFor.current = subscription.id;
+    openExternal(url, options);
+  };
+  const askIfDone = isOpen && cameBackFor === subscription.id && subscription.status !== "killed";
 
   const sub = subscription;
   const cancelUrlKind = getCancelUrlKind(sub.cancelUrl);
@@ -48,7 +80,7 @@ export function CancelGuideModal({
   const checkLinks = bundleCheckLinks(sub);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -65,12 +97,46 @@ export function CancelGuideModal({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {askIfDone && (
+            <section
+              role="status"
+              className="space-y-3 rounded-xl border border-primary/40 bg-primary/5 p-3"
+            >
+              <div className="space-y-1">
+                <p className="text-sm font-bold">해지를 마쳤나요?</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  해지 화면에서 돌아왔어요. 마쳤다면 기록해 두세요. 앱은 해지 여부를 직접 확인할 수
+                  없어요.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl"
+                  onClick={() => setCameBackFor(null)}
+                >
+                  아직이에요
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1 font-bold rounded-xl"
+                  onClick={() => {
+                    onConfirmKilled(sub.id);
+                    close();
+                  }}
+                >
+                  해지 완료했어요
+                </Button>
+              </div>
+            </section>
+          )}
+
           {/*
             0. 해지 전에 — 같은 서비스의 더 싼 요금제. 대안이 없으면 이 칸은 없다. 요금제를 바꿨다고
             기록하면 해지할 일이 없어졌으니 창을 닫는다.
           */}
           {sub.status === "active" && (
-            <PlanAlternatives subscription={sub} compact onChanged={() => onClose()} />
+            <PlanAlternatives subscription={sub} compact onChanged={close} />
           )}
 
           {/* 1. 해지 링크 */}
@@ -83,7 +149,7 @@ export function CancelGuideModal({
               <>
                 <Button
                   className={`${WRAPPING_BUTTON} min-h-11 font-bold rounded-xl`}
-                  onClick={() => openExternal(sub.cancelUrl)}
+                  onClick={() => leaveTo(sub.cancelUrl, { androidApp: getCancelAndroidApp(sub) })}
                 >
                   {cancelUrlKind === "direct"
                     ? `${sub.name} 해지 페이지 열기 (새 창)`
@@ -124,7 +190,7 @@ export function CancelGuideModal({
                     key={link.serviceId}
                     variant="outline"
                     className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
-                    onClick={() => openExternal(link.url)}
+                    onClick={() => leaveTo(link.url)}
                   >
                     {link.kind === "direct"
                       ? `${link.name} 구독 상태 확인하기`
@@ -147,7 +213,7 @@ export function CancelGuideModal({
                     <Button
                       variant="outline"
                       className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
-                      onClick={() => openExternal(paymentMethod.directCancelUrl)}
+                      onClick={() => leaveTo(paymentMethod.directCancelUrl)}
                     >
                       {paymentMethod.label} 정기결제 관리 열기
                     </Button>
@@ -161,7 +227,7 @@ export function CancelGuideModal({
                     <Button
                       variant="outline"
                       className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
-                      onClick={() => openExternal(accountUrl)}
+                      onClick={() => leaveTo(accountUrl)}
                     >
                       계정 관리 페이지로 이동 시도
                     </Button>
@@ -175,7 +241,7 @@ export function CancelGuideModal({
                     <Button
                       variant="outline"
                       className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
-                      onClick={() => openExternal(homeUrl)}
+                      onClick={() => leaveTo(homeUrl)}
                     >
                       {new URL(homeUrl).hostname} 첫 화면 열기
                     </Button>
@@ -221,17 +287,18 @@ export function CancelGuideModal({
                 이미 해지한 구독으로 기록되어 있어요. 해지가 안 됐다면 구독 상세에서 &lsquo;다시
                 구독 중으로 변경&rsquo; 후 다시 기록하세요.
               </p>
-              <Button variant="outline" className="w-full rounded-xl" onClick={onClose}>
+              <Button variant="outline" className="w-full rounded-xl" onClick={close}>
                 닫기
               </Button>
             </section>
           ) : (
             <section className="pt-2 border-t space-y-2">
               <p className="text-[11px] text-muted-foreground">
-                해지를 마쳤다면 눌러 주세요. 앱은 해지 여부를 직접 확인할 수 없어요.
+                해지를 마쳤다면 눌러 주세요. 결제일부터 지킨 돈으로 쌓여요. 앱은 해지 여부를 직접
+                확인할 수 없어요.
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 rounded-xl" onClick={onClose}>
+                <Button variant="outline" className="flex-1 rounded-xl" onClick={close}>
                   나중에 하기
                 </Button>
                 <Button
@@ -239,7 +306,7 @@ export function CancelGuideModal({
                   className="flex-1 font-bold rounded-xl"
                   onClick={() => {
                     onConfirmKilled(sub.id);
-                    onClose();
+                    close();
                   }}
                 >
                   해지 완료했어요

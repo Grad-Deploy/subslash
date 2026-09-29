@@ -80,5 +80,8 @@
         <package android:name="com.initialcoms.ridi" />
         <!-- 구독 중인지 묻는 데에만 쓴다(SUGGEST_ONLY_PACKAGES). -->
         <package android:name="com.coupang.mobile.play" />
+        <!-- 해지 경로가 앱 안에 있는 서비스(services.ts의 cancelAndroidApp). 해지 버튼이 이 앱을 연다. -->
+        <package android:name="com.sampleapp" />
+        <package android:name="com.coupang.mobile" />
     </queries>
 </manifest>

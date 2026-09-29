@@ -74,6 +74,13 @@ export interface ServicePreset {
    * `currentCancelUrl`로 지금 주소로 바꾼다.
    */
   legacyCancelUrls?: string[];
+  /**
+   * 해지 경로가 앱 안에 있는 서비스의 안드로이드 패키지(Play 스토어 주소로 확인한 것만). 해지 주소가
+   * 웹 첫 화면(entry)인데 그 앱이 주소를 맡지 않아, 앱이 설치돼 있어도 '앱을 받으세요' 웹 화면이
+   * 열렸다. 적어 두면 앱에서 해지 버튼이 이 앱을 연다 — 웹 첫 화면 대신 앱 첫 화면이라 가는 곳의
+   * 성격은 같고, 안내(`cancelGuide`)는 앱 기준이다. 적으면 AndroidManifest의 <queries>에도 더한다.
+   */
+  cancelAndroidApp?: string;
   cancelGuide: string;
   iconEmoji: string;
   /**
@@ -207,6 +214,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     currency: "KRW",
     cancelUrl: "https://m.coupang.com/",
     cancelUrlKind: "entry",
+    // 쿠팡 앱(2026-09-29 Play 스토어 '쿠팡(Coupang)-모바일 쇼핑'으로 확인).
+    cancelAndroidApp: "com.coupang.mobile",
     cancelGuide:
       "1. 쿠팡 앱 마이쿠팡 진입\n2. [와우 멤버십] 메뉴 선택\n3. 스크롤을 맨 아래로 내려서 [해지하기] 클릭\n4. 혜택 포기 확인 팝업에서 [내가 받고 있는 혜택 포기하기] 클릭",
     iconEmoji: "🚀",
@@ -419,6 +428,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // 앱 경로를 안내한다.
     cancelUrl: "https://www.baemin.com/",
     cancelUrlKind: "entry",
+    // 배달의민족 앱(2026-09-29 Play 스토어 '배달의민족', 개발사 WoowaBrothers로 확인).
+    cancelAndroidApp: "com.sampleapp",
     cancelGuide:
       "1. 배달의민족 앱 로그인 후 아래 [마이배민]\n2. [배민클럽] 화면으로 이동\n3. 화면 아래쪽 [해지하기] > 해지 사유 선택 후 한 번 더 [해지하기]",
     iconEmoji: "🛵",
@@ -440,6 +451,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // 배민 앱에서 결제하고 해지한다. 결제 메일이 Gmail로 오지 않아 가져오기로는 찾지 못한다.
     cancelUrl: "https://www.baemin.com/",
     cancelUrlKind: "entry",
+    // 배달의민족 앱(2026-09-29 Play 스토어 '배달의민족', 개발사 WoowaBrothers로 확인).
+    cancelAndroidApp: "com.sampleapp",
     cancelGuide:
       "1. 배달의민족 앱 로그인 후 아래 [마이배민]\n2. [배민클럽] 이용정보 화면으로 이동\n3. [배민클럽 해지하기] — 유튜브 프리미엄 제휴 상품도 함께 해지돼요",
     iconEmoji: "🛵",
@@ -1157,6 +1170,16 @@ export function parseServiceUrl(input: string): { url?: string; error?: string }
   } catch {
     return invalid;
   }
+}
+
+/**
+ * 앱에서 해지 버튼이 먼저 열 안드로이드 앱. 구독의 해지 주소가 서비스 목록의 주소 그대로일 때만
+ * 준다 — 사용자가 주소를 바꿨으면 그 주소로 가려는 것이다.
+ */
+export function getCancelAndroidApp(sub: { name: string; cancelUrl?: string }): string | undefined {
+  const preset = findPresetForSubscription(sub);
+  if (!preset?.cancelAndroidApp || preset.cancelUrl !== sub.cancelUrl) return undefined;
+  return preset.cancelAndroidApp;
 }
 
 /**
