@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { IS_APP_BUILD } from "@lib/platform";
+import { ownerScopedKey, readOwnerScoped } from "@lib/owner-scoped";
 import { realRecords, useStore } from "@lib/store";
 import { planAllReminders } from "@lib/local-reminders";
 import { checkReminderPermission, replaceScheduledReminders } from "@lib/native-reminders";
@@ -9,6 +10,10 @@ import { checkReminderPermission, replaceScheduledReminders } from "@lib/native-
 /**
  * 앱의 로컬 결제 알림 설정. 이 기기에만 해당하므로 구독 기록(스토어·백업·계정 동기화)에 넣지
  * 않고 따로 둔다. 이메일 결제 알림(notify)과는 별개다.
+ *
+ * 기록 주인(비로그인·계정)마다 따로 둔다(lib/owner-scoped). 로그인해 켠 알림이 로그아웃한 뒤에도 켜진 것으로
+ * 남아 '시작하기'가 로그인한 동안의 진행을 보였다. 알림은 그 주인의 구독으로만 걸리므로, 로그아웃하면
+ * 비로그인의 설정으로 다시 걸고(꺼져 있으면 지운다), 다시 로그인하면 그 계정의 설정으로 돌아온다.
  */
 export interface LocalReminderSettings {
   enabled: boolean;
@@ -23,18 +28,21 @@ const EVENT = "subslash:local-reminders";
 const DEFAULT_SETTINGS: LocalReminderSettings = { enabled: false, daysBefore: 3 };
 
 let cachedRaw: string | null | undefined;
+let cachedKey: string | undefined;
 let cached: LocalReminderSettings = DEFAULT_SETTINGS;
 
 function read(): LocalReminderSettings {
   let raw: string | null = null;
+  const key = ownerScopedKey(KEY);
   try {
-    raw = localStorage.getItem(KEY);
+    raw = readOwnerScoped(localStorage, KEY);
   } catch {
     return DEFAULT_SETTINGS;
   }
   // useSyncExternalStore는 같은 값이면 같은 객체를 받아야 다시 그리지 않는다.
-  if (raw === cachedRaw) return cached;
+  if (raw === cachedRaw && key === cachedKey) return cached;
   cachedRaw = raw;
+  cachedKey = key;
   try {
     const parsed = raw ? (JSON.parse(raw) as Partial<LocalReminderSettings>) : {};
     cached = {
@@ -52,9 +60,14 @@ function read(): LocalReminderSettings {
 function subscribe(onChange: () => void) {
   window.addEventListener(EVENT, onChange);
   window.addEventListener("storage", onChange);
+  // 로그인·로그아웃으로 기록 주인이 바뀌면 그 주인의 설정을 다시 읽는다.
+  const unsubscribeOwner = useStore.subscribe((state, previous) => {
+    if (state.recordsOwner !== previous.recordsOwner) onChange();
+  });
   return () => {
     window.removeEventListener(EVENT, onChange);
     window.removeEventListener("storage", onChange);
+    unsubscribeOwner();
   };
 }
 
@@ -62,7 +75,7 @@ export function useLocalReminderSettings() {
   const settings = useSyncExternalStore(subscribe, read, () => DEFAULT_SETTINGS);
   const update = useCallback((next: Partial<LocalReminderSettings>) => {
     try {
-      localStorage.setItem(KEY, JSON.stringify({ ...read(), ...next }));
+      localStorage.setItem(ownerScopedKey(KEY), JSON.stringify({ ...read(), ...next }));
     } catch {}
     window.dispatchEvent(new Event(EVENT));
   }, []);
