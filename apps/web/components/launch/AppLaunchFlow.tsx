@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { hasSeenWelcome } from "@lib/welcome";
-import { AppIntro } from "./AppIntro";
-import { AppBrandSplash } from "./AppBrandSplash";
+import { AppIntro, RELAUNCH_HOLD_MS } from "./AppIntro";
 import { AppWelcome } from "./AppWelcome";
 
 /**
@@ -15,8 +14,9 @@ let launchShown = false;
 /**
  * - pending: 환영 화면을 본 적 있는지 읽는 중. AppLaunch의 검은 덮개가 화면을 가리고 있다.
  * - intro → welcome: 처음 실행(환영 화면을 아직 안 봄). 긴 인트로 뒤 환영 화면.
- * - brief → done: 다시 실행. 로고와 이름만 잠깐 보여주고 넘긴다. 매번 긴 인트로를 보면 앱을
- *   여는 데 방해가 된다.
+ * - brief → done: 다시 실행. 같은 인트로(로고를 가르는 동작)를 로고가 머무는 시간만 줄여 보여주고
+ *   환영 화면 없이 넘긴다. 예전에는 가르는 동작 없이 로고만 잠깐 보여줬는데, 앱의 인상인 슬래시가
+ *   처음 실행에만 나와 "애니메이션이 사라졌다"로 읽혔다. 탭하면 바로 넘어간다.
  */
 type Phase = "pending" | "intro" | "brief" | "welcome" | "done";
 
@@ -49,7 +49,8 @@ export default function AppLaunchFlow({ onReady }: { onReady: () => void }) {
   }, [phase]);
 
   if (phase === "pending" || phase === "done") return null;
-  if (phase === "brief") return <AppBrandSplash onDone={() => setPhase("done")} />;
+  if (phase === "brief")
+    return <AppIntro holdMs={RELAUNCH_HOLD_MS} revealOnExit onDone={() => setPhase("done")} />;
   // 인트로의 바깥 판(overlay)은 끝까지 검은색이라, 환영 화면으로 바뀌는 사이 홈 화면이 비치지 않는다.
   if (phase === "intro") return <AppIntro onDone={() => setPhase("welcome")} />;
   return <AppWelcome onDone={() => setPhase("done")} />;
