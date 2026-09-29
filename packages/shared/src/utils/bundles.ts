@@ -56,3 +56,47 @@ export function serviceNameOf(serviceId: string): string {
   const preset = POPULAR_SERVICES.find((service) => service.id === serviceId);
   return preset?.nameKo ?? preset?.name ?? serviceId;
 }
+
+export interface BundleCheckLink {
+  serviceId: string;
+  name: string;
+  url: string;
+  /** 그 서비스의 해지·멤버십 화면이면 direct, 첫 화면·계정 화면이면 entry. */
+  kind: "direct" | "entry";
+}
+
+/**
+ * 결합 상품을 해지한 뒤 포함된 서비스마다 구독이 끝났는지 볼 곳(그 서비스의 해지 주소).
+ *
+ * 해지 버튼을 서비스마다 따로 두지 않는다 — 결합 상품은 판매처가 결제하므로(유튜브 화면에
+ * '제공: Woowa Brothers KR'로 나온다) 포함된 서비스의 해지 화면에서는 해지되지 않고, 한쪽만
+ * 해지하는 경로는 확인하지 못했다. 판매처와 같은 사이트로 가는 서비스(배민클럽 ↔ 배민)는
+ * 해지 버튼과 같은 곳이라 빼고, 결합 상품이 아니거나 서비스 목록에 없으면 빈 배열이다.
+ */
+export function bundleCheckLinks(sub: Identified): BundleCheckLink[] {
+  const preset = findPresetForSubscription(sub);
+  if (!preset?.includes?.length) return [];
+  const sellerHost = hostOf(sub.cancelUrl ?? preset.cancelUrl);
+  const links: BundleCheckLink[] = [];
+  for (const serviceId of preset.includes) {
+    const included = POPULAR_SERVICES.find((service) => service.id === serviceId);
+    if (!included?.cancelUrl) continue;
+    if (hostOf(included.cancelUrl) === sellerHost) continue;
+    links.push({
+      serviceId,
+      name: included.nameKo,
+      url: included.cancelUrl,
+      kind: included.cancelUrlKind,
+    });
+  }
+  return links;
+}
+
+function hostOf(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return undefined;
+  }
+}

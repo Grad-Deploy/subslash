@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  bundleCheckLinks,
   bundlesIncluding,
   coveredServices,
   findBundleOverlaps,
@@ -114,5 +115,34 @@ describe("결합 상품", () => {
     const plan = planDiscoveries([receipt], [BUNDLE]);
     expect(plan.register).toEqual([]);
     expect(plan.review).toEqual([receipt]);
+  });
+});
+
+/**
+ * 결합 상품을 해지한 뒤 포함된 서비스마다 끝났는지 볼 곳. 해지 버튼을 서비스마다 두지 않는다 —
+ * 판매처가 결제하므로 유튜브 쪽에서는 해지되지 않는다.
+ */
+describe("결합 상품 해지 뒤 확인할 곳", () => {
+  it("배민 결합은 유튜브 멤버십 화면만 준다 — 배민클럽은 해지 버튼과 같은 곳이다", () => {
+    const links = bundleCheckLinks({
+      name: "배민클럽 + 유튜브 프리미엄",
+      cancelUrl: "https://www.baemin.com/",
+    });
+    expect(links.map((link) => [link.serviceId, link.url])).toEqual([
+      ["youtube-premium", "https://www.youtube.com/paid_memberships"],
+    ]);
+  });
+
+  it("티빙 3 PACK은 티빙을 빼고 디즈니+·웨이브를 준다", () => {
+    const links = bundleCheckLinks({
+      name: "티빙 3 PACK (티빙 + 디즈니+ + 웨이브)",
+      cancelUrl: "https://www.tving.com/",
+    });
+    expect(links.map((link) => link.serviceId)).toEqual(["disney-plus", "wavve"]);
+  });
+
+  it("결합 상품이 아니거나 서비스 목록에 없으면 아무것도 주지 않는다", () => {
+    expect(bundleCheckLinks({ name: "유튜브 프리미엄" })).toEqual([]);
+    expect(bundleCheckLinks({ name: "내가 적은 구독" })).toEqual([]);
   });
 });
