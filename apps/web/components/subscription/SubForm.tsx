@@ -37,6 +37,12 @@ import { CUSTOM_ICON_COLORS, CUSTOM_ICON_EMOJIS } from "@lib/custom-icon";
 
 const LABEL = "text-xs font-bold text-foreground";
 
+/** 결제일 칸 아래의 빠른 선택. 결제 문자를 보고 바로 등록하는 사람이 많다. */
+const PAID_ON_CHOICES = [
+  { label: "오늘 결제했어요", daysAgo: 0 },
+  { label: "어제", daysAgo: 1 },
+] as const;
+
 /** 서비스 고르기 탭의 순서. 목록에 서비스가 하나도 없는 분류는 탭을 만들지 않는다. */
 const PICK_CATEGORY_ORDER: SubscriptionCategory[] = [
   "ott",
@@ -147,6 +153,18 @@ export function SubForm({
             name === "trialEndsAt" && value === ""
             ? undefined
             : value,
+    }));
+  };
+
+  /**
+   * 결제한 날을 골라 결제일을 채운다('오늘 결제했어요'·'어제'). 사용자가 고른 날이라 지어낸 값이 아니다.
+   * 연간 결제는 그날의 달도 결제 월로 채운다 — 결제 월이 없으면 D-day·알림이 없다.
+   */
+  const pickPaidOn = (date: Date) => {
+    setFormData((prev) => ({
+      ...prev,
+      billingDay: date.getDate(),
+      ...(prev.billingCycle === "yearly" ? { billingMonth: date.getMonth() + 1 } : {}),
     }));
   };
 
@@ -744,6 +762,22 @@ export function SubForm({
             onChange={handleChange}
             required
           />
+          <div className="flex flex-wrap gap-1.5">
+            {PAID_ON_CHOICES.map(({ label, daysAgo }) => {
+              const date = new Date();
+              date.setDate(date.getDate() - daysAgo);
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => pickPaidOn(date)}
+                  className="rounded-full border px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-secondary"
+                >
+                  {label}({date.getDate()}일)
+                </button>
+              );
+            })}
+          </div>
         </div>
         <div className="space-y-1.5">
           <label htmlFor={`${fieldId}-cycle`} className={LABEL}>

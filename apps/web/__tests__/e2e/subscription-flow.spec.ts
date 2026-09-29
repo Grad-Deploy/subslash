@@ -48,6 +48,12 @@ test.describe("Subscription Flow (E2E)", () => {
     // 이름·해지 링크는 프리셋이 알고 있어 묻지 않는다.
     await expect(dialog.locator('input[name="name"]')).toHaveCount(0);
 
+    // 사용자가 결제한 날을 고르면 그날로 채운다(지어낸 값이 아니다).
+    await dialog.getByRole("button", { name: /오늘 결제했어요/ }).click();
+    await expect(dialog.locator('input[name="billingDay"]')).toHaveValue(
+      String(new Date().getDate()),
+    );
+
     await dialog.locator('input[name="billingDay"]').fill("15");
     await dialog.locator('button[type="submit"]').click();
 
