@@ -2,6 +2,8 @@
 
 import { Check, X } from "lucide-react";
 import { useStoredFlag } from "@hooks/useStoredFlag";
+import { ownerScopedKey, readOwnerScoped } from "@lib/owner-scoped";
+import { useStore } from "@lib/store";
 import { cn } from "@lib/utils";
 
 const DISMISSED_KEY = "subslash_app_start_dismissed";
@@ -18,6 +20,9 @@ interface AppStartChecklistProps {
 /**
  * 앱 대시보드의 '시작하기' 체크리스트. 설명 카드를 읽게 하는 대신 해야 할 일 세 가지와 진행만
  * 보여준다. 화면을 막지 않고, 닫으면 다시 나오지 않는다. 기기 알림이 앱에만 있어 웹에는 없다.
+ *
+ * 닫음은 기록 주인(비로그인·계정)마다 따로 둔다 — 로그아웃하면 비로그인의 시작하기가 처음부터 보이고, 다시
+ * 로그인하면 그 계정에서 닫은 대로 돌아온다(lib/owner-scoped).
  */
 export function AppStartChecklist({
   hasSubscription,
@@ -27,8 +32,16 @@ export function AppStartChecklist({
   onCheckIn,
   onReminders,
 }: AppStartChecklistProps) {
+  const owner = useStore((state) => state.recordsOwner);
+  const dismissedKey = ownerScopedKey(DISMISSED_KEY, owner);
+  // 주인별로 나누기 전에 닫은 것은 지금 주인의 칸으로 옮긴다.
+  if (typeof window !== "undefined") {
+    try {
+      readOwnerScoped(localStorage, DISMISSED_KEY, owner);
+    } catch {}
+  }
   // 하이드레이션 동안은 숨긴다. 닫은 사람에게 한 번 번쩍이지 않게.
-  const [dismissed, dismiss] = useStoredFlag(DISMISSED_KEY, true);
+  const [dismissed, dismiss] = useStoredFlag(dismissedKey, true);
   if (dismissed) return null;
 
   const steps = [
