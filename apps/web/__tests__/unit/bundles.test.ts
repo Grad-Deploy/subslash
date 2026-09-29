@@ -4,6 +4,7 @@ import {
   bundlesIncluding,
   coveredServices,
   findBundleOverlaps,
+  getCancelAndroidApp,
   metricForSubscription,
   type Subscription,
 } from "@subslash/shared";
@@ -144,5 +145,31 @@ describe("결합 상품 해지 뒤 확인할 곳", () => {
   it("결합 상품이 아니거나 서비스 목록에 없으면 아무것도 주지 않는다", () => {
     expect(bundleCheckLinks({ name: "유튜브 프리미엄" })).toEqual([]);
     expect(bundleCheckLinks({ name: "내가 적은 구독" })).toEqual([]);
+  });
+});
+
+describe("해지 버튼이 여는 앱", () => {
+  it("배민 결합은 배달의민족 앱을 연다", () => {
+    expect(
+      getCancelAndroidApp({
+        name: "배민클럽 + 유튜브 프리미엄",
+        cancelUrl: "https://www.baemin.com/",
+      }),
+    ).toBe("com.sampleapp");
+  });
+
+  it("사용자가 해지 주소를 바꿨으면 앱을 열지 않는다 — 그 주소로 가려는 것이다", () => {
+    expect(
+      getCancelAndroidApp({
+        name: "배민클럽 + 유튜브 프리미엄",
+        cancelUrl: "https://example.com/",
+      }),
+    ).toBeUndefined();
+  });
+
+  it("해지 화면으로 바로 가는 주소가 있는 서비스에는 앱을 적지 않는다", () => {
+    expect(
+      getCancelAndroidApp({ name: "넷플릭스", cancelUrl: "https://www.netflix.com/cancelplan" }),
+    ).toBeUndefined();
   });
 });

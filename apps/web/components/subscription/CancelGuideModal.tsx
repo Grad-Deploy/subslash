@@ -6,6 +6,7 @@ import {
   PAYMENT_METHOD_OPTIONS,
   bundleCheckLinks,
   getAccountFallbackUrl,
+  getCancelAndroidApp,
   getCancelUrlKind,
   getServiceHomeUrl,
   parseCancelGuideSteps,
@@ -83,7 +84,9 @@ export function CancelGuideModal({
               <>
                 <Button
                   className={`${WRAPPING_BUTTON} min-h-11 font-bold rounded-xl`}
-                  onClick={() => openExternal(sub.cancelUrl)}
+                  onClick={() =>
+                    openExternal(sub.cancelUrl, { androidApp: getCancelAndroidApp(sub) })
+                  }
                 >
                   {cancelUrlKind === "direct"
                     ? `${sub.name} 해지 페이지 열기 (새 창)`

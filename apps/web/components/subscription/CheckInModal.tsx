@@ -7,6 +7,7 @@ import {
   PAYMENT_METHOD_OPTIONS,
   METRIC_SPECS,
   describeCheckIn,
+  getCancelAndroidApp,
   getCancelUrlKind,
   getMyMonthlyShareAmount,
   metricForSubscription,
@@ -94,6 +95,11 @@ export function CheckInModal({
   const usesPaymentMethodUrl = Boolean(paymentMethodInfo?.directCancelUrl);
   const directUrl = paymentMethodInfo?.directCancelUrl || subscription.cancelUrl;
   const cancelUrlKind = getCancelUrlKind(subscription.cancelUrl);
+  // 결제수단 관리 주소로 갈 때는 서비스 앱을 열지 않는다.
+  const openCancel = () =>
+    openExternal(directUrl, {
+      androidApp: usesPaymentMethodUrl ? undefined : getCancelAndroidApp(subscription),
+    });
   const cancelButtonLabel = usesPaymentMethodUrl
     ? `${paymentMethodInfo?.label} 정기결제 관리 열기 (새 창)`
     : cancelUrlKind === "direct"
@@ -213,11 +219,7 @@ export function CheckInModal({
                   }
                 : undefined
             }
-            fallbackLink={
-              directUrl
-                ? { label: cancelButtonLabel, open: () => openExternal(directUrl) }
-                : undefined
-            }
+            fallbackLink={directUrl ? { label: cancelButtonLabel, open: openCancel } : undefined}
             onClose={onClose}
           />
         ) : (
@@ -310,7 +312,7 @@ export function CheckInModal({
                 <Button
                   variant="destructive"
                   className={`${WRAPPING_BUTTON} min-h-12 text-sm font-bold rounded-xl shadow-lg`}
-                  onClick={() => openExternal(directUrl)}
+                  onClick={openCancel}
                 >
                   {cancelButtonLabel}
                 </Button>

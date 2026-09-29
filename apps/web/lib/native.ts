@@ -31,14 +31,19 @@ export function isSafeExternalUrl(url: string | undefined | null): url is string
  * 그 앱으로 먼저 연다 — 인앱 브라우저로 열면 앱에 로그인돼 있어도 웹에 다시 로그인해야 했다. 앱은
  * 자기가 처리하는 경로만 맡으므로 해지 화면 대신 앱 첫 화면이 열리지는 않는다. 맡을 앱이 없거나
  * 플러그인이 실패하면 인앱 브라우저로 연다.
+ *
+ * `androidApp`은 해지 경로가 앱 안에 있는데 그 앱이 웹 주소를 맡지 않는 서비스의 패키지다
+ * (`getCancelAndroidApp`). 설치돼 있으면 주소 대신 그 앱을 연다 — 배민 앱이 있어도 baemin.com의
+ * '앱을 받으세요' 화면이 열렸다.
  */
-export function openExternal(url: string | undefined): void {
+export function openExternal(url: string | undefined, options: { androidApp?: string } = {}): void {
   if (!isSafeExternalUrl(url)) {
     if (url) console.warn("[native] http(s)가 아닌 주소는 열지 않습니다");
     return;
   }
   if (IS_APP_BUILD) {
-    void openInServiceApp(url)
+    void launchAndroidApp(options.androidApp)
+      .then((launched) => launched || openInServiceApp(url))
       .then(async (opened) => {
         if (opened) return;
         const { Browser } = await import("@capacitor/browser");
@@ -223,6 +228,7 @@ const WINDOW_COLORS = { light: "#ffffff", dark: "#09090b" } as const;
 interface AppWindowPlugin {
   setBackgroundColor(options: { color: string }): Promise<void>;
   openInApp(options: { url: string }): Promise<{ opened: boolean }>;
+  launchApp(options: { package: string }): Promise<{ opened: boolean }>;
 }
 
 let appWindow: AppWindowPlugin | null = null;
@@ -237,6 +243,21 @@ const APP_HANDS_BACK_TO_BROWSER = new Set(["www.disneyplus.com", "disneyplus.com
  * 안드로이드에서 주소를 맡을 서비스 앱이 있으면 그 앱으로 연다. 열었으면 true. iOS에는 플러그인이
  * 없고(부르면 거절당한다), 실패하면 false로 돌려 인앱 브라우저로 넘긴다.
  */
+/** 안드로이드에서 설치된 앱을 첫 화면으로 연다. 열었으면 true. */
+async function launchAndroidApp(packageName: string | undefined): Promise<boolean> {
+  if (!packageName) return false;
+  try {
+    const { Capacitor, registerPlugin } = await import("@capacitor/core");
+    if (Capacitor.getPlatform() !== "android") return false;
+    appWindow ??= registerPlugin<AppWindowPlugin>("AppWindow");
+    const { opened } = await appWindow.launchApp({ package: packageName });
+    return opened;
+  } catch (error) {
+    console.warn("[native] 서비스 앱을 열지 못해 주소로 엽니다", error);
+    return false;
+  }
+}
+
 async function openInServiceApp(url: string): Promise<boolean> {
   if (APP_HANDS_BACK_TO_BROWSER.has(new URL(url).hostname)) return false;
   try {

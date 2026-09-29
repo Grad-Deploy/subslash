@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import type { Subscription } from "@subslash/shared";
+import { POPULAR_SERVICES, type Subscription } from "@subslash/shared";
 import {
   ACTIVE_DAY_MS,
   EMPTY_HISTORY,
@@ -484,6 +484,12 @@ describe("연결표 ↔ 안드로이드 매니페스트", () => {
       "utf8",
     );
     const declared = [...manifest.matchAll(/<package android:name="([^"]+)"/g)].map((m) => m[1]);
-    expect([...declared].sort()).toEqual([...ALL_USAGE_PACKAGES].sort());
+    // 해지 버튼이 여는 앱(services.ts의 cancelAndroidApp)도 설치 여부를 알아야 연다.
+    const cancelApps = POPULAR_SERVICES.flatMap((service) =>
+      service.cancelAndroidApp ? [service.cancelAndroidApp] : [],
+    );
+    expect([...declared].sort()).toEqual(
+      [...new Set([...ALL_USAGE_PACKAGES, ...cancelApps])].sort(),
+    );
   });
 });
