@@ -26,6 +26,18 @@ describe("decideSync — 이 기기에서 이 계정으로 처음 맞출 때", (
     });
   });
 
+  it("계정에 빈 기록만 있으면 묻지 않고 이 기기의 기록을 그 판 위에 올린다", () => {
+    // 앱에 구독 4개, 계정에 빈 기록(0개)이 있어 '어느 쪽을 쓸까요'가 떴고, 창을 닫자 동기화가 꺼졌다.
+    expect(decideSync(FRESH, local("h"), { savedAt: "s1", empty: true })).toEqual({
+      kind: "push",
+      condition: { kind: "match", savedAt: "s1" },
+    });
+    // 이미 맞춰 오던 기기에서 계정이 비었으면 다른 기기가 일부러 지웠을 수 있어 그대로 묻는다.
+    expect(
+      decideSync(SYNCED, local("h-changed"), { savedAt: "s2", empty: true, hash: "e" }),
+    ).toEqual({ kind: "ask", reason: "both-changed", savedAt: "s2" });
+  });
+
   it("양쪽에 기록이 있으면 지문을 보고, 같으면 판만 기억하고 다르면 묻는다", () => {
     expect(decideSync(FRESH, local("h"), { savedAt: "s1" })).toEqual({ kind: "need-server-hash" });
     expect(decideSync(FRESH, local("h"), { savedAt: "s1", hash: "h" })).toEqual({

@@ -30,8 +30,9 @@ function formatSavedAt(iso: string): string {
 
 /**
  * 이 기기와 계정의 기록이 서로 달라 한쪽을 골라야 할 때. 합치지 않는다 — 고르지 않은 쪽은
- * 사라지므로 양쪽 개수를 보여준다. 창을 그냥 닫으면 '나중에'와 같다(이 기기의 자동 동기화를
- * 끈다). 닫을 때마다 다시 물으면 기록을 고칠 때마다 창이 뜬다.
+ * 사라지므로 양쪽 개수를 보여준다. 창을 그냥 닫으면(뒤로 가기·바깥 누르기) 이번 실행 동안만 묻지 않고
+ * 자동 동기화는 켜 둔다 — 예전에는 닫기가 '나중에'(동기화 끄기)와 같아서, 모르는 사이에 꺼졌다. 끄는
+ * 것은 '나중에' 버튼뿐이다.
  */
 export function AccountSyncConflictDialog({ conflict, onChoose }: AccountSyncConflictDialogProps) {
   if (!conflict) return null;
@@ -41,7 +42,7 @@ export function AccountSyncConflictDialog({ conflict, onChoose }: AccountSyncCon
       : "이 기기와 다른 기기에서 기록이 따로 바뀌었습니다.";
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onChoose("later")}>
+    <Dialog open onOpenChange={(open) => !open && onChoose("dismiss")}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>어느 기록을 쓸까요?</DialogTitle>
