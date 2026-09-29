@@ -15,6 +15,55 @@ interface Provider {
   label: string;
 }
 
+/**
+ * 제공자 버튼의 모습. 세 회사 모두 로그인 버튼의 색·마크·문구를 가이드로 정해 두었고, 사람들은 글자보다
+ * 노란 말풍선·초록 N·컬러 G로 먼저 알아본다. 그래서 앱 테마(라이트·다크)를 따르지 않고 두 모드에서 같은
+ * 색으로 고정한다. 값은 모두 공식 배포 리소스에서 옮겼다(2026-09-29 확인).
+ *
+ * - 카카오: developers.kakao.com/tool/resource/login 의 'Kakao Login.zip'(SVG) — 바탕 #FEE500, 심볼·글자
+ *   #191919. 심볼은 그 SVG의 path 그대로다. 디자인 가이드상 심볼 없이는 버튼을 만들 수 없고, 문구는
+ *   '카카오 로그인'(또는 '로그인')만 쓴다.
+ * - 네이버: developers.naver.com/docs/login/bi/bi.md 의 NAVER_login_KR.zip — 바탕 #03A94D, 로고·글자 흰색.
+ *   벡터를 내주지 않아 공식 아이콘 버튼 PNG(green_icon_H56)에서 흰 N만 뽑아 `public/logos/login/naver-n.png`로 둔다.
+ * - 구글: developers.google.com/identity/branding-guidelines 의 signin-assets.zip — Light 테마(바탕 #FFFFFF,
+ *   테두리 #747775, 글자 #1F1F1F). G는 색·모양을 바꿀 수 없고 흰 바탕 위에만 둔다. 공식 SVG는 그라데이션을
+ *   foreignObject로 그려 웹뷰마다 다르게 나올 수 있어, 같은 묶음의 PNG(@4x)에서 G 칸만 잘라 쓴다.
+ */
+const PROVIDER_LOOK: Record<
+  Provider["id"],
+  { label: string; className: string; mark: React.ReactNode }
+> = {
+  kakao: {
+    label: "카카오 로그인",
+    className:
+      "border-transparent bg-[#FEE500] text-[#191919] hover:bg-[#FEE500] hover:text-[#191919]",
+    mark: (
+      <svg viewBox="13 14 22 21" className="h-[18px] w-[18px]" aria-hidden="true">
+        <path
+          d="M24.0014 14C17.9241 14 13 18.0219 13 22.9825C13 26.1711 15.0368 28.9728 18.1057 30.5656L17.0681 34.5677C17.0295 34.6871 17.0598 34.8151 17.1424 34.9033C17.2029 34.9659 17.2855 35 17.3653 35C17.4341 35 17.5029 34.9772 17.5607 34.9289L22.0196 31.8171C22.661 31.911 23.3215 31.9622 23.9986 31.9622C30.0732 31.9622 35 27.9403 35 22.9797C35 18.0191 30.0759 14 24.0014 14Z"
+          fill="#191919"
+        />
+      </svg>
+    ),
+  },
+  naver: {
+    label: "네이버 로그인",
+    className: "border-transparent bg-[#03A94D] text-white hover:bg-[#03A94D] hover:text-white",
+    mark: (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src="/logos/login/naver-n.png" alt="" aria-hidden="true" className="h-4 w-4" />
+    ),
+  },
+  google: {
+    label: "Google 계정으로 로그인",
+    className: "border-[#747775] bg-white text-[#1F1F1F] hover:bg-white hover:text-[#1F1F1F]",
+    mark: (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src="/logos/login/google-g.png" alt="" aria-hidden="true" className="h-5 w-5" />
+    ),
+  },
+};
+
 function base64url(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
@@ -150,18 +199,37 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
         </label>
       )}
       <div className="space-y-2">
-        {providers.map((provider) => (
-          <Button
-            key={provider.id}
-            type="button"
-            variant="outline"
-            className="w-full h-11 font-bold rounded-xl"
-            disabled={busy}
-            onClick={() => void start(provider)}
-          >
-            {provider.label}로 계속하기
-          </Button>
-        ))}
+        {providers.map((provider) => {
+          const look = PROVIDER_LOOK[provider.id];
+          // 모르는 제공자가 오면(서버가 앞서 배포된 경우) 예전처럼 테마 색 버튼으로 둔다.
+          if (!look) {
+            return (
+              <Button
+                key={provider.id}
+                type="button"
+                variant="outline"
+                className="w-full h-11 font-bold rounded-xl"
+                disabled={busy}
+                onClick={() => void start(provider)}
+              >
+                {provider.label}로 계속하기
+              </Button>
+            );
+          }
+          return (
+            <Button
+              key={provider.id}
+              type="button"
+              variant="outline"
+              className={`relative w-full h-11 font-bold rounded-xl hover:brightness-95 ${look.className}`}
+              disabled={busy}
+              onClick={() => void start(provider)}
+            >
+              <span className="absolute left-4 flex items-center">{look.mark}</span>
+              {look.label}
+            </Button>
+          );
+        })}
       </div>
       {error && (
         <p role="alert" className="text-sm font-medium text-destructive">
