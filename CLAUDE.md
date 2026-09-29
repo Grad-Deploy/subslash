@@ -83,6 +83,8 @@ USD 환산 환율은 상수가 아니라 사용자 설정값이다. 컴포넌트
 가격이 아니라 `getBilledAmount`와 하고(영수증은 청구액이다), 결제 주기가 다르면 비교하지 않는다.
 요금을 확인해 주거나 금액을 고치면 지운다.
 
+구독 중인 서비스의 마지막 메일이 해지·취소 알림이면 그 날짜를 적는다(`cancelNoticeAt`, `utils/cancelNotice`). 해지 알림은 제목 낱말(해지·취소·환불·만료·종료·cancel)로 가려 요금제 변경·환불·체험 종료 안내도 걸리므로 **해지로 기록하지 않고** 행동 큐의 `cancel-notice`에서 묻는다('해지했어요'/'아직 구독 중'). 해지했다면 결제 임박·체크인 줄은 틀린 말이라 이 줄 하나만 올리고, 체험을 끊었다는 메일이 가장 흔해 체험 확인보다 먼저 본다. '아직 구독 중'이면 그 메일 날짜를 `cancelNoticeDismissedAt`에 남겨 다시 묻지 않는다. 지금은 브라우저가 메일을 읽는 `/import`만 적는다 — 자동 가져오기는 서버가 해지 알림을 후보에서 버리고, 서버에 남기려면 방침의 저장 목적이 바뀐다.
+
 무료 체험 중인 구독(`trialEndsAt`이 아직 오지 않음, `isInTrial`)은 카드에서 나가는 돈이 없다.
 지출 합계·결제 캘린더·알림 미러·캘린더 등록에서 모두 뺀다 — 넣으면 내지도 않은 돈을 '월
 고정지출'로, 없는 결제를 달력에 보여주게 된다. 뺀 사실과 끝난 뒤 금액은 화면에 적는다. 행동 큐는
@@ -444,7 +446,7 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
 `apps/mobile`(Capacitor 8, appId `com.subslash.app`)이 그 폴더를 담는다. 빌드에는 앱이 부를 배포
 주소(`NEXT_PUBLIC_WEB_ORIGIN`)가 꼭 있어야 하고, 없으면 빌드를 멈춘다. 앱에서만 달라지는 동작은
 `IS_APP_BUILD`(`lib/platform`)로 가른다. CI가 이 빌드를 돌려 정적 내보내기를 깨는 코드를 막는다.
-안드로이드 빌드·실행은 README의 '모바일 앱'에 있다.
+안드로이드 빌드·실행은 README의 '모바일 앱'에 있다. 고친 것을 폰에서 확인할 때는 `pnpm --filter @subslash/mobile android:dev`로 테스트용 앱(`com.subslash.app.dev`)을 스토어 앱 옆에 설치한다 — 확인하려고 versionCode를 올리거나 스토어 앱을 지우지 않는다.
 
 `apps/mobile`은 안드로이드(`android/`)와 iOS(`ios/`)를 모두 담는다. iOS 프로젝트는 Capacitor 8이
 CocoaPods 대신 SPM을 쓰므로 Windows에서도 만들어지지만, **빌드는 macOS나 EAS의 macOS 작업 서버에서만**

@@ -156,6 +156,7 @@ export default function Dashboard() {
     killSubscription,
     reviveSubscription,
     confirmKillVerified,
+    dismissCancelNotice,
     confirmSubscriptionPrice,
     checkIn,
     getActiveSubscriptions,
@@ -372,6 +373,19 @@ export default function Dashboard() {
     showToast(`${sub.name} 결제 멈춤 확인`);
   };
 
+  // 해지 알림 메일이 온 구독. 사용자가 해지했다고 답해야 기록한다 — 메일은 제목 낱말로 가린 것이다.
+  const handleCancelNoticeKilled = (id: string) => {
+    const sub = findSub(id);
+    if (sub) confirmKill(sub);
+  };
+
+  const handleCancelNoticeDismissed = (id: string) => {
+    const sub = findSub(id);
+    if (!sub) return;
+    dismissCancelNotice(id);
+    showToast(`${sub.name}은(는) 구독 중으로 둘게요`);
+  };
+
   const handleKillCharged = (id: string) => {
     const sub = findSub(id);
     if (sub) setChargedTarget(sub);
@@ -519,6 +533,8 @@ export default function Dashboard() {
                   onConfirmPrice={handleConfirmPrice}
                   onKillNotCharged={handleKillNotCharged}
                   onKillCharged={handleKillCharged}
+                  onCancelNoticeKilled={handleCancelNoticeKilled}
+                  onCancelNoticeDismissed={handleCancelNoticeDismissed}
                   onAddFirst={() => openAdd()}
                   headerAction={foldButton}
                   lead={
@@ -555,6 +571,8 @@ export default function Dashboard() {
                 onConfirmPrice={handleConfirmPrice}
                 onKillNotCharged={handleKillNotCharged}
                 onKillCharged={handleKillCharged}
+                onCancelNoticeKilled={handleCancelNoticeKilled}
+                onCancelNoticeDismissed={handleCancelNoticeDismissed}
                 onAddFirst={() => openAdd()}
               />
             </>

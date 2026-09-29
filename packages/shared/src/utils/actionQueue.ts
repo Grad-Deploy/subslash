@@ -38,6 +38,8 @@ export type ActionKind =
   | "charged-after-kill"
   /** 무료 체험이 곧 끝난다. 두면 유료로 넘어간다. */
   | "trial-ending"
+  /** 구독 중인데 그 서비스의 마지막 메일이 해지·취소 알림이었다. 해지했는지 묻는다. */
+  | "cancel-notice"
   /** 결제가 코앞인데 마지막 체크인이 '위험'이었다. */
   | "billing-soon-risky"
   /** 결제가 코앞인데 이번 달 사용량이 적다 (체크인 기록 기반). */
@@ -68,6 +70,7 @@ export type ActionVerb =
   | "confirm-price"
   | "set-billing-month"
   | "verify-kill"
+  | "confirm-cancel"
   | "review-resubscribe";
 
 export interface ActionItem {
@@ -112,6 +115,8 @@ const PRIORITY: Record<ActionKind, number> = {
   "charged-after-kill": 0,
   // 첫 결제가 시작되는 순간이고, 가장 쉽게 막을 수 있는 지출이다.
   "trial-ending": 1,
+  // 해지했다면 지출·결제 알림이 모두 틀린 채로 남는다. 결제 임박보다 앞이다 — 해지했으면 체크인할 일도 없다.
+  "cancel-notice": 1,
   "billing-soon-risky": 1,
   "low-usage-billing-soon": 1,
   "billing-soon": 2,
@@ -131,6 +136,7 @@ const VERB: Record<ActionKind, ActionVerb> = {
   // 물어볼 것이 아니라 다시 해지하러 가야 한다.
   "charged-after-kill": "cancel-guide",
   "trial-ending": "cancel-guide",
+  "cancel-notice": "confirm-cancel",
   "billing-soon-risky": "cancel-guide",
   "low-usage-billing-soon": "cancel-guide",
   "billing-soon": "check-in",
@@ -198,6 +204,29 @@ export function getActionQueue(
   const items: ActionItem[] = [];
 
   for (const sub of active) {
+    // 마지막 메일이 해지·취소 알림이었다. 해지했다면 이 구독의 다른 줄(결제 임박·체크인)은 모두 틀린
+    // 말이 되므로 이것만 묻는다. 무료 체험을 끊었다는 메일이 가장 흔해서 체험 확인보다 먼저 본다.
+    if (sub.cancelNoticeAt) {
+      items.push({
+        subscriptionId: sub.id,
+        name: sub.name,
+        iconEmoji: sub.iconUrl || "📦",
+        iconColor: sub.iconColor,
+        kind: "cancel-notice",
+        // 제목의 낱말로 가린 알림이라 해지했다고 말하지 않는다. 사용자가 안다.
+        reason:
+          `${sub.cancelNoticeAt}에 해지·취소 알림 메일이 왔습니다. 해지했다면 기록해 주세요. ` +
+          "요금제 변경이나 환불 안내일 수도 있어요.",
+        verb: VERB["cancel-notice"],
+        daysUntilBilling: null,
+        amountAtStake: null,
+        currency: sub.currency,
+        presetAmount: null,
+        priority: PRIORITY["cancel-notice"],
+      });
+      continue;
+    }
+
     // 체험 중에는 카드에서 나가는 돈이 없다. 결제일을 근거로 "곧 빠져나갑니다"라고 하면 거짓이
     // 되므로, 체험이 끝나간다는 것 하나만 말하고 다른 줄은 만들지 않는다.
     const trialDays = getDaysUntilTrialEnd(sub, now);
