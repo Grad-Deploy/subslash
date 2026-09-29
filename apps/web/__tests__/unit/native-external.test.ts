@@ -213,4 +213,37 @@ describe("외부 주소 열기", () => {
     await vi.waitFor(() => expect(mocks.opened).toEqual([CANCEL_URL]));
     expect(asked).toEqual([]);
   });
+
+  it("해지 경로가 앱 안에 있는 서비스는 설치된 앱을 먼저 연다", async () => {
+    const launched: string[] = [];
+    vi.doMock("@capacitor/core", () => ({
+      Capacitor: { getPlatform: () => "android" },
+      registerPlugin: () => ({
+        launchApp: async ({ package: name }: { package: string }) => {
+          launched.push(name);
+          return { opened: true };
+        },
+        openInApp: async () => ({ opened: false }),
+      }),
+    }));
+    const { openExternal } = await import("../../lib/native");
+    openExternal("https://www.baemin.com/", { androidApp: "com.sampleapp" });
+    await vi.waitFor(() => expect(launched).toEqual(["com.sampleapp"]));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    // baemin.com의 '앱을 받으세요' 화면을 열지 않는다.
+    expect(mocks.opened).toEqual([]);
+  });
+
+  it("앱이 설치돼 있지 않으면 주소로 연다", async () => {
+    vi.doMock("@capacitor/core", () => ({
+      Capacitor: { getPlatform: () => "android" },
+      registerPlugin: () => ({
+        launchApp: async () => ({ opened: false }),
+        openInApp: async () => ({ opened: false }),
+      }),
+    }));
+    const { openExternal } = await import("../../lib/native");
+    openExternal("https://www.baemin.com/", { androidApp: "com.sampleapp" });
+    await vi.waitFor(() => expect(mocks.opened).toEqual(["https://www.baemin.com/"]));
+  });
 });

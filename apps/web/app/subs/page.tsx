@@ -196,7 +196,7 @@ export default function SubscriptionsPage() {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
-    type: "kill" | "revive" | "delete";
+    type: "revive" | "delete";
     sub: Subscription;
   } | null>(null);
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
@@ -343,9 +343,13 @@ export default function SubscriptionsPage() {
     if (sub) setGuideTarget(sub);
   };
 
+  // 가이드에서 '해지 완료했어요'를 누른 것이 곧 확인이다 — 예전에는 확인 창을 한 번 더 띄웠다.
+  // 잘못 눌렀으면 '다시 살리기'로 되돌린다.
   const handleConfirmKilled = (id: string) => {
     const sub = subscriptions.find((s) => s.id === id);
-    if (sub) setConfirmAction({ type: "kill", sub });
+    if (!sub) return;
+    killSubscription(sub.id);
+    showToast(`${sub.name} 해지 완료로 기록`);
   };
 
   const handleRevive = (id: string) => {
@@ -361,10 +365,7 @@ export default function SubscriptionsPage() {
   const executeConfirmAction = () => {
     if (!confirmAction) return;
     const { type, sub } = confirmAction;
-    if (type === "kill") {
-      killSubscription(sub.id);
-      showToast(`${sub.name} 해지 완료로 기록`);
-    } else if (type === "revive") {
+    if (type === "revive") {
       reviveSubscription(sub.id);
       showToast(`${sub.name} 구독 중으로 되돌림`);
     } else if (type === "delete") {
@@ -879,37 +880,23 @@ export default function SubscriptionsPage() {
           subject={IS_APP_BUILD ? <SubjectChip sub={confirmAction.sub} /> : undefined}
           title={
             IS_APP_BUILD
-              ? confirmAction.type === "kill"
-                ? "해지했나요?"
-                : confirmAction.type === "revive"
-                  ? "다시 살릴까요?"
-                  : "삭제할까요?"
-              : confirmAction.type === "kill"
-                ? "구독 해지 완료 처리"
-                : confirmAction.type === "revive"
-                  ? "구독 다시 살리기"
-                  : "구독 영구 삭제"
+              ? confirmAction.type === "revive"
+                ? "다시 살릴까요?"
+                : "삭제할까요?"
+              : confirmAction.type === "revive"
+                ? "구독 다시 살리기"
+                : "구독 영구 삭제"
           }
           description={
-            IS_APP_BUILD && confirmAction.type === "kill"
-              ? "해지 완료로 기록하면\n결제일부터 지킨 돈으로 쌓여요."
-              : IS_APP_BUILD && confirmAction.type === "revive"
-                ? "구독 중으로 돌아가고,\n절약 기록에서는 빠져요."
-                : IS_APP_BUILD
-                  ? "절약 현황에서도 빠지고\n되돌릴 수 없어요."
-                  : confirmAction.type === "kill"
-                    ? `'${confirmAction.sub.name}'을(를) 해지 완료로 기록할까요?\n결제일이 지나면 지킨 돈으로 쌓여요.`
-                    : confirmAction.type === "revive"
-                      ? `'${confirmAction.sub.name}'을(를) 다시 구독 중으로 바꿀까요?\n절약 기록에서 빠져요.`
-                      : `'${confirmAction.sub.name}'을(를) 삭제할까요?\n되돌릴 수 없어요.`
+            IS_APP_BUILD && confirmAction.type === "revive"
+              ? "구독 중으로 돌아가고,\n절약 기록에서는 빠져요."
+              : IS_APP_BUILD
+                ? "절약 현황에서도 빠지고\n되돌릴 수 없어요."
+                : confirmAction.type === "revive"
+                  ? `'${confirmAction.sub.name}'을(를) 다시 구독 중으로 바꿀까요?\n절약 기록에서 빠져요.`
+                  : `'${confirmAction.sub.name}'을(를) 삭제할까요?\n되돌릴 수 없어요.`
           }
-          confirmText={
-            confirmAction.type === "kill"
-              ? "해지 완료"
-              : confirmAction.type === "revive"
-                ? "다시 살리기"
-                : "삭제"
-          }
+          confirmText={confirmAction.type === "revive" ? "다시 살리기" : "삭제"}
           cancelText="취소"
           variant={confirmAction.type === "revive" ? "default" : "destructive"}
         />

@@ -75,4 +75,31 @@ public class AppWindowPlugin extends Plugin {
         }
         call.resolve(result);
     }
+
+    /**
+     * 설치된 앱을 첫 화면으로 연다. 열었으면 { opened: true }, 설치돼 있지 않으면 false. 해지 경로가
+     * 앱 안에 있는데 앱이 웹 주소를 맡지 않는 서비스(배달의민족)에 쓴다. 패키지는 AndroidManifest의
+     * <queries>에 있어야 보인다(안드로이드 11+).
+     */
+    @PluginMethod
+    public void launchApp(PluginCall call) {
+        String packageName = call.getString("package");
+        JSObject result = new JSObject();
+        Intent intent = packageName == null
+            ? null
+            : getContext().getPackageManager().getLaunchIntentForPackage(packageName);
+        if (intent == null) {
+            result.put("opened", false);
+            call.resolve(result);
+            return;
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            getActivity().startActivity(intent);
+            result.put("opened", true);
+        } catch (ActivityNotFoundException e) {
+            result.put("opened", false);
+        }
+        call.resolve(result);
+    }
 }
