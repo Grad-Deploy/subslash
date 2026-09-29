@@ -428,7 +428,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // 앱 경로를 안내한다.
     cancelUrl: "https://www.baemin.com/",
     cancelUrlKind: "entry",
-    // 배달의민족 앱(2026-09-29 갤럭시 S24+에 설치된 배달의민족 16.24.0으로 확인).
+    // 배달의민족 앱(2026-09-29 Play 스토어 '배달의민족', 개발사 WoowaBrothers로 확인).
     cancelAndroidApp: "com.sampleapp",
     cancelGuide:
       "1. 배달의민족 앱 로그인 후 아래 [마이배민]\n2. [배민클럽] 화면으로 이동\n3. 화면 아래쪽 [해지하기] > 해지 사유 선택 후 한 번 더 [해지하기]",
@@ -451,7 +451,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // 배민 앱에서 결제하고 해지한다. 결제 메일이 Gmail로 오지 않아 가져오기로는 찾지 못한다.
     cancelUrl: "https://www.baemin.com/",
     cancelUrlKind: "entry",
-    // 배달의민족 앱(2026-09-29 갤럭시 S24+에 설치된 배달의민족 16.24.0으로 확인).
+    // 배달의민족 앱(2026-09-29 Play 스토어 '배달의민족', 개발사 WoowaBrothers로 확인).
     cancelAndroidApp: "com.sampleapp",
     cancelGuide:
       "1. 배달의민족 앱 로그인 후 아래 [마이배민]\n2. [배민클럽] 이용정보 화면으로 이동\n3. [배민클럽 해지하기] — 유튜브 프리미엄 제휴 상품도 함께 해지돼요",
