@@ -100,17 +100,40 @@ test.describe("Subscription Flow (E2E)", () => {
     const guideDialog = page.getByRole("dialog");
     await expect(guideDialog).toBeVisible();
     await expect(guideDialog.getByText("해지 메뉴까지 가는 길")).toBeVisible();
+    // '해지 완료했어요'가 곧 확인이다. 확인 창을 한 번 더 띄우지 않는다.
     await guideDialog.getByRole("button", { name: "해지 완료했어요" }).click();
-
-    // 가이드가 닫히고 나서야 완료 처리 확인 모달이 뜬다.
-    const confirmDialog = page.getByRole("dialog");
-    await expect(confirmDialog.getByText("구독 해지 완료 처리")).toBeVisible();
-    await confirmDialog.getByRole("button", { name: "해지 완료" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByText("Netflix 해지 완료로 기록")).toBeVisible();
 
     await page.getByRole("button", { name: /해지 완료 \(1\)/ }).click();
 
     await expect(page.getByRole("link", { name: /Netflix/ })).toBeVisible();
+  });
+
+  test("해지 화면에 다녀오면 가이드 맨 위에서 마쳤는지 묻는다", async ({ page, context }) => {
+    await seed(page, [{ ...netflix, cancelUrl: "https://www.netflix.com/cancelplan" }]);
+    // 해지 페이지는 새 창으로 열린다. 테스트에서는 밖으로 나가지 않게 막는다.
+    await context.route("https://www.netflix.com/**", (route) => route.abort());
+    await page.goto("/subs");
+
+    await page.getByRole("button", { name: "해지하기" }).first().click();
+    const guideDialog = page.getByRole("dialog");
+    await expect(guideDialog.getByText("해지 메뉴까지 가는 길")).toBeVisible();
+    // 다녀오기 전에는 묻지 않는다.
+    await expect(guideDialog.getByText("해지를 마쳤나요?")).toHaveCount(0);
+
+    const popup = page.waitForEvent("popup");
+    await guideDialog.getByRole("button", { name: /해지 페이지 열기/ }).click();
+    await (await popup).close();
+    // 앱은 돌아올 때 'resume'(과 visibilitychange)을 받는다.
+    await page.evaluate(() => document.dispatchEvent(new Event("resume")));
+
+    const prompt = guideDialog.getByRole("status").filter({ hasText: "해지를 마쳤나요?" });
+    await expect(prompt).toBeVisible();
+    await prompt.getByRole("button", { name: "해지 완료했어요" }).click();
+
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByText("Netflix 해지 완료로 기록")).toBeVisible();
   });
 
   test("메일 체크인: '해지 가이드 열기'는 가이드를 열 뿐, 확인 전에는 해지로 기록하지 않는다", async ({
@@ -132,9 +155,6 @@ test.describe("Subscription Flow (E2E)", () => {
     expect(statusBefore).toBe("active");
 
     await guideDialog.getByRole("button", { name: "해지 완료했어요" }).click();
-    const confirmDialog = page.getByRole("dialog");
-    await expect(confirmDialog.getByText("구독 해지 완료 처리")).toBeVisible();
-    await confirmDialog.getByRole("button", { name: "해지 완료" }).click();
 
     await expect(page).toHaveURL(/\/savings/);
     // 적립 위젯과 해지 목록이 같은 문구를 쓴다.

@@ -7,12 +7,11 @@ import type { CheckInResponse, Subscription } from "@subslash/shared";
 import { useStore } from "../../lib/store";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
-import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { Button } from "../../components/ui/button";
 import { Spinner } from "../../components/ui/spinner";
 import { CalendarCheck } from "lucide-react";
 
-type Stage = "check-in" | "guide" | "confirm";
+type Stage = "check-in" | "guide";
 
 /**
  * Target of the one-tap buttons in the reminder email.
@@ -35,7 +34,7 @@ function CheckInReceiver() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [stage, setStage] = useState<Stage>("check-in");
   const recorded = useRef(false);
-  // 세 모달 모두 다음으로 넘어가는 콜백 바로 뒤에 onClose를 부른다. 그 onClose가
+  // 두 모달 모두 다음으로 넘어가는 콜백 바로 뒤에 onClose를 부른다. 그 onClose가
   // 대시보드로 떠나 버리면 다음 단계가 열리지 않으므로, 한 번은 건너뛴다.
   const skipNextClose = useRef(false);
 
@@ -115,7 +114,7 @@ function CheckInReceiver() {
       {/*
         '해지 가이드 열기'는 가이드를 연다. 예전에는 여기서 곧바로 해지 완료로
         기록해서, 서비스에서 실제로 해지하기도 전에 방어액이 쌓였다. 다른
-        화면과 같이 가이드 → '해지 완료했어요' → 확인을 거쳐야 기록된다.
+        화면과 같이 가이드에서 '해지 완료했어요'를 눌러야 기록된다.
       */}
       <CheckInModal
         subscription={subscription}
@@ -130,21 +129,12 @@ function CheckInReceiver() {
         subscription={subscription}
         isOpen={stage === "guide"}
         onClose={() => leave()}
-        onConfirmKilled={() => goTo("confirm")}
-      />
-      <ConfirmDialog
-        isOpen={stage === "confirm"}
-        onClose={() => leave()}
-        onConfirm={() => {
+        onConfirmKilled={() => {
+          // 가이드에서 '해지 완료했어요'를 누른 것이 곧 확인이다 — 예전에는 확인 창을 한 번 더 띄웠다.
           killSubscription(subscription.id);
           skipNextClose.current = true;
           router.replace("/savings");
         }}
-        title="구독 해지 완료 처리"
-        description={`'${subscription.name}'을(를) 해지 완료로 기록할까요?\n결제일이 지나면 지킨 돈으로 쌓여요.`}
-        confirmText="해지 완료"
-        cancelText="취소"
-        variant="destructive"
       />
     </>
   );

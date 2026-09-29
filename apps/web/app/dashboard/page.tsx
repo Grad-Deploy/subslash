@@ -77,16 +77,6 @@ const AppAddCheckIn = IS_APP_BUILD
     )
   : null;
 
-const AppKillConfirmDialog = IS_APP_BUILD
-  ? dynamic(
-      () =>
-        import("../../components/dashboard/app/AppKillConfirmDialog").then(
-          (m) => m.AppKillConfirmDialog,
-        ),
-      { ssr: false },
-    )
-  : null;
-
 const AppKillCelebration = IS_APP_BUILD
   ? dynamic(
       () =>
@@ -207,7 +197,6 @@ export default function Dashboard() {
   const [checkInSub, setCheckInSub] = useState<Subscription | null>(null);
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
-  const [killTarget, setKillTarget] = useState<Subscription | null>(null);
   // 앱 계산서에서 '쉬어가도 될 구독'을 이어서 해지할 때의 순서. current는 지금 해지 안내를 연 구독,
   // rest는 그 뒤에 물어볼 구독이다. 계산서가 아닌 곳에서 연 해지 안내에는 쓰지 않는다.
   const [killSeries, setKillSeries] = useState<{
@@ -355,13 +344,13 @@ export default function Dashboard() {
   const confirmKill = (target: Subscription) => {
     killSubscription(target.id);
     showToast(`${target.name} 해지 완료로 기록`);
-    setKillTarget(null);
     advanceKillSeries(target);
   };
 
+  // 가이드에서 '해지 완료했어요'를 누른 것이 곧 확인이다 — 예전에는 확인 창을 한 번 더 띄웠다.
   const handleConfirmKilled = (id: string) => {
     const sub = findSub(id);
-    if (sub) setKillTarget(sub);
+    if (sub) confirmKill(sub);
   };
 
   const handleConfirmPrice = (id: string, newAmount?: number) => {
@@ -754,29 +743,6 @@ export default function Dashboard() {
         onClose={() => setGuideTarget(null)}
         onConfirmKilled={handleConfirmKilled}
       />
-
-      {killTarget &&
-        (AppKillConfirmDialog ? (
-          <AppKillConfirmDialog
-            subscription={killTarget}
-            onConfirm={() => confirmKill(killTarget)}
-            onCancel={() => {
-              setKillTarget(null);
-              setKillSeries(null);
-            }}
-          />
-        ) : (
-          <ConfirmDialog
-            isOpen={!!killTarget}
-            onClose={() => setKillTarget(null)}
-            onConfirm={() => confirmKill(killTarget)}
-            title="구독 해지 완료 처리"
-            description={`'${killTarget.name}'을(를) 해지 완료로 기록할까요?\n결제일이 지나면 지킨 돈으로 쌓여요.`}
-            confirmText="해지 완료"
-            cancelText="취소"
-            variant="destructive"
-          />
-        ))}
 
       {/* 앱 계산서에서 이어서 해지할 때만 뜬다(killSeries는 계산서에서만 채운다). */}
       {nextKill && AppNextKillDialog && (
