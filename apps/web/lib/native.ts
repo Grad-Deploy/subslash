@@ -26,6 +26,11 @@ export function isSafeExternalUrl(url: string | undefined | null): url is string
 /**
  * 외부 사이트(해지 페이지 등)를 연다. 앱에서는 인앱 브라우저(안드로이드 Custom Tabs, iOS
  * SFSafariViewController)로 열어, 해지를 마치고 닫으면 곧바로 앱으로 돌아온다.
+ *
+ * 안드로이드에서는 그 주소를 맡겠다고 한 서비스 앱(구글 플레이 구독 관리, 넷플릭스 등)이 있으면
+ * 그 앱으로 먼저 연다 — 인앱 브라우저로 열면 앱에 로그인돼 있어도 웹에 다시 로그인해야 했다. 앱은
+ * 자기가 처리하는 경로만 맡으므로 해지 화면 대신 앱 첫 화면이 열리지는 않는다. 맡을 앱이 없거나
+ * 플러그인이 실패하면 인앱 브라우저로 연다.
  */
 export function openExternal(url: string | undefined): void {
   if (!isSafeExternalUrl(url)) {
@@ -33,8 +38,12 @@ export function openExternal(url: string | undefined): void {
     return;
   }
   if (IS_APP_BUILD) {
-    void import("@capacitor/browser")
-      .then(({ Browser }) => Browser.open({ url }))
+    void openInServiceApp(url)
+      .then(async (opened) => {
+        if (opened) return;
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.open({ url });
+      })
       .catch((error) => console.error("[native] 링크를 열지 못했습니다", error));
     return;
   }
@@ -213,9 +222,34 @@ const WINDOW_COLORS = { light: "#ffffff", dark: "#09090b" } as const;
 
 interface AppWindowPlugin {
   setBackgroundColor(options: { color: string }): Promise<void>;
+  openInApp(options: { url: string }): Promise<{ opened: boolean }>;
 }
 
 let appWindow: AppWindowPlugin | null = null;
+
+/**
+ * 주소를 맡겠다고 해 놓고, 열면 스스로 기본 브라우저로 넘기는 앱. 인앱 브라우저보다 앱으로
+ * 돌아오기 어려워지므로 앱을 거치지 않는다(2026-09 갤럭시 S24+에서 디즈니+ 계정 화면으로 확인).
+ */
+const APP_HANDS_BACK_TO_BROWSER = new Set(["www.disneyplus.com", "disneyplus.com"]);
+
+/**
+ * 안드로이드에서 주소를 맡을 서비스 앱이 있으면 그 앱으로 연다. 열었으면 true. iOS에는 플러그인이
+ * 없고(부르면 거절당한다), 실패하면 false로 돌려 인앱 브라우저로 넘긴다.
+ */
+async function openInServiceApp(url: string): Promise<boolean> {
+  if (APP_HANDS_BACK_TO_BROWSER.has(new URL(url).hostname)) return false;
+  try {
+    const { Capacitor, registerPlugin } = await import("@capacitor/core");
+    if (Capacitor.getPlatform() !== "android") return false;
+    appWindow ??= registerPlugin<AppWindowPlugin>("AppWindow");
+    const { opened } = await appWindow.openInApp({ url });
+    return opened;
+  } catch (error) {
+    console.warn("[native] 서비스 앱으로 열지 못해 인앱 브라우저로 엽니다", error);
+    return false;
+  }
+}
 
 /**
  * 상태 표시줄·내비게이션 바를 앱 테마에 맞춘다. 웹에서는 아무것도 하지 않는다.
