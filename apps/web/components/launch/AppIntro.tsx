@@ -38,7 +38,28 @@ const SHARDS = Array.from({ length: 12 }, (_, i) => {
 // 충격 시점(ms). 모든 타이밍은 여기를 기준으로 맞춘다(시안과 같은 값).
 const T = 520;
 
-export function AppIntro({ onDone }: { onDone: () => void }) {
+/** 처음 실행에서 로고가 머무는 시간(ms). 충격부터 퇴장까지다. */
+export const FIRST_LAUNCH_HOLD_MS = 1600;
+/**
+ * 다시 실행할 때 로고가 머무는 시간(ms). 가르는 동작과 워드마크가 다 올라온 뒤(T+670) 조금만 둔다 —
+ * 매번 여는 앱이라 처음 실행만큼 오래 보여주면 여는 데 방해가 된다.
+ */
+export const RELAUNCH_HOLD_MS = 800;
+
+/**
+ * `revealOnExit`: 퇴장할 때 바깥 판(검은 바탕)도 함께 걷어 뒤의 홈을 드러낸다. 다시 실행처럼 곧바로 홈으로
+ * 가는 경우에 쓴다. 처음 실행은 뒤에 환영 화면이 오므로 판을 끝까지 검게 둔다(그 사이 홈이 비치지 않게).
+ */
+export function AppIntro({
+  onDone,
+  holdMs = FIRST_LAUNCH_HOLD_MS,
+  revealOnExit = false,
+}: {
+  onDone: () => void;
+  holdMs?: number;
+  revealOnExit?: boolean;
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
   const wholeRef = useRef<HTMLDivElement>(null);
@@ -85,7 +106,9 @@ export function AppIntro({ onDone }: { onDone: () => void }) {
     };
 
     if (reduce) {
-      const introAnim = animate(introRef.current, [{ opacity: 1 }, { opacity: 0 }], {
+      // 다시 실행이면 바깥 판째 걷어 홈을 드러낸다.
+      const target = revealOnExit ? overlayRef.current : introRef.current;
+      const introAnim = animate(target, [{ opacity: 1 }, { opacity: 0 }], {
         duration: 300,
       });
       if (introAnim) introAnim.finished.then(finish).catch(() => {});
@@ -215,7 +238,7 @@ export function AppIntro({ onDone }: { onDone: () => void }) {
     });
 
     // 6) 퇴장: 인트로가 확대되며 사라진다
-    const outAt = T + 1600;
+    const outAt = T + holdMs;
     const introAnim = animate(
       introRef.current,
       [
@@ -224,12 +247,19 @@ export function AppIntro({ onDone }: { onDone: () => void }) {
       ],
       { duration: 320, delay: outAt, easing: "cubic-bezier(.5,0,.75,0)" },
     );
-    if (introAnim) introAnim.finished.then(finish).catch(() => {});
+    const exitAnim = revealOnExit
+      ? animate(overlayRef.current, [{ opacity: 1 }, { opacity: 0 }], {
+          duration: 280,
+          delay: outAt + 120,
+          easing: "cubic-bezier(.4,0,.2,1)",
+        })
+      : introAnim;
+    if (exitAnim) exitAnim.finished.then(finish).catch(() => {});
 
     return () => {
       anims.forEach((a) => a.cancel());
     };
-  }, []);
+  }, [holdMs, revealOnExit]);
 
   const handleTap = () => {
     if (finishedRef.current) return;
@@ -239,7 +269,7 @@ export function AppIntro({ onDone }: { onDone: () => void }) {
   };
 
   return (
-    <div className={styles.overlay} onClick={handleTap}>
+    <div className={styles.overlay} ref={overlayRef} onClick={handleTap}>
       <div className={styles.intro} ref={introRef}>
         <div className={styles.stage} ref={stageRef}>
           <div className={styles.layer} ref={cardsRef}>
