@@ -99,6 +99,16 @@ export interface Subscription {
    */
   observedAmount?: number;
   observedAmountAt?: string;
+  /**
+   * 구독 중인 서비스의 가장 최근 메일이 해지·취소 알림이었던 사실(메일 날짜 `YYYY.MM.DD`).
+   *
+   * 해지했다는 **증거는 아니다** — 해지 알림은 제목의 낱말(해지·취소·환불·만료·종료·cancel)로 가려서
+   * 요금제 변경·환불·체험 종료 안내도 걸린다. 그래서 해지로 기록하지 않고 행동 큐에서 묻는다
+   * (`cancel-notice`). 해지로 기록하거나 되살리면 지우고, "아직 구독 중"이라고 답하면 그 메일 날짜를
+   * `cancelNoticeDismissedAt`에 남겨 같은 메일을 다시 가져와도 묻지 않는다.
+   */
+  cancelNoticeAt?: string;
+  cancelNoticeDismissedAt?: string;
 
   /**
    * 멤버십 혜택을 적을 때 기댈 근거: Gmail 가져오기에서 찾은 최근 30일 주문 메일 수
@@ -193,6 +203,8 @@ export type SubscriptionFormData = Omit<
   | "chargedAfterKillAmount"
   | "observedAmount"
   | "observedAmountAt"
+  | "cancelNoticeAt"
+  | "cancelNoticeDismissedAt"
   | "orderEvidence"
   | "chargeHistory"
 >;

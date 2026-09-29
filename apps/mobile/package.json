@@ -8,6 +8,7 @@
     "open": "cap open android",
     "open:ios": "cap open ios",
     "android": "cap run android",
+    "android:dev": "node scripts/android-dev.mjs",
     "ios": "cap run ios",
     "assets": "node scripts/generate-brand-assets.mjs",
     "eas-build-post-install": "bash scripts/eas-build-post-install.sh"

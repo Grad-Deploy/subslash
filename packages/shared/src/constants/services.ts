@@ -593,6 +593,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     currency: "KRW",
     cancelUrl: "https://mybox.naver.com/",
     cancelUrlKind: "entry",
+    // 네이버 MYBOX 앱(2026-09-29 Play 스토어 '네이버 MYBOX'로 확인).
+    cancelAndroidApp: "com.nhn.android.ndrive",
     cancelGuide:
       "1. 네이버 MYBOX 웹/앱 접속 > 환경설정\n2. [용량 관리/이용권] 선택\n3. [정기결제 해지] 클릭하여 완료",
     iconEmoji: "☁️",
@@ -621,6 +623,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     currency: "KRW",
     cancelUrl: "https://m.comic.naver.com/",
     cancelUrlKind: "entry",
+    // 네이버 웹툰 앱(2026-09-29 Play 스토어 '네이버 웹툰 - Naver Webtoon'으로 확인).
+    cancelAndroidApp: "com.nhn.android.webtoon",
     cancelGuide:
       "1. 네이버웹툰 모바일 앱/웹 > [더보기]\n2. [쿠키샵] > [자동충전 관리] 선택\n3. [자동충전 해지하기] 클릭하여 완료",
     iconEmoji: "🍪",
@@ -640,6 +644,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     currency: "KRW",
     cancelUrl: "https://my.kakao.com/",
     cancelUrlKind: "entry",
+    // 카카오톡 앱(2026-09-29 Play 스토어 '카카오톡 KakaoTalk'으로 확인). 해지 경로가 모두 카카오톡 안에 있다.
+    cancelAndroidApp: "com.kakao.talk",
     cancelGuide:
       "1. 카카오톡 더보기 탭에서 [My구독] 클릭\n2. [이모티콘 플러스] 선택\n3. [구독 중인 상품] 메뉴에서 [해지하기] 클릭\n4. 해지 확인 완료",
     iconEmoji: "😊",
@@ -917,6 +923,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     currency: "KRW",
     cancelUrl: "https://ridibooks.com/",
     cancelUrlKind: "entry",
+    // 리디 앱(2026-09-29 Play 스토어 '만화 웹툰 웹소설 도서는 리디'로 확인).
+    cancelAndroidApp: "com.initialcoms.ridi",
     cancelGuide:
       "1. 리디북스 웹/앱 마이페이지 진입\n2. 리디셀렉트 관리 메뉴 선택\n3. [구독 해지 예약] 클릭\n4. 해지 확인 완료",
     iconEmoji: "📖",

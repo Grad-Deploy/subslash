@@ -7,7 +7,7 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="${appLabel}"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
@@ -15,7 +15,7 @@
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
-            android:label="@string/title_activity_main"
+            android:label="${appLabel}"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
@@ -83,5 +83,8 @@
         <!-- 해지 경로가 앱 안에 있는 서비스(services.ts의 cancelAndroidApp). 해지 버튼이 이 앱을 연다. -->
         <package android:name="com.sampleapp" />
         <package android:name="com.coupang.mobile" />
+        <package android:name="com.kakao.talk" />
+        <package android:name="com.nhn.android.webtoon" />
+        <package android:name="com.nhn.android.ndrive" />
     </queries>
 </manifest>
