@@ -10,10 +10,12 @@
     "test:e2e": "turbo test:e2e",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "knip": "knip"
   },
   "devDependencies": {
     "husky": "^9.1.0",
+    "knip": "^5.0.0",
     "lint-staged": "^15.2.0",
     "prettier": "^3.3.0",
     "turbo": "^2.1.0",

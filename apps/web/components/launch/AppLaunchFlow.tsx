@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * 앱 첫 실행·재실행 인트로와 환영 화면의 진짜 구현. 이 파일을 직접 import하는 곳이 없는 것이 정상이다 —
+ * AppLaunch가 "virtual:app-launch-flow"로 불러오고, next.config.ts의 turbopack.resolveAlias가 앱 빌드에서만
+ * 이 파일로, 웹 빌드에서는 AppLaunchFlowStub으로 바꿔 끼운다(웹 번들에 앱 화면 문구가 들어가지 않게).
+ * 타입은 virtual-app-launch-flow.d.ts가 선언한다. 지우거나 이름을 바꾸면 next.config.ts도 함께 고친다.
+ */
+
 import { useEffect, useRef, useState } from "react";
 import { hasSeenWelcome } from "@lib/welcome";
 import { AppIntro, RELAUNCH_HOLD_MS } from "./AppIntro";

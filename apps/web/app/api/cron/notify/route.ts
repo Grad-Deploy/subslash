@@ -13,8 +13,10 @@ import { signLink } from "@lib/tokens";
 import { pruneStaleContributions } from "@lib/stats-server";
 import { isAnonymousStatsOpen, isDeviceUsageOpen } from "@lib/privacy";
 import { pruneDeviceUsage } from "@lib/device-usage-server";
-import { prunePendingSubscribers } from "@lib/notify-server";
+import { pruneNotificationLog, prunePendingSubscribers } from "@lib/notify-server";
 import { appUrl, reminderEmail, sendEmail, type ReminderItem } from "@lib/email";
+import { pruneAbandonedAccounts } from "@lib/account-verification";
+import { pruneExpiredSessions } from "@lib/auth-server";
 import { logError } from "@lib/log";
 
 const UNSUBSCRIBE_TTL_SECONDS = 60 * 60 * 24 * 90;
@@ -171,9 +173,33 @@ export async function GET(request: NextRequest) {
       return null;
     });
 
+    // 결제일이 두 달 넘게 지난 발송 기록도 치운다. 중복 발송을 막는 용도뿐이라 더 남길 이유가 없다.
+    const prunedLog = await pruneNotificationLog(now).catch((error: unknown) => {
+      logError("cron/notify log prune failed", error);
+      return null;
+    });
+
+    // 만료된 로그인 세션은 로그인할 때만 치우면 아무도 로그인하지 않는 동안 쌓인다. 하루 한 번 함께 치운다.
+    const sessionsPruned = await pruneExpiredSessions().then(
+      () => true,
+      (error: unknown) => {
+        logError("cron/notify session prune failed", error);
+        return false;
+      },
+    );
+
+    // 확인하지 않고 90일 동안 쓴 흔적도 기록도 없는 계정. 세션을 먼저 치운 뒤 본다.
+    const prunedAccounts = await pruneAbandonedAccounts(now).catch((error: unknown) => {
+      logError("cron/notify account prune failed", error);
+      return null;
+    });
+
     return NextResponse.json({
       success: failures.length === 0,
       prunedPending,
+      prunedLog,
+      sessionsPruned,
+      prunedAccounts,
       prunedStats,
       prunedUsage,
       recipients: recipients.length,

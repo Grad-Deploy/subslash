@@ -10,7 +10,6 @@ import { IS_APP_BUILD } from "../platform";
 
 export const HISTORY_KEY = "subslash-phone-usage";
 export const SNOOZE_KEY = "subslash-usage-snooze";
-export const CONNECT_DISMISSED_KEY = "subslash-usage-connect-dismissed";
 /** 폰 기록으로 찾은 구독 후보 중 '내가 내지 않아요'를 고른 서비스(lib/usage/suggest). */
 export const SUGGEST_DISMISSED_KEY = "subslash-usage-suggest-dismissed";
 
