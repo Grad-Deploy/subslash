@@ -308,6 +308,26 @@ describe("알림 옵트인", () => {
     expect(left.map((row) => row.email)).toEqual(["kept@example.com"]);
     expect((await putMirror(verifiedToken, [])).status).toBe(200);
   });
+
+  it("결제일이 60일 넘게 지난 발송 기록만 크론이 지운다", async () => {
+    const { pruneNotificationLog } = await import("../../lib/notify-server");
+    const { notificationLog } = await import("../../lib/schema");
+    await optIn("log@example.com");
+    const [user] = await getDb().select().from(notificationSubscribers);
+    const day = (offset: number) =>
+      new Date(Date.now() + offset * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    await getDb()
+      .insert(notificationLog)
+      .values([
+        { userId: user.id, clientId: "old", billingDate: day(-70) },
+        { userId: user.id, clientId: "recent", billingDate: day(-30) },
+        { userId: user.id, clientId: "upcoming", billingDate: day(3) },
+      ]);
+
+    expect(await pruneNotificationLog(new Date())).toBe(1);
+    const left = await getDb().select().from(notificationLog);
+    expect(left.map((row) => row.clientId).sort()).toEqual(["recent", "upcoming"]);
+  });
 });
 
 describe("미러 동기화", () => {
@@ -353,6 +373,45 @@ describe("미러 동기화", () => {
     const rows = await getDb().select().from(mirroredSubscriptions);
     expect(rows).toHaveLength(1);
     expect(rows[0].clientId).toBe("a");
+  });
+
+  it("바뀐 구독만 쓰고, 그대로인 구독은 건드리지 않는다", async () => {
+    const token = await optIn();
+    const a = { id: "a", name: "A", amount: 1000, billingDay: 5 };
+    const b = { id: "b", name: "B", amount: 2000, billingDay: 6 };
+    await putMirror(token, [a, b]);
+    const before = new Map(
+      (await getDb().select().from(mirroredSubscriptions)).map((row) => [row.clientId, row]),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    // b만 금액이 바뀌고 c가 새로 생긴다. a는 그대로다.
+    await putMirror(token, [
+      a,
+      { ...b, amount: 2500 },
+      { id: "c", name: "C", amount: 300, billingDay: 9 },
+    ]);
+    const after = new Map(
+      (await getDb().select().from(mirroredSubscriptions)).map((row) => [row.clientId, row]),
+    );
+
+    expect([...after.keys()].sort()).toEqual(["a", "b", "c"]);
+    expect(after.get("a")).toEqual(before.get("a")); // id·updatedAt까지 그대로
+    expect(after.get("b")?.id).toBe(before.get("b")?.id);
+    expect(after.get("b")?.amount).toBe(2500);
+    expect(after.get("b")?.updatedAt).not.toBe(before.get("b")?.updatedAt);
+  });
+
+  it("같은 id가 여러 번 오면 마지막 것을 쓴다", async () => {
+    const token = await optIn();
+    const response = await putMirror(token, [
+      { id: "dup", name: "처음", amount: 1000, billingDay: 5 },
+      { id: "dup", name: "나중", amount: 2000, billingDay: 5 },
+    ]);
+    expect(response.status).toBe(200);
+    const rows = await getDb().select().from(mirroredSubscriptions);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].name).toBe("나중");
   });
 
   it("잘못된 항목은 건너뛰고 나머지는 저장한다", async () => {

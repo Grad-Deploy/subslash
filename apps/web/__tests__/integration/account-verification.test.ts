@@ -439,3 +439,55 @@ describe("가입하려는 주소를 확인 전인 계정이 쥐고 있을 때", 
     expect(res.status).toBe(401);
   });
 });
+
+describe("쓰지 않는 확인 전 계정 정리", () => {
+  const OLD = "2020-01-01 00:00:00";
+
+  async function insertAccount(
+    name: string,
+    { createdAt = OLD, verified = false }: { createdAt?: string; verified?: boolean } = {},
+  ) {
+    const [row] = await getDb()
+      .insert(accounts)
+      .values({
+        username: name,
+        email: `${name}@example.com`,
+        passwordHash: "x",
+        createdAt,
+        emailVerifiedAt: verified ? new Date().toISOString() : null,
+      })
+      .returning({ id: accounts.id });
+    return row.id;
+  }
+
+  it("90일이 지나도 로그인도 기록도 없는 확인 전 계정만 지운다", async () => {
+    const { pruneAbandonedAccounts } = await import("../../lib/account-verification");
+    const { accountSnapshots } = await import("../../lib/schema");
+    const now = new Date();
+
+    await insertAccount("abandoned");
+    const withSession = await insertAccount("with_session");
+    const withSnapshot = await insertAccount("with_snapshot");
+    await insertAccount("verified", { verified: true });
+    await insertAccount("recent", { createdAt: now.toISOString().replace("T", " ").slice(0, 19) });
+
+    await getDb()
+      .insert(sessions)
+      .values({
+        accountId: withSession,
+        tokenHash: "live",
+        expiresAt: new Date(now.getTime() + 60_000).toISOString(),
+      });
+    await getDb().insert(accountSnapshots).values({
+      accountId: withSnapshot,
+      payload: "{}",
+      subscriptionCount: 0,
+      savedAt: now.toISOString(),
+    });
+
+    expect(await pruneAbandonedAccounts(now)).toBe(1);
+    const left = (await getDb().select().from(accounts)).map((row) => row.username).sort();
+    expect(left).toEqual(["recent", "verified", "with_session", "with_snapshot"]);
+    expect(left).not.toContain("abandoned");
+  });
+});

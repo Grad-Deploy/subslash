@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "crypto";
 import type { OAuthErrorCode } from "./oauth-messages";
 
-export { OAUTH_ERROR_MESSAGE, type OAuthErrorCode } from "./oauth-messages";
+export type { OAuthErrorCode } from "./oauth-messages";
 
 /**
  * 구글·카카오·네이버 계정으로 로그인(OAuth 2.0 인가 코드 방식).

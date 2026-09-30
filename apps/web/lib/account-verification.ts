@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNull, lt } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, lt, notExists } from "drizzle-orm";
 import { getDb } from "./db";
 import { accountSnapshots, accounts, sessions, verificationMailLog, type Account } from "./schema";
 import { canSignLinks, emailFingerprint, signLink, verifyLink } from "./tokens";
@@ -21,6 +21,10 @@ import { logError } from "./log";
  * 시간이 지났다고 계정을 지우지는 않는다. 시간은 누가 주소의 주인인지 말해주지
  * 않는다. 확인 메일이 스팸함에 있어 누르지 못한 진짜 주인의 계정이, 같은 주소로
  * 가입을 시도한 다른 사람 때문에 지워지게 된다.
+ *
+ * 좁은 예외가 하나 있다(`pruneAbandonedAccounts`). 확인하지 않은 채 90일이 지나도록
+ * 로그인한 적이 없고 계정에 저장한 기록도 없는 계정은 아무도 쓰지 않는 빈 껍데기라서,
+ * 크론이 치운다. 누가 가입을 시도해서가 아니라 저장소를 비우려는 것이고, 지워도 잃는 기록이 없다.
  */
 
 const VERIFY_ACCOUNT_TTL_SECONDS = VERIFY_ACCOUNT_TTL_DAYS * 24 * 60 * 60;
@@ -175,6 +179,50 @@ export async function markEmailVerified(accountId: string): Promise<void> {
     .update(accounts)
     .set({ emailVerifiedAt: new Date().toISOString() })
     .where(and(eq(accounts.id, accountId), isNull(accounts.emailVerifiedAt)));
+}
+
+/** 확인하지 않은 계정을 이만큼 두고도 쓴 흔적이 없으면 치운다. 세션(30일)보다 훨씬 길게 잡는다. */
+export const ABANDONED_ACCOUNT_TTL_DAYS = 90;
+
+/**
+ * 이메일을 확인하지 않고, 가입한 지 90일이 지났으며, 살아 있는 세션(=최근 로그인)도 계정에 저장한 기록도
+ * 없는 계정을 지운다. 크론이 하루 한 번 부른다. 지운 수를 돌려준다.
+ *
+ * 확인 전이라도 기록을 올렸거나 최근에 로그인한 계정은 쓰는 사람이 있는 것이니 건드리지 않는다.
+ */
+export async function pruneAbandonedAccounts(now: Date = new Date()): Promise<number> {
+  const db = getDb();
+  const cutoff = new Date(now.getTime() - ABANDONED_ACCOUNT_TTL_DAYS * DAY_MS);
+  // created_at은 SQLite의 datetime('now') 형식("YYYY-MM-DD HH:MM:SS", UTC)이다.
+  const cutoffText = cutoff.toISOString().replace("T", " ").slice(0, 19);
+  const candidates = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(
+      and(
+        isNull(accounts.emailVerifiedAt),
+        lt(accounts.createdAt, cutoffText),
+        notExists(
+          db
+            .select({ one: sessions.id })
+            .from(sessions)
+            .where(
+              and(eq(sessions.accountId, accounts.id), gt(sessions.expiresAt, now.toISOString())),
+            ),
+        ),
+        notExists(
+          db
+            .select({ one: accountSnapshots.accountId })
+            .from(accountSnapshots)
+            .where(eq(accountSnapshots.accountId, accounts.id)),
+        ),
+      ),
+    );
+  let pruned = 0;
+  for (const { id } of candidates) {
+    if (await deleteUnverifiedAccount(id)) pruned += 1;
+  }
+  return pruned;
 }
 
 /**

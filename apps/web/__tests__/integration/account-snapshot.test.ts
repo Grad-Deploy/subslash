@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
+import { eq } from "drizzle-orm";
 
 /**
  * 계정에 저장한 기록을 실제 SQLite에 대고 돌린다. 로그인해야만 닿는지, 틀린 기록을
@@ -15,7 +16,8 @@ const { accounts, accountSnapshots } = await import("../../lib/schema");
 const { SESSION_COOKIE, createSession } = await import("../../lib/auth-server");
 const { createBackup } = await import("../../lib/backup");
 const { DEFAULT_EXCHANGE_RATE_SETTING } = await import("../../lib/exchange-rate");
-const { MAX_SNAPSHOT_BYTES } = await import("../../lib/account-snapshot");
+const { MAX_SNAPSHOT_BYTES, packPayload, unpackPayload } =
+  await import("../../lib/account-snapshot");
 const { deleteUnverifiedAccount } = await import("../../lib/account-verification");
 const { GET, PUT, DELETE } = await import("../../app/api/account/snapshot/route");
 
@@ -210,6 +212,26 @@ describe("계정에 저장한 기록", () => {
     const full = await (await get(cookie)).json();
     expect(full.backup.data.subscriptions.map((sub: { id: string }) => sub.id)).toEqual(["z"]);
     expect(await getDb().select().from(accountSnapshots)).toHaveLength(1);
+  });
+
+  it("표에는 압축해서 두고, 압축하기 전에 쓴 기록도 그대로 읽는다", async () => {
+    const { account, cookie } = await loggedIn("sean");
+    const text = backupText(Array.from({ length: 60 }, (_, i) => `sub-${i}`));
+    await put(text, cookie);
+
+    const [row] = await getDb().select().from(accountSnapshots);
+    expect(row.payload.startsWith("gz:")).toBe(true);
+    expect(row.payload.length).toBeLessThan(text.length / 2);
+    expect(JSON.parse(unpackPayload(row.payload)).data.subscriptions).toHaveLength(60);
+
+    // 압축을 도입하기 전에 저장된 행(JSON 그대로)도 같은 화면에서 읽힌다.
+    await getDb()
+      .update(accountSnapshots)
+      .set({ payload: unpackPayload(row.payload) })
+      .where(eq(accountSnapshots.accountId, account.id));
+    const full = await (await get(cookie)).json();
+    expect(full.backup.data.subscriptions).toHaveLength(60);
+    expect(unpackPayload(packPayload("{}"))).toBe("{}");
   });
 
   it("지우면 더 이상 불러올 수 없다", async () => {

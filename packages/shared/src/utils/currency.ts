@@ -17,10 +17,6 @@ export function formatAmount(amount: number, currency: Currency): string {
   return formatUSD(amount);
 }
 
-export function convertUSDtoKRW(usd: number, rate: number = DEFAULT_EXCHANGE_RATE): number {
-  return usd * rate;
-}
-
 /** Normalises any amount to KRW so mixed-currency subscriptions can be summed. */
 export function toKRW(
   amount: number,

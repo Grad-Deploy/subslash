@@ -1,0 +1,38 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    "apps/web": {
+      "entry": [
+        "app/**/{page,layout,route,loading,error,not-found,global-error}.tsx",
+        "app/**/route.ts",
+        "app/**/{robots,sitemap,manifest}.ts",
+        "proxy.ts",
+        "components/launch/AppLaunchFlow.tsx",
+        "components/launch/AppLaunchFlowStub.tsx",
+        "scripts/**/*.ts",
+        "__tests__/**/*.{ts,tsx}"
+      ],
+      "project": ["**/*.{ts,tsx}", "!.next/**", "!out/**"],
+      "ignoreDependencies": ["tailwindcss", "@vitest/coverage-v8"]
+    },
+    "apps/mobile": {
+      "entry": ["scripts/**/*.{js,mjs,ts}"],
+      "project": ["scripts/**/*.{js,mjs,ts}"],
+      "ignoreDependencies": [
+        "@capacitor/ios",
+        "@capacitor/app",
+        "@capacitor/browser",
+        "@capacitor/clipboard",
+        "@capacitor/filesystem",
+        "@capacitor/local-notifications",
+        "@capacitor/preferences",
+        "@capacitor/share"
+      ]
+    },
+    "packages/shared": {
+      "project": ["src/**/*.ts"]
+    }
+  },
+  "ignore": ["tools/**", "scripts/claude-hooks/**"],
+  "ignoreExportsUsedInFile": true
+}

@@ -2,6 +2,8 @@ import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import { createClient, type Client } from "@libsql/client";
 import * as schema from "./schema";
 
+type Database = LibSQLDatabase<typeof schema>;
+
 /**
  * The database backs email reminders only. Everything else in the app runs
  * against localStorage, so most requests never touch it — the connection is
@@ -11,7 +13,7 @@ import * as schema from "./schema";
  * what `pnpm dev` uses.
  */
 
-let cached: LibSQLDatabase<typeof schema> | null = null;
+let cached: Database | null = null;
 let client: Client | null = null;
 
 /**
@@ -30,7 +32,7 @@ export class DatabaseNotConfiguredError extends Error {
   }
 }
 
-export function getDb(): LibSQLDatabase<typeof schema> {
+export function getDb(): Database {
   if (cached) return cached;
 
   const url = process.env.TURSO_DATABASE_URL;
@@ -52,7 +54,7 @@ export function getDb(): LibSQLDatabase<typeof schema> {
   return connect(url, authToken);
 }
 
-function connect(url: string, authToken: string | undefined): LibSQLDatabase<typeof schema> {
+function connect(url: string, authToken: string | undefined): Database {
   client = createClient({ url, authToken });
   cached = drizzle(client, { schema });
   return cached;
@@ -90,5 +92,3 @@ export function databaseUnavailableResponse(): Response | null {
     { status: 503 },
   );
 }
-
-export type Database = LibSQLDatabase<typeof schema>;

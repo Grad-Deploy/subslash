@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { databaseUnavailableResponse, getDb } from "@lib/db";
-import { mirroredSubscriptions, notificationSubscribers } from "@lib/schema";
-import { deleteUserCompletely, userFromRequest } from "@lib/notify-server";
+import { notificationSubscribers } from "@lib/schema";
+import {
+  deleteUserCompletely,
+  replaceMirror,
+  userFromRequest,
+  type MirrorItem,
+} from "@lib/notify-server";
 import { logError } from "@lib/log";
-
-/** Only the fields the reminder and the calendar feed need — no guides, categories or icons. */
-interface MirrorInput {
-  clientId: string;
-  name: string;
-  amount: number;
-  currency: string;
-  billingDay: number;
-  billingCycle: string;
-  billingMonth: number | null;
-  /** 캘린더 일정 메모에 적을 해지 주소. 없으면 null. */
-  cancelUrl: string | null;
-}
 
 /** 메모에 적어도 되는 주소인지. 사용자가 직접 적은 값이라 스킴을 믿지 않는다. */
 function httpUrlOrNull(value: unknown): string | null {
@@ -31,7 +23,8 @@ function httpUrlOrNull(value: unknown): string | null {
 
 const MAX_SUBSCRIPTIONS = 100;
 
-function sanitize(raw: unknown): MirrorInput | null {
+/** Only the fields the reminder and the calendar feed need — no guides, categories or icons. */
+function sanitize(raw: unknown): MirrorItem | null {
   if (typeof raw !== "object" || raw === null) return null;
   const item = raw as Record<string, unknown>;
 
@@ -68,7 +61,8 @@ function sanitize(raw: unknown): MirrorInput | null {
 }
 
 /**
- * Replaces the caller's mirror with whatever the browser just sent.
+ * Replaces the caller's mirror with whatever the browser just sent (`replaceMirror` writes only the
+ * rows that changed).
  *
  * The mirror is strictly downstream of localStorage, so there is no merge step
  * and no conflict resolution: the last device to sync defines the server state.
@@ -88,27 +82,22 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "subscriptions must be an array" }, { status: 400 });
     }
 
-    const items: MirrorInput[] = (body.subscriptions as unknown[])
+    const items: MirrorItem[] = (body.subscriptions as unknown[])
       .slice(0, MAX_SUBSCRIPTIONS)
       .map(sanitize)
-      .filter((item): item is MirrorInput => item !== null);
+      .filter((item): item is MirrorItem => item !== null);
 
     const db = getDb();
     const now = new Date().toISOString();
 
-    await db.delete(mirroredSubscriptions).where(eq(mirroredSubscriptions.userId, user.id));
-    if (items.length > 0) {
-      await db
-        .insert(mirroredSubscriptions)
-        .values(items.map((item) => ({ ...item, userId: user.id, updatedAt: now })));
-    }
+    const synced = await replaceMirror(user.id, items, now);
     await db
       .update(notificationSubscribers)
       .set({ lastSyncedAt: now })
       .where(eq(notificationSubscribers.id, user.id));
 
     return NextResponse.json({
-      synced: items.length,
+      synced,
       skipped: body.subscriptions.length - items.length,
       verified: Boolean(user.verifiedAt),
     });
