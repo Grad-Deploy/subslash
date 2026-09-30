@@ -25,9 +25,10 @@ export interface CalendarEntry {
   billingCycle: string;
   billingMonth?: number | null;
   /**
-   * 이 구독의 해지 주소. 캘린더 피드(`/api/calendar/[token]`)는 알림 미러에서 읽는데 그 표에는
-   * 이 칸이 없으므로 늘 비어 있다 — 방침의 사전 고지 없이 서버 저장 칸을 늘리지 않기로 했다.
-   * '구글 캘린더에 등록'은 브라우저가 계획에 실어 보내므로 채워진다.
+   * 이 구독의 해지 주소. 캘린더 피드(`/api/calendar/[token]`)는 알림 미러의 `cancel_url`(0010)에서
+   * 읽는다 — 브라우저가 미러에 올릴 때 함께 보내고(`/api/notify/sync`), 서버는 http(s)만 저장한다.
+   * '구글 캘린더에 등록'은 브라우저가 계획에 실어 보내므로 미러와 상관없이 채워진다. 미러에 아직
+   * 올라가지 않은 구독은 비어 있을 수 있다.
    */
   cancelUrl?: string | null;
 }

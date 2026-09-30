@@ -232,7 +232,7 @@ export const DEFAULT_ACCOUNT_SYNC: AccountSyncState = {
 // 환율 설정은 서버(계정에 저장한 기록의 검증)도 쓰므로 스토어 밖에 둔다. 이 모듈에서
 // 가져다 쓰던 곳이 그대로 동작하도록 다시 내보낸다.
 export { DEFAULT_EXCHANGE_RATE_SETTING, isValidExchangeRate };
-export type { ExchangeRateSetting, ExchangeRateSource };
+export type { ExchangeRateSource };
 
 /** 샘플 체험이 스스로 끝나기까지의 시간. 새로고침하거나 '체험 끝내기'를 누르면 그 전에 끝난다. */
 export const DEMO_DURATION_MS = 30 * 60 * 1000;

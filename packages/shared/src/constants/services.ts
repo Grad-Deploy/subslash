@@ -71,7 +71,8 @@ export interface ServicePreset {
    *
    * 구독은 등록할 때의 해지 주소를 그대로 저장한다. 프리셋만 고치면 이미 등록된
    * 구독은 옛 주소(404일 수도 있다)를 계속 열므로, 저장소를 불러올 때
-   * `currentCancelUrl`로 지금 주소로 바꾼다.
+   * `currentCancelUrl`로 지금 주소로 바꾼다. 읽는 곳은 apps/web/lib/store의 `migrateLegacyCancelUrls`와
+   * 테스트뿐이다 — 프리셋의 값을 지우면 이미 등록된 구독이 죽은 주소를 계속 연다.
    */
   legacyCancelUrls?: string[];
   /**

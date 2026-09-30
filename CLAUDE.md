@@ -62,7 +62,9 @@ USD 환산 환율은 상수가 아니라 사용자 설정값이다. 컴포넌트
 
 기본 경험은 100% 로컬이다. 서버는 **알림을 켠 사용자에 한해**, 알림에 필요한
 최소 정보만 미러로 갖는다. 동기화는 단방향 전체 교체이므로 병합·충돌 처리가
-없고, 서버는 절대 클라이언트로 되쓰지 않는다.
+없고, 서버는 절대 클라이언트로 되쓰지 않는다. 다만 미러는 결과만 통째로 바꾼 것과 같을 뿐 실제로 쓰는 것은
+바뀐 줄이다(`replaceMirror`) — 지우고 다시 넣으면 구독 하나를 고쳐도 N줄을 쓰고, Turso는 저장 용량보다 행
+쓰기 한도가 먼저 찬다.
 
 샘플 체험(`startDemo`)은 실제 기록에 섞지 않는다. 체험 중 화면의 목록은 샘플이고 실제 기록은
 `demo.saved`에 보관되며, localStorage에는 실제 기록만 저장한다(새로고침·30분·'체험 끝내기'로
@@ -124,7 +126,8 @@ PR에서 고친다. 보호책임자 연락처는 `lib/privacy.ts` 한 곳에만 
 - 서버가 기기에 먼저 보내지 않는다. 기기가 물어 가져간다.
 - 다른 기기에서 '계정에서 지우기'로 지웠으면 그 기록을 다시 올리지 않고 동기화를 멈춘다.
 - 기기마다 다른 것(동기화 상태 `accountSync`, 결제 알림 `notify`, 로컬 알림 설정)은 넣지 않는다.
-- 서버는 받은 기록을 `parseBackup`으로 다시 검사한다. 계정을 지우는 경로를 새로 만들면
+- 서버는 받은 기록을 `parseBackup`으로 다시 검사한다. 표에는 gzip한 base64(`gz:` 접두사)로 두고 압축 전 기록은 그대로
+  읽는다(`unpackPayload`) — 크기 상한은 압축 전 글자 수로 건다. 계정을 지우는 경로를 새로 만들면
   `sessions`처럼 이 표도 직접 지운다 — `ON DELETE CASCADE`는 `PRAGMA foreign_keys`가 켜져 있을
   때만 동작한다.
 
@@ -448,7 +451,8 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
 `IS_APP_BUILD`(`lib/platform`)로 가른다. CI가 이 빌드를 돌려 정적 내보내기를 깨는 코드를 막는다.
 안드로이드 빌드·실행은 README의 '모바일 앱'에 있다. 고친 것을 폰에서 확인할 때는 `pnpm --filter @subslash/mobile android:dev`로 테스트용 앱(`com.subslash.app.dev`)을 스토어 앱 옆에 설치한다 — 확인하려고 versionCode를 올리거나 스토어 앱을 지우지 않는다.
 
-`apps/mobile`은 안드로이드(`android/`)와 iOS(`ios/`)를 모두 담는다. iOS 프로젝트는 Capacitor 8이
+`apps/mobile`은 안드로이드(`android/`)와 iOS(`ios/`)를 모두 담는다. `@capacitor/android`·`@capacitor/ios`는
+코드에서 import하지 않지만 `npx cap sync`가 네이티브 프로젝트를 만들고 갱신할 때 쓰므로 지우지 않는다. iOS 프로젝트는 Capacitor 8이
 CocoaPods 대신 SPM을 쓰므로 Windows에서도 만들어지지만, **빌드는 macOS나 EAS의 macOS 작업 서버에서만**
 된다. 실기기·TestFlight·스토어는 Apple 개발자 프로그램이 있어야 하고, 계정 없이 되는 것은 시뮬레이터
 빌드(`eas.json`의 `preview.ios.simulator`)뿐이다. 네이티브 플러그인은 안드로이드에만 있으므로

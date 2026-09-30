@@ -1,8 +1,7 @@
 "use client";
 
 import React, { Suspense, useState, useEffect } from "react";
-import dynamic from "next/dynamic";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useStore } from "../../lib/store";
 import {
   Subscription,
@@ -42,113 +41,22 @@ import { sortSubsForApp, type AppSubsSort } from "@lib/subs-order";
 import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { isWideScreen } from "@lib/wide-screen";
-import { subscriptionDetailHref } from "@lib/routes";
+import { NotifyResultBanner } from "../../components/subscription/NotifyResultBanner";
+import { SelectedSubSync } from "../../components/subscription/SelectedSubSync";
+import {
+  AppAddButton,
+  AppAddCheckIn,
+  AppDuplicateDialog,
+  AppKilledList,
+  AppPhoneCheckInButton,
+  AppSortSelect,
+} from "../../components/subscription/app/appParts";
 import { useIsClient } from "@hooks/useIsClient";
 import { Spinner } from "../../components/ui/spinner";
 import { Receipt, ShieldCheck } from "lucide-react";
 
 /** 카드/표 중 고른 보기. 이 브라우저의 취향일 뿐이라 백업·동기화에 넣지 않는다. */
 const VIEW_KEY = "subslash-subs-view";
-
-/** Feedback for the redirect targets of the reminder emails' links. */
-const NOTIFY_MESSAGES: Record<string, string> = {
-  verified: "결제 알림이 켜졌어요. 결제일 전에 메일로 알려 드려요.",
-  unsubscribed: "결제 알림을 껐어요. 서버의 구독 사본도 지웠어요.",
-  invalid: "만료됐거나 잘못된 링크예요. 알림 설정에서 다시 시도해 주세요.",
-  error: "알림을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.",
-};
-
-function NotifyBanner({ onMessage }: { onMessage: (message: string) => void }) {
-  const searchParams = useSearchParams();
-  const setNotify = useStore((state) => state.setNotify);
-  const clearNotify = useStore((state) => state.clearNotify);
-  const notifyResult = searchParams.get("notify");
-
-  useEffect(() => {
-    if (!notifyResult) return;
-
-    const message = NOTIFY_MESSAGES[notifyResult];
-    if (message) onMessage(message);
-
-    // The link acted on the server; mirror the outcome locally so the header
-    // badge and settings modal do not keep showing a stale state.
-    if (notifyResult === "verified") setNotify({ verified: true });
-    if (notifyResult === "unsubscribed") clearNotify();
-
-    window.history.replaceState(null, "", window.location.pathname);
-  }, [notifyResult, onMessage, setNotify, clearNotify]);
-
-  return null;
-}
-
-/**
- * 주소의 `?sub=`를 옆 칸에 열 구독으로 쓴다. 주소에 두면 새로고침·링크 공유·뒤로
- * 가기가 그대로 동작한다. useSearchParams는 Suspense 안에서만 쓸 수 있어 따로 뺐다.
- */
-function SelectedSubSync({ onChange }: { onChange: (id: string | null) => void }) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const selected = searchParams.get("sub");
-
-  useEffect(() => {
-    // 옆 칸은 넓은 화면에만 있다. 좁은 화면에서 이 주소로 오면 상세 페이지로 보낸다.
-    if (selected && !isWideScreen()) {
-      router.replace(subscriptionDetailHref(selected));
-      return;
-    }
-    onChange(selected);
-  }, [selected, onChange, router]);
-
-  return null;
-}
-
-// 앱에서는 구독을 하나 등록한 뒤 같은 창에서 이번 달 사용 횟수를 묻는다. 웹 번들에는 넣지 않는다.
-const AppDuplicateDialog = IS_APP_BUILD
-  ? dynamic(
-      () =>
-        import("../../components/subscription/app/AppDuplicateDialog").then(
-          (m) => m.AppDuplicateDialog,
-        ),
-      { ssr: false },
-    )
-  : null;
-
-// 폰 기록으로 체크인(안드로이드 앱 전용).
-const AppPhoneCheckInButton = IS_APP_BUILD
-  ? dynamic(
-      () =>
-        import("../../components/usage/app/AppPhoneCheckInButton").then(
-          (m) => m.AppPhoneCheckInButton,
-        ),
-      { ssr: false },
-    )
-  : null;
-// 목록 개수와 순서 고르기(앱 전용). 카테고리 칩과 겹치지 않게 글자 버튼 + 시트.
-const AppSortSelect = IS_APP_BUILD
-  ? dynamic(
-      () => import("../../components/subscription/app/AppSortSelect").then((m) => m.AppSortSelect),
-      { ssr: false },
-    )
-  : null;
-// 해지 완료 목록 정리(숨기기·삭제·여러 개 선택). 앱 전용.
-const AppKilledList = IS_APP_BUILD
-  ? dynamic(
-      () => import("../../components/subscription/app/AppKilledList").then((m) => m.AppKilledList),
-      { ssr: false },
-    )
-  : null;
-// 구독 추가 + 버튼(앱 전용) — 직접 등록·결제 메일·결제 문자 중 고른다.
-const AppAddButton = IS_APP_BUILD
-  ? dynamic(() => import("../../components/layout/app/AppAddButton").then((m) => m.AppAddButton), {
-      ssr: false,
-    })
-  : null;
-const AppAddCheckIn = IS_APP_BUILD
-  ? dynamic(
-      () => import("../../components/subscription/app/AppAddCheckIn").then((m) => m.AppAddCheckIn),
-      { ssr: false },
-    )
-  : null;
 
 export default function SubscriptionsPage() {
   const {
@@ -407,7 +315,7 @@ export default function SubscriptionsPage() {
   return (
     <div className="space-y-6">
       <Suspense fallback={null}>
-        <NotifyBanner onMessage={showToast} />
+        <NotifyResultBanner onMessage={showToast} />
         <SelectedSubSync onChange={setSelectedId} />
       </Suspense>
 

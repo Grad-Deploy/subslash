@@ -1,3 +1,4 @@
+import { gunzipSync, gzipSync } from "node:zlib";
 import { and, eq } from "drizzle-orm";
 import { getDb } from "./db";
 import { accountSnapshots } from "./schema";
@@ -26,6 +27,23 @@ import { createBackup, parseBackup, type BackupFile } from "./backup";
  * 누구나 로그인만 하면 부를 수 있는 입구가 DB를 채우는 통로가 되지는 않는다.
  */
 export const MAX_SNAPSHOT_BYTES = 1_000_000;
+
+/**
+ * 표에는 JSON을 gzip으로 눌러 base64로 적은 글(`gz:…`)을 둔다. 구독·체크인 JSON은 반복이 많아 보통 5분의 1
+ * 안팎으로 줄고, 계정이 늘면 이 표가 DB에서 가장 큰 칸이다. 압축 전 글자 수로 상한(`MAX_SNAPSHOT_BYTES`)을
+ * 거는 것은 그대로다. 압축을 도입하기 전에 쓴 기록은 `{`로 시작하는 JSON 그대로 남아 있으므로 읽을 때
+ * 접두사로 가리고, 다음에 저장할 때 자연스럽게 압축본으로 바뀐다 — 마이그레이션이 필요 없다.
+ */
+const COMPRESSED_PREFIX = "gz:";
+
+export function packPayload(json: string): string {
+  return COMPRESSED_PREFIX + gzipSync(Buffer.from(json, "utf8")).toString("base64");
+}
+
+export function unpackPayload(stored: string): string {
+  if (!stored.startsWith(COMPRESSED_PREFIX)) return stored;
+  return gunzipSync(Buffer.from(stored.slice(COMPRESSED_PREFIX.length), "base64")).toString("utf8");
+}
 
 export interface SnapshotSummary {
   savedAt: string;
@@ -90,7 +108,7 @@ export async function saveSnapshot(
   // 저장 시각은 서버 시계로 적는다.
   const backup = createBackup(parsed.data, savedAt);
   const values = {
-    payload: JSON.stringify(backup),
+    payload: packPayload(JSON.stringify(backup)),
     subscriptionCount: backup.data.subscriptions.length,
     savedAt: backup.exportedAt,
   };
@@ -149,7 +167,14 @@ export async function readSnapshot(
   const payload = rows[0]?.payload;
   if (!payload) return null;
 
-  const parsed = parseBackup(payload);
+  let text: string;
+  try {
+    text = unpackPayload(payload);
+  } catch (error) {
+    console.error("[account-snapshot] stored snapshot could not be decompressed:", error);
+    return null;
+  }
+  const parsed = parseBackup(text);
   if (!parsed.ok) {
     // 저장할 때 검사했으므로 여기 오면 형식이 바뀐 것이다. 깨진 기록을 내려보내
     // 브라우저의 멀쩡한 기록을 덮게 두지 않는다.
