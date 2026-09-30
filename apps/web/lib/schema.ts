@@ -1,5 +1,5 @@
 import { sqliteTable, text, integer, real, uniqueIndex, index } from "drizzle-orm/sqlite-core";
-import { sql, relations } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 /**
  * Server schema for the notification mirror.
@@ -60,7 +60,8 @@ export const notificationSubscribers = sqliteTable(
 
 /**
  * Mirror of the browser's active subscriptions. Replaced wholesale on each sync,
- * so there is no merge/conflict handling: the client always wins.
+ * so there is no merge/conflict handling: the client always wins. The server only writes the rows that
+ * differ from what it already holds (`replaceMirror`), which is the same result for far fewer writes.
  */
 export const mirroredSubscriptions = sqliteTable(
   "mirrored_subscriptions",
@@ -284,7 +285,10 @@ export const accountSnapshots = sqliteTable("account_snapshots", {
   accountId: text("account_id")
     .primaryKey()
     .references(() => accounts.id, { onDelete: "cascade" }),
-  /** 백업 파일과 같은 형식의 JSON(`createBackup`). 서버가 다시 검사한 뒤 저장한 값. */
+  /**
+   * 백업 파일과 같은 형식의 JSON(`createBackup`). 서버가 다시 검사한 뒤 저장한 값. 새로 쓰는 기록은
+   * `gz:` + gzip한 base64이고, 압축 전에 쓴 기록은 JSON 그대로다(lib/account-snapshot의 `unpackPayload`).
+   */
   payload: text("payload").notNull(),
   /** 목록 화면에서 payload를 풀지 않고 보여줄 수 있게 따로 적는다. */
   subscriptionCount: integer("subscription_count").notNull(),
@@ -401,41 +405,11 @@ export type CalendarSyncPlanRow = typeof calendarSyncPlans.$inferSelect;
 export type GmailImportLink = typeof gmailImportLinks.$inferSelect;
 export type GmailDiscovery = typeof gmailDiscoveries.$inferSelect;
 
-export const notificationSubscribersRelations = relations(notificationSubscribers, ({ many }) => ({
-  subscriptions: many(mirroredSubscriptions),
-  notifications: many(notificationLog),
-}));
-
-export const mirroredSubscriptionsRelations = relations(mirroredSubscriptions, ({ one }) => ({
-  subscriber: one(notificationSubscribers, {
-    fields: [mirroredSubscriptions.userId],
-    references: [notificationSubscribers.id],
-  }),
-}));
-
-export const notificationLogRelations = relations(notificationLog, ({ one }) => ({
-  subscriber: one(notificationSubscribers, {
-    fields: [notificationLog.userId],
-    references: [notificationSubscribers.id],
-  }),
-}));
-
 export type NotificationSubscriber = typeof notificationSubscribers.$inferSelect;
 export type NewNotificationSubscriber = typeof notificationSubscribers.$inferInsert;
 export type MirroredSubscription = typeof mirroredSubscriptions.$inferSelect;
 export type NewMirroredSubscription = typeof mirroredSubscriptions.$inferInsert;
 export type NotificationLogEntry = typeof notificationLog.$inferSelect;
-
-export const accountsRelations = relations(accounts, ({ many }) => ({
-  sessions: many(sessions),
-}));
-
-export const sessionsRelations = relations(sessions, ({ one }) => ({
-  account: one(accounts, {
-    fields: [sessions.accountId],
-    references: [accounts.id],
-  }),
-}));
 
 export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
@@ -496,7 +470,10 @@ export const statsItems = sqliteTable(
  * 기기 간 사용 측정(lib/device-usage)에 참여한 기기. 로그인 계정의 것이다 — 같은 사람의 휴대폰과
  * 태블릿을 이어 세려면 계정이라는 공통 식별자가 있어야 한다. 알림 구독자·익명 통계와는 묶지 않는다.
  *
- * `deviceKey`는 기기가 처음 켤 때 만든 무작위 값이고 기기 모델·광고 ID 같은 하드웨어 식별자가 아니다.
+ * `deviceKey`는 안드로이드가 이 앱에 주는 기기 식별값(`ANDROID_ID`)을 계정과 섞은 SHA-256이다
+ * (`stableDeviceKey`, lib/device-usage-client). 식별값 자체는 서버로 보내지 않고 서버는 해시만 둔다.
+ * 계정마다 값이 달라 다른 계정·서비스의 기록과 이어 붙일 수 없다. 앱을 다시 설치해도 같은 폰이 같은
+ * 키로 올라가게 하려는 것이다. 식별값을 읽지 못하는 옛 빌드만 앱 저장소의 무작위 값을 쓴다.
  * `measuredFrom`~`measuredUntil`은 이 기기가 실제로 잰 기간이다 — 그 밖의 시간은 '안 썼다'가 아니라
  * '모른다'라서, 화면이 부분 측정임을 말할 때 쓴다.
  */
