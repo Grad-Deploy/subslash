@@ -8,7 +8,9 @@ import {
   METRIC_SPECS,
   describeCheckIn,
   getCancelAndroidApp,
+  getCancelRoutes,
   getCancelUrlKind,
+  paymentCancelLabel,
   getMyMonthlyShareAmount,
   metricForSubscription,
 } from "@subslash/shared";
@@ -95,16 +97,19 @@ export function CheckInModal({
   const usesPaymentMethodUrl = Boolean(paymentMethodInfo?.directCancelUrl);
   const directUrl = paymentMethodInfo?.directCancelUrl || subscription.cancelUrl;
   const cancelUrlKind = getCancelUrlKind(subscription.cancelUrl);
+  // 해지 화면으로 바로 가는 링크만 빨갛게 칠한다. 첫 화면으로 가는 링크가 해지 버튼처럼 보이면 헷갈린다.
+  const opensCancelScreen = getCancelRoutes(subscription)[0]?.kind === "direct";
   // 결제수단 관리 주소로 갈 때는 서비스 앱을 열지 않는다.
   const openCancel = () =>
     openExternal(directUrl, {
       androidApp: usesPaymentMethodUrl ? undefined : getCancelAndroidApp(subscription),
     });
-  const cancelButtonLabel = usesPaymentMethodUrl
-    ? `${paymentMethodInfo?.label} 정기결제 관리 열기 (새 창)`
-    : cancelUrlKind === "direct"
-      ? `${subscription.name} 해지 페이지 바로가기 (새 창)`
-      : `${subscription.name} 열기 (새 창)`;
+  const cancelButtonLabel =
+    usesPaymentMethodUrl && paymentMethodInfo
+      ? `${paymentCancelLabel(paymentMethodInfo)} (새 창)`
+      : cancelUrlKind === "direct"
+        ? `${subscription.name} 해지 페이지 바로가기 (새 창)`
+        : `${subscription.name} 열기 (새 창)`;
 
   const handleCopyId = async (text: string) => {
     // 복사하지 못했으면 '복사했어요'를 띄우지 않는다. ID는 화면에 그대로 보인다.
@@ -310,8 +315,8 @@ export function CheckInModal({
             <DialogFooter className="w-full flex-col sm:flex-col gap-2 mt-2">
               {directUrl && (
                 <Button
-                  variant="destructive"
-                  className={`${WRAPPING_BUTTON} min-h-12 text-sm font-bold rounded-xl shadow-lg`}
+                  variant={opensCancelScreen ? "destructive" : "outline"}
+                  className={`${WRAPPING_BUTTON} min-h-12 text-sm font-bold rounded-xl ${opensCancelScreen ? "shadow-lg" : ""}`}
                   onClick={openCancel}
                 >
                   {cancelButtonLabel}

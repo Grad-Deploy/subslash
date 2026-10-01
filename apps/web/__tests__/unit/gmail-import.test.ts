@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { gzipSync } from "node:zlib";
-import { parseReceiptEmails } from "@subslash/shared";
+import { KNOWN_RECEIPT_SENDER_DOMAINS, parseReceiptEmails } from "@subslash/shared";
 import {
   GMAIL_APPS_SCRIPT_MANIFEST,
   GmailImportError,
@@ -593,14 +593,63 @@ describe("원클릭 연결 웹 앱", () => {
 
     const api = new Function(
       ...Object.keys(globals),
-      `${gmailConnectWebApp([ORIGIN])}\nreturn { doGet: doGet, scan: scan, scanOlder: scanOlder };`,
+      `${gmailConnectWebApp([ORIGIN])}\nreturn { doGet: doGet, scan: scan, scanOlder: scanOlder, connectAccount: connectAccount, scanRecent: scanRecent };`,
     )(...Object.values(globals)) as {
       doGet: (e: { parameter: Record<string, string> }) => unknown;
       scan: () => number;
       scanOlder: () => void;
+      connectAccount: (...args: string[]) => unknown;
+      scanRecent: (...args: string[]) => unknown;
     };
+
+    /**
+     * 웹 앱을 열고, 돌려받은 로딩 화면의 스크립트를 브라우저처럼 실행한다. google.script.run은 서버
+     * 함수를 그 자리에서 부르는 것으로 흉내 낸다. 로딩 화면이 마지막에 보여 준 내용을 html에 더한다.
+     */
+    const connect = (parameter: Record<string, string>) => {
+      api.doGet({ parameter });
+      const script = /<script>([\s\S]*)<\/script>/.exec(html[html.length - 1])?.[1];
+      if (!script) return;
+      const elements = { root: { innerHTML: "" }, step: { textContent: "" } };
+      type Handler = (value: unknown) => void;
+      const runner = () => {
+        let onSuccess: Handler = () => undefined;
+        let onFailure: Handler = () => undefined;
+        const call =
+          (fn: (...args: string[]) => unknown) =>
+          (...args: string[]) => {
+            let result: unknown;
+            try {
+              result = fn(...args);
+            } catch (error) {
+              return onFailure(error);
+            }
+            onSuccess(result);
+          };
+        const proxy = {
+          withSuccessHandler: (fn: Handler) => ((onSuccess = fn), proxy),
+          withFailureHandler: (fn: Handler) => ((onFailure = fn), proxy),
+          connectAccount: call(api.connectAccount),
+          scanRecent: call(api.scanRecent),
+        };
+        return proxy;
+      };
+      new Function("google", "document", script)(
+        {
+          script: {
+            get run() {
+              return runner();
+            },
+          },
+        },
+        { getElementById: (id: keyof typeof elements) => elements[id] },
+      );
+      html.push(elements.root.innerHTML);
+    };
+
     return {
       api,
+      connect,
       html,
       fetched,
       triggers,
@@ -624,9 +673,43 @@ describe("원클릭 연결 웹 앱", () => {
     expect(run.html.join("")).not.toContain("evil.example");
   });
 
+  it("열면 아무것도 기다리지 않고 로딩 화면부터 보여 준다", () => {
+    // 연결과 첫 검사를 doGet에서 하면 끝날 때까지 사용자가 빈 화면만 봤다.
+    const run = runWebApp();
+    run.api.doGet({ parameter: { code: "signed-code", origin: ORIGIN } });
+
+    expect(run.fetched).toEqual([]);
+    expect(run.triggers).toEqual([]);
+    expect(run.html).toHaveLength(1);
+    expect(run.html[0]).toContain("SubSlash와 연결하는 중");
+    expect(run.html[0]).toContain("창을 닫지 말고");
+  });
+
+  it("로딩 화면의 값은 스크립트를 닫지 못한다", () => {
+    const run = runWebApp();
+    run.api.doGet({ parameter: { code: "</script><script>alert(1)//", origin: ORIGIN } });
+
+    const page = run.html[0];
+    expect(page.match(/<\/script>/g)).toHaveLength(1);
+  });
+
+  it("로딩 중에 새로고침해 같은 코드로 다시 와도 코드를 다시 바꾸지 않고 검사를 마친다", () => {
+    const run = runWebApp();
+    run.connect({ code: "signed-code", origin: ORIGIN });
+    const exchanges = () =>
+      run.fetched.filter((f) => f.url.endsWith("/api/gmail/connect/exchange")).length;
+    expect(exchanges()).toBe(1);
+
+    run.connect({ code: "signed-code", origin: ORIGIN });
+
+    expect(exchanges()).toBe(1);
+    expect(run.html[run.html.length - 1]).toContain("Gmail을 연결했습니다");
+    expect(run.properties.get("token")).toBe("issued-token");
+  });
+
   it("코드를 토큰으로 바꿔 이 사람의 저장소에 두고, 트리거를 새로 건 뒤 최근 메일부터 바로 검사한다", () => {
     const run = runWebApp({ stored: { lastScanAt: "1000", token: "old" } });
-    run.api.doGet({ parameter: { code: "signed-code", origin: ORIGIN } });
+    run.connect({ code: "signed-code", origin: ORIGIN });
 
     const [exchange, ingest] = run.fetched;
     expect(exchange.url).toBe(`${ORIGIN}/api/gmail/connect/exchange`);
@@ -654,22 +737,50 @@ describe("원클릭 연결 웹 앱", () => {
     expect(JSON.parse(ingest.options.payload).emails).toHaveLength(MESSAGES.length);
   });
 
-  it("1분 뒤 나머지 1년 치를 보내고 나서야 검사 시각을 남긴다", () => {
+  it("나머지 1년 치를 기간 창마다 1분 간격으로 보내고, 마지막 창을 보낸 뒤에야 검사 시각을 남긴다", () => {
+    // 400일치를 한 번에 최신순으로 읽으면 쇼핑 주문이 상한을 채워 3월의 연간 구독 영수증이 밀렸다.
     const run = runWebApp();
-    run.api.doGet({ parameter: { code: "signed-code", origin: ORIGIN } });
+    run.connect({ code: "signed-code", origin: ORIGIN });
     const startedAt = run.properties.get("firstScanStartedAt");
-    run.queries.length = 0;
+    const ingests = () => run.fetched.filter((f) => f.url.endsWith("/api/gmail/ingest")).length;
 
-    run.api.scanOlder();
+    const windows = [
+      " newer_than:130d older_than:40d",
+      " newer_than:250d older_than:130d",
+      " newer_than:400d older_than:250d",
+    ];
+    for (const [index, range] of windows.entries()) {
+      run.queries.length = 0;
+      run.triggers.length = 0;
+      run.api.scanOlder();
 
-    expect(run.queries.every((q) => q.endsWith(" newer_than:400d older_than:40d"))).toBe(true);
-    expect(run.fetched.filter((f) => f.url.endsWith("/api/gmail/ingest"))).toHaveLength(2);
-    expect(run.properties.get("lastScanAt")).toBe(startedAt);
+      expect(run.queries.length).toBeGreaterThan(0);
+      expect(run.queries.every((q) => q.endsWith(range))).toBe(true);
+      expect(ingests()).toBe(index + 2);
+      const last = index === windows.length - 1;
+      expect(run.triggers).toEqual(last ? [] : [{ handler: "scanOlder", afterMs: 60_000 }]);
+      expect(run.properties.get("lastScanAt")).toBe(last ? startedAt : undefined);
+    }
     expect(run.properties.get("firstScanStartedAt")).toBeUndefined();
+    expect(run.properties.get("olderWindow")).toBeUndefined();
 
-    // 두 번 돌아도 다시 보내지 않는다.
+    // 한 번 더 돌아도 다시 보내지 않는다.
     run.api.scanOlder();
-    expect(run.fetched.filter((f) => f.url.endsWith("/api/gmail/ingest"))).toHaveLength(2);
+    expect(ingests()).toBe(windows.length + 1);
+  });
+
+  it("영수증 발신 도메인이 확인된 서비스의 메일을 따로 찾는다", () => {
+    // 쇼핑 주문이 많은 메일함에서도 1년에 한 번 오는 영수증(Claude 등)이 상한에 밀리지 않게.
+    const run = runWebApp();
+    run.connect({ code: "signed-code", origin: ORIGIN });
+
+    const senderQuery = run.queries.find((q) => q.includes("anthropic.com"));
+    expect(senderQuery).toBeDefined();
+    expect(senderQuery).toContain("from:(");
+    for (const domain of KNOWN_RECEIPT_SENDER_DOMAINS) expect(senderQuery).toContain(domain);
+    // 여러 서비스가 함께 쓰는 도메인은 이 검색이 아니라 플랫폼 영수증 검색이 맡는다.
+    expect(KNOWN_RECEIPT_SENDER_DOMAINS).not.toContain("google.com");
+    expect(KNOWN_RECEIPT_SENDER_DOMAINS).not.toContain("apple.com");
   });
 
   it("앱에서 왔으면 웹사이트로 가는 '돌아가기' 대신 창을 닫으라고 한다", () => {
@@ -679,22 +790,23 @@ describe("원클릭 연결 웹 앱", () => {
       { action: "calendar", code: "plan-code", origin: ORIGIN, client: "app" },
     ]) {
       const run = runWebApp();
-      run.api.doGet({ parameter });
-      const page = run.html.join("");
+      run.connect(parameter);
+      const page = run.html[run.html.length - 1];
       expect(page).toContain("이 창을 닫으면 SubSlash 앱으로 돌아갑니다");
-      expect(page).not.toContain("href=");
+      // 로딩 화면이 실패했을 때 보여 줄 내용에도 웹사이트 링크를 두지 않는다.
+      expect(run.html.join("")).not.toContain("href=");
     }
 
     // 같은 실행 환경에서 이어 불려도 앞의 앱 요청이 웹 요청의 화면을 바꾸지 않는다.
     const run = runWebApp();
-    run.api.doGet({ parameter: { code: "c", origin: ORIGIN, client: "app" } });
-    run.api.doGet({ parameter: { code: "c", origin: ORIGIN } });
-    expect(run.html[1]).toContain(`href="${ORIGIN}/import"`);
+    run.connect({ code: "c", origin: ORIGIN, client: "app" });
+    run.connect({ code: "c", origin: ORIGIN });
+    expect(run.html[run.html.length - 1]).toContain(`href="${ORIGIN}/import"`);
   });
 
   it("코드를 바꾸지 못하면 서버가 알려 준 이유를 보여주고 아무것도 설치하지 않는다", () => {
     const run = runWebApp({ exchangeStatus: 400 });
-    run.api.doGet({ parameter: { code: "used-code", origin: ORIGIN } });
+    run.connect({ code: "used-code", origin: ORIGIN });
 
     expect(run.html.join("")).toContain("연결 코드가 만료됐거나 이미 쓰였습니다.");
     expect(run.triggers).toEqual([]);

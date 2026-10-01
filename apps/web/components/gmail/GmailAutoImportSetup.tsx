@@ -10,6 +10,7 @@ import {
   createGmailLink,
   deleteGmailLink,
   fetchGmailLink,
+  markGmailConnectStarted,
   requestGmailDiscoveriesAfterConnect,
   startGmailConnect,
   type GmailLinkState,
@@ -17,6 +18,7 @@ import {
 import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { CopyBlock } from "./CopyBlock";
+import { GmailOlderScanNotice } from "./GmailOlderScanNotice";
 
 type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 
@@ -82,7 +84,9 @@ export function GmailAutoImportSetup() {
       // Google 권한 화면으로 간다. 웹에서는 이 탭이 그대로 가고(돌아오면 화면이 다시 그려진다),
       // 앱에서는 인앱 브라우저로 열고 닫힐 때 연결 상태를 다시 읽는다 — 앱 웹뷰가 통째로 나가면
       // 담아 둔 화면을 잃는다.
-      leaveForExternal(await startGmailConnect(), () => {
+      const url = await startGmailConnect();
+      markGmailConnectStarted();
+      leaveForExternal(url, () => {
         setBusy(false);
         fetchGmailLink()
           .then(setLink)
@@ -154,6 +158,7 @@ export function GmailAutoImportSetup() {
               </p>
             </div>
           )}
+          {link.linked && <GmailOlderScanNotice createdAt={link.createdAt} />}
 
           {link.connectAvailable && !token && (
             <div className="space-y-2">

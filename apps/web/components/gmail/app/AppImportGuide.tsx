@@ -13,10 +13,12 @@ import {
   createGmailLink,
   deleteGmailLink,
   fetchGmailLink,
+  markGmailConnectStarted,
   requestGmailDiscoveriesAfterConnect,
   startGmailConnect,
   type GmailLinkState,
 } from "@lib/gmail-auto-client";
+import { GmailOlderScanNotice } from "../GmailOlderScanNotice";
 import { isGmailAutoImportOpen } from "@lib/privacy";
 import { InlineConfirm } from "../../ui/inline-confirm";
 import { Spinner } from "../../ui/spinner";
@@ -85,7 +87,9 @@ export function AppImportGuide() {
     setError(null);
     try {
       // 앱 웹뷰가 통째로 나가면 담아 둔 화면을 잃으므로 인앱 브라우저로 열고, 닫히면 다시 읽는다.
-      leaveForExternal(await startGmailConnect(), () => {
+      const url = await startGmailConnect();
+      markGmailConnectStarted();
+      leaveForExternal(url, () => {
         setBusy(false);
         void refresh();
         // 웹 앱이 최근 메일 검사까지 마쳤다. 앱은 화면이 새로 열리지 않으므로 찾은 구독을
@@ -290,6 +294,7 @@ export function AppImportGuide() {
               <p className="text-lg font-black tracking-tight">{linked.pendingCount}건</p>
             </div>
           </div>
+          <GmailOlderScanNotice createdAt={linked.createdAt} />
           {!linked.lastIngestAt && (
             <p className="text-xs text-muted-foreground">
               아직 스크립트가 보낸 적이 없어요. 직접 설치했다면 Apps Script에서 setup을 실행했는지

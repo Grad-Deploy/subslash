@@ -178,6 +178,16 @@ const SERVICE_KEYWORDS: {
 ];
 
 /**
+ * 영수증을 보내는 것으로 확인된 서비스의 발신 도메인(`senderDomains`)을 모은 것. Gmail 가져오기가
+ * 이 도메인의 메일을 따로 찾는 데 쓴다 — 쇼핑 주문이 많은 메일함에서도 1년에 한 번 오는 연간 구독
+ * 영수증이 검색 상한 밖으로 밀리지 않게 하려는 것이다. 여러 서비스가 함께 쓰는 도메인(google.com·
+ * apple.com)은 표에 없고, 그쪽은 플랫폼 영수증 검색이 맡는다.
+ */
+export const KNOWN_RECEIPT_SENDER_DOMAINS: readonly string[] = [
+  ...new Set(SERVICE_KEYWORDS.flatMap((item) => item.senderDomains ?? [])),
+].sort();
+
+/**
  * Parses raw SMS / push notification text containing payment approvals
  * Handles multi-line or multi-message input.
  */
