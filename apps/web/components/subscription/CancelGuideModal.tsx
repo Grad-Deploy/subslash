@@ -7,9 +7,11 @@ import {
   bundleCheckLinks,
   getAccountFallbackUrl,
   getCancelAndroidApp,
+  getCancelRoutes,
   getCancelUrlKind,
   getServiceHomeUrl,
   parseCancelGuideSteps,
+  paymentCancelLabel,
 } from "@subslash/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button, WRAPPING_BUTTON } from "../ui/button";
@@ -78,6 +80,7 @@ export function CancelGuideModal({
   const accountUrl = getAccountFallbackUrl(sub.cancelUrl);
   const steps = parseCancelGuideSteps(sub.cancelGuide);
   const paymentMethod = PAYMENT_METHOD_OPTIONS.find((p) => p.value === sub.paymentMethod);
+  const routes = getCancelRoutes(sub);
   const checkLinks = bundleCheckLinks(sub);
 
   return (
@@ -146,24 +149,43 @@ export function CancelGuideModal({
               1단계 · 해지 화면 열기
             </h4>
 
-            {sub.cancelUrl ? (
-              <>
-                <Button
-                  className={`${WRAPPING_BUTTON} min-h-11 font-bold rounded-xl`}
-                  onClick={() => leaveTo(sub.cancelUrl, { androidApp: getCancelAndroidApp(sub) })}
-                >
-                  {cancelUrlKind === "direct"
-                    ? `${sub.name} 해지 페이지 열기 (새 창)`
-                    : `${sub.name} 열기 (새 창)`}
-                </Button>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  {cancelUrlKind === "direct"
-                    ? "해지 화면으로 바로 가요."
-                    : cancelUrlKind === "entry"
-                      ? "해지 화면이 아니라 첫 화면·계정 화면으로 가요. 아래 단계대로 해지 메뉴를 찾아가세요."
-                      : "직접 입력한 주소예요. 어디로 가는지는 확인하지 않았어요."}
-                </p>
-              </>
+            {/*
+              결제수단의 정기결제 관리가 먼저다(구글 플레이로 낸 구글 원은 Play에서 끊는다). 해지 화면으로
+              바로 가는 링크만 빨갛게 칠한다 — 첫 화면으로 가는 링크가 해지 버튼처럼 보이면 헷갈린다.
+            */}
+            {routes.length > 0 ? (
+              routes.map((route) => (
+                <div key={route.source} className="space-y-1">
+                  <Button
+                    variant={route.kind === "direct" ? "destructive" : "outline"}
+                    className={`${WRAPPING_BUTTON} min-h-11 font-bold rounded-xl`}
+                    onClick={() =>
+                      route.source === "payment"
+                        ? leaveTo(route.url)
+                        : leaveTo(route.url, { androidApp: getCancelAndroidApp(sub) })
+                    }
+                  >
+                    {route.source === "payment" && paymentMethod
+                      ? `${paymentCancelLabel(paymentMethod)} (새 창)`
+                      : cancelUrlKind === "direct"
+                        ? `${sub.name} 해지 페이지 열기 (새 창)`
+                        : `${sub.name} 열기 (새 창)`}
+                  </Button>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    {route.source === "payment"
+                      ? `${
+                          route.kind === "direct"
+                            ? `${paymentMethod?.label}로 결제했다면 여기서 해지해요.`
+                            : `${paymentMethod?.label}로 결제했다면 여기서 해지해요. 정기결제 목록이 아니라 첫 화면으로 가요.`
+                        }${paymentMethod?.guide ? ` ${paymentMethod.guide}` : ""}`
+                      : route.kind === "direct"
+                        ? "해지 화면으로 바로 가요."
+                        : route.kind === "entry"
+                          ? "해지 화면이 아니라 첫 화면·계정 화면으로 가요. 아래 단계대로 해지 메뉴를 찾아가세요."
+                          : "직접 입력한 주소예요. 어디로 가는지는 확인하지 않았어요."}
+                  </p>
+                </div>
+              ))
             ) : (
               <p className="text-xs text-muted-foreground p-3 border border-dashed rounded-xl">
                 저장된 해지 링크가 없어요. &lsquo;정보 수정&rsquo;에서 주소를 넣으면 바로가기가
@@ -213,26 +235,12 @@ export function CancelGuideModal({
           )}
 
           {/* 2. 폴백 경로 — 실제로 아는 주소만 */}
-          {(accountUrl || homeUrl || paymentMethod?.directCancelUrl) && (
+          {(accountUrl || homeUrl) && (
             <section className="space-y-2">
               <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 링크가 안 열릴 때
               </h4>
               <div className="space-y-2">
-                {paymentMethod?.directCancelUrl && (
-                  <div className="space-y-1">
-                    <Button
-                      variant="outline"
-                      className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
-                      onClick={() => leaveTo(paymentMethod.directCancelUrl)}
-                    >
-                      {paymentMethod.label} 정기결제 관리 열기
-                    </Button>
-                    {paymentMethod.guide && (
-                      <p className="text-[11px] text-muted-foreground">{paymentMethod.guide}</p>
-                    )}
-                  </div>
-                )}
                 {accountUrl && (
                   <div className="space-y-1">
                     <Button

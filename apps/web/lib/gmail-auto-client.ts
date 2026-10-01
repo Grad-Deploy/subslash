@@ -107,12 +107,60 @@ export function requestGmailDiscoveries(): void {
 }
 
 /**
- * 연결 화면에서 돌아왔을 때. 웹 앱은 최근 메일만 보고 화면을 돌려준 뒤, 1분쯤 지나 나머지 1년 치(연간
- * 결제)를 이어서 보낸다(scanOlder). 그래서 지금 한 번 받고, 이어서 올 것을 90초·3분 뒤에 다시 받는다.
+ * 웹 앱이 최근 메일을 보낸 뒤 나머지 1년 치(연간 결제)를 보내는 시각. 기간 창 셋(scanOlder)을 1분
+ * 간격으로 보내므로 3~4분쯤에 끝난다. 그 사이에 찾은 구독을 다시 받는다.
  */
+const OLDER_SCAN_REFETCH_MS = [90_000, 180_000, 300_000];
+/** 이 시간이 지나면 나머지 1년 치 확인도 끝났다고 본다. */
+export const GMAIL_OLDER_SCAN_MS = 6 * 60_000;
+
+/** 연결 화면에서 돌아왔을 때(앱). 지금 한 번 받고, 나머지 1년 치가 오는 동안 몇 번 더 받는다. */
 export function requestGmailDiscoveriesAfterConnect(): void {
   requestGmailDiscoveries();
-  for (const delay of [90_000, 180_000]) window.setTimeout(requestGmailDiscoveries, delay);
+  for (const delay of OLDER_SCAN_REFETCH_MS) window.setTimeout(requestGmailDiscoveries, delay);
+}
+
+/**
+ * 연결한 시각(`createdAt`)을 기준으로 남은 다시 받기를 건다. 웹은 연결 화면에서 돌아오면 페이지가 새로
+ * 열려 앱처럼 돌아온 순간을 잡을 수 없다. 멈추는 함수를 돌려준다.
+ */
+export function scheduleGmailDiscoveriesSince(createdAt: string, now = Date.now()): () => void {
+  const connectedAt = Date.parse(createdAt);
+  const timers = OLDER_SCAN_REFETCH_MS.map((offset) => connectedAt + offset - now)
+    .filter((delay) => delay > 0)
+    .map((delay) => window.setTimeout(requestGmailDiscoveries, delay));
+  return () => timers.forEach((timer) => window.clearTimeout(timer));
+}
+
+const CONNECT_STARTED_KEY = "subslash:gmail-connect-started";
+
+/**
+ * 원클릭 연결을 시작한 시각을 이 탭에 남긴다. 스크립트를 복사해 설치해도 연결 시각이 바뀌므로, 연결
+ * 시각만으로는 웹 앱이 나머지 1년 치를 이어서 보내는 중인지 알 수 없다 — 복사한 스크립트는 처음에
+ * 400일치를 한 번에 보낸다.
+ */
+export function markGmailConnectStarted(now = Date.now()): void {
+  try {
+    sessionStorage.setItem(CONNECT_STARTED_KEY, String(now));
+  } catch {
+    // 저장소를 쓸 수 없으면 안내만 보이지 않는다.
+  }
+}
+
+/**
+ * 원클릭 연결로 막 연결해서 웹 앱이 나머지 1년 치를 이어서 확인하고 있을 때인지. 이 탭에서 연결을
+ * 시작했고, 그 뒤에 만들어진 연결이며, 아직 확인이 끝날 시간이 지나지 않았을 때만 참이다.
+ */
+export function isGmailOlderScanPending(createdAt: string, now = Date.now()): boolean {
+  let started: number;
+  try {
+    started = Number(sessionStorage.getItem(CONNECT_STARTED_KEY));
+  } catch {
+    return false;
+  }
+  const connectedAt = Date.parse(createdAt);
+  // 연결 시각은 서버 시계다. 기기 시계가 조금 빨라도 놓치지 않게 1분을 봐준다.
+  return started > 0 && connectedAt >= started - 60_000 && now - connectedAt < GMAIL_OLDER_SCAN_MS;
 }
 
 /** `requestGmailDiscoveries`를 듣는다. 듣기를 멈추는 함수를 돌려준다. */

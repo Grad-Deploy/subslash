@@ -1,8 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { POPULAR_SERVICES, type Subscription } from "@subslash/shared";
 import {
+  GMAIL_OLDER_SCAN_MS,
   discoveryToCandidate,
   discoveryToFormData,
+  isGmailOlderScanPending,
+  markGmailConnectStarted,
   planDiscoveries,
   type GmailDiscovery,
 } from "../../lib/gmail-auto-client";
@@ -160,5 +163,61 @@ describe("discoveryToFormData", () => {
     expect(form.cancelGuide).toBe(netflix?.cancelGuide);
     expect(form.taxRate).toBeUndefined();
     expect(form.billingMonth).toBeUndefined();
+  });
+});
+
+describe("isGmailOlderScanPending", () => {
+  const START = Date.parse("2026-10-01T02:00:00.000Z");
+  const connectedAt = new Date(START + 20_000).toISOString();
+
+  function withSession(stored: Record<string, string>, run: () => void) {
+    const store = new Map(Object.entries(stored));
+    vi.stubGlobal("sessionStorage", {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+    });
+    try {
+      run();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  }
+
+  it("이 탭에서 원클릭 연결을 시작한 뒤 만들어진 연결이면 몇 분 동안 참이다", () => {
+    withSession({}, () => {
+      markGmailConnectStarted(START);
+      expect(isGmailOlderScanPending(connectedAt, START + 60_000)).toBe(true);
+      // 나머지 1년 치를 보낼 시간이 지나면 안내를 거둔다.
+      expect(isGmailOlderScanPending(connectedAt, START + 20_000 + GMAIL_OLDER_SCAN_MS)).toBe(
+        false,
+      );
+    });
+  });
+
+  it("스크립트를 복사해 설치한 연결에는 띄우지 않는다 — 복사한 스크립트는 400일치를 한 번에 보낸다", () => {
+    withSession({}, () => {
+      expect(isGmailOlderScanPending(connectedAt, START + 60_000)).toBe(false);
+    });
+  });
+
+  it("원클릭 연결을 시작하기 전에 만들어진 연결이면 거짓이다", () => {
+    withSession({}, () => {
+      markGmailConnectStarted(START);
+      const before = new Date(START - 5 * 60_000).toISOString();
+      expect(isGmailOlderScanPending(before, START + 60_000)).toBe(false);
+    });
+  });
+
+  it("탭 저장소를 쓸 수 없으면 거짓이다", () => {
+    vi.stubGlobal("sessionStorage", {
+      getItem: () => {
+        throw new Error("blocked");
+      },
+    });
+    try {
+      expect(isGmailOlderScanPending(connectedAt, START + 60_000)).toBe(false);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
