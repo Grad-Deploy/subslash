@@ -213,12 +213,16 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     category: "ott",
     defaultAmount: 7890,
     currency: "KRW",
-    cancelUrl: "https://m.coupang.com/",
+    // 마이쿠팡 왼쪽 메뉴의 '와우 멤버십'이 가는 '와우 멤버십 관리' 화면(2026-10-01, 로그인한 웹에서 확인).
+    // 와우 회원이 아닌 계정으로 봐 해지 버튼은 보지 못했으므로 해지 화면이라고 부르지 않는다. 예전에는
+    // 쿠팡 첫 화면이었다.
+    cancelUrl: "https://loyalty.coupang.com/loyalty/management/home",
     cancelUrlKind: "entry",
+    legacyCancelUrls: ["https://m.coupang.com/"],
     // 쿠팡 앱(2026-09-29 Play 스토어 '쿠팡(Coupang)-모바일 쇼핑'으로 확인).
     cancelAndroidApp: "com.coupang.mobile",
     cancelGuide:
-      "1. 쿠팡 앱 마이쿠팡 진입\n2. [와우 멤버십] 메뉴 선택\n3. 스크롤을 맨 아래로 내려서 [해지하기] 클릭\n4. 혜택 포기 확인 팝업에서 [내가 받고 있는 혜택 포기하기] 클릭",
+      "1. 쿠팡 앱이나 웹에서 [마이쿠팡] 진입(웹은 왼쪽 메뉴)\n2. [와우 멤버십] 메뉴 선택\n3. 스크롤을 맨 아래로 내려서 [해지하기] 클릭\n4. 혜택 포기 확인 팝업에서 [내가 받고 있는 혜택 포기하기] 클릭",
     iconEmoji: "🚀",
   },
   {
@@ -235,10 +239,12 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     ],
     priceNote: "웹에서 결제한 요금이에요. 앱에서 결제했다면 더 비쌀 수 있어요.",
     currency: "KRW",
+    // 이용권이 없는 계정으로 열면 이용권 구매 화면(/voucher)으로 넘어간다(2026-10-01, 로그인한 웹에서
+    // 확인). 이용권이 있을 때 해지 화면이 나오는지는 보지 못했으므로 해지 화면이라고 부르지 않는다.
     cancelUrl: "https://www.wavve.com/my/membership",
-    cancelUrlKind: "direct",
+    cancelUrlKind: "entry",
     cancelGuide:
-      "1. 웨이브 로그인 후 마이페이지 진입\n2. [나의 이용권] 클릭\n3. 이용권 내역에서 [자동결제 해지] 클릭\n4. 해지 사유 선택 후 [해지하기] 완료",
+      "1. 웨이브 로그인 후 오른쪽 위 프로필 메뉴 > [이용권]\n2. 이용권 내역에서 [자동결제 해지] 클릭\n3. 해지 사유 선택 후 [해지하기] 완료\n4. 이용권이 없다고 나오면 앱(App Store·Google Play)이나 제휴처에서 결제한 것일 수 있어요",
     iconEmoji: "🌊",
   },
   {
@@ -336,10 +342,15 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     ],
     priceNote: "웹에서 결제한 요금이에요. 앱에서 결제했다면 더 비쌀 수 있어요.",
     currency: "KRW",
-    cancelUrl: "https://laftel.net/setting",
-    cancelUrlKind: "direct",
+    // 예전 링크 /setting은 계정·알림·테마만 있는 설정 화면이라 멤버십 항목이 없다. 멤버십은 오른쪽 위
+    // 프로필 메뉴의 '라프텔 멤버십'에서 다루는데, 멤버십이 없는 계정으로는 소개·구매 화면
+    // (/membership/landing)이 나와 관리 화면의 주소는 확인하지 못했다(2026-10-01, 로그인한 웹에서
+    // 확인). 그래서 첫 화면으로 보내고 경로를 안내한다.
+    cancelUrl: "https://laftel.net/",
+    cancelUrlKind: "entry",
+    legacyCancelUrls: ["https://laftel.net/setting"],
     cancelGuide:
-      "1. 라프텔 웹/앱 마이페이지 접속\n2. [멤버십/결제 정보] 선택\n3. [멤버십 해지하기] 클릭하여 다음 결제 예약 취소 완료",
+      "1. 라프텔 웹 로그인 후 오른쪽 위 프로필 메뉴 > [라프텔 멤버십]\n2. 멤버십 관리 화면에서 해지 — 결제 예정일 24시간 전까지 해지해야 다음 결제가 되지 않아요\n3. 앱(App Store·Google Play)이나 LG U+로 결제했다면 그곳에서 해지해요",
     iconEmoji: "⚡",
   },
   {
@@ -1039,7 +1050,7 @@ export const DEMO_SUBSCRIPTIONS: Array<{
     billingDay: 28,
     billingCycle: "monthly",
     category: "shopping",
-    cancelUrl: "https://m.coupang.com/",
+    cancelUrl: "https://loyalty.coupang.com/loyalty/management/home",
     cancelGuide: "마이쿠팡 > 와우 멤버십 > 해지하기",
     iconUrl: "🛒",
   },
