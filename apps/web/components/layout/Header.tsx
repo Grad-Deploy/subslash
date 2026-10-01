@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Settings } from "lucide-react";
 import { AccountMenu } from "./AccountMenu";
+import { ThemeMenu } from "./ThemeMenu";
 import { useStatsContribution } from "@hooks/useStatsContribution";
 import { useAccountSync } from "@hooks/useAccountSync";
 import { useDeviceUsageUpload } from "@hooks/useDeviceUsageUpload";
@@ -99,13 +100,15 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* 화면 모드(웹·앱). 화면 모드를 바꾸는 곳은 여기 한 곳이다. */}
+            <ThemeMenu />
             {/*
               설정(웹). 예전 결제 알림 종이 있던 자리다. 앱은 하단 설정 탭이 같은 역할을 하고, 좁은 화면의 웹은
               이 아이콘이 계정 메뉴 안으로 접힌다.
             */}
             {!IS_APP_BUILD && (
               <>
-                <div className="hidden items-center sm:flex">
+                <div className="-ml-2 hidden items-center sm:flex">
                   <Link
                     href="/settings"
                     aria-label="설정"
