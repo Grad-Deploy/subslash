@@ -237,12 +237,16 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     category: "ott",
     defaultAmount: 7890,
     currency: "KRW",
-    cancelUrl: "https://m.coupang.com/",
+    // 마이쿠팡 왼쪽 메뉴의 '와우 멤버십'이 가는 '와우 멤버십 관리' 화면(2026-10-01, 로그인한 웹에서 확인).
+    // 와우 회원이 아닌 계정으로 봐 해지 버튼은 보지 못했으므로 해지 화면이라고 부르지 않는다. 예전에는
+    // 쿠팡 첫 화면이었다.
+    cancelUrl: "https://loyalty.coupang.com/loyalty/management/home",
     cancelUrlKind: "entry",
+    legacyCancelUrls: ["https://m.coupang.com/"],
     // 쿠팡 앱(2026-09-29 Play 스토어 '쿠팡(Coupang)-모바일 쇼핑'으로 확인).
     cancelAndroidApp: "com.coupang.mobile",
     cancelGuide:
-      "1. 쿠팡 앱 마이쿠팡 진입\n2. [와우 멤버십] 메뉴 선택\n3. 스크롤을 맨 아래로 내려서 [해지하기] 클릭\n4. 혜택 포기 확인 팝업에서 [내가 받고 있는 혜택 포기하기] 클릭",
+      "1. 쿠팡 앱이나 웹에서 [마이쿠팡] 진입(웹은 왼쪽 메뉴)\n2. [와우 멤버십] 메뉴 선택\n3. 스크롤을 맨 아래로 내려서 [해지하기] 클릭\n4. 혜택 포기 확인 팝업에서 [내가 받고 있는 혜택 포기하기] 클릭",
     iconEmoji: "🚀",
   },
   {
@@ -259,10 +263,12 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     ],
     priceNote: "웹에서 결제한 요금이에요. 앱에서 결제했다면 더 비쌀 수 있어요.",
     currency: "KRW",
+    // 이용권이 없는 계정으로 열면 이용권 구매 화면(/voucher)으로 넘어간다(2026-10-01, 로그인한 웹에서
+    // 확인). 이용권이 있을 때 해지 화면이 나오는지는 보지 못했으므로 해지 화면이라고 부르지 않는다.
     cancelUrl: "https://www.wavve.com/my/membership",
-    cancelUrlKind: "direct",
+    cancelUrlKind: "entry",
     cancelGuide:
-      "1. 웨이브 로그인 후 마이페이지 진입\n2. [나의 이용권] 클릭\n3. 이용권 내역에서 [자동결제 해지] 클릭\n4. 해지 사유 선택 후 [해지하기] 완료",
+      "1. 웨이브 로그인 후 오른쪽 위 프로필 메뉴 > [이용권]\n2. 이용권 내역에서 [자동결제 해지] 클릭\n3. 해지 사유 선택 후 [해지하기] 완료\n4. 이용권이 없다고 나오면 앱(App Store·Google Play)이나 제휴처에서 결제한 것일 수 있어요",
     iconEmoji: "🌊",
   },
   {
@@ -360,10 +366,15 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     ],
     priceNote: "웹에서 결제한 요금이에요. 앱에서 결제했다면 더 비쌀 수 있어요.",
     currency: "KRW",
-    cancelUrl: "https://laftel.net/setting",
-    cancelUrlKind: "direct",
+    // 예전 링크 /setting은 계정·알림·테마만 있는 설정 화면이라 멤버십 항목이 없다. 멤버십은 오른쪽 위
+    // 프로필 메뉴의 '라프텔 멤버십'에서 다루는데, 멤버십이 없는 계정으로는 소개·구매 화면
+    // (/membership/landing)이 나와 관리 화면의 주소는 확인하지 못했다(2026-10-01, 로그인한 웹에서
+    // 확인). 그래서 첫 화면으로 보내고 경로를 안내한다.
+    cancelUrl: "https://laftel.net/",
+    cancelUrlKind: "entry",
+    legacyCancelUrls: ["https://laftel.net/setting"],
     cancelGuide:
-      "1. 라프텔 웹/앱 마이페이지 접속\n2. [멤버십/결제 정보] 선택\n3. [멤버십 해지하기] 클릭하여 다음 결제 예약 취소 완료",
+      "1. 라프텔 웹 로그인 후 오른쪽 위 프로필 메뉴 > [라프텔 멤버십]\n2. 멤버십 관리 화면에서 해지 — 결제 예정일 24시간 전까지 해지해야 다음 결제가 되지 않아요\n3. 앱(App Store·Google Play)이나 LG U+로 결제했다면 그곳에서 해지해요",
     iconEmoji: "⚡",
   },
   {
@@ -632,10 +643,14 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     defaultAmount: null,
     priceNote: "지금 요금을 확인하지 못했어요. 결제 내역의 금액을 적어주세요.",
     currency: "KRW",
-    cancelUrl: "https://vibe.naver.com/membership",
-    cancelUrlKind: "direct",
+    // 'My 멤버십' 화면(2026-10-01, 로그인한 브라우저에서 사용자가 확인). 해지는 여기서 [결제 관리]를 한 번 더
+    // 눌러야 나오므로 해지 화면이라고 부르지 않는다. 바이브는 없는 주소에도 같은 화면 틀을 줘서 주소만으로는
+    // 살아 있는지 가릴 수 없다. 예전 링크 /membership은 My 멤버십이 아니었다.
+    cancelUrl: "https://vibe.naver.com/membership/my",
+    cancelUrlKind: "entry",
+    legacyCancelUrls: ["https://vibe.naver.com/membership"],
     cancelGuide:
-      "1. 네이버 VIBE 웹/앱 접속 > [마이페이지]\n2. [멤버십/결제] 메뉴 선택\n3. [구독 해지 예약] 또는 [정기결제 해지] 클릭\n4. 혜택 포기 확인 후 해지 완료",
+      "1. VIBE 웹 로그인 후 왼쪽 위 프로필 > [My 멤버십]\n2. [결제 관리] 클릭\n3. [구독 해지] 클릭 후 혜택을 확인하고 [혜택 포기] 선택 — 남은 기간까지는 이용할 수 있어요\n4. 앱(App Store·Google Play)에서 결제했다면 그곳에서 해지해요",
     iconEmoji: "🎧",
   },
   {
@@ -823,11 +838,16 @@ export const POPULAR_SERVICES: ServicePreset[] = [
       { id: "pro-plus", name: "Pro+", amount: 39 },
     ],
     currency: "USD",
-    // GitHub 문서는 설정 메뉴 경로만 안내하고 해지 화면의 고정 주소를 밝히지 않는다.
-    cancelUrl: "https://github.com/settings/billing",
+    // GitHub 문서(Viewing and changing your GitHub Copilot plan)의 경로: Settings > Billing & licensing >
+    // Licensing > 'GitHub Copilot'의 Manage subscription > Cancel subscription. 그 Licensing 화면이
+    // /settings/billing/licensing이다. 예전 주소 /settings/billing은 없는 주소와 같은 404를 준다 — 있는
+    // 설정 주소는 로그인하지 않으면 로그인 화면으로 보낸다(2026-10-01 확인). 로그인한 화면은 보지 못해
+    // 해지 화면이라고 부르지 않는다.
+    cancelUrl: "https://github.com/settings/billing/licensing",
     cancelUrlKind: "entry",
+    legacyCancelUrls: ["https://github.com/settings/billing"],
     cancelGuide:
-      "1. GitHub 로그인 후 오른쪽 위 프로필 사진 > [Settings]\n2. 왼쪽 'Access'의 [Billing and licensing] > [Licensing] (예전 화면은 [Plans and usage])\n3. 'GitHub Copilot' 칸의 [Manage subscription] > [Cancel subscription]\n4. [Cancel Copilot Pro]로 확인 — 이번 결제 주기가 끝나면 Copilot Free로 바뀝니다",
+      "1. GitHub 로그인 후 오른쪽 위 프로필 사진 > [Settings]\n2. 왼쪽 'Access'의 [Billing & licensing] > [Licensing]\n3. 'GitHub Copilot' 칸의 [Manage subscription] > [Cancel subscription]\n4. 확인하면 이번 결제 주기가 끝난 뒤 Copilot Free로 바뀝니다. 조직·회사가 준 Copilot은 여기서 해지할 수 없어요",
     iconEmoji: "🐙",
   },
   {
@@ -1058,7 +1078,7 @@ export const DEMO_SUBSCRIPTIONS: Array<{
     billingDay: 28,
     billingCycle: "monthly",
     category: "shopping",
-    cancelUrl: "https://m.coupang.com/",
+    cancelUrl: "https://loyalty.coupang.com/loyalty/management/home",
     cancelGuide: "마이쿠팡 > 와우 멤버십 > 해지하기",
     iconUrl: "🛒",
   },
