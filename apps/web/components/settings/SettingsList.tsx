@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Activity, Bell, CalendarDays, ChevronRight, HardDrive, Trash2 } from "lucide-react";
+import { Activity, Bell, ChevronRight, HardDrive, Trash2 } from "lucide-react";
 import { useStore } from "@lib/store";
-import { isDeviceUsageOpen, isGmailAutoImportOpen } from "@lib/privacy";
+import { isDeviceUsageOpen } from "@lib/privacy";
 import { useAuth } from "@hooks/useAuth";
 import { isMeasuringFor, useDeviceUsage } from "@lib/device-usage-client";
 import { useLocalReminderSettings } from "@hooks/useLocalReminders";
@@ -12,10 +12,9 @@ import { IS_APP_BUILD } from "@lib/platform";
 import { LocalReminderCard } from "./LocalReminderCard";
 import { DataBackupCard } from "./DataBackupCard";
 import { DeviceUsageCard } from "./DeviceUsageCard";
-import { GoogleCalendarSync } from "../calendar/GoogleCalendarSync";
 import { AppSheet } from "./app/AppSheet";
 
-type SheetKey = "reminder" | "calendar" | "backup" | "usage";
+type SheetKey = "reminder" | "backup" | "usage";
 
 interface SettingsListProps {
   onMessage: (message: string) => void;
@@ -29,11 +28,12 @@ function reminderSummary(enabled: boolean, daysBefore: number) {
 }
 
 /**
- * 설정 화면(SettingsScreen, 웹·앱)의 알림 / 연동 / 측정 / 데이터 목록.
+ * 설정 화면(SettingsScreen, 웹·앱)의 알림 / 측정 / 데이터 목록.
  *
  * 예전 웹은 캘린더·백업을 설명이 긴 카드로 늘어놓고, 전체 초기화를 위쪽 버튼 줄에 혼자 빨갛게
  * 두었다. 한 줄 제목과 지금 상태만 보여 주고, 줄을 누르면 기존 카드를 시트에 그대로 연다. 기기 결제
- * 알림은 앱에만 있다(웹은 구글 캘린더 연동이 결제일을 알린다).
+ * 알림은 앱에만 있다. 구글 캘린더 등록은 여기 두지 않고 '내 구독' 목록 아래에 둔다 — 구독을 확인한 그
+ * 자리에서 누르는 것이고, 설정 안에 있으면 그런 기능이 있는지 찾기 어려웠다.
  */
 export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
   const [sheet, setSheet] = useState<SheetKey | null>(null);
@@ -49,7 +49,6 @@ export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
       state.accountSync.stoppedReason === null &&
       state.accountSync.accountId === account?.id,
   );
-  const calendarOpen = isGmailAutoImportOpen();
   // 여러 기기 사용 측정은 로그인한 계정에 모으는 기능이라 로그인했을 때만 보인다.
   const usageOpen = isDeviceUsageOpen() && Boolean(account);
   const measuring = useDeviceUsage((state) => isMeasuringFor(state, account?.id ?? null));
@@ -66,17 +65,6 @@ export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
             status={reminderSummary(reminder.enabled, reminder.daysBefore)}
             statusOn={reminder.enabled}
             onClick={() => setSheet("reminder")}
-          />
-        </Group>
-      )}
-
-      {calendarOpen && (
-        <Group title="연동">
-          <Row
-            icon={<CalendarDays className="size-4" />}
-            title="구글 캘린더 연동"
-            detail="결제일을 반복 일정으로"
-            onClick={() => setSheet("calendar")}
           />
         </Group>
       )}
@@ -119,11 +107,6 @@ export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
       {IS_APP_BUILD && (
         <AppSheet open={sheet === "reminder"} onClose={close} label="이 기기 결제 알림">
           <LocalReminderCard onMessage={onMessage} />
-        </AppSheet>
-      )}
-      {calendarOpen && (
-        <AppSheet open={sheet === "calendar"} onClose={close} label="구글 캘린더 연동">
-          <GoogleCalendarSync />
         </AppSheet>
       )}
       {usageOpen && (
