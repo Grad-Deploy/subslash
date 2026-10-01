@@ -9,7 +9,6 @@ import {
   findPresetForSubscription,
   formatKRW,
   getMyMonthlyAmountKRW,
-  getSavingsTiers,
   isInTrial,
   sumMyAnnualKRW,
   sumMyMonthlyKRW,
@@ -95,8 +94,8 @@ function presetName(presetId: string): string {
 
 /**
  * 구독 리포트. 해지하기 전에도 볼 것이 있어야 한다 — 예전 '절약 현황'은 해지한 구독이 없으면 빈 화면
- * 이었다. 여기서는 지금 내는 돈과 1회 단가를 먼저 보여 주고, 다른 사람들과의 비교(익명 통계), 해지로
- * 지킨 돈을 그 아래에 둔다.
+ * 이었다. 여기서는 지금 내는 돈과 1회 단가를 먼저 보여 주고, 그 아래에 다른 사람들과의 비교(익명 통계)를
+ * 둔다. 해지로 지킨 돈(/savings)은 앱과 같게 리포트에 두지 않는다 — 웹은 대시보드에서 들어간다.
  */
 export default function ReportPage() {
   const mounted = useIsClient();
@@ -108,10 +107,6 @@ export default function ReportPage() {
   const active = useMemo(
     () => subscriptions.filter((sub) => sub.status === "active" && !isInTrial(sub, now)),
     [subscriptions, now],
-  );
-  const killed = useMemo(
-    () => subscriptions.filter((sub) => sub.status === "killed"),
-    [subscriptions],
   );
 
   // 횟수가 아닌 것(시간·쓴 날·혜택·용량)으로 재는 구독은 1회 단가 순위에 넣지 않는다. 시간당 ₩500과
@@ -156,7 +151,6 @@ export default function ReportPage() {
 
   const monthly = sumMyMonthlyKRW(active, rate);
   const annual = sumMyAnnualKRW(active, rate);
-  const confirmedSaved = killed.length > 0 ? getSavingsTiers(killed, now, rate).confirmed : 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-2">
@@ -317,22 +311,6 @@ export default function ReportPage() {
         <section className="rounded-2xl border bg-muted/30 p-4 text-sm text-muted-foreground">
           다른 사용자와의 비교는 준비 중이에요.
         </section>
-      )}
-
-      {/* 앱은 지킨 돈을 대시보드 계산서 카드와 해지 완료 탭에서 보여서 여기서는 뺀다. */}
-      {!IS_APP_BUILD && killed.length > 0 && (
-        <Link
-          href="/savings"
-          className="flex items-center justify-between gap-3 rounded-2xl border p-4 hover:bg-muted/50"
-        >
-          <div>
-            <p className="text-xs text-muted-foreground">해지로 지킨 돈</p>
-            <p className="text-lg font-black tabular-nums">{formatKRW(confirmedSaved)}</p>
-          </div>
-          <span className="flex items-center gap-1 text-sm font-semibold">
-            절약 기록 보기 <ChevronRight className="size-4" aria-hidden />
-          </span>
-        </Link>
       )}
     </div>
   );
