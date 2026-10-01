@@ -121,4 +121,49 @@ test.describe("설정 화면 (E2E)", () => {
       0,
     );
   });
+
+  test("설정의 '도움말 · 문의'에서 자주 묻는 질문을 펴 보고, 보호책임자와 같은 주소로 문의한다", async ({
+    page,
+  }) => {
+    await page.goto("/settings");
+    await page.getByRole("link", { name: /도움말 · 문의/ }).click({ timeout: 30_000 });
+    await expect(page).toHaveURL(/\/help$/);
+    await expect(page.getByRole("heading", { name: "도움말", exact: true })).toBeVisible();
+
+    // 답은 접혀 있다가 질문을 누르면 펼쳐진다.
+    const question = page.getByText("SubSlash에서 바로 해지되나요?");
+    const answer = page.getByText(/해지는 각 서비스에서 해야 해요/);
+    await expect(answer).toBeHidden();
+    await question.click();
+    await expect(answer).toBeVisible();
+
+    const mail = page.getByRole("link", { name: "메일 앱으로 문의하기" });
+    await expect(mail).toHaveAttribute("href", /^mailto:privacy@subslash\.me\?/);
+    await expect(page.getByText("privacy@subslash.me", { exact: true })).toBeVisible();
+  });
+
+  test("계정 메뉴에서 도움말로 갈 수 있다", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "계정 메뉴" }).click({ timeout: 30_000 });
+    await page
+      .getByRole("menu", { name: "계정 메뉴" })
+      .getByRole("menuitem", { name: "도움말 · 문의" })
+      .click();
+    await expect(page).toHaveURL(/\/help$/);
+    await expect(page.getByRole("link", { name: "메일 앱으로 문의하기" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Gmail로 쓰기" })).toBeVisible();
+  });
+
+  test("웹 하단에서도 도움말로 갈 수 있다", async ({ page }) => {
+    // 내용이 늦게 늘어나는 화면(대시보드)은 누르는 사이 하단 위치가 밀려, 고정된 화면에서 본다.
+    await page.goto("/privacy");
+    await expect(page.getByRole("heading", { name: "개인정보처리방침" })).toBeVisible({
+      timeout: 30_000,
+    });
+    await page
+      .getByRole("contentinfo")
+      .getByRole("link", { name: "도움말 · 문의" })
+      .click({ timeout: 30_000 });
+    await expect(page).toHaveURL(/\/help$/);
+  });
 });

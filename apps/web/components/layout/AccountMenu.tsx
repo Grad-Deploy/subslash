@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, LogIn, LogOut, Settings, User } from "lucide-react";
+import { ChevronDown, CircleHelp, LogIn, LogOut, Settings, User } from "lucide-react";
 import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
@@ -12,9 +12,9 @@ const itemClass =
   "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none";
 
 /**
- * 로그인·내 정보·로그아웃처럼 계정에 관한 항목을 모은 메뉴. 상단 바에는 아바타 하나만 두고, 나머지는
- * 열었을 때만 보인다. 화면 모드(라이트/다크)는 기기의 화면 설정이라 설정 화면의 '화면'에만 둔다 — 두 곳에
- * 있으면 어느 쪽이 원래 자리인지 어색했다.
+ * 로그인·내 정보·로그아웃처럼 계정에 관한 항목과 도움말을 모은 메뉴. 상단 바에는 아바타 하나만 두고,
+ * 나머지는 열었을 때만 보인다. 화면 모드(라이트/다크)는 상단 바의 화면 모드 버튼(ThemeMenu) 한 곳에만 둔다 —
+ * 두 곳에 있으면 어느 쪽이 원래 자리인지 어색했다.
  */
 export function AccountMenu() {
   const [open, setOpen] = useState(false);
@@ -170,6 +170,15 @@ export function AccountMenu() {
               설정
             </Link>
           )}
+
+          {/*
+            도움말(웹·앱). 설정 맨 아래와 웹 하단에만 있을 때는 찾아보지 않으면 지나쳤다. 막혔을 때 가장 먼저
+            열어 보는 메뉴라 여기에도 둔다.
+          */}
+          <Link href="/help" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
+            <CircleHelp className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            도움말 · 문의
+          </Link>
 
           {account && (
             <>

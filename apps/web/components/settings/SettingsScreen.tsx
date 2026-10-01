@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, LogIn, Shield, User } from "lucide-react";
+import { ChevronRight, CircleHelp, LogIn, Shield, User } from "lucide-react";
 import { useStore } from "@lib/store";
 import { useAuth } from "@hooks/useAuth";
 import { ConfirmDialog } from "../ui/confirm-dialog";
@@ -94,13 +94,28 @@ export function SettingsScreen({
       {/* 정보 */}
       <section className="space-y-2">
         <h2 className="px-1 text-xs font-bold text-muted-foreground">정보</h2>
-        <Link href="/privacy" className="flex items-center gap-3 rounded-2xl border px-3 py-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary">
-            <Shield className="size-4" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1 text-sm font-bold">개인정보처리방침</span>
-          <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-        </Link>
+        <div className="divide-y overflow-hidden rounded-2xl border">
+          {/* 도움말(자주 묻는 질문 + 문의). 앱은 이 설정 탭이 도움말로 가는 길이다. */}
+          <Link href="/help" className="flex items-center gap-3 px-3 py-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary">
+              <CircleHelp className="size-4" aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold">도움말 · 문의</span>
+              <span className="block text-xs text-muted-foreground">
+                자주 묻는 질문과 문의 메일
+              </span>
+            </span>
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          </Link>
+          <Link href="/privacy" className="flex items-center gap-3 px-3 py-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary">
+              <Shield className="size-4" aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1 text-sm font-bold">개인정보처리방침</span>
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          </Link>
+        </div>
       </section>
 
       {/* 활성 탭이 비어 있어도 해지한 구독이 남아 있을 수 있다. 무엇이 지워지는지 나눠 적는다. */}
