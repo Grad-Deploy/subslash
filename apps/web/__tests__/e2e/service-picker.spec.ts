@@ -2,8 +2,8 @@ import { test, expect } from "@playwright/test";
 
 test.describe("새 구독 등록 — 서비스 고르기 (E2E)", () => {
   test("분류 탭으로 좁히고, 검색은 고른 분류와 상관없이 전체에서 찾는다", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "더 보기", exact: true }).click({ timeout: 30_000 });
 
     const dialog = page.getByRole("dialog");
     const tabs = dialog.getByRole("group", { name: "서비스 분류" });
@@ -29,8 +29,8 @@ test.describe("새 구독 등록 — 서비스 고르기 (E2E)", () => {
   test("부가세가 붙는 서비스는 부가세를 넣은 금액으로 채우고, 결제 주기를 바꾸면 연 결제 요금제로 옮긴다", async ({
     page,
   }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "더 보기", exact: true }).click({ timeout: 30_000 });
 
     const dialog = page.getByRole("dialog");
     await dialog.getByPlaceholder(/서비스 이름 검색/).fill("Claude");

@@ -7,13 +7,21 @@ test.describe("Dashboard (E2E)", () => {
   });
 
   test("온보딩 표시", async ({ page }) => {
+    // 소개 페이지는 쓰는 곳(대시보드)으로 보내고, 첫 대시보드는 쓰고 있는 구독부터 고르게 한다.
     await page.goto("/");
-    await expect(page.getByRole("button", { name: /내 구독 등록하기/ })).toBeVisible();
+    await page
+      .getByRole("link", { name: /웹에서 바로 시작하기/ })
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.getByRole("heading", { name: "쓰고 있는 구독을 골라보세요" })).toBeVisible({
+      timeout: 30_000,
+    });
   });
 
   test("구독 등록 폼 표시", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "더 보기", exact: true }).click({ timeout: 30_000 });
 
     // 새 등록은 서비스부터 고른다. 이름·금액 칸은 고른 다음에 나온다.
     const dialog = page.getByRole("dialog");
@@ -26,8 +34,8 @@ test.describe("Dashboard (E2E)", () => {
   });
 
   test("Escape 키로 모달 닫기", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "더 보기", exact: true }).click({ timeout: 30_000 });
     await expect(page.getByRole("dialog")).toBeVisible();
 
     await page.keyboard.press("Escape");
