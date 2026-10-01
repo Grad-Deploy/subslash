@@ -31,8 +31,8 @@ test.describe("Subscription Flow (E2E)", () => {
   test("구독 등록 플로우: 서비스와 요금제를 고르면 요금이 채워지고 결제일만 적으면 된다", async ({
     page,
   }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "더 보기", exact: true }).click({ timeout: 30_000 });
 
     const dialog = page.getByRole("dialog");
     await dialog.getByPlaceholder(/서비스 이름 검색/).fill("넷플");
@@ -62,8 +62,8 @@ test.describe("Subscription Flow (E2E)", () => {
   });
 
   test("구독 등록 플로우: 목록에 없는 서비스 직접 입력", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: /내 구독 등록하기/ }).click();
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "더 보기", exact: true }).click({ timeout: 30_000 });
 
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: /목록에 없는 서비스 직접 입력/ }).click();
