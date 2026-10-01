@@ -69,12 +69,12 @@ export function MonthlyValueReport({
           </div>
         )}
 
-        {/* ⏸️ 줄일 수 있는 지출 */}
+        {/* 줄일 수 있는 지출 */}
         {summary.wastedItems.length > 0 && (
           <div className="flex flex-col gap-2 mt-2">
             <div className="flex justify-between items-center text-amber-500 dark:text-amber-400">
               <span className="text-sm font-semibold flex items-center gap-1.5">
-                ⏸️ 줄일 수 있는 지출 (쉬어가기 추천)
+                줄일 수 있는 지출 (쉬어가기 추천)
               </span>
               <span className="text-sm font-semibold">{formatKRW(summary.wastedKRW)}</span>
             </div>

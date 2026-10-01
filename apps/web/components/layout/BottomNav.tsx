@@ -22,7 +22,7 @@ export function BottomNav() {
     <nav className="md:hidden fixed bottom-0 w-full border-t bg-background z-40 pb-safe">
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {
-          // 절약 기록(/savings)은 리포트에서 들어가는 화면이라 리포트 탭에 불을 켠다.
+          // 절약 기록(/savings)은 따로 탭이 없어, 같은 결과를 보는 리포트 탭에 불을 켠다.
           const isActive =
             pathname?.startsWith(item.href) ||
             (item.href === "/report" && pathname?.startsWith("/savings"));
