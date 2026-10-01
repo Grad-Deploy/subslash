@@ -64,7 +64,7 @@ test.describe("설정 화면 (E2E)", () => {
     await page.goto("/settings");
     await expect(page.getByText("이 브라우저에만 저장돼요")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole("button", { name: /백업 · 계정 저장/ })).toBeVisible();
-    await expect(page.getByRole("switch", { name: /다크 모드/ })).toBeVisible();
+    await expect(page.getByRole("radiogroup", { name: "화면 모드" })).toBeVisible();
 
     await page.getByRole("button", { name: /전체 초기화/ }).click();
     await page.getByRole("button", { name: "모두 삭제" }).click();
@@ -77,5 +77,42 @@ test.describe("설정 화면 (E2E)", () => {
       timeout: 30_000,
     });
     await expect(page.getByRole("button", { name: /백업 · 계정 저장/ })).toHaveCount(0);
+  });
+
+  test("화면 모드는 설정에서만 고르고, 기기 설정으로 다시 돌아갈 수 있다", async ({ page }) => {
+    // 기기는 다크 모드다.
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto("/settings");
+    const modes = page.getByRole("radiogroup", { name: "화면 모드" });
+    const html = page.locator("html");
+
+    // 고른 적이 없으면 기기 설정을 따른다.
+    await expect(modes.getByRole("radio", { name: "기기 설정" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+      { timeout: 30_000 },
+    );
+    await expect(html).toHaveClass(/\bdark\b/);
+
+    await modes.getByRole("radio", { name: "라이트" }).click();
+    await expect(html).not.toHaveClass(/\bdark\b/);
+    await expect(modes.getByRole("radio", { name: "라이트" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+
+    // 예전에는 한 번 고르면 기기 설정으로 돌아갈 길이 없었다.
+    await modes.getByRole("radio", { name: "기기 설정" }).click();
+    await expect(html).toHaveClass(/\bdark\b/);
+    expect(await page.evaluate(() => localStorage.getItem("subslash-theme"))).toBeNull();
+
+    // 기기 설정을 따르는 동안에는 기기가 바뀌면 화면도 바뀐다.
+    await page.emulateMedia({ colorScheme: "light" });
+    await expect(html).not.toHaveClass(/\bdark\b/);
+
+    // 계정 메뉴에는 화면 모드가 없다.
+    await page.getByRole("button", { name: "계정 메뉴" }).click();
+    const menu = page.getByRole("menu", { name: "계정 메뉴" });
+    await expect(menu.getByRole("menuitem", { name: /다크 모드|라이트 모드/ })).toHaveCount(0);
   });
 });

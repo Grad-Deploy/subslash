@@ -3,8 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, LogIn, LogOut, Moon, Settings, Sun, User } from "lucide-react";
-import { useTheme } from "./ThemeProvider";
+import { ChevronDown, LogIn, LogOut, Settings, User } from "lucide-react";
 import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
@@ -13,8 +12,9 @@ const itemClass =
   "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none";
 
 /**
- * 로그인·내 정보·테마처럼 가끔 쓰는 항목을 한 곳에 모은 메뉴.
- * 상단 바에는 아바타 하나만 두고, 나머지는 열었을 때만 보인다.
+ * 로그인·내 정보·로그아웃처럼 계정에 관한 항목을 모은 메뉴. 상단 바에는 아바타 하나만 두고, 나머지는
+ * 열었을 때만 보인다. 화면 모드(라이트/다크)는 기기의 화면 설정이라 설정 화면의 '화면'에만 둔다 — 두 곳에
+ * 있으면 어느 쪽이 원래 자리인지 어색했다.
  */
 export function AccountMenu() {
   const [open, setOpen] = useState(false);
@@ -22,7 +22,6 @@ export function AccountMenu() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme();
   const { account, loading, logout } = useAuth();
 
   // 다른 화면으로 가면 닫는다. effect로 닫으면 렌더링이 한 번 더 일어나 렌더링 중에 맞춘다.
@@ -171,16 +170,6 @@ export function AccountMenu() {
               설정
             </Link>
           )}
-
-          {/* 테마는 바뀐 모습을 바로 보도록 메뉴를 닫지 않는다. */}
-          <button type="button" role="menuitem" className={itemClass} onClick={toggleTheme}>
-            {theme === "dark" ? (
-              <Sun className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            ) : (
-              <Moon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            )}
-            {theme === "dark" ? "라이트 모드" : "다크 모드"}
-          </button>
 
           {account && (
             <>
