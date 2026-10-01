@@ -2,22 +2,28 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, LogIn, Moon, Shield, Sun, User } from "lucide-react";
+import { ChevronRight, LogIn, Monitor, Moon, Shield, Sun, User } from "lucide-react";
 import { useStore } from "@lib/store";
 import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
-import { useTheme } from "../layout/ThemeProvider";
+import { useTheme, type ThemePreference } from "../layout/ThemeProvider";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { ExchangeRateNote } from "./ExchangeRateNote";
 import { SettingsList } from "./SettingsList";
+
+const THEME_OPTIONS: { value: ThemePreference; label: string; Icon: typeof Sun }[] = [
+  { value: "system", label: "기기 설정", Icon: Monitor },
+  { value: "light", label: "라이트", Icon: Sun },
+  { value: "dark", label: "다크", Icon: Moon },
+];
 
 /**
  * 설정 화면(`/settings`, 웹·앱). 켜고 끄고 연결하는 것을 여기에 모은다 — 예전에는 구독 관리 위쪽(자동 체크인
  * 스위치·환율)과 맨 아래(연동·측정·데이터)에 흩어져 있어 처음 쓰는 사람이 찾지 못했다. 앱에서 먼저 설정 탭으로
  * 모았고, 웹도 같은 화면을 상단 바의 설정 아이콘에서 연다.
  *
- * 상단의 계정 아이콘과 그 메뉴(로그인한 계정 확인, 내 정보, 다크 모드, 로그아웃)는 그대로 둔다 — 어느 계정으로
- * 들어와 있는지는 어느 화면에서든 보여야 한다. 여기에는 같은 계정 줄을 맨 위에 둔다.
+ * 상단의 계정 아이콘과 그 메뉴(로그인한 계정 확인, 내 정보, 로그아웃)는 그대로 둔다 — 어느 계정으로 들어와
+ * 있는지는 어느 화면에서든 보여야 한다. 여기에는 같은 계정 줄을 맨 위에 둔다. 화면 모드는 여기에만 있다.
  */
 export function SettingsScreen({
   storageNote,
@@ -29,7 +35,7 @@ export function SettingsScreen({
   children?: React.ReactNode;
 }) {
   const { account, loading } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { preference, setPreference } = useTheme();
   const subscriptions = useStore((state) => state.subscriptions);
   const demo = useStore((state) => state.demo);
   const clearSubscriptions = useStore((state) => state.clearSubscriptions);
@@ -87,31 +93,38 @@ export function SettingsScreen({
       {/* 화면 */}
       <section className="space-y-2">
         <h2 className="px-1 text-xs font-bold text-muted-foreground">화면</h2>
-        <div className="overflow-hidden rounded-2xl border">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={theme === "dark"}
-            onClick={toggleTheme}
-            className="flex w-full items-center gap-3 px-3 py-3 text-left"
+        <div className="space-y-2.5 rounded-2xl border px-3 py-3">
+          <p id="theme-mode-label" className="text-sm font-bold">
+            화면 모드
+          </p>
+          {/* 기본은 기기 설정을 따른다. 한 번 라이트·다크를 골라도 다시 돌아올 수 있게 셋 중에서 고른다. */}
+          <div
+            role="radiogroup"
+            aria-labelledby="theme-mode-label"
+            className="grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1"
           >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary">
-              {theme === "dark" ? (
-                <Moon className="size-4" aria-hidden />
-              ) : (
-                <Sun className="size-4" aria-hidden />
-              )}
-            </span>
-            <span className="min-w-0 flex-1 text-sm font-bold">다크 모드</span>
-            <span
-              className={cn(
-                "text-xs font-semibold",
-                theme === "dark" ? "text-foreground" : "text-muted-foreground",
-              )}
-            >
-              {theme === "dark" ? "켜짐" : "꺼짐"}
-            </span>
-          </button>
+            {THEME_OPTIONS.map(({ value, label, Icon }) => {
+              const selected = preference === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setPreference(value)}
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition-colors",
+                    selected
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon className="size-4 shrink-0" aria-hidden />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
         {/* 달러 구독이 있을 때만 보인다(ExchangeRateNote가 스스로 가린다). */}
         <ExchangeRateNote />
