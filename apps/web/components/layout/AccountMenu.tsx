@@ -3,10 +3,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, LogIn, LogOut, Moon, Sun, User } from "lucide-react";
+import { ChevronDown, LogIn, LogOut, Moon, Settings, Sun, User } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
+import { IS_APP_BUILD } from "@lib/platform";
 
 const itemClass =
   "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none";
@@ -154,6 +155,21 @@ export function AccountMenu() {
             <p className="px-2.5 pb-1.5 text-[11px] leading-relaxed text-muted-foreground">
               로그인하면 여러 기기에서 같은 기록을 쓸 수 있어요.
             </p>
+          )}
+
+          {/*
+            좁은 화면의 웹은 상단 바의 설정 아이콘이 여기로 접힌다. 앱은 하단 설정 탭이 있어 두지 않는다.
+          */}
+          {!IS_APP_BUILD && (
+            <Link
+              href="/settings"
+              role="menuitem"
+              className={cn(itemClass, "sm:hidden")}
+              onClick={() => setOpen(false)}
+            >
+              <Settings className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              설정
+            </Link>
           )}
 
           {/* 테마는 바뀐 모습을 바로 보도록 메뉴를 닫지 않는다. */}
