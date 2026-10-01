@@ -619,10 +619,14 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     defaultAmount: null,
     priceNote: "지금 요금을 확인하지 못했어요. 결제 내역의 금액을 적어주세요.",
     currency: "KRW",
-    cancelUrl: "https://vibe.naver.com/membership",
-    cancelUrlKind: "direct",
+    // 'My 멤버십' 화면(2026-10-01, 로그인한 브라우저에서 사용자가 확인). 해지는 여기서 [결제 관리]를 한 번 더
+    // 눌러야 나오므로 해지 화면이라고 부르지 않는다. 바이브는 없는 주소에도 같은 화면 틀을 줘서 주소만으로는
+    // 살아 있는지 가릴 수 없다. 예전 링크 /membership은 My 멤버십이 아니었다.
+    cancelUrl: "https://vibe.naver.com/membership/my",
+    cancelUrlKind: "entry",
+    legacyCancelUrls: ["https://vibe.naver.com/membership"],
     cancelGuide:
-      "1. 네이버 VIBE 웹/앱 접속 > [마이페이지]\n2. [멤버십/결제] 메뉴 선택\n3. [구독 해지 예약] 또는 [정기결제 해지] 클릭\n4. 혜택 포기 확인 후 해지 완료",
+      "1. VIBE 웹 로그인 후 왼쪽 위 프로필 > [My 멤버십]\n2. [결제 관리] 클릭\n3. [구독 해지] 클릭 후 혜택을 확인하고 [혜택 포기] 선택 — 남은 기간까지는 이용할 수 있어요\n4. 앱(App Store·Google Play)에서 결제했다면 그곳에서 해지해요",
     iconEmoji: "🎧",
   },
   {
