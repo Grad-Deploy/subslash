@@ -1,4 +1,4 @@
-import type { ReceiptEmail } from "@subslash/shared";
+import { KNOWN_RECEIPT_SENDER_DOMAINS, type ReceiptEmail } from "@subslash/shared";
 
 /**
  * Gmail 결제 메일 가져오기.
@@ -522,8 +522,13 @@ var ALLOWED_ORIGINS = __ORIGINS__;
 // ③ 결제 낱말 — Gmail이 '구매'로 분류하지 못한 영수증을 줍습니다. 광고가 섞이지만
 //    SubSlash가 결제한 증거가 없는 메일은 버립니다.
 // 빠지는 결제 메일이 있으면 ③에 단어를 더하세요.
+// ④ 영수증을 보내는 것으로 확인된 서비스의 발신 도메인 — 서비스(KNOWN_SENDER_DOMAINS)가 보낸
+//    결제 낱말이 든 메일만 따로 찾습니다. 양이 적어 쇼핑 주문에 밀리지 않으므로, 1년에 한 번 오는
+//    연간 구독 영수증이 ①~③의 상한 밖으로 밀려 읽히지 않던 것을 막습니다.
+var KNOWN_SENDER_DOMAINS = __SENDER_DOMAINS__;
 var SEARCH_QUERIES = [
   "from:(apple.com OR google.com) (영수증 OR receipt OR 주문)",
+  "from:(" + KNOWN_SENDER_DOMAINS.join(" OR ") + ") (영수증 OR 결제 OR 청구 OR 구독 OR 갱신 OR receipt OR invoice OR subscription OR payment OR renewal)",
   "category:purchases (구독 OR 멤버십 OR 정기결제 OR 자동결제 OR 이용권 OR subscription OR membership OR renewal)",
   "category:purchases",
   "(영수증 OR 결제 OR 청구 OR 정기결제 OR 구독 OR 멤버십 OR receipt OR invoice OR subscription OR payment)",
@@ -533,10 +538,15 @@ var FIRST_SCAN_MAX_MESSAGES = 200;
 var MAX_MESSAGES = 100;
 // 연결 화면에서는 최근 메일만 바로 본다 — 월 결제는 한 달 안에 영수증이 오므로 여기서 거의 다
 // 잡힌다. 400일치 200통을 다 보는 동안 사용자가 빈 화면에서 기다렸다. 나머지(연간 결제)는
-// 화면을 돌려준 뒤 1분 뒤에 한 번 도는 트리거(scanOlder)가 이어서 본다.
+// 화면을 돌려준 뒤 트리거(scanOlder)가 이어서 본다.
 var RECENT_DAYS = 40;
 var RECENT_MAX_MESSAGES = 60;
-var OLDER_MAX_MESSAGES = 160;
+// 나머지는 한 번에 400일치를 최신순으로 읽으면 쇼핑 주문이 상한을 채워 오래된 달의 영수증이
+// 밀리므로, 기간을 나눠 창마다 따로 상한을 둔다. 창 하나를 1분 간격으로 한 번씩 돌린다 —
+// Gmail 사용 한도가 풀리고, 한 번의 실행 시간 제한도 넘지 않는다.
+// OLDER_BOUNDS[i]~OLDER_BOUNDS[i+1]일 전이 i번째 창이다.
+var OLDER_BOUNDS = [RECENT_DAYS, 130, 250, FIRST_SCAN_DAYS];
+var OLDER_WINDOW_MAX_MESSAGES = 80;
 var MAX_BODY_CHARS = 1500;
 // 연결 코드를 바꾸려고 외부 요청 권한이 이미 있어, 메일을 여러 통씩 한꺼번에 받습니다. 사용자가
 // 연결 화면에서 첫 검사가 끝나기를 기다리므로 여기가 가장 중요합니다.
@@ -562,24 +572,75 @@ function doGet(e) {
     return connectPage("연결할 수 없습니다", "연결 코드가 없습니다. SubSlash에서 다시 연결해 주세요.", origin);
   }
   if (String(params.action || "") === "calendar") return calendarPage(origin, String(params.code));
+  return loadingPage(origin, String(params.code));
+}
+
+// 연결과 첫 검사는 15초 넘게 걸린다. doGet이 그동안 붙잡고 있으면 사용자는 빈 화면만 보므로, 먼저
+// 로딩 화면을 돌려주고 화면이 google.script.run으로 두 단계(connectAccount → scanRecent)를 부른다.
+// 단계가 끝날 때마다 문구를 바꾼다 — 진행률은 알 수 없으므로 지어내지 않는다.
+function loadingPage(origin, code) {
+  var args = scriptJson([code, origin, FROM_APP ? "app" : ""]);
+  return HtmlService.createHtmlOutput(
+    "<style>" +
+      "@keyframes subslash-spin{to{transform:rotate(360deg)}}" +
+      ".subslash-spinner{width:28px;height:28px;border:3px solid #e4e4e7;border-top-color:#18181b;" +
+      "border-radius:50%;animation:subslash-spin .8s linear infinite}" +
+      "</style>" +
+      '<div id="root" style="font-family:sans-serif;line-height:1.6;padding:8px">' +
+      '<div class="subslash-spinner" role="status" aria-label="진행 중"></div>' +
+      '<h2 id="step">SubSlash와 연결하는 중</h2>' +
+      "<p>창을 닫지 말고 기다려 주세요. 보통 20초 안에 끝납니다.</p>" +
+      "</div>" +
+      "<script>" +
+      "var ARGS = " + args + ";" +
+      "function show(html) { document.getElementById('root').innerHTML = html; }" +
+      "function fail(error) { show(" + scriptJson(pageHtml("연결하지 못했습니다", "잠시 뒤 SubSlash에서 다시 연결해 주세요.", origin)) + "); }" +
+      "google.script.run.withFailureHandler(fail).withSuccessHandler(function (result) {" +
+      "  if (!result.ok) return show(result.html);" +
+      "  document.getElementById('step').textContent = " + scriptJson("최근 " + RECENT_DAYS + "일 결제 메일을 확인하는 중") + ";" +
+      "  google.script.run.withFailureHandler(fail).withSuccessHandler(show).scanRecent(ARGS[1], ARGS[2]);" +
+      "}).connectAccount(ARGS[0], ARGS[1], ARGS[2]);" +
+      "</script>",
+  )
+    .setTitle("SubSlash Gmail 연결")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1");
+}
+
+// 로딩 화면이 부르는 첫 단계. 코드를 토큰으로 바꾸고 2주 검사를 건다. { ok, html }을 돌려준다.
+function connectAccount(code, origin, client) {
+  FROM_APP = String(client || "") === "app";
+  if (ALLOWED_ORIGINS.indexOf(origin) === -1) {
+    return { ok: false, html: pageHtml("연결할 수 없습니다", "허용되지 않은 주소에서 왔습니다. SubSlash에서 다시 연결해 주세요.", null) };
+  }
+  var properties = PropertiesService.getUserProperties();
+  // 로딩 중에 새로고침하면 이미 쓴 코드로 다시 온다. 그 코드로 이미 연결했으면 다시 바꾸지 않는다.
+  if (properties.getProperty("connectCode") === String(code) && properties.getProperty("token")) {
+    return { ok: true };
+  }
 
   var response = UrlFetchApp.fetch(origin + "/api/gmail/connect/exchange", {
     method: "post",
     contentType: "application/json",
-    payload: JSON.stringify({ code: String(params.code) }),
+    payload: JSON.stringify({ code: String(code) }),
     muteHttpExceptions: true,
   });
   if (response.getResponseCode() !== 200) {
-    return connectPage(
-      "연결하지 못했습니다",
-      responseError(response, "연결 코드가 만료됐거나 이미 쓰였습니다. SubSlash에서 다시 연결해 주세요."),
-      origin,
-    );
+    return {
+      ok: false,
+      html: pageHtml(
+        "연결하지 못했습니다",
+        responseError(response, "연결 코드가 만료됐거나 이미 쓰였습니다. SubSlash에서 다시 연결해 주세요."),
+        origin,
+      ),
+    };
   }
 
-  var properties = PropertiesService.getUserProperties();
   properties.deleteAllProperties();
-  properties.setProperties({ token: JSON.parse(response.getContentText()).token, origin: origin });
+  properties.setProperties({
+    token: JSON.parse(response.getContentText()).token,
+    origin: origin,
+    connectCode: String(code),
+  });
   removeScanTriggers();
   ScriptApp.newTrigger("scan")
     .timeBased()
@@ -587,13 +648,29 @@ function doGet(e) {
     .onWeekDay(ScriptApp.WeekDay.MONDAY)
     .atHour(9)
     .create();
+  return { ok: true };
+}
 
+// 로딩 화면이 부르는 둘째 단계. 최근 메일을 보내고 나머지 1년 치를 트리거에 맡긴다. 완료 화면을 돌려준다.
+function scanRecent(origin, client) {
+  FROM_APP = String(client || "") === "app";
+  var properties = PropertiesService.getUserProperties();
+  if (!properties.getProperty("token") || properties.getProperty("origin") !== origin) {
+    return pageHtml("연결하지 못했습니다", "SubSlash에서 다시 연결해 주세요.", ALLOWED_ORIGINS.indexOf(origin) === -1 ? null : origin);
+  }
   try {
     // 검사 시각은 나머지까지 다 보낸 뒤(scanOlder)에 남긴다. 그 전에 끊기면 2주 검사가 처음부터 본다.
     properties.setProperty("firstScanStartedAt", String(Date.now()));
+    properties.deleteProperty("olderWindow");
     var sent = sendRange(" newer_than:" + RECENT_DAYS + "d", RECENT_MAX_MESSAGES);
+    if (sent < 0) {
+      return pageHtml("연결이 끊겼습니다", "SubSlash에서 연결을 끊었습니다. 다시 연결해 주세요.", origin);
+    }
+    ScriptApp.getProjectTriggers().forEach(function (trigger) {
+      if (trigger.getHandlerFunction() === "scanOlder") ScriptApp.deleteTrigger(trigger);
+    });
     ScriptApp.newTrigger("scanOlder").timeBased().after(60 * 1000).create();
-    return connectPage(
+    return pageHtml(
       "Gmail을 연결했습니다",
       "최근 " + RECENT_DAYS + "일 메일 " + sent + "통을 확인했습니다. SubSlash로 돌아가면 찾은 구독이 " +
         "등록됩니다. 1년 치 나머지(연간 결제)는 몇 분 안에 이어서 확인하고, 앞으로 2주마다 새 결제 " +
@@ -601,7 +678,7 @@ function doGet(e) {
       origin,
     );
   } catch (error) {
-    return connectPage(
+    return pageHtml(
       "Gmail을 연결했습니다",
       "첫 검사는 하지 못해 2주 뒤 검사 때 다시 합니다(" + error.message + ").",
       origin,
@@ -609,8 +686,14 @@ function doGet(e) {
   }
 }
 
-// 연결한 직후 한 번 도는 트리거. 첫 검사의 나머지(최근 며칠 앞 ~ 400일)를 보내고 검사 시각을 남긴다.
-// 서버는 같은 서비스의 더 최근 영수증을 옛 영수증으로 덮지 않으므로 나눠 보내도 된다.
+// <script> 안에 값을 넣는다. '</script>'로 스크립트를 닫지 못하게 '<'를 바꾼다.
+function scriptJson(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
+// 연결한 직후 도는 트리거. 첫 검사의 나머지(40일 앞 ~ 400일)를 창(OLDER_BOUNDS) 하나씩 보내고, 다음
+// 창을 1분 뒤로 건다. 마지막 창까지 보낸 뒤에 검사 시각을 남긴다. 서버는 같은 서비스의 더 최근
+// 영수증을 옛 영수증으로 덮지 않으므로 나눠 보내도 된다.
 function scanOlder() {
   ScriptApp.getProjectTriggers().forEach(function (trigger) {
     if (trigger.getHandlerFunction() === "scanOlder") ScriptApp.deleteTrigger(trigger);
@@ -618,13 +701,21 @@ function scanOlder() {
   var properties = PropertiesService.getUserProperties();
   var startedAt = Number(properties.getProperty("firstScanStartedAt") || 0);
   if (!startedAt || properties.getProperty("lastScanAt")) return;
+  var index = Number(properties.getProperty("olderWindow") || 0);
+  if (!(index >= 0 && index < OLDER_BOUNDS.length - 1)) index = 0;
   var sent = sendRange(
-    " newer_than:" + FIRST_SCAN_DAYS + "d older_than:" + RECENT_DAYS + "d",
-    OLDER_MAX_MESSAGES,
+    " newer_than:" + OLDER_BOUNDS[index + 1] + "d older_than:" + OLDER_BOUNDS[index] + "d",
+    OLDER_WINDOW_MAX_MESSAGES,
   );
   if (sent < 0) return;
+  if (index + 1 < OLDER_BOUNDS.length - 1) {
+    properties.setProperty("olderWindow", String(index + 1));
+    ScriptApp.newTrigger("scanOlder").timeBased().after(60 * 1000).create();
+    return;
+  }
   properties.setProperty("lastScanAt", String(startedAt));
   properties.deleteProperty("firstScanStartedAt");
+  properties.deleteProperty("olderWindow");
 }
 
 // 기간 조건(range)을 붙여 찾은 메일을 SubSlash로 보낸다. 보낸 메일 수를 돌려주고, 연결이 끊겼으면
@@ -675,6 +766,7 @@ function scan() {
   if (sent < 0) return 0;
   properties.setProperty("lastScanAt", String(startedAt));
   properties.deleteProperty("firstScanStartedAt");
+  properties.deleteProperty("olderWindow");
   return sent;
 }
 
@@ -805,6 +897,17 @@ function clearBillingEvents(calendarId) {
 
 // backPath는 '돌아가기'가 열 SubSlash 화면이다. 캘린더는 버튼이 있던 '내 구독'으로 돌려보낸다.
 function connectPage(title, message, origin, backPath) {
+  return HtmlService.createHtmlOutput(
+    '<div style="font-family:sans-serif;line-height:1.6;padding:8px">' +
+      pageHtml(title, message, origin, backPath) +
+      "</div>",
+  )
+    .setTitle("SubSlash Gmail 연결")
+    .addMetaTag("viewport", "width=device-width, initial-scale=1");
+}
+
+// 결과 화면의 내용. 로딩 화면은 이 HTML로 자기 내용을 바꾼다.
+function pageHtml(title, message, origin, backPath) {
   var back = FROM_APP
     ? '<p style="font-weight:700">이 창을 닫으면 SubSlash 앱으로 돌아갑니다.</p>'
     : origin
@@ -812,13 +915,7 @@ function connectPage(title, message, origin, backPath) {
         'style="display:inline-block;padding:12px 20px;border-radius:10px;background:#18181b;color:#fff;text-decoration:none;font-weight:700">' +
         "SubSlash로 돌아가기</a></p>"
       : "";
-  return HtmlService.createHtmlOutput(
-    '<div style="font-family:sans-serif;line-height:1.6;padding:8px">' +
-      "<h2>" + escapeHtml(title) + "</h2><p>" + escapeHtml(message) + "</p>" + back +
-      "</div>",
-  )
-    .setTitle("SubSlash Gmail 연결")
-    .addMetaTag("viewport", "width=device-width, initial-scale=1");
+  return "<h2>" + escapeHtml(title) + "</h2><p>" + escapeHtml(message) + "</p>" + back;
 }
 
 `;
@@ -828,7 +925,12 @@ function connectPage(title, message, origin, backPath) {
  * (끝의 `/` 없이). `pnpm --filter @subslash/web gmail:web-app`이 파일로 써 준다.
  */
 export function gmailConnectWebApp(origins: string[]): string {
-  return CONNECT_WEB_APP.replace("__ORIGINS__", () => JSON.stringify(origins)) + MAIL_HELPERS;
+  return (
+    CONNECT_WEB_APP.replace("__ORIGINS__", () => JSON.stringify(origins)).replace(
+      "__SENDER_DOMAINS__",
+      () => JSON.stringify(KNOWN_RECEIPT_SENDER_DOMAINS),
+    ) + MAIL_HELPERS
+  );
 }
 
 /** 사용자가 Apps Script 편집기에 붙여 넣을 코드. 가져오기 주소는 지금 보고 있는 SubSlash다. */
