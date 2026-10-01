@@ -187,9 +187,15 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 필요하다 — 그래서 복사 방식을 없애지 않는다. 원클릭은 연결 토큰을 주소에 싣지 않는다: 주소에는 10분짜리
 서명 코드(`gmail-connect`, 연결 지문 포함 → 한 번만 교환)만 싣고, 웹 앱이 `/api/gmail/connect/exchange`로
 토큰을 받아 사용자별 저장소(UserProperties)에 둔다. 웹 앱 코드는 `lib/gmail-import.ts` 한 곳에만 있고
-`pnpm --filter @subslash/web gmail:web-app -- --origins …`가 파일로 쓴다. 연결 화면(`doGet`)은 최근 40일 메일만 검사해
-바로 돌려주고, 나머지 1년 치는 1분 뒤 한 번 도는 트리거(`scanOlder`)가 이어서 보낸다 — 400일치 200통을 다 보는
-동안 사용자가 빈 화면에서 기다렸다. 검사 시각(`lastScanAt`)은 나머지까지 보낸 뒤에 남겨, 중간에 끊기면 2주
+`pnpm --filter @subslash/web gmail:web-app -- --origins …`가 파일로 쓴다. 연결 화면(`doGet`)은 로딩 화면부터 돌려주고, 그 화면이 `google.script.run`으로
+`connectAccount`(코드 교환·트리거) → `scanRecent`(최근 40일 검사)를 차례로 부른 뒤 결과로 바뀐다 — doGet에서 다 하면
+15초 넘게 빈 화면이었다. 로딩 중 새로고침은 같은 코드(`connectCode`)면 다시 교환하지 않는다. 최근 40일만 검사해
+바로 돌려주고, 나머지 1년 치는 트리거(`scanOlder`)가 기간 창(`OLDER_BOUNDS`, 40~~130·130~~250·250~400일)마다 1분 간격으로 이어서
+보낸다 — 400일치 200통을 다 보는 동안 사용자가 빈 화면에서 기다렸고, 400일치를 한 번에 최신순으로 읽으면 쇼핑
+주문이 상한을 채워 3월의 연간 구독 영수증이 밀렸다. 영수증 발신 도메인이 확인된 서비스(`KNOWN_RECEIPT_SENDER_DOMAINS`,
+parser의 `senderDomains`)는 따로 검색해 상한에 밀리지 않게 한다. `/import`는 이 탭에서 원클릭 연결을 시작한 뒤
+몇 분 동안 '1년 치 나머지를 이어서 확인 중'을 알리고 찾은 구독을 다시 받는다(`GmailOlderScanNotice`) — 복사 방식은
+400일치를 한 번에 보내므로 띄우지 않는다. 검사 시각(`lastScanAt`)은 나머지까지 보낸 뒤에 남겨, 중간에 끊기면 2주
 검사가 처음부터 본다. 서버는 같은 서비스의 더 최근 영수증을 옛 영수증으로 덮지 않는다(`setWhere`). 코드를 고치면 운영자가 웹 앱을
 다시 배포해야 반영된다. 허용할 SubSlash 주소(`ALLOWED_ORIGINS`)와 `GMAIL_CONNECT_WEB_APP_URL`(두 Vercel
 프로젝트)이 서로 맞아야 한다.
