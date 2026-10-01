@@ -14,6 +14,7 @@ import {
 import { cn } from "@lib/utils";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { IS_APP_BUILD } from "@lib/platform";
+import { AppDownloadPending } from "./Landing";
 
 /**
  * 체험용으로 고를 수 있는 서비스. 요금은 여기 적지 않고 서비스 목록에서 읽는다. 요금제가
@@ -122,6 +123,9 @@ export function UnitCostHero({ onStart, onDemo }: UnitCostHeroProps) {
             </div>
 
             <p className="mt-3 text-xs text-muted-foreground">가입 없이 이 브라우저에 저장돼요.</p>
+
+            {/* 앱은 비공개 테스트 중이라 받을 곳이 없다. 링크 없이 '준비 중'으로만 알린다. */}
+            <AppDownloadPending className="mt-4 px-3 py-1.5 text-xs" />
           </div>
         )}
 
