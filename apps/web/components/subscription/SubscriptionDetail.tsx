@@ -12,10 +12,12 @@ import {
   formatDday,
   getBilledAmount,
   getCancelAndroidApp,
+  getCancelRoutes,
   getCancelUrlKind,
   getDaysUntilBillingFor,
   getDaysUntilTrialEnd,
   describeCheckIn,
+  paymentCancelLabel,
   type UsageLog,
 } from "@subslash/shared";
 import { SubForm } from "./SubForm";
@@ -364,46 +366,47 @@ export function SubscriptionDetail({
           })()}
         </div>
 
-        {/* Action Buttons based on Payment Method & Service */}
+        {/*
+          해지하러 갈 곳 — 결제수단의 정기결제 관리가 먼저다. 해지 화면으로 바로 가는 링크만 빨갛게
+          칠한다. 첫 화면으로 가는 링크를 빨갛게 칠하면 그쪽이 해지 버튼처럼 보인다.
+        */}
         <div className="space-y-2">
-          {(() => {
+          {getCancelRoutes(sub).map((route) => {
             const pm = PAYMENT_METHOD_OPTIONS.find((p) => p.value === sub.paymentMethod);
             return (
-              <>
-                {pm?.directCancelUrl && (
-                  <Button
-                    size="lg"
-                    className={`${WRAPPING_BUTTON} min-h-12 bg-primary text-primary-foreground hover:opacity-90 font-bold rounded-xl shadow-md`}
-                    onClick={() => openExternal(pm.directCancelUrl)}
-                  >
-                    {pm.label} 전용 정기결제 관리 열기 (새 창)
-                  </Button>
+              <div key={route.source} className="space-y-1">
+                <Button
+                  size="lg"
+                  variant={route.kind === "direct" ? "destructive" : "outline"}
+                  className={cn(
+                    WRAPPING_BUTTON,
+                    "min-h-12 font-bold rounded-xl",
+                    route.kind === "direct" && "shadow-md",
+                  )}
+                  onClick={() =>
+                    route.source === "payment"
+                      ? openExternal(route.url)
+                      : openExternal(route.url, { androidApp: getCancelAndroidApp(sub) })
+                  }
+                >
+                  {route.source === "payment" && pm
+                    ? `${paymentCancelLabel(pm)} (새 창)`
+                    : cancelUrlKind === "direct"
+                      ? `${sub.name} 해지 페이지 바로가기 (새 창)`
+                      : `${sub.name} 열기 (새 창)`}
+                </Button>
+                {route.kind !== "direct" && (
+                  <p className="text-[11px] text-muted-foreground text-center">
+                    {route.source === "payment"
+                      ? "정기결제 목록이 아니라 첫 화면으로 가요. 위 결제 수단 안내대로 해지 메뉴를 찾아가세요."
+                      : route.kind === "entry"
+                        ? "해지 화면이 아니라 첫 화면·계정 화면으로 가요. 아래 안내대로 해지 메뉴를 찾아가세요."
+                        : "직접 입력한 주소예요. 어디로 가는지는 확인하지 않았어요."}
+                  </p>
                 )}
-                {sub.cancelUrl && (
-                  <>
-                    <Button
-                      size="lg"
-                      className={`${WRAPPING_BUTTON} min-h-12 bg-destructive text-destructive-foreground hover:bg-destructive/90 font-bold rounded-xl shadow-md`}
-                      onClick={() =>
-                        openExternal(sub.cancelUrl, { androidApp: getCancelAndroidApp(sub) })
-                      }
-                    >
-                      {cancelUrlKind === "direct"
-                        ? `${sub.name} 해지 페이지 바로가기 (새 창)`
-                        : `${sub.name} 열기 (새 창)`}
-                    </Button>
-                    {cancelUrlKind !== "direct" && (
-                      <p className="text-[11px] text-muted-foreground text-center">
-                        {cancelUrlKind === "entry"
-                          ? "해지 화면이 아니라 첫 화면·계정 화면으로 가요. 아래 안내대로 해지 메뉴를 찾아가세요."
-                          : "직접 입력한 주소예요. 어디로 가는지는 확인하지 않았어요."}
-                      </p>
-                    )}
-                  </>
-                )}
-              </>
+              </div>
             );
-          })()}
+          })}
         </div>
 
         {/* 가이드 모달 진입점 — 링크가 죽었을 때의 폴백까지 한 화면에 모아준다. */}

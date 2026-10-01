@@ -29,7 +29,7 @@ function seed(): string {
           name: LONG_PRESET,
           category: "ai",
           cancelUrl: "https://play.google.com/store/account/subscriptions",
-          // 결제 수단 버튼 문구도 길다("Apple App Store 인앱결제 전용 정기결제 관리 열기").
+          // 결제 수단 이름도 길다("Apple App Store 인앱결제").
           paymentMethod: "apple_iap",
           linkedAccountName: "구글 (averyveryverylongemailaddressforsubscriptions@gmail.com)",
         },

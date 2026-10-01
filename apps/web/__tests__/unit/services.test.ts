@@ -4,10 +4,65 @@ import {
   currentCancelUrl,
   findPresetForSubscription,
   getAccountFallbackUrl,
+  getCancelRoutes,
   getCancelUrlKind,
   getServiceHomeUrl,
+  PAYMENT_METHOD_OPTIONS,
   parseServiceUrl,
+  paymentCancelLabel,
 } from "@subslash/shared";
+
+describe("해지하러 갈 곳(getCancelRoutes)", () => {
+  const preset = (id: string) => POPULAR_SERVICES.find((service) => service.id === id)!;
+
+  it("구글 플레이로 결제한 구글 원은 Play 정기결제가 먼저이고, 그것만 해지 화면이다", () => {
+    // 예전에는 첫 화면으로 가는 '구글 원 열기'가 빨간 버튼으로 위에 있어 해지 버튼처럼 보였다.
+    const routes = getCancelRoutes({
+      paymentMethod: "google_play",
+      cancelUrl: preset("google-one").cancelUrl,
+    });
+    expect(routes.map((route) => [route.source, route.kind])).toEqual([
+      ["payment", "direct"],
+      ["service", "entry"],
+    ]);
+  });
+
+  it("앱스토어로 결제한 굿노트도 같다", () => {
+    const routes = getCancelRoutes({
+      paymentMethod: "apple_iap",
+      cancelUrl: preset("goodnotes").cancelUrl,
+    });
+    expect(routes.map((route) => [route.source, route.kind])).toEqual([
+      ["payment", "direct"],
+      ["service", "entry"],
+    ]);
+  });
+
+  it("간편결제 첫 화면은 해지 화면이라고 하지 않는다", () => {
+    for (const paymentMethod of ["kakaopay", "naverpay"]) {
+      expect(getCancelRoutes({ paymentMethod })).toEqual([
+        expect.objectContaining({ source: "payment", kind: "entry" }),
+      ]);
+    }
+  });
+
+  it("첫 화면으로 가는 결제수단 버튼은 '정기결제 관리'라고 부르지 않는다", () => {
+    const label = (value: string) =>
+      paymentCancelLabel(PAYMENT_METHOD_OPTIONS.find((option) => option.value === value)!);
+    expect(label("kakaopay")).toBe("카카오페이 열기");
+    expect(label("naverpay")).toBe("네이버페이 열기");
+    expect(label("google_play")).toBe("Google Play 정기결제 관리 열기");
+    expect(label("apple_iap")).toBe("App Store 정기결제 관리 열기");
+  });
+
+  it("카드로 결제했으면 서비스 주소 하나뿐이고, 성격은 서비스 목록을 따른다", () => {
+    const direct = POPULAR_SERVICES.find((service) => service.cancelUrlKind === "direct")!;
+    expect(getCancelRoutes({ paymentMethod: "credit_card", cancelUrl: direct.cancelUrl })).toEqual([
+      { source: "service", url: direct.cancelUrl, kind: getCancelUrlKind(direct.cancelUrl) },
+    ]);
+    expect(getCancelRoutes({ paymentMethod: "credit_card" })).toEqual([]);
+  });
+});
 
 describe("직접 입력한 서비스 주소", () => {
   it("도메인만 적어도 https 링크로 만든다", () => {
