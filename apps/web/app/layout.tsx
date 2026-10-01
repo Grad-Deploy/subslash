@@ -107,6 +107,12 @@ export default function RootLayout({
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <BrandWordmark className="text-xs" />
                 <Link
+                  href="/help"
+                  className="underline-offset-4 hover:text-foreground hover:underline"
+                >
+                  도움말 · 문의
+                </Link>
+                <Link
                   href="/privacy"
                   className="underline-offset-4 hover:text-foreground hover:underline"
                 >
