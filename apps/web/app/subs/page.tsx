@@ -32,7 +32,6 @@ import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
-import { SettingsList } from "../../components/settings/SettingsList";
 import { IS_APP_BUILD } from "@lib/platform";
 import { useLocalReminderSettings } from "@hooks/useLocalReminders";
 import { ReminderPromptSheet } from "../../components/app-start/ReminderPromptSheet";
@@ -65,12 +64,9 @@ export default function SubscriptionsPage() {
     killSubscription,
     reviveSubscription,
     deleteSubscription,
-    clearSubscriptions,
-    accountSync,
     checkIn,
     getActiveSubscriptions,
     getKilledSubscriptions,
-    demo,
   } = useStore();
   const rate = useExchangeRate();
   const router = useRouter();
@@ -101,7 +97,6 @@ export default function SubscriptionsPage() {
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
     type: "revive" | "delete";
     sub: Subscription;
@@ -136,10 +131,6 @@ export default function SubscriptionsPage() {
 
   const activeSubs = getActiveSubscriptions();
   const killedSubs = getKilledSubscriptions();
-  const syncedWarning =
-    accountSync.enabled && accountSync.baseSavedAt
-      ? "\n자동 동기화가 켜져 있어 다른 기기의 기록도 지워져요."
-      : "";
 
   const filteredActiveRaw =
     filterCategory === "all" ? activeSubs : activeSubs.filter((s) => s.category === filterCategory);
@@ -606,11 +597,7 @@ export default function SubscriptionsPage() {
         </aside>
       </div>
 
-      {/* 알림·연동·데이터를 한 줄씩 묶은 목록(웹·앱). 누르면 카드를 시트로 연다. */}
-      {/* 앱은 이 설정 목록을 설정 탭으로 옮겼다. */}
-      {!IS_APP_BUILD && (
-        <SettingsList onMessage={showToast} onClearAll={() => setConfirmClearAll(true)} />
-      )}
+      {/* 연동·측정·데이터 설정은 설정 화면(/settings)에 있다 — 웹은 상단 바, 앱은 하단 설정 탭에서 연다. */}
 
       {/* Floating Action Button for Mobile — 앱은 추가 방법을 고르는 AppAddButton */}
       {AppAddButton ? (
@@ -748,32 +735,6 @@ export default function SubscriptionsPage() {
         isOpen={!!guideTarget}
         onClose={() => setGuideTarget(null)}
         onConfirmKilled={handleConfirmKilled}
-      />
-
-      {/* 자동 동기화 중이면 빈 기록이 올라가 로그인한 다른 기기에서도 지워진다. 알고 누르게 한다. */}
-      {/* Confirmation Modal */}
-      {/* 활성 탭이 비어 있어도 해지한 구독이 남아 있을 수 있다. 무엇이 지워지는지 나눠 적는다. */}
-      <ConfirmDialog
-        isOpen={confirmClearAll}
-        onClose={() => setConfirmClearAll(false)}
-        onConfirm={() => {
-          // 체험 중이면 샘플만 치우고 체험을 끝낸다(store의 clearSubscriptions).
-          const wasDemo = Boolean(demo);
-          clearSubscriptions();
-          showToast(
-            wasDemo ? "샘플 체험을 끝냈어요. 내 구독은 그대로예요." : "구독 기록을 모두 지웠어요",
-          );
-        }}
-        title="전체 초기화"
-        description={
-          demo
-            ? `샘플 ${subscriptions.length}건을 치우고 체험을 끝내요.\n내 구독은 그대로예요.`
-            : killedSubs.length > 0
-              ? `구독 ${subscriptions.length}건(구독 중 ${activeSubs.length}, 해지 ${killedSubs.length})을 모두 지울까요?\n절약 기록도 지워져요.${syncedWarning}`
-              : `구독 ${subscriptions.length}건을 모두 지울까요?${syncedWarning}`
-        }
-        confirmText="모두 삭제"
-        variant="destructive"
       />
 
       {confirmAction && (
