@@ -32,7 +32,12 @@ const run = (cmd, args, cwd = root) =>
 const status = run("git", ["status", "--porcelain", "--untracked-files=all"]);
 const changed = status.stdout
   .split("\n")
-  .map((line) => line.slice(3).trim().replace(/^"|"$/g, ""))
+  .filter((line) => line.length > 3)
+  // 지운 파일은 검사할 것이 없다. 경로로 넘기면 vitest가 없는 파일을 찾는다.
+  .filter((line) => !line.slice(0, 2).includes("D"))
+  // 이름을 바꾼 파일은 'old -> new'로 나온다. 그대로 넘기면 Windows 셸이 '>'를 출력 돌리기로 읽어
+  // 없는 경로에 쓰려다 실패한다. 새 이름만 쓴다.
+  .map((line) => line.slice(3).split(" -> ").pop().trim().replace(/^"|"$/g, ""))
   .filter((file) => /\.(ts|tsx)$/.test(file) && !/(^|\/)(out|\.next|node_modules)\//.test(file));
 if (changed.length === 0) process.exit(0);
 
