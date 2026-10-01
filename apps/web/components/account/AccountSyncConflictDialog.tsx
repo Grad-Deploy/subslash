@@ -18,7 +18,7 @@ interface AccountSyncConflictDialogProps {
 }
 
 function describe(counts: RecordCounts): string {
-  return `구독 ${counts.subscriptionCount}개 (해지 ${counts.killedCount}개), 체크인 ${counts.usageLogCount}건, 연동 계정 ${counts.linkedAccountCount}개`;
+  return `구독 ${counts.subscriptionCount}개 (해지 ${counts.killedCount}개), 체크인 ${counts.usageLogCount}건`;
 }
 
 function formatSavedAt(iso: string): string {

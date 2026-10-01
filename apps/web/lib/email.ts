@@ -1,4 +1,3 @@
-import { formatCurrency, type Currency } from "@subslash/shared";
 import { logError } from "./log";
 
 /**
@@ -6,7 +5,7 @@ import { logError } from "./log";
  * dependency in a serverless function that sends two kinds of mail.
  *
  * Without RESEND_API_KEY nothing is sent and the message is logged instead, so
- * the whole reminder flow can be exercised locally.
+ * the whole flow can be exercised locally.
  */
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
@@ -119,20 +118,6 @@ ${body}
 <p style="margin-top:28px;font-size:11px;color:#a1a1aa;">SubSlash — 구독, 끊을 용기</p>
 </div></body></html>`;
 
-export function verificationEmail(verifyUrl: string) {
-  return {
-    subject: "[SubSlash] 결제 알림 수신을 확인해주세요",
-    html: shell(`
-<h1 style="margin:0 0 12px;font-size:20px;color:#18181b;">결제 알림을 켤까요?</h1>
-<p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#52525b;">
-아래 버튼을 누르면 결제일이 다가올 때 <strong>딱 한 가지 질문</strong>을 이메일로 보내드립니다.
-본인이 신청한 게 아니라면 이 메일을 무시하세요 — 확인 전에는 아무것도 발송되지 않습니다.
-</p>
-<a href="${verifyUrl}" style="display:inline-block;background:#18181b;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:700;font-size:14px;">알림 수신 확인하기</a>`),
-    text: `SubSlash 결제 알림 수신 확인\n\n아래 링크를 열면 결제일 알림이 시작됩니다.\n${verifyUrl}\n\n본인이 신청하지 않았다면 이 메일을 무시하세요.`,
-  };
-}
-
 /**
  * 가입한 이메일이 본인 것인지 묻는 메일.
  *
@@ -200,66 +185,5 @@ export function passwordResetEmail(params: {
       `${resetUrl}\n\n` +
       `요청하지 않았다면 이 메일을 무시하세요. 비밀번호는 바뀌지 않습니다. ` +
       `링크는 ${validMinutes}분 동안, 한 번만 쓸 수 있습니다.`,
-  };
-}
-
-export interface ReminderItem {
-  clientId: string;
-  name: string;
-  amount: number;
-  currency: Currency;
-  billingDate: string;
-  daysLeft: number;
-}
-
-export function reminderEmail(items: ReminderItem[], unsubscribeUrl: string) {
-  const base = appUrl();
-  const counts = [0, 1, 3, 5, 10];
-
-  const blocks = items
-    .map((item) => {
-      const buttons = counts
-        .map(
-          (n) =>
-            `<a href="${base}/check-in?sub=${encodeURIComponent(item.clientId)}&count=${n}" style="display:inline-block;margin:0 6px 6px 0;padding:9px 15px;border:1px solid #d4d4d8;border-radius:9px;color:#18181b;text-decoration:none;font-size:13px;font-weight:600;">${n}회</a>`,
-        )
-        .join("");
-
-      return `<div style="margin:0 0 22px;padding:18px;border:1px solid #e4e4e7;border-radius:12px;">
-<p style="margin:0 0 4px;font-size:15px;font-weight:700;color:#18181b;">${escapeHtml(item.name)}</p>
-<p style="margin:0 0 14px;font-size:13px;color:#71717a;">${item.billingDate}에 ${formatCurrency(item.amount, item.currency)}이 결제됩니다 (D-${item.daysLeft})</p>
-<p style="margin:0 0 10px;font-size:13px;color:#3f3f46;">지난 30일 동안 몇 번 이용하셨나요?</p>
-${buttons}
-</div>`;
-    })
-    .join("");
-
-  const title =
-    items.length === 1
-      ? `[SubSlash] ${oneLine(items[0].name)} 결제 D-${items[0].daysLeft} — 몇 번 쓰셨나요?`
-      : `[SubSlash] 결제 임박 구독 ${items.length}건 — 몇 번 쓰셨나요?`;
-
-  const textBody = items
-    .map(
-      (item) =>
-        `${item.name} — ${item.billingDate} ${formatCurrency(item.amount, item.currency)} (D-${item.daysLeft})\n` +
-        counts
-          .map(
-            (n) => `  ${n}회: ${base}/check-in?sub=${encodeURIComponent(item.clientId)}&count=${n}`,
-          )
-          .join("\n"),
-    )
-    .join("\n\n");
-
-  return {
-    subject: title,
-    html: shell(`
-<h1 style="margin:0 0 6px;font-size:20px;color:#18181b;">결제 전 마지막 점검</h1>
-<p style="margin:0 0 20px;font-size:13px;color:#71717a;">버튼을 누르면 1회당 실제 사용 단가가 계산됩니다.</p>
-${blocks}
-<p style="margin:20px 0 0;font-size:11px;color:#a1a1aa;">
-알림이 필요 없다면 <a href="${unsubscribeUrl}" style="color:#71717a;">수신 거부</a>할 수 있습니다.
-</p>`),
-    text: `결제 전 마지막 점검\n\n${textBody}\n\n수신 거부: ${unsubscribeUrl}`,
   };
 }

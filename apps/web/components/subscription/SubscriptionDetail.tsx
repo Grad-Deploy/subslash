@@ -316,10 +316,10 @@ export function SubscriptionDetail({
           <h2 className="text-lg font-bold">해지 경로 안내</h2>
         </div>
 
-        {/* Linked Account Card */}
+        {/* 가입한 계정 — 정보 수정의 '가입한 계정' 칸에 적은 것 */}
         <div className="p-4 bg-card border rounded-2xl space-y-2 text-xs">
           <div className="font-bold flex items-center justify-between text-foreground">
-            <span>로그인 연동 계정</span>
+            <span>가입한 계정</span>
             {sub.linkedAccountName && (
               <button
                 onClick={() => {

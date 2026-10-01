@@ -1,7 +1,12 @@
 import { test, expect, type Page } from "@playwright/test";
 
-/** 로그인 없이 결제 알림을 켜 둔(또는 확인 메일을 기다리는) 브라우저. */
-function notifyOnly(verified: boolean): string {
+/**
+ * 결제 알림 메일과 연동 계정 관리를 걷어낸 뒤의 계정 메뉴와 등록 창.
+ *
+ * 알림을 켜 두었던 브라우저에는 예전 알림 설정(`notify`)이 저장소에 남아 있다. 그래도 알림 아이콘이
+ * 다시 나타나면 끌 수도 바꿀 수도 없는 메뉴가 생긴다.
+ */
+function oldNotifyBrowser(): string {
   return JSON.stringify({
     state: {
       subscriptions: [],
@@ -9,8 +14,8 @@ function notifyOnly(verified: boolean): string {
       accounts: [],
       notify: {
         email: "me@gmail.com",
-        syncToken: null,
-        verified,
+        syncToken: "old-token",
+        verified: true,
         reminderDays: 3,
         lastSyncedAt: null,
         calendarUrl: null,
@@ -51,52 +56,40 @@ async function openAddFormDetails(page: Page) {
   return dialog;
 }
 
-test.describe("결제 알림·연동 계정은 로그인했을 때만 (E2E)", () => {
-  test.skip(({ isMobile }) => isMobile, "상단 바의 알림 아이콘은 sm 이상에서 보인다");
-
-  test("로그인하지 않으면 알림 아이콘·연동 계정 메뉴·등록 창의 계정 칸이 없다", async ({
+test.describe("결제 알림 메일·연동 계정 관리를 걷어낸 뒤 (E2E)", () => {
+  test("로그인하지 않아도 등록 창에 '가입한 계정' 칸이 있고, 알림·연동 계정 메뉴는 없다", async ({
     page,
   }) => {
     await page.goto("/dashboard");
     await page.getByRole("button", { name: "계정 메뉴" }).click({ timeout: 30_000 });
     const menu = page.getByRole("menu", { name: "계정 메뉴" });
     await expect(menu.getByRole("menuitem", { name: /로그인/ })).toBeVisible();
-    await expect(menu.getByText("로그인하면 결제 알림과 연동 계정을 쓸 수 있어요.")).toBeVisible();
     await expect(menu.getByRole("menuitem", { name: /연동 계정 관리/ })).toHaveCount(0);
+    await expect(menu.getByRole("menuitem", { name: /결제 알림/ })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /결제 알림/ })).toHaveCount(0);
 
     const dialog = await openAddFormDetails(page);
-    await expect(dialog.getByLabel("결제 수단")).toBeVisible();
-    await expect(dialog.getByLabel("사용/로그인 계정")).toHaveCount(0);
+    await expect(dialog.getByLabel("가입한 계정")).toBeVisible();
   });
 
-  test("로그인 없이 이미 알림을 켠 브라우저에는 알림 설정을 계속 보여준다", async ({ page }) => {
-    // 숨기면 끄거나 바꿀 곳이 사라진다.
+  test("로그인해도 알림 아이콘·연동 계정 메뉴는 없다", async ({ page }) => {
+    await mockLoggedIn(page);
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: /계정 메뉴/ }).click({ timeout: 30_000 });
+    const menu = page.getByRole("menu", { name: "계정 메뉴" });
+    await expect(menu.getByRole("menuitem", { name: /내 정보/ })).toBeVisible();
+    await expect(menu.getByRole("menuitem", { name: /연동 계정 관리/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /결제 알림/ })).toHaveCount(0);
+  });
+
+  test("예전에 알림을 켜 둔 브라우저에도 알림 아이콘이 다시 나타나지 않는다", async ({ page }) => {
     await page.addInitScript((value) => {
       if (!localStorage.getItem("subslash-storage")) {
         localStorage.setItem("subslash-storage", value);
       }
-    }, notifyOnly(true));
+    }, oldNotifyBrowser());
     await page.goto("/dashboard");
-    await expect(page.getByRole("button", { name: "결제 알림 (켜짐)" })).toBeVisible({
-      timeout: 30_000,
-    });
-  });
-
-  test("로그인하면 알림 아이콘·연동 계정 메뉴·등록 창의 계정 칸이 보인다", async ({ page }) => {
-    await mockLoggedIn(page);
-    await page.goto("/dashboard");
-    await expect(page.getByRole("button", { name: "결제 알림 (꺼짐)" })).toBeVisible({
-      timeout: 30_000,
-    });
-    await page.getByRole("button", { name: /계정 메뉴/ }).click();
-    await expect(
-      page
-        .getByRole("menu", { name: "계정 메뉴" })
-        .getByRole("menuitem", { name: /연동 계정 관리/ }),
-    ).toBeVisible();
-
-    const dialog = await openAddFormDetails(page);
-    await expect(dialog.getByLabel("사용/로그인 계정")).toBeVisible();
+    await expect(page.getByRole("button", { name: "계정 메뉴" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("button", { name: /결제 알림/ })).toHaveCount(0);
   });
 });

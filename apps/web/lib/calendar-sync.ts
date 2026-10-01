@@ -17,9 +17,6 @@ import { subscriptionDetailHref } from "./routes";
  * SubSlash는 Google 캘린더 권한을 받지 않는다. 버튼을 누르면 브라우저가 지금 구독의 결제일을
  * 계획으로 맡기고, 사용자의 권한으로 도는 SubSlash Apps Script 웹 앱이 그 계획을 받아 **자기**
  * 캘린더에 쓴다. 서버는 그 사이에서 계획을 10분 동안만 들고 있다 — 받아 가면 곧바로 지운다.
- *
- * 캘린더 피드(`/api/calendar/[token]`)와는 다른 길이다. 피드는 캘린더 앱이 주소를 다시 읽을 때까지
- * 기다려야 하고 알림도 캘린더 설정을 따르지만, 이쪽은 누른 그 자리에서 진짜 일정으로 들어간다.
  */
 
 /** 계획을 받아 갈 수 있는 시간. Google 권한 화면을 읽고 허용하기에 넉넉하다(연결 코드와 같다). */
@@ -41,11 +38,11 @@ export interface CalendarPlanEntry extends CalendarEntry {
 
 export interface CalendarPlan {
   entries: CalendarPlanEntry[];
-  /** 며칠 전에 알릴지. 알림 설정의 값을 그대로 쓴다. 0이면 결제일 아침에 알린다. */
+  /** 며칠 전에 알릴지. 등록 화면에서 고른다. 0이면 결제일 아침에 알린다. */
   reminderDays: number;
 }
 
-/** 웹 앱이 받아 캘린더에 쓰는 일정 하나. RRULE은 캘린더 피드와 같은 규칙을 쓴다. */
+/** 웹 앱이 받아 캘린더에 쓰는 일정 하나. RRULE은 `lib/ics`의 규칙을 쓴다. */
 export interface CalendarSyncEvent {
   uid: string;
   summary: string;
