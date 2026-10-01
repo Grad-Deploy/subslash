@@ -5,15 +5,10 @@ import { useIsClient } from "@hooks/useIsClient";
 import { useRouter } from "next/navigation";
 import { useStore } from "../lib/store";
 import { IS_APP_BUILD } from "@lib/platform";
-import {
-  POPULAR_SERVICES,
-  ServicePreset,
-  SubscriptionFormData,
-  describePresetPrice,
-  presetFormData,
-} from "@subslash/shared";
+import { POPULAR_SERVICES, SubscriptionFormData } from "@subslash/shared";
 import { SubForm } from "../components/subscription/SubForm";
 import { UnitCostHero } from "../components/home/UnitCostHero";
+import { LandingFeatures, LandingFinalCta, LandingTrust } from "../components/home/Landing";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +17,6 @@ import {
   DialogDescription,
 } from "../components/ui/dialog";
 import { Button } from "../components/ui/button";
-import { ServiceLogo } from "@components/subscription/ServiceLogo";
 
 /**
  * 처음 온 사람이 "여기가 뭐 하는 곳인지" 알 수 있게, 앱이 실제로 하는 일을
@@ -38,9 +32,6 @@ export default function Home() {
   const router = useRouter();
   const { subscriptions, addSubscription, startDemo } = useStore();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState<Partial<SubscriptionFormData> | undefined>(
-    undefined,
-  );
   const mounted = useIsClient();
   const activeCount = subscriptions.filter((sub) => sub.status === "active").length;
   const killedCount = subscriptions.filter((sub) => sub.status === "killed").length;
@@ -51,15 +42,7 @@ export default function Home() {
     if (IS_APP_BUILD) router.replace("/dashboard");
   }, [router]);
 
-  const handleStart = () => {
-    setSelectedPreset(undefined);
-    setIsFormOpen(true);
-  };
-
-  const handlePresetClick = (preset: ServicePreset) => {
-    setSelectedPreset(presetFormData(preset));
-    setIsFormOpen(true);
-  };
+  const handleStart = () => setIsFormOpen(true);
 
   const handleFormSubmit = (data: SubscriptionFormData) => {
     addSubscription(data);
@@ -115,32 +98,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* Quick Add Presets */}
-      <section className="w-full space-y-3" aria-labelledby="quick-add">
-        <h2
-          id="quick-add"
-          className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-        >
-          바로 등록
-        </h2>
-        <div className="flex flex-wrap gap-2">
-          {POPULAR_SERVICES.slice(0, 8).map((preset) => (
-            <button
-              key={preset.id}
-              onClick={() => handlePresetClick(preset)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-card border text-sm font-medium hover:bg-muted hover:border-primary/50 transition-all shadow-sm active:scale-95"
-            >
-              <ServiceLogo presetId={preset.id} name={preset.nameKo} size={18} />
-              <span>{preset.nameKo}</span>
-              <span className="text-xs text-muted-foreground">{describePresetPrice(preset)}</span>
-            </button>
-          ))}
-        </div>
-      </section>
-
       {/*
         SubSlash가 하는 일. 처음 온 사람이 읽고 떠나지 않게 세 줄로 줄였다 — 예전에는 네 장의 카드에
-        설명 문장이 붙어 있었다. '바로 등록'을 위로 올려, 읽기 전에 누를 수 있게 한다.
+        설명 문장이 붙어 있었다. 예전의 '바로 등록'(인기 서비스 버튼)은 소개 페이지에서 뺐다 — 등록은
+        위의 '내 구독 등록하기'와 대시보드의 서비스 고르기가 맡는다.
       */}
       <section className="w-full space-y-3" aria-labelledby="how-it-works">
         <h2 id="how-it-works" className="text-base font-bold tracking-tight">
@@ -161,6 +122,10 @@ export default function Home() {
         </ol>
       </section>
 
+      <LandingFeatures />
+      <LandingTrust />
+      <LandingFinalCta />
+
       {/* Subscription Form Modal */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-md text-left">
@@ -169,11 +134,7 @@ export default function Home() {
             <DialogDescription>서비스를 고르고 요금을 확인하세요.</DialogDescription>
           </DialogHeader>
           <div className="py-2">
-            <SubForm
-              popularServices={POPULAR_SERVICES}
-              initialData={selectedPreset}
-              onSubmit={handleFormSubmit}
-            />
+            <SubForm popularServices={POPULAR_SERVICES} onSubmit={handleFormSubmit} />
           </div>
         </DialogContent>
       </Dialog>
