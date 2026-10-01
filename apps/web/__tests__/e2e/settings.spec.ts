@@ -64,7 +64,8 @@ test.describe("설정 화면 (E2E)", () => {
     await page.goto("/settings");
     await expect(page.getByText("이 브라우저에만 저장돼요")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByRole("button", { name: /백업 · 계정 저장/ })).toBeVisible();
-    await expect(page.getByRole("radiogroup", { name: "화면 모드" })).toBeVisible();
+    // 화면 모드는 설정 화면이 아니라 상단 바에 있다.
+    await expect(page.getByRole("radiogroup", { name: "화면 모드" })).toHaveCount(0);
 
     await page.getByRole("button", { name: /전체 초기화/ }).click();
     await page.getByRole("button", { name: "모두 삭제" }).click();
@@ -79,32 +80,35 @@ test.describe("설정 화면 (E2E)", () => {
     await expect(page.getByRole("button", { name: /백업 · 계정 저장/ })).toHaveCount(0);
   });
 
-  test("화면 모드는 설정에서만 고르고, 기기 설정으로 다시 돌아갈 수 있다", async ({ page }) => {
+  test("화면 모드는 상단 바에서 자동·라이트·다크 중에 고르고, 자동으로 다시 돌아갈 수 있다", async ({
+    page,
+  }) => {
     // 기기는 다크 모드다.
     await page.emulateMedia({ colorScheme: "dark" });
-    await page.goto("/settings");
-    const modes = page.getByRole("radiogroup", { name: "화면 모드" });
+    await page.goto("/dashboard");
     const html = page.locator("html");
+    const trigger = page.getByRole("button", { name: /^화면 모드/ });
+    const menu = page.getByRole("menu", { name: "화면 모드" });
 
-    // 고른 적이 없으면 기기 설정을 따른다.
-    await expect(modes.getByRole("radio", { name: "기기 설정" })).toHaveAttribute(
-      "aria-checked",
-      "true",
-      { timeout: 30_000 },
-    );
+    // 고른 적이 없으면 자동(기기 설정)을 따른다.
+    await expect(trigger).toHaveAccessibleName("화면 모드 (자동)", { timeout: 30_000 });
     await expect(html).toHaveClass(/\bdark\b/);
 
-    await modes.getByRole("radio", { name: "라이트" }).click();
-    await expect(html).not.toHaveClass(/\bdark\b/);
-    await expect(modes.getByRole("radio", { name: "라이트" })).toHaveAttribute(
+    await trigger.click();
+    await expect(menu.getByRole("menuitemradio", { name: /자동/ })).toHaveAttribute(
       "aria-checked",
       "true",
     );
+    await menu.getByRole("menuitemradio", { name: "라이트" }).click();
+    await expect(html).not.toHaveClass(/\bdark\b/);
+    await expect(trigger).toHaveAccessibleName("화면 모드 (라이트)");
 
     // 예전에는 한 번 고르면 기기 설정으로 돌아갈 길이 없었다.
-    await modes.getByRole("radio", { name: "기기 설정" }).click();
+    await menu.getByRole("menuitemradio", { name: /자동/ }).click();
     await expect(html).toHaveClass(/\bdark\b/);
     expect(await page.evaluate(() => localStorage.getItem("subslash-theme"))).toBeNull();
+    await page.keyboard.press("Escape");
+    await expect(menu).toHaveCount(0);
 
     // 기기 설정을 따르는 동안에는 기기가 바뀌면 화면도 바뀐다.
     await page.emulateMedia({ colorScheme: "light" });
@@ -112,7 +116,9 @@ test.describe("설정 화면 (E2E)", () => {
 
     // 계정 메뉴에는 화면 모드가 없다.
     await page.getByRole("button", { name: "계정 메뉴" }).click();
-    const menu = page.getByRole("menu", { name: "계정 메뉴" });
-    await expect(menu.getByRole("menuitem", { name: /다크 모드|라이트 모드/ })).toHaveCount(0);
+    const accountMenu = page.getByRole("menu", { name: "계정 메뉴" });
+    await expect(accountMenu.getByRole("menuitem", { name: /다크 모드|라이트 모드/ })).toHaveCount(
+      0,
+    );
   });
 });
