@@ -47,7 +47,7 @@ function Status({ item }: { item: DiscoveredSubscription }) {
 
 /**
  * 앱의 '문자로 가져오기'. 웹의 가운데 창(AutoImportModal) 대신 아래에서 올라오는 시트로,
- * 붙여넣기 칸과 찾은 목록, 등록 버튼만 둔다. 계정 연결과 기존 구독 지우기는 '옵션'에 접는다.
+ * 붙여넣기 칸과 찾은 목록, 등록 버튼만 둔다. 기존 구독 지우기는 '옵션'에 접는다.
  *
  * 웹과 달리 '기존 구독 지우고 등록'은 늘 꺼진 채로 연다. 문자 몇 줄을 더하러 온 사람의 목록이
  * 기본값 때문에 지워지면 안 된다. 전체 삭제는 구독 관리의 데이터 묶음에 따로 있다.
@@ -55,21 +55,19 @@ function Status({ item }: { item: DiscoveredSubscription }) {
 export function AppAutoImportModal({
   isOpen,
   onClose,
-  defaultAccountId,
   initialSmsText,
   initialDiscovered,
   initialResultsNote,
   onRegistered,
 }: AutoImportModalProps) {
   const isClient = useIsClient();
-  const { accounts, addBatchSubscriptions, subscriptions } = useStore();
+  const { addBatchSubscriptions, subscriptions } = useStore();
   const rate = useExchangeRate();
   const killedCount = subscriptions.filter((sub) => sub.status === "killed").length;
 
   const [smsText, setSmsText] = useState(initialSmsText ?? "");
   const [items, setItems] = useState<DiscoveredSubscription[]>(initialDiscovered ?? []);
   const [resultsNote, setResultsNote] = useState<string | null>(initialResultsNote ?? null);
-  const [accountId, setAccountId] = useState(defaultAccountId || accounts[0]?.id || "");
   const [replaceExisting, setReplaceExisting] = useState(false);
   const [sampleIndex, setSampleIndex] = useState(0);
   const [, startTransition] = useTransition();
@@ -79,13 +77,7 @@ export function AppAutoImportModal({
   const reviewOnly = Boolean(initialDiscovered);
 
   const parse = (text: string) => {
-    const acc = accounts.find((a) => a.id === accountId);
-    setItems(
-      parsePaymentSms(text, {
-        linkedAccountId: acc?.id,
-        linkedAccountName: acc ? `${acc.name} (${acc.emailOrId})` : undefined,
-      }),
-    );
+    setItems(parsePaymentSms(text));
     setResultsNote(null);
   };
 
@@ -106,7 +98,6 @@ export function AppAutoImportModal({
     if (!isOpen || !initialSmsText || sharedTextParsed.current) return;
     sharedTextParsed.current = true;
     parse(initialSmsText);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialSmsText]);
 
   useEffect(() => {
@@ -143,8 +134,6 @@ export function AppAutoImportModal({
 
   const register = () => {
     if (selected.length === 0) return;
-    const acc = accounts.find((a) => a.id === accountId);
-    const accName = acc ? `${acc.name} (${acc.emailOrId})` : undefined;
     const dataList: SubscriptionFormData[] = selected.map((item) => ({
       name: item.name,
       amount: item.amount,
@@ -156,8 +145,8 @@ export function AppAutoImportModal({
       cancelUrl: item.cancelUrl,
       cancelGuide: item.cancelGuide,
       paymentMethod: item.paymentMethod,
-      linkedAccountId: acc?.id || item.linkedAccountId,
-      linkedAccountName: accName || item.linkedAccountName,
+      linkedAccountId: item.linkedAccountId,
+      linkedAccountName: item.linkedAccountName,
     }));
     startTransition(() => {
       addBatchSubscriptions(dataList, { clearPrevious: willReplace });
@@ -312,30 +301,15 @@ export function AppAutoImportModal({
                 ))}
               </ul>
 
-              <details className="group mt-3 rounded-2xl border px-3">
-                <summary className="flex cursor-pointer list-none items-center justify-between py-2.5 text-[12.5px] font-bold">
-                  옵션
-                  <ChevronDown
-                    className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
-                    aria-hidden
-                  />
-                </summary>
-                <label className="flex items-center justify-between gap-3 border-t py-2.5 text-[12.5px]">
-                  <span className="shrink-0">계정 연결</span>
-                  <select
-                    value={accountId}
-                    onChange={(e) => setAccountId(e.target.value)}
-                    className="min-w-0 max-w-[60%] truncate rounded-lg border bg-card px-2 py-1 text-xs text-foreground"
-                  >
-                    <option value="">안 함</option>
-                    {accounts.map((acc) => (
-                      <option key={acc.id} value={acc.id}>
-                        {acc.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {subscriptions.length > 0 && (
+              {subscriptions.length > 0 && (
+                <details className="group mt-3 rounded-2xl border px-3">
+                  <summary className="flex cursor-pointer list-none items-center justify-between py-2.5 text-[12.5px] font-bold">
+                    옵션
+                    <ChevronDown
+                      className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
+                      aria-hidden
+                    />
+                  </summary>
                   <label className="flex items-center justify-between gap-3 border-t py-2.5 text-[12.5px]">
                     <span>기존 구독 지우고 등록</span>
                     <input
@@ -345,15 +319,15 @@ export function AppAutoImportModal({
                       className="size-4 shrink-0 accent-rose-500"
                     />
                   </label>
-                )}
-                {willReplace && (
-                  <p className="pb-2.5 text-[11px] text-rose-600 dark:text-rose-400" role="alert">
-                    지금 구독 {subscriptions.length}건
-                    {killedCount > 0 && `(해지한 구독 ${killedCount}건과 절약 기록 포함)`}이
-                    지워져요.
-                  </p>
-                )}
-              </details>
+                  {willReplace && (
+                    <p className="pb-2.5 text-[11px] text-rose-600 dark:text-rose-400" role="alert">
+                      지금 구독 {subscriptions.length}건
+                      {killedCount > 0 && `(해지한 구독 ${killedCount}건과 절약 기록 포함)`}이
+                      지워져요.
+                    </p>
+                  )}
+                </details>
+              )}
             </section>
           )}
         </div>

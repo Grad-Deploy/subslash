@@ -41,7 +41,6 @@ import { sortSubsForApp, type AppSubsSort } from "@lib/subs-order";
 import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { isWideScreen } from "@lib/wide-screen";
-import { NotifyResultBanner } from "../../components/subscription/NotifyResultBanner";
 import { SelectedSubSync } from "../../components/subscription/SelectedSubSync";
 import {
   AppAddButton,
@@ -315,7 +314,6 @@ export default function SubscriptionsPage() {
   return (
     <div className="space-y-6">
       <Suspense fallback={null}>
-        <NotifyResultBanner onMessage={showToast} />
         <SelectedSubSync onChange={setSelectedId} />
       </Suspense>
 

@@ -24,12 +24,9 @@ import {
   bundlesIncluding,
   serviceNameOf,
 } from "@subslash/shared";
-import { useStore } from "../../lib/store";
-import { useAuth } from "@hooks/useAuth";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
-import { EmailDomainInput } from "../ui/email-domain-input";
 import { ServiceLogo } from "./ServiceLogo";
 import { SquarePen } from "lucide-react";
 import { IS_APP_BUILD } from "@lib/platform";
@@ -83,11 +80,6 @@ export function SubForm({
   openCustom?: boolean;
 }) {
   const isEdit = mode === "edit";
-  const { accounts, addAccount } = useStore();
-  // 연동 계정(구독에 쓴 이메일·아이디 목록)은 로그인한 사람에게만 묻는다. 로그인 계정과는
-  // 다른 것이다 — 연동 계정 기록은 여전히 이 브라우저에만 있다.
-  const { account: loginAccount } = useAuth();
-  const isLoggedIn = !!loginAccount;
   const fieldId = useId();
 
   // 프리셋을 누르고 연 경우(이름이 이미 채워짐)에는 고르는 단계를 건너뛴다.
@@ -112,12 +104,9 @@ export function SubForm({
   const [serviceUrl, setServiceUrl] = useState(initialData?.cancelUrl ?? "");
   const [serviceUrlError, setServiceUrlError] = useState<string | null>(null);
 
-  const [isCustomAccount, setIsCustomAccount] = useState<boolean>(
-    Boolean(!initialData?.linkedAccountId && initialData?.linkedAccountName),
-  );
-  const [customEmail, setCustomEmail] = useState<string>(
-    (!initialData?.linkedAccountId && initialData?.linkedAccountName) || "",
-  );
+  // 가입한 계정(이메일·아이디). 해지할 때 '이 계정으로 로그인해야 해지 버튼이 보여요'로 쓴다. 예전에는
+  // 계정 목록을 따로 관리하는 화면에서 골랐는데, 칸 하나로 같은 일을 한다.
+  const [signInAccount, setSignInAccount] = useState(initialData?.linkedAccountName ?? "");
 
   // 금액과 결제일은 미리 채우지 않는다. 결제일을 1일로 채워 두면 손대지 않은
   // 사람의 D-day가 1일 기준으로 계산돼, 사실처럼 보이는 틀린 날짜가 된다.
@@ -214,33 +203,6 @@ export function SubForm({
     });
   };
 
-  const handleAccountChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    if (val === "__custom__") {
-      setIsCustomAccount(true);
-      setFormData((prev) => ({
-        ...prev,
-        linkedAccountId: undefined,
-        linkedAccountName: customEmail.trim() || undefined,
-      }));
-    } else if (!val) {
-      setIsCustomAccount(false);
-      setFormData((prev) => ({
-        ...prev,
-        linkedAccountId: undefined,
-        linkedAccountName: undefined,
-      }));
-    } else {
-      setIsCustomAccount(false);
-      const acc = accounts.find((a) => a.id === val);
-      setFormData((prev) => ({
-        ...prev,
-        linkedAccountId: val,
-        linkedAccountName: acc ? `${acc.name} (${acc.emailOrId})` : undefined,
-      }));
-    }
-  };
-
   const pickPreset = (service: ServicePreset) => {
     setFormData((prev) => ({ ...prev, ...presetFormData(service), iconColor: undefined }));
     setPreset(service);
@@ -297,45 +259,15 @@ export function SubForm({
       }
     }
 
-    let finalAccountId = formData.linkedAccountId;
-    let finalAccountName = formData.linkedAccountName;
-
-    // 로그아웃 상태에서는 연동 계정 칸이 보이지 않는다. 예전에 적어 둔 이메일이 남아 있어도
-    // 보이지 않는 칸으로 연동 계정을 새로 만들지 않고, 적어 둔 값은 그대로 둔다.
-    if (isLoggedIn && isCustomAccount && customEmail.trim()) {
-      finalAccountName = customEmail.trim();
-      const found = accounts.find(
-        (a) => a.emailOrId.toLowerCase() === customEmail.trim().toLowerCase(),
-      );
-      if (found) {
-        finalAccountId = found.id;
-        finalAccountName = `${found.name} (${found.emailOrId})`;
-      } else {
-        const localPart = customEmail.split("@")[0] || "직접 입력 계정";
-        const provider = customEmail.includes("naver")
-          ? "naver"
-          : customEmail.includes("gmail")
-            ? "google"
-            : customEmail.includes("kakao")
-              ? "kakao"
-              : customEmail.includes("icloud") || customEmail.includes("apple")
-                ? "apple"
-                : "email";
-        const newAcc = addAccount({
-          name: localPart,
-          emailOrId: customEmail.trim(),
-          provider,
-        });
-        finalAccountId = newAcc.id;
-        finalAccountName = `${newAcc.name} (${newAcc.emailOrId})`;
-      }
-    }
+    // 손대지 않았으면 예전에 고른 계정(연결된 id까지) 그대로 둔다. 고쳤으면 적은 글자만 남긴다.
+    const typedAccount = signInAccount.trim();
+    const accountUnchanged = typedAccount === (initialData?.linkedAccountName ?? "").trim();
 
     onSubmit({
       ...formData,
       cancelUrl,
-      linkedAccountId: finalAccountId,
-      linkedAccountName: finalAccountName,
+      linkedAccountId: accountUnchanged ? initialData?.linkedAccountId : undefined,
+      linkedAccountName: typedAccount || undefined,
     } as SubscriptionFormData);
   };
 
@@ -855,7 +787,7 @@ export function SubForm({
           {[
             "공유 인원",
             "결제 수단",
-            ...(isLoggedIn ? ["계정"] : []),
+            "가입한 계정",
             ...(showServiceFields ? ["웹사이트", "해지 방법"] : []),
           ].join(", ")}
         </span>
@@ -933,28 +865,20 @@ export function SubForm({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Linked Account Selector — 로그인한 사람에게만 묻는다 */}
-            {isLoggedIn && (
-              <div className="space-y-1.5">
-                <label htmlFor={`${fieldId}-account`} className={LABEL}>
-                  사용/로그인 계정
-                </label>
-                <Select
-                  id={`${fieldId}-account`}
-                  name="linkedAccountId"
-                  value={isCustomAccount ? "__custom__" : formData.linkedAccountId || ""}
-                  onChange={handleAccountChange}
-                >
-                  <option value="">지정 안 함</option>
-                  {accounts.map((acc) => (
-                    <option key={acc.id} value={acc.id}>
-                      {acc.name} - {acc.emailOrId}
-                    </option>
-                  ))}
-                  <option value="__custom__">새 이메일 입력</option>
-                </Select>
-              </div>
-            )}
+            <div className="space-y-1.5">
+              <label htmlFor={`${fieldId}-account`} className={LABEL}>
+                가입한 계정
+              </label>
+              <Input
+                id={`${fieldId}-account`}
+                name="linkedAccountName"
+                value={signInAccount}
+                onChange={(e) => setSignInAccount(e.target.value)}
+                placeholder="예: 가족 계정 abc@gmail.com"
+                autoComplete="off"
+                maxLength={120}
+              />
+            </div>
 
             {/* Payment Method Selector */}
             <div className="space-y-1.5">
@@ -975,27 +899,6 @@ export function SubForm({
               </Select>
             </div>
           </div>
-
-          {/* Custom Email Input with Domain Selector */}
-          {isLoggedIn && isCustomAccount && (
-            <div className="p-3 rounded-xl bg-muted/40 border border-border/80 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <span className={LABEL}>이메일 계정</span>
-              </div>
-              <EmailDomainInput
-                value={customEmail}
-                onChange={(full) => {
-                  setCustomEmail(full);
-                  setFormData((prev) => ({
-                    ...prev,
-                    linkedAccountName: full,
-                  }));
-                }}
-                placeholderId="아이디 입력"
-                size="default"
-              />
-            </div>
-          )}
 
           {showServiceFields && (
             <>

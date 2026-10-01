@@ -2,12 +2,9 @@ import { sqliteTable, text, integer, real, uniqueIndex, index } from "drizzle-or
 import { sql } from "drizzle-orm";
 
 /**
- * Server schema for the notification mirror.
- *
- * localStorage stays the source of truth for a user's subscriptions; the server
- * holds only the thin projection the reminder cron needs, and only for people
- * who explicitly opted into email reminders. Check-in history, usage logs and
- * the savings pot never leave the browser.
+ * 아래 세 표(`notification_subscribers`, `mirrored_subscriptions`, `notification_log`)는 그만둔 결제 알림
+ * 메일과 캘린더 피드의 것이다. 이제 쓰는 API가 없고, 남은 줄은 크론이 지운다(`purgeRetiredNotifyData`).
+ * 표는 다음 마이그레이션에서 지운다 — 그때까지 지우는 코드가 표를 찾을 수 있게 정의를 남긴다.
  */
 
 /**
@@ -279,7 +276,7 @@ export const sessions = sqliteTable(
  * 로그인한 사람이 '계정에 저장'을 직접 눌렀을 때만 생긴다. 기본 경험은 여전히
  * 브라우저 안에서 끝나고, 서버가 이 기록을 브라우저로 알아서 되쓰지도 않는다 —
  * 다른 기기에서 '계정에서 불러오기'를 눌러야 받는다. 내용은 백업 파일과 같다
- * (구독·체크인·연동 계정·환율). 결제 알림의 동기화 토큰은 넣지 않는다.
+ * (구독·체크인·계정 목록·환율). 기기마다 다른 설정은 넣지 않는다.
  */
 export const accountSnapshots = sqliteTable("account_snapshots", {
   accountId: text("account_id")

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { billingRRule, buildBillingCalendar, calendarEligible } from "../../lib/ics";
+import { billingRRule, calendarEligible, eventDescription } from "../../lib/ics";
 
 const netflix = {
   clientId: "sub-1",
@@ -9,8 +9,6 @@ const netflix = {
   billingDay: 15,
   billingCycle: "monthly",
 };
-
-const NOW = new Date(2026, 8, 9); // 2026-09-09
 
 describe("billingRRule", () => {
   it("모든 달에 있는 날짜는 그대로 반복한다", () => {
@@ -50,136 +48,25 @@ describe("calendarEligible", () => {
   });
 });
 
-describe("buildBillingCalendar", () => {
-  it("구독마다 반복 일정과 사전 알림을 만든다", () => {
-    const ics = buildBillingCalendar([netflix], { reminderDays: 3, now: NOW });
-
-    expect(ics).toContain("BEGIN:VCALENDAR");
-    expect(ics).toContain("END:VCALENDAR");
-    expect(ics).toContain("UID:sub-1@subslash");
-    expect(ics).toContain("DTSTART;VALUE=DATE:20260915");
-    expect(ics).toContain("DTEND;VALUE=DATE:20260916");
-    expect(ics).toContain("RRULE:FREQ=MONTHLY;BYMONTHDAY=15");
-    expect(ics).toContain("TRIGGER:-P3D");
-    expect(ics).toContain("BEGIN:VALARM");
-  });
-
-  it("결제 월 없는 연간 구독만 있으면 일정 없는 빈 캘린더를 준다", () => {
-    const ics = buildBillingCalendar([{ ...netflix, billingCycle: "yearly" }], {
-      reminderDays: 3,
-      now: NOW,
-    });
-
-    expect(ics).not.toContain("BEGIN:VEVENT");
-    expect(ics).toContain("END:VCALENDAR");
-  });
-
-  it("결제 월이 있는 연간 구독은 그 달의 일정으로 나간다", () => {
-    const ics = buildBillingCalendar(
-      [{ ...netflix, billingDay: 3, billingCycle: "yearly", billingMonth: 11 }],
-      { reminderDays: 3, now: NOW },
+describe("eventDescription — 일정 메모", () => {
+  it("해지 주소가 있으면 메모에 적는다", () => {
+    const text = eventDescription(
+      { ...netflix, cancelUrl: "https://www.netflix.com/cancelplan" },
+      null,
     );
-
-    expect(ics).toContain("DTSTART;VALUE=DATE:20261103");
-    expect(ics).toContain("RRULE:FREQ=YEARLY;BYMONTH=11;BYMONTHDAY=3");
-  });
-
-  it("올해 결제 월이 지났으면 내년 날짜로 시작한다", () => {
-    const ics = buildBillingCalendar(
-      [{ ...netflix, billingDay: 3, billingCycle: "yearly", billingMonth: 2 }],
-      { reminderDays: 3, now: NOW },
-    );
-
-    expect(ics).toContain("DTSTART;VALUE=DATE:20270203");
-  });
-
-  it("RFC 5545가 요구하는 CRLF로 끝난다", () => {
-    const ics = buildBillingCalendar([netflix], { reminderDays: 3, now: NOW });
-
-    expect(ics.endsWith("\r\n")).toBe(true);
-    expect(ics.split("\r\n").every((line) => !line.endsWith("\r"))).toBe(true);
-  });
-
-  it("이름에 든 쉼표와 세미콜론을 이스케이프한다", () => {
-    const ics = buildBillingCalendar([{ ...netflix, name: "A,B;C" }], {
-      reminderDays: 3,
-      now: NOW,
-    });
-
-    expect(ics).toContain("A\\,B\\;C");
-  });
-
-  it("긴 한글 이름도 한 줄 75옥텟을 넘기지 않는다", () => {
-    const ics = buildBillingCalendar([{ ...netflix, name: "아주아주긴한글구독이름".repeat(8) }], {
-      reminderDays: 3,
-      now: NOW,
-    });
-
-    for (const line of ics.split("\r\n")) {
-      expect(Buffer.byteLength(line, "utf8")).toBeLessThanOrEqual(75);
-    }
-  });
-
-  it("알림 시점은 사용자가 고른 일수를 따른다", () => {
-    expect(buildBillingCalendar([netflix], { reminderDays: 7, now: NOW })).toContain(
-      "TRIGGER:-P7D",
-    );
-    expect(buildBillingCalendar([netflix], { reminderDays: 0, now: NOW })).toContain(
-      "TRIGGER:PT0S",
-    );
-  });
-
-  it("일정 주소와 본문은 그 구독의 상세 화면으로 간다", () => {
-    const ics = buildBillingCalendar([{ ...netflix, clientId: "sub 1&x" }], {
-      reminderDays: 3,
-      now: NOW,
-      appUrl: "https://subslash.me",
-    });
-    // 본문은 75옥텟마다 접히므로 펼친 뒤 본다.
-    const unfolded = ics.replace(/\r\n /g, "");
-
-    expect(unfolded).toContain("URL:https://subslash.me/subs/detail?id=sub%201%26x\r\n");
-    expect(unfolded).toContain("구독 보기·수정: https://subslash.me/subs/detail?id=sub%201%26x");
-    // 다른 기기에서는 구독이 보이지 않는다는 것을 함께 적는다.
-    // 쉼표는 RFC 5545에서 \, 로 이스케이프되므로 쉼표가 없는 조각으로 본다.
-    expect(unfolded).toContain("로그인해 두면 다른 기기에서도 보입니다");
-  });
-
-  it("앱 주소를 모르면 링크를 만들지 않는다", () => {
-    const ics = buildBillingCalendar([netflix], { reminderDays: 3, now: NOW });
-
-    expect(ics).not.toContain("URL:");
-    expect(ics).not.toContain("/subs/detail");
-  });
-});
-
-describe("캘린더 피드의 해지 안내", () => {
-  const base = {
-    clientId: "sub-1",
-    name: "넷플릭스",
-    amount: 17000,
-    currency: "KRW",
-    billingDay: 25,
-    billingCycle: "monthly",
-    billingMonth: null,
-  };
-  const NOW = new Date(2026, 8, 18);
-
-  it("해지 주소가 있으면 일정 메모에 적는다", () => {
-    const feed = buildBillingCalendar(
-      [{ ...base, cancelUrl: "https://www.netflix.com/cancelplan" }],
-      { reminderDays: 3, now: NOW },
-    );
-    expect(feed).toContain("netflix.com/cancelplan");
-    expect(feed).toContain("확인된 해지 화면");
+    expect(text).toContain("netflix.com/cancelplan");
+    expect(text).toContain("확인된 해지 화면");
   });
 
   it("해지 주소가 없으면 메모에 해지 줄이 없다", () => {
-    const feed = buildBillingCalendar([{ ...base, cancelUrl: null }], {
-      reminderDays: 3,
-      now: NOW,
-    });
-    expect(feed).not.toContain("해지하러 가기");
-    expect(feed).not.toContain("확인된 해지 화면");
+    const text = eventDescription({ ...netflix, cancelUrl: null }, null);
+    expect(text).not.toContain("해지하러 가기");
+    expect(text).not.toContain("확인된 해지 화면");
+  });
+
+  it("상세 주소가 있으면 다른 기기에서는 보이지 않을 수 있다는 것과 함께 적는다", () => {
+    const text = eventDescription(netflix, "https://subslash.me/subs/detail?id=sub-1");
+    expect(text).toContain("구독 보기·수정: https://subslash.me/subs/detail?id=sub-1");
+    expect(text).toContain("로그인해 두면 다른 기기에서도 보입니다");
   });
 });
