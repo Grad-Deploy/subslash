@@ -33,8 +33,8 @@ function reminderSummary(enabled: boolean, daysBefore: number) {
  *
  * 예전 웹은 캘린더·백업을 설명이 긴 카드로 늘어놓고, 전체 초기화를 위쪽 버튼 줄에 혼자 빨갛게
  * 두었다. 앱에서 먼저 바꾼 대로 알림 / 연동 / 데이터로 묶어 한 줄 제목과 지금 상태만 보여 주고,
- * 줄을 누르면 기존 카드를 시트에 그대로 연다. 기기 결제 알림은 앱에만 있다(웹의 결제 알림 메일은
- * 상단 종 아이콘에서 켠다).
+ * 줄을 누르면 기존 카드를 시트에 그대로 연다. 기기 결제 알림은 앱에만 있다(웹은 '내 구독'의 구글
+ * 캘린더 등록이 결제일을 알린다).
  */
 export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
   const [sheet, setSheet] = useState<SheetKey | null>(null);

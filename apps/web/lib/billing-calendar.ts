@@ -13,7 +13,7 @@ import {
  * "보고 있는 달의 며칠에 청구되는가". 그 달의 1일을 기준으로 다음 결제일을 구하면 결제일이 1일인
  * 구독이 다음 달로 밀려 어느 달에도 찍히지 않는다(`getNextBillingDate`는 결제일 당일을 지난 것으로
  * 친다). 그래서 달을 고정해 놓고 그 달의 결제일을 직접 구한다. 짧은 달로 당기는 규칙(29~31일)은
- * 캘린더 피드의 RRULE(`BYMONTHDAY=<일>,-1;BYSETPOS=1`)과 같다.
+ * 구글 캘린더 등록의 RRULE(`BYMONTHDAY=<일>,-1;BYSETPOS=1`, `lib/ics`)과 같다.
  */
 
 export interface BillingMonth {

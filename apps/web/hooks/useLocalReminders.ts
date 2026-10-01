@@ -9,7 +9,7 @@ import { checkReminderPermission, replaceScheduledReminders } from "@lib/native-
 
 /**
  * 앱의 로컬 결제 알림 설정. 이 기기에만 해당하므로 구독 기록(스토어·백업·계정 동기화)에 넣지
- * 않고 따로 둔다. 이메일 결제 알림(notify)과는 별개다.
+ * 않고 따로 둔다.
  *
  * 기록 주인(비로그인·계정)마다 따로 둔다(lib/owner-scoped). 로그인해 켠 알림이 로그아웃한 뒤에도 켜진 것으로
  * 남아 '시작하기'가 로그인한 동안의 진행을 보였다. 알림은 그 주인의 구독으로만 걸리므로, 로그아웃하면

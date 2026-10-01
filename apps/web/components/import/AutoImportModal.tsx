@@ -16,8 +16,6 @@ import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { Select } from "../ui/select";
-import { EmailDomainInput } from "../ui/email-domain-input";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { IS_APP_BUILD } from "@lib/platform";
 import dynamic from "next/dynamic";
@@ -26,7 +24,6 @@ import { SAMPLE_NAVER_RECEIPT, SAMPLE_SMS } from "./samples";
 export interface AutoImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultAccountId?: string;
   /** Pre-filled receipt/SMS text, e.g. handed over by the PWA share target. */
   initialSmsText?: string;
   /**
@@ -55,14 +52,12 @@ export function AutoImportModal(props: AutoImportModalProps) {
 function WebAutoImportModal({
   isOpen,
   onClose,
-  defaultAccountId,
   initialSmsText,
   initialDiscovered,
   initialResultsNote,
   onRegistered,
 }: AutoImportModalProps) {
-  const { accounts, addAccount, addBatchSubscriptions, subscriptions, clearSubscriptions } =
-    useStore();
+  const { addBatchSubscriptions, subscriptions, clearSubscriptions } = useStore();
   // '모두 지우고'는 해지한 구독과 그 절약 기록까지 지운다. 활성 목록만 보고 온
   // 사람이 모르고 지우지 않게 따로 적는다.
   const killedCount = subscriptions.filter((sub) => sub.status === "killed").length;
@@ -75,10 +70,6 @@ function WebAutoImportModal({
   const [discoveredItems, setDiscoveredItems] = useState<DiscoveredSubscription[]>(
     initialDiscovered ?? [],
   );
-  const [targetAccountId, setTargetAccountId] = useState<string>(
-    defaultAccountId || accounts[0]?.id || "",
-  );
-  const [customTargetEmail, setCustomTargetEmail] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "ott" | "ai" | "other">("all");
   const [replaceExisting, setReplaceExisting] = useState<boolean>(!initialDiscovered);
   /** 후보 개수 옆에 붙일 설명(예: "Gmail 메일 40통에서"). */
@@ -101,13 +92,7 @@ function WebAutoImportModal({
 
   // Run SMS parse
   const handleParseSms = (textToParse: string) => {
-    const acc = accounts.find((a) => a.id === targetAccountId);
-    const accName = acc ? `${acc.name} (${acc.emailOrId})` : undefined;
-
-    const results = parsePaymentSms(textToParse, {
-      linkedAccountId: acc?.id,
-      linkedAccountName: accName,
-    });
+    const results = parsePaymentSms(textToParse);
     setDiscoveredItems(results);
     setResultsNote(null);
   };
@@ -127,7 +112,6 @@ function WebAutoImportModal({
     if (!isOpen || !initialSmsText || sharedTextParsed.current) return;
     sharedTextParsed.current = true;
     handleParseSms(initialSmsText);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialSmsText]);
 
   const handleToggleSelect = (id: string) => {
@@ -140,44 +124,6 @@ function WebAutoImportModal({
     const selected = discoveredItems.filter((item) => item.selected);
     if (selected.length === 0) return;
 
-    let accId: string | undefined = undefined;
-    let accName: string | undefined = undefined;
-
-    const effectiveCustomEmail = customTargetEmail.trim();
-
-    if ((targetAccountId === "__custom__" || !targetAccountId) && effectiveCustomEmail) {
-      const email = effectiveCustomEmail;
-      const existingAcc = accounts.find((a) => a.emailOrId.toLowerCase() === email.toLowerCase());
-      if (existingAcc) {
-        accId = existingAcc.id;
-        accName = `${existingAcc.name} (${existingAcc.emailOrId})`;
-      } else {
-        const localPart = email.split("@")[0] || "직접 입력 계정";
-        const provider = email.includes("naver")
-          ? "naver"
-          : email.includes("gmail")
-            ? "google"
-            : email.includes("kakao")
-              ? "kakao"
-              : email.includes("icloud") || email.includes("apple")
-                ? "apple"
-                : "email";
-        const newAcc = addAccount({
-          name: localPart,
-          emailOrId: email,
-          provider,
-        });
-        accId = newAcc.id;
-        accName = `${newAcc.name} (${newAcc.emailOrId})`;
-      }
-    } else if (targetAccountId && targetAccountId !== "__custom__") {
-      const acc = accounts.find((a) => a.id === targetAccountId);
-      if (acc) {
-        accId = acc.id;
-        accName = `${acc.name} (${acc.emailOrId})`;
-      }
-    }
-
     const dataList: SubscriptionFormData[] = selected.map((item) => ({
       name: item.name,
       amount: item.amount,
@@ -189,8 +135,8 @@ function WebAutoImportModal({
       cancelUrl: item.cancelUrl,
       cancelGuide: item.cancelGuide,
       paymentMethod: item.paymentMethod,
-      linkedAccountId: accId || item.linkedAccountId,
-      linkedAccountName: accName || item.linkedAccountName,
+      linkedAccountId: item.linkedAccountId,
+      linkedAccountName: item.linkedAccountName,
     }));
 
     startTransition(() => {
@@ -552,42 +498,7 @@ function WebAutoImportModal({
             />
           )}
 
-          {targetAccountId === "__custom__" && (
-            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/80 flex flex-col sm:flex-row sm:items-center gap-2">
-              <span className="text-xs font-semibold text-foreground shrink-0">
-                직접 매핑할 이메일:
-              </span>
-              <div className="flex-1">
-                <EmailDomainInput
-                  value={customTargetEmail}
-                  onChange={(full) => setCustomTargetEmail(full)}
-                  placeholderId="매핑할 계정 아이디"
-                  size="sm"
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-              <span className="text-xs text-muted-foreground shrink-0">연동 계정 매핑:</span>
-              <Select
-                value={targetAccountId}
-                onChange={(e) => setTargetAccountId(e.target.value)}
-                className="text-xs py-1 w-full min-w-0 sm:max-w-56"
-              >
-                <option value="">계정 매핑 안함</option>
-                {accounts.map((acc) => (
-                  <option key={acc.id} value={acc.id}>
-                    {acc.name} ({acc.emailOrId})
-                  </option>
-                ))}
-                <option value="__custom__">
-                  직접 입력한 계정 ({customTargetEmail.trim() || "새 이메일"}) 매핑
-                </option>
-              </Select>
-            </div>
-
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-end gap-3">
             <div className="flex shrink-0 items-center gap-2 w-full sm:w-auto justify-end">
               <Button type="button" variant="outline" size="sm" onClick={handleClose}>
                 취소

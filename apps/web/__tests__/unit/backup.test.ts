@@ -7,7 +7,7 @@ import {
   parseBackup,
   type BackupFile,
 } from "../../lib/backup";
-import { DEFAULT_NOTIFY, useStore, type BackupData } from "../../lib/store";
+import { useStore, type BackupData } from "../../lib/store";
 
 const NOW = new Date(2026, 8, 11, 15, 30);
 
@@ -309,11 +309,10 @@ describe("replaceAllData", () => {
       subscriptions: [],
       usageLogs: [],
       accounts: [],
-      notify: { ...DEFAULT_NOTIFY, email: "me@example.com", syncToken: "this-device-token" },
     });
   });
 
-  it("지금 데이터를 백업 내용으로 통째로 바꾸고, 이 기기의 알림 설정은 그대로 둔다", () => {
+  it("지금 데이터를 백업 내용으로 통째로 바꾼다", () => {
     useStore.getState().addSubscription({
       name: "지금 있던 구독",
       amount: 5000,
@@ -330,7 +329,6 @@ describe("replaceAllData", () => {
     expect(state.usageLogs).toHaveLength(1);
     expect(state.accounts).toHaveLength(1);
     expect(state.exchangeRate.rate).toBe(1382.5);
-    expect(state.notify.syncToken).toBe("this-device-token");
   });
 
   it("옛 백업에 든 폐기된 해지 링크를 지금 주소로 바꾼다", () => {

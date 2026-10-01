@@ -56,19 +56,10 @@ const SEEDED_DEMO_ACCOUNTS: ReadonlyArray<Pick<LinkedAccount, "id" | "name" | "e
 
 type PersistedState = Pick<
   SubSlashStore,
-  | "subscriptions"
-  | "usageLogs"
-  | "accounts"
-  | "notify"
-  | "exchangeRate"
-  | "accountSync"
-  | "recordsOwner"
+  "subscriptions" | "usageLogs" | "accounts" | "exchangeRate" | "accountSync" | "recordsOwner"
 >;
 
-/**
- * 백업 파일에 담는 데이터. 알림 설정(`notify`)은 뺀다 — 거기 든 동기화
- * 토큰은 이 기기의 자격증명이라 파일로 돌아다니면 안 된다.
- */
+/** 백업 파일에 담는 데이터. 기기마다 다른 것(계정 동기화 상태 등)은 뺀다. */
 export type BackupData = Pick<
   SubSlashStore,
   "subscriptions" | "usageLogs" | "accounts" | "exchangeRate"
@@ -171,38 +162,6 @@ function legacyRecordsOwner(saved: Partial<PersistedState>): string | null {
 }
 
 /**
- * Email-reminder opt-in. The token authenticates this browser's uploads to the
- * server mirror; localStorage remains the source of truth for the data itself.
- */
-export interface NotifySettings {
-  email: string | null;
-  syncToken: string | null;
-  verified: boolean;
-  reminderDays: number;
-  lastSyncedAt: string | null;
-  /**
-   * The calendar feed URL, which embeds a read-only token. Only its hash is
-   * stored server-side, so this browser copy is the only way back to it; losing
-   * it means rotating rather than recovering.
-   */
-  calendarUrl: string | null;
-  /**
-   * 서버가 이 브라우저의 동기화 토큰을 거절한 시각(`markNotifyRejected`). 알림 설정은 꺼진 상태로
-   * 돌아가고, 화면은 사용자가 끄지 않았는데 꺼졌다는 것과 그 이유를 알린다. 다시 신청하면 지운다.
-   */
-  rejectedAt?: string;
-}
-
-export const DEFAULT_NOTIFY: NotifySettings = {
-  email: null,
-  syncToken: null,
-  verified: false,
-  reminderDays: 3,
-  lastSyncedAt: null,
-  calendarUrl: null,
-};
-
-/**
  * 계정 기록 자동 동기화에서 이 기기가 기억하는 것(lib/account-sync, hooks/useAccountSync). 기기마다
  * 다르므로 백업·계정 저장에는 넣지 않는다.
  */
@@ -283,7 +242,6 @@ interface SubSlashStore {
   subscriptions: Subscription[];
   usageLogs: UsageLog[];
   accounts: LinkedAccount[];
-  notify: NotifySettings;
   exchangeRate: ExchangeRateSetting;
   accountSync: AccountSyncState;
   /**
@@ -306,10 +264,7 @@ interface SubSlashStore {
   ) => Subscription[];
   clearSubscriptions: () => void;
   clearAllData: () => void;
-  /**
-   * 백업에서 복원한다. 병합하지 않고 통째로 바꾼다. 알림 설정은 이 기기의
-   * 것을 그대로 둔다.
-   */
+  /** 백업에서 복원한다. 병합하지 않고 통째로 바꾼다. 기기마다 다른 설정은 그대로 둔다. */
   replaceAllData: (data: BackupData) => void;
   updateSubscription: (id: string, data: Partial<SubscriptionFormData>) => void;
   /**
@@ -384,14 +339,6 @@ interface SubSlashStore {
   getDashboardStats: () => DashboardStats;
   getAtRiskSubscriptions: () => Subscription[];
 
-  // Email reminder actions
-  setNotify: (settings: Partial<NotifySettings>) => void;
-  clearNotify: () => void;
-  /**
-   * 서버가 `syncToken`을 모른다고 답했을 때. 그 토큰이 아직 이 브라우저의 토큰일 때만 알림을
-   * 꺼진 상태로 돌린다 — 응답을 기다리는 사이 다시 신청했다면 새 신청을 건드리지 않는다.
-   */
-  markNotifyRejected: (syncToken: string) => void;
   setAccountSync: (next: Partial<AccountSyncState>) => void;
 
   // Exchange rate actions
@@ -413,7 +360,6 @@ export function toPersistedState(state: SubSlashStore): PersistedState {
   return {
     ...realRecords(state),
     accounts: state.accounts,
-    notify: state.notify,
     exchangeRate: state.exchangeRate,
     accountSync: state.accountSync,
     recordsOwner: state.recordsOwner,
@@ -426,7 +372,6 @@ export const useStore = create<SubSlashStore>()(
       subscriptions: [],
       usageLogs: [],
       accounts: [],
-      notify: DEFAULT_NOTIFY,
       exchangeRate: DEFAULT_EXCHANGE_RATE_SETTING,
       demo: null,
       accountSync: DEFAULT_ACCOUNT_SYNC,
@@ -846,25 +791,6 @@ export const useStore = create<SubSlashStore>()(
           }
           return false;
         });
-      },
-
-      setNotify: (settings) => {
-        set((state) => ({ notify: { ...state.notify, ...settings } }));
-      },
-      clearNotify: () => {
-        set({ notify: DEFAULT_NOTIFY });
-      },
-      markNotifyRejected: (syncToken) => {
-        if (get().notify.syncToken !== syncToken) return;
-        // 서버에 이 브라우저의 기록이 없다. '켜짐'으로 남겨 두면 오지 않을 알림을 기다리게 된다.
-        // 알림 시점만 남겨 다시 신청할 때 그대로 쓴다.
-        set((state) => ({
-          notify: {
-            ...DEFAULT_NOTIFY,
-            reminderDays: state.notify.reminderDays,
-            rejectedAt: new Date().toISOString(),
-          },
-        }));
       },
 
       setAccountSync: (next) => {
