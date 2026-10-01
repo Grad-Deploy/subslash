@@ -83,7 +83,7 @@ async function fetchSnapshotSummary(): Promise<AccountSnapshotState> {
  */
 export function DataBackupCard({ onMessage }: DataBackupCardProps) {
   const store = useStore();
-  const { accounts, exchangeRate, notify, replaceAllData, accountSync, setAccountSync } = store;
+  const { accounts, exchangeRate, replaceAllData, accountSync, setAccountSync } = store;
   // 샘플 체험 중이면 화면의 목록은 샘플이다. 백업·계정 저장과 개수 안내는 실제 기록으로 한다.
   const { subscriptions, usageLogs } = realRecords(store);
   const { account, loading: authLoading } = useAuth();
@@ -264,16 +264,13 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     const lines = [
       `이 기기의 기록을 ${label} 내용으로 바꿔요.`,
       "",
-      `${label}${date ? ` (${date})` : ""}: 구독 ${subs.length}개 (해지 ${killed}개), 체크인 ${restore.data.usageLogs.length}건, 연동 계정 ${restore.data.accounts.length}개`,
-      `지금: 구독 ${subscriptions.length}개, 체크인 ${usageLogs.length}건, 연동 계정 ${accounts.length}개`,
+      `${label}${date ? ` (${date})` : ""}: 구독 ${subs.length}개 (해지 ${killed}개), 체크인 ${restore.data.usageLogs.length}건`,
+      `지금: 구독 ${subscriptions.length}개, 체크인 ${usageLogs.length}건`,
       "",
       "지금 기록은 합쳐지지 않고 사라져요. 필요하면 먼저 '백업 파일 저장'을 누르세요.",
     ];
     if (syncOn) {
       lines.push("자동 동기화 중이라 다른 기기의 기록도 바뀌어요.");
-    }
-    if (notify.syncToken) {
-      lines.push("결제 알림용 서버 사본도 바뀌어요.");
     }
     return lines.join("\n");
   };
@@ -284,8 +281,8 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     return [
       "계정 기록을 이 기기의 기록으로 바꿔요.",
       "",
-      `계정 (${formatSavedAt(saved.savedAt)}): 구독 ${saved.subscriptionCount}개 (해지 ${saved.killedCount}개), 체크인 ${saved.usageLogCount}건, 연동 계정 ${saved.linkedAccountCount}개`,
-      `지금: 구독 ${subscriptions.length}개, 체크인 ${usageLogs.length}건, 연동 계정 ${accounts.length}개`,
+      `계정 (${formatSavedAt(saved.savedAt)}): 구독 ${saved.subscriptionCount}개 (해지 ${saved.killedCount}개), 체크인 ${saved.usageLogCount}건`,
+      `지금: 구독 ${subscriptions.length}개, 체크인 ${usageLogs.length}건`,
       "",
       "합쳐지지 않고 바뀌어요.",
     ].join("\n");
@@ -323,9 +320,6 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
         </h3>
         <p className="text-xs text-muted-foreground leading-relaxed">
           기록은 이 기기에만 있어요. 브라우저를 지우거나 기기를 바꾸기 전에 백업하거나 로그인하세요.
-        </p>
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
-          결제 알림 설정은 백업에 넣지 않아요.
         </p>
       </div>
 

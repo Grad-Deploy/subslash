@@ -9,6 +9,15 @@ import { startCalendarSync, toCalendarPlanEntries } from "@lib/calendar-sync-cli
 import { fetchGmailLink, type GmailLinkState } from "@lib/gmail-auto-client";
 import { leaveForExternal } from "@lib/native";
 import { Button } from "../ui/button";
+import { Select } from "../ui/select";
+
+/** 일정 알림을 띄울 때. 0은 결제일 아침이다. */
+const REMINDER_DAY_OPTIONS = [
+  { value: 0, label: "결제일 아침" },
+  { value: 1, label: "결제 1일 전" },
+  { value: 3, label: "결제 3일 전" },
+  { value: 7, label: "결제 7일 전" },
+] as const;
 
 /**
  * 구독의 결제일을 내 구글 캘린더에 반복 일정으로 넣는다.
@@ -16,13 +25,13 @@ import { Button } from "../ui/button";
  * '내 구독' 맨 아래에 둔다 — 목록에서 금액·결제일을 확인하고 고친 뒤 마지막에 누르는 버튼이다.
  *
  * SubSlash는 캘린더 권한을 받지 않는다. 버튼을 누르면 SubSlash의 Apps Script 웹 앱으로 가고, 그
- * 웹 앱이 **접속한 사람의 권한으로** 그 사람의 'SubSlash 결제일' 캘린더에 쓴다. 알림 설정의 캘린더
- * 구독과 다른 점은 두 가지다 — 누른 그 자리에서 들어가고, 일정에 적은 알림이 그대로 뜬다.
+ * 웹 앱이 **접속한 사람의 권한으로** 그 사람의 'SubSlash 결제일' 캘린더에 쓴다. 결제일이 다가오면
+ * 일정에 적은 알림이 캘린더 앱에서 뜬다 — 웹에서 결제일을 알리는 길은 이것이다(결제 알림 메일은 그만뒀다).
  */
 export function GoogleCalendarSync() {
   const { account, loading } = useAuth();
   const subscriptions = useStore((state) => realRecords(state).subscriptions);
-  const reminderDays = useStore((state) => state.notify.reminderDays);
+  const [reminderDays, setReminderDays] = useState(3);
   const [link, setLink] = useState<GmailLinkState | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,16 +92,28 @@ export function GoogleCalendarSync() {
         </p>
       ) : !link || !link.open ? null : !link.connectAvailable ? (
         <p className="text-xs leading-relaxed text-muted-foreground">
-          이 서버에는 구글 캘린더 등록이 설정되어 있지 않습니다. 결제 알림의 &lsquo;캘린더에 결제일
-          띄우기&rsquo;를 쓰세요.
+          이 서버에는 구글 캘린더 등록이 설정되어 있지 않습니다.
         </p>
       ) : (
         <>
           <p className="rounded-xl bg-muted/50 p-3 text-xs leading-relaxed">
             지금 올릴 결제일 <strong>{willSync}건</strong>
             {undated > 0 && ` · 결제 월을 적지 않은 연간 구독 ${undated}건은 뺍니다`}
-            {reminderDays > 0 ? ` · 결제 ${reminderDays}일 전에 알림` : " · 결제일 아침에 알림"}
           </p>
+          <label className="flex items-center gap-2 text-xs">
+            <span className="shrink-0 font-semibold">일정 알림</span>
+            <Select
+              value={String(reminderDays)}
+              onChange={(e) => setReminderDays(Number(e.target.value))}
+              className="w-auto"
+            >
+              {REMINDER_DAY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </label>
           <Button disabled={busy || willSync === 0} onClick={() => void sync()}>
             구글 캘린더에 등록하기
           </Button>

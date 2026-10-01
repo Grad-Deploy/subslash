@@ -100,9 +100,6 @@ export function DeleteAccountSection() {
           이 브라우저에 있는 구독·체크인 기록은 지워지지 않습니다. 지우려면 내 구독의 &lsquo;전체
           초기화&rsquo;나 브라우저 데이터 삭제를 쓰세요.
         </li>
-        <li>
-          결제 알림은 계정과 따로 저장됩니다. 켜 두셨다면 탈퇴 전에 결제 알림 설정에서 끄세요.
-        </li>
       </ul>
 
       <HydratedForm

@@ -20,8 +20,6 @@ export function apiUrl(path: `/api/${string}`): string {
  * 로그인이 필요한 API 요청(서버가 readSessionToken으로 읽는 곳 전부). 웹은 세션 쿠키를 싣는다. 앱은 화면이 다른 출처라 쿠키가 실리지 않으므로
  * 보관한 세션 토큰을 Authorization 헤더로 싣고, 응답에 새 토큰이 있으면 보관한다
  * (lib/session-token).
- *
- * 알림 동기화(lib/notify-client)는 로그인과 무관한 자기 토큰을 쓰므로 이것을 쓰지 않는다.
  */
 export async function apiFetch(path: `/api/${string}`, init: RequestInit = {}): Promise<Response> {
   if (!IS_APP_BUILD) return fetch(apiUrl(path), { ...init, credentials: "same-origin" });

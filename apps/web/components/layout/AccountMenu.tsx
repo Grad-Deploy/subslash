@@ -3,33 +3,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AtSign, Bell, ChevronDown, LogIn, LogOut, Moon, Sun, User } from "lucide-react";
+import { ChevronDown, LogIn, LogOut, Moon, Sun, User } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
-
-interface AccountMenuProps {
-  onOpenLinkedAccounts: () => void;
-  onOpenNotify: () => void;
-  /** 좁은 화면에서는 상단 바의 알림 아이콘이 이 메뉴 안으로 접힌다. */
-  notifyLabel: string;
-  /** 결제 알림 항목을 보일지. 상단 바의 종 아이콘과 같은 조건이다(Header). */
-  showNotify: boolean;
-}
 
 const itemClass =
   "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none";
 
 /**
- * 로그인·연동 계정·테마처럼 가끔 쓰는 항목을 한 곳에 모은 메뉴.
+ * 로그인·내 정보·테마처럼 가끔 쓰는 항목을 한 곳에 모은 메뉴.
  * 상단 바에는 아바타 하나만 두고, 나머지는 열었을 때만 보인다.
  */
-export function AccountMenu({
-  onOpenLinkedAccounts,
-  onOpenNotify,
-  notifyLabel,
-  showNotify,
-}: AccountMenuProps) {
+export function AccountMenu() {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -166,34 +152,8 @@ export function AccountMenu({
           )}
           {!account && !loading && (
             <p className="px-2.5 pb-1.5 text-[11px] leading-relaxed text-muted-foreground">
-              로그인하면 결제 알림과 연동 계정을 쓸 수 있어요.
+              로그인하면 여러 기기에서 같은 기록을 쓸 수 있어요.
             </p>
-          )}
-
-          {/* 연동 계정은 로그인한 사람에게만 보인다. 기록 자체는 여전히 이 브라우저에 있다. */}
-          {account && (
-            <button
-              type="button"
-              role="menuitem"
-              className={itemClass}
-              onClick={run(onOpenLinkedAccounts)}
-            >
-              <AtSign className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-              연동 계정 관리
-            </button>
-          )}
-
-          {showNotify && (
-            <button
-              type="button"
-              role="menuitem"
-              className={cn(itemClass, "sm:hidden")}
-              onClick={run(onOpenNotify)}
-            >
-              <Bell className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-              <span className="flex-1">결제 알림</span>
-              <span className="text-xs text-muted-foreground">{notifyLabel}</span>
-            </button>
           )}
 
           {/* 테마는 바뀐 모습을 바로 보도록 메뉴를 닫지 않는다. */}
