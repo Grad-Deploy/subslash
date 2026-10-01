@@ -73,7 +73,7 @@ export function Header() {
             {/* 좁은 화면에서는 하단 탭(BottomNav)이 같은 역할을 한다. */}
             <nav className="hidden h-full items-center gap-6 md:flex" aria-label="주요 메뉴">
               {navLinks.map((link) => {
-                // 절약 기록(/savings)은 리포트에서 들어가는 화면이라 리포트 탭에 불을 켠다.
+                // 절약 기록(/savings)은 따로 탭이 없어, 같은 결과를 보는 리포트 탭에 불을 켠다.
                 const isActive =
                   pathname?.startsWith(link.href) ||
                   (link.href === "/report" && pathname?.startsWith("/savings"));
