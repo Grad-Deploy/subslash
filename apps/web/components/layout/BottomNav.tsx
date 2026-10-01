@@ -14,7 +14,7 @@ export function BottomNav() {
     { name: "대시보드", href: "/dashboard", Icon: House },
     { name: "구독 관리", href: "/subs", Icon: Receipt },
     { name: "리포트", href: "/report", Icon: BarChart3 },
-    // 앱은 켜고 끄는 것을 설정 탭 하나에 모은다(웹은 구독 관리 맨 아래와 계정 메뉴).
+    // 앱은 켜고 끄는 것을 설정 탭 하나에 모은다(웹은 상단 바의 설정 아이콘, 좁은 화면은 계정 메뉴).
     ...(IS_APP_BUILD ? [{ name: "설정", href: "/settings", Icon: Settings }] : []),
   ];
 

@@ -4,6 +4,7 @@ import React from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Settings } from "lucide-react";
 import { AccountMenu } from "./AccountMenu";
 import { useStatsContribution } from "@hooks/useStatsContribution";
 import { useAccountSync } from "@hooks/useAccountSync";
@@ -98,6 +99,36 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/*
+              설정(웹). 예전 결제 알림 종이 있던 자리다. 앱은 하단 설정 탭이 같은 역할을 하고, 좁은 화면의 웹은
+              이 아이콘이 계정 메뉴 안으로 접힌다.
+            */}
+            {!IS_APP_BUILD && (
+              <>
+                <div className="hidden items-center sm:flex">
+                  <Link
+                    href="/settings"
+                    aria-label="설정"
+                    aria-current={pathname?.startsWith("/settings") ? "page" : undefined}
+                    className={cn(
+                      "group relative flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      pathname?.startsWith("/settings")
+                        ? "bg-muted text-foreground"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    <Settings className="h-5 w-5" aria-hidden="true" />
+                    <span
+                      className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs font-medium text-background opacity-0 shadow transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+                      aria-hidden="true"
+                    >
+                      설정
+                    </span>
+                  </Link>
+                </div>
+                <div className="hidden h-5 w-px bg-border sm:block" aria-hidden="true" />
+              </>
+            )}
             {AppCalendarButton && <AppCalendarButton />}
             <AccountMenu />
           </div>
