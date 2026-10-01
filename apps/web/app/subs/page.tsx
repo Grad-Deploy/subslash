@@ -39,6 +39,8 @@ import { findDuplicateSubscription } from "@lib/duplicate-subscription";
 import { sortSubsForApp, type AppSubsSort } from "@lib/subs-order";
 import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
+import { GoogleCalendarSync } from "../../components/calendar/GoogleCalendarSync";
+import { isGmailAutoImportOpen } from "@lib/privacy";
 import { isWideScreen } from "@lib/wide-screen";
 import { SelectedSubSync } from "../../components/subscription/SelectedSubSync";
 import {
@@ -597,7 +599,12 @@ export default function SubscriptionsPage() {
         </aside>
       </div>
 
-      {/* 연동·측정·데이터 설정은 설정 화면(/settings)에 있다 — 웹은 상단 바, 앱은 하단 설정 탭에서 연다. */}
+      {/*
+        구글 캘린더 등록은 구독 목록 바로 아래에 둔다 — 금액·결제일을 확인하고 고친 뒤 그 자리에서 누르는 것이다.
+        설정 화면에 두었더니 이런 기능이 있는지 찾기 어려웠다. 해지한 구독은 올리지 않으므로 구독 중 탭에만 둔다.
+        측정·데이터 설정은 설정 화면(/settings)에 있다.
+      */}
+      {tab === "active" && isGmailAutoImportOpen() && <GoogleCalendarSync />}
 
       {/* Floating Action Button for Mobile — 앱은 추가 방법을 고르는 AppAddButton */}
       {AppAddButton ? (
