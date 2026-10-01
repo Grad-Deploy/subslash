@@ -98,7 +98,23 @@ export interface PaymentMethodOption {
   value: string;
   label: string;
   directCancelUrl?: string;
+  /**
+   * `directCancelUrl`이 정기결제 목록으로 바로 가는지(direct), 첫 화면이라 메뉴를 찾아가야 하는지(entry).
+   * 서비스의 `cancelUrlKind`와 같은 뜻이다 — 첫 화면을 해지 버튼처럼 칠하면 누른 것만으로 해지된 줄 안다.
+   */
+  directCancelUrlKind?: "direct" | "entry";
+  /** 버튼 문구에 쓸 짧은 이름. `label`('Google Play 정기결제')을 그대로 쓰면 '정기결제'가 겹친다. */
+  shortName?: string;
   guide?: string;
+}
+
+/**
+ * 결제수단 링크 버튼의 문구. 정기결제 목록으로 바로 가는 링크만 '정기결제 관리'라고 부른다 — 첫 화면을
+ * 그렇게 부르면 눌러서 첫 화면만 보고 해지된 줄 안다(서비스 링크의 `cancelUrlKind` 문구와 같은 규칙).
+ */
+export function paymentCancelLabel(option: PaymentMethodOption): string {
+  const name = option.shortName ?? option.label;
+  return option.directCancelUrlKind === "direct" ? `${name} 정기결제 관리 열기` : `${name} 열기`;
 }
 
 export const PAYMENT_METHOD_OPTIONS: PaymentMethodOption[] = [
@@ -107,24 +123,32 @@ export const PAYMENT_METHOD_OPTIONS: PaymentMethodOption[] = [
     value: "kakaopay",
     label: "카카오페이 자동결제",
     directCancelUrl: "https://pay.kakao.com",
+    directCancelUrlKind: "entry",
+    shortName: "카카오페이",
     guide: "카카오톡 > 더보기 > 카카오페이 > 결제 > 자동결제 관리 > 해당 서비스 해지",
   },
   {
     value: "naverpay",
     label: "네이버페이 정기결제",
     directCancelUrl: "https://pay.naver.com",
+    directCancelUrlKind: "entry",
+    shortName: "네이버페이",
     guide: "네이버페이 홈 > 내 지갑 > 정기/반복결제 > 해당 서비스 해지",
   },
   {
     value: "apple_iap",
     label: "Apple App Store 인앱결제",
     directCancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
+    directCancelUrlKind: "direct",
+    shortName: "App Store",
     guide: "설정 > 본인 이름(Apple ID) > 구독 > 해당 구독 선택 > 구독 취소",
   },
   {
     value: "google_play",
     label: "Google Play 정기결제",
     directCancelUrl: "https://play.google.com/store/account/subscriptions",
+    directCancelUrlKind: "direct",
+    shortName: "Google Play",
     guide: "Google Play 앱/웹 > 프로필 > 결제 및 정기결제 > 정기결제 > 취소",
   },
   {
@@ -1058,6 +1082,39 @@ export function getCancelUrlKind(cancelUrl?: string): "direct" | "entry" | "unkn
     ),
   );
   return kinds.size === 1 ? [...kinds][0] : "unknown";
+}
+
+export interface CancelRoute {
+  /** 결제수단(앱스토어·간편결제)의 정기결제 관리인지, 서비스 자신의 주소인지. */
+  source: "payment" | "service";
+  url: string;
+  kind: "direct" | "entry" | "unknown";
+}
+
+/**
+ * 해지하러 갈 곳을 눌러야 할 순서대로 돌려준다. 화면은 `kind`가 direct인 것만 해지 버튼처럼(빨갛게) 칠한다.
+ *
+ * 결제수단이 정기결제를 관리하면 그쪽이 먼저다 — 결제가 거기 묶여 있어 서비스 화면에서는 끊기지 않는다.
+ * 예전에는 구글 플레이로 결제한 구글 원에서 첫 화면으로 가는 '구글 원 열기'가 빨간 버튼으로 위에 있고,
+ * 실제로 해지하는 'Google Play 정기결제 관리'는 다른 색으로 아래에 있어 어느 쪽이 해지인지 헷갈렸다.
+ */
+export function getCancelRoutes(sub: {
+  paymentMethod?: string | null;
+  cancelUrl?: string;
+}): CancelRoute[] {
+  const routes: CancelRoute[] = [];
+  const payment = PAYMENT_METHOD_OPTIONS.find((option) => option.value === sub.paymentMethod);
+  if (payment?.directCancelUrl) {
+    routes.push({
+      source: "payment",
+      url: payment.directCancelUrl,
+      kind: payment.directCancelUrlKind ?? "unknown",
+    });
+  }
+  if (sub.cancelUrl) {
+    routes.push({ source: "service", url: sub.cancelUrl, kind: getCancelUrlKind(sub.cancelUrl) });
+  }
+  return routes;
 }
 
 /**
