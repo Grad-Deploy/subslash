@@ -799,11 +799,16 @@ export const POPULAR_SERVICES: ServicePreset[] = [
       { id: "pro-plus", name: "Pro+", amount: 39 },
     ],
     currency: "USD",
-    // GitHub 문서는 설정 메뉴 경로만 안내하고 해지 화면의 고정 주소를 밝히지 않는다.
-    cancelUrl: "https://github.com/settings/billing",
+    // GitHub 문서(Viewing and changing your GitHub Copilot plan)의 경로: Settings > Billing & licensing >
+    // Licensing > 'GitHub Copilot'의 Manage subscription > Cancel subscription. 그 Licensing 화면이
+    // /settings/billing/licensing이다. 예전 주소 /settings/billing은 없는 주소와 같은 404를 준다 — 있는
+    // 설정 주소는 로그인하지 않으면 로그인 화면으로 보낸다(2026-10-01 확인). 로그인한 화면은 보지 못해
+    // 해지 화면이라고 부르지 않는다.
+    cancelUrl: "https://github.com/settings/billing/licensing",
     cancelUrlKind: "entry",
+    legacyCancelUrls: ["https://github.com/settings/billing"],
     cancelGuide:
-      "1. GitHub 로그인 후 오른쪽 위 프로필 사진 > [Settings]\n2. 왼쪽 'Access'의 [Billing and licensing] > [Licensing] (예전 화면은 [Plans and usage])\n3. 'GitHub Copilot' 칸의 [Manage subscription] > [Cancel subscription]\n4. [Cancel Copilot Pro]로 확인 — 이번 결제 주기가 끝나면 Copilot Free로 바뀝니다",
+      "1. GitHub 로그인 후 오른쪽 위 프로필 사진 > [Settings]\n2. 왼쪽 'Access'의 [Billing & licensing] > [Licensing]\n3. 'GitHub Copilot' 칸의 [Manage subscription] > [Cancel subscription]\n4. 확인하면 이번 결제 주기가 끝난 뒤 Copilot Free로 바뀝니다. 조직·회사가 준 Copilot은 여기서 해지할 수 없어요",
     iconEmoji: "🐙",
   },
   {

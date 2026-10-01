@@ -135,6 +135,10 @@ describe("바뀐 해지 주소", () => {
       "https://account.apple.com/account/manage/section/subscriptions",
     );
     expect(currentCancelUrl("https://chat.openai.com/")).toBe("https://chatgpt.com/");
+    // GitHub이 /settings/billing을 없앴다(없는 주소와 같은 404). Copilot은 Licensing 화면에서 해지한다.
+    expect(currentCancelUrl("https://github.com/settings/billing")).toBe(
+      "https://github.com/settings/billing/licensing",
+    );
   });
 
   it("지금 주소와 사용자가 적은 주소는 그대로 둔다", () => {
@@ -166,8 +170,9 @@ describe("바뀐 해지 주소", () => {
   });
 
   it("바꾼 링크 중 해지 화면을 확인하지 못한 곳은 direct라고 하지 않는다", () => {
-    // 멜론·노션은 해지 화면 주소가 공개돼 있지 않고, 디즈니플러스는 계정 화면이다.
-    for (const id of ["melon", "notion", "disney-plus", "chatgpt-plus"]) {
+    // 멜론·노션은 해지 화면 주소가 공개돼 있지 않고, 디즈니플러스는 계정 화면이다. GitHub Copilot은
+    // 로그인한 화면을 보지 못했다.
+    for (const id of ["melon", "notion", "disney-plus", "chatgpt-plus", "github-copilot-pro"]) {
       expect(POPULAR_SERVICES.find((service) => service.id === id)?.cancelUrlKind).toBe("entry");
     }
   });
