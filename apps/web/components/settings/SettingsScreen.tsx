@@ -2,20 +2,12 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, LogIn, Monitor, Moon, Shield, Sun, User } from "lucide-react";
+import { ChevronRight, LogIn, Shield, User } from "lucide-react";
 import { useStore } from "@lib/store";
 import { useAuth } from "@hooks/useAuth";
-import { cn } from "@lib/utils";
-import { useTheme, type ThemePreference } from "../layout/ThemeProvider";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { ExchangeRateNote } from "./ExchangeRateNote";
 import { SettingsList } from "./SettingsList";
-
-const THEME_OPTIONS: { value: ThemePreference; label: string; Icon: typeof Sun }[] = [
-  { value: "system", label: "기기 설정", Icon: Monitor },
-  { value: "light", label: "라이트", Icon: Sun },
-  { value: "dark", label: "다크", Icon: Moon },
-];
 
 /**
  * 설정 화면(`/settings`, 웹·앱). 켜고 끄고 연결하는 것을 여기에 모은다 — 예전에는 구독 관리 위쪽(자동 체크인
@@ -23,7 +15,8 @@ const THEME_OPTIONS: { value: ThemePreference; label: string; Icon: typeof Sun }
  * 모았고, 웹도 같은 화면을 상단 바의 설정 아이콘에서 연다.
  *
  * 상단의 계정 아이콘과 그 메뉴(로그인한 계정 확인, 내 정보, 로그아웃)는 그대로 둔다 — 어느 계정으로 들어와
- * 있는지는 어느 화면에서든 보여야 한다. 여기에는 같은 계정 줄을 맨 위에 둔다. 화면 모드는 여기에만 있다.
+ * 있는지는 어느 화면에서든 보여야 한다. 여기에는 같은 계정 줄을 맨 위에 둔다. 화면 모드(라이트/다크)는 여기가
+ * 아니라 상단 바의 화면 모드 버튼(ThemeMenu)에 있다 — 설정에 들어가지 않아도 바로 바꿀 수 있게.
  */
 export function SettingsScreen({
   storageNote,
@@ -35,8 +28,8 @@ export function SettingsScreen({
   children?: React.ReactNode;
 }) {
   const { account, loading } = useAuth();
-  const { preference, setPreference } = useTheme();
   const subscriptions = useStore((state) => state.subscriptions);
+  const hasUSD = subscriptions.some((sub) => sub.currency === "USD" && sub.status === "active");
   const demo = useStore((state) => state.demo);
   const clearSubscriptions = useStore((state) => state.clearSubscriptions);
   const accountSync = useStore((state) => state.accountSync);
@@ -90,45 +83,13 @@ export function SettingsScreen({
       {/* 알림 · 연동 · 측정 · 데이터 */}
       <SettingsList onMessage={showToast} onClearAll={() => setConfirmClearAll(true)} />
 
-      {/* 화면 */}
-      <section className="space-y-2">
-        <h2 className="px-1 text-xs font-bold text-muted-foreground">화면</h2>
-        <div className="space-y-2.5 rounded-2xl border px-3 py-3">
-          <p id="theme-mode-label" className="text-sm font-bold">
-            화면 모드
-          </p>
-          {/* 기본은 기기 설정을 따른다. 한 번 라이트·다크를 골라도 다시 돌아올 수 있게 셋 중에서 고른다. */}
-          <div
-            role="radiogroup"
-            aria-labelledby="theme-mode-label"
-            className="grid grid-cols-3 gap-1 rounded-xl bg-secondary p-1"
-          >
-            {THEME_OPTIONS.map(({ value, label, Icon }) => {
-              const selected = preference === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  onClick={() => setPreference(value)}
-                  className={cn(
-                    "flex items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition-colors",
-                    selected
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <Icon className="size-4 shrink-0" aria-hidden />
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        {/* 달러 구독이 있을 때만 보인다(ExchangeRateNote가 스스로 가린다). */}
-        <ExchangeRateNote />
-      </section>
+      {/* 환율 — 달러 구독이 있을 때만 보인다(ExchangeRateNote도 스스로 가린다). 제목만 남지 않게 같이 가린다. */}
+      {hasUSD && (
+        <section className="space-y-2">
+          <h2 className="px-1 text-xs font-bold text-muted-foreground">환율</h2>
+          <ExchangeRateNote />
+        </section>
+      )}
 
       {/* 정보 */}
       <section className="space-y-2">
