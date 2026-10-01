@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { ChevronDown, Mail } from "lucide-react";
 import { PRIVACY_OFFICER, isGmailAutoImportOpen } from "@lib/privacy";
-import { copyText } from "@lib/native";
+import { copyText, openExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { Button } from "../../components/ui/button";
 
@@ -108,10 +108,15 @@ function faqGroups(gmailOpen: boolean): FaqGroup[] {
 export default function HelpPage() {
   const groups = faqGroups(isGmailAutoImportOpen());
   const email = PRIVACY_OFFICER?.email ?? null;
+  const subject = "[SubSlash 문의] ";
+  const body = `문의 내용:\n\n\n---\n사용 환경: ${IS_APP_BUILD ? "앱" : "웹"}`;
   const mailto = email
-    ? `mailto:${email}?subject=${encodeURIComponent("[SubSlash 문의] ")}&body=${encodeURIComponent(
-        `문의 내용:\n\n\n---\n사용 환경: ${IS_APP_BUILD ? "앱" : "웹"}`,
-      )}`
+    ? `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    : null;
+  // mailto:는 기기에 기본 메일 앱이 정해져 있어야 열린다. 메일을 웹(Gmail)으로만 쓰는 PC에서는 눌러도 아무것도
+  // 열리지 않았고, 열리지 않은 것을 페이지는 알 수 없다. 그래서 웹 주소로 여는 Gmail 쓰기 화면을 함께 둔다.
+  const gmailCompose = email
+    ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
     : null;
   const [copied, setCopied] = React.useState(false);
 
@@ -158,7 +163,7 @@ export default function HelpPage() {
           문의하기
         </h2>
         <div className="space-y-3 rounded-2xl border bg-card p-4 text-sm">
-          {email && mailto ? (
+          {email && mailto && gmailCompose ? (
             <>
               <p className="leading-relaxed text-muted-foreground">
                 찾는 답이 없으면 메일로 알려 주세요. 오류라면 어느 화면에서 무엇을 눌렀는지 함께
@@ -172,12 +177,19 @@ export default function HelpPage() {
                   className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <Mail className="size-4" aria-hidden />
-                  메일로 문의하기
+                  메일 앱으로 문의하기
                 </a>
+                <Button type="button" variant="outline" onClick={() => openExternal(gmailCompose)}>
+                  Gmail로 쓰기
+                </Button>
                 <Button type="button" variant="outline" onClick={() => void copyEmail()}>
                   {copied ? "복사했어요" : "주소 복사"}
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                메일 앱이 열리지 않으면 &lsquo;Gmail로 쓰기&rsquo;를 누르거나, 주소를 복사해 쓰는
+                메일에서 보내 주세요.
+              </p>
               <p className="text-xs text-muted-foreground">
                 개인정보에 관한 요청도 같은 주소로 받아요(
                 <Link href="/privacy" className="underline underline-offset-4">
