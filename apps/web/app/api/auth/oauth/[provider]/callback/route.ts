@@ -1,14 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
-import { eq } from "drizzle-orm";
-import { getDb, isDatabaseConfigured } from "@lib/db";
-import { accounts } from "@lib/schema";
-import {
-  SESSION_COOKIE,
-  createSession,
-  pruneExpiredSessions,
-  sessionCookieOptions,
-} from "@lib/auth-server";
+import { isDatabaseConfigured } from "@lib/db";
+import { SESSION_COOKIE, startLoginSession, sessionCookieOptions } from "@lib/auth-server";
 import {
   OAUTH_COOKIE,
   OAuthError,
@@ -100,14 +93,9 @@ export async function GET(
       return finish(NextResponse.redirect(appDone()));
     }
 
-    await getDb()
-      .update(accounts)
-      .set({ lastLoginAt: new Date().toISOString() })
-      .where(eq(accounts.id, account.id));
-    await pruneExpiredSessions().catch(() => {
-      // 청소가 실패해도 로그인은 막지 않는다.
-    });
-    const session = await createSession(account.id);
+    const started = await startLoginSession(account.id);
+    if (!started) return fail("server");
+    const { session } = started;
     const response = NextResponse.redirect(new URL(flow.next, origin));
     response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
     return finish(response);

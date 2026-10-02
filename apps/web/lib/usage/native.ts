@@ -5,7 +5,7 @@
  * 않는다 — iOS에서 부르면 "not implemented"로 거절당해 경고만 쌓인다(lib/native의 syncSystemBars와
  * 같은 이유). 플러그인은 동적으로 불러와 웹 번들에 들어가지 않는다.
  */
-import { IS_APP_BUILD } from "../platform";
+import { androidPluginLoader } from "../android-plugin";
 
 export interface NativeUsageDay {
   /** 이 폰의 시간대 기준 날짜(YYYY-MM-DD). */
@@ -50,24 +50,8 @@ interface UsageStatsPlugin {
   }): Promise<NativeForegroundResult>;
 }
 
-// 플러그인 프록시는 { plugin }으로 한 번 감싸서 넘긴다. Capacitor 플러그인 프록시는 어떤 속성이든
-// 네이티브 메서드로 답해서 `then`도 있는 것처럼 보인다. 프록시를 그대로 Promise의 결과로 넘기면
-// Promise가 그것을 thenable로 여겨 네이티브 'then'을 부르고, 영영 끝나지 않는다(화면이 계속
-// '확인 중'에 머물러 사용 현황이 아무 데도 뜨지 않았다).
-let plugin: Promise<{ plugin: UsageStatsPlugin } | null> | null = null;
-
-// load()도 프록시가 아니라 감싼 것을 돌려준다(async 함수의 반환값도 같은 이유로 풀린다).
-function load(): Promise<{ plugin: UsageStatsPlugin } | null> {
-  if (!IS_APP_BUILD) return Promise.resolve(null);
-  plugin ??= import("@capacitor/core")
-    .then(({ Capacitor, registerPlugin }) =>
-      Capacitor.getPlatform() === "android"
-        ? { plugin: registerPlugin<UsageStatsPlugin>("UsageStats") }
-        : null,
-    )
-    .catch(() => null);
-  return plugin;
-}
+// 프록시를 감싸는 까닭은 lib/android-plugin에 있다.
+const load = androidPluginLoader<UsageStatsPlugin>("UsageStats");
 
 /** 이 기기에서 폰 사용 기록을 쓸 수 있는지(안드로이드 앱인지). */
 export async function isUsageSupported(): Promise<boolean> {

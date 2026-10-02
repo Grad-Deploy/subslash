@@ -8,7 +8,7 @@ import { restoreRecords } from "@lib/mirrored-storage";
 import { onReminderTapped } from "@lib/native-reminders";
 import { useStore } from "@lib/store";
 import { useLocalReminderSync } from "@hooks/useLocalReminders";
-import { refreshAuth } from "@hooks/useAuth";
+import { enterAfterLogin } from "@hooks/useAuth";
 import { claimPendingLogin, hasPendingLogin } from "@lib/app-oauth";
 
 // 안드로이드 뒤로가기. @capacitor/app과 종료 확인 창이 웹 번들에 들어가지 않게 떼어 부른다.
@@ -44,9 +44,7 @@ export function NativeAppEffects() {
     const claim = async () => {
       if (!hasPendingLogin()) return;
       if ((await claimPendingLogin()) !== "ok" || cancelled) return;
-      await refreshAuth();
-      router.push("/dashboard");
-      router.refresh();
+      await enterAfterLogin(router);
     };
     void claim();
     void import("@capacitor/app").then(async ({ App }) => {
