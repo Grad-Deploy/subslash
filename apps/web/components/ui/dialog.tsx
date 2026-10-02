@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { cn } from "@lib/utils";
 import { useIsClient } from "@hooks/useIsClient";
 import { X } from "lucide-react";
-import { lockBodyScroll } from "@lib/scroll-lock";
+import { useOverlayLock } from "@hooks/useOverlayLock";
 
 interface DialogProps {
   open?: boolean;
@@ -24,22 +24,8 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
   // 포털 대상(document.body)은 서버에 없으므로, 브라우저에서 그릴 때만 붙인다.
   const isClient = useIsClient();
 
-  // Close on Escape and lock background scrolling while the dialog is open.
-  React.useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onOpenChange?.(false);
-    };
-    document.addEventListener("keydown", onKeyDown);
-
-    const unlockScroll = lockBodyScroll();
-
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      unlockScroll();
-    };
-  }, [open, onOpenChange]);
+  // Esc로 닫고, 열려 있는 동안 뒤 화면의 스크롤을 막는다.
+  useOverlayLock(!!open, onOpenChange && (() => onOpenChange(false)));
 
   if (!open || !isClient) return null;
 

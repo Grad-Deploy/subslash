@@ -25,7 +25,7 @@ import { Spinner } from "../../ui/spinner";
 import { AppCopyCode } from "./AppCopyCode";
 import { AppImportFlow } from "./AppImportFlow";
 import { AppStepper, StepTip, type AppStep } from "./AppStepper";
-import { lockBodyScroll } from "@lib/scroll-lock";
+import { useOverlayLock } from "@hooks/useOverlayLock";
 
 type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 
@@ -436,18 +436,7 @@ function PcInstallSheet({
   const isClient = useIsClient();
   const address = webUrl("/import");
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    const unlockScroll = lockBodyScroll();
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      unlockScroll();
-    };
-  }, [open, onClose]);
+  useOverlayLock(open, onClose);
 
   if (!open || !isClient) return null;
 

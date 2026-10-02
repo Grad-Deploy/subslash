@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import { AuthOutcome } from "./AuthOutcome";
 import { useSearchParams } from "next/navigation";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
@@ -206,7 +206,7 @@ export function ResetPassword() {
 
     case "done":
       return (
-        <Outcome
+        <AuthOutcome
           title="비밀번호를 바꿨습니다"
           body={`${view.username ? `아이디 ${view.username} 계정에 ` : ""}새 비밀번호로 로그인했습니다. 다른 기기에서는 새 비밀번호로 다시 로그인해주세요.`}
           link={{ href: "/me", label: "내 정보 보기" }}
@@ -215,7 +215,7 @@ export function ResetPassword() {
 
     case "invalid":
       return (
-        <Outcome
+        <AuthOutcome
           title="링크가 만료됐거나 올바르지 않습니다"
           body={`재설정 링크는 보낸 뒤 ${RESET_PASSWORD_TTL_MINUTES}분 동안, 한 번만 쓸 수 있습니다. 비밀번호를 이미 바꿨다면 새 비밀번호로 로그인하세요.`}
           link={{ href: "/forgot-password", label: "재설정 메일 다시 받기" }}
@@ -224,7 +224,7 @@ export function ResetPassword() {
 
     case "error":
       return (
-        <Outcome
+        <AuthOutcome
           title="처리하지 못했습니다"
           body={view.message}
           link={{ href: "/login", label: "로그인으로" }}
@@ -237,26 +237,3 @@ const NETWORK_ERROR: View = {
   kind: "error",
   message: "네트워크에 문제가 있어 처리하지 못했습니다. 잠시 후 다시 시도해주세요.",
 };
-
-function Outcome({
-  title,
-  body,
-  link,
-}: {
-  title: string;
-  body: string;
-  link: { href: string; label: string };
-}) {
-  return (
-    <div className="space-y-3 text-center" role="status">
-      <p className="text-lg font-black">{title}</p>
-      <p className="text-sm leading-relaxed text-muted-foreground">{body}</p>
-      <Link
-        href={link.href}
-        className="inline-block text-sm font-semibold text-primary underline underline-offset-4"
-      >
-        {link.label}
-      </Link>
-    </div>
-  );
-}
