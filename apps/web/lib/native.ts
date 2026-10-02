@@ -56,32 +56,85 @@ export function openExternal(url: string | undefined, options: { androidApp?: st
 }
 
 /**
+ * 돌아오는 딥링크가 브라우저 닫힘보다 늦게 오는 경우를 기다리는 시간. 안드로이드에서는 딥링크가 앱을
+ * 앞으로 부르면서 인앱 브라우저가 닫히므로, 닫힘 알림이 결과(딥링크)보다 먼저 올 수 있다.
+ */
+const RETURN_LINK_GRACE_MS = 600;
+
+/**
  * 사용자를 외부 사이트로 보냈다가 돌아오게 한다(Google 권한 화면처럼, 그 사이트에서 무언가를 마치고
  * 와야 하는 흐름).
  *
  * 웹에서는 이 탭이 그대로 그 주소로 간다 — 돌아오면 화면이 처음부터 다시 그려져 바뀐 상태가 보인다.
  * 앱에서는 그럴 수 없다. 웹뷰가 통째로 외부 사이트로 가면 그 안에 담긴 앱 화면을 잃고, 외부
- * 사이트의 '돌아가기'는 앱이 아니라 웹사이트를 연다. 그래서 인앱 브라우저로 열고, 닫으면 앱으로
- * 돌아온 뒤 `onReturn`으로 화면을 다시 맞춘다.
+ * 사이트의 '돌아가기'는 앱이 아니라 웹사이트를 연다. 그래서 인앱 브라우저로 열고, 앱으로 돌아온 뒤
+ * `onReturn`으로 화면을 다시 맞춘다.
+ *
+ * 돌아오는 길은 둘이다. 사용자가 인앱 브라우저를 닫거나, 끝 화면이 앱의 돌아오는 주소
+ * (`<앱 ID>://oauth-done?…`, lib/app-return)를 연다. 뒤의 것은 카카오톡처럼 다른 앱을 거쳐 Chrome에서
+ * 끝난 경우에도 앱으로 돌아오게 하고, 결과 쿼리를 `onReturn`에 넘긴다(닫기만 했으면 null).
  */
-export function leaveForExternal(url: string, onReturn?: () => void): void {
+export function leaveForExternal(
+  url: string,
+  onReturn?: (result: URLSearchParams | null) => void,
+): void {
   if (!isSafeExternalUrl(url)) return;
   if (IS_APP_BUILD) {
-    void import("@capacitor/browser")
-      .then(async ({ Browser }) => {
-        const finished = await Browser.addListener("browserFinished", () => {
-          void finished.remove();
-          onReturn?.();
-        });
+    void Promise.all([
+      import("@capacitor/browser"),
+      import("@capacitor/app"),
+      import("./app-return"),
+    ])
+      .then(async ([{ Browser }, { App }, { parseAppReturn }]) => {
+        let done = false;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const handles: Array<{ remove: () => Promise<void> }> = [];
+        const finish = (result: URLSearchParams | null) => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          for (const handle of handles) void handle.remove();
+          onReturn?.(result);
+        };
+        handles.push(
+          await Browser.addListener("browserFinished", () => {
+            timer = setTimeout(() => finish(null), RETURN_LINK_GRACE_MS);
+          }),
+          await App.addListener("appUrlOpen", ({ url: opened }) => {
+            const result = parseAppReturn(opened);
+            if (!result) return;
+            // iOS는 직접 닫아야 한다. 안드로이드는 앱이 앞으로 오며 이미 닫혔다(지원하지 않아 거절된다).
+            void Browser.close().catch(() => undefined);
+            finish(result);
+          }),
+        );
         await Browser.open({ url });
       })
       .catch((error) => {
         console.error("[native] 링크를 열지 못했습니다", error);
-        onReturn?.();
+        onReturn?.(null);
       });
     return;
   }
   window.location.assign(url);
+}
+
+/**
+ * 끝 화면이 열 이 앱의 스킴(앱 ID). 스토어 앱과 테스트용 앱(.dev)이 다르다. 웹이거나 읽지 못하면 null —
+ * 그러면 끝 화면은 예전처럼 창을 닫으라고만 말한다.
+ */
+export async function appReturnScheme(): Promise<string | null> {
+  if (!IS_APP_BUILD) return null;
+  try {
+    const [{ App }, { isAppReturnScheme }] = await Promise.all([
+      import("@capacitor/app"),
+      import("./app-return"),
+    ]);
+    const { id } = await App.getInfo();
+    return isAppReturnScheme(id) ? id : null;
+  } catch {
+    return null;
+  }
 }
 
 export interface SharePayload {

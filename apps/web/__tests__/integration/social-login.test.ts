@@ -341,3 +341,37 @@ describe("로그인 방법 잇기", () => {
     expect(unlink.status).toBe(409);
   });
 });
+
+describe("앱으로 돌아오기", () => {
+  const params = (provider = "google") => ({ params: Promise.resolve({ provider }) });
+  const CHALLENGE = s256("v".repeat(43));
+
+  it("앱이 보낸 스킴을 흐름에 적고, 목록에 없는 스킴은 버린다", async () => {
+    const start = (scheme: string) =>
+      startRoute(
+        new NextRequest(
+          `http://localhost/api/auth/oauth/google/start?client=app&challenge=${CHALLENGE}&return=${scheme}`,
+        ),
+        params(),
+      );
+    const ours = await start("com.subslash.app.dev");
+    expect(decodeFlow(ours.cookies.get(OAUTH_COOKIE)?.value)?.appReturn).toBe(
+      "com.subslash.app.dev",
+    );
+    const theirs = await start("evil.app");
+    expect(decodeFlow(theirs.cookies.get(OAUTH_COOKIE)?.value)?.appReturn).toBeNull();
+  });
+
+  it("앱에서 시작하자마자 실패해도 끝 화면에 돌아갈 앱을 싣는다", async () => {
+    const res = await startRoute(
+      new NextRequest(
+        "http://localhost/api/auth/oauth/google/start?client=app&challenge=short&return=com.subslash.app",
+      ),
+      params(),
+    );
+    const location = new URL(res.headers.get("location") ?? "");
+    expect(location.pathname).toBe("/oauth/done");
+    expect(location.searchParams.get("oauthError")).toBe("state");
+    expect(location.searchParams.get("app")).toBe("com.subslash.app");
+  });
+});
