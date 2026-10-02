@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MIN_AGE } from "@subslash/shared";
 import { Button } from "@components/ui/button";
-import { refreshAuth } from "@hooks/useAuth";
+import { enterAfterLogin } from "@hooks/useAuth";
 import { apiFetch, apiUrl } from "@lib/api";
 import { appReturnScheme, leaveForExternal } from "@lib/native";
 import { claimPendingLogin, clearPendingLogin, savePendingLogin } from "@lib/app-oauth";
@@ -151,25 +151,28 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
 
     setBusy(true);
 
+    /**
+     * 앱에서 실패한 결과(끝 화면·카카오톡 로그인 모두 `oauthError…` 모양)를 보인다. 처음 온 사람은 나이 확인이
+     * 있는 가입 화면에서 다시 누르게 한다(웹의 콜백이 가입 화면으로 보내는 것과 같다).
+     */
+    const showFailure = (result: URLSearchParams) => {
+      if (result.get("oauthError") === "need-age" && mode === "login") {
+        router.push("/signup?oauthError=need-age");
+        return;
+      }
+      setError(oauthErrorMessageFrom(result));
+    };
+
     // 카카오톡이 있으면 브라우저 없이 카카오톡으로 로그인한다(lib/kakao-native). 예전 앱·키 없는 빌드·서버가
     // 토큰을 확인할 수 없을 때는 아래 인앱 브라우저로 한다.
     if (provider.id === "kakao" && native.includes("kakao") && (await isKakaoNativeAvailable())) {
       const outcome = await kakaoNativeLogin({ over14: mode === "signup" && isOver14 });
       if (outcome.status === "ok") {
-        await refreshAuth();
-        router.push("/dashboard");
-        router.refresh();
+        await enterAfterLogin(router);
         return;
       }
       setBusy(false);
-      if (outcome.status === "error") {
-        // 처음 온 사람은 나이 확인이 있는 가입 화면에서 다시 누르게 한다(인앱 브라우저 로그인과 같다).
-        if (outcome.result.get("oauthError") === "need-age" && mode === "login") {
-          router.push("/signup?oauthError=need-age");
-          return;
-        }
-        setError(oauthErrorMessageFrom(outcome.result));
-      }
+      if (outcome.status === "error") showFailure(outcome.result);
       return;
     }
 
@@ -184,24 +187,16 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
     leaveForExternal(apiUrl(`/api/auth/oauth/${provider.id}/start?${params}`), (result) => {
       void (async () => {
         try {
-          const failed = result?.get("oauthError");
-          if (result && failed) {
+          if (result?.has("oauthError")) {
             clearPendingLogin();
-            // 처음 온 사람은 나이 확인이 있는 가입 화면에서 다시 누르게 한다(웹과 같은 동작).
-            if (failed === "need-age" && mode === "login") {
-              router.push("/signup?oauthError=need-age");
-              return;
-            }
-            setError(oauthErrorMessageFrom(result));
+            showFailure(result);
             return;
           }
           const claimed = await claimPendingLogin();
           // none: 창에서 취소했거나, 앱 복귀(NativeAppEffects)가 먼저 받아 갔다.
           if (claimed === "failed") setError(oauthErrorMessage("server"));
           if (claimed !== "ok") return;
-          await refreshAuth();
-          router.push("/dashboard");
-          router.refresh();
+          await enterAfterLogin(router);
         } finally {
           setBusy(false);
         }

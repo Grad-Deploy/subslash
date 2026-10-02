@@ -6,7 +6,7 @@ import Link from "next/link";
 import { validateLogin } from "@subslash/shared";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
-import { refreshAuth } from "@hooks/useAuth";
+import { enterAfterLogin } from "@hooks/useAuth";
 import { apiFetch } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
 
@@ -57,9 +57,7 @@ export function LoginForm() {
       }
 
       // 헤더가 곧바로 로그인 상태로 바뀌도록, 이동하기 전에 공유 상태를 갱신한다.
-      await refreshAuth();
-      router.push("/dashboard");
-      router.refresh();
+      await enterAfterLogin(router);
     } catch {
       setFormError("네트워크에 문제가 있어 로그인하지 못했습니다. 잠시 후 다시 시도해주세요.");
     } finally {

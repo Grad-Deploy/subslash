@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
-import { databaseUnavailableResponse, getDb } from "@lib/db";
-import { accounts } from "@lib/schema";
+import { databaseUnavailableResponse } from "@lib/db";
 import {
-  createSession,
   getAccountBySessionToken,
-  pruneExpiredSessions,
   readSessionToken,
   sessionTokenForApp,
+  startLoginSession,
   toPublicAccount,
 } from "@lib/auth-server";
 import { isAppOrigin } from "@lib/app-origins";
@@ -69,14 +66,11 @@ export async function POST(request: NextRequest) {
     const { account } = await resolveOAuthAccount(provider, profile, {
       over14: body?.over14 === true,
     });
-    const now = new Date().toISOString();
-    await getDb().update(accounts).set({ lastLoginAt: now }).where(eq(accounts.id, account.id));
-    await pruneExpiredSessions().catch(() => {
-      // 청소가 실패해도 로그인은 막지 않는다.
-    });
-    const session = await createSession(account.id);
+    const started = await startLoginSession(account.id);
+    if (!started) return fail("server", 500);
+    const { session } = started;
     return NextResponse.json({
-      account: toPublicAccount(account),
+      account: toPublicAccount(started.account),
       ...sessionTokenForApp(request, session),
     });
   } catch (error) {

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
-import { databaseUnavailableResponse, getDb } from "@lib/db";
-import { accounts } from "@lib/schema";
-import { createSession, sessionTokenForApp, toPublicAccount } from "@lib/auth-server";
+import { databaseUnavailableResponse } from "@lib/db";
+import { sessionTokenForApp, startLoginSession, toPublicAccount } from "@lib/auth-server";
 import { isAppOrigin } from "@lib/app-origins";
 import { consumeAppClaim } from "@lib/oauth-accounts";
 import { logError } from "@lib/log";
@@ -31,16 +29,11 @@ export async function POST(request: NextRequest) {
     if (!accountId) {
       return NextResponse.json({ error: "로그인이 끝나지 않았어요." }, { status: 404 });
     }
-    const rows = await getDb()
-      .update(accounts)
-      .set({ lastLoginAt: new Date().toISOString() })
-      .where(eq(accounts.id, accountId))
-      .returning();
-    const account = rows[0];
-    if (!account) {
+    const started = await startLoginSession(accountId);
+    if (!started) {
       return NextResponse.json({ error: "로그인이 끝나지 않았어요." }, { status: 404 });
     }
-    const session = await createSession(account.id);
+    const { account, session } = started;
     return NextResponse.json({
       account: toPublicAccount(account),
       ...sessionTokenForApp(request, session),
