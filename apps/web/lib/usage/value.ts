@@ -3,6 +3,7 @@
  * 한 달치 내 몫으로 나누므로, 폰 기록도 기록이 있는 날을 30일에 맞춰 환산한다.
  */
 import {
+  asksFreeTier,
   getMyMonthlyAmountKRW,
   getRiskLevel,
   metricRiskLevel,
@@ -252,7 +253,16 @@ export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {
       goal: GOOD_AT.days,
       goalUnit: GOAL_UNIT.days,
       pendingDays,
-      level: judge(metricRiskLevel("days", monthlyKRW, Math.round(per30))),
+      // 체크인과 같게, 무료로도 충분했다고 답한 구독은 많이 써도 '잘 씀'이 아니다.
+      level: judge(
+        metricRiskLevel(
+          "days",
+          monthlyKRW,
+          Math.round(per30),
+          null,
+          asksFreeTier(usage.sub) ? (usage.sub.freeTierAnswer ?? null) : null,
+        ),
+      ),
     };
   }
   // 시간(음악·독서). 혜택·용량은 폰 기록으로 재지 않으므로 여기 오지 않는다 — 오면 시간으로 본다.

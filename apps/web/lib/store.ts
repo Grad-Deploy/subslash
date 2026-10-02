@@ -14,6 +14,8 @@ import {
   evaluateMetric,
   storagePlanFit,
   metricForSubscription,
+  asksFreeTier,
+  type FreeTierAnswer,
   type ValueMetric,
   type OrderCount,
   findPresetForSubscription,
@@ -318,6 +320,8 @@ interface SubSlashStore {
   ) => void;
   /** 해지 알림에 "아직 구독 중"이라고 답했다. 같은 메일로 다시 묻지 않는다. */
   dismissCancelNotice: (id: string) => void;
+  /** 체크인의 "무료 요금제로도 충분했을까요?" 답을 적는다(무료 요금제가 있는 AI·업무 도구). */
+  setFreeTierAnswer: (id: string, answer: FreeTierAnswer) => void;
   deleteSubscription: (id: string) => void;
   /** 여러 구독을 한 번에 지운다(체크인 기록도). 절약 현황에서도 빠진다. */
   deleteSubscriptions: (ids: string[]) => void;
@@ -599,6 +603,13 @@ export const useStore = create<SubSlashStore>()(
           ),
         }));
       },
+      setFreeTierAnswer: (id, answer) => {
+        set((state) => ({
+          subscriptions: state.subscriptions.map((sub) =>
+            sub.id === id ? { ...sub, freeTierAnswer: answer } : sub,
+          ),
+        }));
+      },
       dismissCancelNotice: (id) => {
         set((state) => ({
           subscriptions: state.subscriptions.map((sub) =>
@@ -714,6 +725,9 @@ export const useStore = create<SubSlashStore>()(
         // 쪽이 다른 지표로 물었으면(메일의 'N회' 버튼) 그 지표를 넘긴다.
         const metric = options?.metric ?? metricForSubscription(sub);
         const quantity = clampQuantity(metric, usageCount);
+        // 무료 요금제로 충분했는지의 답은 묻는 구독(쓴 날로 재는, 무료 요금제가 있는 서비스)에만 쓴다.
+        const freeTier =
+          metric === "days" && asksFreeTier(sub) ? (sub.freeTierAnswer ?? null) : null;
         const { costPerUse, riskLevel, shockMessage } = evaluateMetric(
           metric,
           sub.name,
@@ -721,6 +735,7 @@ export const useStore = create<SubSlashStore>()(
           quantity,
           sub.currency,
           metric === "storage" ? storagePlanFit(sub, quantity) : null,
+          freeTier,
         );
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -736,6 +751,7 @@ export const useStore = create<SubSlashStore>()(
           // 횟수는 적지 않는다 — 이 기능 전의 기록과 같은 모양으로 남아 예전 앱도 읽는다.
           ...(metric !== "uses" ? { metric } : {}),
           ...(options?.source ? { source: options.source } : {}),
+          ...(freeTier ? { freeTier } : {}),
         };
 
         const replaceId = options?.replaceLogId;

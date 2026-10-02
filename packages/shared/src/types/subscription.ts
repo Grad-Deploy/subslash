@@ -111,6 +111,14 @@ export interface Subscription {
   cancelNoticeDismissedAt?: string;
 
   /**
+   * 체크인에서 "무료 요금제로도 충분했을까요?"에 한 답(utils/valueMetric의 `FreeTierAnswer`). 무료
+   * 요금제가 있는 AI·업무 도구(`asksFreeTier`)만 묻는다. 체크인 기록이 아니라 구독에 두는 까닭은, 폰
+   * 기록으로 적는 자동 체크인과 한꺼번에 체크인에서도 같은 판단을 쓰기 위해서다. 체크인 화면은 이 값을
+   * 미리 골라 두고, 다시 답하면 바꾼다.
+   */
+  freeTierAnswer?: "needed" | "enough" | "unsure";
+
+  /**
    * 멤버십 혜택을 적을 때 기댈 근거: Gmail 가져오기에서 찾은 최근 30일 주문 메일 수
    * (utils/orderEvidence). 가져온 메일 안에서 센 것이라 **최소**이고, 금액으로 바꾸지 않는다 — 주문마다
    * 받은 혜택(배송비·할인)은 사용자가 안다. 다시 가져오면 바뀐다.
@@ -205,6 +213,7 @@ export type SubscriptionFormData = Omit<
   | "observedAmountAt"
   | "cancelNoticeAt"
   | "cancelNoticeDismissedAt"
+  | "freeTierAnswer"
   | "orderEvidence"
   | "chargeHistory"
 >;

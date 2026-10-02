@@ -12,11 +12,13 @@ import {
   formatUnitCost,
   getMyMonthlyShareAmount,
   storagePlanFit,
+  asksFreeTier,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { FreeTierQuestion } from "./FreeTierQuestion";
 
 // 폰 기록 한 줄(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
 const AppPhoneMetricHint = IS_APP_BUILD
@@ -161,6 +163,11 @@ export function MetricQuantityInput({
 
       {spec.hint && (
         <p className="text-center text-[11px] leading-relaxed text-muted-foreground">{spec.hint}</p>
+      )}
+
+      {/* 무료 요금제가 있는 AI·업무 도구는 쓴 날만으로 판단하지 않는다. */}
+      {metric === "days" && asksFreeTier(subscription) && (
+        <FreeTierQuestion subscriptionId={subscription.id} />
       )}
 
       {AppPhoneMetricHint && (metric === "days" || metric === "hours") && (

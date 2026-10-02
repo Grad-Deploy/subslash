@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  asksFreeTier,
   clampQuantity,
   describeCheckIn,
   evaluateMetric,
@@ -43,6 +44,11 @@ describe("metricForSubscription", () => {
     expect(metricForSubscription(sub({ name: "동네 음악앱", category: "music" }))).toBe("hours");
     expect(metricForSubscription(sub({ name: "내 AI", category: "ai" }))).toBe("days");
     expect(metricForSubscription(sub({ name: "헬스장", category: "other" }))).toBe("uses");
+    // 직접 적은 쇼핑 멤버십·클라우드도 돈을 내서 받는 것으로 잰다.
+    expect(metricForSubscription(sub({ name: "동네 마트 멤버십", category: "shopping" }))).toBe(
+      "benefit",
+    );
+    expect(metricForSubscription(sub({ name: "내 NAS", category: "cloud" }))).toBe("storage");
   });
 
   it("달러 회비에는 원화 혜택을 견주지 않는다", () => {
@@ -66,6 +72,35 @@ describe("metricRiskLevel", () => {
     expect(metricRiskLevel("storage", 4400, 0)).toBe("red");
     expect(metricRiskLevel("storage", 4400, 20)).toBe("yellow");
     expect(metricRiskLevel("storage", 4400, 60)).toBe("green");
+  });
+});
+
+describe("무료 요금제로 충분했는지", () => {
+  it("무료 요금제가 확인된, 쓴 날로 재는 서비스에만 묻는다", () => {
+    expect(asksFreeTier(sub({ name: "ChatGPT", category: "ai" }))).toBe(true);
+    expect(asksFreeTier(sub({ name: "Notion", category: "ai" }))).toBe(true);
+    // 무료 요금제가 없거나(어도비) 있는지 모르는(직접 입력) 구독은 묻지 않는다.
+    expect(asksFreeTier(sub({ name: "Adobe Creative Cloud", category: "ai" }))).toBe(false);
+    expect(asksFreeTier(sub({ name: "내 AI", category: "ai" }))).toBe(false);
+    expect(asksFreeTier(sub({ name: "넷플릭스" }))).toBe(false);
+  });
+
+  it("무료로도 충분했다면 많이 써도 초록이 아니라 노랑이고, 빨강은 그대로다", () => {
+    expect(metricRiskLevel("days", 29000, 20, null, "enough")).toBe("yellow");
+    expect(metricRiskLevel("days", 29000, 20, null, "needed")).toBe("green");
+    expect(metricRiskLevel("days", 29000, 20, null, "unsure")).toBe("green");
+    expect(metricRiskLevel("days", 29000, 1, null, "enough")).toBe("red");
+  });
+
+  it("무료로 내려도 된다는 말은 쓴 날이 있고 무료로 충분했을 때만 붙인다", () => {
+    const enough = evaluateMetric("days", "ChatGPT Plus", 29000, 20, "KRW", null, "enough");
+    expect(enough.shockMessage).toContain("무료로 내려도 돼요");
+    expect(
+      evaluateMetric("days", "ChatGPT Plus", 29000, 0, "KRW", null, "enough").shockMessage,
+    ).not.toContain("무료로 내려도");
+    expect(
+      evaluateMetric("days", "ChatGPT Plus", 29000, 20, "KRW", null, "needed").shockMessage,
+    ).not.toContain("무료로 내려도");
   });
 });
 
