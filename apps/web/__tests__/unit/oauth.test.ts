@@ -10,6 +10,7 @@ import {
   safeNextPath,
   type OAuthFlow,
 } from "@lib/oauth";
+import { oauthErrorMessageFrom } from "@lib/oauth-messages";
 
 const ENV_KEYS = [
   "GOOGLE_OAUTH_CLIENT_ID",
@@ -31,6 +32,7 @@ const FLOW: OAuthFlow = {
   appChallenge: null,
   over14: true,
   next: "/subs",
+  link: null,
 };
 
 describe("parseProfile", () => {
@@ -78,6 +80,10 @@ describe("safeNextPath", () => {
 describe("흐름 쿠키", () => {
   it("적은 대로 읽고, 망가졌으면 null", () => {
     expect(decodeFlow(encodeFlow(FLOW))).toEqual(FLOW);
+    const linking = { ...FLOW, link: { accountId: "acc-1", fromApp: true } };
+    expect(decodeFlow(encodeFlow(linking))).toEqual(linking);
+    // 계정 없는 연결은 로그인으로 읽는다.
+    expect(decodeFlow(encodeFlow({ ...FLOW, link: { accountId: "" } as never }))?.link).toBeNull();
     expect(decodeFlow("not-json")).toBeNull();
     expect(decodeFlow(encodeFlow({ ...FLOW, provider: "apple" as never }))).toBeNull();
   });
@@ -131,5 +137,24 @@ describe("fetchProfile", () => {
     await expect(
       fetchProfile("google", "https://subslash.me", "code", FLOW, denied),
     ).rejects.toMatchObject({ code: "provider" });
+  });
+});
+
+describe("email-taken 문구", () => {
+  const message = (query: string) => oauthErrorMessageFrom(new URLSearchParams(query));
+
+  it("그 계정이 로그인하는 방법으로 로그인한 뒤 지금 누른 제공자를 이으라고 말한다", () => {
+    expect(message("oauthError=email-taken&oauthVia=google&oauthProvider=kakao")).toBe(
+      "이 이메일은 이미 구글로 가입돼 있어요. 그 방법으로 로그인한 뒤 '내 정보'의 로그인 방법에서 카카오를 연결하면 다음부터 카카오로도 로그인할 수 있어요.",
+    );
+    expect(
+      message("oauthError=email-taken&oauthVia=password,naver&oauthProvider=google"),
+    ).toContain("이메일(또는 아이디)과 비밀번호 또는 네이버로 가입돼 있어요");
+  });
+
+  it("방법을 모르면(제공자가 이메일을 확인하지 않음) 비밀번호가 있다고 단정하지 않는다", () => {
+    const generic = message("oauthError=email-taken");
+    expect(generic).toContain("처음 가입한 방법");
+    expect(generic).not.toContain("아이디와 비밀번호로 로그인해");
   });
 });
