@@ -205,32 +205,8 @@ export async function copyText(text: string): Promise<boolean> {
  * 그 창에서 저장할 곳(파일 앱·드라이브·메일 등)을 고른다.
  */
 export async function saveFile(name: string, content: string, mimeType: string): Promise<boolean> {
-  if (IS_APP_BUILD) {
-    const [{ Filesystem, Directory, Encoding }, { Share }] = await Promise.all([
-      import("@capacitor/filesystem"),
-      import("@capacitor/share"),
-    ]);
-    const { uri } = await Filesystem.writeFile({
-      path: name,
-      data: content,
-      directory: Directory.Cache,
-      encoding: Encoding.UTF8,
-    });
-    try {
-      await Share.share({ title: name, files: [uri], dialogTitle: name });
-      return true;
-    } catch (error) {
-      if (/cancel/i.test(String((error as Error)?.message))) return false;
-      throw error;
-    }
-  }
-  const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = name;
-  link.click();
-  URL.revokeObjectURL(url);
-  return true;
+  if (IS_APP_BUILD) return shareFromCache(name, content, "utf8");
+  return downloadBlob(name, new Blob([content], { type: mimeType }));
 }
 
 /** Blob을 base64 글자로(앞의 `data:...;base64,`는 뺀다). 네이티브 파일 쓰기가 이 형식을 받는다. */
@@ -248,25 +224,37 @@ function blobToBase64(blob: Blob): Promise<string> {
  * 폴더에 써서 공유 창을 연다(갤러리·메신저로 보낼 수 있다). 넘겼으면 true, 창을 닫았으면 false.
  */
 export async function saveImage(name: string, image: Blob): Promise<boolean> {
-  if (IS_APP_BUILD) {
-    const [{ Filesystem, Directory }, { Share }] = await Promise.all([
-      import("@capacitor/filesystem"),
-      import("@capacitor/share"),
-    ]);
-    const { uri } = await Filesystem.writeFile({
-      path: name,
-      data: await blobToBase64(image),
-      directory: Directory.Cache,
-    });
-    try {
-      await Share.share({ title: name, files: [uri], dialogTitle: name });
-      return true;
-    } catch (error) {
-      if (/cancel/i.test(String((error as Error)?.message))) return false;
-      throw error;
-    }
+  if (IS_APP_BUILD) return shareFromCache(name, await blobToBase64(image));
+  return downloadBlob(name, image);
+}
+
+/**
+ * 앱: 임시 폴더에 파일을 쓰고 네이티브 공유 창으로 넘긴다. `encoding`이 없으면 `data`는 base64다.
+ * 넘겼으면 true, 사용자가 창을 닫았으면 false.
+ */
+async function shareFromCache(name: string, data: string, encoding?: "utf8"): Promise<boolean> {
+  const [{ Filesystem, Directory, Encoding }, { Share }] = await Promise.all([
+    import("@capacitor/filesystem"),
+    import("@capacitor/share"),
+  ]);
+  const { uri } = await Filesystem.writeFile({
+    path: name,
+    data,
+    directory: Directory.Cache,
+    ...(encoding ? { encoding: Encoding.UTF8 } : {}),
+  });
+  try {
+    await Share.share({ title: name, files: [uri], dialogTitle: name });
+    return true;
+  } catch (error) {
+    if (/cancel/i.test(String((error as Error)?.message))) return false;
+    throw error;
   }
-  const url = URL.createObjectURL(image);
+}
+
+/** 웹: 브라우저 내려받기로 넘긴다. */
+function downloadBlob(name: string, blob: Blob): boolean {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = name;

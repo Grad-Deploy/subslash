@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useStore } from "../../lib/store";
 import {
   Subscription,
-  SubscriptionFormData,
   POPULAR_SERVICES,
   ServicePreset,
   formatKRW,
@@ -32,7 +31,7 @@ import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { IS_APP_BUILD } from "@lib/platform";
 import { useCheckInFlow, useReminderPrompt } from "@hooks/useCheckInFlow";
-import { findDuplicateSubscription } from "@lib/duplicate-subscription";
+import { useAddSubscriptionFlow } from "@hooks/useAddSubscriptionFlow";
 import { sortSubsForApp, type AppSubsSort } from "@lib/subs-order";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { GoogleCalendarSync } from "../../components/calendar/GoogleCalendarSync";
@@ -41,8 +40,6 @@ import { isWideScreen } from "@lib/wide-screen";
 import { SelectedSubSync } from "../../components/subscription/SelectedSubSync";
 import {
   AppAddButton,
-  AppAddCheckIn,
-  AppDuplicateDialog,
   AppKilledList,
   AppPhoneCheckInButton,
   AppSortSelect,
@@ -58,7 +55,6 @@ export default function SubscriptionsPage() {
   const {
     subscriptions,
     usageLogs,
-    addSubscription,
     killSubscription,
     reviveSubscription,
     deleteSubscription,
@@ -75,15 +71,6 @@ export default function SubscriptionsPage() {
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   // 앱: 구독 중 목록의 순서(결제일·금액·가성비).
   const [appSort, setAppSort] = useState<AppSubsSort>("billing");
-  // 앱: 방금 등록한 구독. 있으면 등록 창이 사용 횟수 묻기로 바뀐다.
-  const [addedSub, setAddedSub] = useState<Subscription | null>(null);
-  // 앱: 같은 서비스를 또 등록하려 할 때 한 번 묻는다. data는 확인하면 그대로 등록할 폼 값이다.
-  const [duplicate, setDuplicate] = useState<{
-    data: SubscriptionFormData;
-    existing: Subscription;
-  } | null>(null);
-  // 앱: 등록 직후 체크인이 이 사람의 첫 체크인인지. 맞으면 결제 알림을 한 번 묻는다.
-  const [firstEverCheckIn, setFirstEverCheckIn] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<ServicePreset | null>(null);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -124,6 +111,15 @@ export default function SubscriptionsPage() {
   const reminder = useReminderPrompt(showToast);
   const checkInFlow = useCheckInFlow({ showToast, reminder, onKill: (id) => handleKill(id) });
   const handleOpenCheckIn = checkInFlow.open;
+  // 구독 추가의 등록 처리(대시보드와 같은 흐름, hooks/useAddSubscriptionFlow).
+  const addFlow = useAddSubscriptionFlow({
+    showToast,
+    reminder,
+    onClose: () => {
+      setIsAddOpen(false);
+      setSelectedPreset(null);
+    },
+  });
 
   const activeSubs = getActiveSubscriptions();
   const killedSubs = getKilledSubscriptions();
@@ -229,24 +225,6 @@ export default function SubscriptionsPage() {
       showToast("삭제했어요");
     }
     setConfirmAction(null);
-  };
-
-  const handleAddSubmit = (data: SubscriptionFormData, allowDuplicate = false) => {
-    if (AppDuplicateDialog && !allowDuplicate) {
-      const existing = findDuplicateSubscription(subscriptions, data);
-      if (existing) {
-        setDuplicate({ data, existing });
-        return;
-      }
-    }
-    const added = addSubscription(data);
-    if (AppAddCheckIn) {
-      setFirstEverCheckIn(usageLogs.length === 0);
-      setAddedSub(added);
-      return;
-    }
-    setIsAddOpen(false);
-    showToast(`${data.name} 등록 완료`);
   };
 
   const categories = [
@@ -594,28 +572,12 @@ export default function SubscriptionsPage() {
           setIsAddOpen(open);
           if (!open) {
             setSelectedPreset(null);
-            setAddedSub(null);
+            addFlow.reset();
           }
         }}
       >
         <DialogContent className="sm:max-w-md">
-          {addedSub && AppAddCheckIn ? (
-            <AppAddCheckIn
-              subscription={addedSub}
-              onDone={(recorded) => {
-                setIsAddOpen(false);
-                setSelectedPreset(null);
-                setAddedSub(null);
-                // 이 사람의 첫 체크인이면 결제 알림을 한 번만 묻는다(대시보드 첫 체크인과 같은 흐름).
-                if (recorded !== undefined && firstEverCheckIn) reminder.askNow(addedSub);
-                showToast(
-                  recorded === undefined
-                    ? `${addedSub.name} 등록 완료`
-                    : `${addedSub.name} 등록 · ${recorded}회 기록`,
-                );
-              }}
-            />
-          ) : (
+          {addFlow.checkInStep ?? (
             <>
               <DialogHeader>
                 <DialogTitle>
@@ -627,7 +589,7 @@ export default function SubscriptionsPage() {
                 <SubForm
                   popularServices={POPULAR_SERVICES}
                   initialData={selectedPreset ? presetFormData(selectedPreset) : undefined}
-                  onSubmit={(data) => handleAddSubmit(data)}
+                  onSubmit={(data) => addFlow.submit(data)}
                 />
               </div>
             </>
@@ -637,18 +599,7 @@ export default function SubscriptionsPage() {
 
       {IS_APP_BUILD && reminder.sheet}
 
-      {duplicate && AppDuplicateDialog && (
-        <AppDuplicateDialog
-          existing={duplicate.existing}
-          candidate={duplicate.data}
-          onCancel={() => setDuplicate(null)}
-          onAddAnyway={() => {
-            const data = duplicate.data;
-            setDuplicate(null);
-            handleAddSubmit(data, true);
-          }}
-        />
-      )}
+      {addFlow.duplicateDialog}
 
       {checkInFlow.modal}
 
