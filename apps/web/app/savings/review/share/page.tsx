@@ -7,6 +7,7 @@ import { describeSpendingType, formatKRW } from "@subslash/shared";
 import { Button } from "@components/ui/button";
 import { readSharedReview } from "@lib/share-review";
 import { Spinner } from "../../../../components/ui/spinner";
+import { KilledServicesCard } from "@components/savings/KilledServicesCard";
 
 /**
  * 링크만으로 열리는 연말 결산 카드. 보는 사람의 브라우저에는 공유한 사람의 기록이
@@ -56,24 +57,11 @@ function SharedReviewContent() {
           </p>
         </div>
 
-        <div className="space-y-3 text-left bg-muted/40 p-4 rounded-2xl border">
-          <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
-            <span>{scope} 해지한 구독</span>
-            <span className="text-foreground">{shared.killedCount}개 서비스</span>
-          </div>
-          {shared.names.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {shared.names.map((name, idx) => (
-                <span
-                  key={idx}
-                  className="px-2.5 py-1 rounded-lg bg-card border text-xs font-medium text-foreground line-through opacity-80"
-                >
-                  {name}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+        <KilledServicesCard
+          label={`${scope} 해지한 구독`}
+          count={shared.killedCount}
+          names={shared.names}
+        />
 
         {type && (
           <div className="text-left p-4 rounded-2xl border bg-card space-y-1">

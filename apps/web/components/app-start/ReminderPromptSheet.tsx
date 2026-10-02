@@ -7,7 +7,7 @@ import { getNextBillingDateFor, type Subscription } from "@subslash/shared";
 import { REMINDER_DAY_CHOICES, useLocalReminderSettings } from "@hooks/useLocalReminders";
 import {
   checkReminderPermission,
-  requestReminderPermission,
+  ensureReminderPermission,
   sendTestReminder,
   type ReminderPermission,
 } from "@lib/native-reminders";
@@ -64,8 +64,7 @@ export function ReminderPromptSheet({
   const turnOn = async () => {
     setBusy(true);
     try {
-      let next = permission ?? (await checkReminderPermission());
-      if (next === "prompt") next = await requestReminderPermission();
+      const next = await ensureReminderPermission(permission);
       setPermission(next);
       if (next !== "granted") return;
       update({ enabled: true });
