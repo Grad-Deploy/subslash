@@ -5,7 +5,7 @@ import { needsBillingMonth } from "@subslash/shared";
 import { realRecords, useStore } from "@lib/store";
 import {
   checkReminderPermission,
-  requestReminderPermission,
+  ensureReminderPermission,
   sendTestReminder,
   type ReminderPermission,
 } from "@lib/native-reminders";
@@ -55,8 +55,7 @@ export function LocalReminderCard({ onMessage }: LocalReminderCardProps) {
   const turnOn = async () => {
     setBusy(true);
     try {
-      let next = permission ?? (await checkReminderPermission());
-      if (next === "prompt") next = await requestReminderPermission();
+      const next = await ensureReminderPermission(permission);
       setPermission(next);
       if (next !== "granted") return;
       update({ enabled: true });

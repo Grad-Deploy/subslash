@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Subscription, formatKRW, getYearDefendedSeries } from "@subslash/shared";
 import { cn } from "../../lib/utils";
+import { niceCeil } from "@lib/chart-scale";
 
 interface MonthlyDefenseChartProps {
   killedSubscriptions: Subscription[];
@@ -16,16 +17,6 @@ interface MonthlyDefenseChartProps {
  */
 const DEFENDED = "bg-emerald-700 dark:bg-emerald-400";
 const SCHEDULED = "bg-emerald-500 dark:bg-emerald-600";
-
-/** 눈금 맨 위를 1·2·2.5·5 단위의 깔끔한 수로 올린다. */
-function niceCeil(value: number): number {
-  if (value <= 0) return 0;
-  const base = 10 ** Math.floor(Math.log10(value));
-  for (const step of [1, 2, 2.5, 5]) {
-    if (value <= step * base) return step * base;
-  }
-  return 10 * base;
-}
 
 /**
  * 올해 달마다 해지 덕분에 빠져나가지 않은 금액.

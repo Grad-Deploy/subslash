@@ -49,6 +49,17 @@ export async function requestReminderPermission(): Promise<ReminderPermission> {
   return normalize((await LocalNotifications.requestPermissions()).display);
 }
 
+/**
+ * 알림을 켤 때: 아는 권한(`known`)이 없으면 확인하고, 아직 묻지 않았으면 그때 묻는다. 앱을 켤 때가 아니라
+ * 사용자가 '알림 켜기'를 누를 때만 부른다. 결제 알림 시트와 설정 카드가 같은 순서를 따로 들고 있었다.
+ */
+export async function ensureReminderPermission(
+  known: ReminderPermission | null,
+): Promise<ReminderPermission> {
+  const current = known ?? (await checkReminderPermission());
+  return current === "prompt" ? requestReminderPermission() : current;
+}
+
 let channelReady: Promise<void> | null = null;
 
 /**

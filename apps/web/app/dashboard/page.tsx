@@ -5,8 +5,8 @@ import { useIsClient } from "@hooks/useIsClient";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { IS_APP_BUILD } from "@lib/platform";
-import { findDuplicateSubscription } from "@lib/duplicate-subscription";
 import { useCheckInFlow, useReminderPrompt } from "@hooks/useCheckInFlow";
+import { useAddSubscriptionFlow } from "@hooks/useAddSubscriptionFlow";
 import { useStore } from "../../lib/store";
 import {
   Subscription,
@@ -51,24 +51,6 @@ import { FirstCheckInCard } from "../../components/app-start/FirstCheckInCard";
 const AppValueReceipt = IS_APP_BUILD
   ? dynamic(
       () => import("../../components/dashboard/app/AppValueReceipt").then((m) => m.AppValueReceipt),
-      { ssr: false },
-    )
-  : null;
-
-// 앱에서는 구독을 하나 등록한 뒤 같은 창에서 이번 달 사용 횟수를 묻는다. 웹 번들에는 넣지 않는다.
-const AppDuplicateDialog = IS_APP_BUILD
-  ? dynamic(
-      () =>
-        import("../../components/subscription/app/AppDuplicateDialog").then(
-          (m) => m.AppDuplicateDialog,
-        ),
-      { ssr: false },
-    )
-  : null;
-
-const AppAddCheckIn = IS_APP_BUILD
-  ? dynamic(
-      () => import("../../components/subscription/app/AppAddCheckIn").then((m) => m.AppAddCheckIn),
       { ssr: false },
     )
   : null;
@@ -148,7 +130,6 @@ export default function Dashboard() {
   const {
     subscriptions,
     usageLogs,
-    addSubscription,
     killSubscription,
     reviveSubscription,
     confirmKillVerified,
@@ -169,15 +150,6 @@ export default function Dashboard() {
 
   const mounted = useIsClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
-  // 앱: 방금 등록한 구독. 있으면 등록 창이 사용 횟수 묻기로 바뀐다.
-  const [addedSub, setAddedSub] = useState<Subscription | null>(null);
-  // 앱: 같은 서비스를 또 등록하려 할 때 한 번 묻는다. data는 확인하면 그대로 등록할 폼 값이다.
-  const [duplicate, setDuplicate] = useState<{
-    data: SubscriptionFormData;
-    existing: Subscription;
-  } | null>(null);
-  // 앱: 등록 직후 체크인이 이 사람의 첫 체크인인지. 맞으면 결제 알림을 한 번 묻는다.
-  const [firstEverCheckIn, setFirstEverCheckIn] = useState(false);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   // 등록 창을 여는 방식(앱의 빈 대시보드에서 서비스를 눌렀는지, '직접 입력'을 눌렀는지).
   // 열 때마다 key를 바꿔 SubForm을 새로 그린다 — 앞서 연 창의 입력이 남지 않게.
@@ -214,6 +186,12 @@ export default function Dashboard() {
     onKill: (id) => handleCancelGuide(id),
   });
   const handleOpenCheckIn = checkInFlow.open;
+  // 구독 추가의 등록 처리(내 구독과 같은 흐름, hooks/useAddSubscriptionFlow).
+  const addFlow = useAddSubscriptionFlow({
+    showToast,
+    reminder,
+    onClose: () => setIsAddOpen(false),
+  });
 
   if (!mounted) {
     return (
@@ -347,27 +325,9 @@ export default function Dashboard() {
     if (sub) setChargedTarget(sub);
   };
 
-  const handleAddSubmit = (data: SubscriptionFormData, allowDuplicate = false) => {
-    if (AppDuplicateDialog && !allowDuplicate) {
-      const existing = findDuplicateSubscription(subscriptions, data);
-      if (existing) {
-        setDuplicate({ data, existing });
-        return;
-      }
-    }
-    const added = addSubscription(data);
-    if (AppAddCheckIn) {
-      setFirstEverCheckIn(usageLogs.length === 0);
-      setAddedSub(added);
-      return;
-    }
-    setIsAddOpen(false);
-    showToast(`${data.name} 등록 완료`);
-  };
-
   const closeAdd = (open: boolean) => {
     setIsAddOpen(open);
-    if (!open) setAddedSub(null);
+    if (!open) addFlow.reset();
   };
 
   // 샘플은 내 구독에 더하지 않고 잠시 동안만 보여준다(store의 DemoSession).
@@ -619,21 +579,7 @@ export default function Dashboard() {
       {/* SubForm Modal for Adding */}
       <Dialog open={isAddOpen} onOpenChange={closeAdd}>
         <DialogContent className="sm:max-w-md">
-          {addedSub && AppAddCheckIn ? (
-            <AppAddCheckIn
-              subscription={addedSub}
-              onDone={(recorded) => {
-                closeAdd(false);
-                // 이 사람의 첫 체크인이면 결제 알림을 한 번만 묻는다(첫 체크인 카드와 같은 흐름).
-                if (recorded !== undefined && firstEverCheckIn) reminder.askNow(addedSub);
-                showToast(
-                  recorded === undefined
-                    ? `${addedSub.name} 등록 완료`
-                    : `${addedSub.name} 등록 · ${recorded}회 기록`,
-                );
-              }}
-            />
-          ) : (
+          {addFlow.checkInStep ?? (
             <>
               <DialogHeader>
                 <DialogTitle>새 구독 등록</DialogTitle>
@@ -645,7 +591,7 @@ export default function Dashboard() {
                   popularServices={POPULAR_SERVICES}
                   initialData={addInitial}
                   openCustom={addCustom}
-                  onSubmit={(data) => handleAddSubmit(data)}
+                  onSubmit={(data) => addFlow.submit(data)}
                 />
               </div>
             </>
@@ -653,18 +599,7 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {duplicate && AppDuplicateDialog && (
-        <AppDuplicateDialog
-          existing={duplicate.existing}
-          candidate={duplicate.data}
-          onCancel={() => setDuplicate(null)}
-          onAddAnyway={() => {
-            const data = duplicate.data;
-            setDuplicate(null);
-            handleAddSubmit(data, true);
-          }}
-        />
-      )}
+      {addFlow.duplicateDialog}
 
       {checkInFlow.modal}
 

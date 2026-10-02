@@ -13,6 +13,7 @@ import {
 import { readSharedSavings } from "../../../lib/share-savings";
 import { Spinner } from "../../../components/ui/spinner";
 import { PiggyBank } from "lucide-react";
+import { KilledServicesCard } from "@components/savings/KilledServicesCard";
 
 function SharedSavingsContent() {
   const searchParams = useSearchParams();
@@ -115,24 +116,7 @@ function SharedSavingsContent() {
         )}
 
         {/* Defended count & services */}
-        <div className="space-y-3 text-left bg-muted/40 p-4 rounded-2xl border">
-          <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
-            <span>해지한 구독</span>
-            <span className="text-foreground">{shared.count}개 서비스</span>
-          </div>
-          {shared.names.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {shared.names.map((name, idx) => (
-                <span
-                  key={idx}
-                  className="px-2.5 py-1 rounded-lg bg-card border text-xs font-medium text-foreground line-through opacity-80"
-                >
-                  {name}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+        <KilledServicesCard label="해지한 구독" count={shared.count} names={shared.names} />
 
         {/* Equivalents Cards */}
         {equivalents.length > 0 && (
