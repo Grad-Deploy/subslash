@@ -8,7 +8,7 @@ import { refreshAuth } from "@hooks/useAuth";
 import { apiFetch, apiUrl } from "@lib/api";
 import { leaveForExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
-import { oauthErrorMessage } from "@lib/oauth-messages";
+import { oauthErrorMessage, oauthErrorMessageFrom } from "@lib/oauth-messages";
 
 interface Provider {
   id: "google" | "kakao" | "naver";
@@ -99,9 +99,7 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
   useEffect(() => {
     let cancelled = false;
     // 제공자에서 돌아온 실패 이유(서버가 ?oauthError=로 넘긴다). 목록과 함께 그린다.
-    const returned = oauthErrorMessage(
-      new URLSearchParams(window.location.search).get("oauthError"),
-    );
+    const returned = oauthErrorMessageFrom(new URLSearchParams(window.location.search));
     apiFetch("/api/auth/oauth/providers")
       .then((res) => (res.ok ? res.json() : { providers: [] }))
       .then((data: { providers?: Provider[] }) => {

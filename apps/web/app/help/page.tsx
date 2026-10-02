@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { ChevronDown, Mail } from "lucide-react";
-import { PRIVACY_OFFICER, isGmailAutoImportOpen } from "@lib/privacy";
+import { PRIVACY_OFFICER, isGmailAutoImportOpen, isSocialLoginOpen } from "@lib/privacy";
 import { copyText, openExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { Button } from "../../components/ui/button";
@@ -22,7 +22,7 @@ interface FaqGroup {
  * 자주 묻는 질문. 답은 코드가 실제로 하는 일만 적는다(CLAUDE.md '제1원칙') — 하지 않는 일을 하는 것처럼 적으면
  * 그 말을 믿고 해지를 미룬 사람이 손해를 본다. 기능이 바뀌면 여기도 함께 고친다.
  */
-function faqGroups(gmailOpen: boolean): FaqGroup[] {
+function faqGroups(gmailOpen: boolean, socialOpen: boolean): FaqGroup[] {
   return [
     {
       title: "시작하기",
@@ -48,6 +48,14 @@ function faqGroups(gmailOpen: boolean): FaqGroup[] {
           q: "기기를 바꾸거나 브라우저 데이터를 지우면 기록이 사라지나요?",
           a: "로그인하지 않았다면 사라질 수 있어요. 미리 로그인해 두거나, 설정의 '백업 · 계정 저장'에서 백업 파일을 저장해 두세요. 새 기기에서 로그인하거나 백업 파일을 불러오면 돼요.",
         },
+        ...(socialOpen
+          ? [
+              {
+                q: "구글·카카오·네이버로 로그인하면 '이미 가입한 계정이 있어요'라고 나와요.",
+                a: "그 이메일로 먼저 가입한 계정이 있으면, 다른 사람이 같은 주소로 계정에 들어오지 못하게 자동으로 합치지 않아요. 처음 가입한 방법(이메일과 비밀번호, 또는 처음 쓴 간편 로그인)으로 로그인한 뒤 내 정보의 '로그인 방법'에서 연결하면, 다음부터 그 방법으로도 같은 계정에 들어가요. 기록은 한 계정에 그대로 있어서 합치거나 지울 것이 없어요.",
+              },
+            ]
+          : []),
         {
           q: "기록을 지우거나 탈퇴하려면 어떻게 하나요?",
           a: "이 기기의 구독 기록은 설정의 '전체 초기화'로 지워요. 계정은 내 정보의 '회원 탈퇴'로 지우는데, 이때 이 기기에 있는 기록은 지워지지 않고 로그인하지 않은 기록으로 남아요.",
@@ -106,7 +114,7 @@ function faqGroups(gmailOpen: boolean): FaqGroup[] {
  * 문의 주소는 개인정보 보호책임자 연락처와 같은 곳(lib/privacy.ts)에서 가져온다 — 주소를 두 군데 적지 않는다.
  */
 export default function HelpPage() {
-  const groups = faqGroups(isGmailAutoImportOpen());
+  const groups = faqGroups(isGmailAutoImportOpen(), isSocialLoginOpen());
   const email = PRIVACY_OFFICER?.email ?? null;
   const subject = "[SubSlash 문의] ";
   const body = `문의 내용:\n\n\n---\n사용 환경: ${IS_APP_BUILD ? "앱" : "웹"}`;
