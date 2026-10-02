@@ -1,17 +1,24 @@
 apply plugin: 'com.android.application'
 
+def kakaoNativeAppKey = (project.findProperty('KAKAO_NATIVE_APP_KEY') ?: '').toString().trim()
+
 android {
     namespace = "com.subslash.app"
+    buildFeatures {
+        buildConfig = true
+    }
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "com.subslash.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 26
+        versionCode 27
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // 홈 화면·최근 앱에 보이는 이름. 테스트용 빌드(아래 debug)만 바꾼다.
-        manifestPlaceholders = [appLabel: "@string/app_name"]
+        manifestPlaceholders = [appLabel: "@string/app_name", kakaoScheme: "kakao${kakaoNativeAppKey}"]
+        // 카카오 로그인(KakaoLoginPlugin). 키가 없으면 플러그인이 '쓸 수 없음'이라 답하고 화면은 인앱 브라우저로 한다.
+        buildConfigField "String", "KAKAO_NATIVE_APP_KEY", "\"${kakaoNativeAppKey}\""
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
@@ -38,7 +45,7 @@ android {
             // 기록도 따로라 테스트하느라 실제 기록을 건드리지 않는다. 버전을 올릴 필요도 없다.
             if (project.hasProperty('devApp')) {
                 applicationIdSuffix ".dev"
-                manifestPlaceholders = [appLabel: "SubSlash Dev"]
+                manifestPlaceholders = [appLabel: "SubSlash Dev", kakaoScheme: "kakao${kakaoNativeAppKey}"]
             }
         }
         release {
@@ -67,6 +74,8 @@ dependencies {
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
+    // 카카오톡 앱으로 로그인(KakaoLoginPlugin). 버전을 올리면 proguard-rules.pro의 카카오 규칙도 확인한다.
+    implementation "com.kakao.sdk:v2-user:2.25.0"
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"

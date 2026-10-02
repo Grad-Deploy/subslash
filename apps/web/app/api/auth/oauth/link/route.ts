@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
-import { OAUTH_PROVIDER_LABEL, enabledProviders, isOAuthProviderId } from "@lib/oauth";
+import {
+  OAUTH_PROVIDER_LABEL,
+  enabledProviders,
+  isOAuthProviderId,
+  nativeProviders,
+} from "@lib/oauth";
 import { createLinkCode, linkedProviders, unlinkOAuthIdentity } from "@lib/oauth-accounts";
 import { hasPassword } from "@lib/password";
 import { isSocialLoginOpen } from "@lib/privacy";
@@ -39,6 +44,7 @@ export async function GET(request: NextRequest) {
         providers,
         linked: await linkedProviders(account.id),
         hasPassword: hasPassword(account.passwordHash),
+        native: providers.length > 0 ? nativeProviders() : [],
       },
       { headers: { "Cache-Control": "no-store" } },
     );

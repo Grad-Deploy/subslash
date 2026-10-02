@@ -21,6 +21,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // 카카오 SDK(KakaoLoginPlugin)는 카카오 저장소에만 있다.
+        maven { url 'https://devrepo.kakao.com/nexus/content/groups/public/' }
     }
 }
 
