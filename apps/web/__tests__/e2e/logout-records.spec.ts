@@ -111,7 +111,11 @@ test("로그아웃하면 계정의 기록을 치우고 로그인 전 기록을 �
   await expect(subCard(page, "유튜브 프리미엄")).toBeVisible();
   await expect.poll(serverNames).toEqual(["넷플릭스", "유튜브 프리미엄"]);
 
+  // 동기화 상태는 설정 화면에 있다(예전에는 내 구독 아래에 있었다).
+  await page.goto("/settings");
   await expect(page.getByText("계정과 자동으로 맞추는 중")).toBeVisible();
+  await page.goto("/subs");
+  await expect(subCard(page, "유튜브 프리미엄")).toBeVisible();
 
   await page.getByRole("button", { name: "계정 메뉴 (tester)" }).click();
   await page.getByRole("menuitem", { name: "로그아웃" }).click();
@@ -119,8 +123,9 @@ test("로그아웃하면 계정의 기록을 치우고 로그인 전 기록을 �
   await expect(subCard(page, "유튜브 프리미엄")).toBeHidden();
   await expect(subCard(page, "넷플릭스")).toBeVisible();
   // 로그인하지 않은 기기에 '계정과 맞추는 중'이라고 쓰지 않는다.
+  await page.goto("/settings");
   await expect(page.getByText("파일로 저장하거나 로그인해 두기")).toBeVisible();
-  await page.reload();
+  await page.goto("/subs");
   await expect(subCard(page, "넷플릭스")).toBeVisible();
   await expect(subCard(page, "유튜브 프리미엄")).toBeHidden();
   // 계정에 이미 올라간 기록은 이 기기에 사본을 남기지 않는다.
