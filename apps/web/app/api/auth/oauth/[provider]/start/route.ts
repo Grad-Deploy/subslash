@@ -11,6 +11,9 @@ import {
   type OAuthFlow,
 } from "@lib/oauth";
 import { isSocialLoginOpen } from "@lib/privacy";
+import { getAccountBySessionToken, SESSION_COOKIE } from "@lib/auth-server";
+import { verifyLinkCode } from "@lib/oauth-accounts";
+import { canSignLinks } from "@lib/tokens";
 
 /** 앱이 만든 challenge 모양(S256 base64url, 43자). */
 const CHALLENGE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
@@ -20,6 +23,11 @@ const CHALLENGE_PATTERN = /^[A-Za-z0-9_-]{43}$/;
  *
  * 쿼리: `client=app&challenge=…`(앱에서 시작), `over14=1`(가입 화면에서 만 14세 이상 확인),
  * `next=/경로`(로그인 뒤 갈 화면). 할 일은 httpOnly 쿠키에 적어 두고, 제공자에게는 state만 보낸다.
+ *
+ * `link=<연결 코드>`이면 로그인이 아니라 '내 정보'에서 로그인 방법을 잇는 것이다(코드는
+ * `/api/auth/oauth/link`가 준다). 웹에서는 이 브라우저에 로그인한 계정과 코드의 계정이 같아야 한다 —
+ * 남이 자기 코드를 담은 주소를 보내, 받은 사람의 구글 계정을 자기 계정에 잇게 하지 못하게. 앱은 인앱
+ * 브라우저라 세션 쿠키가 없어 코드만 본다(`client=app`).
  */
 export async function GET(
   request: NextRequest,
@@ -39,15 +47,32 @@ export async function GET(
   if (!isOAuthProviderId(provider) || !isSocialLoginOpen() || !isDatabaseConfigured()) {
     return fail("unavailable");
   }
-  if (fromApp && (!challenge || !CHALLENGE_PATTERN.test(challenge))) return fail("state");
+  const linkCode = params.get("link");
+  let link: OAuthFlow["link"] = null;
+  if (linkCode !== null) {
+    const done = fromApp ? "/oauth/done" : "/me";
+    const linkFail = (code: string) =>
+      NextResponse.redirect(new URL(`${done}?oauthError=${code}&oauthLink=1`, origin));
+    if (!canSignLinks()) return linkFail("unavailable");
+    const accountId = await verifyLinkCode(linkCode, provider);
+    if (!accountId) return linkFail("state");
+    if (!fromApp) {
+      const signedIn = await getAccountBySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
+      if (signedIn?.id !== accountId) return linkFail("state");
+    }
+    link = { accountId, fromApp };
+  } else if (fromApp && (!challenge || !CHALLENGE_PATTERN.test(challenge))) {
+    return fail("state");
+  }
 
   const flow: OAuthFlow = {
     provider,
     state: randomToken(),
     verifier: randomToken(),
-    appChallenge: fromApp ? challenge : null,
+    appChallenge: fromApp && !link ? challenge : null,
     over14: params.get("over14") === "1",
     next: safeNextPath(params.get("next")),
+    link,
   };
   const target = authorizeUrl(provider, origin, flow);
   if (!target) return fail("unavailable");

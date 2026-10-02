@@ -17,7 +17,7 @@ import {
   isOAuthProviderId,
   type OAuthErrorCode,
 } from "@lib/oauth";
-import { resolveOAuthAccount, storeAppClaim } from "@lib/oauth-accounts";
+import { linkOAuthIdentity, resolveOAuthAccount, storeAppClaim } from "@lib/oauth-accounts";
 import { isSocialLoginOpen } from "@lib/privacy";
 import { logError } from "@lib/log";
 
@@ -43,17 +43,30 @@ export async function GET(
   const origin = request.nextUrl.origin;
   const params = request.nextUrl.searchParams;
   const flow = decodeFlow(request.cookies.get(OAUTH_COOKIE)?.value);
-  const fromApp = flow?.appChallenge != null;
+  const fromApp = flow?.appChallenge != null || flow?.link?.fromApp === true;
+  // 로그인 방법을 잇는 중이면 끝나고 '내 정보'로 돌아간다(앱은 인앱 브라우저의 끝 화면).
+  const linking = flow?.link != null;
 
   const finish = (response: NextResponse) => {
     response.cookies.set(OAUTH_COOKIE, "", { path: "/api/auth/oauth", maxAge: 0 });
     return response;
   };
-  const fail = (code: OAuthErrorCode) => {
+  const fail = (code: OAuthErrorCode, via: readonly string[] = []) => {
     // 새 계정에 나이 확인이 필요하면 가입 화면으로, 나머지는 시작한 쪽으로.
-    const page = fromApp ? "/oauth/done" : code === "need-age" ? "/signup" : "/login";
+    const page = fromApp
+      ? "/oauth/done"
+      : linking
+        ? "/me"
+        : code === "need-age"
+          ? "/signup"
+          : "/login";
     const url = new URL(page, origin);
     url.searchParams.set("oauthError", code);
+    if (linking) url.searchParams.set("oauthLink", "1");
+    if (code === "email-taken" && via.length > 0) {
+      url.searchParams.set("oauthVia", via.join(","));
+      url.searchParams.set("oauthProvider", provider);
+    }
     return finish(NextResponse.redirect(url));
   };
 
@@ -70,6 +83,15 @@ export async function GET(
 
   try {
     const profile = await fetchProfile(provider, origin, code, flow);
+
+    if (flow.link) {
+      await linkOAuthIdentity(flow.link.accountId, provider, profile);
+      const page = flow.link.fromApp ? "/oauth/done" : "/me";
+      const url = new URL(page, origin);
+      url.searchParams.set("oauthLinked", provider);
+      return finish(NextResponse.redirect(url));
+    }
+
     const { account } = await resolveOAuthAccount(provider, profile, flow);
 
     if (flow.appChallenge) {
@@ -89,7 +111,7 @@ export async function GET(
     response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
     return finish(response);
   } catch (error) {
-    if (error instanceof OAuthError) return fail(error.code);
+    if (error instanceof OAuthError) return fail(error.code, error.via);
     logError(`api/auth/oauth/${provider}/callback`, error);
     return fail("server");
   }
