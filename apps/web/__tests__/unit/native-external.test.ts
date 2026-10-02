@@ -11,6 +11,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   opened: [] as string[],
   listeners: [] as (() => void)[],
+  appUrlListeners: [] as ((event: { url: string }) => void)[],
+  closed: 0,
   removed: 0,
 }));
 
@@ -21,6 +23,17 @@ vi.mock("@capacitor/browser", () => ({
       mocks.listeners.push(handler);
       return { remove: async () => void (mocks.removed += 1) };
     },
+    close: async () => void (mocks.closed += 1),
+  },
+}));
+
+vi.mock("@capacitor/app", () => ({
+  App: {
+    addListener: async (_event: string, handler: (event: { url: string }) => void) => {
+      mocks.appUrlListeners.push(handler);
+      return { remove: async () => void (mocks.removed += 1) };
+    },
+    getInfo: async () => ({ id: "com.subslash.app.dev" }),
   },
 }));
 
@@ -30,6 +43,8 @@ const URL_TO_OPEN = "https://script.google.com/macros/s/TEST/exec?action=calenda
 beforeEach(() => {
   mocks.opened = [];
   mocks.listeners = [];
+  mocks.appUrlListeners = [];
+  mocks.closed = 0;
   mocks.removed = 0;
   vi.resetModules();
 });
@@ -88,9 +103,39 @@ describe("앱에서", () => {
     await vi.waitFor(() => expect(mocks.listeners).toHaveLength(1));
 
     mocks.listeners[0]();
+    // 돌아오는 딥링크가 닫힘보다 늦게 올 수 있어 잠깐 기다린 뒤 결과 없이(null) 알린다.
+    await vi.waitFor(() => expect(onReturn).toHaveBeenCalledWith(null));
     expect(onReturn).toHaveBeenCalledTimes(1);
-    // 들은 것은 거둔다. 여러 번 열고 닫아도 쌓이지 않는다.
-    await vi.waitFor(() => expect(mocks.removed).toBe(1));
+    // 들은 것은 거둔다(닫힘·딥링크 둘). 여러 번 열고 닫아도 쌓이지 않는다.
+    await vi.waitFor(() => expect(mocks.removed).toBe(2));
+  });
+
+  it("끝 화면이 앱의 돌아오는 주소를 열면 결과를 넘기고, 남의 주소는 무시한다", async () => {
+    vi.stubGlobal("window", { location: { assign: vi.fn() } });
+    const onReturn = vi.fn();
+
+    const { leaveForExternal } = await load();
+    leaveForExternal(URL_TO_OPEN, onReturn);
+    await vi.waitFor(() => expect(mocks.appUrlListeners).toHaveLength(1));
+
+    mocks.appUrlListeners[0]({ url: "evil.app://oauth-done?oauthError=state" });
+    expect(onReturn).not.toHaveBeenCalled();
+
+    mocks.appUrlListeners[0]({ url: "com.subslash.app://oauth-done?oauthLinked=kakao" });
+    expect(onReturn).toHaveBeenCalledTimes(1);
+    expect(onReturn.mock.calls[0][0].get("oauthLinked")).toBe("kakao");
+    // iOS의 인앱 브라우저는 앱이 닫는다.
+    expect(mocks.closed).toBe(1);
+
+    // 뒤이은 닫힘 알림으로 두 번 부르지 않는다.
+    mocks.listeners[0]();
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    expect(onReturn).toHaveBeenCalledTimes(1);
+  });
+
+  it("돌아올 스킴은 앱 ID이고, 목록에 있는 것만 쓴다", async () => {
+    const { appReturnScheme } = await load();
+    expect(await appReturnScheme()).toBe("com.subslash.app.dev");
   });
 
   it("주소가 없으면 아무것도 하지 않는다", async () => {

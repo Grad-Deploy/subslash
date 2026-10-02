@@ -25,6 +25,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!--
+              인앱 브라우저에서 마친 간편 로그인·로그인 방법 연결이 앱으로 돌아오는 주소
+              (`<앱 ID>://oauth-done`, apps/web/lib/app-return.ts). 스킴을 앱 ID로 두어 테스트용 앱(.dev)은
+              자기 주소로 돌아온다. 주소에는 결과만 싣고 비밀값은 없다 — 세션은 앱이 쥔 verifier로만 받는다.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${applicationId}" android:host="oauth-done" />
+            </intent-filter>
+
         </activity>
 
         <provider

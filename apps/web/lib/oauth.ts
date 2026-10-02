@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "crypto";
 import type { OAuthErrorCode } from "./oauth-messages";
+import { isAppReturnScheme } from "./app-return";
 
 export type { OAuthErrorCode } from "./oauth-messages";
 
@@ -138,6 +139,11 @@ export interface OAuthFlow {
    * 뒤에만 채운다. `fromApp`이면 끝 화면이 앱의 '창을 닫으면 돌아갑니다'다.
    */
   link: { accountId: string; fromApp: boolean } | null;
+  /**
+   * 앱에서 시작했으면 끝 화면이 열 앱의 스킴(앱 ID, lib/app-return). 예전 앱은 보내지 않으므로 null이고,
+   * 그때 끝 화면은 예전처럼 창을 닫으라고만 말한다.
+   */
+  appReturn: string | null;
 }
 
 export const OAUTH_COOKIE = "subslash_oauth";
@@ -172,6 +178,7 @@ export function decodeFlow(raw: string | undefined): OAuthFlow | null {
         value.link && typeof value.link.accountId === "string" && value.link.accountId
           ? { accountId: value.link.accountId, fromApp: value.link.fromApp === true }
           : null,
+      appReturn: isAppReturnScheme(value.appReturn) ? value.appReturn : null,
     };
   } catch {
     return null;
