@@ -18,6 +18,11 @@ export interface UsageLog {
    * 구독마다 재는 것이 다르다 — 음악은 시간, AI는 쓴 날, 멤버십은 받은 혜택 금액.
    */
   metric?: "uses" | "days" | "hours" | "benefit" | "storage";
+  /**
+   * 이 체크인을 평가할 때 쓴 "무료 요금제로 충분했나"의 답(구독의 `freeTierAnswer`를 그때 옮겨 둔 것).
+   * 묻지 않는 구독이거나 답하지 않았으면 없다. `riskLevel`이 왜 노랑인지 나중에 읽을 수 있게 남긴다.
+   */
+  freeTier?: "needed" | "enough" | "unsure";
 }
 
 export interface CheckInResponse {

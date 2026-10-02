@@ -3,6 +3,7 @@ import {
   currentCategory,
   isChargeRecord,
   isValueMetric,
+  isFreeTierAnswer,
   parseDateOnly,
 } from "@subslash/shared";
 import type { LinkedAccount, Subscription, UsageLog } from "@subslash/shared";
@@ -133,6 +134,7 @@ function checkSubscription(v: unknown): string | null {
   if (!optional(v.linkedAccountId, isString)) return "연동 계정";
   if (!optional(v.linkedAccountName, isString)) return "연동 계정 이름";
   if (!optional(v.accountMemo, isString)) return "메모";
+  if (!optional(v.freeTierAnswer, isFreeTierAnswer)) return "무료 요금제로 충분했는지";
   if (!optional(v.resubscribeRemindOn, (d) => typeof d === "string" && parseDateOnly(d) !== null)) {
     return "다시 살펴볼 날";
   }
@@ -178,6 +180,7 @@ function checkUsageLog(v: unknown): string | null {
   if (!isDateText(v.checkedAt)) return "체크인 시각";
   if (!optional(v.source, (value) => value === "phone")) return "체크인 출처";
   if (!optional(v.metric, isValueMetric)) return "체크인 지표";
+  if (!optional(v.freeTier, isFreeTierAnswer)) return "무료 요금제로 충분했는지";
   return null;
 }
 
