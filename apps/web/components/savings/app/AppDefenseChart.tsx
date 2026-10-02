@@ -8,6 +8,7 @@ import {
   getYearDefendedSeries,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
+import { niceCeil } from "@lib/chart-scale";
 
 /**
  * 막대·선 색. 웹 그래프(MonthlyDefenseChart)와 같은 에메랄드 두 단계다(밝은 모드 700/500,
@@ -19,15 +20,6 @@ const SCHEDULED = "bg-emerald-500 dark:bg-emerald-600";
 const UPCOMING = "bg-emerald-200 dark:bg-emerald-800";
 const DEFENDED_STROKE = "stroke-emerald-700 dark:stroke-emerald-400";
 const SCHEDULED_STROKE = "stroke-emerald-500 dark:stroke-emerald-600";
-
-function niceCeil(value: number): number {
-  if (value <= 0) return 0;
-  const base = 10 ** Math.floor(Math.log10(value));
-  for (const step of [1, 2, 2.5, 5]) {
-    if (value <= step * base) return step * base;
-  }
-  return 10 * base;
-}
 
 /**
  * 이번 달 방어액 중 결제일이 오늘 이후라 아직 막았다고 할 수 없는 몫. 결제일이 '지났다'는 것은
