@@ -6,6 +6,7 @@ import { Header } from "../components/layout/Header";
 import { DemoBanner } from "../components/layout/DemoBanner";
 import { GmailDiscoveryInbox } from "../components/gmail/GmailDiscoveryInbox";
 import { BottomNav } from "../components/layout/BottomNav";
+import { SiteChrome } from "../components/layout/SiteChrome";
 import { ThemeProvider } from "../components/layout/ThemeProvider";
 import { BrandWordmark } from "../components/brand/Brand";
 import { ServiceWorkerRegistrar } from "../components/layout/ServiceWorkerRegistrar";
@@ -90,9 +91,12 @@ export default function RootLayout({
           <ServiceWorkerRegistrar />
           <NativeAppEffects />
           <AppLaunch />
-          <Header />
-          <DemoBanner />
-          <GmailDiscoveryInbox />
+          {/* 앱이 인앱 브라우저로 여는 화면(/oauth/done)에는 사이트 메뉴를 두지 않는다(SiteChrome). */}
+          <SiteChrome>
+            <Header />
+            <DemoBanner />
+            <GmailDiscoveryInbox />
+          </SiteChrome>
           {/*
             숫자를 보는 화면(대시보드·내 구독·절약 현황)이 넓은 화면에서 칸을 나눌 수 있게
             바깥 폭은 넓게 둔다. 읽거나 입력하는 화면은 각 페이지가 스스로 좁힌다(max-w-md 등).
@@ -102,34 +106,36 @@ export default function RootLayout({
             모바일 하단 탭에 가려지지 않게, 본문 대신 푸터가 아래 여백을 갖는다. 하단 탭이
             홈 표시줄만큼 높아지므로 그 높이도 더한다.
           */}
-          <footer className="container max-w-6xl mx-auto px-4 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 text-xs text-muted-foreground">
-            <div className="space-y-2 border-t pt-4">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <BrandWordmark className="text-xs" />
-                <Link
-                  href="/help"
-                  className="underline-offset-4 hover:text-foreground hover:underline"
-                >
-                  도움말 · 문의
-                </Link>
-                <Link
-                  href="/privacy"
-                  className="underline-offset-4 hover:text-foreground hover:underline"
-                >
-                  개인정보처리방침
-                </Link>
-              </div>
-              {/*
+          <SiteChrome>
+            <footer className="container max-w-6xl mx-auto px-4 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 text-xs text-muted-foreground">
+              <div className="space-y-2 border-t pt-4">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <BrandWordmark className="text-xs" />
+                  <Link
+                    href="/help"
+                    className="underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    도움말 · 문의
+                  </Link>
+                  <Link
+                    href="/privacy"
+                    className="underline-offset-4 hover:text-foreground hover:underline"
+                  >
+                    개인정보처리방침
+                  </Link>
+                </div>
+                {/*
                 화면에 보이는 서비스 이름과 로고는 남의 상표다. 구독을 알아볼 수 있게 쓸 뿐이고
                 SubSlash가 그 서비스와 제휴한 것이 아니라는 것을 로고가 보이는 곳에서 밝힌다.
               */}
-              <p className="text-[11px] leading-relaxed text-muted-foreground/80">
-                서비스 이름과 로고는 각 소유자의 상표이며, 구독을 알아볼 수 있게 쓸 뿐입니다.
-                SubSlash는 해당 서비스와 제휴하거나 보증받지 않았습니다.
-              </p>
-            </div>
-          </footer>
-          <BottomNav />
+                <p className="text-[11px] leading-relaxed text-muted-foreground/80">
+                  서비스 이름과 로고는 각 소유자의 상표이며, 구독을 알아볼 수 있게 쓸 뿐입니다.
+                  SubSlash는 해당 서비스와 제휴하거나 보증받지 않았습니다.
+                </p>
+              </div>
+            </footer>
+            <BottomNav />
+          </SiteChrome>
         </ThemeProvider>
       </body>
     </html>

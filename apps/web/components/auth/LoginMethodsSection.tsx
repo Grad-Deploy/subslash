@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@components/ui/button";
 import { useAuth } from "@hooks/useAuth";
 import { apiFetch, apiUrl } from "@lib/api";
-import { leaveForExternal } from "@lib/native";
+import { appReturnScheme, leaveForExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { oauthErrorMessageFrom } from "@lib/oauth-messages";
 
@@ -20,6 +20,10 @@ interface Methods {
 type Notice = { tone: "ok" | "error"; message: string } | null;
 
 const LABEL: Record<string, string> = { google: "구글", kakao: "카카오", naver: "네이버" };
+
+function linkedMessage(provider: string): string {
+  return `${LABEL[provider] ?? provider} 계정을 연결했어요. 다음부터 이것으로도 로그인할 수 있어요.`;
+}
 
 /** 못 받으면 null — 칸을 그리지 않는다. 다른 설정은 그대로 쓴다. */
 async function fetchMethods(): Promise<Methods | null> {
@@ -56,10 +60,7 @@ export function LoginMethodsSection() {
     const linked = search.get("oauthLinked");
     const failed = oauthErrorMessageFrom(search);
     const returned: Notice = linked
-      ? {
-          tone: "ok",
-          message: `${LABEL[linked] ?? linked} 계정을 연결했어요. 다음부터 이것으로도 로그인할 수 있어요.`,
-        }
+      ? { tone: "ok", message: linkedMessage(linked) }
       : failed
         ? { tone: "error", message: failed }
         : null;
@@ -102,8 +103,14 @@ export function LoginMethodsSection() {
         leaveForExternal(new URL(apiUrl(data.path), window.location.href).toString());
         return;
       }
-      leaveForExternal(apiUrl(`${data.path}&client=app`), () => {
+      const scheme = await appReturnScheme();
+      const returnParam = scheme ? `&return=${encodeURIComponent(scheme)}` : "";
+      leaveForExternal(apiUrl(`${data.path}&client=app${returnParam}`), (result) => {
         setBusy(null);
+        const linked = result?.get("oauthLinked");
+        const failed = result ? oauthErrorMessageFrom(result) : null;
+        if (linked) setNotice({ tone: "ok", message: linkedMessage(linked) });
+        else if (failed) setNotice({ tone: "error", message: failed });
         void load();
       });
     } catch {

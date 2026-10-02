@@ -6,7 +6,8 @@ import { MIN_AGE } from "@subslash/shared";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { apiFetch, apiUrl } from "@lib/api";
-import { leaveForExternal } from "@lib/native";
+import { appReturnScheme, leaveForExternal } from "@lib/native";
+import { claimPendingLogin, clearPendingLogin, savePendingLogin } from "@lib/app-oauth";
 import { IS_APP_BUILD } from "@lib/platform";
 import { oauthErrorMessage, oauthErrorMessageFrom } from "@lib/oauth-messages";
 
@@ -84,8 +85,9 @@ async function makeVerifier(): Promise<{ verifier: string; challenge: string }> 
  * 처음 쓰는 제공자 계정이면 그 자리에서 가입된다. 가입 화면(`mode="signup"`)에서는 만 14세 이상 확인을
  * 먼저 받고, 로그인 화면에서 처음 온 사람은 서버가 가입 화면으로 돌려보낸다(`need-age`).
  *
- * 웹은 이 탭이 제공자로 갔다가 돌아온다. 앱은 인앱 브라우저로 열고, 닫히면 앱이 만든 비밀값으로 세션을
- * 받아 온다(api/auth/oauth/claim) — 인앱 브라우저의 쿠키는 앱으로 오지 않는다.
+ * 웹은 이 탭이 제공자로 갔다가 돌아온다. 앱은 인앱 브라우저로 열고, 끝 화면이 앱을 다시 열거나
+ * (`<앱 ID>://oauth-done`) 창이 닫히면 앱이 만든 비밀값으로 세션을 받아 온다(api/auth/oauth/claim) —
+ * 인앱 브라우저의 쿠키는 앱으로 오지 않는다.
  *
  * 아이디 로그인·가입 폼 **아래**에 둔다. 위의 구분선('또는')도 이 칸의 것이라, 제공자가 없으면 함께 사라진다.
  */
@@ -145,26 +147,34 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
 
     setBusy(true);
     const { verifier, challenge } = await makeVerifier();
+    // 앱이 내려가도 돌아와서 받아 가도록 기기에 적어 둔다(lib/app-oauth).
+    savePendingLogin(verifier);
     params.set("client", "app");
     params.set("challenge", challenge);
-    leaveForExternal(apiUrl(`/api/auth/oauth/${provider.id}/start?${params}`), () => {
+    // 끝 화면이 이 앱을 다시 열게 한다. 카카오톡으로 로그인하면 Chrome에서 끝나기 때문이다.
+    const scheme = await appReturnScheme();
+    if (scheme) params.set("return", scheme);
+    leaveForExternal(apiUrl(`/api/auth/oauth/${provider.id}/start?${params}`), (result) => {
       void (async () => {
         try {
-          const res = await apiFetch("/api/auth/oauth/claim", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ verifier }),
-          });
-          if (!res.ok) {
-            // 창에서 취소했거나 실패했다. 이유는 그 창에 이미 보였다.
-            if (res.status !== 404) setError(oauthErrorMessage("server"));
+          const failed = result?.get("oauthError");
+          if (result && failed) {
+            clearPendingLogin();
+            // 처음 온 사람은 나이 확인이 있는 가입 화면에서 다시 누르게 한다(웹과 같은 동작).
+            if (failed === "need-age" && mode === "login") {
+              router.push("/signup?oauthError=need-age");
+              return;
+            }
+            setError(oauthErrorMessageFrom(result));
             return;
           }
+          const claimed = await claimPendingLogin();
+          // none: 창에서 취소했거나, 앱 복귀(NativeAppEffects)가 먼저 받아 갔다.
+          if (claimed === "failed") setError(oauthErrorMessage("server"));
+          if (claimed !== "ok") return;
           await refreshAuth();
           router.push("/dashboard");
           router.refresh();
-        } catch {
-          setError("네트워크에 문제가 있어 로그인하지 못했습니다. 잠시 후 다시 시도해주세요.");
         } finally {
           setBusy(false);
         }
