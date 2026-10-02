@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import { AuthOutcome } from "./AuthOutcome";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
@@ -143,7 +143,7 @@ export function EmailVerification() {
 
     case "verified":
       return (
-        <Outcome
+        <AuthOutcome
           title="이메일을 확인했습니다"
           body={
             view.username
@@ -156,7 +156,7 @@ export function EmailVerification() {
 
     case "declined":
       return (
-        <Outcome
+        <AuthOutcome
           title="계정을 지웠습니다"
           body="알려주셔서 고맙습니다. 이 주소로 가입된 계정이 없어졌고, 이 주소로 다시 가입할 수 있습니다."
           link={{ href: "/signup", label: "회원가입" }}
@@ -165,7 +165,7 @@ export function EmailVerification() {
 
     case "gone":
       return (
-        <Outcome
+        <AuthOutcome
           title="이미 지워진 계정입니다"
           body="이 링크가 가리키는 계정은 더 이상 없습니다. 이 주소로 새로 가입할 수 있습니다."
           link={{ href: "/signup", label: "회원가입" }}
@@ -174,7 +174,7 @@ export function EmailVerification() {
 
     case "invalid":
       return (
-        <Outcome
+        <AuthOutcome
           title="링크가 만료됐거나 올바르지 않습니다"
           body={`확인 링크는 보낸 뒤 ${VERIFY_ACCOUNT_TTL_DAYS}일 동안만 쓸 수 있습니다. 로그인한 뒤 '내 정보'에서 확인 메일을 다시 받을 수 있습니다.`}
           link={{ href: "/me", label: "내 정보로 가기" }}
@@ -183,7 +183,7 @@ export function EmailVerification() {
 
     case "error":
       return (
-        <Outcome
+        <AuthOutcome
           title="처리하지 못했습니다"
           body={view.message}
           link={{ href: "/", label: "홈으로" }}
@@ -226,28 +226,5 @@ function AccountSummary({ username, email }: { username: string; email: string }
       <dt className="text-muted-foreground">이메일</dt>
       <dd className="font-semibold break-all">{email}</dd>
     </dl>
-  );
-}
-
-function Outcome({
-  title,
-  body,
-  link,
-}: {
-  title: string;
-  body: string;
-  link: { href: string; label: string };
-}) {
-  return (
-    <div className="space-y-3 text-center" role="status">
-      <p className="text-lg font-black">{title}</p>
-      <p className="text-sm leading-relaxed text-muted-foreground">{body}</p>
-      <Link
-        href={link.href}
-        className="inline-block text-sm font-semibold text-primary underline underline-offset-4"
-      >
-        {link.label}
-      </Link>
-    </div>
   );
 }

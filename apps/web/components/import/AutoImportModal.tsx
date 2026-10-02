@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   CATEGORY_LABELS,
   DiscoveredSubscription,
-  SubscriptionFormData,
   parsePaymentSms,
   formatCurrency,
   formatKRW,
@@ -18,6 +17,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { IS_APP_BUILD } from "@lib/platform";
+import { discoveredFormData } from "@lib/discovered-form";
 import dynamic from "next/dynamic";
 import { SAMPLE_NAVER_RECEIPT, SAMPLE_SMS } from "./samples";
 
@@ -124,20 +124,7 @@ function WebAutoImportModal({
     const selected = discoveredItems.filter((item) => item.selected);
     if (selected.length === 0) return;
 
-    const dataList: SubscriptionFormData[] = selected.map((item) => ({
-      name: item.name,
-      amount: item.amount,
-      currency: item.currency,
-      billingDay: item.billingDay,
-      billingCycle: item.billingCycle,
-      billingMonth: item.billingMonth,
-      category: item.category,
-      cancelUrl: item.cancelUrl,
-      cancelGuide: item.cancelGuide,
-      paymentMethod: item.paymentMethod,
-      linkedAccountId: item.linkedAccountId,
-      linkedAccountName: item.linkedAccountName,
-    }));
+    const dataList = selected.map(discoveredFormData);
 
     startTransition(() => {
       addBatchSubscriptions(dataList, { clearPrevious: replaceExisting });

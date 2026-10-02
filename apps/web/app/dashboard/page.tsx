@@ -6,13 +6,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { IS_APP_BUILD } from "@lib/platform";
 import { findDuplicateSubscription } from "@lib/duplicate-subscription";
-import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt";
-import { useLocalReminderSettings } from "@hooks/useLocalReminders";
+import { useCheckInFlow, useReminderPrompt } from "@hooks/useCheckInFlow";
 import { useStore } from "../../lib/store";
 import {
   Subscription,
   SubscriptionFormData,
-  CheckInResponse,
   POPULAR_SERVICES,
   presetFormData,
   type ServicePreset,
@@ -30,7 +28,6 @@ import { BillingCalendar } from "../../components/dashboard/BillingCalendar";
 import { MonthlyValueReport } from "../../components/dashboard/MonthlyValueReport";
 import dynamic from "next/dynamic";
 import { SubForm } from "../../components/subscription/SubForm";
-import { CheckInModal } from "../../components/subscription/CheckInModal";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
 import {
@@ -49,7 +46,6 @@ import { Spinner } from "../../components/ui/spinner";
 import { AppStartChecklist } from "../../components/app-start/AppStartChecklist";
 import { AppServicePicker } from "../../components/app-start/AppServicePicker";
 import { FirstCheckInCard } from "../../components/app-start/FirstCheckInCard";
-import { ReminderPromptSheet } from "../../components/app-start/ReminderPromptSheet";
 
 // 앱에서는 가성비 리포트와 월 고정지출을 계산서 카드 하나로 보여준다. 웹 사용자가 이 코드를 받지 않도록 앱 빌드에서만 불러온다.
 const AppValueReceipt = IS_APP_BUILD
@@ -166,7 +162,6 @@ export default function Dashboard() {
     demo,
   } = useStore();
   const router = useRouter();
-  const [reminderSettings] = useLocalReminderSettings();
   const rate = useExchangeRate();
   // 폰 사용 기록을 읽을 수 없는 곳(웹·iOS)에는 '폰 사용 기록으로 찾기'를 두지 않는다.
   const phoneUsageStatus = usePhoneUsageStore((state) => state.status);
@@ -183,20 +178,12 @@ export default function Dashboard() {
   } | null>(null);
   // 앱: 등록 직후 체크인이 이 사람의 첫 체크인인지. 맞으면 결제 알림을 한 번 묻는다.
   const [firstEverCheckIn, setFirstEverCheckIn] = useState(false);
-  // 앱: 체크인·불러오기 창이 닫히면 결제 알림을 물을 구독(처음 한 번만). false면 묻지 않는다.
-  const [pendingReminder, setPendingReminder] = useState<Subscription | null | false>(false);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   // 등록 창을 여는 방식(앱의 빈 대시보드에서 서비스를 눌렀는지, '직접 입력'을 눌렀는지).
   // 열 때마다 key를 바꿔 SubForm을 새로 그린다 — 앞서 연 창의 입력이 남지 않게.
   const [addInitial, setAddInitial] = useState<Partial<SubscriptionFormData> | undefined>();
   const [addCustom, setAddCustom] = useState(false);
   const [addKey, setAddKey] = useState(0);
-  // 앱: 결제 알림을 켜기 전에 앱 안에서 먼저 묻는 시트. 누구의 결제일로 안내할지 함께 둔다.
-  const [reminderPromptSub, setReminderPromptSub] = useState<Subscription | null | undefined>(
-    undefined,
-  );
-  const [checkInSub, setCheckInSub] = useState<Subscription | null>(null);
-  const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
   // 앱 계산서에서 '쉬어가도 될 구독'을 이어서 해지할 때의 순서. current는 지금 해지 안내를 연 구독,
   // rest는 그 뒤에 물어볼 구독이다. 계산서가 아닌 곳에서 연 해지 안내에는 쓰지 않는다.
@@ -218,6 +205,15 @@ export default function Dashboard() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  // 결제 알림 묻기와 체크인 창(내 구독과 같은 흐름, hooks/useCheckInFlow).
+  const reminder = useReminderPrompt(showToast);
+  const checkInFlow = useCheckInFlow({
+    showToast,
+    reminder,
+    onKill: (id) => handleCancelGuide(id),
+  });
+  const handleOpenCheckIn = checkInFlow.open;
 
   if (!mounted) {
     return (
@@ -269,46 +265,6 @@ export default function Dashboard() {
       onAdd={(preset) => openAdd({ preset })}
     />
   );
-
-  const handleOpenCheckIn = (id: string) => {
-    const sub = findSub(id);
-    if (sub) {
-      setCheckInSub(sub);
-      setCheckInResult(undefined);
-    }
-  };
-
-  const flushPendingReminder = () => {
-    if (pendingReminder === false) return;
-    markReminderPrompted();
-    setReminderPromptSub(pendingReminder);
-    setPendingReminder(false);
-  };
-
-  // 불러오기로 구독을 처음 등록했을 때도 창이 닫히면 한 번 묻는다. 대표로 가장 최근 구독을 보여준다.
-  const handleImportRegistered = () => {
-    if (!shouldPromptReminder(reminderSettings.enabled)) return;
-    const latest = [...useStore.getState().subscriptions]
-      .filter((sub) => sub.status === "active")
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-    setPendingReminder(latest ?? null);
-  };
-
-  const handleCheckInSubmit = (count: number) => {
-    if (!checkInSub) return;
-    // 이 사람의 첫 체크인이면 체크인 창을 닫을 때 결제 알림을 한 번 묻는다(결과 화면을 가리지 않게).
-    if (usageLogs.length === 0 && shouldPromptReminder(reminderSettings.enabled)) {
-      setPendingReminder(checkInSub);
-    }
-    try {
-      const res = checkIn(checkInSub.id, count);
-      setCheckInResult(res);
-      showToast(`${checkInSub.name} 체크인 완료`);
-    } catch (error) {
-      console.error(error);
-      showToast("체크인하지 못했어요. 다시 시도해 주세요.");
-    }
-  };
 
   // 실제 해지는 서비스 쪽에서 해야 하므로 가이드를 먼저 열고, 마쳤다고
   // 알려줄 때만 완료로 기록한다.
@@ -476,13 +432,13 @@ export default function Dashboard() {
             <AppStartChecklist
               hasSubscription={activeSubs.length > 0}
               hasCheckIn={usageLogs.length > 0}
-              remindersOn={reminderSettings.enabled}
+              remindersOn={reminder.remindersOn}
               onAdd={() => openAdd()}
               onCheckIn={() => {
                 const target = firstCheckInSub ?? activeSubs[0];
                 if (target) handleOpenCheckIn(target.id);
               }}
-              onReminders={() => setReminderPromptSub(activeSubs[0] ?? null)}
+              onReminders={() => reminder.open(activeSubs[0] ?? null)}
             />
           ) : null}
 
@@ -494,10 +450,7 @@ export default function Dashboard() {
                 checkIn(firstCheckInSub.id, count);
                 showToast(`${firstCheckInSub.name} 사용 횟수를 기록했습니다.`);
                 // 체크리스트의 다음 단계(결제 알림)를 바로 이어서 묻는다. 이미 켰으면 묻지 않는다.
-                if (shouldPromptReminder(reminderSettings.enabled)) {
-                  markReminderPrompted();
-                  setReminderPromptSub(firstCheckInSub);
-                }
+                reminder.askNow(firstCheckInSub);
               }}
             />
           )}
@@ -672,14 +625,7 @@ export default function Dashboard() {
               onDone={(recorded) => {
                 closeAdd(false);
                 // 이 사람의 첫 체크인이면 결제 알림을 한 번만 묻는다(첫 체크인 카드와 같은 흐름).
-                if (
-                  recorded !== undefined &&
-                  firstEverCheckIn &&
-                  shouldPromptReminder(reminderSettings.enabled)
-                ) {
-                  markReminderPrompted();
-                  setReminderPromptSub(addedSub);
-                }
+                if (recorded !== undefined && firstEverCheckIn) reminder.askNow(addedSub);
                 showToast(
                   recorded === undefined
                     ? `${addedSub.name} 등록 완료`
@@ -720,39 +666,17 @@ export default function Dashboard() {
         />
       )}
 
-      {checkInSub && (
-        <CheckInModal
-          subscription={checkInSub}
-          isOpen={!!checkInSub}
-          onClose={() => {
-            setCheckInSub(null);
-            flushPendingReminder();
-          }}
-          onSubmit={handleCheckInSubmit}
-          onKill={handleCancelGuide}
-          result={checkInResult}
-        />
-      )}
+      {checkInFlow.modal}
 
-      {appStart && (
-        <ReminderPromptSheet
-          open={reminderPromptSub !== undefined}
-          subscription={reminderPromptSub ?? undefined}
-          onClose={() => setReminderPromptSub(undefined)}
-          onEnabled={() => {
-            setReminderPromptSub(undefined);
-            showToast("결제 알림을 켰어요. 몇 초 뒤 시험 알림이 떠요.");
-          }}
-        />
-      )}
+      {appStart && reminder.sheet}
 
       <AutoImportModal
         isOpen={isAutoImportOpen}
         onClose={() => {
           setIsAutoImportOpen(false);
-          flushPendingReminder();
+          reminder.flush();
         }}
-        onRegistered={handleImportRegistered}
+        onRegistered={reminder.askAfterImport}
       />
 
       <CancelGuideModal

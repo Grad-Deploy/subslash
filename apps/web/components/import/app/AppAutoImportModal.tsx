@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { ChevronDown, X } from "lucide-react";
 import {
   type DiscoveredSubscription,
-  type SubscriptionFormData,
   formatCurrency,
   formatKRW,
   parsePaymentSms,
@@ -14,11 +13,12 @@ import {
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { useStore } from "@lib/store";
+import { discoveredFormData } from "@lib/discovered-form";
 import { cn } from "@lib/utils";
 import { ServiceLogo } from "../../subscription/ServiceLogo";
 import type { AutoImportModalProps } from "../AutoImportModal";
 import { SAMPLE_NAVER_RECEIPT, SAMPLE_SMS } from "../samples";
-import { lockBodyScroll } from "@lib/scroll-lock";
+import { useOverlayLock } from "@hooks/useOverlayLock";
 
 /** 결제 주기 한 줄. 연간인데 결제 월을 모르면 날짜를 지어내지 않고 '미설정'으로 둔다. */
 function cycleText(item: DiscoveredSubscription): string {
@@ -100,19 +100,7 @@ export function AppAutoImportModal({
     parse(initialSmsText);
   }, [isOpen, initialSmsText]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    const unlockScroll = lockBodyScroll();
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      unlockScroll();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  useOverlayLock(isOpen, close);
 
   const fillSample = () => {
     // 예시는 카드 문자와 네이버페이 영수증을 번갈아 채운다.
@@ -134,20 +122,7 @@ export function AppAutoImportModal({
 
   const register = () => {
     if (selected.length === 0) return;
-    const dataList: SubscriptionFormData[] = selected.map((item) => ({
-      name: item.name,
-      amount: item.amount,
-      currency: item.currency,
-      billingDay: item.billingDay,
-      billingCycle: item.billingCycle,
-      billingMonth: item.billingMonth,
-      category: item.category,
-      cancelUrl: item.cancelUrl,
-      cancelGuide: item.cancelGuide,
-      paymentMethod: item.paymentMethod,
-      linkedAccountId: item.linkedAccountId,
-      linkedAccountName: item.linkedAccountName,
-    }));
+    const dataList = selected.map(discoveredFormData);
     startTransition(() => {
       addBatchSubscriptions(dataList, { clearPrevious: willReplace });
       // 결제 메일에서 찾은 후보는 이전 결제 메일들을 방금 등록한 구독에 적는다(웹의 등록 창과 같다).
