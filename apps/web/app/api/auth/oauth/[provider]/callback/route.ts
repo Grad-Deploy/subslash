@@ -47,20 +47,22 @@ export async function GET(
   // 로그인 방법을 잇는 중이면 끝나고 '내 정보'로 돌아간다(앱은 인앱 브라우저의 끝 화면).
   const linking = flow?.link != null;
 
+  /** 앱의 끝 화면 주소. 앱이 돌아갈 스킴을 보냈으면 싣는다(끝 화면이 그 앱을 연다). */
+  const appDone = () => {
+    const url = new URL("/oauth/done", origin);
+    if (flow?.appReturn) url.searchParams.set("app", flow.appReturn);
+    return url;
+  };
+
   const finish = (response: NextResponse) => {
     response.cookies.set(OAUTH_COOKIE, "", { path: "/api/auth/oauth", maxAge: 0 });
     return response;
   };
   const fail = (code: OAuthErrorCode, via: readonly string[] = []) => {
     // 새 계정에 나이 확인이 필요하면 가입 화면으로, 나머지는 시작한 쪽으로.
-    const page = fromApp
-      ? "/oauth/done"
-      : linking
-        ? "/me"
-        : code === "need-age"
-          ? "/signup"
-          : "/login";
-    const url = new URL(page, origin);
+    const url = fromApp
+      ? appDone()
+      : new URL(linking ? "/me" : code === "need-age" ? "/signup" : "/login", origin);
     url.searchParams.set("oauthError", code);
     if (linking) url.searchParams.set("oauthLink", "1");
     if (code === "email-taken" && via.length > 0) {
@@ -86,8 +88,7 @@ export async function GET(
 
     if (flow.link) {
       await linkOAuthIdentity(flow.link.accountId, provider, profile);
-      const page = flow.link.fromApp ? "/oauth/done" : "/me";
-      const url = new URL(page, origin);
+      const url = flow.link.fromApp ? appDone() : new URL("/me", origin);
       url.searchParams.set("oauthLinked", provider);
       return finish(NextResponse.redirect(url));
     }
@@ -96,7 +97,7 @@ export async function GET(
 
     if (flow.appChallenge) {
       await storeAppClaim(flow.appChallenge, account.id);
-      return finish(NextResponse.redirect(new URL("/oauth/done", origin)));
+      return finish(NextResponse.redirect(appDone()));
     }
 
     await getDb()

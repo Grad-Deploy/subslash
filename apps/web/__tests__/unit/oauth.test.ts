@@ -33,6 +33,7 @@ const FLOW: OAuthFlow = {
   over14: true,
   next: "/subs",
   link: null,
+  appReturn: null,
 };
 
 describe("parseProfile", () => {
@@ -82,6 +83,10 @@ describe("흐름 쿠키", () => {
     expect(decodeFlow(encodeFlow(FLOW))).toEqual(FLOW);
     const linking = { ...FLOW, link: { accountId: "acc-1", fromApp: true } };
     expect(decodeFlow(encodeFlow(linking))).toEqual(linking);
+    const fromApp = { ...FLOW, appReturn: "com.subslash.app.dev" };
+    expect(decodeFlow(encodeFlow(fromApp))).toEqual(fromApp);
+    // 목록에 없는 스킴으로는 끝 화면이 남의 앱을 열지 않는다.
+    expect(decodeFlow(encodeFlow({ ...FLOW, appReturn: "intent" }))?.appReturn).toBeNull();
     // 계정 없는 연결은 로그인으로 읽는다.
     expect(decodeFlow(encodeFlow({ ...FLOW, link: { accountId: "" } as never }))?.link).toBeNull();
     expect(decodeFlow("not-json")).toBeNull();

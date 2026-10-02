@@ -457,6 +457,11 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
   `onReturn`은 **그 화면 밖에서** 페이지를 새로 열 때만 받던 것까지 다시 받게 해야 한다 — 웹은
   돌아오면 모든 컴포넌트가 처음부터 돌지만 앱은 아니다. Gmail 연결은 링크 상태만 다시 읽어, 찾은
   구독(`GmailDiscoveryInbox`)이 앱을 껐다 켤 때까지 등록되지 않았다(`requestGmailDiscoveries`로 알린다).
+  간편 로그인·로그인 방법 연결은 끝 화면(`/oauth/done`)이 앱의 돌아오는 주소(`<앱 ID>://oauth-done?결과`,
+  `lib/app-return`, 매니페스트·iOS URL 타입)를 연다 — 카카오톡으로 로그인하면 Chrome에서 끝나, 창을 닫으라는
+  말만으로는 사용자가 웹에 남았다. `leaveForExternal`은 이 주소를 받으면 결과를 `onReturn`에 넘긴다. 앱의
+  verifier는 기기에 10분 적어 두고(`lib/app-oauth`) 돌아오는 길·앱 복귀·다음 실행 어디서든 한 번만 받아 간다.
+  인앱 브라우저가 여는 웹 화면에는 사이트 메뉴·Gmail 받기 상자를 두지 않는다(`SiteChrome`의 목록에 더한다).
   인앱 브라우저에 띄우는 외부 화면(Apps Script 웹 앱)도 웹사이트로 가는 링크를 두지 않는다 — 서버가
   앱 출처의 요청에 `client=app`을 붙이면 웹 앱은 '창을 닫으면 앱으로 돌아갑니다'를 띄운다. 링크를 두면
   인앱 브라우저에 웹이 열리고, 웹에 로그인돼 있으면 찾은 구독을 웹이 먼저 받아 가 앱에는 오지 않는다.
