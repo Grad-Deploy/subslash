@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterAll, afterEach, vi } from "vitest";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { NextRequest } from "next/server";
@@ -31,6 +31,7 @@ const {
 const { OAuthError, OAUTH_COOKIE, decodeFlow, s256 } = await import("../../lib/oauth");
 const linkRoute = await import("../../app/api/auth/oauth/link/route");
 const { GET: startRoute } = await import("../../app/api/auth/oauth/[provider]/start/route");
+const { POST: nativeRoute } = await import("../../app/api/auth/oauth/native/route");
 const { POST: loginRoute } = await import("../../app/api/auth/login/route");
 const { POST: claimRoute } = await import("../../app/api/auth/oauth/claim/route");
 const { DELETE: deleteRoute } = await import("../../app/api/auth/account/route");
@@ -373,5 +374,111 @@ describe("앱으로 돌아오기", () => {
     expect(location.pathname).toBe("/oauth/done");
     expect(location.searchParams.get("oauthError")).toBe("state");
     expect(location.searchParams.get("app")).toBe("com.subslash.app");
+  });
+});
+
+describe("카카오톡으로 로그인(앱 SDK)", () => {
+  const APP_ID = 1234567;
+
+  /** 카카오 API를 흉내 낸다. 토큰마다 발급한 앱과 회원 번호가 다르다. */
+  function stubKakao(tokens: Record<string, { appId: number; id: number; email: string }>) {
+    vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
+      const auth = new Headers(init?.headers).get("authorization") ?? "";
+      const token = tokens[auth.replace("Bearer ", "")];
+      if (!token) return Response.json({ msg: "invalid" }, { status: 401 });
+      if (url.includes("access_token_info")) {
+        return Response.json({ id: token.id, app_id: token.appId, expires_in: 3600 });
+      }
+      return Response.json({
+        id: token.id,
+        kakao_account: { email: token.email, is_email_verified: true, is_email_valid: true },
+      });
+    });
+  }
+
+  function nativeRequest(body: unknown, headers: Record<string, string> = {}) {
+    return new NextRequest("http://localhost/api/auth/oauth/native", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: "https://localhost", ...headers },
+      body: JSON.stringify(body),
+    });
+  }
+
+  beforeEach(() => {
+    process.env.KAKAO_APP_ID = String(APP_ID);
+  });
+  afterEach(() => {
+    delete process.env.KAKAO_APP_ID;
+    vi.unstubAllGlobals();
+  });
+
+  it("우리 앱이 발급한 토큰이면 웹 로그인과 같은 계정 규칙으로 세션을 준다", async () => {
+    stubKakao({ "token-ours-000000000000": { appId: APP_ID, id: 42, email: "k@kakao.com" } });
+    const first = await nativeRoute(
+      nativeRequest({ provider: "kakao", accessToken: "token-ours-000000000000" }),
+    );
+    // 처음 온 사람은 나이 확인부터.
+    expect(await first.json()).toMatchObject({ oauthError: "need-age" });
+
+    const signup = await nativeRoute(
+      nativeRequest({ provider: "kakao", accessToken: "token-ours-000000000000", over14: true }),
+    );
+    expect(signup.status).toBe(200);
+    const body = (await signup.json()) as { sessionToken?: string; account: { id: string } };
+    expect(body.sessionToken).toBeTruthy();
+    // 같은 회원 번호라 인앱 브라우저 로그인으로 들어와도 같은 계정이다.
+    const viaWeb = await resolveOAuthAccount(
+      "kakao",
+      { subject: "42", email: "k@kakao.com", emailVerified: true },
+      { over14: false },
+    );
+    expect(viaWeb.account.id).toBe(body.account.id);
+  });
+
+  it("다른 카카오 앱이 발급한 토큰은 거절한다", async () => {
+    stubKakao({ "token-other-00000000000": { appId: 999, id: 42, email: "k@kakao.com" } });
+    const res = await nativeRoute(
+      nativeRequest({ provider: "kakao", accessToken: "token-other-00000000000", over14: true }),
+    );
+    expect(await res.json()).toMatchObject({ oauthError: "state" });
+    expect(await getDb().select().from(accounts)).toHaveLength(0);
+  });
+
+  it("앱 ID가 없으면 열지 않고, 웹 출처에는 답하지 않는다", async () => {
+    stubKakao({ "token-ours-000000000000": { appId: APP_ID, id: 42, email: "k@kakao.com" } });
+    const fromWeb = await nativeRoute(
+      nativeRequest(
+        { provider: "kakao", accessToken: "token-ours-000000000000" },
+        { Origin: "https://www.subslash.me" },
+      ),
+    );
+    expect(fromWeb.status).toBe(403);
+
+    delete process.env.KAKAO_APP_ID;
+    const closed = await nativeRoute(
+      nativeRequest({ provider: "kakao", accessToken: "token-ours-000000000000", over14: true }),
+    );
+    expect(await closed.json()).toMatchObject({ oauthError: "unavailable" });
+  });
+
+  it("로그인한 계정에 카카오를 잇는다(로그인 방법)", async () => {
+    stubKakao({ "token-ours-000000000000": { appId: APP_ID, id: 7, email: "other@kakao.com" } });
+    const [owner] = await getDb()
+      .insert(accounts)
+      .values({ username: "owner", email: "someone@gmail.com", passwordHash: "scrypt$x" })
+      .returning();
+    const session = await createSession(owner.id);
+    const anonymous = await nativeRoute(
+      nativeRequest({ provider: "kakao", accessToken: "token-ours-000000000000", link: true }),
+    );
+    expect(anonymous.status).toBe(401);
+    const res = await nativeRoute(
+      nativeRequest(
+        { provider: "kakao", accessToken: "token-ours-000000000000", link: true },
+        { Authorization: `Bearer ${session.token}` },
+      ),
+    );
+    expect(res.status).toBe(200);
+    expect(await linkedProviders(owner.id)).toEqual(["kakao"]);
   });
 });

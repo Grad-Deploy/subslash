@@ -8,6 +8,7 @@ import { refreshAuth } from "@hooks/useAuth";
 import { apiFetch, apiUrl } from "@lib/api";
 import { appReturnScheme, leaveForExternal } from "@lib/native";
 import { claimPendingLogin, clearPendingLogin, savePendingLogin } from "@lib/app-oauth";
+import { isKakaoNativeAvailable, kakaoNativeLogin } from "@lib/kakao-native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { oauthErrorMessage, oauthErrorMessageFrom } from "@lib/oauth-messages";
 
@@ -97,6 +98,8 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
   const [isOver14, setIsOver14] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // 앱이 SDK(카카오톡)로 로그인할 수 있다고 서버가 답한 제공자.
+  const [native, setNative] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,9 +107,10 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
     const returned = oauthErrorMessageFrom(new URLSearchParams(window.location.search));
     apiFetch("/api/auth/oauth/providers")
       .then((res) => (res.ok ? res.json() : { providers: [] }))
-      .then((data: { providers?: Provider[] }) => {
+      .then((data: { providers?: Provider[]; native?: string[] }) => {
         if (cancelled) return;
         setProviders(Array.isArray(data.providers) ? data.providers : []);
+        setNative(Array.isArray(data.native) ? data.native : []);
         setError(returned);
       })
       .catch(() => {
@@ -146,6 +150,29 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
     }
 
     setBusy(true);
+
+    // 카카오톡이 있으면 브라우저 없이 카카오톡으로 로그인한다(lib/kakao-native). 예전 앱·키 없는 빌드·서버가
+    // 토큰을 확인할 수 없을 때는 아래 인앱 브라우저로 한다.
+    if (provider.id === "kakao" && native.includes("kakao") && (await isKakaoNativeAvailable())) {
+      const outcome = await kakaoNativeLogin({ over14: mode === "signup" && isOver14 });
+      if (outcome.status === "ok") {
+        await refreshAuth();
+        router.push("/dashboard");
+        router.refresh();
+        return;
+      }
+      setBusy(false);
+      if (outcome.status === "error") {
+        // 처음 온 사람은 나이 확인이 있는 가입 화면에서 다시 누르게 한다(인앱 브라우저 로그인과 같다).
+        if (outcome.result.get("oauthError") === "need-age" && mode === "login") {
+          router.push("/signup?oauthError=need-age");
+          return;
+        }
+        setError(oauthErrorMessageFrom(outcome.result));
+      }
+      return;
+    }
+
     const { verifier, challenge } = await makeVerifier();
     // 앱이 내려가도 돌아와서 받아 가도록 기기에 적어 둔다(lib/app-oauth).
     savePendingLogin(verifier);

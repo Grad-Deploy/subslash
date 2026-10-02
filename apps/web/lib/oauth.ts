@@ -317,12 +317,61 @@ export async function fetchProfile(
     throw new OAuthError("provider");
   }
 
-  const profileRes = await fetcher(config.profileUrl, {
+  return readProfile(provider, accessToken, fetcher);
+}
+
+/** 액세스 토큰으로 제공자 프로필을 한 번 읽는다. 토큰은 저장하지 않는다. */
+async function readProfile(
+  provider: OAuthProviderId,
+  accessToken: string,
+  fetcher: Fetcher,
+): Promise<OAuthProfile> {
+  const profileRes = await fetcher(PROVIDERS[provider].profileUrl, {
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: "no-store",
   });
   if (!profileRes.ok) throw new OAuthError("provider");
   const profile = parseProfile(provider, await profileRes.json().catch(() => null));
   if (!profile) throw new OAuthError("provider");
+  return profile;
+}
+
+/**
+ * 앱이 SDK로 받은 액세스 토큰으로 로그인하는 제공자(앱의 KakaoLoginPlugin). 토큰이 **이 앱에서** 발급됐는지
+ * 확인할 앱 ID가 있어야 연다 — 확인하지 않으면 사용자가 로그인한 아무 카카오 앱의 토큰으로도 들어올 수 있다.
+ * 앱 ID(숫자)는 카카오 개발자 콘솔의 '앱 키' 화면에 있고, 웹 로그인의 REST API 키와 같은 앱의 것이어야 같은
+ * 회원 번호가 나온다(카카오 회원 번호는 앱마다 다르다).
+ */
+export function nativeProviders(): OAuthProviderId[] {
+  return kakaoAppId() !== null ? ["kakao"] : [];
+}
+
+function kakaoAppId(): number | null {
+  const value = Number(process.env.KAKAO_APP_ID?.trim());
+  return Number.isInteger(value) && value > 0 ? value : null;
+}
+
+/**
+ * 앱이 넘긴 카카오 액세스 토큰을 확인하고 프로필을 읽는다. 토큰 정보의 앱 ID가 우리 앱이 아니면 거절한다.
+ */
+export async function fetchNativeProfile(
+  provider: OAuthProviderId,
+  accessToken: string,
+  fetcher: Fetcher = fetch,
+): Promise<OAuthProfile> {
+  const appId = provider === "kakao" ? kakaoAppId() : null;
+  if (appId === null) throw new OAuthError("unavailable");
+  const infoRes = await fetcher("https://kapi.kakao.com/v1/user/access_token_info", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  const info = asRecord(await infoRes.json().catch(() => null));
+  if (!infoRes.ok || !info) throw new OAuthError("provider");
+  if (info.app_id !== appId) throw new OAuthError("state");
+  const profile = await readProfile(provider, accessToken, fetcher);
+  // 토큰 정보와 프로필이 다른 사람을 가리키면(그사이 바뀐 토큰) 믿지 않는다.
+  if (info.id !== undefined && String(info.id) !== profile.subject) {
+    throw new OAuthError("provider");
+  }
   return profile;
 }
