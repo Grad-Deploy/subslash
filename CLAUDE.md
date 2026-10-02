@@ -219,7 +219,9 @@ parser의 `senderDomains`)는 따로 검색해 상한에 밀리지 않게 한다
   것인지 확인한 뒤 웹 로그인과 같은 `resolveOAuthAccount`·`linkOAuthIdentity`로 처리한다 — 확인하지 않으면 사용자가
   로그인한 아무 카카오 앱의 토큰으로 들어올 수 있다. `KAKAO_APP_ID`가 없거나 예전 앱이면 인앱 브라우저로 한다.
   네이티브 앱 키는 APK에 들어가는 공개 값이라 `apps/mobile/android/gradle.properties`에 두고, 카카오 콘솔의
-  안드로이드 플랫폼에 패키지(`com.subslash.app`·`.dev`)와 서명 키마다의 키 해시를 등록해야 동작한다.
+  안드로이드 플랫폼에 패키지와 서명 키마다의 키 해시를 등록해야 동작한다. 콘솔은 키 하나에 패키지명을 하나만
+  받아, 테스트용 앱(`.dev`)은 따로 만든 키(`KAKAO_NATIVE_APP_KEY_DEV`, 디버그 키 해시만 등록)를 쓴다. 스토어 키에는
+  Play 앱 서명 키(현재·이전)·업로드 키·디버그 키의 해시가 있다 — 서명 키를 바꾸면 새 해시를 더한다.
 - 앱은 인앱 브라우저에서 로그인하므로 쿠키를 주지 않는다. 앱이 만든 verifier의 해시(challenge)만 주소에
   싣고, 서버는 challenge에 계정을 적어 두었다가(`oauth_app_claims`, 10분·1회) 앱 출처가 verifier를 내밀 때
   세션을 준다. 계정을 지우는 경로는 `deleteOAuthData`를 부른다.

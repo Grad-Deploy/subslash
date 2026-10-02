@@ -1,6 +1,10 @@
 apply plugin: 'com.android.application'
 
 def kakaoNativeAppKey = (project.findProperty('KAKAO_NATIVE_APP_KEY') ?: '').toString().trim()
+// 테스트용 앱(.dev)은 카카오 콘솔에 따로 만든 네이티브 앱 키를 쓴다. 콘솔은 키 하나에 패키지명을 하나만 받아,
+// 스토어 앱의 키로는 com.subslash.app.dev가 카카오톡 로그인을 할 수 없다. 같은 카카오 앱(ID 1589535)의 키라
+// 서버의 앱 ID 확인(KAKAO_APP_ID)과 회원 번호는 스토어 앱과 같다.
+def kakaoDevNativeAppKey = (project.findProperty('KAKAO_NATIVE_APP_KEY_DEV') ?: '').toString().trim()
 
 android {
     namespace = "com.subslash.app"
@@ -45,7 +49,8 @@ android {
             // 기록도 따로라 테스트하느라 실제 기록을 건드리지 않는다. 버전을 올릴 필요도 없다.
             if (project.hasProperty('devApp')) {
                 applicationIdSuffix ".dev"
-                manifestPlaceholders = [appLabel: "SubSlash Dev", kakaoScheme: "kakao${kakaoNativeAppKey}"]
+                manifestPlaceholders = [appLabel: "SubSlash Dev", kakaoScheme: "kakao${kakaoDevNativeAppKey}"]
+                buildConfigField "String", "KAKAO_NATIVE_APP_KEY", "\"${kakaoDevNativeAppKey}\""
             }
         }
         release {
