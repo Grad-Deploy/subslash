@@ -1,6 +1,7 @@
 import React from "react";
 import { ProfileForm } from "@components/auth/ProfileForm";
 import { ChangePasswordSection } from "@components/auth/ChangePasswordSection";
+import { LoginMethodsSection } from "@components/auth/LoginMethodsSection";
 import { DeleteAccountSection } from "@components/auth/DeleteAccountSection";
 import { DataSettings } from "@components/settings/DataSettings";
 
@@ -21,6 +22,8 @@ export default function ProfilePage() {
       </div>
 
       <DataSettings />
+
+      <LoginMethodsSection />
 
       <ChangePasswordSection />
 

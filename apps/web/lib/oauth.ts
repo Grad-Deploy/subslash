@@ -133,6 +133,11 @@ export interface OAuthFlow {
   over14: boolean;
   /** 로그인 뒤 갈 화면(같은 사이트의 경로만). */
   next: string;
+  /**
+   * 로그인이 아니라 '내 정보'에서 로그인 방법을 잇는 중이면 이을 계정. 연결 코드(`oauth-link`)를 확인한
+   * 뒤에만 채운다. `fromApp`이면 끝 화면이 앱의 '창을 닫으면 돌아갑니다'다.
+   */
+  link: { accountId: string; fromApp: boolean } | null;
 }
 
 export const OAUTH_COOKIE = "subslash_oauth";
@@ -163,6 +168,10 @@ export function decodeFlow(raw: string | undefined): OAuthFlow | null {
       appChallenge: typeof value.appChallenge === "string" ? value.appChallenge : null,
       over14: value.over14 === true,
       next: safeNextPath(value.next),
+      link:
+        value.link && typeof value.link.accountId === "string" && value.link.accountId
+          ? { accountId: value.link.accountId, fromApp: value.link.fromApp === true }
+          : null,
     };
   } catch {
     return null;
@@ -250,8 +259,18 @@ export function parseProfile(provider: OAuthProviderId, body: unknown): OAuthPro
 }
 
 export class OAuthError extends Error {
-  constructor(readonly code: OAuthErrorCode) {
+  /**
+   * `email-taken`일 때 그 이메일의 계정이 로그인하는 방법(`password`·제공자). 화면이 "구글로 로그인한 뒤
+   * 연결하세요"처럼 따를 수 있는 말을 하게 한다. 제공자가 이메일을 확인하지 않았으면 비워 둔다 — 남의
+   * 주소를 적은 계정으로 그 주소의 주인이 어디로 가입했는지 알아낼 수 있게 된다.
+   */
+  readonly via: readonly string[];
+  constructor(
+    readonly code: OAuthErrorCode,
+    via: readonly string[] = [],
+  ) {
     super(code);
+    this.via = via;
   }
 }
 
