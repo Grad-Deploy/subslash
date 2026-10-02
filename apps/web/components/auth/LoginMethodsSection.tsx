@@ -8,6 +8,7 @@ import { apiFetch, apiUrl } from "@lib/api";
 import { appReturnScheme, leaveForExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { oauthErrorMessageFrom } from "@lib/oauth-messages";
+import { providerLabel } from "@lib/oauth-providers";
 import { isKakaoNativeAvailable, kakaoNativeLogin } from "@lib/kakao-native";
 
 type ProviderId = "google" | "kakao" | "naver";
@@ -22,10 +23,8 @@ interface Methods {
 
 type Notice = { tone: "ok" | "error"; message: string } | null;
 
-const LABEL: Record<string, string> = { google: "구글", kakao: "카카오", naver: "네이버" };
-
 function linkedMessage(provider: string): string {
-  return `${LABEL[provider] ?? provider} 계정을 연결했어요. 다음부터 이것으로도 로그인할 수 있어요.`;
+  return `${providerLabel(provider)} 계정을 연결했어요. 다음부터 이것으로도 로그인할 수 있어요.`;
 }
 
 /** 못 받으면 null — 칸을 그리지 않는다. 다른 설정은 그대로 쓴다. */
@@ -150,7 +149,7 @@ export function LoginMethodsSection() {
       if (!res.ok) {
         setNotice({ tone: "error", message: data.error ?? "연결을 끊지 못했어요." });
       } else {
-        setNotice({ tone: "ok", message: `${LABEL[provider]} 연결을 끊었어요.` });
+        setNotice({ tone: "ok", message: `${providerLabel(provider)} 연결을 끊었어요.` });
         await load();
       }
     } catch {

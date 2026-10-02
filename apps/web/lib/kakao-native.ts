@@ -6,7 +6,7 @@
  * 않는다. 웹·iOS이거나, 이 빌드에 카카오 키가 없거나, 서버가 토큰을 확인할 수 없으면(`native` 목록에 없음)
  * 화면은 예전처럼 인앱 브라우저로 한다.
  */
-import { IS_APP_BUILD } from "./platform";
+import { androidPluginLoader } from "./android-plugin";
 import { apiFetch } from "./api";
 
 interface KakaoLoginPlugin {
@@ -14,21 +14,7 @@ interface KakaoLoginPlugin {
   login(): Promise<{ accessToken: string }>;
 }
 
-// 프록시를 { plugin }으로 감싼다 — 그대로 Promise 결과로 넘기면 `then`도 네이티브 메서드로 보여 영영
-// 끝나지 않는다(lib/usage/native와 같은 이유).
-let loaded: Promise<{ plugin: KakaoLoginPlugin } | null> | null = null;
-
-function load(): Promise<{ plugin: KakaoLoginPlugin } | null> {
-  if (!IS_APP_BUILD) return Promise.resolve(null);
-  loaded ??= import("@capacitor/core")
-    .then(({ Capacitor, registerPlugin }) =>
-      Capacitor.getPlatform() === "android"
-        ? { plugin: registerPlugin<KakaoLoginPlugin>("KakaoLogin") }
-        : null,
-    )
-    .catch(() => null);
-  return loaded;
-}
+const load = androidPluginLoader<KakaoLoginPlugin>("KakaoLogin");
 
 /** 이 기기에서 카카오톡 로그인을 쓸 수 있는지. 예전 앱(플러그인 없음)이면 거절당하므로 false다. */
 export async function isKakaoNativeAvailable(): Promise<boolean> {

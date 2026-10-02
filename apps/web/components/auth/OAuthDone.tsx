@@ -3,8 +3,7 @@
 import React, { useEffect, useSyncExternalStore } from "react";
 import { appReturnUrl, isAppReturnScheme } from "@lib/app-return";
 import { oauthErrorMessageFrom } from "@lib/oauth-messages";
-
-const LINKED_LABEL: Record<string, string> = { google: "구글", kakao: "카카오", naver: "네이버" };
+import { providerLabel } from "@lib/oauth-providers";
 
 const subscribe = () => () => {};
 const readSearch = () => window.location.search;
@@ -39,7 +38,7 @@ export function OAuthDone() {
       ? "연결하지 못했어요"
       : "로그인하지 못했어요"
     : linked
-      ? `${LINKED_LABEL[linked] ?? linked} 계정을 연결했어요`
+      ? `${providerLabel(linked)} 계정을 연결했어요`
       : "로그인했어요";
   return (
     <div className="space-y-3 rounded-2xl border bg-card p-6 text-center" role="status">
