@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useIsClient } from "@hooks/useIsClient";
-import { lockBodyScroll } from "@lib/scroll-lock";
+import { useOverlayLock } from "@hooks/useOverlayLock";
 
 interface AppSheetProps {
   open: boolean;
@@ -24,18 +24,7 @@ interface AppSheetProps {
 export function AppSheet({ open, onClose, label, children }: AppSheetProps) {
   const isClient = useIsClient();
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    const unlockScroll = lockBodyScroll();
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      unlockScroll();
-    };
-  }, [open, onClose]);
+  useOverlayLock(open, onClose);
 
   if (!open || !isClient) return null;
 

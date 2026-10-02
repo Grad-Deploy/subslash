@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
+import { useDropdownMenu } from "@hooks/useDropdownMenu";
 import { Check, Monitor, Moon, Sun } from "lucide-react";
 import { cn } from "@lib/utils";
 import { useTheme, type ThemePreference } from "./ThemeProvider";
@@ -21,42 +22,13 @@ const OPTIONS: { value: ThemePreference; label: string; detail?: string; Icon: t
  */
 export function ThemeMenu() {
   const { preference, setPreference } = useTheme();
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const { open, setOpen, rootRef, triggerRef, menuRef } = useDropdownMenu({
+    items: '[role="menuitemradio"]',
+    // 지금 고른 모드에 포커스를 둔다.
+    initialFocus: '[aria-checked="true"]',
+  });
 
   const current = OPTIONS.find((option) => option.value === preference) ?? OPTIONS[0];
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-        return;
-      }
-      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-      const items = Array.from(
-        menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitemradio"]') ?? [],
-      );
-      if (items.length === 0) return;
-      e.preventDefault();
-      const index = items.indexOf(document.activeElement as HTMLElement);
-      const step = e.key === "ArrowDown" ? 1 : -1;
-      items[(index + step + items.length) % items.length]?.focus();
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    menuRef.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
 
   return (
     <div ref={rootRef} className="relative">

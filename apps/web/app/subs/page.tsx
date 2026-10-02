@@ -6,7 +6,6 @@ import { useStore } from "../../lib/store";
 import {
   Subscription,
   SubscriptionFormData,
-  CheckInResponse,
   POPULAR_SERVICES,
   ServicePreset,
   formatKRW,
@@ -18,7 +17,6 @@ import { SubjectChip } from "../../components/subscription/SubjectChip";
 import { SubTable } from "../../components/subscription/SubTable";
 import { SubForm } from "../../components/subscription/SubForm";
 import { QuickPresetRecommender } from "../../components/subscription/QuickPresetRecommender";
-import { CheckInModal } from "../../components/subscription/CheckInModal";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
 import {
@@ -33,11 +31,9 @@ import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { IS_APP_BUILD } from "@lib/platform";
-import { useLocalReminderSettings } from "@hooks/useLocalReminders";
-import { ReminderPromptSheet } from "../../components/app-start/ReminderPromptSheet";
+import { useCheckInFlow, useReminderPrompt } from "@hooks/useCheckInFlow";
 import { findDuplicateSubscription } from "@lib/duplicate-subscription";
 import { sortSubsForApp, type AppSubsSort } from "@lib/subs-order";
-import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { GoogleCalendarSync } from "../../components/calendar/GoogleCalendarSync";
 import { isGmailAutoImportOpen } from "@lib/privacy";
@@ -66,7 +62,6 @@ export default function SubscriptionsPage() {
     killSubscription,
     reviveSubscription,
     deleteSubscription,
-    checkIn,
     getActiveSubscriptions,
     getKilledSubscriptions,
   } = useStore();
@@ -89,14 +84,8 @@ export default function SubscriptionsPage() {
   } | null>(null);
   // 앱: 등록 직후 체크인이 이 사람의 첫 체크인인지. 맞으면 결제 알림을 한 번 묻는다.
   const [firstEverCheckIn, setFirstEverCheckIn] = useState(false);
-  // 앱: 체크인·불러오기 창이 닫히면 결제 알림을 물을 구독(처음 한 번만). false면 묻지 않는다.
-  const [pendingReminder, setPendingReminder] = useState<Subscription | null | false>(false);
-  const [reminderSettings] = useLocalReminderSettings();
-  const [reminderPromptSub, setReminderPromptSub] = useState<Subscription | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<ServicePreset | null>(null);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
-  const [checkInSub, setCheckInSub] = useState<Subscription | null>(null);
-  const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [confirmAction, setConfirmAction] = useState<{
@@ -130,6 +119,11 @@ export default function SubscriptionsPage() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
+
+  // 결제 알림 묻기와 체크인 창(대시보드와 같은 흐름, hooks/useCheckInFlow).
+  const reminder = useReminderPrompt(showToast);
+  const checkInFlow = useCheckInFlow({ showToast, reminder, onKill: (id) => handleKill(id) });
+  const handleOpenCheckIn = checkInFlow.open;
 
   const activeSubs = getActiveSubscriptions();
   const killedSubs = getKilledSubscriptions();
@@ -197,46 +191,6 @@ export default function SubscriptionsPage() {
     router.replace(next ? `/subs?sub=${encodeURIComponent(next)}` : "/subs", { scroll: false });
   };
   const selectedExists = selectedId !== null && subscriptions.some((s) => s.id === selectedId);
-
-  const handleOpenCheckIn = (id: string) => {
-    const sub = subscriptions.find((s) => s.id === id);
-    if (sub) {
-      setCheckInSub(sub);
-      setCheckInResult(undefined);
-    }
-  };
-
-  const flushPendingReminder = () => {
-    if (pendingReminder === false) return;
-    markReminderPrompted();
-    setReminderPromptSub(pendingReminder);
-    setPendingReminder(false);
-  };
-
-  // 불러오기로 구독을 처음 등록했을 때도 창이 닫히면 한 번 묻는다. 대표로 가장 최근 구독을 보여준다.
-  const handleImportRegistered = () => {
-    if (!shouldPromptReminder(reminderSettings.enabled)) return;
-    const latest = [...useStore.getState().subscriptions]
-      .filter((sub) => sub.status === "active")
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-    setPendingReminder(latest ?? null);
-  };
-
-  const handleCheckInSubmit = (count: number) => {
-    if (!checkInSub) return;
-    // 이 사람의 첫 체크인이면 체크인 창을 닫을 때 결제 알림을 한 번 묻는다(결과 화면을 가리지 않게).
-    if (usageLogs.length === 0 && shouldPromptReminder(reminderSettings.enabled)) {
-      setPendingReminder(checkInSub);
-    }
-    try {
-      const res = checkIn(checkInSub.id, count);
-      setCheckInResult(res);
-      showToast(`${checkInSub.name} 체크인 완료`);
-    } catch (error) {
-      console.error(error);
-      showToast("체크인하지 못했어요. 다시 시도해 주세요.");
-    }
-  };
 
   // 해지 버튼은 완료 처리로 바로 가지 않는다. 실제 해지는 서비스 쪽에서
   // 해야 하므로 가이드를 먼저 열고, 사용자가 마쳤다고 알려줄 때 확인을 받는다.
@@ -653,14 +607,7 @@ export default function SubscriptionsPage() {
                 setSelectedPreset(null);
                 setAddedSub(null);
                 // 이 사람의 첫 체크인이면 결제 알림을 한 번만 묻는다(대시보드 첫 체크인과 같은 흐름).
-                if (
-                  recorded !== undefined &&
-                  firstEverCheckIn &&
-                  shouldPromptReminder(reminderSettings.enabled)
-                ) {
-                  markReminderPrompted();
-                  setReminderPromptSub(addedSub);
-                }
+                if (recorded !== undefined && firstEverCheckIn) reminder.askNow(addedSub);
                 showToast(
                   recorded === undefined
                     ? `${addedSub.name} 등록 완료`
@@ -688,17 +635,7 @@ export default function SubscriptionsPage() {
         </DialogContent>
       </Dialog>
 
-      {IS_APP_BUILD && (
-        <ReminderPromptSheet
-          open={reminderPromptSub !== null}
-          subscription={reminderPromptSub ?? undefined}
-          onClose={() => setReminderPromptSub(null)}
-          onEnabled={() => {
-            setReminderPromptSub(null);
-            showToast("결제 알림을 켰어요. 몇 초 뒤 시험 알림이 떠요.");
-          }}
-        />
-      )}
+      {IS_APP_BUILD && reminder.sheet}
 
       {duplicate && AppDuplicateDialog && (
         <AppDuplicateDialog
@@ -713,29 +650,16 @@ export default function SubscriptionsPage() {
         />
       )}
 
-      {/* CheckIn Modal */}
-      {checkInSub && (
-        <CheckInModal
-          subscription={checkInSub}
-          isOpen={!!checkInSub}
-          onClose={() => {
-            setCheckInSub(null);
-            flushPendingReminder();
-          }}
-          onSubmit={handleCheckInSubmit}
-          onKill={handleKill}
-          result={checkInResult}
-        />
-      )}
+      {checkInFlow.modal}
 
       {/* Auto Import Hub Modal */}
       <AutoImportModal
         isOpen={isAutoImportOpen}
         onClose={() => {
           setIsAutoImportOpen(false);
-          flushPendingReminder();
+          reminder.flush();
         }}
-        onRegistered={handleImportRegistered}
+        onRegistered={reminder.askAfterImport}
       />
 
       {/* Cancel Guide Modal (Issue 14) */}
