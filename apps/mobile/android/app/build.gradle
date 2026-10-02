@@ -12,7 +12,7 @@ android {
         applicationId "com.subslash.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 26
+        versionCode 27
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         // 홈 화면·최근 앱에 보이는 이름. 테스트용 빌드(아래 debug)만 바꾼다.
