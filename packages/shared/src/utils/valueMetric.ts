@@ -83,8 +83,20 @@ export const SERVICE_METRICS: Readonly<Record<string, ValueMetric>> = {
 };
 
 /**
+ * 목록에 없는 구독(직접 입력)은 고른 분류로 정한다. 그 분류의 구독이 돈을 내서 받는 것으로 잰다 —
+ * 쇼핑 멤버십은 무료배송·할인, 클라우드는 저장해 둔 자리다. 예전에는 음악·AI만 적어, 직접 적은 쇼핑
+ * 멤버십과 클라우드에 "몇 번 썼어요?"를 물었다. OTT·기타는 횟수다.
+ */
+const CATEGORY_METRICS: Readonly<Partial<Record<Subscription["category"], ValueMetric>>> = {
+  music: "hours",
+  ai: "days",
+  shopping: "benefit",
+  cloud: "storage",
+};
+
+/**
  * 이 구독을 재는 지표. 서비스 목록에서 찾으면 그 서비스의 것, 못 찾으면 사용자가 고른 분류로 정한다
- * (음악 → 시간, AI → 쓴 날). 그 밖에는 예전처럼 횟수다.
+ * (CATEGORY_METRICS). 그 밖에는 예전처럼 횟수다.
  *
  * 혜택 금액은 원으로 받으므로 원화 구독에만 쓴다 — 달러 회비와 원 혜택을 나누면 뜻 없는 숫자가 된다.
  */
@@ -93,10 +105,53 @@ export function metricForSubscription(
 ): ValueMetric {
   const preset = findPresetForSubscription(sub);
   const metric: ValueMetric =
-    (preset && SERVICE_METRICS[preset.id]) ??
-    (sub.category === "music" ? "hours" : sub.category === "ai" ? "days" : "uses");
+    (preset && SERVICE_METRICS[preset.id]) ?? CATEGORY_METRICS[sub.category] ?? "uses";
   if (metric === "benefit" && sub.currency !== "KRW") return "uses";
   return metric;
+}
+
+/**
+ * 무료 요금제가 있는 서비스. 이런 구독은 많이 써도 유료가 필요했는지는 따로다 — 무료로 되는 일에만 매일
+ * 쓰면 쓴 날로는 '잘 쓰는 중'이지만, 맞는 판단은 해지가 아니라 무료로 내리는 것이다. 그래서 쓴 날과 함께
+ * "무료 요금제로도 충분했을까요?"를 묻는다(`FreeTierAnswer`).
+ *
+ * 각 서비스가 무료 요금제를 내놓은 것을 확인한 것만 적는다. 적지 않은 것: 어도비(크리에이티브 클라우드에
+ * 무료 요금제가 없다), 유독 구글 AI 프로 + 유튜브 프리미엄(유튜브 프리미엄은 무료로 대신할 수 없다),
+ * 직접 입력한 AI 구독(무료 요금제가 있는지 모른다).
+ */
+export const FREE_TIER_SERVICES: ReadonlySet<string> = new Set([
+  "chatgpt-plus",
+  "claude-pro",
+  "perplexity-pro",
+  "google-ai-pro",
+  "github-copilot-pro",
+  "cursor-pro",
+  "notion",
+  "microsoft-365",
+  "goodnotes",
+]);
+
+/**
+ * "무료 요금제로도 충분했을까요?"의 답.
+ * - `needed`: 한도에 걸렸거나 유료 기능이 필요했다
+ * - `enough`: 무료로도 됐을 것이다 → 쓴 날이 많아도 '무료로 내려도 돼요'(노랑)
+ * - `unsure`: 모른다 → 쓴 날로만 본다
+ */
+export type FreeTierAnswer = "needed" | "enough" | "unsure";
+
+export const FREE_TIER_ANSWERS: readonly FreeTierAnswer[] = ["needed", "enough", "unsure"];
+
+export function isFreeTierAnswer(value: unknown): value is FreeTierAnswer {
+  return typeof value === "string" && (FREE_TIER_ANSWERS as readonly string[]).includes(value);
+}
+
+/** 이 구독의 체크인에서 무료 요금제로 충분했는지 묻는지. 쓴 날로 재는, 무료 요금제가 있는 서비스만. */
+export function asksFreeTier(
+  sub: Pick<Subscription, "name" | "cancelUrl" | "category" | "currency">,
+): boolean {
+  if (metricForSubscription(sub) !== "days") return false;
+  const preset = findPresetForSubscription(sub);
+  return !!preset && FREE_TIER_SERVICES.has(preset.id);
 }
 
 /** 기록에 적힌 지표. 적히지 않았으면 이 기능 전의 체크인이라 횟수다. */
@@ -179,7 +234,9 @@ export function clampQuantity(metric: ValueMetric, value: number): number {
  * 색 기준. `uses`는 예전 기준(getRiskLevel) 그대로다. 나머지는 이렇게 정했다 — 숫자가 바뀌면 이 표와
  * 테스트를 함께 고친다.
  *
- * - 쓴 날: 2일 이하 빨강, 10일 이상 초록. 횟수의 1회 이하/8회 이상에 맞춘 값이다.
+ * - 쓴 날: 2일 이하 빨강, 10일 이상 초록. 횟수의 1회 이하/8회 이상에 맞춘 값이다. 무료로도 충분했다고
+ *   답했으면(`freeTier: "enough"`) 초록이 아니라 노랑이다 — 많이 써도 유료가 필요했던 것은 아니다. 빨강은
+ *   그대로 둔다(안 쓰는 데 무료로 내리라고 하면 해지가 묻힌다).
  * - 쓴 시간: 2시간 미만 빨강, 10시간 이상 초록.
  * - 혜택: 회비의 절반도 못 돌려받으면 빨강, 회비 이상이면(본전) 초록.
  * - 용량: 0%(아무것도 안 둠)만 빨강, 절반 미만은 노랑(더 작은 요금제로 충분할 수 있다), 절반 이상 초록.
@@ -191,12 +248,15 @@ export function metricRiskLevel(
   monthlyShare: number,
   quantity: number,
   storageFit?: StoragePlanFit | null,
+  freeTier?: FreeTierAnswer | null,
 ): RiskLevel {
   switch (metric) {
     case "uses":
       return getRiskLevel(calculateCostPerUse(monthlyShare, quantity), monthlyShare, quantity);
-    case "days":
-      return quantity <= 2 ? "red" : quantity >= 10 ? "green" : "yellow";
+    case "days": {
+      const level = quantity <= 2 ? "red" : quantity >= 10 ? "green" : "yellow";
+      return level === "green" && freeTier === "enough" ? "yellow" : level;
+    }
     case "hours":
       return quantity < 2 ? "red" : quantity >= 10 ? "green" : "yellow";
     case "benefit": {
@@ -226,12 +286,18 @@ export function evaluateMetric(
   currency: Currency,
   /** 저장 공간 구독의 요금제 계산(utils/storagePlan). 요금제를 모르면 null. */
   storageFit?: StoragePlanFit | null,
+  /** 무료 요금제로 충분했는지의 답(쓴 날로 재는 구독만). 묻지 않았으면 null. */
+  freeTier?: FreeTierAnswer | null,
 ): MetricEvaluation {
   const costPerUse = calculateCostPerUse(monthlyShare, quantity);
+  const message = metricMessage(metric, serviceName, monthlyShare, quantity, currency, storageFit);
   return {
     costPerUse,
-    riskLevel: metricRiskLevel(metric, monthlyShare, quantity, storageFit),
-    shockMessage: metricMessage(metric, serviceName, monthlyShare, quantity, currency, storageFit),
+    riskLevel: metricRiskLevel(metric, monthlyShare, quantity, storageFit, freeTier),
+    shockMessage:
+      metric === "days" && quantity > 0 && freeTier === "enough"
+        ? `${message} 무료 요금제로도 충분했다면, 해지하지 않고 무료로 내려도 돼요.`
+        : message,
   };
 }
 
