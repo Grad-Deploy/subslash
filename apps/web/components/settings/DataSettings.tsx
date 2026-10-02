@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React from "react";
+import { useToast } from "@hooks/useToast";
 import { DataBackupCard } from "./DataBackupCard";
 
 /**
@@ -9,26 +10,12 @@ import { DataBackupCard } from "./DataBackupCard";
  * 로그인 여부와 상관없이 보인다. 자동 동기화는 기본으로 켜져 있다(lib/store의 DEFAULT_ACCOUNT_SYNC).
  */
 export function DataSettings() {
-  const [message, setMessage] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showMessage = (text: string) => {
-    setMessage(text);
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setMessage(null), 3000);
-  };
+  const { showToast, toast } = useToast();
 
   return (
     <>
-      {message && (
-        <div
-          role="status"
-          className="fixed top-16 right-4 z-50 bg-foreground text-background px-4 py-2.5 rounded-xl shadow-2xl text-sm font-medium animate-in fade-in slide-in-from-top-4"
-        >
-          {message}
-        </div>
-      )}
-      <DataBackupCard onMessage={showMessage} />
+      {toast}
+      <DataBackupCard onMessage={showToast} />
     </>
   );
 }
