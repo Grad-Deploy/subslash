@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
+import { useDropdownMenu } from "@hooks/useDropdownMenu";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, CircleHelp, LogIn, LogOut, Settings, User } from "lucide-react";
@@ -17,10 +18,9 @@ const itemClass =
  * 두 곳에 있으면 어느 쪽이 원래 자리인지 어색했다.
  */
 export function AccountMenu() {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const { open, setOpen, rootRef, triggerRef, menuRef } = useDropdownMenu({
+    items: '[role="menuitem"]',
+  });
   const pathname = usePathname();
   const { account, loading, logout } = useAuth();
 
@@ -30,38 +30,6 @@ export function AccountMenu() {
     setMenuPath(pathname);
     setOpen(false);
   }
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onPointerDown = (e: PointerEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        triggerRef.current?.focus();
-        return;
-      }
-      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-      const items = Array.from(
-        menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
-      ).filter((el) => el.offsetParent !== null);
-      if (items.length === 0) return;
-      e.preventDefault();
-      const current = items.indexOf(document.activeElement as HTMLElement);
-      const step = e.key === "ArrowDown" ? 1 : -1;
-      items[(current + step + items.length) % items.length]?.focus();
-    };
-
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
 
   const run = (action: () => void) => () => {
     setOpen(false);

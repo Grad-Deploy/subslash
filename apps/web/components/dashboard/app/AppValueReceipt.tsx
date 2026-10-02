@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, ReceiptText, X } from "lucide-react";
 import {
@@ -24,7 +24,7 @@ import { useIsClient } from "@hooks/useIsClient";
 import { cn } from "@lib/utils";
 import { ExchangeRateNote } from "../../settings/ExchangeRateNote";
 import styles from "./AppValueReceipt.module.css";
-import { lockBodyScroll } from "@lib/scroll-lock";
+import { useOverlayLock } from "@hooks/useOverlayLock";
 import { AppSavingsLink } from "../../savings/app/AppSavingsLink";
 
 interface AppValueReceiptProps {
@@ -226,18 +226,7 @@ function ReceiptSheet({
 }) {
   const isClient = useIsClient();
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    const unlockScroll = lockBodyScroll();
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      unlockScroll();
-    };
-  }, [open, onClose]);
+  useOverlayLock(open, onClose);
 
   if (!open || !isClient) return null;
   const { summary } = data;
