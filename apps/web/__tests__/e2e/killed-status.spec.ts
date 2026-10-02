@@ -49,27 +49,33 @@ async function readState(page: Page) {
 }
 
 test.describe("해지한 구독의 상태 (E2E)", () => {
-  test("메인 화면은 해지한 구독을 구독 중으로 세지 않는다", async ({ page }) => {
+  // 첫 화면(소개)의 시작 버튼은 구독 중인 것만 센다. 해지한 것까지 세어 "N개"라고 하면 대시보드에는
+  // 하나도 없을 수 있다. 예전 첫 화면의 '구독 중 N개 · 해지한 N개는 리포트에' 칸은 소개 페이지로 바뀌며
+  // 없어졌다(a789213).
+  test("첫 화면은 해지한 구독을 구독 중으로 세지 않는다", async ({ page }) => {
     await seedOnce(page, [killedNetflix]);
     await page.goto("/");
 
-    await expect(page.getByText("구독 중인 서비스 없음")).toBeVisible({
-      timeout: 30_000,
-    });
+    // 버튼은 하이드레이션 전에는 늘 '시작하기'다. 계산기가 반응하면(살아난 뒤) 센 결과를 본다.
+    await expect(async () => {
+      await page.getByLabel("월 이용 횟수").fill("1");
+      await expect(page.getByText("한 번 쓰려고 한 달 요금을 다 냈어요")).toBeVisible({
+        timeout: 1_000,
+      });
+    }).toPass({ timeout: 30_000 });
+    const hero = page.getByRole("region", { name: /한 달에 몇 번 써요/ });
+    await expect(hero.getByRole("link", { name: "웹에서 바로 시작하기 →" })).toBeVisible();
     await expect(page.getByText(/구독 중 \d+개/)).toHaveCount(0);
-
-    await page.getByRole("button", { name: /리포트 →/ }).click();
-    await expect(page).toHaveURL(/\/report/, { timeout: 30_000 });
   });
 
   test("구독 중과 해지한 구독이 섞여 있으면 구독 중인 것만 센다", async ({ page }) => {
     await seedOnce(page, [killedNetflix, activeMelon]);
     await page.goto("/");
 
-    await expect(page.getByText("구독 중 1개")).toBeVisible({
-      timeout: 30_000,
-    });
-    await expect(page.getByText(/해지한 1개는 리포트에 있어요/)).toBeVisible();
+    const start = page.getByRole("link", { name: "구독 중 1개 · 대시보드로 →" });
+    await expect(start).toBeVisible({ timeout: 30_000 });
+    await start.click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
   });
 
   test("해지한 구독의 상세에서는 다시 해지로 기록하거나 체크인할 수 없다", async ({ page }) => {

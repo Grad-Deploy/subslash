@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState, useEffect } from "react";
+import React, { Suspense, useState, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "../../lib/store";
 import {
@@ -150,7 +150,9 @@ export default function SubscriptionsPage() {
 
   // 구독을 하나 고른 뒤에만 ↑↓로 넘긴다. 아무것도 고르지 않았을 때는 평소처럼 스크롤한다.
   // 넘길 때는 기록을 쌓지 않는다(replace) — 뒤로 가기는 눌러서 고른 구독으로 돌아간다.
-  useEffect(() => {
+  // 화면을 칠하기 전에 다시 단다(useLayoutEffect). useEffect면 뒤로 가기로 옆 칸이 바뀐 것이 보인 뒤에도
+  // 잠깐 이전 선택을 들고 있어, 그때 누른 ↓가 한 칸 더 넘어갔다(E2E가 가끔 실패했다).
+  useLayoutEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
       if (!selectedId || !isWideScreen() || e.altKey || e.ctrlKey || e.metaKey) return;
