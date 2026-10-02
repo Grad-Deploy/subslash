@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { useIsClient } from "@hooks/useIsClient";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { IS_APP_BUILD } from "@lib/platform";
 import { useCheckInFlow, useReminderPrompt } from "@hooks/useCheckInFlow";
@@ -15,18 +14,13 @@ import {
   presetFormData,
   type ServicePreset,
   formatCurrency,
-  formatKRW,
   getActionQueue,
-  getDetoxLevel,
   getNextBillingHint,
-  getSavingsTiers,
-  getMyMonthlyAmountKRW,
 } from "@subslash/shared";
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { ActionQueue } from "../../components/dashboard/ActionQueue";
 import { BillingCalendar } from "../../components/dashboard/BillingCalendar";
 import { MonthlyValueReport } from "../../components/dashboard/MonthlyValueReport";
-import dynamic from "next/dynamic";
 import { SubForm } from "../../components/subscription/SubForm";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
@@ -46,76 +40,18 @@ import { Spinner } from "../../components/ui/spinner";
 import { AppStartChecklist } from "../../components/app-start/AppStartChecklist";
 import { AppServicePicker } from "../../components/app-start/AppServicePicker";
 import { FirstCheckInCard } from "../../components/app-start/FirstCheckInCard";
-
-// 앱에서는 가성비 리포트와 월 고정지출을 계산서 카드 하나로 보여준다. 웹 사용자가 이 코드를 받지 않도록 앱 빌드에서만 불러온다.
-const AppValueReceipt = IS_APP_BUILD
-  ? dynamic(
-      () => import("../../components/dashboard/app/AppValueReceipt").then((m) => m.AppValueReceipt),
-      { ssr: false },
-    )
-  : null;
-
-const AppKillCelebration = IS_APP_BUILD
-  ? dynamic(
-      () =>
-        import("../../components/dashboard/app/AppKillCelebration").then(
-          (m) => m.AppKillCelebration,
-        ),
-      { ssr: false },
-    )
-  : null;
-
-// 폰 사용 기록으로 본 알림(안드로이드 앱 전용).
-const AppUnusedAlerts = IS_APP_BUILD
-  ? dynamic(
-      () => import("../../components/usage/app/AppUnusedAlerts").then((m) => m.AppUnusedAlerts),
-      { ssr: false },
-    )
-  : null;
-// 폰 사용 기록으로 찾은 '등록하지 않았는데 쓰고 있는 구독'(안드로이드 앱 전용).
-const AppSubscriptionSuggestions = IS_APP_BUILD
-  ? dynamic(
-      () =>
-        import("../../components/usage/app/AppSubscriptionSuggestions").then(
-          (m) => m.AppSubscriptionSuggestions,
-        ),
-      { ssr: false },
-    )
-  : null;
-// 첫 화면의 '폰 사용 기록으로 찾기'(안드로이드 앱 전용). 구독 추가 메뉴(AppAddButton)의 것과 같다.
-const AppUsageFindSheet = IS_APP_BUILD
-  ? dynamic(
-      () => import("../../components/usage/app/AppUsageFindSheet").then((m) => m.AppUsageFindSheet),
-      { ssr: false },
-    )
-  : null;
-// 결제 달력(앱은 상단 아이콘 + 여기 '다음 결제' 한 줄), 구독 추가 + 버튼(앱 전용).
-const AppNextBilling = IS_APP_BUILD
-  ? dynamic(
-      () =>
-        import("../../components/dashboard/app/AppBillingCalendar").then((m) => m.AppNextBilling),
-      { ssr: false },
-    )
-  : null;
-const AppAddButton = IS_APP_BUILD
-  ? dynamic(() => import("../../components/layout/app/AppAddButton").then((m) => m.AppAddButton), {
-      ssr: false,
-    })
-  : null;
-// '지금 결정할 것'을 접었다 펴기(앱 전용). 접으면 아래 결제 달력이 바로 보인다.
-const AppDecisionFold = IS_APP_BUILD
-  ? dynamic(
-      () => import("../../components/dashboard/app/AppDecisionFold").then((m) => m.AppDecisionFold),
-      { ssr: false },
-    )
-  : null;
-const AppNextKillDialog = IS_APP_BUILD
-  ? dynamic(
-      () =>
-        import("../../components/dashboard/app/AppNextKillDialog").then((m) => m.AppNextKillDialog),
-      { ssr: false },
-    )
-  : null;
+import { useToast } from "@hooks/useToast";
+import { useKillSeries } from "@hooks/useKillSeries";
+import { SavedMoneyLink } from "../../components/dashboard/SavedMoneyLink";
+import {
+  AppAddButton,
+  AppDecisionFold,
+  AppNextBilling,
+  AppSubscriptionSuggestions,
+  AppUnusedAlerts,
+  AppUsageFindSheet,
+  AppValueReceipt,
+} from "../../components/dashboard/app/appParts";
 
 /**
  * 대시보드는 "지금 무엇을 결정할까"에만 답한다.
@@ -157,26 +93,10 @@ export default function Dashboard() {
   const [addCustom, setAddCustom] = useState(false);
   const [addKey, setAddKey] = useState(0);
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
-  // 앱 계산서에서 '쉬어가도 될 구독'을 이어서 해지할 때의 순서. current는 지금 해지 안내를 연 구독,
-  // rest는 그 뒤에 물어볼 구독이다. 계산서가 아닌 곳에서 연 해지 안내에는 쓰지 않는다.
-  const [killSeries, setKillSeries] = useState<{
-    current: string;
-    rest: string[];
-    /** 이번에 이어서 해지한 구독들의 월 내 몫. 다 끝나면 축하 화면에 합계를 보여준다. */
-    done: number[];
-  } | null>(null);
-  const [celebration, setCelebration] = useState<{ count: number; monthlyKRW: number } | null>(
-    null,
-  );
-  const [nextKill, setNextKill] = useState<Subscription | null>(null);
 
   const [chargedTarget, setChargedTarget] = useState<Subscription | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
+  const { showToast, toast } = useToast();
 
   // 결제 알림 묻기와 체크인 창(내 구독과 같은 흐름, hooks/useCheckInFlow).
   const reminder = useReminderPrompt(showToast);
@@ -192,6 +112,8 @@ export default function Dashboard() {
     reminder,
     onClose: () => setIsAddOpen(false),
   });
+  // 앱 계산서에서 이어서 해지하기(hooks/useKillSeries).
+  const killSeries = useKillSeries((sub) => setGuideTarget(sub));
 
   if (!mounted) {
     return (
@@ -208,9 +130,6 @@ export default function Dashboard() {
   const now = new Date();
   const queue = getActionQueue(subscriptions, usageLogs, now, rate);
   const nextBilling = getNextBillingHint(subscriptions, now);
-  const tiers = getSavingsTiers(killedSubs, now, rate);
-  // 레벨은 1년치 요금이 아니라 결제가 멈춘 것을 확인한 지킨 돈으로 매긴다.
-  const detoxLevel = getDetoxLevel(tiers.confirmed, stats.killedCount);
 
   const findSub = (id: string) => subscriptions.find((s) => s.id === id);
 
@@ -253,33 +172,14 @@ export default function Dashboard() {
 
   // 계산서에서 해지 안내를 열 때. 뒤에 남은 구독을 기억해 두었다가 해지를 마치면 다음 것을 묻는다.
   const handleReceiptCancelGuide = (id: string, rest: string[] = []) => {
-    setKillSeries({ current: id, rest, done: [] });
+    killSeries.start(id, rest);
     handleCancelGuide(id);
-  };
-
-  // 해지를 기록한 뒤 이어서 물어볼 다음 구독. 그 사이 이미 해지했거나 지운 구독은 건너뛴다.
-  // 마지막 하나까지 해지하면 축하 화면을 띄운다. 중간에 그만두면 띄우지 않는다.
-  const advanceKillSeries = (killed: Subscription) => {
-    if (!killSeries || killSeries.current !== killed.id) return;
-    const done = [...killSeries.done, getMyMonthlyAmountKRW(killed, rate)];
-    const remaining = killSeries.rest.filter((id) => {
-      const sub = findSub(id);
-      return sub && sub.status === "active";
-    });
-    const next = remaining[0] ? findSub(remaining[0]) : undefined;
-    if (next) {
-      setKillSeries({ current: next.id, rest: remaining.slice(1), done });
-      setNextKill(next);
-    } else {
-      setKillSeries(null);
-      setCelebration({ count: done.length, monthlyKRW: done.reduce((a, b) => a + b, 0) });
-    }
   };
 
   const confirmKill = (target: Subscription) => {
     killSubscription(target.id);
     showToast(`${target.name} 해지 완료로 기록`);
-    advanceKillSeries(target);
+    killSeries.advance(target);
   };
 
   // 가이드에서 '해지 완료했어요'를 누른 것이 곧 확인이다 — 예전에는 확인 창을 한 번 더 띄웠다.
@@ -336,13 +236,31 @@ export default function Dashboard() {
     showToast("샘플 체험 시작 · 내 구독과 섞이지 않아요");
   };
 
+  // '지금 결정할 것' 목록. 앱은 접기 묶음 안에, 웹은 그대로 그린다 — 속성은 같다.
+  const queueProps = {
+    items: queue,
+    nextBilling,
+    activeCount: activeSubs.length,
+    onCheckIn: handleOpenCheckIn,
+    onCancelGuide: handleCancelGuide,
+    onConfirmPrice: handleConfirmPrice,
+    onKillNotCharged: handleKillNotCharged,
+    onKillCharged: handleKillCharged,
+    onCancelNoticeKilled: handleCancelNoticeKilled,
+    onCancelNoticeDismissed: handleCancelNoticeDismissed,
+    onAddFirst: () => openAdd(),
+  };
+  const unusedAlerts = AppUnusedAlerts && (
+    <AppUnusedAlerts
+      subscriptions={activeSubs}
+      usageLogs={usageLogs}
+      onCancelGuide={handleCancelGuide}
+    />
+  );
+
   return (
     <div className="space-y-6">
-      {toastMessage && (
-        <div className="fixed top-16 right-4 z-50 bg-foreground text-background px-4 py-2.5 rounded-xl shadow-2xl text-sm font-medium animate-in fade-in slide-in-from-top-4">
-          {toastMessage}
-        </div>
-      )}
+      {toast}
 
       {AppAddButton && !(startFlow && isFirstVisit) && (
         <AppAddButton
@@ -438,28 +356,12 @@ export default function Dashboard() {
             <AppDecisionFold items={queue}>
               {(foldButton) => (
                 <ActionQueue
-                  items={queue}
-                  nextBilling={nextBilling}
-                  activeCount={activeSubs.length}
-                  onCheckIn={handleOpenCheckIn}
-                  onCancelGuide={handleCancelGuide}
-                  onConfirmPrice={handleConfirmPrice}
-                  onKillNotCharged={handleKillNotCharged}
-                  onKillCharged={handleKillCharged}
-                  onCancelNoticeKilled={handleCancelNoticeKilled}
-                  onCancelNoticeDismissed={handleCancelNoticeDismissed}
-                  onAddFirst={() => openAdd()}
+                  {...queueProps}
                   headerAction={foldButton}
                   lead={
                     <>
                       {usageSuggestions}
-                      {AppUnusedAlerts && (
-                        <AppUnusedAlerts
-                          subscriptions={activeSubs}
-                          usageLogs={usageLogs}
-                          onCancelGuide={handleCancelGuide}
-                        />
-                      )}
+                      {unusedAlerts}
                     </>
                   }
                 />
@@ -468,26 +370,8 @@ export default function Dashboard() {
           ) : (
             <>
               {usageSuggestions}
-              {AppUnusedAlerts && (
-                <AppUnusedAlerts
-                  subscriptions={activeSubs}
-                  usageLogs={usageLogs}
-                  onCancelGuide={handleCancelGuide}
-                />
-              )}
-              <ActionQueue
-                items={queue}
-                nextBilling={nextBilling}
-                activeCount={activeSubs.length}
-                onCheckIn={handleOpenCheckIn}
-                onCancelGuide={handleCancelGuide}
-                onConfirmPrice={handleConfirmPrice}
-                onKillNotCharged={handleKillNotCharged}
-                onKillCharged={handleKillCharged}
-                onCancelNoticeKilled={handleCancelNoticeKilled}
-                onCancelNoticeDismissed={handleCancelNoticeDismissed}
-                onAddFirst={() => openAdd()}
-              />
+              {unusedAlerts}
+              <ActionQueue {...queueProps} />
             </>
           )}
 
@@ -534,36 +418,11 @@ export default function Dashboard() {
               </>
             )}
 
-            {/*
-              절약 성과는 /savings가 전담한다. 여기서는 이번 달 실제로 막은 금액과
-              레벨만 한 줄로 보여주고 넘긴다 — 같은 위젯을 두 화면에 두면 어느 쪽이
-              본체인지 알 수 없게 된다.
-            */}
-            {killedSubs.length > 0 && (
-              <Link
-                href="/savings"
-                className="flex items-center justify-between gap-3 p-4 border rounded-2xl bg-card hover:bg-muted transition-colors"
-              >
-                <div className="min-w-0">
-                  {/* 머리 숫자는 결제가 멈춘 것을 확인한 돈뿐이다. 1년치 요금은 아끼는 속도로 적는다. */}
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    지킨 돈
-                  </p>
-                  <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                    {formatKRW(tiers.confirmed)}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    {tiers.pending > 0 && `⏳ 확인 대기 ${formatKRW(tiers.pending)} · `}연{" "}
-                    {formatKRW(tiers.annualRunRate)} 아끼는 중 · {detoxLevel.emoji}{" "}
-                    {detoxLevel.levelLabel} {detoxLevel.title}
-                    {tiers.unknownCount > 0 && ` · 결제 월 미설정 ${tiers.unknownCount}건 제외`}
-                  </p>
-                </div>
-                <span className="text-sm font-semibold text-muted-foreground shrink-0">
-                  절약 현황 →
-                </span>
-              </Link>
-            )}
+            <SavedMoneyLink
+              killedSubscriptions={killedSubs}
+              killedCount={stats.killedCount}
+              now={now}
+            />
           </aside>
         )}
       </div>
@@ -621,30 +480,8 @@ export default function Dashboard() {
         onConfirmKilled={handleConfirmKilled}
       />
 
-      {/* 앱 계산서에서 이어서 해지할 때만 뜬다(killSeries는 계산서에서만 채운다). */}
-      {nextKill && AppNextKillDialog && (
-        <AppNextKillDialog
-          subscription={nextKill}
-          remaining={killSeries?.rest.length ?? 0}
-          onContinue={() => {
-            const next = nextKill;
-            setNextKill(null);
-            setGuideTarget(next);
-          }}
-          onStop={() => {
-            setNextKill(null);
-            setKillSeries(null);
-          }}
-        />
-      )}
-
-      {celebration && AppKillCelebration && (
-        <AppKillCelebration
-          count={celebration.count}
-          monthlyKRW={celebration.monthlyKRW}
-          onDone={() => setCelebration(null)}
-        />
-      )}
+      {/* 앱 계산서에서 이어서 해지할 때만 뜬다. */}
+      {killSeries.dialogs}
 
       {chargedTarget && (
         <ConfirmDialog
