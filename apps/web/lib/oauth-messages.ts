@@ -2,6 +2,8 @@
  * 소셜 로그인 실패 이유와 화면 문구. 서버(lib/oauth)가 `?oauthError=`로 넘기고 화면이 읽는다. 화면에서도
  * 가져오므로 서버 모듈(crypto)을 끌어오지 않게 따로 둔다.
  */
+import { OAUTH_PROVIDER_LABEL, isOAuthProviderId, type OAuthProviderId } from "./oauth-providers";
+
 export type OAuthErrorCode =
   | "unavailable"
   | "cancelled"
@@ -30,9 +32,8 @@ export const OAUTH_ERROR_MESSAGE: Record<OAuthErrorCode, string> = {
   server: "로그인을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.",
 };
 
-const PROVIDER_LABEL: Record<string, string> = { google: "구글", kakao: "카카오", naver: "네이버" };
 /** 목적격 조사까지 붙인 이름. 구글만 받침이 있다. */
-const PROVIDER_OBJECT: Record<string, string> = {
+const PROVIDER_OBJECT: Record<OAuthProviderId, string> = {
   google: "구글을",
   kakao: "카카오를",
   naver: "네이버를",
@@ -46,12 +47,12 @@ const PROVIDER_OBJECT: Record<string, string> = {
 function emailTakenMessage(via: string[], provider: string | null): string {
   const ways = [
     ...(via.includes("password") ? ["이메일(또는 아이디)과 비밀번호"] : []),
-    ...via.filter((id) => id in PROVIDER_LABEL).map((id) => PROVIDER_LABEL[id]),
+    ...via.filter(isOAuthProviderId).map((id) => OAUTH_PROVIDER_LABEL[id]),
   ];
-  if (ways.length === 0 || !provider || !(provider in PROVIDER_LABEL)) {
+  if (ways.length === 0 || !isOAuthProviderId(provider)) {
     return OAUTH_ERROR_MESSAGE["email-taken"];
   }
-  return `이 이메일은 이미 ${ways.join(" 또는 ")}로 가입돼 있어요. 그 방법으로 로그인한 뒤 '내 정보'의 로그인 방법에서 ${PROVIDER_OBJECT[provider]} 연결하면 다음부터 ${PROVIDER_LABEL[provider]}로도 로그인할 수 있어요.`;
+  return `이 이메일은 이미 ${ways.join(" 또는 ")}로 가입돼 있어요. 그 방법으로 로그인한 뒤 '내 정보'의 로그인 방법에서 ${PROVIDER_OBJECT[provider]} 연결하면 다음부터 ${OAUTH_PROVIDER_LABEL[provider]}로도 로그인할 수 있어요.`;
 }
 
 export function oauthErrorMessage(code: string | null): string | null {

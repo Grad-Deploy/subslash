@@ -1,8 +1,15 @@
 import { createHash, randomBytes } from "crypto";
 import type { OAuthErrorCode } from "./oauth-messages";
 import { isAppReturnScheme } from "./app-return";
+import { OAUTH_PROVIDER_IDS, isOAuthProviderId, type OAuthProviderId } from "./oauth-providers";
 
 export type { OAuthErrorCode } from "./oauth-messages";
+export {
+  OAUTH_PROVIDER_IDS,
+  OAUTH_PROVIDER_LABEL,
+  isOAuthProviderId,
+  type OAuthProviderId,
+} from "./oauth-providers";
 
 /**
  * 구글·카카오·네이버 계정으로 로그인(OAuth 2.0 인가 코드 방식).
@@ -14,20 +21,6 @@ export type { OAuthErrorCode } from "./oauth-messages";
  * 각 제공자의 앱 키는 환경 변수로 받고, 키가 없는 제공자는 버튼을 두지 않는다(`enabledProviders`).
  * 가짜 키로 채워 두면 누르는 순간 제공자 오류 화면이 뜬다.
  */
-
-export type OAuthProviderId = "google" | "kakao" | "naver";
-
-export const OAUTH_PROVIDER_IDS: readonly OAuthProviderId[] = ["google", "kakao", "naver"];
-
-export const OAUTH_PROVIDER_LABEL: Record<OAuthProviderId, string> = {
-  google: "구글",
-  kakao: "카카오",
-  naver: "네이버",
-};
-
-export function isOAuthProviderId(value: unknown): value is OAuthProviderId {
-  return typeof value === "string" && (OAUTH_PROVIDER_IDS as readonly string[]).includes(value);
-}
 
 interface ProviderConfig {
   authorizeUrl: string;

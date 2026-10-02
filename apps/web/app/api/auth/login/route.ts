@@ -6,11 +6,10 @@ import { accounts } from "@lib/schema";
 import { hasPassword, hashPassword, needsRehash, verifyPassword } from "@lib/password";
 import {
   SESSION_COOKIE,
-  createSession,
   findAccountByIdentifier,
-  pruneExpiredSessions,
   sessionCookieOptions,
   sessionTokenForApp,
+  startLoginSession,
   toPublicAccount,
 } from "@lib/auth-server";
 import {
@@ -99,16 +98,11 @@ export async function POST(request: NextRequest) {
       await db.update(accounts).set({ passwordHash: upgraded }).where(eq(accounts.id, account.id));
     }
 
-    await db
-      .update(accounts)
-      .set({ lastLoginAt: new Date().toISOString() })
-      .where(eq(accounts.id, account.id));
-
-    await pruneExpiredSessions().catch(() => {
-      // 청소가 실패해도 로그인은 막지 않는다.
-    });
-
-    const session = await createSession(account.id);
+    const started = await startLoginSession(account.id);
+    if (!started) {
+      return NextResponse.json({ error: "로그인을 처리하지 못했습니다." }, { status: 500 });
+    }
+    const { session } = started;
     // 앱에서 온 요청이면 본문에도 토큰을 싣는다(sessionTokenForApp). 웹은 쿠키만 받는다.
     const response = NextResponse.json({
       account: toPublicAccount(account),

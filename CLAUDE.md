@@ -343,7 +343,7 @@ DB는 정보 종류별로 나누지 않는다. 같은 서버가 모든 접속 �
 `useAccountDeviceUsage`로 받아 보여 준다. 1회 단가 순위는 여전히 체크인으로 계산한다. 측정한 기기가 없으면
 숫자를 쓰지 않는다(0회가 아니라 모름). 매니페스트에 `PACKAGE_USAGE_STATS`가 있으므로, 이 빌드를 스토어에
 올리기 전에 Play Console의 데이터 보안 항목과 권한 신고서를 고친다. 플러그인을 Promise로 넘길 때는
-프록시를 보통 객체로 감싼다(`lib/usage/native`의 `{ plugin }`) — 프록시는 `then`도 네이티브 메서드로 만들어
+프록시를 보통 객체로 감싼다(`lib/android-plugin`의 `{ plugin }` — 새 플러그인도 `androidPluginLoader`로 부른다) — 프록시는 `then`도 네이티브 메서드로 만들어
 `await`가 끝나지 않는다.
 
 ## 파일 경계

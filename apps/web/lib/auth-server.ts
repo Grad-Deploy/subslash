@@ -160,6 +160,24 @@ export async function pruneExpiredSessions(): Promise<void> {
 }
 
 /**
+ * 로그인을 마친 계정에 새 세션을 준다. 마지막 로그인 시각을 적고, 그 김에 만료된 세션을 치운다(청소가
+ * 실패해도 로그인은 막지 않는다). 아이디·간편 로그인·카카오톡·앱 넘겨받기가 모두 이것으로 끝난다.
+ * 계정이 그사이 지워졌으면 `null`.
+ */
+export async function startLoginSession(
+  accountId: string,
+): Promise<{ account: Account; session: IssuedSession } | null> {
+  const [account] = await getDb()
+    .update(accounts)
+    .set({ lastLoginAt: new Date().toISOString() })
+    .where(eq(accounts.id, accountId))
+    .returning();
+  if (!account) return null;
+  await pruneExpiredSessions().catch(() => undefined);
+  return { account, session: await createSession(account.id) };
+}
+
+/**
  * 아이디 또는 이메일로 계정을 찾는다.
  *
  * 두 값 모두 소문자로 정규화해 저장하므로, 찾을 때도 정규화된 값을 넘겨야 한다.

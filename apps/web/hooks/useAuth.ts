@@ -134,6 +134,16 @@ export async function refreshAuth(): Promise<void> {
   return inflight;
 }
 
+/**
+ * 로그인을 마친 뒤: 로그인 상태를 다시 읽고(기록 주인도 바뀐다) 대시보드로 간다. 아이디 로그인·간편 로그인·
+ * 앱 넘겨받기가 같은 곳에서 끝나도록 한 곳에 둔다.
+ */
+export async function enterAfterLogin(router: { push(href: string): void; refresh(): void }) {
+  await refreshAuth();
+  router.push("/dashboard");
+  router.refresh();
+}
+
 /** 로그아웃하고 공유 상태를 즉시 비운다. 화면의 기록도 로그인 전 기록으로 돌아간다. */
 export async function logoutAuth(): Promise<void> {
   try {
