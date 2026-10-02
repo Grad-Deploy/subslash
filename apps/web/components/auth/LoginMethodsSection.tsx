@@ -8,11 +8,14 @@ import { apiFetch, apiUrl } from "@lib/api";
 import { appReturnScheme, leaveForExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { oauthErrorMessageFrom } from "@lib/oauth-messages";
+import { isKakaoNativeAvailable, kakaoNativeLogin } from "@lib/kakao-native";
 
 type ProviderId = "google" | "kakao" | "naver";
 
 interface Methods {
   providers: Array<{ id: ProviderId; label: string }>;
+  /** 앱이 SDK(카카오톡)로 이을 수 있는 제공자. 서버가 토큰을 확인할 수 있을 때만 있다. */
+  native?: string[];
   linked: string[];
   hasPassword: boolean;
 }
@@ -84,6 +87,21 @@ export function LoginMethodsSection() {
   const connect = async (provider: ProviderId) => {
     setNotice(null);
     setBusy(provider);
+    if (
+      IS_APP_BUILD &&
+      provider === "kakao" &&
+      methods.native?.includes("kakao") &&
+      (await isKakaoNativeAvailable())
+    ) {
+      const outcome = await kakaoNativeLogin({ link: true });
+      setBusy(null);
+      if (outcome.status === "ok") setNotice({ tone: "ok", message: linkedMessage("kakao") });
+      if (outcome.status === "error") {
+        setNotice({ tone: "error", message: oauthErrorMessageFrom(outcome.result) ?? "" });
+      }
+      await load();
+      return;
+    }
     try {
       const res = await apiFetch("/api/auth/oauth/link", {
         method: "POST",

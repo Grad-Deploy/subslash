@@ -55,6 +55,7 @@ const SESSION_ISSUERS = new Set([
   "/api/auth/password",
   "/api/auth/password-reset/confirm",
   "/api/auth/oauth/claim",
+  "/api/auth/oauth/native",
 ]);
 
 /**
