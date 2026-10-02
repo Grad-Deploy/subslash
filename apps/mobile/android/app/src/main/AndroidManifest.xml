@@ -39,6 +39,21 @@
 
         </activity>
 
+        <!--
+          카카오톡이 없거나 카카오톡 로그인이 안 되면 SDK가 카카오계정 로그인을 인앱 브라우저로 열고, 끝나면
+          kakao<네이티브 앱 키>://oauth 로 이 화면에 돌아온다(KakaoLoginPlugin). 키는 gradle.properties에 있다.
+        -->
+        <activity
+            android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:host="oauth" android:scheme="${kakaoScheme}" />
+            </intent-filter>
+        </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

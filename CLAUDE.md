@@ -214,6 +214,12 @@ parser의 `senderDomains`)는 따로 검색해 상한에 밀리지 않게 한다
   비밀번호로 로그인"은 비밀번호 없는 간편 가입 계정이 따를 수 없었다.
 - 새 계정은 만 14세 확인(가입 화면의 체크)이 있어야 만들고, 비밀번호가 없다(`NO_PASSWORD`, 어떤 비밀번호와도
   맞지 않음). 비밀번호는 재설정 메일로 만든다. 탈퇴는 비밀번호 대신 '탈퇴'를 입력받는다.
+- 안드로이드 앱의 카카오는 인앱 브라우저 대신 카카오톡으로 로그인한다(`KakaoLoginPlugin` → `lib/kakao-native` →
+  `/api/auth/oauth/native`). 앱이 받은 액세스 토큰은 서버가 토큰 정보의 앱 ID(`KAKAO_APP_ID`)로 우리 앱이 발급한
+  것인지 확인한 뒤 웹 로그인과 같은 `resolveOAuthAccount`·`linkOAuthIdentity`로 처리한다 — 확인하지 않으면 사용자가
+  로그인한 아무 카카오 앱의 토큰으로 들어올 수 있다. `KAKAO_APP_ID`가 없거나 예전 앱이면 인앱 브라우저로 한다.
+  네이티브 앱 키는 APK에 들어가는 공개 값이라 `apps/mobile/android/gradle.properties`에 두고, 카카오 콘솔의
+  안드로이드 플랫폼에 패키지(`com.subslash.app`·`.dev`)와 서명 키마다의 키 해시를 등록해야 동작한다.
 - 앱은 인앱 브라우저에서 로그인하므로 쿠키를 주지 않는다. 앱이 만든 verifier의 해시(challenge)만 주소에
   싣고, 서버는 challenge에 계정을 적어 두었다가(`oauth_app_claims`, 10분·1회) 앱 출처가 verifier를 내밀 때
   세션을 준다. 계정을 지우는 경로는 `deleteOAuthData`를 부른다.
