@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState, useEffect, useLayoutEffect } from "react";
+import React, { Suspense, useState, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "../../lib/store";
 import {
