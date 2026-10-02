@@ -27,7 +27,7 @@ import styles from "./AppValueReceipt.module.css";
 import { useOverlayLock } from "@hooks/useOverlayLock";
 import { AppSavingsLink } from "../../savings/app/AppSavingsLink";
 
-interface AppValueReceiptProps {
+export interface AppValueReceiptProps {
   subscriptions: Subscription[];
   usageLogs: UsageLog[];
   now: Date;

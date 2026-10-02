@@ -1,9 +1,10 @@
 "use client";
 
-import React, { Suspense, useState, useLayoutEffect } from "react";
+import React, { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "../../lib/store";
 import {
+  CATEGORY_LABELS,
   Subscription,
   POPULAR_SERVICES,
   ServicePreset,
@@ -12,7 +13,7 @@ import {
   sumMyMonthlyKRW,
 } from "@subslash/shared";
 import { SubCard } from "../../components/subscription/SubCard";
-import { SubjectChip } from "../../components/subscription/SubjectChip";
+import { SubscriptionActionConfirm } from "../../components/subscription/SubscriptionActionConfirm";
 import { SubTable } from "../../components/subscription/SubTable";
 import { SubForm } from "../../components/subscription/SubForm";
 import { QuickPresetRecommender } from "../../components/subscription/QuickPresetRecommender";
@@ -26,7 +27,6 @@ import {
   DialogDescription,
 } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
-import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { IS_APP_BUILD } from "@lib/platform";
@@ -36,7 +36,7 @@ import { sortSubsForApp, type AppSubsSort } from "@lib/subs-order";
 import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { GoogleCalendarSync } from "../../components/calendar/GoogleCalendarSync";
 import { isGmailAutoImportOpen } from "@lib/privacy";
-import { isWideScreen } from "@lib/wide-screen";
+import { useArrowKeySelection } from "@hooks/useArrowKeySelection";
 import { SelectedSubSync } from "../../components/subscription/SelectedSubSync";
 import {
   AppAddButton,
@@ -47,9 +47,19 @@ import {
 import { useIsClient } from "@hooks/useIsClient";
 import { Spinner } from "../../components/ui/spinner";
 import { Receipt, ShieldCheck } from "lucide-react";
+import { useToast } from "@hooks/useToast";
 
 /** 카드/표 중 고른 보기. 이 브라우저의 취향일 뿐이라 백업·동기화에 넣지 않는다. */
 const VIEW_KEY = "subslash-subs-view";
+
+// 분류 칩. '기타'가 없으면 노션·어도비처럼 기타로 등록된 구독을 분류로 걸러 볼 수 없다.
+const CATEGORY_FILTERS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "all", label: "전체" },
+  ...(["ott", "music", "shopping", "cloud", "ai", "other"] as const).map((value) => ({
+    value,
+    label: CATEGORY_LABELS[value],
+  })),
+];
 
 export default function SubscriptionsPage() {
   const {
@@ -73,7 +83,6 @@ export default function SubscriptionsPage() {
   const [appSort, setAppSort] = useState<AppSubsSort>("billing");
   const [selectedPreset, setSelectedPreset] = useState<ServicePreset | null>(null);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [confirmAction, setConfirmAction] = useState<{
     type: "revive" | "delete";
@@ -102,10 +111,7 @@ export default function SubscriptionsPage() {
   // 표 보기일 때 표에 보이는 정렬 순서. ↑↓가 그 순서를 따른다.
   const [tableOrder, setTableOrder] = useState<string[]>([]);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
+  const { showToast, toast } = useToast();
 
   // 결제 알림 묻기와 체크인 창(대시보드와 같은 흐름, hooks/useCheckInFlow).
   const reminder = useReminderPrompt(showToast);
@@ -136,38 +142,14 @@ export default function SubscriptionsPage() {
 
   const visibleIds = (tab === "active" ? filteredActive : filteredKilled).map((s) => s.id);
   const visibleOrder = view === "table" && tableOrder.length > 0 ? tableOrder : visibleIds;
-  const orderKey = visibleOrder.join("|");
 
-  // 구독을 하나 고른 뒤에만 ↑↓로 넘긴다. 아무것도 고르지 않았을 때는 평소처럼 스크롤한다.
-  // 넘길 때는 기록을 쌓지 않는다(replace) — 뒤로 가기는 눌러서 고른 구독으로 돌아간다.
-  // 화면을 칠하기 전에 다시 단다(useLayoutEffect). useEffect면 뒤로 가기로 옆 칸이 바뀐 것이 보인 뒤에도
-  // 잠깐 이전 선택을 들고 있어, 그때 누른 ↓가 한 칸 더 넘어갔다(E2E가 가끔 실패했다).
-  useLayoutEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-      if (!selectedId || !isWideScreen() || e.altKey || e.ctrlKey || e.metaKey) return;
-      const target = e.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select, [contenteditable='true'], [role='menu']"))
-        return;
-      if (document.querySelector("[role='dialog']")) return;
-      const ids = orderKey ? orderKey.split("|") : [];
-      if (ids.length === 0) return;
-      e.preventDefault();
-      const current = ids.indexOf(selectedId);
-      const nextIndex =
-        current < 0
-          ? 0
-          : e.key === "ArrowDown"
-            ? Math.min(current + 1, ids.length - 1)
-            : Math.max(current - 1, 0);
-      const next = ids[nextIndex];
-      if (next && next !== selectedId) {
-        router.replace(`/subs?sub=${encodeURIComponent(next)}`, { scroll: false });
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [orderKey, selectedId, router]);
+  // 구독을 하나 고른 뒤에만 ↑↓로 넘긴다. 넘길 때는 기록을 쌓지 않는다(replace) — 뒤로 가기는 눌러서
+  // 고른 구독으로 돌아간다.
+  useArrowKeySelection({
+    order: visibleOrder,
+    selectedId,
+    onSelect: (id) => router.replace(`/subs?sub=${encodeURIComponent(id)}`, { scroll: false }),
+  });
 
   if (!mounted) {
     return (
@@ -227,29 +209,13 @@ export default function SubscriptionsPage() {
     setConfirmAction(null);
   };
 
-  const categories = [
-    { value: "all", label: "전체" },
-    { value: "ott", label: "OTT" },
-    { value: "music", label: "음악" },
-    { value: "shopping", label: "쇼핑" },
-    { value: "cloud", label: "클라우드" },
-    { value: "ai", label: "AI 툴" },
-    // 없으면 노션·어도비처럼 '기타'로 등록된 구독을 분류로 걸러 볼 수 없다.
-    { value: "other", label: "기타" },
-  ];
-
   return (
     <div className="space-y-6">
       <Suspense fallback={null}>
         <SelectedSubSync onChange={setSelectedId} />
       </Suspense>
 
-      {/* Toast */}
-      {toastMessage && (
-        <div className="fixed top-16 right-4 z-50 bg-foreground text-background px-4 py-2.5 rounded-xl shadow-2xl text-sm font-medium animate-in fade-in slide-in-from-top-4">
-          {toastMessage}
-        </div>
-      )}
+      {toast}
 
       {/*
         제목과 불러오기 두 개. 앱에서 먼저 줄인 모양을 웹도 쓴다 — 긴 부제와 혼자 빨갛게 튀던 '전체
@@ -328,7 +294,7 @@ export default function SubscriptionsPage() {
           {/* Category Pills + 보기 방식 */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-2 text-xs">
-              {categories.map((c) => (
+              {CATEGORY_FILTERS.map((c) => (
                 <button
                   key={c.value}
                   onClick={() => setFilterCategory(c.value)}
@@ -622,34 +588,10 @@ export default function SubscriptionsPage() {
       />
 
       {confirmAction && (
-        <ConfirmDialog
-          isOpen={!!confirmAction}
+        <SubscriptionActionConfirm
+          action={confirmAction}
           onClose={() => setConfirmAction(null)}
           onConfirm={executeConfirmAction}
-          // 앱: 제목은 짧게, 이름은 칩으로, 줄은 뜻이 끊기는 자리에서(ConfirmDialog의 centered).
-          centered={IS_APP_BUILD}
-          subject={IS_APP_BUILD ? <SubjectChip sub={confirmAction.sub} /> : undefined}
-          title={
-            IS_APP_BUILD
-              ? confirmAction.type === "revive"
-                ? "다시 살릴까요?"
-                : "삭제할까요?"
-              : confirmAction.type === "revive"
-                ? "구독 다시 살리기"
-                : "구독 영구 삭제"
-          }
-          description={
-            IS_APP_BUILD && confirmAction.type === "revive"
-              ? "구독 중으로 돌아가고,\n절약 기록에서는 빠져요."
-              : IS_APP_BUILD
-                ? "절약 현황에서도 빠지고\n되돌릴 수 없어요."
-                : confirmAction.type === "revive"
-                  ? `'${confirmAction.sub.name}'을(를) 다시 구독 중으로 바꿀까요?\n절약 기록에서 빠져요.`
-                  : `'${confirmAction.sub.name}'을(를) 삭제할까요?\n되돌릴 수 없어요.`
-          }
-          confirmText={confirmAction.type === "revive" ? "다시 살리기" : "삭제"}
-          cancelText="취소"
-          variant={confirmAction.type === "revive" ? "default" : "destructive"}
         />
       )}
     </div>

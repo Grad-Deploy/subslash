@@ -40,6 +40,7 @@ import { ServiceLogo } from "./ServiceLogo";
 import { copyText } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import dynamic from "next/dynamic";
+import { useToast } from "@hooks/useToast";
 
 // 폰 사용 기록(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
 const AppUsageDetail = IS_APP_BUILD
@@ -97,14 +98,10 @@ export function SubscriptionDetail({
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const [checkInResult, setCheckInResult] = useState<CheckInResponse | undefined>(undefined);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [confirmType, setConfirmType] = useState<"revive" | "delete" | null>(null);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
+  const { showToast, toast } = useToast();
 
   const sub = subscriptions.find((s) => s.id === id);
   const Title = headingLevel;
@@ -181,12 +178,7 @@ export function SubscriptionDetail({
 
   return (
     <div className={cn("space-y-8", className)}>
-      {/* Toast */}
-      {toastMessage && (
-        <div className="fixed top-16 right-4 z-50 bg-foreground text-background px-4 py-2.5 rounded-xl shadow-2xl text-sm font-medium animate-in fade-in slide-in-from-top-4">
-          {toastMessage}
-        </div>
-      )}
+      {toast}
 
       {/* Top Back & Actions */}
       <div className="flex items-center justify-between">
