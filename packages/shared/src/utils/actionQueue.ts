@@ -76,7 +76,8 @@ export type ActionVerb =
 export interface ActionItem {
   subscriptionId: string;
   name: string;
-  iconEmoji: string;
+  /** 사용자가 직접 넣은 아이콘(`Subscription.iconUrl`). 없으면 로고·이니셜로 그린다. */
+  iconEmoji?: string;
   /** 직접 등록한 구독의 아이콘 타일 색(`Subscription.iconColor`). */
   iconColor?: string;
   kind: ActionKind;
@@ -210,7 +211,7 @@ export function getActionQueue(
       items.push({
         subscriptionId: sub.id,
         name: sub.name,
-        iconEmoji: sub.iconUrl || "📦",
+        iconEmoji: sub.iconUrl,
         iconColor: sub.iconColor,
         kind: "cancel-notice",
         // 제목의 낱말로 가린 알림이라 해지했다고 말하지 않는다. 사용자가 안다.
@@ -236,7 +237,7 @@ export function getActionQueue(
       items.push({
         subscriptionId: sub.id,
         name: sub.name,
-        iconEmoji: sub.iconUrl || "📦",
+        iconEmoji: sub.iconUrl,
         iconColor: sub.iconColor,
         kind: "trial-ending",
         reason:
@@ -332,7 +333,7 @@ export function getActionQueue(
     items.push({
       subscriptionId: sub.id,
       name: sub.name,
-      iconEmoji: sub.iconUrl || "📦",
+      iconEmoji: sub.iconUrl,
       iconColor: sub.iconColor,
       kind,
       reason,
@@ -356,7 +357,7 @@ export function getActionQueue(
     items.push({
       subscriptionId: sub.id,
       name: sub.name,
-      iconEmoji: sub.iconUrl || "📦",
+      iconEmoji: sub.iconUrl,
       iconColor: sub.iconColor,
       kind: "charged-after-kill",
       reason:
@@ -382,7 +383,7 @@ export function getActionQueue(
     items.push({
       subscriptionId: sub.id,
       name: sub.name,
-      iconEmoji: sub.iconUrl || "📦",
+      iconEmoji: sub.iconUrl,
       iconColor: sub.iconColor,
       kind: "verify-kill",
       reason:
@@ -405,7 +406,7 @@ export function getActionQueue(
     items.push({
       subscriptionId: sub.id,
       name: sub.name,
-      iconEmoji: sub.iconUrl || "📦",
+      iconEmoji: sub.iconUrl,
       iconColor: sub.iconColor,
       kind: "resubscribe-reminder",
       reason:

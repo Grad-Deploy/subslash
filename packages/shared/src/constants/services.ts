@@ -89,7 +89,6 @@ export interface ServicePreset {
    */
   cancelAndroidApp?: string;
   cancelGuide: string;
-  iconEmoji: string;
   /**
    * 결합 상품: 이 구독 하나로 함께 받는 서비스(서비스 목록의 id). 공식 발표나 판매 화면에서 확인한
    * 구성만 적는다. 적어 두면 폰 기록이 포함된 서비스의 앱으로 재고(lib/usage/packages), 같은 서비스를
@@ -165,32 +164,6 @@ export const PAYMENT_METHOD_OPTIONS: PaymentMethodOption[] = [
   { value: "other", label: "기타 결제수단" },
 ];
 
-export const ACCOUNT_PROVIDERS = [
-  { id: "google", name: "Google", icon: "🌐", defaultDomain: "@gmail.com", color: "text-red-500" },
-  {
-    id: "kakao",
-    name: "카카오",
-    icon: "🟡",
-    defaultDomain: "@kakao.com",
-    color: "text-yellow-500",
-  },
-  { id: "naver", name: "네이버", icon: "🟢", defaultDomain: "@naver.com", color: "text-green-500" },
-  {
-    id: "apple",
-    name: "Apple ID",
-    icon: "🍎",
-    defaultDomain: "@icloud.com",
-    color: "text-neutral-500",
-  },
-  {
-    id: "email",
-    name: "일반 이메일 / 기타",
-    icon: "📧",
-    defaultDomain: "",
-    color: "text-blue-500",
-  },
-] as const;
-
 /**
  * 서비스 목록과 요금. 요금은 2026년 9월에 확인했다 — 공식 요금표를 먼저 보고, 공식 페이지가
  * 나라마다 달리 보이거나 막혀 있으면 여러 보도·안내가 같은 값을 말할 때만 적었다. 확인하지
@@ -214,7 +187,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 넷플릭스 로그인 후 우측 상단 프로필 클릭\n2. [계정] 메뉴 선택\n3. 멤버십 상세 정보에서 [멤버십 해지] 버튼 클릭\n4. [해지 완료] 버튼으로 최종 확인",
-    iconEmoji: "🍿",
   },
   {
     id: "tving",
@@ -234,7 +206,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 티빙 앱 또는 웹에서 마이페이지 진입\n2. [나의 이용권] 선택\n3. 이용권 상세 페이지에서 [변경/해지] 클릭\n4. 하단의 [자동결제 해지] 선택",
-    iconEmoji: "📺",
   },
   {
     id: "coupang-wow",
@@ -253,7 +224,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelAndroidApp: "com.coupang.mobile",
     cancelGuide:
       "1. 쿠팡 앱이나 웹에서 [마이쿠팡] 진입(웹은 왼쪽 메뉴)\n2. [와우 멤버십] 메뉴 선택\n3. 스크롤을 맨 아래로 내려서 [해지하기] 클릭\n4. 혜택 포기 확인 팝업에서 [내가 받고 있는 혜택 포기하기] 클릭",
-    iconEmoji: "🚀",
   },
   {
     id: "wavve",
@@ -275,7 +245,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "entry",
     cancelGuide:
       "1. 웨이브 로그인 후 오른쪽 위 프로필 메뉴 > [이용권]\n2. 이용권 내역에서 [자동결제 해지] 클릭\n3. 해지 사유 선택 후 [해지하기] 완료\n4. 이용권이 없다고 나오면 앱(App Store·Google Play)이나 제휴처에서 결제한 것일 수 있어요",
-    iconEmoji: "🌊",
   },
   {
     id: "watcha",
@@ -292,7 +261,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 왓챠 설정 페이지 접속\n2. 설정 메뉴 중 [이용권 설정] 클릭\n3. [해지 신청] 클릭\n4. 팝업 확인 후 [해지 완료] 진행",
-    iconEmoji: "🎬",
   },
   {
     id: "youtube-premium",
@@ -310,7 +278,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 유튜브 앱 우측 상단 프로필 클릭\n2. [구매 항목 및 멤버십] 선택\n3. Premium 멤버십 탭 클릭\n4. [비활성화] - [그대로 취소] 순서로 클릭",
-    iconEmoji: "▶️",
   },
   {
     id: "disney-plus",
@@ -330,7 +297,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     legacyCancelUrls: ["https://www.disneyplus.com/account/cancel-subscription"],
     cancelGuide:
       "1. 디즈니플러스 계정 설정 접속\n2. [멤버십] 섹션에서 구독 중인 플랜 선택\n3. 하단의 [멤버십 취소] 클릭\n4. 취소 사유 선택 후 [취소 완료] 클릭",
-    iconEmoji: "✨",
   },
   {
     id: "apple-tv",
@@ -344,7 +310,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "entry",
     cancelGuide:
       "1. tv.apple.com 접속 또는 애플 기기 설정 > [구독] 메뉴 진입\n2. Apple TV+ 멤버십 선택\n3. 하단의 [구독 취소] 버튼 클릭하여 완료",
-    iconEmoji: "📺",
   },
   {
     id: "prime-video",
@@ -358,7 +323,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. Prime Video 웹사이트 접속 후 프로필 > [계정 및 설정] 선택\n2. [내 멤버십] 섹션 이동\n3. [멤버십 종료] 클릭하여 정기결제 해지 완료",
-    iconEmoji: "🎬",
   },
   {
     id: "laftel",
@@ -381,7 +345,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     legacyCancelUrls: ["https://laftel.net/setting"],
     cancelGuide:
       "1. 라프텔 웹 로그인 후 오른쪽 위 프로필 메뉴 > [라프텔 멤버십]\n2. 멤버십 관리 화면에서 해지 — 결제 예정일 24시간 전까지 해지해야 다음 결제가 되지 않아요\n3. 앱(App Store·Google Play)이나 LG U+로 결제했다면 그곳에서 해지해요",
-    iconEmoji: "⚡",
   },
   {
     id: "spotify",
@@ -400,7 +363,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 스포티파이 계정 관리 페이지 접속\n2. 내 요금제 섹션에서 [요금제 변경] 클릭\n3. 페이지 하단의 Spotify Free로 [프리미엄 취소] 클릭\n4. [예, 취소합니다] 클릭하여 확인",
-    iconEmoji: "🎵",
   },
   {
     id: "melon",
@@ -423,7 +385,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     legacyCancelUrls: ["https://member.melon.com/pay/charge/payCancel.htm"],
     cancelGuide:
       "1. 멜론 PC웹(melon.com) 로그인 후 [내정보] 진입\n2. [멜론이용권/결제정보] > [멜론이용권] 선택\n3. [이용권 해지신청] 클릭\n4. 모바일 앱은 내정보 > 이용권/쿠폰/캐시 > 변경/해지 > 결제방법 변경/해지 > 해지",
-    iconEmoji: "🍈",
   },
   {
     id: "apple-music",
@@ -443,7 +404,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 아이폰 [설정] 앱 > 맨 위 내 이름\n2. [구독] > [Apple Music] 선택\n3. [구독 취소] 클릭\n4. 웹에서는 Apple 계정의 구독 관리 화면에서 Apple Music을 골라 취소",
-    iconEmoji: "🎶",
   },
   {
     id: "naver-plus",
@@ -456,7 +416,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 네이버플러스 멤버십 마이페이지 접속\n2. 우측 상단 설정(톱니바퀴) 아이콘 클릭\n3. [네이버플러스 멤버십 관리] 클릭\n4. 하단의 [네이버플러스 멤버십 해지하기] 클릭",
-    iconEmoji: "N",
   },
   {
     id: "baemin-club",
@@ -474,7 +433,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelAndroidApp: "com.sampleapp",
     cancelGuide:
       "1. 배달의민족 앱 로그인 후 아래 [마이배민]\n2. [배민클럽] 화면으로 이동\n3. 화면 아래쪽 [해지하기] > 해지 사유 선택 후 한 번 더 [해지하기]",
-    iconEmoji: "🛵",
   },
   {
     id: "baemin-youtube-premium",
@@ -497,7 +455,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelAndroidApp: "com.sampleapp",
     cancelGuide:
       "1. 배달의민족 앱 로그인 후 아래 [마이배민]\n2. [배민클럽] 이용정보 화면으로 이동\n3. [배민클럽 해지하기] — 유튜브 프리미엄 제휴 상품도 함께 해지돼요",
-    iconEmoji: "🛵",
     includes: ["baemin-club", "youtube-premium"],
     sourceUrl: "https://zdnet.co.kr/view/?no=20250924105307",
   },
@@ -520,7 +477,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "entry",
     cancelGuide:
       "1. LG U+ 구독 플랫폼 '유독' 접속 후 로그인\n2. 구독 중인 더블스트리밍 선택\n3. 해지 — 유독은 버튼 한 번으로 해지할 수 있다고 안내해요(연간권은 약정 조건을 확인하세요)",
-    iconEmoji: "📺",
     includes: ["netflix", "youtube-premium"],
     sourceUrl: "https://www.newsis.com/view/NISX20260506_0003617774",
   },
@@ -540,7 +496,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "entry",
     cancelGuide:
       "1. 티빙 웹에서 로그인 후 마이페이지 진입\n2. [나의 이용권] 선택\n3. 이용권 상세 페이지에서 [변경/해지] 클릭\n4. 하단의 [자동결제 해지] 선택",
-    iconEmoji: "📺",
     includes: ["tving", "disney-plus", "wavve"],
     sourceUrl:
       "https://cjnews.cj.net/%ED%8B%B0%EB%B9%99-%EB%94%94%EC%A6%88%EB%8B%88%EC%99%80-%EA%B5%AD%EB%82%B4-%ED%8C%8C%ED%8A%B8%EB%84%88%EC%8B%AD-%EC%B2%B4%EA%B2%B0-%EA%B5%AD%EB%82%B4-%EC%B5%9C%EC%B4%88-3%EC%9E%90-ott-%EA%B2%B0/",
@@ -559,7 +514,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "entry",
     cancelGuide:
       "1. 티빙 웹에서 로그인 후 마이페이지 진입\n2. [나의 이용권] 선택\n3. 이용권 상세 페이지에서 [변경/해지] 클릭\n4. 하단의 [자동결제 해지] 선택",
-    iconEmoji: "📺",
     includes: ["tving", "disney-plus"],
     sourceUrl:
       "https://cjnews.cj.net/%ED%8B%B0%EB%B9%99-%EB%94%94%EC%A6%88%EB%8B%88%EC%99%80-%EA%B5%AD%EB%82%B4-%ED%8C%8C%ED%8A%B8%EB%84%88%EC%8B%AD-%EC%B2%B4%EA%B2%B0-%EA%B5%AD%EB%82%B4-%EC%B5%9C%EC%B4%88-3%EC%9E%90-ott-%EA%B2%B0/",
@@ -579,7 +533,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "entry",
     cancelGuide:
       "1. 가입한 곳(티빙 또는 웨이브)에 로그인\n2. 마이페이지의 [나의 이용권]에서 더블 이용권 선택\n3. [변경/해지] 또는 [자동결제 해지]를 눌러 해지",
-    iconEmoji: "📺",
     includes: ["tving", "wavve"],
     sourceUrl: "https://www.mediatoday.co.kr/news/articleView.html?idxno=329193",
   },
@@ -600,7 +553,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 아이폰 [설정] 앱 > 맨 위 내 이름\n2. [구독] > [Apple One] 선택\n3. [구독 취소] 클릭\n4. 웹에서는 Apple 계정의 구독 관리 화면에서 Apple One을 골라 취소",
-    iconEmoji: "🍎",
     includes: ["apple-music", "apple-tv", "apple-icloud"],
     sourceUrl: "https://www.apple.com/kr/apple-one/",
   },
@@ -621,7 +573,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "entry",
     cancelGuide:
       "1. LG U+ 구독 플랫폼 '유독' 접속 후 로그인\n2. 구독 중인 구글 AI 프로 + 유튜브 프리미엄 선택\n3. 해지",
-    iconEmoji: "✨",
     includes: ["google-ai-pro", "youtube-premium"],
     sourceUrl: "https://view.asiae.co.kr/article/2026060108404250306",
   },
@@ -639,7 +590,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelAndroidApp: "com.nhn.android.ndrive",
     cancelGuide:
       "1. 네이버 MYBOX 웹/앱 접속 > 환경설정\n2. [용량 관리/이용권] 선택\n3. [정기결제 해지] 클릭하여 완료",
-    iconEmoji: "☁️",
   },
   {
     id: "naver-vibe",
@@ -657,7 +607,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     legacyCancelUrls: ["https://vibe.naver.com/membership"],
     cancelGuide:
       "1. VIBE 웹 로그인 후 왼쪽 위 프로필 > [My 멤버십]\n2. [결제 관리] 클릭\n3. [구독 해지] 클릭 후 혜택을 확인하고 [혜택 포기] 선택 — 남은 기간까지는 이용할 수 있어요\n4. 앱(App Store·Google Play)에서 결제했다면 그곳에서 해지해요",
-    iconEmoji: "🎧",
   },
   {
     id: "naver-webtoon",
@@ -673,7 +622,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelAndroidApp: "com.nhn.android.webtoon",
     cancelGuide:
       "1. 네이버웹툰 모바일 앱/웹 > [더보기]\n2. [쿠키샵] > [자동충전 관리] 선택\n3. [자동충전 해지하기] 클릭하여 완료",
-    iconEmoji: "🍪",
   },
   {
     id: "kakao-emoticon",
@@ -694,7 +642,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelAndroidApp: "com.kakao.talk",
     cancelGuide:
       "1. 카카오톡 더보기 탭에서 [My구독] 클릭\n2. [이모티콘 플러스] 선택\n3. [구독 중인 상품] 메뉴에서 [해지하기] 클릭\n4. 해지 확인 완료",
-    iconEmoji: "😊",
   },
   {
     id: "apple-icloud",
@@ -716,7 +663,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     legacyCancelUrls: ["https://apps.apple.com/account/subscriptions"],
     cancelGuide:
       "1. 아이폰 설정 > 상단 내 이름 클릭\n2. [iCloud] - [계정 저장 공간 관리] 선택\n3. [저장 공간 요금제 변경] 클릭\n4. [다운그레이드 옵션]에서 무료 요금제(5GB) 선택 후 완료",
-    iconEmoji: "☁️",
   },
   {
     id: "google-one",
@@ -735,7 +681,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "entry",
     cancelGuide:
       "1. 구글 원 홈페이지/앱 접속 후 로그인\n2. [설정] 아이콘 클릭\n3. [멤버십 취소] 메뉴 선택\n4. [취소] 버튼 클릭하여 확인",
-    iconEmoji: "☁️",
   },
   {
     id: "google-ai-pro",
@@ -752,7 +697,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. Google Play 접속 > [결제 및 정기결제] > [정기결제] 선택\n2. Google AI Pro / Google One 멤버십 선택\n3. [구독 취소] 클릭하여 해지 완료",
-    iconEmoji: "✨",
   },
   {
     id: "notion",
@@ -779,7 +723,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     legacyCancelUrls: ["https://www.notion.so/my-account"],
     cancelGuide:
       "1. 노션 좌측 사이드바에서 [설정과 멤버] 클릭\n2. [청구] 메뉴 탭으로 이동\n3. 요금제 정보에서 [플랜 변경] 클릭\n4. [다운그레이드] 메뉴를 통해 무료(Free) 플랜으로 변경",
-    iconEmoji: "📝",
   },
   {
     id: "chatgpt-plus",
@@ -800,7 +743,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     legacyCancelUrls: ["https://chat.openai.com/"],
     cancelGuide:
       "1. 챗GPT 웹사이트 좌측 하단 프로필 클릭\n2. [My plan] 클릭\n3. [Manage my subscription] 클릭\n4. [Cancel plan] 버튼 클릭하여 해지 완료",
-    iconEmoji: "🤖",
   },
   {
     id: "claude-pro",
@@ -830,7 +772,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. claude.ai 접속 후 좌측 하단 프로필/계정 클릭\n2. [Settings] > [Billing] 메뉴 선택\n3. [Cancel Plan] 또는 구독 취소 클릭하여 완료",
-    iconEmoji: "🧠",
   },
   {
     id: "github-copilot-pro",
@@ -854,7 +795,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     legacyCancelUrls: ["https://github.com/settings/billing"],
     cancelGuide:
       "1. GitHub 로그인 후 오른쪽 위 프로필 사진 > [Settings]\n2. 왼쪽 'Access'의 [Billing & licensing] > [Licensing]\n3. 'GitHub Copilot' 칸의 [Manage subscription] > [Cancel subscription]\n4. 확인하면 이번 결제 주기가 끝난 뒤 Copilot Free로 바뀝니다. 조직·회사가 준 Copilot은 여기서 해지할 수 없어요",
-    iconEmoji: "🐙",
   },
   {
     id: "cursor-pro",
@@ -882,7 +822,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "entry",
     cancelGuide:
       "1. cursor.com 로그인 후 대시보드의 [Billing] 화면\n2. [Manage Subscription]을 누르면 Stripe 결제 화면이 열림\n3. [Cancel subscription]으로 확인 — 이번 결제 주기가 끝나면 무료 Hobby 플랜으로 바뀝니다",
-    iconEmoji: "⌨️",
   },
   {
     id: "perplexity-pro",
@@ -900,7 +839,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "entry",
     cancelGuide:
       "1. 웹에서 로그인 후 왼쪽 아래 프로필 > [Settings]\n2. [Subscription] 탭 > [Manage Subscription]\n3. 열린 결제 화면에서 구독 취소\n4. 앱에서 가입했다면 App Store·Google Play의 구독 관리에서 해지",
-    iconEmoji: "🔍",
   },
   {
     id: "adobe-cc",
@@ -914,7 +852,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 어도비 계정 플랜 관리 페이지 접속\n2. 취소하려는 플랜의 [플랜 관리] 클릭\n3. [플랜 취소] 선택\n4. 취소 이유 선택 후 안내에 따라 계속 진행하여 해지",
-    iconEmoji: "🎨",
   },
   {
     id: "microsoft-365",
@@ -946,7 +883,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 마이크로소프트 계정 서비스 및 구독 페이지 접속\n2. 취소할 Microsoft 365 구독 찾기\n3. [관리] - [구독 취소] 클릭\n4. 취소 확인 화면에서 [구독 취소] 확정",
-    iconEmoji: "💻",
   },
   {
     id: "millie",
@@ -963,7 +899,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 밀리의 서재 앱 하단 [관리] 탭 진입\n2. [구독 관리] 선택\n3. [자동결제 해지] 클릭\n4. 안내 팝업 확인 후 해지 완료",
-    iconEmoji: "📚",
   },
   {
     id: "ridi-select",
@@ -978,7 +913,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelAndroidApp: "com.initialcoms.ridi",
     cancelGuide:
       "1. 리디북스 웹/앱 마이페이지 진입\n2. 리디셀렉트 관리 메뉴 선택\n3. [구독 해지 예약] 클릭\n4. 해지 확인 완료",
-    iconEmoji: "📖",
   },
   {
     id: "goodnotes",
@@ -999,7 +933,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "entry",
     cancelGuide:
       "결제한 곳에서 해지해요.\n\n[앱스토어에서 결제했다면]\n1. 아이폰/아이패드 설정 > 최상단 프로필 이름 클릭\n2. [구독] 메뉴 선택\n3. Goodnotes 선택 후 [구독 취소] 클릭\n\n[구글플레이에서 결제했다면]\n1. Play 스토어 > 프로필 > [결제 및 정기결제]\n2. [정기결제] > Goodnotes 선택\n3. [구독 취소] 클릭\n\n[굿노트에서 바로 결제했다면]\ngoodnotes.com에 로그인해 계정의 구독 상태를 확인하세요.",
-    iconEmoji: "📝",
   },
   {
     id: "apple-play-store",
@@ -1014,7 +947,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 안드로이드 기기 구글 플레이스토어 앱 실행\n2. 우측 상단 프로필 클릭\n3. [결제 및 정기 결제] - [정기 결제] 선택\n4. 해지할 항목 선택 후 [구독 취소] 클릭",
-    iconEmoji: "📱",
   },
   {
     id: "apple-app-store",
@@ -1030,7 +962,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     legacyCancelUrls: ["https://apps.apple.com/account/subscriptions"],
     cancelGuide:
       "1. 아이폰/아이패드 설정 > 최상단 프로필 이름 클릭\n2. [구독] 메뉴 선택\n3. 해지할 구독 항목 선택\n4. 하단의 [구독 취소] 클릭하여 확인",
-    iconEmoji: "🍏",
   },
 ];
 
@@ -1047,7 +978,6 @@ export const DEMO_SUBSCRIPTIONS: Array<{
   category: SubscriptionCategory;
   cancelUrl: string;
   cancelGuide: string;
-  iconUrl: string;
   planId?: string;
   planName?: string;
 }> = [
@@ -1062,7 +992,6 @@ export const DEMO_SUBSCRIPTIONS: Array<{
     category: "ott",
     cancelUrl: "https://www.netflix.com/cancelplan",
     cancelGuide: "계정 > 멤버십 해지 > 해지 완료",
-    iconUrl: "🎬",
   },
   {
     name: "유튜브 프리미엄",
@@ -1075,7 +1004,6 @@ export const DEMO_SUBSCRIPTIONS: Array<{
     category: "ott",
     cancelUrl: "https://www.youtube.com/paid_memberships",
     cancelGuide: "프로필 > 구매 항목 및 멤버십 > 비활성화",
-    iconUrl: "▶️",
   },
   {
     name: "쿠팡 와우 멤버십",
@@ -1086,7 +1014,6 @@ export const DEMO_SUBSCRIPTIONS: Array<{
     category: "shopping",
     cancelUrl: "https://loyalty.coupang.com/loyalty/management/home",
     cancelGuide: "마이쿠팡 > 와우 멤버십 > 해지하기",
-    iconUrl: "🛒",
   },
 ];
 
@@ -1323,7 +1250,8 @@ export function presetFormData(preset: ServicePreset): Partial<SubscriptionFormD
     category: preset.category,
     cancelUrl: preset.cancelUrl,
     cancelGuide: preset.cancelGuide,
-    iconUrl: preset.iconEmoji,
+    // 앞서 직접 입력에서 고른 아이콘이 남지 않게 비운다. 목록의 서비스는 로고(없으면 이니셜)로 그린다.
+    iconUrl: undefined,
     planId: undefined,
     planName: undefined,
     // 결제 화면에서 확인한 세율이 있으면 채운다. 없으면 undefined로 적어 앞서 고른 서비스의

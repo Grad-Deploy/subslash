@@ -31,8 +31,9 @@ interface ServiceLogoProps {
    */
   cancelUrl?: string;
   /**
-   * 프리셋을 찾지 못했을 때 대신 보여줄 이모지. 사용자가 직접 등록한 구독은 로고를 모르므로
-   * 지금처럼 이모지를 쓴다 — 첫 글자로 그럴듯한 마크를 만들어 브랜드인 척하지 않는다.
+   * 프리셋을 찾지 못했을 때 대신 보여줄 아이콘 — 사용자가 직접 등록하며 고른 것이다. 목록에 있는
+   * 서비스는 로고가 없어도 쓰지 않고 이니셜로 둔다. 예전에는 등록할 때 서비스 목록의 이모지를 구독에
+   * 복사해 두어, 로고가 없는 서비스는 이모지로 보였다.
    */
   fallbackEmoji?: string;
   /**
@@ -48,8 +49,8 @@ interface ServiceLogoProps {
 /**
  * 구독 한 줄 앞에 붙는 서비스 로고.
  *
- * 알려진 서비스는 브랜드 색 타일 위에 로고(또는 이니셜)를 그리고, 알 수 없는 구독은
- * 저장된 이모지를 그대로 보여준다. 로고 자료와 그 출처는 `lib/service-logos.ts`에 있다.
+ * 알려진 서비스는 브랜드 색 타일 위에 로고(또는 이니셜)를 그리고, 직접 등록한 구독은
+ * 사용자가 고른 아이콘을, 없으면 이름 첫 글자를 보여준다. 로고 자료와 그 출처는 `lib/service-logos.ts`에 있다.
  *
  * 화면에서 로고 옆에는 늘 서비스 이름이 함께 나오므로 로고는 장식으로 둔다 — 읽어 주면
  * "넷플릭스 로고 넷플릭스"가 된다.
@@ -72,6 +73,7 @@ export function ServiceLogo({
 
   if (!logo) {
     const tileHex = customIconHex(fallbackColor);
+    const icon = id ? undefined : fallbackEmoji;
     return (
       <span
         className={cn(
@@ -83,14 +85,14 @@ export function ServiceLogo({
           width: size,
           height: size,
           // 색 타일 위의 이모지는 조금 작게 둬야 가장자리에 여백이 생겨 타일로 읽힌다.
-          fontSize: size * (fallbackEmoji ? (tileHex ? 0.6 : 0.82) : 0.46),
+          fontSize: size * (icon ? (tileHex ? 0.6 : 0.82) : 0.46),
           ...(tileHex && { backgroundColor: tileHex }),
         }}
         aria-hidden="true"
       >
         {/* 사용자가 직접 넣은 아이콘은 그대로 쓰고, 없으면 이름 첫 글자로 둔다.
             상자 이모지는 어느 서비스인지 알려주지 않으면서 자리만 차지했다. */}
-        {fallbackEmoji || name.trim().charAt(0).toUpperCase()}
+        {icon || name.trim().charAt(0).toUpperCase()}
       </span>
     );
   }

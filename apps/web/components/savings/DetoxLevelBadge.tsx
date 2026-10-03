@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Award } from "lucide-react";
 import { formatKRW, getDetoxLevel } from "@subslash/shared";
 
 interface DetoxLevelBadgeProps {
@@ -28,7 +29,6 @@ export function DetoxLevelBadge({
       <span
         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 ${className}`}
       >
-        <span>{level.emoji}</span>
         <span>
           {level.levelLabel} {level.title}
         </span>
@@ -40,7 +40,7 @@ export function DetoxLevelBadge({
     <div className={`p-5 border rounded-2xl bg-card shadow-sm space-y-3 ${className}`}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="text-3xl leading-none">{level.emoji}</span>
+          <Award className="size-8 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
           <div>
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               구독 디톡스 레벨

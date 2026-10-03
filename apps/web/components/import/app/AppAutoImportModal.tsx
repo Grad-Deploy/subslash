@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { ChevronDown, X } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 import {
   type DiscoveredSubscription,
   formatCurrency,
@@ -241,7 +241,7 @@ export function AppAutoImportModal({
                         )}
                         aria-hidden
                       >
-                        {item.selected && "✓"}
+                        {item.selected && <Check className="size-3.5" strokeWidth={3} />}
                       </span>
                       <ServiceLogo
                         presetId={item.presetId}

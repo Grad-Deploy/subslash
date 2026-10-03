@@ -14,7 +14,6 @@ export interface DetoxLevel {
   levelLabel: string;
   /** 방어 칭호. */
   title: string;
-  emoji: string;
   /** 이 레벨에 들어오기 위해 필요했던 누적 방어액(KRW). */
   minSavings: number;
   /**
@@ -33,7 +32,6 @@ export interface DetoxLevel {
 interface LevelTier {
   level: number;
   title: string;
-  emoji: string;
   minSavings: number;
 }
 
@@ -42,12 +40,12 @@ interface LevelTier {
  * Lv.1은 금액이 적더라도 한 건이라도 해지했으면 도달한다.
  */
 export const DETOX_LEVEL_TIERS: readonly LevelTier[] = [
-  { level: 0, title: "디톡스 준비", emoji: "🌱", minSavings: 0 },
-  { level: 1, title: "구독 새싹", emoji: "🌿", minSavings: 10000 },
-  { level: 2, title: "디톡스 탐험가", emoji: "🧭", minSavings: 50000 },
-  { level: 3, title: "스마트 슬래셔", emoji: "✂️", minSavings: 150000 },
-  { level: 4, title: "지출 방어 사령관", emoji: "🛡️", minSavings: 300000 },
-  { level: 5, title: "구독 킬러 · 미니멀리스트", emoji: "👑", minSavings: 500000 },
+  { level: 0, title: "디톡스 준비", minSavings: 0 },
+  { level: 1, title: "구독 새싹", minSavings: 10000 },
+  { level: 2, title: "디톡스 탐험가", minSavings: 50000 },
+  { level: 3, title: "스마트 슬래셔", minSavings: 150000 },
+  { level: 4, title: "지출 방어 사령관", minSavings: 300000 },
+  { level: 5, title: "구독 킬러 · 미니멀리스트", minSavings: 500000 },
 ] as const;
 
 const MAX_LEVEL = DETOX_LEVEL_TIERS[DETOX_LEVEL_TIERS.length - 1].level;
@@ -81,7 +79,6 @@ export function getDetoxLevel(confirmedSavings: number, killCount: number = 0): 
       level: tier.level,
       levelLabel: tier.level >= MAX_LEVEL ? "Lv.MAX" : `Lv.${tier.level}`,
       title: tier.title,
-      emoji: tier.emoji,
       minSavings: tier.minSavings,
       nextThreshold: null,
       nextTitle: null,
@@ -98,7 +95,6 @@ export function getDetoxLevel(confirmedSavings: number, killCount: number = 0): 
     level: tier.level,
     levelLabel: `Lv.${tier.level}`,
     title: tier.title,
-    emoji: tier.emoji,
     minSavings: tier.minSavings,
     nextThreshold: nextTier.minSavings,
     nextTitle: nextTier.title,
