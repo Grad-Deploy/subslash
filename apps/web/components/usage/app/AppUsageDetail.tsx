@@ -10,7 +10,6 @@ import {
   formatDuration,
   formatDurationPrecise,
   lastDays,
-  monthlyTotals,
   totalsFor,
   type UsageHistory,
 } from "@lib/usage/history";
@@ -25,34 +24,17 @@ import {
   type UsageRange,
 } from "@lib/usage/value";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
-import { RangeTabs, StatTile, won } from "./parts";
+import { RangeTabs, StatTile, UsageBarChart, monthBars, won, type UsageBar } from "./parts";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
-
-interface Bar {
-  key: string;
-  label: string;
-  /** 축에 글자를 붙일지(1달은 30칸이라 몇 칸에만). */
-  showLabel: boolean;
-  ms: number | null;
-  spoken: string;
-}
 
 function bars(
   range: UsageRange,
   history: UsageHistory,
   packages: readonly string[],
   now: Date,
-): Bar[] {
-  if (range === "year") {
-    return monthlyTotals(history, packages, now).map((m) => ({
-      key: m.month,
-      label: m.label,
-      showLabel: true,
-      ms: m.totals.coveredDays > 0 ? m.totals.usedMs : null,
-      spoken: m.label,
-    }));
-  }
+): UsageBar[] {
+  if (range === "year") return monthBars(history, packages, now);
   const dates = lastDays(now, RANGE_DAYS[range]);
   return dates.map((date, i) => {
     const [y, m, d] = date.split("-").map(Number);
@@ -111,7 +93,6 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
   const periodDates = lastDays(now, RANGE_DAYS[range]);
   const period = subUsage(subscription, history, installed, periodDates, rate);
   const month = subUsage(subscription, history, installed, lastDays(now, 30), rate);
-  const maxMs = Math.max(1, ...series.map((b) => b.ms ?? 0));
 
   return (
     <section className="space-y-4 rounded-2xl border p-4" aria-labelledby="sub-usage-heading">
@@ -156,37 +137,7 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
           )}
 
           <div>
-            <div className="flex h-28 items-end gap-[3px]" aria-hidden>
-              {series.map((bar) => (
-                <div key={bar.key} className="flex h-full flex-1 flex-col justify-end">
-                  {bar.ms === null ? (
-                    <div className="h-1 w-full rounded-full border border-dashed border-border" />
-                  ) : (
-                    <div
-                      className="w-full rounded-t-sm bg-foreground/80"
-                      style={{ height: `${bar.ms > 0 ? Math.max(3, (bar.ms / maxMs) * 100) : 0}%` }}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="mt-1 flex gap-[3px]" aria-hidden>
-              {series.map((bar) => (
-                <span
-                  key={bar.key}
-                  className="flex-1 overflow-visible whitespace-nowrap text-center text-[9.5px] text-muted-foreground"
-                >
-                  {bar.showLabel ? bar.label : ""}
-                </span>
-              ))}
-            </div>
-            <ul className="sr-only">
-              {series.map((bar) => (
-                <li key={bar.key}>
-                  {bar.spoken}: {bar.ms === null ? "기록 없음" : formatDuration(bar.ms)}
-                </li>
-              ))}
-            </ul>
+            <UsageBarChart bars={series} />
             {series.some((bar) => bar.ms === null) && (
               <p className="mt-2 text-xs text-muted-foreground">점선은 기록이 없는 때예요.</p>
             )}
