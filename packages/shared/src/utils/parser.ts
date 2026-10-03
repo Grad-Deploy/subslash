@@ -91,11 +91,6 @@ const SERVICE_KEYWORDS: {
     defaultPaymentMethod: "naverpay",
   },
   {
-    keywords: ["쿠키", "네이버 웹툰", "네이버웹툰", "웹툰 쿠키", "cookie"],
-    presetId: "naver-webtoon",
-    defaultPaymentMethod: "naverpay",
-  },
-  {
     keywords: ["카카오 이모티콘", "이모티콘 플러스", "톡서랍"],
     presetId: "kakao-emoticon",
     defaultPaymentMethod: "kakaopay",
@@ -167,14 +162,6 @@ const SERVICE_KEYWORDS: {
   },
   { keywords: ["밀리", "밀리의 서재", "millie"], presetId: "millie" },
   { keywords: ["리디", "리디셀렉트", "ridi"], presetId: "ridi-select" },
-  {
-    // 카드 명세에 찍히는 애플 결제 표기. 어느 앱의 구독인지는 알 수 없으므로 앱스토어 구독
-    // 묶음(요금 없음)으로 두고 사용자가 앱과 요금을 적게 한다. 이 줄은 위의 어느 서비스와도
-    // 맞지 않았을 때만 닿도록 맨 뒤에 둔다.
-    keywords: ["apple.com/bill"],
-    presetId: "apple-app-store",
-    defaultPaymentMethod: "apple_iap",
-  },
 ];
 
 /**
@@ -368,6 +355,13 @@ function hasPaymentEvidence(text: string): boolean {
   return PAYMENT_EVIDENCE.some((pattern) => pattern.test(text));
 }
 
+/**
+ * 결제는 맞지만 구독이 아닌 것 — 웹툰 쿠키 충전(자동충전 포함). 쓴 만큼 채우는 것이라 결제일과 금액이
+ * 매번 바뀌어, 구독으로 등록하면 지어낸 결제일로 D-day와 지출을 계산하게 된다. 서비스 목록에서도 뺐다.
+ * '쿠키'만으로는 가리지 않는다 — 메일 하단의 쿠키 정책 안내에도 나온다.
+ */
+const NOT_SUBSCRIPTION_PURCHASE = /웹툰\s*쿠키|쿠키\s*(?:자동\s*)?충전|쿠키\s*구매|쿠키샵/;
+
 /** "Netflix <info@account.netflix.com>"에서 도메인만 꺼낸다. */
 export function senderDomainOf(from: string): string {
   const match = /@([A-Za-z0-9.-]+)/.exec(from);
@@ -400,14 +394,6 @@ function isPlatformSender(sender: string): boolean {
 }
 
 /**
- * 어느 앱인지 모를 때 쓰는 묶음 프리셋. 항목별로 쪼갤 때는 후보가 아니다.
- *
- * 애플 영수증 하단의 "apple.com/bill"은 어느 줄에나 있는 안내 문구라, 이것으로 조각을 하나 더
- * 만들면 실제로 결제하지 않은 '앱스토어 구독'이 그 옆 항목의 금액을 달고 등록된다.
- */
-const PLATFORM_FALLBACK_PRESET_IDS = new Set(["apple-app-store", "apple-play-store"]);
-
-/**
  * 한 통으로 여러 앱을 청구하는 영수증을 항목별 조각으로 나눈다.
  *
  * 애플·구글 플레이 영수증은 한 통에 굿노트·아이클라우드가 나란히 적힌다. 메일 한 통을 후보
@@ -426,7 +412,6 @@ function splitPlatformReceipt(body: string): { presetId: string; text: string }[
   const found = new Map<string, number>();
 
   for (const item of SERVICE_KEYWORDS) {
-    if (PLATFORM_FALLBACK_PRESET_IDS.has(item.presetId)) continue;
     if (!POPULAR_SERVICES.some((s) => s.id === item.presetId)) continue;
     let at = -1;
     for (const keyword of item.keywords) {
@@ -462,6 +447,9 @@ function parseSingleMessageBlock(
 
   // 메일은 결제가 일어났다는 증거가 있어야 읽는다. 문자는 카드 승인 문자 자체가 증거다.
   if (hints && !hasPaymentEvidence(normalized)) return null;
+  if (NOT_SUBSCRIPTION_PURCHASE.test(hints ? hints.subject + " " + normalized : normalized)) {
+    return null;
+  }
 
   // 1. Structured Field Extraction for Naver / Email Receipts
   // e.g. "상품명 : VIBE 무제한 듣기 (정기결제)" / "서비스명: 네이버 MYBOX" / "가맹점: 스포티파이"
@@ -685,10 +673,16 @@ function parseSingleMessageBlock(
     matchByKeyword(structuredProductName + " " + normalized);
   }
 
-  // 연 결제만 있는 서비스(굿노트)의 영수증은 '연간'이라고 적혀 있지 않아도 연 결제다. 애플
-  // 영수증은 앱 이름과 갱신일만 적기도 해서, 월 결제로 읽으면 3월 영수증이 반년 뒤 '오래된 메일'이
-  // 되어 자동으로 등록되지 않았다.
-  if (matchedPreset?.onlyBillingCycle) billingCycle = matchedPreset.onlyBillingCycle;
+  // 가장 비싼 월 요금보다 큰 영수증(굿노트)은 '연간'이라고 적혀 있지 않아도 연 결제다. 애플 영수증은
+  // 앱 이름과 갱신일만 적기도 해서, 월 결제로 읽으면 3월 영수증이 반년 뒤 '오래된 메일'이 되어 자동으로
+  // 등록되지 않았다.
+  if (
+    matchedPreset?.yearlyAbove !== undefined &&
+    currency === matchedPreset.currency &&
+    amount > matchedPreset.yearlyAbove
+  ) {
+    billingCycle = "yearly";
+  }
   if (billingCycle !== "yearly") {
     billingMonth = undefined;
   } else if (hints && billingMonth === undefined) {
