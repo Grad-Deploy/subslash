@@ -47,11 +47,12 @@ export interface ServicePreset {
   /** 결제 경로·조건에 따라 요금이 달라지는 점을 알리는 한 줄. */
   priceNote?: string;
   /**
-   * 이 서비스의 구독이 한 가지 결제 주기뿐일 때(확인한 곳만). 등록 폼과 영수증 파싱이 이 주기를
-   * 쓴다. 영수증에 '연간'이 적혀 있지 않아도 연 결제만 있는 서비스를 월 결제로 읽으면, 1년에 한
-   * 번인 결제가 매달 있는 것처럼 보이고 지난 영수증은 35일 만에 '오래됨'이 된다.
+   * 영수증 금액이 이보다 크면 '연간'이 적혀 있지 않아도 연 결제로 읽는다(서비스 통화 기준). 가장 비싼
+   * 월 요금을 확인한 서비스에만 둔다. 애플 영수증은 앱 이름과 갱신일만 적기도 해서, 연 결제를 월
+   * 결제로 읽으면 1년에 한 번인 결제가 매달 있는 것처럼 보이고 지난 영수증은 35일 만에 '오래됨'이
+   * 된다 — 굿노트의 3월 영수증이 그래서 자동으로 등록되지 않았다.
    */
-  onlyBillingCycle?: BillingCycle;
+  yearlyAbove?: number;
   /**
    * 요금표 가격에 세금이 빠져 있다고 서비스가 스스로 밝힌 경우(요금표의 문구로 확인한 곳만).
    * 한국에서 결제할 때 요금표 가격에 더해져 청구되는 세금(%). 결제 화면에서 세금이 따로 붙는 것을
@@ -352,13 +353,27 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Amazon Prime Video",
     nameKo: "아마존 프라임 비디오",
     category: "ott",
+    // 아마존 프라임 멤버십(Prime Video 포함)의 요금(2026-10-03 사용자 확인). Prime Video만 따로 내는
+    // 요금은 확인하지 못해 적지 않았다 — 그렇게 냈다면 요금제를 고르지 않고 금액을 적는다.
     defaultAmount: null,
-    priceNote: "한국 요금을 확인하지 못했어요. 결제 내역의 금액을 적어주세요.",
+    plans: [
+      { id: "prime-monthly", name: "아마존 프라임 멤버십", amount: 14.99 },
+      {
+        id: "prime-yearly",
+        name: "아마존 프라임 멤버십 (연 결제)",
+        amount: 139,
+        billingCycle: "yearly",
+        yearlyOf: "prime-monthly",
+      },
+    ],
+    plansIncomplete: true,
+    priceNote:
+      "아마존 프라임 멤버십 요금이에요. Prime Video만 따로 결제했다면 요금제를 고르지 말고 결제 내역의 금액을 적어 주세요.",
     currency: "USD",
     cancelUrl: "https://www.primevideo.com/settings",
     cancelUrlKind: "direct",
     cancelGuide:
-      "1. Prime Video 웹사이트 접속 후 프로필 > [계정 및 설정] 선택\n2. [내 멤버십] 섹션 이동\n3. [멤버십 종료] 클릭하여 정기결제 해지 완료",
+      "1. Prime Video 웹사이트 접속 후 프로필 > [계정 및 설정] 선택\n2. [내 멤버십] 섹션 이동\n3. [멤버십 종료] 클릭하여 정기결제 해지 완료\n4. 아마존 프라임 멤버십으로 보고 있다면 amazon.com 계정의 Prime 멤버십 관리에서 해지해요",
     iconEmoji: "🎬",
   },
   {
@@ -631,10 +646,14 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Naver MYBOX",
     nameKo: "네이버 MYBOX",
     category: "cloud",
-    // 한국 App Store의 앱 내 구입 가격(2026-10-03 확인). 웹(네이버페이)에서 결제하면 요금이 달라지는데,
-    // 웹 요금표는 확인하지 못해 적지 않는다. 용량은 무료 30GB를 더한 전체 용량이다.
+    // 웹 결제 월 요금(2026-10-03 사용자 확인)과 한국 App Store의 앱 내 구입 가격(같은 날 확인). 웹의 연
+    // 결제와 5TB 이상은 확인하지 못했다. 용량은 무료 30GB를 더한 전체 용량이다.
     defaultAmount: null,
     plans: [
+      { id: "80gb", name: "80GB (웹 결제)", amount: 1650, storageGB: 80 },
+      { id: "180gb", name: "180GB (웹 결제)", amount: 3300, storageGB: 180 },
+      { id: "330gb", name: "330GB (웹 결제)", amount: 5500, storageGB: 330 },
+      { id: "2tb", name: "2TB (웹 결제)", amount: 11000, storageGB: 2000 },
       { id: "80gb-ios", name: "80GB (App Store 결제)", amount: 2200, storageGB: 80 },
       { id: "180gb-ios", name: "180GB (App Store 결제)", amount: 4300, storageGB: 180 },
       { id: "330gb-ios", name: "330GB (App Store 결제)", amount: 7200, storageGB: 330 },
@@ -658,7 +677,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     ],
     plansIncomplete: true,
     priceNote:
-      "App Store에서 결제한 요금이에요. 네이버페이 등 웹에서 결제했다면 요금제를 고르지 말고 결제 내역의 금액을 적어 주세요.",
+      "웹과 App Store의 요금이 달라요. 결제 내역의 금액이 요금제와 다르면 요금제를 고르지 말고 그 금액을 적어 주세요.",
     sourceUrl: "https://apps.apple.com/kr/app/id585173084",
     currency: "KRW",
     cancelUrl: "https://mybox.naver.com/",
@@ -1011,19 +1030,37 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Goodnotes",
     nameKo: "굿노트",
     category: "other",
-    // 한국 App Store의 앱 내 구입 가격(2026-10-03 확인). 구글 플레이·굿노트 웹이나 Pro 요금제는 한국 요금을
-    // 확인하지 못했고, 예전에 가입한 사람은 그때 요금으로 갱신되기도 한다.
+    // 한국 요금(2026-10-03 사용자 확인). 베이직 연간은 예전에 가입한 사람이 이전 가격으로 갱신되기도 해서
+    // 둘을 다 둔다. 이 밖의 값(다른 스토어·더 예전 가격)도 있을 수 있어 요금제를 고르지 않아도 되게 한다.
     defaultAmount: null,
     plans: [
-      { id: "basic-yearly", name: "베이직 (App Store)", amount: 16900, billingCycle: "yearly" },
+      { id: "basic", name: "베이직", amount: 2200 },
+      { id: "pro", name: "프로", amount: 5500 },
+      {
+        id: "basic-yearly",
+        name: "베이직 (연 결제)",
+        amount: 16000,
+        billingCycle: "yearly",
+        yearlyOf: "basic",
+      },
+      {
+        id: "basic-yearly-previous",
+        name: "베이직 (연 결제·이전 가격)",
+        amount: 14000,
+        billingCycle: "yearly",
+      },
+      {
+        id: "pro-yearly",
+        name: "프로 (연 결제)",
+        amount: 50000,
+        billingCycle: "yearly",
+        yearlyOf: "pro",
+      },
     ],
     plansIncomplete: true,
-    priceNote:
-      "App Store의 베이직 요금이에요. 다른 곳에서 결제했거나 다른 요금제라면 요금제를 고르지 말고 영수증의 금액을 적어 주세요.",
-    sourceUrl: "https://apps.apple.com/kr/app/id1444383602",
-    // 구독은 1년 단위 결제 하나뿐이다(월 결제 없음, 2026-09 사용자 확인). 애플 영수증에는 '연간'이
-    // 적히지 않을 때가 있어, 이것이 없으면 3월 영수증이 월 결제로 읽혀 '오래된 메일'이 됐다.
-    onlyBillingCycle: "yearly",
+    priceNote: "영수증의 금액이 요금제와 다르면 요금제를 고르지 말고 그 금액을 적어 주세요.",
+    // 가장 비싼 월 요금(프로 5,500원)보다 큰 영수증은 연 결제다.
+    yearlyAbove: 5500,
     currency: "KRW",
     // 결제한 곳(앱스토어·구글플레이·굿노트 웹)에서 해지한다. 어디서 결제했는지는 앱이 알 수
     // 없으므로 한 곳을 '해지 페이지'라고 부르지 않고, 첫 화면을 주고 안내로 나눈다.
@@ -1320,7 +1357,7 @@ export function presetFormData(preset: ServicePreset): Partial<SubscriptionFormD
     name: preset.nameKo || preset.name,
     amount: preset.defaultAmount ?? undefined,
     currency: preset.currency,
-    billingCycle: preset.onlyBillingCycle ?? "monthly",
+    billingCycle: "monthly",
     category: preset.category,
     cancelUrl: preset.cancelUrl,
     cancelGuide: preset.cancelGuide,

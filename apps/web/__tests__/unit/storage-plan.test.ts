@@ -26,6 +26,17 @@ describe("저장 공간 요금제 계산", () => {
     expect(storagePlanFit(icloud("2tb"), 9)?.smaller).toBeNull();
   });
 
+  it("용량이 같은 다른 결제처의 요금제는 '더 작은 요금제'가 아니다", () => {
+    // 네이버 MYBOX는 웹 2TB(11,000원)가 App Store 2TB(14,300원)보다 싸다. 같은 2TB를 작다고 하지 않는다.
+    const mybox = {
+      name: "네이버 MYBOX",
+      cancelUrl: "https://mybox.naver.com/",
+      planId: "2tb-ios",
+    };
+    expect(storagePlanFit(mybox, 50)?.smaller).toBeNull();
+    expect(storagePlanFit(mybox, 10)?.smaller?.capacityGB).toBeLessThan(2000);
+  });
+
   it("요금제를 모르면 계산하지 않는다", () => {
     expect(storagePlanFit(icloud(), 10)).toBeNull();
     expect(storagePlanFit({ name: "네이버 MYBOX", planId: "x" }, 10)).toBeNull();

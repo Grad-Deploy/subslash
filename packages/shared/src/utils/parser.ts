@@ -673,10 +673,16 @@ function parseSingleMessageBlock(
     matchByKeyword(structuredProductName + " " + normalized);
   }
 
-  // 연 결제만 있는 서비스(굿노트)의 영수증은 '연간'이라고 적혀 있지 않아도 연 결제다. 애플
-  // 영수증은 앱 이름과 갱신일만 적기도 해서, 월 결제로 읽으면 3월 영수증이 반년 뒤 '오래된 메일'이
-  // 되어 자동으로 등록되지 않았다.
-  if (matchedPreset?.onlyBillingCycle) billingCycle = matchedPreset.onlyBillingCycle;
+  // 가장 비싼 월 요금보다 큰 영수증(굿노트)은 '연간'이라고 적혀 있지 않아도 연 결제다. 애플 영수증은
+  // 앱 이름과 갱신일만 적기도 해서, 월 결제로 읽으면 3월 영수증이 반년 뒤 '오래된 메일'이 되어 자동으로
+  // 등록되지 않았다.
+  if (
+    matchedPreset?.yearlyAbove !== undefined &&
+    currency === matchedPreset.currency &&
+    amount > matchedPreset.yearlyAbove
+  ) {
+    billingCycle = "yearly";
+  }
   if (billingCycle !== "yearly") {
     billingMonth = undefined;
   } else if (hints && billingMonth === undefined) {
