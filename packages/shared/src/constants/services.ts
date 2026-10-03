@@ -1,4 +1,10 @@
-import { BillingCycle, SubscriptionCategory, SubscriptionFormData, Currency } from "../types";
+import {
+  BillingCycle,
+  Subscription,
+  SubscriptionCategory,
+  SubscriptionFormData,
+  Currency,
+} from "../types";
 import { formatCurrency } from "../utils/cost-per-use";
 
 /** 한 서비스 안의 요금제 하나. */
@@ -1338,6 +1344,44 @@ export function planFormData(
     currency: planCurrency(preset, plan),
     billingCycle: plan.billingCycle ?? "monthly",
   };
+}
+
+/**
+ * 폼이 고칠 수 있는 칸 목록. `Record<keyof SubscriptionFormData, true>`라서 폼 칸이 늘면 여기에 적기
+ * 전까지 타입 검사가 멈춘다 — 수정 화면이 칸을 손으로 옮겨 적었을 때 체험 종료일과 아이콘 색이
+ * 빠져, 체험 중인 구독을 고치는 화면에 체험 종료일이 비어 보였다.
+ */
+const FORM_FIELDS: Record<keyof SubscriptionFormData, true> = {
+  name: true,
+  amount: true,
+  currency: true,
+  billingDay: true,
+  billingCycle: true,
+  billingMonth: true,
+  category: true,
+  cancelUrl: true,
+  cancelGuide: true,
+  iconUrl: true,
+  iconColor: true,
+  planId: true,
+  planName: true,
+  taxRate: true,
+  trialEndsAt: true,
+  sharingCount: true,
+  myShareAmount: true,
+  linkedAccountId: true,
+  linkedAccountName: true,
+  paymentMethod: true,
+  accountMemo: true,
+};
+
+/** 등록한 구독을 고칠 때 폼에 채울 값 — 폼이 고칠 수 있는 칸을 저장된 그대로 옮긴다. */
+export function subscriptionFormData(sub: Subscription): Partial<SubscriptionFormData> {
+  const data: Partial<Record<keyof SubscriptionFormData, unknown>> = {};
+  for (const key of Object.keys(FORM_FIELDS) as (keyof SubscriptionFormData)[]) {
+    data[key] = sub[key];
+  }
+  return data as Partial<SubscriptionFormData>;
 }
 
 /** 같은 요금제의 다른 결제 주기(월↔연) 요금제. 목록에 없으면 undefined. */
