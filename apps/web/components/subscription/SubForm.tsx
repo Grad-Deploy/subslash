@@ -2,7 +2,6 @@
 
 import React, { useId, useState } from "react";
 import {
-  CATEGORY_LABELS,
   SubscriptionFormData,
   ServicePreset,
   type BillingCycle,
@@ -10,19 +9,10 @@ import {
   type SubscriptionCategory,
   PAYMENT_METHOD_OPTIONS,
   counterpartPlan,
-  describePresetPrice,
   findPresetForSubscription,
-  formatAmount,
-  getBilledAmount,
-  getMyShareAmount,
-  getSharingCount,
   parseServiceUrl,
-  planCurrency,
   planFormData,
   presetFormData,
-  yearlyDiscountOf,
-  bundlesIncluding,
-  serviceNameOf,
 } from "@subslash/shared";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -30,25 +20,20 @@ import { Select } from "../ui/select";
 import { ServiceLogo } from "./ServiceLogo";
 import { SquarePen } from "lucide-react";
 import { IS_APP_BUILD } from "@lib/platform";
-import { CUSTOM_ICON_COLORS, CUSTOM_ICON_EMOJIS } from "@lib/custom-icon";
-
-const LABEL = "text-xs font-bold text-foreground";
+import { FIELD_LABEL } from "./form/fieldLabel";
+import { ServicePicker } from "./form/ServicePicker";
+import { CustomIconPicker } from "./form/CustomIconPicker";
+import { PlanPicker } from "./form/PlanPicker";
+import { BundleNotes } from "./form/BundleNotes";
+import { TaxField } from "./form/TaxField";
+import { SharingFields } from "./form/SharingFields";
+import { ServiceLinkFields } from "./form/ServiceLinkFields";
 
 /** 결제일 칸 아래의 빠른 선택. 결제 문자를 보고 바로 등록하는 사람이 많다. */
 const PAID_ON_CHOICES = [
   { label: "오늘 결제했어요", daysAgo: 0 },
   { label: "어제", daysAgo: 1 },
 ] as const;
-
-/** 서비스 고르기 탭의 순서. 목록에 서비스가 하나도 없는 분류는 탭을 만들지 않는다. */
-const PICK_CATEGORY_ORDER: SubscriptionCategory[] = [
-  "ott",
-  "music",
-  "ai",
-  "shopping",
-  "cloud",
-  "other",
-];
 
 /**
  * 구독 등록·수정 폼.
@@ -272,100 +257,19 @@ export function SubForm({
   };
 
   if (step === "pick") {
-    const keyword = query.trim().toLowerCase();
-    // 검색어가 있으면 고른 분류와 상관없이 전체에서 찾는다. 분류를 잘못 고른 채
-    // 검색하면 목록에 있는 서비스도 '없다'고 보이기 때문이다.
-    const matches = keyword
-      ? popularServices.filter(
-          (service) =>
-            service.nameKo.toLowerCase().includes(keyword) ||
-            service.name.toLowerCase().includes(keyword),
-        )
-      : pickCategory === "all"
-        ? popularServices
-        : popularServices.filter((service) => service.category === pickCategory);
-    const countOf = (category: SubscriptionCategory | "all") =>
-      category === "all"
-        ? popularServices.length
-        : popularServices.filter((service) => service.category === category).length;
-    const tabs: Array<SubscriptionCategory | "all"> = [
-      "all",
-      ...PICK_CATEGORY_ORDER.filter((category) => countOf(category) > 0),
-    ];
-
     return (
-      <div className="space-y-3 text-left">
-        <Input
-          placeholder="서비스 이름 검색 (예: 넷플릭스)"
-          aria-label="서비스 이름 검색"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-
-        {/* 분류로 좁혀 스크롤 없이 찾게 한다. 검색 중에는 어느 탭도 켜져 있지 않다. */}
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="서비스 분류">
-          {tabs.map((category) => {
-            const active = !keyword && pickCategory === category;
-            return (
-              <button
-                key={category}
-                type="button"
-                aria-pressed={active}
-                onClick={() => {
-                  setPickCategory(category);
-                  setQuery("");
-                }}
-                className={
-                  active
-                    ? "rounded-full border border-primary bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground"
-                    : "rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                }
-              >
-                {category === "all" ? "전체" : CATEGORY_LABELS[category]}
-                <span className="ml-1 text-[10px] opacity-70">{countOf(category)}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {matches.length > 0 ? (
-          <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1">
-            {matches.map((service) => (
-              <button
-                key={service.id}
-                type="button"
-                onClick={() => pickPreset(service)}
-                className="flex items-center gap-2 p-2.5 rounded-xl border bg-card hover:bg-muted hover:border-primary/40 text-left transition-colors"
-              >
-                <ServiceLogo presetId={service.id} name={service.nameKo} size={22} />
-                <span className="min-w-0">
-                  <span className="block text-xs font-bold truncate">{service.nameKo}</span>
-                  <span className="block text-[11px] text-muted-foreground">
-                    {describePresetPrice(service)}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground p-3 border border-dashed rounded-xl text-center">
-            &lsquo;{query.trim()}&rsquo;은(는) 목록에 없어요. 직접 입력하세요.
-          </p>
-        )}
-
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full h-11 font-semibold"
-          onClick={startCustom}
-        >
-          {keyword ? `'${query.trim()}' 직접 입력하기` : "목록에 없는 서비스 직접 입력"}
-        </Button>
-      </div>
+      <ServicePicker
+        popularServices={popularServices}
+        query={query}
+        onQueryChange={setQuery}
+        category={pickCategory}
+        onCategoryChange={setPickCategory}
+        onPick={pickPreset}
+        onCustom={startCustom}
+      />
     );
   }
 
-  const sharing = (formData.sharingCount ?? 1) > 1;
   const plans = preset?.plans ?? [];
   const cycle = formData.billingCycle ?? "monthly";
   // 고른 주기의 요금제가 목록에 없으면(연 결제 요금을 모르는 서비스 등) 요금제를 고르라고 막지
@@ -373,11 +277,6 @@ export function SubForm({
   const plansRequired = !isEdit && plans.some((plan) => (plan.billingCycle ?? "monthly") === cycle);
   const showTax =
     formData.currency === "USD" || Boolean(preset?.taxRate) || Boolean(formData.taxRate);
-  const formCurrency = formData.currency || "KRW";
-  const billed =
-    typeof formData.amount === "number"
-      ? getBilledAmount({ amount: formData.amount, taxRate: formData.taxRate })
-      : undefined;
 
   return (
     <form className="space-y-4 text-left" onSubmit={handleSubmit}>
@@ -421,7 +320,7 @@ export function SubForm({
       {showServiceFields && (
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <label htmlFor={`${fieldId}-name`} className={LABEL}>
+            <label htmlFor={`${fieldId}-name`} className={FIELD_LABEL}>
               서비스 이름
             </label>
             <Input
@@ -434,7 +333,7 @@ export function SubForm({
             />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor={`${fieldId}-category`} className={LABEL}>
+            <label htmlFor={`${fieldId}-category`} className={FIELD_LABEL}>
               카테고리
             </label>
             <Select
@@ -454,150 +353,35 @@ export function SubForm({
         </div>
       )}
 
-      {/*
-        앱에서 목록에 없는 서비스를 직접 등록할 때는 아이콘(이모지)과 타일 색을 고르게 한다. 브랜드
-        마크를 지어내지 않는 대신, 사용자가 고른 것으로 목록에서 알아보게 한다(lib/custom-icon).
-        웹은 지금 모양 그대로 둔다.
-      */}
+      {/* 웹은 지금 모양 그대로 두고, 앱에서 직접 등록할 때만 아이콘과 색을 고르게 한다. */}
       {IS_APP_BUILD && isCustom && (
-        <div className="space-y-3 rounded-xl border bg-muted/40 p-3">
-          <div className="flex items-center gap-2.5">
-            <ServiceLogo
-              name={formData.name || "?"}
-              fallbackEmoji={formData.iconUrl}
-              fallbackColor={formData.iconColor}
-              size={36}
-            />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold">{formData.name || "이름을 적어주세요"}</p>
-              <p className="text-[11px] text-muted-foreground">목록에서 이렇게 보여요</p>
-            </div>
-          </div>
-          <fieldset className="space-y-1.5">
-            <legend className={`${LABEL} mb-1.5`}>아이콘</legend>
-            <div className="grid grid-cols-8 gap-1">
-              {CUSTOM_ICON_EMOJIS.map((emoji) => {
-                const on = formData.iconUrl === emoji;
-                return (
-                  <button
-                    key={emoji}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, iconUrl: on ? undefined : emoji }))
-                    }
-                    className={`grid aspect-square place-items-center rounded-lg border text-lg transition-colors ${
-                      on ? "border-primary bg-background" : "border-transparent hover:bg-background"
-                    }`}
-                  >
-                    {emoji}
-                  </button>
-                );
-              })}
-            </div>
-          </fieldset>
-          <fieldset className="space-y-1.5">
-            <legend className={`${LABEL} mb-1.5`}>색</legend>
-            <div className="flex flex-wrap gap-2">
-              {CUSTOM_ICON_COLORS.map((color) => {
-                const on = formData.iconColor === color.id;
-                return (
-                  <button
-                    key={color.id}
-                    type="button"
-                    aria-label={color.label}
-                    aria-pressed={on}
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, iconColor: on ? undefined : color.id }))
-                    }
-                    className={`size-7 rounded-full ring-offset-2 ring-offset-background transition ${
-                      on ? "ring-2 ring-foreground" : "ring-1 ring-black/10 dark:ring-white/15"
-                    }`}
-                    style={{ backgroundColor: color.hex }}
-                  />
-                );
-              })}
-            </div>
-          </fieldset>
-        </div>
+        <CustomIconPicker
+          name={formData.name}
+          iconUrl={formData.iconUrl}
+          iconColor={formData.iconColor}
+          onChange={(change) => setFormData((prev) => ({ ...prev, ...change }))}
+        />
       )}
 
-      {/*
-        요금제가 여럿인 서비스는 등록할 때 요금제를 반드시 고른다. 하나를 미리 골라 두면
-        손대지 않은 사람의 요금이 그 요금제로 저장된다. 고른 요금제는 가격 확인의 기준이 된다.
-      */}
       {preset && plans.length > 0 && (
-        <fieldset className="space-y-1.5">
-          <legend className={`${LABEL} mb-1.5`}>요금제</legend>
-          <div className="grid grid-cols-2 gap-2">
-            {plans.map((plan) => {
-              const checked = formData.planId === plan.id;
-              const currency = planCurrency(preset, plan);
-              const discount = yearlyDiscountOf(preset, plan);
-              return (
-                <label
-                  key={plan.id}
-                  className={`relative cursor-pointer rounded-xl border p-2.5 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring ${
-                    checked
-                      ? "border-primary bg-primary/5"
-                      : "bg-card hover:border-primary/40 hover:bg-muted"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="planId"
-                    value={plan.id}
-                    checked={checked}
-                    onChange={() => pickPlan(plan)}
-                    required={plansRequired}
-                    className="sr-only"
-                  />
-                  <span className="block text-xs font-bold">{plan.name}</span>
-                  <span className="block text-[11px] text-muted-foreground">
-                    {(plan.billingCycle ?? "monthly") === "yearly" ? "연" : "월"}{" "}
-                    {formatAmount(plan.amount, currency)}
-                  </span>
-                  {discount && (
-                    <span className="block text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                      월 {formatAmount(plan.amount / 12, currency)}꼴 · 월 결제보다 연{" "}
-                      {formatAmount(discount.saved, currency)} 적게 ({discount.percent}%)
-                    </span>
-                  )}
-                </label>
-              );
-            })}
-          </div>
-          {preset.priceNote && (
-            <p className="text-[11px] text-muted-foreground">{preset.priceNote}</p>
-          )}
-        </fieldset>
+        <PlanPicker
+          preset={preset}
+          plans={plans}
+          selectedPlanId={formData.planId}
+          required={plansRequired}
+          onPick={pickPlan}
+        />
       )}
       {!isEdit && preset && plans.length === 0 && preset.priceNote && (
         <p className="text-[11px] text-muted-foreground">{preset.priceNote}</p>
       )}
-      {/* 결합 상품이면 무엇이 들어 있는지, 결합 상품으로도 파는 서비스면 그 상품을 알린다. 결합으로
-          결제하면서 원래 구독을 끊지 않아 두 번 내는 일이 있다. */}
-      {!isEdit && preset?.includes && preset.includes.length > 0 && (
-        <p className="rounded-xl bg-secondary/60 px-3 py-2 text-[11px] leading-relaxed">
-          <b>결합 상품</b> · {preset.includes.map(serviceNameOf).join(" + ")}을(를) 이 구독 하나로
-          받아요. 따로 구독 중인 게 있으면 두 번 내고 있을 수 있어요.
-        </p>
-      )}
-      {!isEdit && preset && bundlesIncluding(preset.id).length > 0 && (
-        <p className="rounded-xl bg-secondary/60 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
-          {bundlesIncluding(preset.id)
-            .map((bundle) => bundle.nameKo)
-            .join(", ")}
-          (으)로 결제하고 있다면 그 결합 상품을 골라 등록해 주세요. 결합 상품은 결제 메일이 Gmail로
-          오지 않을 수 있어요.
-        </p>
-      )}
+      {!isEdit && preset && <BundleNotes preset={preset} />}
 
       {/* Amount & Currency */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           {/* 연간 구독에 '월 결제 금액'이라고 물으면 월 환산액을 적게 되고, 앱이 그걸 다시 12로 나눈다. */}
-          <label htmlFor={`${fieldId}-amount`} className={LABEL}>
+          <label htmlFor={`${fieldId}-amount`} className={FIELD_LABEL}>
             {formData.taxRate
               ? cycle === "yearly"
                 ? "연 요금 (세금 제외)"
@@ -620,7 +404,7 @@ export function SubForm({
           />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor={`${fieldId}-currency`} className={LABEL}>
+          <label htmlFor={`${fieldId}-currency`} className={FIELD_LABEL}>
             통화
           </label>
           <Select
@@ -635,52 +419,21 @@ export function SubForm({
         </div>
       </div>
 
-      {/*
-        해외 서비스는 요금표 가격에 부가세가 더해져 청구되기도 한다. 금액 칸에는 요금표 가격을 두고
-        세금은 따로 고르게 해, 카드에 찍히는 금액과 가격 확인(요금표 가격끼리 비교)이 둘 다 맞게 한다.
-      */}
       {showTax && (
-        <div className="space-y-1.5">
-          <label htmlFor={`${fieldId}-tax`} className={LABEL}>
-            세금
-          </label>
-          <Select
-            id={`${fieldId}-tax`}
-            name="taxRate"
-            value={formData.taxRate ? String(formData.taxRate) : "none"}
-            onChange={(e) => {
-              const { value } = e.target;
-              setFormData((prev) => ({
-                ...prev,
-                taxRate: value === "none" ? undefined : Number(value),
-              }));
-            }}
-          >
-            <option value="none">금액에 포함 · 따로 붙지 않음</option>
-            <option value="10">부가세 10% 별도</option>
-            {/* 백업 등으로 들어온 다른 세율도 고친 적 없이 사라지지 않게 보여준다. */}
-            {formData.taxRate && formData.taxRate !== 10 ? (
-              <option value={String(formData.taxRate)}>세금 {formData.taxRate}% 별도</option>
-            ) : null}
-          </Select>
-          <p className="text-[11px] text-muted-foreground break-keep">
-            {preset?.taxRate
-              ? `한국 결제 시 ${preset.nameKo}에 부가세 ${preset.taxRate}%가 붙어요. 사업자 결제라 안 붙으면 '금액에 포함'으로 바꾸세요.`
-              : "해외 서비스는 부가세 10%가 붙기도 해요. 카드 명세서와 비교해 고르세요."}
-          </p>
-          {formData.taxRate && billed !== undefined && typeof formData.amount === "number" ? (
-            <p className="text-[11px] font-semibold text-foreground">
-              카드에 청구되는 금액: {formatAmount(billed, formCurrency)} (요금{" "}
-              {formatAmount(formData.amount, formCurrency)} + 부가세 {formData.taxRate}%)
-            </p>
-          ) : null}
-        </div>
+        <TaxField
+          id={`${fieldId}-tax`}
+          preset={preset}
+          amount={formData.amount}
+          taxRate={formData.taxRate}
+          currency={formData.currency || "KRW"}
+          onChange={(taxRate) => setFormData((prev) => ({ ...prev, taxRate }))}
+        />
       )}
 
       {/* Billing Day & Cycle */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label htmlFor={`${fieldId}-day`} className={LABEL}>
+          <label htmlFor={`${fieldId}-day`} className={FIELD_LABEL}>
             결제일 (1-31)
           </label>
           <Input
@@ -712,7 +465,7 @@ export function SubForm({
           </div>
         </div>
         <div className="space-y-1.5">
-          <label htmlFor={`${fieldId}-cycle`} className={LABEL}>
+          <label htmlFor={`${fieldId}-cycle`} className={FIELD_LABEL}>
             주기
           </label>
           <Select
@@ -730,7 +483,7 @@ export function SubForm({
       {/* Yearly plans need the month too, or there is no date to count down to */}
       {formData.billingCycle === "yearly" && (
         <div className="space-y-1.5">
-          <label htmlFor={`${fieldId}-month`} className={LABEL}>
+          <label htmlFor={`${fieldId}-month`} className={FIELD_LABEL}>
             결제 월
           </label>
           <Select
@@ -753,7 +506,7 @@ export function SubForm({
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor={`${fieldId}-trial`} className={LABEL}>
+        <label htmlFor={`${fieldId}-trial`} className={FIELD_LABEL}>
           무료 체험 종료일 <span className="font-normal text-muted-foreground">(선택)</span>
         </label>
         <Input
@@ -796,77 +549,11 @@ export function SubForm({
 
       {showMore && (
         <div className="space-y-4">
-          {/* Cost Splitting */}
-          <div className="space-y-2 rounded-xl border border-border/80 bg-muted/30 p-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label htmlFor={`${fieldId}-sharing`} className={LABEL}>
-                  함께 쓰는 인원
-                </label>
-                <Select
-                  id={`${fieldId}-sharing`}
-                  name="sharingCount"
-                  value={String(formData.sharingCount ?? 1)}
-                  onChange={handleSharingChange}
-                >
-                  <option value="1">나 혼자 (1명)</option>
-                  {[2, 3, 4, 5, 6].map((n) => (
-                    <option key={n} value={String(n)}>
-                      {n}명이서 나눔
-                    </option>
-                  ))}
-                </Select>
-              </div>
-
-              {sharing && (
-                <div className="space-y-1.5">
-                  <label htmlFor={`${fieldId}-share`} className={LABEL}>
-                    내 부담금 <span className="font-normal text-muted-foreground">(선택)</span>
-                  </label>
-                  <Input
-                    id={`${fieldId}-share`}
-                    type="number"
-                    name="myShareAmount"
-                    min="0"
-                    step="any"
-                    placeholder={String(
-                      Math.round(
-                        (billed ?? 0) /
-                          getSharingCount({
-                            amount: formData.amount ?? 0,
-                            sharingCount: formData.sharingCount,
-                          }),
-                      ),
-                    )}
-                    value={formData.myShareAmount ?? ""}
-                    onChange={handleSharingChange}
-                  />
-                </div>
-              )}
-            </div>
-
-            {sharing && (
-              <p className="text-[11px] text-muted-foreground">
-                내가 내는 몫은{" "}
-                <strong className="text-foreground">
-                  {formatAmount(
-                    getMyShareAmount({
-                      amount: formData.amount ?? 0,
-                      sharingCount: formData.sharingCount,
-                      myShareAmount: formData.myShareAmount,
-                      taxRate: formData.taxRate,
-                    }),
-                    formData.currency || "KRW",
-                  )}
-                </strong>
-                이에요. 비워 두면 인원수로 나눠요. 지출·절약은 이 금액으로 계산해요.
-              </p>
-            )}
-          </div>
+          <SharingFields idPrefix={fieldId} formData={formData} onChange={handleSharingChange} />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label htmlFor={`${fieldId}-account`} className={LABEL}>
+              <label htmlFor={`${fieldId}-account`} className={FIELD_LABEL}>
                 가입한 계정
               </label>
               <Input
@@ -882,7 +569,7 @@ export function SubForm({
 
             {/* Payment Method Selector */}
             <div className="space-y-1.5">
-              <label htmlFor={`${fieldId}-payment`} className={LABEL}>
+              <label htmlFor={`${fieldId}-payment`} className={FIELD_LABEL}>
                 결제 수단
               </label>
               <Select
@@ -901,55 +588,19 @@ export function SubForm({
           </div>
 
           {showServiceFields && (
-            <>
-              <div className="space-y-1.5">
-                <label htmlFor={`${fieldId}-url`} className={LABEL}>
-                  서비스 웹사이트 또는 해지 페이지 주소
-                </label>
-                <Input
-                  id={`${fieldId}-url`}
-                  name="cancelUrl"
-                  inputMode="url"
-                  placeholder="예: service.com"
-                  value={serviceUrl}
-                  onChange={(e) => {
-                    setServiceUrl(e.target.value);
-                    setServiceUrlError(null);
-                  }}
-                  aria-invalid={Boolean(serviceUrlError)}
-                />
-                {serviceUrlError ? (
-                  <p className="text-[11px] font-medium text-destructive" role="alert">
-                    {serviceUrlError}
-                  </p>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground">
-                    도메인만 적어도 돼요. 해지 가이드에 이 주소와 추정한 계정 관리 링크(/account)가
-                    생겨요. 추정이라 없는 페이지일 수 있어요.
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <label htmlFor={`${fieldId}-guide`} className={LABEL}>
-                  해지 방법 메모
-                </label>
-                <textarea
-                  id={`${fieldId}-guide`}
-                  name="cancelGuide"
-                  rows={3}
-                  placeholder={"예:\n1. 앱 실행 → 설정\n2. 구독 관리 → 해지"}
-                  value={formData.cancelGuide ?? ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, cancelGuide: e.target.value || undefined }))
-                  }
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  한 줄에 한 단계씩 적으면 해지 가이드에 보여요.
-                </p>
-              </div>
-            </>
+            <ServiceLinkFields
+              idPrefix={fieldId}
+              url={serviceUrl}
+              error={serviceUrlError}
+              onUrlChange={(url) => {
+                setServiceUrl(url);
+                setServiceUrlError(null);
+              }}
+              cancelGuide={formData.cancelGuide}
+              onCancelGuideChange={(cancelGuide) =>
+                setFormData((prev) => ({ ...prev, cancelGuide }))
+              }
+            />
           )}
         </div>
       )}
