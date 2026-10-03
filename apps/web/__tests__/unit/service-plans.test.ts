@@ -51,9 +51,9 @@ describe("describePresetPrice", () => {
   });
 
   it("요금제 목록이 요금을 다 담지 못했으면 '부터'라고 하지 않는다", () => {
-    // 굿노트는 App Store 베이직 요금만 확인했다. 다른 곳에서 더 싸게 냈을 수 있다.
+    // 굿노트는 이전 가격으로 갱신되는 사람도 있어, 목록의 가장 싼 값이 가장 싼 요금이라고 할 수 없다.
     expect(byId("goodnotes").plansIncomplete).toBe(true);
-    expect(describePresetPrice(byId("goodnotes"))).toBe("연 ₩16,900 등");
+    expect(describePresetPrice(byId("goodnotes"))).toBe("월 ₩2,200 등");
   });
 
   it("요금을 모르면 지어내지 않는다", () => {
@@ -73,12 +73,6 @@ describe("등록 폼에 채울 값", () => {
     const data = presetFormData(byId("coupang-wow"));
     expect(data.amount).toBe(7890);
     expect(data.billingDay).toBeUndefined();
-  });
-
-  it("결제 주기가 하나뿐인 서비스는 그 주기로 채운다", () => {
-    // 굿노트는 1년 단위 결제뿐이다. 월 결제로 채우면 손대지 않은 사람의 결제가 매달 있는 것이 된다.
-    expect(presetFormData(byId("goodnotes")).billingCycle).toBe("yearly");
-    expect(presetFormData(byId("coupang-wow")).billingCycle).toBe("monthly");
   });
 
   it("요금제를 고르면 요금·결제 주기·요금제 이름이 그 요금제를 따른다", () => {

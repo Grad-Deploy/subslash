@@ -696,9 +696,9 @@ describe("결제 주기가 하나뿐인 서비스", () => {
     ].join("\n"),
   };
 
-  it("굿노트는 영수증에 '연간'이 없어도 연 결제로 읽고, 반년 전 영수증을 오래됐다고 하지 않는다", () => {
-    // 1년 단위 결제뿐인 굿노트의 3월 영수증이 월 결제로 읽혀, 35일이 지난 '오래된 메일'로 체크가
-    // 풀린 채 남았다. 자동으로 등록되지 않았다.
+  it("굿노트는 가장 비싼 월 요금보다 큰 영수증을 '연간'이 없어도 연 결제로 읽고, 반년 전 영수증을 오래됐다고 하지 않는다", () => {
+    // 굿노트의 3월 연 결제 영수증이 월 결제로 읽혀, 35일이 지난 '오래된 메일'로 체크가 풀린 채
+    // 남았다. 자동으로 등록되지 않았다.
     const [item] = parseReceiptEmails([MARCH_GOODNOTES], { now: NOW, timeZone: "Asia/Seoul" });
 
     expect(item.presetId).toBe("goodnotes");
@@ -709,6 +709,17 @@ describe("결제 주기가 하나뿐인 서비스", () => {
     expect(item.confidence).toBe("high");
     expect(item.selected).toBe(true);
     expect(item.isWithin30Days).toBe(true);
+  });
+
+  it("굿노트의 월 요금 영수증은 월 결제로 읽는다", () => {
+    const [item] = parseReceiptEmails(
+      [{ ...MARCH_GOODNOTES, body: MARCH_GOODNOTES.body.replace(/13,000/g, "2,200") }],
+      { now: NOW, timeZone: "Asia/Seoul" },
+    );
+
+    expect(item.presetId).toBe("goodnotes");
+    expect(item.amount).toBe(2200);
+    expect(item.billingCycle).toBe("monthly");
   });
 
   it("결제 주기가 정해지지 않은 서비스는 여전히 영수증의 말을 따른다", () => {
