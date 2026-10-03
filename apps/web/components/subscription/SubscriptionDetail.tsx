@@ -1,45 +1,28 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useStore } from "../../lib/store";
 import {
-  CATEGORY_LABELS,
   SubscriptionFormData,
   CheckInResponse,
   POPULAR_SERVICES,
-  PAYMENT_METHOD_OPTIONS,
-  formatCurrency,
-  formatDday,
-  getBilledAmount,
-  getCancelAndroidApp,
-  getCancelRoutes,
-  getCancelUrlKind,
-  getDaysUntilBillingFor,
-  getDaysUntilTrialEnd,
-  describeCheckIn,
-  paymentCancelLabel,
-  type UsageLog,
+  subscriptionFormData,
 } from "@subslash/shared";
 import { SubForm } from "./SubForm";
 import { CheckInModal } from "./CheckInModal";
 import { CancelGuideModal } from "./CancelGuideModal";
-import { CheckInEvidence } from "./CheckInEvidence";
 import { PlanAlternatives } from "./PlanAlternatives";
 import { KillRecordCard } from "./KillRecordCard";
-import { MeasuredUsageLine } from "../usage/MeasuredUsage";
-import { RiskBadge } from "../dashboard/RiskBadge";
+import { SubscriptionActionConfirm } from "./SubscriptionActionConfirm";
+import { SubscriptionSummaryCard } from "./detail/SubscriptionSummaryCard";
+import { CancelRoutesCard } from "./detail/CancelRoutesCard";
+import { CheckInHistory } from "./detail/CheckInHistory";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
-import { Button, WRAPPING_BUTTON } from "../ui/button";
-import { Badge } from "../ui/badge";
-import { ConfirmDialog } from "../ui/confirm-dialog";
-import { SubjectChip } from "./SubjectChip";
-import Link from "next/link";
+import { Button } from "../ui/button";
 import { cn } from "@lib/utils";
-import { openExternal } from "@lib/native";
-import { ServiceLogo } from "./ServiceLogo";
-import { copyText } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
-import dynamic from "next/dynamic";
 import { useToast } from "@hooks/useToast";
 
 // 폰 사용 기록(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
@@ -59,16 +42,6 @@ interface SubscriptionDetailProps {
   /** 페이지에서는 h1이다. 목록 옆 칸에서는 페이지 제목(구독 관리) 아래라 h2다. */
   headingLevel?: "h1" | "h2";
   className?: string;
-}
-
-/** 폰 기록으로 자동 체크인한 줄에 붙이는 한 마디. 무엇을 쟀는지와 빠진 것을 말한다. */
-function phoneCheckInNote(metric: UsageLog["metric"]): string {
-  if (metric === "hours") {
-    return "폰 기록으로 자동 체크인 · 앱을 쓴 시간과 재생 알림이 떠 있던 시간 중 긴 쪽이에요. 일시정지 시간이 섞일 수 있어요";
-  }
-  if (metric === "days")
-    return "폰 기록으로 자동 체크인 · 이 폰에서 쓴 날이에요. PC에서 쓴 날은 빠져 있어요";
-  return "폰 기록으로 자동 체크인 · 다른 기기에서 쓴 건 빠져 있어요";
 }
 
 /**
@@ -127,17 +100,6 @@ export function SubscriptionDetail({
 
   const subLogs = usageLogs.filter((log) => log.subscriptionId === id);
   const isKilled = sub.status === "killed";
-  const daysLeft = getDaysUntilBillingFor(sub);
-  const cancelUrlKind = getCancelUrlKind(sub.cancelUrl);
-  // 연간 구독에 "매월 결제일"이라고 적으면 1년에 한 번인 결제가 매달 있는 것처럼 읽힌다.
-  // 체험 중이면 아직 청구되지 않는다. 결제 주기만 적으면 지금 나가는 돈처럼 읽힌다.
-  const trialDaysLeft = getDaysUntilTrialEnd(sub);
-  const billingScheduleLabel =
-    sub.billingCycle !== "yearly"
-      ? `매월 ${sub.billingDay}일 결제`
-      : typeof sub.billingMonth === "number"
-        ? `매년 ${sub.billingMonth}월 ${sub.billingDay}일 결제`
-        : "연간 결제 · 결제 월 미설정";
 
   const handleEditSubmit = (data: SubscriptionFormData) => {
     updateSubscription(sub.id, data);
@@ -203,96 +165,13 @@ export function SubscriptionDetail({
         </div>
       </div>
 
-      {/* Subscription Hero Card */}
-      {/*
-        목록 옆 칸처럼 좁게 그려질 때는 가격을 이름 아래로 내린다. 화면 폭이 아니라
-        이 카드의 폭을 본다(@container) — 넓은 화면의 옆 칸도 좁기 때문이다.
-      */}
-      <div className="@container p-6 border rounded-2xl bg-card shadow-sm space-y-4">
-        <div className="flex flex-col gap-3 @md:flex-row @md:items-start @md:justify-between">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className="w-16 h-16 shrink-0 rounded-2xl bg-secondary flex items-center justify-center">
-              <ServiceLogo
-                name={sub.name}
-                cancelUrl={sub.cancelUrl}
-                fallbackEmoji={sub.iconUrl}
-                fallbackColor={sub.iconColor}
-                size={44}
-              />
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <Title className="min-w-0 text-2xl font-black break-keep [overflow-wrap:anywhere]">
-                  {sub.name}
-                </Title>
-                <Badge variant={isKilled ? "secondary" : "default"} className="whitespace-nowrap">
-                  {isKilled ? "해지 완료" : "구독 중"}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                카테고리: {CATEGORY_LABELS[sub.category] ?? sub.category}
-                {sub.planName ? ` · 요금제: ${sub.planName}` : ""} · 결제 주기:{" "}
-                {sub.billingCycle === "yearly" ? "매년" : "매월"}
-              </p>
-            </div>
-          </div>
-
-          <div className="@md:text-right">
-            <div className="text-2xl font-extrabold text-foreground">
-              <span className="text-sm font-semibold text-muted-foreground">
-                {sub.billingCycle === "yearly" ? "연 " : "월 "}
-              </span>
-              {formatCurrency(getBilledAmount(sub), sub.currency)}
-            </div>
-            {/* 카드에 찍히는 금액이 등록한 요금과 다른 이유를 적는다. */}
-            {sub.taxRate ? (
-              <div className="text-xs text-muted-foreground">
-                요금 {formatCurrency(sub.amount, sub.currency)} + 부가세 {sub.taxRate}%
-              </div>
-            ) : null}
-            {sub.billingCycle === "yearly" && (
-              <div className="text-xs text-muted-foreground">
-                월 {formatCurrency(getBilledAmount(sub) / 12, sub.currency)}꼴
-              </div>
-            )}
-            <div className="text-xs text-muted-foreground">{billingScheduleLabel}</div>
-            {trialDaysLeft !== null && (
-              <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-                무료 체험 중 · {sub.trialEndsAt} 종료({formatDday(trialDaysLeft)}) · 그때까지
-                지출에서 빼요
-              </div>
-            )}
-          </div>
-        </div>
-
-        {!isKilled ? (
-          <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t">
-            <div className="text-sm font-medium">
-              다음 결제까지:{" "}
-              {daysLeft === null ? (
-                <span className="font-bold text-muted-foreground">결제 월 미설정</span>
-              ) : (
-                <span className="font-bold text-destructive">{formatDday(daysLeft)}</span>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={handleOpenCheckIn}>
-                이용 횟수 체크인
-              </Button>
-              <Button size="sm" variant="destructive" onClick={handleKill}>
-                지금 해지하기
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="pt-2 flex items-center justify-between border-t text-sm">
-            <span className="text-muted-foreground">해지한 구독입니다.</span>
-            <Button size="sm" variant="outline" onClick={() => setConfirmType("revive")}>
-              다시 구독 중으로 변경
-            </Button>
-          </div>
-        )}
-      </div>
+      <SubscriptionSummaryCard
+        sub={sub}
+        headingLevel={headingLevel}
+        onCheckIn={handleOpenCheckIn}
+        onKill={handleKill}
+        onRevive={() => setConfirmType("revive")}
+      />
 
       {/*
         해지 전에는 같은 서비스의 더 싼 요금제를, 해지한 뒤에는 그 해지의 기록(다시 살펴볼 날·근거·환불
@@ -304,171 +183,11 @@ export function SubscriptionDetail({
         <PlanAlternatives subscription={sub} onChanged={showToast} />
       )}
 
-      {/* 해지 경로 안내 — 계정, 결제 수단, 링크, 단계 안내를 한곳에 */}
-      <div className="p-6 border-2 border-primary/20 bg-muted/30 rounded-2xl space-y-5">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-bold">해지 경로 안내</h2>
-        </div>
-
-        {/* 가입한 계정 — 정보 수정의 '가입한 계정' 칸에 적은 것 */}
-        <div className="p-4 bg-card border rounded-2xl space-y-2 text-xs">
-          <div className="font-bold flex items-center justify-between text-foreground">
-            <span>가입한 계정</span>
-            {sub.linkedAccountName && (
-              <button
-                onClick={() => {
-                  const idOnly =
-                    sub.linkedAccountName!.split("(")[1]?.replace(")", "") ||
-                    sub.linkedAccountName!;
-                  void copyText(idOnly).then((copied) =>
-                    showToast(
-                      copied
-                        ? "계정 ID를 복사했어요"
-                        : "복사하지 못했어요. 화면의 ID를 직접 선택해 주세요",
-                    ),
-                  );
-                }}
-                className="text-primary underline hover:opacity-80 font-medium"
-              >
-                계정 ID 복사
-              </button>
-            )}
-          </div>
-          {sub.linkedAccountName ? (
-            <p className="text-muted-foreground [overflow-wrap:anywhere]">
-              <strong className="text-foreground">{sub.linkedAccountName}</strong> 계정으로
-              로그인해야 해지 버튼이 보여요.
-            </p>
-          ) : (
-            <p className="text-muted-foreground">
-              가입한 계정으로 로그인하세요. 계정은 &lsquo;정보 수정&rsquo;에서 적을 수 있어요.
-            </p>
-          )}
-
-          {/* Payment Method Details */}
-          {(() => {
-            const pm = PAYMENT_METHOD_OPTIONS.find((p) => p.value === sub.paymentMethod);
-            if (!pm) return null;
-            return (
-              <div className="mt-2 pt-2 border-t text-[11px] text-muted-foreground">
-                결제 수단: <strong className="text-foreground">{pm.label}</strong>
-                {pm.guide && <div className="mt-1 text-foreground/80">{pm.guide}</div>}
-              </div>
-            );
-          })()}
-        </div>
-
-        {/*
-          해지하러 갈 곳 — 결제수단의 정기결제 관리가 먼저다. 해지 화면으로 바로 가는 링크만 빨갛게
-          칠한다. 첫 화면으로 가는 링크를 빨갛게 칠하면 그쪽이 해지 버튼처럼 보인다.
-        */}
-        <div className="space-y-2">
-          {getCancelRoutes(sub).map((route) => {
-            const pm = PAYMENT_METHOD_OPTIONS.find((p) => p.value === sub.paymentMethod);
-            return (
-              <div key={route.source} className="space-y-1">
-                <Button
-                  size="lg"
-                  variant={route.kind === "direct" ? "destructive" : "outline"}
-                  className={cn(
-                    WRAPPING_BUTTON,
-                    "min-h-12 font-bold rounded-xl",
-                    route.kind === "direct" && "shadow-md",
-                  )}
-                  onClick={() =>
-                    route.source === "payment"
-                      ? openExternal(route.url)
-                      : openExternal(route.url, { androidApp: getCancelAndroidApp(sub) })
-                  }
-                >
-                  {route.source === "payment" && pm
-                    ? `${paymentCancelLabel(pm)} (새 창)`
-                    : cancelUrlKind === "direct"
-                      ? `${sub.name} 해지 페이지 바로가기 (새 창)`
-                      : `${sub.name} 열기 (새 창)`}
-                </Button>
-                {route.kind !== "direct" && (
-                  <p className="text-[11px] text-muted-foreground text-center">
-                    {route.source === "payment"
-                      ? "정기결제 목록이 아니라 첫 화면으로 가요. 위 결제 수단 안내대로 해지 메뉴를 찾아가세요."
-                      : route.kind === "entry"
-                        ? "해지 화면이 아니라 첫 화면·계정 화면으로 가요. 아래 안내대로 해지 메뉴를 찾아가세요."
-                        : "직접 입력한 주소예요. 어디로 가는지는 확인하지 않았어요."}
-                  </p>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* 가이드 모달 진입점 — 링크가 죽었을 때의 폴백까지 한 화면에 모아준다. */}
-        <Button
-          variant="outline"
-          size="lg"
-          className={`${WRAPPING_BUTTON} min-h-11 rounded-xl font-semibold`}
-          onClick={() => setIsGuideOpen(true)}
-        >
-          해지 방법 보기
-        </Button>
-
-        {sub.cancelGuide && (
-          <div className="p-4 bg-background border rounded-xl space-y-2 text-xs">
-            <div className="font-bold text-foreground">저장해 둔 해지 단계:</div>
-            <p className="whitespace-pre-line text-muted-foreground leading-relaxed">
-              {sub.cancelGuide}
-            </p>
-          </div>
-        )}
-      </div>
+      <CancelRoutesCard sub={sub} onMessage={showToast} onOpenGuide={() => setIsGuideOpen(true)} />
 
       {AppUsageDetail && !isKilled && <AppUsageDetail subscription={sub} />}
 
-      {/* Usage History / Check-In Logs */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold">체크인 기록 ({subLogs.length}건)</h3>
-          {/* 체크인은 지금 돈을 내는 구독의 1회 단가를 묻는다. 해지한 구독에는 묻지 않는다. */}
-          {!isKilled && (
-            <Button size="sm" variant="outline" onClick={handleOpenCheckIn}>
-              + 체크인 하기
-            </Button>
-          )}
-        </div>
-
-        <CheckInEvidence logs={subLogs} currency={sub.currency} />
-
-        {!isKilled && <MeasuredUsageLine sub={sub} />}
-
-        {subLogs.length === 0 ? (
-          <div className="text-center py-10 border border-dashed rounded-xl text-xs text-muted-foreground">
-            아직 체크인 기록이 없어요. 이번 달 이용 횟수를 넣어 보세요.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {subLogs.map((log) => (
-              <div
-                key={log.id}
-                className="flex items-center justify-between p-4 border rounded-xl bg-card text-sm"
-              >
-                <div>
-                  <div className="font-bold">{log.month} 사용 기록</div>
-                  <div className="text-xs text-muted-foreground">
-                    {describeCheckIn(log, sub.currency)}
-                  </div>
-                  {log.source === "phone" && (
-                    <div className="text-[11px] text-muted-foreground">
-                      {phoneCheckInNote(log.metric)}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <RiskBadge level={log.riskLevel} size="sm" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <CheckInHistory sub={sub} logs={subLogs} onCheckIn={handleOpenCheckIn} />
 
       {/* Edit Form Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
@@ -481,29 +200,7 @@ export function SubscriptionDetail({
             <SubForm
               mode="edit"
               popularServices={POPULAR_SERVICES}
-              initialData={{
-                name: sub.name,
-                amount: sub.amount,
-                currency: sub.currency,
-                billingDay: sub.billingDay,
-                billingCycle: sub.billingCycle,
-                // 빠져 있으면 연간 구독의 결제 월이 '선택해주세요'로, 공유 구독이
-                // '나 혼자'로 보여서 저장된 값과 다른 폼을 고치게 된다.
-                billingMonth: sub.billingMonth,
-                sharingCount: sub.sharingCount,
-                myShareAmount: sub.myShareAmount,
-                category: sub.category,
-                cancelUrl: sub.cancelUrl,
-                cancelGuide: sub.cancelGuide,
-                iconUrl: sub.iconUrl,
-                planId: sub.planId,
-                planName: sub.planName,
-                taxRate: sub.taxRate,
-                paymentMethod: sub.paymentMethod,
-                linkedAccountId: sub.linkedAccountId,
-                linkedAccountName: sub.linkedAccountName,
-                accountMemo: sub.accountMemo,
-              }}
+              initialData={subscriptionFormData(sub)}
               submitLabel="저장"
               onSubmit={handleEditSubmit}
             />
@@ -533,38 +230,11 @@ export function SubscriptionDetail({
         }}
       />
 
-      {/* Confirmation Modal */}
       {confirmType && (
-        <ConfirmDialog
-          isOpen={!!confirmType}
+        <SubscriptionActionConfirm
+          action={{ type: confirmType, sub }}
           onClose={() => setConfirmType(null)}
           onConfirm={executeConfirm}
-          // 앱: 제목은 짧게, 이름은 칩으로(ConfirmDialog의 centered). 웹은 그대로.
-          centered={IS_APP_BUILD}
-          subject={IS_APP_BUILD ? <SubjectChip sub={sub} /> : undefined}
-          title={
-            IS_APP_BUILD
-              ? confirmType === "revive"
-                ? "다시 살릴까요?"
-                : "삭제할까요?"
-              : confirmType === "revive"
-                ? "구독 다시 살리기"
-                : "구독 영구 삭제"
-          }
-          description={
-            IS_APP_BUILD
-              ? confirmType === "revive"
-                ? "구독 중으로 돌아가고,\n절약 기록에서는 빠져요."
-                : "절약 현황에서도 빠지고\n되돌릴 수 없어요."
-              : confirmType === "revive"
-                ? `'${sub.name}'을(를) 다시 구독 중으로 바꿀까요?
-절약 기록에서 빠져요.`
-                : `'${sub.name}'을(를) 삭제할까요?
-되돌릴 수 없어요.`
-          }
-          confirmText={confirmType === "revive" ? "다시 살리기" : "삭제"}
-          cancelText="취소"
-          variant={confirmType === "revive" ? "default" : "destructive"}
         />
       )}
     </div>
