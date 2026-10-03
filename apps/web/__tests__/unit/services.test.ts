@@ -160,8 +160,8 @@ describe("해지 주소로 프리셋 되찾기", () => {
       findPresetForSubscription({ name: "애플 뮤직", cancelUrl: appleSubscriptions })?.id,
     ).toBe("apple-music");
     expect(
-      findPresetForSubscription({ name: "애플 앱스토어 구독", cancelUrl: appleSubscriptions })?.id,
-    ).toBe("apple-app-store");
+      findPresetForSubscription({ name: "아이클라우드", cancelUrl: appleSubscriptions })?.id,
+    ).toBe("apple-icloud");
   });
 
   it("주소가 겹치고 이름도 맞지 않으면 남의 요금표를 고르지 않는다", () => {
