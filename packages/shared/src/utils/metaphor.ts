@@ -9,7 +9,6 @@ import { describeCheckIn, metricOfLog } from "./valueMetric";
 // ─────────────────────────────────────────────────────────
 
 export interface UsageMetaphor {
-  emoji: string;
   /** 짧은 비교 문구, 예: "커피 3.4잔" */
   comparison: string;
   /** 한 문장 메시지 */
@@ -19,10 +18,10 @@ export interface UsageMetaphor {
 
 /** 일상 소비재 기준표 — 가장 가까운 것 하나를 고른다. */
 const METAPHOR_ITEMS = [
-  { emoji: "☕", label: "커피", unit: "잔", price: 5000 },
-  { emoji: "🍿", label: "영화관 티켓", unit: "장", price: 15000 },
-  { emoji: "🍗", label: "치킨", unit: "마리", price: 20000 },
-  { emoji: "🛵", label: "배달팁", unit: "회", price: 3000 },
+  { label: "커피", unit: "잔", price: 5000 },
+  { label: "영화관 티켓", unit: "장", price: 15000 },
+  { label: "치킨", unit: "마리", price: 20000 },
+  { label: "배달팁", unit: "회", price: 3000 },
 ] as const;
 
 /**
@@ -63,7 +62,6 @@ export function getUsageMetaphor(
     )[0];
     const totalCount = amountKRW / totalItem.price;
     return {
-      emoji: "⏸️",
       comparison: `${totalItem.label} ${formatCount(totalCount)}${totalItem.unit} 세이브 기회`,
       message: `이번 달 ${serviceName} 이용이 없었어요. 잠시 구독을 쉬어가면 매달 ${totalItem.label} ${formatCount(totalCount)}${totalItem.unit} 값(${formatKRW(amountKRW)})을 아낄 수 있어요.`,
       tone: "danger",
@@ -76,14 +74,12 @@ export function getUsageMetaphor(
     const movieCount = costPerUse / movieItem.price;
     if (movieCount >= 0.8) {
       return {
-        emoji: "🎬",
         comparison: `영화관 티켓 ${formatCount(movieCount)}${movieItem.unit} 세이브 기회`,
         message: `이번 달 1회 이용에 그쳤다면, 잠시 일시정지하고 영화관 티켓 1장 값(${formatAmount(calculateCostPerUse(amount, usageCount), currency)})을 세이브해보는 건 어떨까요?`,
         tone: "danger",
       };
     }
     return {
-      emoji: "💡",
       comparison: `${best.label} ${formatCount(count)}${best.unit} 세이브 기회`,
       message: `이번 달 1회 이용했어요. 지금 잠시 쉬어가면 매달 ${best.label} ${formatCount(count)}${best.unit} 값(${formatAmount(calculateCostPerUse(amount, usageCount), currency)})을 아낄 수 있어요.`,
       tone: "danger",
@@ -92,7 +88,6 @@ export function getUsageMetaphor(
 
   if (tone === "warning") {
     return {
-      emoji: "🏃",
       comparison: `${best.label} ${formatCount(count)}${best.unit} 수준`,
       message: `1회당 ${formatAmount(calculateCostPerUse(amount, usageCount), currency)} — 조금만 더 자주 쓰면 본전 달성! 알차게 즐겨보세요.`,
       tone: "warning",
@@ -103,15 +98,14 @@ export function getUsageMetaphor(
   const coffeeItem = METAPHOR_ITEMS.find((i) => i.label === "커피")!;
   const coffeeRatio = costPerUse / coffeeItem.price;
   return {
-    emoji: "🎉",
     comparison:
       coffeeRatio < 1
         ? `커피 한 잔보다 알뜰하게`
         : `${best.label} ${formatCount(count)}${best.unit} 가치`,
     message:
       coffeeRatio < 1
-        ? `1회당 ${formatAmount(calculateCostPerUse(amount, usageCount), currency)} — 커피 한 잔보다 알뜰하게 즐겼어요! 본전 달성 완료 🎉`
-        : `1회당 ${formatAmount(calculateCostPerUse(amount, usageCount), currency)} — 낸 돈 이상으로 알차게 활용하고 있어요! 🎉`,
+        ? `1회당 ${formatAmount(calculateCostPerUse(amount, usageCount), currency)} — 커피 한 잔보다 알뜰하게 즐겼어요! 본전 달성 완료`
+        : `1회당 ${formatAmount(calculateCostPerUse(amount, usageCount), currency)} — 낸 돈 이상으로 알차게 활용하고 있어요!`,
     tone: "safe",
   };
 }

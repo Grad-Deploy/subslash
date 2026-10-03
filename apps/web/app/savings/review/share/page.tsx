@@ -68,9 +68,7 @@ function SharedReviewContent() {
             <div className="text-[11px] font-bold text-muted-foreground">
               지금 구독 구성으로 본 소비 유형
             </div>
-            <div className="text-lg font-black text-foreground">
-              {type.emoji} {type.title}
-            </div>
+            <div className="text-lg font-black text-foreground">{type.title}</div>
             <p className="text-xs text-muted-foreground">{type.detail}</p>
           </div>
         )}

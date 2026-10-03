@@ -58,7 +58,7 @@ test.describe("절약 세 칸 (E2E)", () => {
     await expect(tiers).toBeVisible({ timeout: 30_000 });
     // 확인한 넷플릭스의 한 번치만 지킨 돈이다.
     await expect(tiers.getByText("₩17,000", { exact: true })).toBeVisible();
-    await expect(tiers.getByText("⏳ 확인 대기 ₩10,900 (1건)")).toBeVisible();
+    await expect(tiers.getByText("확인 대기 ₩10,900 (1건)")).toBeVisible();
     // 앞으로: (17,000 + 10,900) × 12
     await expect(tiers.getByText(/연 ₩334,800 아끼는 중/)).toBeVisible();
 
