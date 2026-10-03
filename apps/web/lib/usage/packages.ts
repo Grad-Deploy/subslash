@@ -11,7 +11,7 @@ import { findPresetForSubscription, type Subscription } from "@subslash/shared";
  * - 멤버십(쿠팡 와우·네이버플러스·배민클럽): 혜택을 쓴 것과 앱을 연 것이 다르다. 쿠팡플레이 앱만
  *   세면 배송 혜택으로 쓰는 사람이 늘 0회가 된다.
  * - 저장 공간(아이클라우드·구글 원·네이버 MYBOX): 앱을 열지 않아도 사진이 올라가며 제 일을 한다.
- * - 다른 앱 안에서 쓰는 것(카카오 이모티콘)과 자동충전(네이버 웹툰 쿠키 — 무료 회차만 봐도 앱을 연다).
+ * - 다른 앱 안에서 쓰는 것(카카오 이모티콘).
  * - PC에서 쓰는 도구(Cursor·GitHub Copilot)와 앱이 여럿인 묶음(어도비·마이크로소프트 365).
  *
  * 여기에 패키지를 더하면 apps/mobile/android/app/src/main/AndroidManifest.xml의 <queries>에도 더한다

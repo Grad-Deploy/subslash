@@ -50,6 +50,12 @@ describe("describePresetPrice", () => {
     expect(describePresetPrice(byId("coupang-wow"))).toBe("월 ₩7,890");
   });
 
+  it("요금제 목록이 요금을 다 담지 못했으면 '부터'라고 하지 않는다", () => {
+    // 굿노트는 App Store 베이직 요금만 확인했다. 다른 곳에서 더 싸게 냈을 수 있다.
+    expect(byId("goodnotes").plansIncomplete).toBe(true);
+    expect(describePresetPrice(byId("goodnotes"))).toBe("연 ₩16,900 등");
+  });
+
   it("요금을 모르면 지어내지 않는다", () => {
     expect(describePresetPrice(unknownPrice[0])).toBe("요금 직접 입력");
   });

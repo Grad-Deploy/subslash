@@ -53,7 +53,7 @@ export const SAMPLE_CONTRIBUTORS: ContributorRow[] = [
   ]),
   persona("10s", [
     ["spotify", 6600, 30],
-    ["naver-webtoon", 4900, 20],
+    ["ridi-select", 4900, 20],
   ]),
   persona("10s", [
     ["youtube-premium", 14900, 30],
@@ -68,7 +68,7 @@ export const SAMPLE_CONTRIBUTORS: ContributorRow[] = [
   ]),
   persona("10s", [
     ["youtube-premium", 8500, 30],
-    ["naver-webtoon", 4900, 15],
+    ["ridi-select", 4900, 15],
   ]),
   persona("10s", [
     ["chatgpt-plus", 27000, 20],
@@ -110,7 +110,7 @@ export const SAMPLE_CONTRIBUTORS: ContributorRow[] = [
   persona("20s", [
     ["melon", 8690, 20],
     ["youtube-premium", 14900, 12],
-    ["naver-webtoon", 4900, 15],
+    ["ridi-select", 4900, 15],
   ]),
   persona("20s", [
     ["chatgpt-plus", 27000, 40],

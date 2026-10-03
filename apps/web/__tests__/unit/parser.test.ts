@@ -497,6 +497,36 @@ describe("결제 메일이 아닌 메일을 구독으로 읽지 않는다", () =
     expect(item.presetId).toBe("apple-icloud");
   });
 
+  it("어느 앱인지 모르는 애플 영수증은 '앱스토어 구독'이 아니라 알 수 없는 결제다", () => {
+    // 예전에는 apple.com/bill을 보고 '애플 앱스토어 구독' 프리셋으로 등록했다. 무엇을 내는지 모르는
+    // 항목이라 서비스 목록에서 뺐다.
+    const [item] = parseReceiptEmails(
+      mail(
+        "귀하의 영수증입니다.",
+        "APPLE 계정\n모르는 앱 프로\n월간 구독\n₩5,900\napple.com/bill",
+        "Apple <no_reply@email.apple.com>",
+      ),
+      { now: NOW },
+    );
+
+    expect(item.presetId).toBeUndefined();
+    expect(item.name).toBe("알 수 없는 결제 (₩5,900)");
+  });
+
+  it("웹툰 쿠키 충전은 결제지만 구독 후보로 만들지 않는다", () => {
+    // 쓴 만큼 채우는 것이라 결제일과 금액이 매번 바뀐다. 구독으로 등록하면 지어낸 결제일로 D-day를 센다.
+    const items = parseReceiptEmails(
+      mail(
+        "[네이버웹툰] 쿠키 자동충전 결제 완료",
+        "쿠키 자동충전이 완료되었습니다.\n결제금액 : 5,000원\n결제일시 : 2026.09.10",
+        "네이버웹툰 <webtoon_noreply@navercorp.com>",
+      ),
+      { now: NOW },
+    );
+
+    expect(items).toEqual([]);
+  });
+
   it("한 메일로 여러 서비스를 청구하는 발신자는 본문의 이름을 그대로 믿는다", () => {
     // 구글 플레이 영수증은 제목이 '주문 영수증'뿐이고 어느 서비스인지는 본문에만 있다.
     const [item] = parseReceiptEmails(

@@ -111,7 +111,6 @@
         <package android:name="com.sampleapp" />
         <package android:name="com.coupang.mobile" />
         <package android:name="com.kakao.talk" />
-        <package android:name="com.nhn.android.webtoon" />
         <package android:name="com.nhn.android.ndrive" />
     </queries>
 </manifest>

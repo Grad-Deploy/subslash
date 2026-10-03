@@ -37,6 +37,13 @@ export interface ServicePreset {
   defaultAmount: number | null;
   /** 요금제가 여럿인 서비스. 등록할 때 사용자가 하나를 고른다 — 미리 골라 두지 않는다. */
   plans?: ServicePlan[];
+  /**
+   * `plans`가 이 서비스의 요금을 다 담지 못한다 — 결제한 곳(App Store·웹)이나 약정마다 요금이 다른데
+   * 확인한 것만 적었을 때다. 이때는 등록할 때 요금제를 고르지 않아도 되고(금액만 적는다), 고르지 않은
+   * 구독은 가격 확인을 하지 않는다. 목록에 없는 요금으로 낸 사람에게 맞지 않는 요금제를 고르게 하면,
+   * 그 요금제가 가격 확인의 기준이 되어 "요금이 달라요"라는 틀린 말을 듣게 된다.
+   */
+  plansIncomplete?: boolean;
   /** 결제 경로·조건에 따라 요금이 달라지는 점을 알리는 한 줄. */
   priceNote?: string;
   /**
@@ -90,7 +97,7 @@ export interface ServicePreset {
    * 따로 구독하고 있으면 두 번 내는 것일 수 있다고 알린다(utils/bundles).
    */
   includes?: string[];
-  /** 결합 구성·요금을 확인한 곳. 요금이 바뀌면 여기부터 다시 본다. */
+  /** 결합 구성·요금제 요금을 확인한 곳. 요금이 바뀌면 여기부터 다시 본다. */
   sourceUrl?: string;
 }
 
@@ -624,8 +631,35 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Naver MYBOX",
     nameKo: "네이버 MYBOX",
     category: "cloud",
+    // 한국 App Store의 앱 내 구입 가격(2026-10-03 확인). 웹(네이버페이)에서 결제하면 요금이 달라지는데,
+    // 웹 요금표는 확인하지 못해 적지 않는다. 용량은 무료 30GB를 더한 전체 용량이다.
     defaultAmount: null,
-    priceNote: "용량마다 요금이 달라요. 결제 내역의 금액을 적어주세요.",
+    plans: [
+      { id: "80gb-ios", name: "80GB (App Store 결제)", amount: 2200, storageGB: 80 },
+      { id: "180gb-ios", name: "180GB (App Store 결제)", amount: 4300, storageGB: 180 },
+      { id: "330gb-ios", name: "330GB (App Store 결제)", amount: 7200, storageGB: 330 },
+      { id: "2tb-ios", name: "2TB (App Store 결제)", amount: 14300, storageGB: 2000 },
+      {
+        id: "80gb-ios-yearly",
+        name: "80GB (App Store 연 결제)",
+        amount: 22000,
+        billingCycle: "yearly",
+        yearlyOf: "80gb-ios",
+        storageGB: 80,
+      },
+      {
+        id: "180gb-ios-yearly",
+        name: "180GB (App Store 연 결제)",
+        amount: 44000,
+        billingCycle: "yearly",
+        yearlyOf: "180gb-ios",
+        storageGB: 180,
+      },
+    ],
+    plansIncomplete: true,
+    priceNote:
+      "App Store에서 결제한 요금이에요. 네이버페이 등 웹에서 결제했다면 요금제를 고르지 말고 결제 내역의 금액을 적어 주세요.",
+    sourceUrl: "https://apps.apple.com/kr/app/id585173084",
     currency: "KRW",
     cancelUrl: "https://mybox.naver.com/",
     cancelUrlKind: "entry",
@@ -652,22 +686,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "1. VIBE 웹 로그인 후 왼쪽 위 프로필 > [My 멤버십]\n2. [결제 관리] 클릭\n3. [구독 해지] 클릭 후 혜택을 확인하고 [혜택 포기] 선택 — 남은 기간까지는 이용할 수 있어요\n4. 앱(App Store·Google Play)에서 결제했다면 그곳에서 해지해요",
     iconEmoji: "🎧",
-  },
-  {
-    id: "naver-webtoon",
-    name: "Naver Webtoon Cookie",
-    nameKo: "네이버 웹툰 쿠키 자동충전",
-    category: "other",
-    defaultAmount: null,
-    priceNote: "자동충전 금액은 직접 정한 금액이에요. 그 금액을 적어주세요.",
-    currency: "KRW",
-    cancelUrl: "https://m.comic.naver.com/",
-    cancelUrlKind: "entry",
-    // 네이버 웹툰 앱(2026-09-29 Play 스토어 '네이버 웹툰 - Naver Webtoon'으로 확인).
-    cancelAndroidApp: "com.nhn.android.webtoon",
-    cancelGuide:
-      "1. 네이버웹툰 모바일 앱/웹 > [더보기]\n2. [쿠키샵] > [자동충전 관리] 선택\n3. [자동충전 해지하기] 클릭하여 완료",
-    iconEmoji: "🍪",
   },
   {
     id: "kakao-emoticon",
@@ -901,8 +919,22 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Adobe Creative Cloud",
     nameKo: "어도비",
     category: "other",
+    // adobe.com/kr 개인 요금표(2026-10-03 확인)의 '연간 구독, 월별 청구' 정가, 부가세 포함. 월간(약정 없음)과
+    // 연간 선결제는 요금이 달라 적지 않았고, 모든 앱의 첫해 할인가(₩58,200)도 기준으로 두지 않는다.
     defaultAmount: null,
-    priceNote: "플랜과 약정마다 요금이 달라요. 결제 내역의 금액을 적어주세요.",
+    plans: [
+      { id: "all-apps", name: "모든 앱 (Creative Cloud Pro)", amount: 78100 },
+      { id: "photoshop", name: "Photoshop", amount: 30800 },
+      { id: "illustrator", name: "Illustrator", amount: 30800 },
+      { id: "premiere", name: "Premiere", amount: 30800 },
+      { id: "acrobat-pro", name: "Acrobat Pro", amount: 26400 },
+      { id: "photography", name: "포토그래피 (Lightroom + Photoshop)", amount: 26400 },
+      { id: "lightroom", name: "Lightroom", amount: 13200 },
+    ],
+    plansIncomplete: true,
+    priceNote:
+      "연간 약정·월 결제 정가예요. 월간(약정 없음)·연간 선결제·할인가로 냈다면 요금제를 고르지 말고 결제 내역의 금액을 적어 주세요.",
+    sourceUrl: "https://www.adobe.com/kr/creativecloud/plans.html",
     currency: "KRW",
     cancelUrl: "https://account.adobe.com/plans",
     cancelUrlKind: "direct",
@@ -979,10 +1011,16 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Goodnotes",
     nameKo: "굿노트",
     category: "other",
-    // 요금을 확인하지 못했다. 결제한 스토어와 나라에 따라 다르고, 한 번 사는 상품도 있다.
-    // 영수증에 적힌 금액을 등록할 때 적는다.
+    // 한국 App Store의 앱 내 구입 가격(2026-10-03 확인). 구글 플레이·굿노트 웹이나 Pro 요금제는 한국 요금을
+    // 확인하지 못했고, 예전에 가입한 사람은 그때 요금으로 갱신되기도 한다.
     defaultAmount: null,
-    priceNote: "요금을 확인하지 못했어요. 영수증이나 스토어의 구독 화면에 적힌 금액을 적어주세요.",
+    plans: [
+      { id: "basic-yearly", name: "베이직 (App Store)", amount: 16900, billingCycle: "yearly" },
+    ],
+    plansIncomplete: true,
+    priceNote:
+      "App Store의 베이직 요금이에요. 다른 곳에서 결제했거나 다른 요금제라면 요금제를 고르지 말고 영수증의 금액을 적어 주세요.",
+    sourceUrl: "https://apps.apple.com/kr/app/id1444383602",
     // 구독은 1년 단위 결제 하나뿐이다(월 결제 없음, 2026-09 사용자 확인). 애플 영수증에는 '연간'이
     // 적히지 않을 때가 있어, 이것이 없으면 3월 영수증이 월 결제로 읽혀 '오래된 메일'이 됐다.
     onlyBillingCycle: "yearly",
@@ -994,37 +1032,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "결제한 곳에서 해지해요.\n\n[앱스토어에서 결제했다면]\n1. 아이폰/아이패드 설정 > 최상단 프로필 이름 클릭\n2. [구독] 메뉴 선택\n3. Goodnotes 선택 후 [구독 취소] 클릭\n\n[구글플레이에서 결제했다면]\n1. Play 스토어 > 프로필 > [결제 및 정기결제]\n2. [정기결제] > Goodnotes 선택\n3. [구독 취소] 클릭\n\n[굿노트에서 바로 결제했다면]\ngoodnotes.com에 로그인해 계정의 구독 상태를 확인하세요.",
     iconEmoji: "📝",
-  },
-  {
-    id: "apple-play-store",
-    name: "Apple Play Store subscriptions",
-    nameKo: "구글 플레이스토어 정기결제",
-    category: "other",
-    // 여러 앱의 정기결제를 한데 모은 항목이라 정해진 요금이 없다(예전에는 0원으로 채웠다).
-    defaultAmount: null,
-    priceNote: "해지하려는 앱의 요금을 적어주세요.",
-    currency: "KRW",
-    cancelUrl: "https://play.google.com/store/account/subscriptions",
-    cancelUrlKind: "direct",
-    cancelGuide:
-      "1. 안드로이드 기기 구글 플레이스토어 앱 실행\n2. 우측 상단 프로필 클릭\n3. [결제 및 정기 결제] - [정기 결제] 선택\n4. 해지할 항목 선택 후 [구독 취소] 클릭",
-    iconEmoji: "📱",
-  },
-  {
-    id: "apple-app-store",
-    name: "Apple App Store subscriptions",
-    nameKo: "애플 앱스토어 구독",
-    category: "other",
-    // 여러 앱의 구독을 한데 모은 항목이라 정해진 요금이 없다(예전에는 0원으로 채웠다).
-    defaultAmount: null,
-    priceNote: "해지하려는 앱의 요금을 적어주세요.",
-    currency: "KRW",
-    cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
-    cancelUrlKind: "direct",
-    legacyCancelUrls: ["https://apps.apple.com/account/subscriptions"],
-    cancelGuide:
-      "1. 아이폰/아이패드 설정 > 최상단 프로필 이름 클릭\n2. [구독] 메뉴 선택\n3. 해지할 구독 항목 선택\n4. 하단의 [구독 취소] 클릭하여 확인",
-    iconEmoji: "🍏",
   },
 ];
 
@@ -1373,7 +1380,8 @@ export function yearlyDiscountOf(preset: ServicePreset, plan: ServicePlan): Year
 
 /**
  * 목록에 보여줄 요금 한 줄. 요금제가 여럿이면 가장 싼 월 요금에 '부터'를 붙이고, 요금을
- * 모르면 '요금 직접 입력'이다. 반올림하지 않는다 — ₩7,890을 '₩8k'로 적지 않는다.
+ * 모르면 '요금 직접 입력'이다. 반올림하지 않는다 — ₩7,890을 '₩8k'로 적지 않는다. 요금제 목록이
+ * 요금을 다 담지 못했으면(plansIncomplete) 가장 싼 값이라고 말할 수 없어 '부터' 대신 '등'이다.
  */
 export function describePresetPrice(preset: ServicePreset): string {
   if (preset.plans && preset.plans.length > 0) {
@@ -1381,7 +1389,8 @@ export function describePresetPrice(preset: ServicePreset): string {
     const pool = monthly.length > 0 ? monthly : preset.plans;
     const cheapest = pool.reduce((min, plan) => (plan.amount < min.amount ? plan : min));
     const cycle = (cheapest.billingCycle ?? "monthly") === "yearly" ? "연" : "월";
-    return `${cycle} ${formatCurrency(cheapest.amount, planCurrency(preset, cheapest))}부터`;
+    const price = formatCurrency(cheapest.amount, planCurrency(preset, cheapest));
+    return `${cycle} ${price}${preset.plansIncomplete ? " 등" : "부터"}`;
   }
   if (preset.defaultAmount === null) return "요금 직접 입력";
   return `월 ${formatCurrency(preset.defaultAmount, preset.currency)}`;
