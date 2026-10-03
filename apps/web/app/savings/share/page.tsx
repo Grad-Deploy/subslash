@@ -47,7 +47,6 @@ function SharedSavingsContent() {
         {detoxLevel && (
           <div className="flex flex-col items-center gap-2">
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-black bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 shadow-sm">
-              <span className="text-lg leading-none">{detoxLevel.emoji}</span>
               <span>
                 {detoxLevel.levelLabel} {detoxLevel.title}
               </span>
@@ -129,7 +128,7 @@ function SharedSavingsContent() {
                 <div key={item.label} className="p-3 border rounded-xl bg-card space-y-0.5">
                   <div className="text-[11px] text-muted-foreground">{item.label}</div>
                   <div className="text-sm font-bold text-foreground">
-                    {item.emoji} {item.count.toLocaleString()} {item.unit}
+                    {item.count.toLocaleString()} {item.unit}
                   </div>
                 </div>
               ))}

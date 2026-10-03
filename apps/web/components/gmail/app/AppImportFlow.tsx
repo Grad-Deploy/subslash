@@ -1,4 +1,4 @@
-import { ListChecks, MailSearch } from "lucide-react";
+import { Check, ListChecks, MailSearch } from "lucide-react";
 import { cn } from "@lib/utils";
 import styles from "./AppImportFlow.module.css";
 
@@ -58,7 +58,7 @@ export function AppImportFlow() {
                   "absolute -right-1.5 -bottom-1.5 grid size-5 place-items-center rounded-full border-2 border-background bg-emerald-500 text-[11px] font-black text-white",
                 )}
               >
-                ✓
+                <Check className="size-3" strokeWidth={3.5} aria-hidden />
               </span>
             </div>
             <p className={cn(styles.label, "text-center text-[11.5px] leading-snug font-bold")}>
