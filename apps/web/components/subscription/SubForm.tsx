@@ -6,7 +6,6 @@ import {
   ServicePreset,
   type BillingCycle,
   type ServicePlan,
-  type SubscriptionCategory,
   PAYMENT_METHOD_OPTIONS,
   counterpartPlan,
   findPresetForSubscription,
@@ -21,7 +20,7 @@ import { ServiceLogo } from "./ServiceLogo";
 import { SquarePen } from "lucide-react";
 import { IS_APP_BUILD } from "@lib/platform";
 import { FIELD_LABEL } from "./form/fieldLabel";
-import { ServicePicker } from "./form/ServicePicker";
+import { ServicePicker, type PickTab } from "./form/ServicePicker";
 import { CustomIconPicker } from "./form/CustomIconPicker";
 import { PlanPicker } from "./form/PlanPicker";
 import { BundleNotes } from "./form/BundleNotes";
@@ -84,7 +83,7 @@ export function SubForm({
       : undefined,
   );
   const [query, setQuery] = useState("");
-  const [pickCategory, setPickCategory] = useState<SubscriptionCategory | "all">("all");
+  const [pickCategory, setPickCategory] = useState<PickTab>("all");
   const [showMore, setShowMore] = useState(isEdit);
   const [serviceUrl, setServiceUrl] = useState(initialData?.cancelUrl ?? "");
   const [serviceUrlError, setServiceUrlError] = useState<string | null>(null);
@@ -273,8 +272,11 @@ export function SubForm({
   const plans = preset?.plans ?? [];
   const cycle = formData.billingCycle ?? "monthly";
   // 고른 주기의 요금제가 목록에 없으면(연 결제 요금을 모르는 서비스 등) 요금제를 고르라고 막지
-  // 않는다. 그때는 금액을 직접 적는다.
-  const plansRequired = !isEdit && plans.some((plan) => (plan.billingCycle ?? "monthly") === cycle);
+  // 않는다. 그때는 금액을 직접 적는다. 목록이 요금을 다 담지 못한 서비스(plansIncomplete)도 같다.
+  const plansRequired =
+    !isEdit &&
+    !preset?.plansIncomplete &&
+    plans.some((plan) => (plan.billingCycle ?? "monthly") === cycle);
   const showTax =
     formData.currency === "USD" || Boolean(preset?.taxRate) || Boolean(formData.taxRate);
 
@@ -300,7 +302,9 @@ export function SubForm({
                 {isCustom
                   ? "목록에 없는 서비스"
                   : plans.length > 0
-                    ? "요금제를 고르면 요금이 채워져요."
+                    ? preset?.plansIncomplete
+                      ? "요금제를 고르거나, 목록에 없으면 결제한 금액을 적어 주세요."
+                      : "요금제를 고르면 요금이 채워져요."
                     : typeof preset?.defaultAmount === "number"
                       ? "기본 요금이에요. 다르면 고쳐 주세요."
                       : "요금을 적어 주세요."}
