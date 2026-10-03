@@ -109,7 +109,7 @@ export function AppSavings() {
       tiers.confirmed > 0
         ? `구독을 해지해 ${formatKRW(tiers.confirmed)}을 지켰고, 해지를 유지하면 1년에 ${formatKRW(tiers.annualRunRate)}을 아낍니다!`
         : `구독을 해지해 1년에 ${formatKRW(tiers.annualRunRate)}을 아낄 예정입니다!`;
-    const text = `SubSlash 구독 디톡스 ${level.levelLabel} ${level.title} ${level.emoji}\n${savingsLine} ${headline}\n결과 보기: ${shareUrl}`;
+    const text = `SubSlash 구독 디톡스 ${level.levelLabel} ${level.title}\n${savingsLine} ${headline}\n결과 보기: ${shareUrl}`;
     if (await shareText({ title: "SubSlash 구독 디톡스 결과", text, url: shareUrl })) return;
     // 앱 웹뷰에서는 navigator.clipboard가 막혀 있어 네이티브 복사(copyText)를 쓴다. 실패하면
     // '복사했어요'를 띄우지 않는다(#114와 같은 기준).
@@ -173,7 +173,7 @@ export function AppSavings() {
           </dl>
           <div className="mt-3 flex items-center gap-2.5">
             <span className="text-xs font-extrabold whitespace-nowrap text-foreground">
-              {level.emoji} {level.levelLabel} {level.title}
+              {level.levelLabel} {level.title}
             </span>
             <div className="min-w-0 flex-1">
               <div className="h-1.5 overflow-hidden rounded-full bg-secondary dark:bg-background/60">
@@ -335,10 +335,7 @@ export function AppSavings() {
                     key={item.label}
                     className="min-w-[108px] shrink-0 rounded-2xl border px-3 py-2.5"
                   >
-                    <p className="text-xl" aria-hidden>
-                      {item.emoji}
-                    </p>
-                    <p className="mt-0.5 text-sm font-black tabular-nums">
+                    <p className="text-sm font-black tabular-nums">
                       {item.count.toLocaleString()}
                       {item.unit}
                     </p>

@@ -256,9 +256,7 @@ function YearInReviewContent() {
             {spendingType && (
               <div className="p-3 rounded-xl bg-muted/60 space-y-0.5">
                 <p className="text-[11px] text-muted-foreground">소비 유형</p>
-                <p className="text-sm font-black text-foreground">
-                  {spendingType.emoji} {spendingType.title}
-                </p>
+                <p className="text-sm font-black text-foreground">{spendingType.title}</p>
                 <p className="text-[11px] text-muted-foreground">{spendingType.detail}</p>
               </div>
             )}

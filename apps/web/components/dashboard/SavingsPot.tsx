@@ -52,7 +52,7 @@ export function SavingsPot({ killedSubscriptions }: { killedSubscriptions: Subsc
       {tiers.pending > 0 && (
         <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs space-y-1">
           <p className="font-semibold text-amber-800 dark:text-amber-300">
-            ⏳ 확인 대기 {formatKRW(tiers.pending)} ({tiers.pendingCount}건)
+            확인 대기 {formatKRW(tiers.pending)} ({tiers.pendingCount}건)
           </p>
           <p className="text-amber-900/80 dark:text-amber-200/80 leading-relaxed">
             결제일은 지났지만 결제가 멈췄는지 아직 답하지 않은 해지입니다. 답하면 지킨 돈에

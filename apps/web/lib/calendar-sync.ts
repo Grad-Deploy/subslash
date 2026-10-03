@@ -157,7 +157,7 @@ export function buildCalendarEvents(
 
     events.push({
       uid: entry.clientId,
-      summary: `💳 ${entry.name} ${price}`,
+      summary: `${entry.name} ${price}`,
       description: eventDescription(
         entry,
         options.appUrl ? `${options.appUrl}${subscriptionDetailHref(entry.clientId)}` : null,
