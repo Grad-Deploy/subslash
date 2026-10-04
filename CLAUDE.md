@@ -181,7 +181,7 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 '확인되지 않은 앱' 경고와 새 사용자 100명 제한이 있고, 그 이상은 제한 권한 심사·연례 보안 평가가
 필요하다 — 그래서 복사 방식을 없애지 않는다. 원클릭은 연결 토큰을 주소에 싣지 않는다: 주소에는 10분짜리
 서명 코드(`gmail-connect`, 연결 지문 포함 → 한 번만 교환)만 싣고, 웹 앱이 `/api/gmail/connect/exchange`로
-토큰을 받아 사용자별 저장소(UserProperties)에 둔다. 웹 앱 코드는 `lib/gmail-import.ts` 한 곳에만 있고
+토큰을 받아 사용자별 저장소(UserProperties)에 둔다. 웹 앱 코드는 `lib/gmail-import/connect-web-app.ts` 한 곳에만 있고
 `pnpm --filter @subslash/web gmail:web-app -- --origins …`가 파일로 쓴다. 연결 화면(`doGet`)은 로딩 화면부터 돌려주고, 그 화면이 `google.script.run`으로
 `connectAccount`(코드 교환·트리거) → `scanRecent`(최근 40일 검사)를 차례로 부른 뒤 결과로 바뀐다 — doGet에서 다 하면
 15초 넘게 빈 화면이었다. 로딩 중 새로고침은 같은 코드(`connectCode`)면 다시 교환하지 않는다. 최근 40일만 검사해
@@ -361,7 +361,7 @@ DB는 정보 종류별로 나누지 않는다. 같은 서버가 모든 접속 �
 19일에 플래그·픽스처·화면을 모두 지웠다. 다시 만들지 않는다 — 그 탭은 등록을 누르면
 예시 데이터를 진짜 구독 목록에 써 넣었다.
 
-Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash가 Gmail에 연결하는 것이
+Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import`)는 SubSlash가 Gmail에 연결하는 것이
 아니다. 사용자가 자기 계정에 만든 Apps Script가 메일을 찾아 `/import#gmail=…`로 넘기고, 브라우저가
 `#` 뒤를 풀어 `parseReceiptEmails`로 후보를 만든다. `#` 뒤는 서버로 가지 않으므로 메일 내용은
 서버를 거치지 않는다 — 이 값을 API로 보내거나 쿼리(`?`)로 옮기지 않는다. 스크립트 권한은
