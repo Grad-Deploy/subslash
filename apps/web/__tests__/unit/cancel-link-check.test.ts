@@ -226,7 +226,7 @@ describe("점검 대상 수집", () => {
     expect(apple).toHaveLength(1);
     expect(apple[0].kind).toBe("direct");
     expect(apple[0].usedBy).toEqual(
-      expect.arrayContaining(["아이클라우드", "애플 앱스토어 구독", "Apple App Store 인앱결제"]),
+      expect.arrayContaining(["아이클라우드", "Apple One", "Apple App Store 인앱결제"]),
     );
   });
 

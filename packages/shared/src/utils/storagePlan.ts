@@ -39,6 +39,9 @@ export function storagePlanFit(sub: StorageSub, percent: number): StoragePlanFit
   const candidates = plans.filter(
     (p) =>
       p.storageGB &&
+      // 용량이 같은 다른 결제처의 요금제(네이버 MYBOX의 웹 2TB와 App Store 2TB)는 '더 작은 요금제'가
+      // 아니다. 더 싸게 내는 길은 요금제 대안(planAlternatives)이 보여 준다.
+      p.storageGB < plan.storageGB! &&
       p.amount < plan.amount &&
       (p.billingCycle ?? "monthly") === (plan.billingCycle ?? "monthly") &&
       usedGB <= p.storageGB * HEADROOM,
