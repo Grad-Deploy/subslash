@@ -6,6 +6,7 @@ import {
   planFormData,
   presetFormData,
   referencePriceFor,
+  subscriptionFormData,
   yearlyDiscountOf,
 } from "@subslash/shared";
 
@@ -85,6 +86,31 @@ describe("등록 폼에 채울 값", () => {
       currency: "KRW",
       billingCycle: "yearly",
     });
+  });
+
+  it("등록한 구독을 고칠 때는 폼 칸을 빠짐없이 채우고, 앱이 적은 기록은 넘기지 않는다", () => {
+    const data = subscriptionFormData({
+      id: "s1",
+      name: "동네 헬스장",
+      amount: 50000,
+      currency: "KRW",
+      billingDay: 3,
+      billingCycle: "monthly",
+      category: "other",
+      status: "active",
+      createdAt: "2026-09-01T00:00:00.000Z",
+      // 예전 수정 화면은 이 둘을 빠뜨려, 체험 중인 구독의 체험 종료일 칸이 비어 보였다.
+      trialEndsAt: "2026-10-20",
+      iconColor: "red",
+      observedAmount: 55000,
+      killVerifiedAt: "2026-09-10T00:00:00.000Z",
+    });
+    expect(data.trialEndsAt).toBe("2026-10-20");
+    expect(data.iconColor).toBe("red");
+    expect(data.billingDay).toBe(3);
+    expect(data).not.toHaveProperty("observedAmount");
+    expect(data).not.toHaveProperty("killVerifiedAt");
+    expect(data).not.toHaveProperty("status");
   });
 });
 

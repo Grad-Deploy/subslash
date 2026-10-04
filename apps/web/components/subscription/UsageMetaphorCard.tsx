@@ -34,11 +34,10 @@ export function UsageMetaphorCard({
 
   return (
     <div
-      className={`flex items-start gap-3 p-4 rounded-xl border ${
+      className={`flex items-start p-4 rounded-xl border ${
         toneStyles[metaphor.tone]
       } max-w-[400px] w-full`}
     >
-      <div className="shrink-0 text-2xl">{metaphor.emoji}</div>
       {/*
         문구에 서비스 이름이 들어간다. 길이를 모르는 글자라 min-w-0으로 줄어들 수 있게 하고,
         띄어쓰기 없이 길게 적은 이름도 줄바꿈되도록 overflow-wrap:anywhere를 준다 — break-keep은

@@ -100,7 +100,7 @@ function SavingsDashboard() {
       tiers.confirmed > 0
         ? `구독을 해지해 ${formatKRW(tiers.confirmed)}을 지켰고, 해지를 유지하면 1년에 ${formatKRW(annualSavings)}을 아낍니다!`
         : `구독을 해지해 1년에 ${formatKRW(annualSavings)}을 아낄 예정입니다!`;
-    const text = `SubSlash 구독 디톡스 ${detoxLevel.levelLabel} ${detoxLevel.title} ${detoxLevel.emoji}\n${savingsLine} ${headlineEquivalent}\n결과 보기: ${shareUrl}`;
+    const text = `SubSlash 구독 디톡스 ${detoxLevel.levelLabel} ${detoxLevel.title}\n${savingsLine} ${headlineEquivalent}\n결과 보기: ${shareUrl}`;
     // 공유 창을 열었거나 사용자가 닫았으면 끝이다. 공유할 수 없는 환경이면 복사로 넘어간다.
     if (await shareText({ title: "SubSlash 구독 디톡스 결과", text, url: shareUrl })) return;
     await copyToClipboard(text);
@@ -177,7 +177,7 @@ function SavingsDashboard() {
                     <div key={item.label} className="p-4 border rounded-2xl bg-card space-y-1">
                       <p className="text-xs text-muted-foreground">{item.label} 환산</p>
                       <p className="text-lg font-bold text-foreground">
-                        {item.emoji} {item.label} {item.count.toLocaleString()}
+                        {item.label} {item.count.toLocaleString()}
                         {item.unit}
                       </p>
                     </div>
