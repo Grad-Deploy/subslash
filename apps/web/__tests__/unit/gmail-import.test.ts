@@ -447,7 +447,7 @@ describe("원클릭 연결 웹 앱", () => {
   // 서버(`lib/calendar-sync`)가 만들어 보내는 모양. 스크립트는 이 값을 그대로 캘린더에 넣는다.
   const CALENDAR_EVENT = {
     uid: "sub-netflix",
-    summary: "💳 넷플릭스 ₩17,000",
+    summary: "넷플릭스 ₩17,000",
     description: "넷플릭스 결제일입니다.",
     start: "2026-09-25",
     end: "2026-09-26",

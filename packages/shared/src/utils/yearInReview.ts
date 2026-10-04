@@ -100,20 +100,17 @@ export function getSpendingType(spend: CategorySpend[]): SpendingType | null {
 
 /** 소비 유형을 화면·공유 카드에 적을 말. 둘이 같은 문장을 쓴다. */
 export function describeSpendingType(type: SpendingType): {
-  emoji: string;
   title: string;
   detail: string;
 } {
   if (type.kind === "focused") {
     const label = CATEGORY_LABELS[type.category];
     return {
-      emoji: "🎯",
       title: `${label} 집중형`,
       detail: `구독 지출의 ${Math.round(type.share * 100)}%가 ${label}에 모여 있습니다.`,
     };
   }
   return {
-    emoji: "🧩",
     title: "고루 쓰는 분산형",
     detail: `${type.categoryCount}개 분야에 나눠 쓰고, 가장 큰 분야도 절반이 되지 않습니다.`,
   };

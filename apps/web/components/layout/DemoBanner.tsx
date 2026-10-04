@@ -42,7 +42,7 @@ export function DemoBanner() {
     >
       <div className="container mx-auto flex max-w-6xl flex-col gap-2 px-4 py-2.5 text-xs sm:flex-row sm:items-center sm:justify-between">
         <p className="leading-relaxed break-keep">
-          ✨ <strong>샘플로 체험하는 중입니다.</strong> 지금 보이는 구독은 예시이고 내 구독과 섞이지
+          <strong>샘플로 체험하는 중입니다.</strong> 지금 보이는 구독은 예시이고 내 구독과 섞이지
           않습니다. 여기서 바꾼 내용은 저장되지 않고, 새로고침하거나 {DEMO_DURATION_MS / 60_000}분이
           지나면 체험이 끝납니다.
         </p>

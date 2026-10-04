@@ -39,9 +39,8 @@ export function SavedMoneyLink({
           {formatKRW(tiers.confirmed)}
         </p>
         <p className="text-[11px] text-muted-foreground mt-0.5">
-          {tiers.pending > 0 && `⏳ 확인 대기 ${formatKRW(tiers.pending)} · `}연{" "}
-          {formatKRW(tiers.annualRunRate)} 아끼는 중 · {detoxLevel.emoji} {detoxLevel.levelLabel}{" "}
-          {detoxLevel.title}
+          {tiers.pending > 0 && `확인 대기 ${formatKRW(tiers.pending)} · `}연{" "}
+          {formatKRW(tiers.annualRunRate)} 아끼는 중 · {detoxLevel.levelLabel} {detoxLevel.title}
           {tiers.unknownCount > 0 && ` · 결제 월 미설정 ${tiers.unknownCount}건 제외`}
         </p>
       </div>
