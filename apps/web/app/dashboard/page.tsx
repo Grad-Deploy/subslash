@@ -7,30 +7,13 @@ import { IS_APP_BUILD } from "@lib/platform";
 import { useCheckInFlow, useReminderPrompt } from "@hooks/useCheckInFlow";
 import { useAddSubscriptionFlow } from "@hooks/useAddSubscriptionFlow";
 import { useStore } from "../../lib/store";
-import {
-  Subscription,
-  SubscriptionFormData,
-  POPULAR_SERVICES,
-  presetFormData,
-  type ServicePreset,
-  formatCurrency,
-  getActionQueue,
-  getNextBillingHint,
-} from "@subslash/shared";
+import { Subscription, formatCurrency, getActionQueue, getNextBillingHint } from "@subslash/shared";
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { ActionQueue } from "../../components/dashboard/ActionQueue";
 import { BillingCalendar } from "../../components/dashboard/BillingCalendar";
 import { MonthlyValueReport } from "../../components/dashboard/MonthlyValueReport";
-import { SubForm } from "../../components/subscription/SubForm";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
@@ -85,13 +68,7 @@ export default function Dashboard() {
   const [usageFindOpen, setUsageFindOpen] = useState(false);
 
   const mounted = useIsClient();
-  const [isAddOpen, setIsAddOpen] = useState(false);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
-  // 등록 창을 여는 방식(앱의 빈 대시보드에서 서비스를 눌렀는지, '직접 입력'을 눌렀는지).
-  // 열 때마다 key를 바꿔 SubForm을 새로 그린다 — 앞서 연 창의 입력이 남지 않게.
-  const [addInitial, setAddInitial] = useState<Partial<SubscriptionFormData> | undefined>();
-  const [addCustom, setAddCustom] = useState(false);
-  const [addKey, setAddKey] = useState(0);
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
 
   const [chargedTarget, setChargedTarget] = useState<Subscription | null>(null);
@@ -106,12 +83,9 @@ export default function Dashboard() {
     onKill: (id) => handleCancelGuide(id),
   });
   const handleOpenCheckIn = checkInFlow.open;
-  // 구독 추가의 등록 처리(내 구독과 같은 흐름, hooks/useAddSubscriptionFlow).
-  const addFlow = useAddSubscriptionFlow({
-    showToast,
-    reminder,
-    onClose: () => setIsAddOpen(false),
-  });
+  // 구독 추가 창과 등록 처리(내 구독과 같은 흐름, hooks/useAddSubscriptionFlow).
+  const addFlow = useAddSubscriptionFlow({ showToast, reminder });
+  const openAdd = addFlow.open;
   // 앱 계산서에서 이어서 해지하기(hooks/useKillSeries).
   const killSeries = useKillSeries((sub) => setGuideTarget(sub));
 
@@ -132,13 +106,6 @@ export default function Dashboard() {
   const nextBilling = getNextBillingHint(subscriptions, now);
 
   const findSub = (id: string) => subscriptions.find((s) => s.id === id);
-
-  const openAdd = (options?: { preset?: ServicePreset; custom?: boolean }) => {
-    setAddInitial(options?.preset ? presetFormData(options.preset) : undefined);
-    setAddCustom(options?.custom ?? false);
-    setAddKey((k) => k + 1);
-    setIsAddOpen(true);
-  };
 
   // 첫 사용 안내(서비스 고르기 → 첫 체크인). 웹과 앱이 같다. 체험(샘플) 중에는 보이지 않는다 —
   // 샘플은 사용자의 기록이 아니다. 기기 알림 체크리스트는 앱에만 있다(알림이 기기 기능이라).
@@ -223,11 +190,6 @@ export default function Dashboard() {
   const handleKillCharged = (id: string) => {
     const sub = findSub(id);
     if (sub) setChargedTarget(sub);
-  };
-
-  const closeAdd = (open: boolean) => {
-    setIsAddOpen(open);
-    if (!open) addFlow.reset();
   };
 
   // 샘플은 내 구독에 더하지 않고 잠시 동안만 보여준다(store의 DemoSession).
@@ -435,28 +397,7 @@ export default function Dashboard() {
         />
       )}
 
-      {/* SubForm Modal for Adding */}
-      <Dialog open={isAddOpen} onOpenChange={closeAdd}>
-        <DialogContent className="sm:max-w-md">
-          {addFlow.checkInStep ?? (
-            <>
-              <DialogHeader>
-                <DialogTitle>새 구독 등록</DialogTitle>
-                <DialogDescription>서비스를 고르거나 직접 입력하세요.</DialogDescription>
-              </DialogHeader>
-              <div className="py-2">
-                <SubForm
-                  key={addKey}
-                  popularServices={POPULAR_SERVICES}
-                  initialData={addInitial}
-                  openCustom={addCustom}
-                  onSubmit={(data) => addFlow.submit(data)}
-                />
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {addFlow.dialog}
 
       {addFlow.duplicateDialog}
 

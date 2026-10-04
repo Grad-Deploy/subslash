@@ -3,29 +3,20 @@
 import React, { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "../../lib/store";
-import {
-  CATEGORY_LABELS,
-  Subscription,
-  POPULAR_SERVICES,
-  ServicePreset,
-  formatKRW,
-  presetFormData,
-  sumMyMonthlyKRW,
-} from "@subslash/shared";
-import { SubCard } from "../../components/subscription/SubCard";
+import { Subscription, formatKRW, sumMyMonthlyKRW } from "@subslash/shared";
 import { SubscriptionActionConfirm } from "../../components/subscription/SubscriptionActionConfirm";
-import { SubTable } from "../../components/subscription/SubTable";
-import { SubForm } from "../../components/subscription/SubForm";
 import { QuickPresetRecommender } from "../../components/subscription/QuickPresetRecommender";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
+import { SubsEmptyState, SubsList } from "../../components/subscription/list/SubsList";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "../../components/ui/dialog";
+  SubsFilterBar,
+  SubsTabs,
+  type SubsTab,
+} from "../../components/subscription/list/SubsToolbar";
+import { SubsDetailAside } from "../../components/subscription/list/SubsDetailAside";
+import { useSubsView } from "../../components/subscription/list/useSubsView";
+import { useSubsSelection } from "../../components/subscription/list/useSubsSelection";
 import { Button } from "../../components/ui/button";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
@@ -33,10 +24,8 @@ import { IS_APP_BUILD } from "@lib/platform";
 import { useCheckInFlow, useReminderPrompt } from "@hooks/useCheckInFlow";
 import { useAddSubscriptionFlow } from "@hooks/useAddSubscriptionFlow";
 import { sortSubsForApp, type AppSubsSort } from "@lib/subs-order";
-import { SubscriptionDetail } from "../../components/subscription/SubscriptionDetail";
 import { GoogleCalendarSync } from "../../components/calendar/GoogleCalendarSync";
 import { isGmailAutoImportOpen } from "@lib/privacy";
-import { useArrowKeySelection } from "@hooks/useArrowKeySelection";
 import { SelectedSubSync } from "../../components/subscription/SelectedSubSync";
 import {
   AppAddButton,
@@ -49,18 +38,10 @@ import { Spinner } from "../../components/ui/spinner";
 import { Receipt, ShieldCheck } from "lucide-react";
 import { useToast } from "@hooks/useToast";
 
-/** 카드/표 중 고른 보기. 이 브라우저의 취향일 뿐이라 백업·동기화에 넣지 않는다. */
-const VIEW_KEY = "subslash-subs-view";
-
-// 분류 칩. '기타'가 없으면 노션·어도비처럼 기타로 등록된 구독을 분류로 걸러 볼 수 없다.
-const CATEGORY_FILTERS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: "all", label: "전체" },
-  ...(["ott", "music", "shopping", "cloud", "ai", "other"] as const).map((value) => ({
-    value,
-    label: CATEGORY_LABELS[value],
-  })),
-];
-
+/**
+ * 내 구독. 위에서부터 제목·불러오기, 구독 중/해지 완료 탭, 분류·보기 방식, 목록이고, 넓은 화면(xl)에서는
+ * 목록 오른쪽에 고른 구독의 상세 칸을 둔다. 칸마다의 모양은 components/subscription/list에 있다.
+ */
 export default function SubscriptionsPage() {
   const {
     subscriptions,
@@ -75,13 +56,11 @@ export default function SubscriptionsPage() {
   const router = useRouter();
 
   const mounted = useIsClient();
-  const [tab, setTab] = useState<"active" | "killed">("active");
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [tab, setTab] = useState<SubsTab>("active");
   // 앱의 구독 추가 메뉴(AppAddButton). 빈 목록의 '구독 추가'도 + 버튼과 같은 메뉴를 연다.
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   // 앱: 구독 중 목록의 순서(결제일·금액·가성비).
   const [appSort, setAppSort] = useState<AppSubsSort>("billing");
-  const [selectedPreset, setSelectedPreset] = useState<ServicePreset | null>(null);
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [confirmAction, setConfirmAction] = useState<{
@@ -89,25 +68,7 @@ export default function SubscriptionsPage() {
     sub: Subscription;
   } | null>(null);
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
-  // 표는 넓은 화면(md 이상)에서만 고를 수 있다. 좁은 화면은 늘 카드다.
-  // 서버에는 저장소가 없어 카드로 시작한다. 하이드레이션 동안은 mounted가 false라 스피너만
-  // 그리므로, 브라우저에서 처음부터 저장된 보기로 시작해도 서버 화면과 어긋나지 않는다.
-  const [view, setView] = useState<"cards" | "table">(() => {
-    if (typeof window === "undefined") return "cards";
-    try {
-      return localStorage.getItem(VIEW_KEY) === "table" ? "table" : "cards";
-    } catch {
-      return "cards";
-    }
-  });
-
-  const changeView = (next: "cards" | "table") => {
-    setView(next);
-    localStorage.setItem(VIEW_KEY, next);
-  };
-
-  // 넓은 화면에서 목록 옆 칸에 연 구독. 주소의 ?sub=가 원본이다(SelectedSubSync).
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [view, changeView] = useSubsView();
   // 표 보기일 때 표에 보이는 정렬 순서. ↑↓가 그 순서를 따른다.
   const [tableOrder, setTableOrder] = useState<string[]>([]);
 
@@ -116,40 +77,24 @@ export default function SubscriptionsPage() {
   // 결제 알림 묻기와 체크인 창(대시보드와 같은 흐름, hooks/useCheckInFlow).
   const reminder = useReminderPrompt(showToast);
   const checkInFlow = useCheckInFlow({ showToast, reminder, onKill: (id) => handleKill(id) });
-  const handleOpenCheckIn = checkInFlow.open;
-  // 구독 추가의 등록 처리(대시보드와 같은 흐름, hooks/useAddSubscriptionFlow).
-  const addFlow = useAddSubscriptionFlow({
-    showToast,
-    reminder,
-    onClose: () => {
-      setIsAddOpen(false);
-      setSelectedPreset(null);
-    },
-  });
+  // 구독 추가 창과 등록 처리(대시보드와 같은 흐름, hooks/useAddSubscriptionFlow).
+  const addFlow = useAddSubscriptionFlow({ showToast, reminder });
 
   const activeSubs = getActiveSubscriptions();
   const killedSubs = getKilledSubscriptions();
 
-  const filteredActiveRaw =
-    filterCategory === "all" ? activeSubs : activeSubs.filter((s) => s.category === filterCategory);
+  const inCategory = (subs: Subscription[]) =>
+    filterCategory === "all" ? subs : subs.filter((s) => s.category === filterCategory);
   // 앱: 기본은 결제일이 가까운 순(결제월을 모르는 연간 구독은 맨 뒤), 칩으로 금액·가성비 순. 웹은 등록 순 그대로.
   const filteredActive = IS_APP_BUILD
-    ? sortSubsForApp(filteredActiveRaw, appSort, usageLogs, rate)
-    : filteredActiveRaw;
-
-  const filteredKilled =
-    filterCategory === "all" ? killedSubs : killedSubs.filter((s) => s.category === filterCategory);
+    ? sortSubsForApp(inCategory(activeSubs), appSort, usageLogs, rate)
+    : inCategory(activeSubs);
+  const filteredKilled = inCategory(killedSubs);
 
   const visibleIds = (tab === "active" ? filteredActive : filteredKilled).map((s) => s.id);
   const visibleOrder = view === "table" && tableOrder.length > 0 ? tableOrder : visibleIds;
-
-  // 구독을 하나 고른 뒤에만 ↑↓로 넘긴다. 넘길 때는 기록을 쌓지 않는다(replace) — 뒤로 가기는 눌러서
-  // 고른 구독으로 돌아간다.
-  useArrowKeySelection({
-    order: visibleOrder,
-    selectedId,
-    onSelect: (id) => router.replace(`/subs?sub=${encodeURIComponent(id)}`, { scroll: false }),
-  });
+  const selection = useSubsSelection(visibleOrder);
+  const { selectedId } = selection;
 
   if (!mounted) {
     return (
@@ -159,42 +104,31 @@ export default function SubscriptionsPage() {
     );
   }
 
-  const selectSub = (id: string) =>
-    router.push(`/subs?sub=${encodeURIComponent(id)}`, { scroll: false });
-  const clearSelection = () => router.push("/subs", { scroll: false });
-  // 옆 칸의 구독을 지웠을 때: 목록에서 그다음(없으면 앞) 구독으로 넘어가고, 없으면 비운다.
-  const leaveSelection = () => {
-    const index = selectedId ? visibleOrder.indexOf(selectedId) : -1;
-    const next = index < 0 ? undefined : (visibleOrder[index + 1] ?? visibleOrder[index - 1]);
-    router.replace(next ? `/subs?sub=${encodeURIComponent(next)}` : "/subs", { scroll: false });
-  };
   const selectedExists = selectedId !== null && subscriptions.some((s) => s.id === selectedId);
+  const findSub = (id: string) => subscriptions.find((s) => s.id === id);
 
   // 해지 버튼은 완료 처리로 바로 가지 않는다. 실제 해지는 서비스 쪽에서
   // 해야 하므로 가이드를 먼저 열고, 사용자가 마쳤다고 알려줄 때 확인을 받는다.
   const handleKill = (id: string) => {
-    const sub = subscriptions.find((s) => s.id === id);
+    const sub = findSub(id);
     if (sub) setGuideTarget(sub);
   };
 
   // 가이드에서 '해지 완료했어요'를 누른 것이 곧 확인이다 — 예전에는 확인 창을 한 번 더 띄웠다.
   // 잘못 눌렀으면 '다시 살리기'로 되돌린다.
   const handleConfirmKilled = (id: string) => {
-    const sub = subscriptions.find((s) => s.id === id);
+    const sub = findSub(id);
     if (!sub) return;
     killSubscription(sub.id);
     showToast(`${sub.name} 해지 완료로 기록`);
   };
 
-  const handleRevive = (id: string) => {
-    const sub = subscriptions.find((s) => s.id === id);
-    if (sub) setConfirmAction({ type: "revive", sub });
+  const askConfirm = (type: "revive" | "delete") => (id: string) => {
+    const sub = findSub(id);
+    if (sub) setConfirmAction({ type, sub });
   };
-
-  const handleDelete = (id: string) => {
-    const sub = subscriptions.find((s) => s.id === id);
-    if (sub) setConfirmAction({ type: "delete", sub });
-  };
+  const handleRevive = askConfirm("revive");
+  const handleDelete = askConfirm("delete");
 
   const executeConfirmAction = () => {
     if (!confirmAction) return;
@@ -202,17 +136,25 @@ export default function SubscriptionsPage() {
     if (type === "revive") {
       reviveSubscription(sub.id);
       showToast(`${sub.name} 구독 중으로 되돌림`);
-    } else if (type === "delete") {
+    } else {
       deleteSubscription(sub.id);
       showToast("삭제했어요");
     }
     setConfirmAction(null);
   };
 
+  const listProps = {
+    usageLogs,
+    view,
+    selectedId,
+    onSelect: selection.select,
+    onOrderChange: setTableOrder,
+  };
+
   return (
     <div className="space-y-6">
       <Suspense fallback={null}>
-        <SelectedSubSync onChange={setSelectedId} />
+        <SelectedSubSync onChange={selection.setSelectedId} />
       </Suspense>
 
       {toast}
@@ -225,7 +167,7 @@ export default function SubscriptionsPage() {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-black tracking-tight">구독 관리</h1>
-          <Button onClick={() => setIsAddOpen(true)} className="hidden font-bold md:inline-flex">
+          <Button onClick={() => addFlow.open()} className="hidden font-bold md:inline-flex">
             + 구독 추가
           </Button>
         </div>
@@ -262,95 +204,41 @@ export default function SubscriptionsPage() {
       {/* 앱은 환율을 설정 탭(화면)에 둔다. */}
       {!IS_APP_BUILD && <ExchangeRateNote />}
 
-      {/* 넓은 화면(xl)에서는 목록 오른쪽에 고른 구독의 상세 칸을 둔다. */}
       <div className="space-y-6 xl:grid xl:grid-cols-[minmax(0,1fr)_26rem] xl:items-start xl:gap-6 xl:space-y-0">
         <div className="min-w-0 space-y-6">
-          {/* Tabs */}
-          <div className="flex border-b">
-            <button
-              className={`flex-1 py-3 font-bold text-sm transition-colors border-b-2 ${
-                tab === "active"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setTab("active")}
-            >
-              활성 구독 ({activeSubs.length})
-            </button>
-            <button
-              className={`flex-1 py-3 font-bold text-sm transition-colors border-b-2 ${
-                tab === "killed"
-                  ? "border-destructive text-destructive"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => setTab("killed")}
-            >
-              {/* 앱은 숨긴 해지 구독을 목록에서 빼므로 개수도 보이는 것만 센다. */}
-              해지 완료 (
-              {AppKilledList ? killedSubs.filter((s) => !s.hiddenAt).length : killedSubs.length})
-            </button>
-          </div>
+          <SubsTabs
+            tab={tab}
+            onChange={setTab}
+            activeCount={activeSubs.length}
+            // 앱은 숨긴 해지 구독을 목록에서 빼므로 개수도 보이는 것만 센다.
+            killedCount={
+              AppKilledList ? killedSubs.filter((s) => !s.hiddenAt).length : killedSubs.length
+            }
+          />
+          <SubsFilterBar
+            category={filterCategory}
+            onCategoryChange={setFilterCategory}
+            view={view}
+            onViewChange={changeView}
+          />
 
-          {/* Category Pills + 보기 방식 */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-2 text-xs">
-              {CATEGORY_FILTERS.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => setFilterCategory(c.value)}
-                  className={`px-3 py-1.5 rounded-full font-medium transition-all whitespace-nowrap ${
-                    filterCategory === c.value
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-secondary-foreground hover:bg-muted"
-                  }`}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-            <div
-              role="group"
-              aria-label="보기 방식"
-              className="hidden shrink-0 items-center rounded-lg border p-0.5 text-xs md:inline-flex"
-            >
-              {(
-                [
-                  { value: "cards", label: "카드" },
-                  { value: "table", label: "표" },
-                ] as const
-              ).map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  aria-pressed={view === option.value}
-                  onClick={() => changeView(option.value)}
-                  className={`rounded-md px-3 py-1 font-medium transition-colors ${
-                    view === option.value
-                      ? "bg-secondary text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Active Tab */}
           {tab === "active" ? (
             <div className="space-y-4">
               {filteredActive.length === 0 ? (
-                <div className="text-center py-16 border border-dashed rounded-2xl space-y-3">
-                  <Receipt className="mx-auto size-9 text-muted-foreground" aria-hidden />
-                  <p className="font-bold">구독 중인 서비스가 없어요</p>
-                  <p className="text-xs text-muted-foreground">구독을 등록해 보세요.</p>
-                  <Button
-                    size="sm"
-                    onClick={() => (AppAddButton ? setAddMenuOpen(true) : setIsAddOpen(true))}
-                  >
-                    + 구독 추가
-                  </Button>
-                </div>
+                <SubsEmptyState
+                  Icon={Receipt}
+                  title="구독 중인 서비스가 없어요"
+                  action={
+                    <Button
+                      size="sm"
+                      onClick={() => (AppAddButton ? setAddMenuOpen(true) : addFlow.open())}
+                    >
+                      + 구독 추가
+                    </Button>
+                  }
+                >
+                  구독을 등록해 보세요.
+                </SubsEmptyState>
               ) : (
                 <>
                   {AppSortSelect && (
@@ -360,58 +248,25 @@ export default function SubscriptionsPage() {
                       onChange={setAppSort}
                     />
                   )}
-                  {view === "table" && (
-                    <div className="hidden md:block">
-                      <SubTable
-                        subscriptions={filteredActive}
-                        usageLogs={usageLogs}
-                        mode="active"
-                        onCheckIn={handleOpenCheckIn}
-                        onKill={handleKill}
-                        selectedId={selectedId}
-                        onSelect={selectSub}
-                        onOrderChange={setTableOrder}
-                        sidePanel
-                      />
-                    </div>
-                  )}
-                  <div
-                    className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4${view === "table" ? " md:hidden" : ""}`}
-                  >
-                    {filteredActive.map((sub) => (
-                      <SubCard
-                        key={sub.id}
-                        subscription={sub}
-                        onCheckIn={handleOpenCheckIn}
-                        onKill={handleKill}
-                        selected={selectedId === sub.id}
-                        onSelect={selectSub}
-                      />
-                    ))}
-                  </div>
+                  <SubsList
+                    {...listProps}
+                    subscriptions={filteredActive}
+                    handlers={{ mode: "active", onCheckIn: checkInFlow.open, onKill: handleKill }}
+                  />
                 </>
               )}
 
-              {/* Quick Preset Recommender (Issue 19) */}
               <QuickPresetRecommender
                 subscriptions={subscriptions}
-                onSelectPreset={(preset) => {
-                  setSelectedPreset(preset);
-                  setIsAddOpen(true);
-                }}
+                onSelectPreset={(preset) => addFlow.open({ preset })}
               />
             </div>
           ) : (
-            /* Killed Tab */
             <div className="space-y-4">
               {filteredKilled.length === 0 ? (
-                <div className="text-center py-16 border border-dashed rounded-2xl space-y-3">
-                  <ShieldCheck className="mx-auto size-9 text-muted-foreground" aria-hidden />
-                  <p className="font-bold">아직 해지한 구독이 없어요</p>
-                  <p className="text-xs text-muted-foreground">
-                    &lsquo;지금 해지하기&rsquo;로 기록하면 여기에 모여요.
-                  </p>
-                </div>
+                <SubsEmptyState Icon={ShieldCheck} title="아직 해지한 구독이 없어요">
+                  &lsquo;지금 해지하기&rsquo;로 기록하면 여기에 모여요.
+                </SubsEmptyState>
               ) : (
                 <div className="space-y-3">
                   {/* 앱은 이 자리에 '지킨 돈 · 절약 현황' 한 줄(AppKilledList 맨 위)을 둔다. 두 줄이 같이 있으면
@@ -431,37 +286,11 @@ export default function SubscriptionsPage() {
                       onMessage={showToast}
                     />
                   ) : (
-                    <>
-                      {view === "table" && (
-                        <div className="hidden md:block">
-                          <SubTable
-                            subscriptions={filteredKilled}
-                            usageLogs={usageLogs}
-                            mode="killed"
-                            onRevive={handleRevive}
-                            onDelete={handleDelete}
-                            selectedId={selectedId}
-                            onSelect={selectSub}
-                            onOrderChange={setTableOrder}
-                            sidePanel
-                          />
-                        </div>
-                      )}
-                      <div
-                        className={`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-4${view === "table" ? " md:hidden" : ""}`}
-                      >
-                        {filteredKilled.map((sub) => (
-                          <SubCard
-                            key={sub.id}
-                            subscription={sub}
-                            onRevive={handleRevive}
-                            onDelete={handleDelete}
-                            selected={selectedId === sub.id}
-                            onSelect={selectSub}
-                          />
-                        ))}
-                      </div>
-                    </>
+                    <SubsList
+                      {...listProps}
+                      subscriptions={filteredKilled}
+                      handlers={{ mode: "killed", onRevive: handleRevive, onDelete: handleDelete }}
+                    />
                   )}
                 </div>
               )}
@@ -469,34 +298,12 @@ export default function SubscriptionsPage() {
           )}
         </div>
 
-        <aside
-          aria-label="구독 상세"
-          className="hidden xl:block xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto xl:pr-1"
-        >
-          {selectedId ? (
-            <div className="space-y-3">
-              {selectedExists && !visibleIds.includes(selectedId) && (
-                <p className="rounded-xl border border-dashed p-3 text-xs text-muted-foreground">
-                  지금 탭·분류의 목록에는 없는 구독이에요.
-                </p>
-              )}
-              <SubscriptionDetail
-                key={selectedId}
-                id={selectedId}
-                headingLevel="h2"
-                closeLabel="닫기"
-                onClose={clearSelection}
-                onLeave={leaveSelection}
-                className="space-y-6"
-              />
-            </div>
-          ) : (
-            <div className="space-y-2 rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-              <p className="font-semibold text-foreground">구독을 고르면 여기에 자세히 보여요</p>
-              <p className="text-xs">목록에서 이름을 누르세요. ↑↓ 키로 넘길 수 있어요.</p>
-            </div>
-          )}
-        </aside>
+        <SubsDetailAside
+          selectedId={selectedId}
+          outsideList={selectedExists && !visibleIds.includes(selectedId)}
+          onClose={selection.clear}
+          onLeave={selection.leave}
+        />
       </div>
 
       {/*
@@ -511,19 +318,16 @@ export default function SubscriptionsPage() {
         // 해지 완료 탭에서는 두지 않는다 — 선택 모드의 아래 버튼 줄과 겹친다.
         tab === "active" && (
           <AppAddButton
-            onManual={() => setIsAddOpen(true)}
+            onManual={() => addFlow.open()}
             onPaste={() => setIsAutoImportOpen(true)}
-            onPickPreset={(preset) => {
-              setSelectedPreset(preset);
-              setIsAddOpen(true);
-            }}
+            onPickPreset={(preset) => addFlow.open({ preset })}
             menuOpen={addMenuOpen}
             onMenuOpenChange={setAddMenuOpen}
           />
         )
       ) : (
         <button
-          onClick={() => setIsAddOpen(true)}
+          onClick={() => addFlow.open()}
           className="md:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-2xl text-2xl font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-30"
           aria-label="Add Subscription"
         >
@@ -531,37 +335,7 @@ export default function SubscriptionsPage() {
         </button>
       )}
 
-      {/* SubForm Modal */}
-      <Dialog
-        open={isAddOpen}
-        onOpenChange={(open) => {
-          setIsAddOpen(open);
-          if (!open) {
-            setSelectedPreset(null);
-            addFlow.reset();
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          {addFlow.checkInStep ?? (
-            <>
-              <DialogHeader>
-                <DialogTitle>
-                  {selectedPreset ? `${selectedPreset.nameKo} 등록` : "새 구독 추가"}
-                </DialogTitle>
-                <DialogDescription>서비스를 고르거나 직접 입력하세요.</DialogDescription>
-              </DialogHeader>
-              <div className="py-2">
-                <SubForm
-                  popularServices={POPULAR_SERVICES}
-                  initialData={selectedPreset ? presetFormData(selectedPreset) : undefined}
-                  onSubmit={(data) => addFlow.submit(data)}
-                />
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      {addFlow.dialog}
 
       {IS_APP_BUILD && reminder.sheet}
 
@@ -569,7 +343,6 @@ export default function SubscriptionsPage() {
 
       {checkInFlow.modal}
 
-      {/* Auto Import Hub Modal */}
       <AutoImportModal
         isOpen={isAutoImportOpen}
         onClose={() => {
@@ -579,7 +352,6 @@ export default function SubscriptionsPage() {
         onRegistered={reminder.askAfterImport}
       />
 
-      {/* Cancel Guide Modal (Issue 14) */}
       <CancelGuideModal
         subscription={guideTarget}
         isOpen={!!guideTarget}
