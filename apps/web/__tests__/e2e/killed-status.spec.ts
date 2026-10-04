@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 
-// Must match the `name` given to zustand's persist middleware in lib/store.ts.
+// Must match the `name` given to zustand's persist middleware in lib/store/index.ts.
 const STORAGE_KEY = "subslash-storage";
 
 const base = {
