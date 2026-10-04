@@ -448,9 +448,9 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
 (`public/landing/`)이고 화면에 그렇게 밝힌다 — 화면이 크게 바뀌면 새로 찍는다. 앱은 비공개 테스트라 '앱 받기'는 링크 없는
 '준비 중' 표시(`AppDownloadPending`)다. 공개 출시하면 그때 실제 스토어 주소로 바꾼다 — 받을 수 없는 주소를 걸지 않는다.
 
-앱은 `/`를 열자마자 대시보드로 옮기고, 처음 실행할 때만 인트로 뒤에 옆으로 넘기는 소개(`components/launch/AppOnboarding`)를
+앱은 `/`를 열자마자 대시보드로 옮기고, 처음 실행할 때만 인트로 뒤에 옆으로 넘기는 소개(`components/launch/onboarding`)를
 덮어 보여 준다. 모양은 Claude Design의 `App Onboarding.dc.html`(소개 · 기능 4장 · 시작)이고, 마지막 장에서 내 구독 등록
-(대시보드)·샘플·로그인 중에 고르면 다시 띄우지 않는다(`lib/welcome`, 기기 저장소). 예전 환영 화면과 키를 달리 둬
+(대시보드)·샘플·로그인 중에 고르면 다시 띄우지 않는다(`lib/onboarding-seen`, 기기 저장소). 예전 환영 화면과 키를 달리 둬
 기존 사용자도 업데이트 뒤 한 번 본다 — 소개를 크게 바꿔 다시 보여 주려면 키를 바꾼다. 첫 장의 서비스 로고는 확인한 로고
 (`BRAND_LOGOS`)만 쓴다. 웹 번들에 들어가지 않도록 `virtual:app-launch-flow`로만 불러온다(`AppLaunch`).
 

@@ -13,6 +13,7 @@ import {
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
+import { prefersReducedMotion } from "@lib/motion";
 
 /**
  * 체험용으로 고를 수 있는 서비스. 요금은 여기 적지 않고 서비스 목록에서 읽는다. 요금제가
@@ -116,7 +117,7 @@ function useTweenedNumber(target: number): number {
   const shownRef = useRef(target);
 
   useEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = prefersReducedMotion();
     const from = shownRef.current;
     if (reduce || from === target) {
       shownRef.current = target;

@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@lib/utils";
+import { prefersReducedMotion } from "@lib/motion";
 
 /**
  * 첫 화면(소개)의 칸들. 내려 읽으며 무엇을 하는 서비스인지, 어디서 쓰는지만 알리고, 쓰는 것은 대시보드로
@@ -156,7 +157,7 @@ export function LandingFeatures() {
     const el = blocksRef.current[i];
     if (!el) return;
     const top = el.getBoundingClientRect().top + window.scrollY;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = prefersReducedMotion();
     window.scrollTo({
       top: top - window.innerHeight / 2 + el.offsetHeight / 2,
       behavior: reduce ? "auto" : "smooth",
