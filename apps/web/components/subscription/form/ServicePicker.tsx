@@ -21,6 +21,21 @@ const PICK_CATEGORY_ORDER: SubscriptionCategory[] = [
 ];
 
 /**
+ * 서비스 고르기의 탭. 분류 탭 말고 '결합 상품'이 따로 있다 — 결합 상품(배민클럽 + 유튜브 프리미엄 등)을
+ * OTT·AI 탭에 섞어 두면 단독 구독과 나란히 보여 무엇을 고르는지 헷갈린다.
+ */
+export type PickTab = SubscriptionCategory | "all" | "bundle";
+
+const isBundle = (service: ServicePreset) => (service.includes?.length ?? 0) > 0;
+
+/** 그 탭에 보일 서비스. 결합 상품은 '결합 상품' 탭에만 있고 분류 탭에는 없다('전체'에는 있다). */
+function inTab(service: ServicePreset, tab: PickTab): boolean {
+  if (tab === "all") return true;
+  if (tab === "bundle") return isBundle(service);
+  return !isBundle(service) && service.category === tab;
+}
+
+/**
  * 구독 등록의 첫 단계: 목록에서 서비스를 고르거나 직접 입력으로 넘어간다.
  *
  * 검색어와 분류는 폼이 들고 있다 — '다른 서비스'로 돌아왔을 때 보던 분류가 남아 있고, 직접
@@ -38,8 +53,8 @@ export function ServicePicker({
   popularServices: ServicePreset[];
   query: string;
   onQueryChange: (query: string) => void;
-  category: SubscriptionCategory | "all";
-  onCategoryChange: (category: SubscriptionCategory | "all") => void;
+  category: PickTab;
+  onCategoryChange: (category: PickTab) => void;
   onPick: (service: ServicePreset) => void;
   onCustom: () => void;
 }) {
@@ -52,16 +67,12 @@ export function ServicePicker({
           service.nameKo.toLowerCase().includes(keyword) ||
           service.name.toLowerCase().includes(keyword),
       )
-    : category === "all"
-      ? popularServices
-      : popularServices.filter((service) => service.category === category);
-  const countOf = (tab: SubscriptionCategory | "all") =>
-    tab === "all"
-      ? popularServices.length
-      : popularServices.filter((service) => service.category === tab).length;
-  const tabs: Array<SubscriptionCategory | "all"> = [
+    : popularServices.filter((service) => inTab(service, category));
+  const countOf = (tab: PickTab) => popularServices.filter((service) => inTab(service, tab)).length;
+  const tabs: PickTab[] = [
     "all",
     ...PICK_CATEGORY_ORDER.filter((tab) => countOf(tab) > 0),
+    ...(countOf("bundle") > 0 ? (["bundle"] as const) : []),
   ];
 
   return (
@@ -92,7 +103,7 @@ export function ServicePicker({
                   : "rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
               }
             >
-              {tab === "all" ? "전체" : CATEGORY_LABELS[tab]}
+              {tab === "all" ? "전체" : tab === "bundle" ? "결합 상품" : CATEGORY_LABELS[tab]}
               <span className="ml-1 text-[10px] opacity-70">{countOf(tab)}</span>
             </button>
           );

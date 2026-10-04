@@ -26,6 +26,37 @@ test.describe("새 구독 등록 — 서비스 고르기 (E2E)", () => {
     await expect(tabs.getByRole("button", { name: /AI/ })).toHaveAttribute("aria-pressed", "false");
   });
 
+  test("결합 상품은 분류 탭이 아니라 '결합 상품' 탭에 따로 있다", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "더 보기", exact: true }).click({ timeout: 30_000 });
+
+    const dialog = page.getByRole("dialog");
+    const tabs = dialog.getByRole("group", { name: "서비스 분류" });
+    const bundle = dialog.getByRole("button", { name: /^배민클럽 \+ 유튜브 프리미엄/ });
+
+    await tabs.getByRole("button", { name: /OTT/ }).click({ timeout: 30_000 });
+    await expect(dialog.getByRole("button", { name: /^넷플릭스/ })).toBeVisible();
+    await expect(bundle).toHaveCount(0);
+
+    await tabs.getByRole("button", { name: /결합 상품/ }).click();
+    await expect(bundle).toBeVisible();
+    await expect(dialog.getByRole("button", { name: /^넷플릭스/ })).toHaveCount(0);
+  });
+
+  test("목록에서 뺀 앱스토어·플레이스토어 정기결제와 웹툰 쿠키는 나오지 않는다", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "더 보기", exact: true }).click({ timeout: 30_000 });
+
+    const dialog = page.getByRole("dialog");
+    const search = dialog.getByPlaceholder(/서비스 이름 검색/);
+    for (const name of ["앱스토어", "플레이스토어", "웹툰"]) {
+      await search.fill(name);
+      await expect(dialog.getByText(/목록에 없어요/)).toBeVisible({ timeout: 30_000 });
+    }
+  });
+
   test("부가세가 붙는 서비스는 부가세를 넣은 금액으로 채우고, 결제 주기를 바꾸면 연 결제 요금제로 옮긴다", async ({
     page,
   }) => {
