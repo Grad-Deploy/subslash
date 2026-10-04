@@ -54,6 +54,17 @@
             </intent-filter>
         </activity>
 
+        <!--
+          카카오 SDK의 통합 로그인 화면(loginWithKakao가 띄우는 '카카오톡/카카오계정' 선택 바텀시트)은 쓰지
+          않는다 — KakaoLoginPlugin은 loginWithKakaoTalk·loginWithKakaoAccount만 부른다. 이 화면이 매니페스트에
+          남으면 R8이 Material BottomSheetDialog까지 앱에 남기고, 그 onCreate가 Android 15에서 지원 중단된
+          Window.setStatusBarColor를 불러 Play Console이 '더 넓은 화면용 지원 중단 API'로 알린다(Material
+          1.13에서도 그대로다). loginWithKakao를 쓰게 되면 이 줄을 지운다.
+        -->
+        <activity
+            android:name="com.kakao.sdk.user.LoginBridgeActivity"
+            tools:node="remove" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
