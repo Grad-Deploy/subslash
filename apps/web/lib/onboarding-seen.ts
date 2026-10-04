@@ -19,7 +19,7 @@ function preferencesModule() {
 }
 
 /** 읽기 실패 시 true를 돌려준다 — 오류로 매번 소개가 뜨는 것보다 안 뜨는 쪽이 낫다. */
-export async function hasSeenWelcome(): Promise<boolean> {
+export async function hasSeenOnboarding(): Promise<boolean> {
   if (!IS_APP_BUILD) return true;
   try {
     const { Preferences } = await preferencesModule();
@@ -30,12 +30,12 @@ export async function hasSeenWelcome(): Promise<boolean> {
   }
 }
 
-export async function markWelcomeSeen(): Promise<void> {
+export async function markOnboardingSeen(): Promise<void> {
   if (!IS_APP_BUILD) return;
   try {
     const { Preferences } = await preferencesModule();
     await Preferences.set({ key: KEY, value: "1" });
   } catch (error) {
-    console.warn("[welcome] 소개를 본 것으로 남기지 못했습니다", error);
+    console.warn("[onboarding] 소개를 본 것으로 남기지 못했습니다", error);
   }
 }

@@ -8,9 +8,9 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { hasSeenWelcome } from "@lib/welcome";
+import { hasSeenOnboarding } from "@lib/onboarding-seen";
 import { AppIntro, RELAUNCH_HOLD_MS } from "./AppIntro";
-import { AppOnboarding } from "./AppOnboarding";
+import { AppOnboarding } from "./onboarding/AppOnboarding";
 
 /**
  * 실행 화면은 앱 프로세스당 한 번만. 화면 이동으로 AppLaunch가 다시 마운트돼도(레이아웃이 다시
@@ -19,13 +19,13 @@ import { AppOnboarding } from "./AppOnboarding";
 let launchShown = false;
 
 /**
- * - pending: 환영 화면을 본 적 있는지 읽는 중. AppLaunch의 검은 덮개가 화면을 가리고 있다.
- * - intro → welcome: 처음 실행(소개를 아직 안 봄). 긴 인트로 뒤 옆으로 넘기는 소개(AppOnboarding).
+ * - pending: 소개를 본 적 있는지 읽는 중. AppLaunch의 검은 덮개가 화면을 가리고 있다.
+ * - intro → onboarding: 처음 실행(소개를 아직 안 봄). 긴 인트로 뒤 옆으로 넘기는 소개(AppOnboarding).
  * - brief → done: 다시 실행. 같은 인트로(로고를 가르는 동작)를 로고가 머무는 시간만 줄여 보여주고
- *   환영 화면 없이 넘긴다. 예전에는 가르는 동작 없이 로고만 잠깐 보여줬는데, 앱의 인상인 슬래시가
+ *   소개 없이 넘긴다. 예전에는 가르는 동작 없이 로고만 잠깐 보여줬는데, 앱의 인상인 슬래시가
  *   처음 실행에만 나와 "애니메이션이 사라졌다"로 읽혔다. 탭하면 바로 넘어간다.
  */
-type Phase = "pending" | "intro" | "brief" | "welcome" | "done";
+type Phase = "pending" | "intro" | "brief" | "onboarding" | "done";
 
 export default function AppLaunchFlow({ onReady }: { onReady: () => void }) {
   const [phase, setPhase] = useState<Phase>(() => (launchShown ? "done" : "pending"));
@@ -40,7 +40,7 @@ export default function AppLaunchFlow({ onReady }: { onReady: () => void }) {
     if (phase !== "pending") return;
     launchShown = true;
     let cancelled = false;
-    void hasSeenWelcome().then((seen) => {
+    void hasSeenOnboarding().then((seen) => {
       if (!cancelled) setPhase(seen ? "brief" : "intro");
     });
     return () => {
@@ -58,7 +58,7 @@ export default function AppLaunchFlow({ onReady }: { onReady: () => void }) {
   if (phase === "pending" || phase === "done") return null;
   if (phase === "brief")
     return <AppIntro holdMs={RELAUNCH_HOLD_MS} revealOnExit onDone={() => setPhase("done")} />;
-  // 인트로의 바깥 판(overlay)은 끝까지 검은색이라, 환영 화면으로 바뀌는 사이 홈 화면이 비치지 않는다.
-  if (phase === "intro") return <AppIntro onDone={() => setPhase("welcome")} />;
+  // 인트로의 바깥 판(overlay)은 끝까지 검은색이라, 소개로 바뀌는 사이 홈 화면이 비치지 않는다.
+  if (phase === "intro") return <AppIntro onDone={() => setPhase("onboarding")} />;
   return <AppOnboarding onDone={() => setPhase("done")} />;
 }

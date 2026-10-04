@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { prefersReducedMotion } from "@lib/motion";
 import styles from "./AppIntro.module.css";
 
 /** icon.svg와 같은 좌표·색의 카드 두 장(바탕 제외). */
@@ -90,7 +91,7 @@ export function AppIntro({
       onDoneRef.current();
     };
 
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = prefersReducedMotion();
     const anims: Animation[] = [];
     animsRef.current = anims;
 
