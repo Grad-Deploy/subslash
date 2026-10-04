@@ -4,7 +4,7 @@ import { GMAIL_CONNECT_WEB_APP_MANIFEST, gmailConnectWebApp } from "../../lib/gm
 
 /**
  * 원클릭 Gmail 연결 웹 앱의 파일을 쓴다. 운영자가 이 파일을 Apps Script 프로젝트에 넣고 웹 앱으로
- * 한 번 배포한다. 코드는 lib/gmail-import.ts 한 곳에만 있다 — 여기서 고치지 않는다.
+ * 한 번 배포한다. 코드는 lib/gmail-import/connect-web-app.ts 한 곳에만 있다 — 여기서 고치지 않는다.
  *
  *   pnpm --filter @subslash/web gmail:web-app -- --origins https://www.subslash.me,https://subslash-web-qki1.vercel.app --out ./gmail-web-app
  */
