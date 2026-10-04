@@ -18,7 +18,7 @@ interface AppServicePickerProps {
   onEmail: () => void;
   onCustom: () => void;
   onPaste: () => void;
-  /** 샘플로 둘러보기. 웹 첫 화면에서만 준다 — 앱은 환영 화면에서 고른다. */
+  /** 샘플로 둘러보기. 웹 첫 화면에서만 준다 — 앱은 첫 실행 소개의 마지막 장에서 고른다. */
   onSample?: () => void;
   /** 폰 사용 기록에서 찾기. 폰 기록을 읽을 수 있는 안드로이드 앱에서만 준다. */
   onUsage?: () => void;
