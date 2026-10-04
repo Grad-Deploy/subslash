@@ -450,7 +450,8 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import.ts`)는 SubSlash�
 
 앱은 `/`를 열자마자 대시보드로 옮기고, 처음 실행할 때만 인트로 뒤에 옆으로 넘기는 소개(`components/launch/AppOnboarding`)를
 덮어 보여 준다. 모양은 Claude Design의 `App Onboarding.dc.html`(소개 · 기능 4장 · 시작)이고, 마지막 장에서 내 구독 등록
-(대시보드)·샘플·로그인 중에 고르면 다시 띄우지 않는다(`lib/welcome`, 기기 저장소). 첫 장의 서비스 로고는 확인한 로고
+(대시보드)·샘플·로그인 중에 고르면 다시 띄우지 않는다(`lib/welcome`, 기기 저장소). 예전 환영 화면과 키를 달리 둬
+기존 사용자도 업데이트 뒤 한 번 본다 — 소개를 크게 바꿔 다시 보여 주려면 키를 바꾼다. 첫 장의 서비스 로고는 확인한 로고
 (`BRAND_LOGOS`)만 쓴다. 웹 번들에 들어가지 않도록 `virtual:app-launch-flow`로만 불러온다(`AppLaunch`).
 
 ## 앱(Capacitor)에 담을 화면
