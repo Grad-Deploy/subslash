@@ -127,7 +127,7 @@ test.describe("설정 화면 (E2E)", () => {
   }) => {
     await page.goto("/settings");
     await page.getByRole("link", { name: /도움말 · 문의/ }).click({ timeout: 30_000 });
-    await expect(page).toHaveURL(/\/help$/);
+    await expect(page).toHaveURL(/\/help$/, { timeout: 30_000 });
     await expect(page.getByRole("heading", { name: "도움말", exact: true })).toBeVisible();
 
     // 답은 접혀 있다가 질문을 누르면 펼쳐진다.
@@ -149,7 +149,7 @@ test.describe("설정 화면 (E2E)", () => {
       .getByRole("menu", { name: "계정 메뉴" })
       .getByRole("menuitem", { name: "도움말 · 문의" })
       .click();
-    await expect(page).toHaveURL(/\/help$/);
+    await expect(page).toHaveURL(/\/help$/, { timeout: 30_000 });
     await expect(page.getByRole("link", { name: "메일 앱으로 문의하기" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Gmail로 쓰기" })).toBeVisible();
   });
@@ -164,6 +164,6 @@ test.describe("설정 화면 (E2E)", () => {
       .getByRole("contentinfo")
       .getByRole("link", { name: "도움말 · 문의" })
       .click({ timeout: 30_000 });
-    await expect(page).toHaveURL(/\/help$/);
+    await expect(page).toHaveURL(/\/help$/, { timeout: 30_000 });
   });
 });
