@@ -8,7 +8,7 @@ import { findBundleOverlaps, isInTrial, sumMyAnnualKRW, sumMyMonthlyKRW } from "
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
-import { isAnonymousStatsOpen } from "@lib/privacy";
+import { isAnonymousStatsOpen, isAskReportOpen } from "@lib/privacy";
 import { IS_APP_BUILD } from "@lib/platform";
 import { MeasuredUsageSection } from "@components/usage/MeasuredUsage";
 import { buildOtherMetricRows, buildValueRows } from "@components/report/valueRows";
@@ -19,6 +19,7 @@ import {
 } from "@components/report/sections/SummarySections";
 import { CostPerUseRanking, OtherMetricList } from "@components/report/sections/ValueSections";
 import { PeerComparison } from "@components/report/sections/PeerComparison";
+import { AskReport } from "@components/report/sections/AskReport";
 import { Spinner } from "../../components/ui/spinner";
 
 // 폰 사용 기록(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
@@ -97,6 +98,10 @@ export default function ReportPage() {
             annual={sumMyAnnualKRW(active, rate)}
             count={active.length}
           />
+          {/* AI는 질문에 맞는 계산만 고르고, 숫자는 이 기기의 기록으로 계산한다(lib/ask). */}
+          {isAskReportOpen() && (
+            <AskReport subscriptions={subscriptions} usageLogs={usageLogs} rate={rate} now={now} />
+          )}
           {/* 폰 사용 기록 요약 카드(안드로이드 앱). 누르면 전체를 시트로 연다. */}
           {AppUsageReport && <AppUsageReport active={active} />}
           <CostPerUseRanking rows={rows} />
