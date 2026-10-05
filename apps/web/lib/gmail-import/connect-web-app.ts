@@ -466,7 +466,8 @@ function connectPage(title, message, origin, backPath) {
         ? "<script>try { window.top.location.href = " + scriptJson(returnUrl) + "; } catch (e) {}</script>"
         : ""),
   )
-    .setTitle("SubSlash Gmail 연결")
+    // 캘린더 등록도 이 화면을 쓴다. 제목줄(인앱 브라우저·탭)이 'Gmail 연결'이면 무엇을 한 화면인지 헷갈린다.
+    .setTitle(FLOW === "calendar" ? "SubSlash 캘린더 등록" : "SubSlash Gmail 연결")
     .addMetaTag("viewport", "width=device-width, initial-scale=1");
 }
 
