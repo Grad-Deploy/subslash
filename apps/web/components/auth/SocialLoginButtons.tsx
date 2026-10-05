@@ -31,7 +31,7 @@ interface Provider {
  *   테두리 #747775, 글자 #1F1F1F). G는 색·모양을 바꿀 수 없고 흰 바탕 위에만 둔다. 공식 SVG는 그라데이션을
  *   foreignObject로 그려 웹뷰마다 다르게 나올 수 있어, 같은 묶음의 PNG(@4x)에서 G 칸만 잘라 쓴다.
  */
-const PROVIDER_LOOK: Record<
+export const PROVIDER_LOOK: Record<
   Provider["id"],
   { label: string; className: string; mark: React.ReactNode }
 > = {
