@@ -3,10 +3,8 @@
 import React, { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
-  CATEGORY_LABELS,
   DiscoveredSubscription,
   parsePaymentSms,
-  formatCurrency,
   formatKRW,
   sumMonthlyKRW,
 } from "@subslash/shared";
@@ -14,12 +12,12 @@ import { useStore } from "../../lib/store";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { IS_APP_BUILD } from "@lib/platform";
 import { discoveredFormData } from "@lib/discovered-form";
 import dynamic from "next/dynamic";
 import { SAMPLE_NAVER_RECEIPT, SAMPLE_SMS } from "./samples";
+import { DiscoveredResults } from "./DiscoveredResults";
 
 export interface AutoImportModalProps {
   isOpen: boolean;
@@ -70,7 +68,6 @@ function WebAutoImportModal({
   const [discoveredItems, setDiscoveredItems] = useState<DiscoveredSubscription[]>(
     initialDiscovered ?? [],
   );
-  const [categoryFilter, setCategoryFilter] = useState<"all" | "ott" | "ai" | "other">("all");
   const [replaceExisting, setReplaceExisting] = useState<boolean>(!initialDiscovered);
   /** 후보 개수 옆에 붙일 설명(예: "Gmail 메일 40통에서"). */
   const [resultsNote, setResultsNote] = useState<string | null>(initialResultsNote ?? null);
@@ -235,187 +232,13 @@ function WebAutoImportModal({
             </div>
           )}
 
-          {/* DISCOVERED SUBSCRIPTIONS RESULT */}
-          {discoveredItems.length > 0 &&
-            (() => {
-              const ottCount = discoveredItems.filter((i) => i.category === "ott").length;
-              const aiCount = discoveredItems.filter((i) => i.category === "ai").length;
-              const otherCount = discoveredItems.filter(
-                (i) => i.category !== "ott" && i.category !== "ai",
-              ).length;
-              const filteredDiscoveredItems = discoveredItems.filter((item) => {
-                if (categoryFilter === "all") return true;
-                if (categoryFilter === "ott") return item.category === "ott";
-                if (categoryFilter === "ai") return item.category === "ai";
-                return item.category !== "ott" && item.category !== "ai";
-              });
-
-              return (
-                <div className="space-y-2.5 pt-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-border/50">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                        <span>검색된 구독 서비스</span>
-                        <Badge variant="secondary" className="text-xs font-bold">
-                          {discoveredItems.length}건
-                        </Badge>
-                        {resultsNote && (
-                          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                            {resultsNote}
-                          </span>
-                        )}
-                      </span>
-                    </div>
-
-                    {/* Category Filter Chips */}
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => setCategoryFilter("all")}
-                        className={`text-[11px] px-2.5 py-0.5 rounded-full border transition font-medium ${
-                          categoryFilter === "all"
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-muted/40 hover:bg-muted text-muted-foreground border-border"
-                        }`}
-                      >
-                        전체 ({discoveredItems.length})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCategoryFilter("ott")}
-                        className={`text-[11px] px-2.5 py-0.5 rounded-full border transition font-medium ${
-                          categoryFilter === "ott"
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-muted/40 hover:bg-muted text-muted-foreground border-border"
-                        }`}
-                      >
-                        OTT ({ottCount})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCategoryFilter("ai")}
-                        className={`text-[11px] px-2.5 py-0.5 rounded-full border transition font-medium ${
-                          categoryFilter === "ai"
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-muted/40 hover:bg-muted text-muted-foreground border-border"
-                        }`}
-                      >
-                        AI ({aiCount})
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCategoryFilter("other")}
-                        className={`text-[11px] px-2.5 py-0.5 rounded-full border transition font-medium ${
-                          categoryFilter === "other"
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-muted/40 hover:bg-muted text-muted-foreground border-border"
-                        }`}
-                      >
-                        기타 ({otherCount})
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                    {filteredDiscoveredItems.length === 0 ? (
-                      <div className="p-4 text-center text-xs text-muted-foreground border border-dashed rounded-xl">
-                        이 분류에는 없어요.
-                      </div>
-                    ) : (
-                      filteredDiscoveredItems.map((item) => (
-                        <div
-                          key={item.id}
-                          onClick={() => handleToggleSelect(item.id)}
-                          className={`p-3 rounded-xl border text-left transition cursor-pointer flex items-center justify-between gap-3 ${
-                            item.isCanceled
-                              ? "border-rose-400/40 bg-rose-500/5 dark:bg-rose-950/15 opacity-70"
-                              : item.selected
-                                ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-sm"
-                                : "border-border bg-card opacity-50"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={item.selected}
-                              onChange={() => {}}
-                              className="w-4 h-4 rounded text-primary border-border cursor-pointer shrink-0"
-                            />
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span
-                                  className={`font-bold text-sm text-foreground truncate ${
-                                    item.isCanceled ? "line-through opacity-70" : ""
-                                  }`}
-                                >
-                                  {item.name}
-                                </span>
-                                {item.emailProvider === "naver" ? (
-                                  <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] py-0 border-0">
-                                    네이버
-                                  </Badge>
-                                ) : item.emailProvider === "google" ? (
-                                  <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] py-0 border-0">
-                                    Google
-                                  </Badge>
-                                ) : null}
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] py-0 px-1.5 shrink-0"
-                                >
-                                  {CATEGORY_LABELS[item.category] ?? item.category}
-                                </Badge>
-                                {item.isCanceled ? (
-                                  <Badge className="bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[10px] py-0 border-0 font-semibold">
-                                    해지 완료 메일 감지 (비활성)
-                                  </Badge>
-                                ) : item.isWithin30Days ? (
-                                  <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] py-0 border-0 font-medium">
-                                    최근 결제 확인 (활성)
-                                  </Badge>
-                                ) : (
-                                  // '만료'라고 쓰지 않는다. 앱이 아는 것은 마지막 결제 메일이
-                                  // 오래됐다는 것뿐이고, 연간 구독은 원래 1년에 한 번 온다.
-                                  <Badge
-                                    variant="outline"
-                                    className="text-[10px] py-0 text-muted-foreground"
-                                  >
-                                    마지막 결제 메일이 오래됨 (확인 필요)
-                                  </Badge>
-                                )}
-                              </div>
-                              {item.statusReason && (
-                                <p className="text-[11px] text-muted-foreground font-medium mt-0.5">
-                                  {item.statusReason}
-                                </p>
-                              )}
-                              {item.sourceSnippet && (
-                                <p className="text-[10px] text-muted-foreground truncate max-w-sm font-mono mt-0.5">
-                                  {item.sourceSnippet}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="text-right shrink-0">
-                            <div
-                              className={`font-black text-sm text-foreground ${
-                                item.isCanceled ? "line-through opacity-60" : ""
-                              }`}
-                            >
-                              {formatCurrency(item.amount, item.currency)}
-                            </div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {item.isCanceled ? "해지 완료됨" : `매월 ${item.billingDay}일 결제`}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
+          {discoveredItems.length > 0 && (
+            <DiscoveredResults
+              items={discoveredItems}
+              note={resultsNote}
+              onToggle={handleToggleSelect}
+            />
+          )}
         </div>
 
         {/* Modal Footer Actions */}
