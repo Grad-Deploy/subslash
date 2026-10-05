@@ -82,6 +82,50 @@ function LogoGlyph({ logo }: { logo: BrandLogo }) {
   );
 }
 
+/**
+ * 첫 장에 눕혀 놓은 폰. 판 하나에 옆면 그림자 한 줄이면 화면만 붙인 납작한 판으로 보여, 두께(1px씩 쌓은
+ * 그림자 14겹 — 맨 위 두 겹은 금속 테두리의 빛), 바닥에 떨어지는 그림자, 옆 버튼, 카메라 구멍, 유리 반사를 둔다.
+ * 그림자는 판의 좌표에서 오른쪽 아래로 쌓여, 등각으로 눕히면 아래로 두께가 보인다.
+ */
+const PHONE_DEPTH = Array.from(
+  { length: 14 },
+  (_, i) => `${i + 1}px ${i + 1}px 0 ${i < 2 ? "#52525b" : "#18181b"}`,
+).join(", ");
+
+function IsoPhone() {
+  return (
+    <div className="relative" style={ISO}>
+      {/* 바닥 그림자 — 폰보다 더 아래로 떨어져 떠 있는 것처럼 보이게 한다. */}
+      <div className="absolute inset-0 translate-x-[34px] translate-y-[34px] rounded-[38px] bg-zinc-950/45 blur-[18px]" />
+      <div
+        className="relative w-[270px] rounded-[38px] p-[9px]"
+        style={{
+          background: "linear-gradient(135deg,#3f3f46 0%,#18181b 18%,#09090b 60%,#27272a 100%)",
+          boxShadow: `inset 0 0 0 1.5px rgba(255,255,255,.14), inset 0 0 0 3px #09090b, ${PHONE_DEPTH}`,
+        }}
+      >
+        {/* 옆 버튼(전원·음량). 옆면 두께만큼 바깥에 둔다. */}
+        <span className="absolute top-[150px] -right-[17px] h-[46px] w-1 rounded-[2px] bg-zinc-700" />
+        <span className="absolute top-[215px] -right-[17px] h-[70px] w-1 rounded-[2px] bg-zinc-700" />
+        <div className="relative overflow-hidden rounded-[30px] bg-white">
+          {/* 앱 빌드는 정적 내보내기라 next/image의 최적화를 쓸 수 없다(Landing과 같다). */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/landing/dashboard.png"
+            alt=""
+            width={1080}
+            height={1920}
+            draggable={false}
+            className="block aspect-[1080/1920] w-full object-cover"
+          />
+          <span className="absolute top-2.5 left-1/2 size-3 -translate-x-1/2 rounded-full bg-zinc-950 shadow-[inset_0_0_0_2px_#27272a]" />
+          <span className="pointer-events-none absolute inset-0 bg-[linear-gradient(125deg,transparent_18%,rgba(255,255,255,.28)_30%,transparent_44%)]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HeroSlide() {
   const coupang = BRAND_LOGOS["coupang-wow"];
   return (
@@ -134,21 +178,7 @@ function HeroSlide() {
             </Tile>
           )}
           <div data-a className="absolute top-[400px] left-[88px]">
-            <div
-              className="w-[270px] rounded-[38px] bg-zinc-950 p-[9px] shadow-[9px_9px_0_var(--tile-side),0_40px_60px_-20px_rgba(9,9,11,0.35)] ring-1 ring-transparent dark:ring-zinc-600"
-              style={ISO}
-            >
-              {/* 앱 빌드는 정적 내보내기라 next/image의 최적화를 쓸 수 없다(Landing과 같다). */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/landing/dashboard.png"
-                alt=""
-                width={1080}
-                height={1920}
-                draggable={false}
-                className="block aspect-[1080/1920] w-full rounded-[30px] bg-white object-cover"
-              />
-            </div>
+            <IsoPhone />
           </div>
         </div>
       </div>
