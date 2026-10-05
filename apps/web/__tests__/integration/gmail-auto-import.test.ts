@@ -461,6 +461,29 @@ describe("원클릭 Gmail 연결", () => {
     }
   });
 
+  it("앱이 보낸 돌아올 스킴은 목록에 있는 것만 웹 앱에 넘긴다", async () => {
+    const { account } = await loggedIn("sean");
+    const session = await createSession(account.id);
+    for (const [origin, sent, expected] of [
+      ["https://localhost", "com.subslash.app", "com.subslash.app"],
+      ["https://localhost", "com.subslash.app.dev", "com.subslash.app.dev"],
+      ["https://localhost", "evil-app", null],
+      // 웹에서 온 요청에는 붙이지 않는다 — 웹 앱이 웹사이트로 돌아가는 링크를 둔다.
+      ["http://localhost:3000", "com.subslash.app", null],
+    ] as const) {
+      const response = await connectRoute.POST(
+        request(`${BASE}/connect?return=${encodeURIComponent(sent)}`, {
+          method: "POST",
+          bearer: session.token,
+          headers: { origin },
+        }),
+      );
+      expect(response.status).toBe(200);
+      const url = new URL(((await response.json()) as { url: string }).url);
+      expect(url.searchParams.get("return")).toBe(expected);
+    }
+  });
+
   it("같은 코드는 한 번만 바꿀 수 있고, 다시 연결하면 예전 토큰은 거절된다", async () => {
     const { cookie } = await loggedIn("sean");
     const code = await connectCode(cookie);

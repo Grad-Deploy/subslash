@@ -137,6 +137,29 @@ describe("구글 캘린더에 결제일 등록", () => {
     expect(params.get("code")).toBeTruthy();
   });
 
+  it("앱에서 시작하면 앱 표시와 목록에 있는 돌아올 스킴만 웹 앱에 넘긴다", async () => {
+    // 웹 앱의 끝 화면이 그 앱을 열어, 사용자가 인앱 브라우저를 닫는 법을 몰라도 앱으로 돌아온다.
+    const { cookie } = await loggedIn("app-user");
+    for (const [origin, sent, client, expected] of [
+      ["https://localhost", "com.subslash.app", "app", "com.subslash.app"],
+      ["capacitor://localhost", "evil-app", "app", null],
+      ["https://subslash.test", "com.subslash.app", null, null],
+    ] as const) {
+      const response = await startRoute.POST(
+        request(`${BASE}?return=${encodeURIComponent(sent)}`, {
+          method: "POST",
+          cookie,
+          headers: { origin },
+          body: JSON.stringify({ entries: [NETFLIX], reminderDays: 3 }),
+        }),
+      );
+      expect(response.status).toBe(200);
+      const params = new URL(((await response.json()) as { url: string }).url).searchParams;
+      expect(params.get("client")).toBe(client);
+      expect(params.get("return")).toBe(expected);
+    }
+  });
+
   it("올릴 구독이 없으면 시작하지 않는다 — 빈 캘린더를 만들지 않는다", async () => {
     const { cookie } = await loggedIn("empty");
     expect((await start(cookie, { entries: [] })).status).toBe(400);
