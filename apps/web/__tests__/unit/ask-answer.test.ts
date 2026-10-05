@@ -163,6 +163,23 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
     expect(result.notes.join()).toContain("달마다 쓴 돈의 기록이 없어");
   });
 
+  it("이번 달에 등록하고 해지한 구독은 지난달에 없던 것이라 '줄었어요'로 세지 않는다", () => {
+    const tried = sub({
+      id: "tving",
+      name: "티빙",
+      amount: 9500,
+      status: "killed",
+      createdAt: new Date(2026, 9, 1).toISOString(),
+      killedAt: new Date(2026, 9, 3).toISOString(),
+    });
+    const result = answerAsk(
+      { tool: "compareLastMonth" },
+      { ...CTX, subscriptions: [sub(), tried] },
+    );
+    expect(result.rows).toEqual([]);
+    expect(result.headline).toBe("이번 달에 새로 등록하거나 해지한 구독이 없어요.");
+  });
+
   it("범위 밖이면 숫자 없이 물어볼 수 있는 질문을, 사용법이면 도움말을 안내한다", () => {
     const unsupported = answerAsk({ tool: "unsupported" }, CTX);
     expect(unsupported.headline).not.toMatch(/\d/);
