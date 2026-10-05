@@ -18,17 +18,8 @@ import { cn } from "@lib/utils";
 import { ServiceLogo } from "../../subscription/ServiceLogo";
 import type { AutoImportModalProps } from "../AutoImportModal";
 import { SAMPLE_NAVER_RECEIPT, SAMPLE_SMS } from "../samples";
+import { cycleText } from "../cycleText";
 import { useOverlayLock } from "@hooks/useOverlayLock";
-
-/** 결제 주기 한 줄. 연간인데 결제 월을 모르면 날짜를 지어내지 않고 '미설정'으로 둔다. */
-function cycleText(item: DiscoveredSubscription): string {
-  if (item.billingCycle === "yearly") {
-    return item.billingMonth
-      ? `매년 ${item.billingMonth}월 ${item.billingDay}일`
-      : "매년 · 결제월 미설정";
-  }
-  return `매월 ${item.billingDay}일`;
-}
 
 function Status({ item }: { item: DiscoveredSubscription }) {
   // '만료'라고 쓰지 않는다. 앱이 아는 것은 마지막 결제가 오래됐다는 것뿐이다(웹 창과 같은 기준).

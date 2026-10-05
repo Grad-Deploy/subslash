@@ -6,20 +6,14 @@ import {
   ServicePreset,
   type BillingCycle,
   type ServicePlan,
-  PAYMENT_METHOD_OPTIONS,
   counterpartPlan,
   findPresetForSubscription,
   parseServiceUrl,
   planFormData,
   presetFormData,
 } from "@subslash/shared";
-import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { Select } from "../ui/select";
-import { ServiceLogo } from "./ServiceLogo";
-import { SquarePen } from "lucide-react";
 import { IS_APP_BUILD } from "@lib/platform";
-import { FIELD_LABEL } from "./form/fieldLabel";
 import { ServicePicker, type PickTab } from "./form/ServicePicker";
 import { CustomIconPicker } from "./form/CustomIconPicker";
 import { PlanPicker } from "./form/PlanPicker";
@@ -27,12 +21,11 @@ import { BundleNotes } from "./form/BundleNotes";
 import { TaxField } from "./form/TaxField";
 import { SharingFields } from "./form/SharingFields";
 import { ServiceLinkFields } from "./form/ServiceLinkFields";
-
-/** 결제일 칸 아래의 빠른 선택. 결제 문자를 보고 바로 등록하는 사람이 많다. */
-const PAID_ON_CHOICES = [
-  { label: "오늘 결제했어요", daysAgo: 0 },
-  { label: "어제", daysAgo: 1 },
-] as const;
+import { SelectedServiceBar } from "./form/SelectedServiceBar";
+import { AmountFields } from "./form/AmountFields";
+import { BillingFields } from "./form/BillingFields";
+import { AccountPaymentFields } from "./form/AccountPaymentFields";
+import { ServiceNameFields } from "./form/ServiceNameFields";
 
 /**
  * 구독 등록·수정 폼.
@@ -283,78 +276,16 @@ export function SubForm({
   return (
     <form className="space-y-4 text-left" onSubmit={handleSubmit}>
       {!isEdit && (
-        <div className="flex items-center justify-between gap-3 p-3 rounded-xl border bg-muted/40">
-          <div className="flex items-center gap-2.5 min-w-0">
-            {isCustom ? (
-              <SquarePen className="size-7 shrink-0 text-muted-foreground" aria-hidden />
-            ) : (
-              <ServiceLogo
-                presetId={preset?.id}
-                name={formData.name ?? ""}
-                cancelUrl={formData.cancelUrl}
-                fallbackEmoji={formData.iconUrl}
-                size={28}
-              />
-            )}
-            <div className="min-w-0">
-              <p className="text-sm font-bold truncate">{isCustom ? "직접 입력" : formData.name}</p>
-              <p className="text-[11px] text-muted-foreground break-keep">
-                {isCustom
-                  ? "목록에 없는 서비스"
-                  : plans.length > 0
-                    ? preset?.plansIncomplete
-                      ? "요금제를 고르거나, 목록에 없으면 결제한 금액을 적어 주세요."
-                      : "요금제를 고르면 요금이 채워져요."
-                    : typeof preset?.defaultAmount === "number"
-                      ? "기본 요금이에요. 다르면 고쳐 주세요."
-                      : "요금을 적어 주세요."}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setStep("pick")}
-            className="shrink-0 text-xs font-semibold text-primary hover:underline"
-          >
-            다른 서비스
-          </button>
-        </div>
+        <SelectedServiceBar
+          isCustom={isCustom}
+          preset={preset}
+          formData={formData}
+          onChangeService={() => setStep("pick")}
+        />
       )}
 
       {showServiceFields && (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label htmlFor={`${fieldId}-name`} className={FIELD_LABEL}>
-              서비스 이름
-            </label>
-            <Input
-              id={`${fieldId}-name`}
-              name="name"
-              placeholder="예: 동네 헬스장"
-              value={formData.name || ""}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label htmlFor={`${fieldId}-category`} className={FIELD_LABEL}>
-              카테고리
-            </label>
-            <Select
-              id={`${fieldId}-category`}
-              name="category"
-              value={formData.category || "other"}
-              onChange={handleChange}
-            >
-              <option value="ott">OTT / 동영상</option>
-              <option value="music">음악 스트리밍</option>
-              <option value="shopping">쇼핑 / 멤버십</option>
-              <option value="cloud">클라우드 / 저장공간</option>
-              <option value="ai">AI 툴 / 생산성</option>
-              <option value="other">기타</option>
-            </Select>
-          </div>
-        </div>
+        <ServiceNameFields idPrefix={fieldId} formData={formData} onChange={handleChange} />
       )}
 
       {/* 웹은 지금 모양 그대로 두고, 앱에서 직접 등록할 때만 아이콘과 색을 고르게 한다. */}
@@ -381,47 +312,7 @@ export function SubForm({
       )}
       {!isEdit && preset && <BundleNotes preset={preset} />}
 
-      {/* Amount & Currency */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          {/* 연간 구독에 '월 결제 금액'이라고 물으면 월 환산액을 적게 되고, 앱이 그걸 다시 12로 나눈다. */}
-          <label htmlFor={`${fieldId}-amount`} className={FIELD_LABEL}>
-            {formData.taxRate
-              ? cycle === "yearly"
-                ? "연 요금 (세금 제외)"
-                : "월 요금 (세금 제외)"
-              : cycle === "yearly"
-                ? "연 결제 금액"
-                : "월 결제 금액"}
-          </label>
-          {/* step="any": 없으면 브라우저가 $9.99 같은 소수 금액을 입력 오류로 막는다. */}
-          <Input
-            id={`${fieldId}-amount`}
-            type="number"
-            name="amount"
-            min="0"
-            step="any"
-            placeholder="예: 17000"
-            value={formData.amount ?? ""}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor={`${fieldId}-currency`} className={FIELD_LABEL}>
-            통화
-          </label>
-          <Select
-            id={`${fieldId}-currency`}
-            name="currency"
-            value={formData.currency || "KRW"}
-            onChange={handleChange}
-          >
-            <option value="KRW">KRW (₩)</option>
-            <option value="USD">USD ($)</option>
-          </Select>
-        </div>
-      </div>
+      <AmountFields idPrefix={fieldId} formData={formData} onChange={handleChange} />
 
       {showTax && (
         <TaxField
@@ -434,104 +325,13 @@ export function SubForm({
         />
       )}
 
-      {/* Billing Day & Cycle */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <label htmlFor={`${fieldId}-day`} className={FIELD_LABEL}>
-            결제일 (1-31)
-          </label>
-          <Input
-            id={`${fieldId}-day`}
-            type="number"
-            min="1"
-            max="31"
-            name="billingDay"
-            placeholder="예: 15"
-            value={formData.billingDay ?? ""}
-            onChange={handleChange}
-            required
-          />
-          <div className="flex flex-wrap gap-1.5">
-            {PAID_ON_CHOICES.map(({ label, daysAgo }) => {
-              const date = new Date();
-              date.setDate(date.getDate() - daysAgo);
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => pickPaidOn(date)}
-                  className="rounded-full border px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-secondary"
-                >
-                  {label}({date.getDate()}일)
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor={`${fieldId}-cycle`} className={FIELD_LABEL}>
-            주기
-          </label>
-          <Select
-            id={`${fieldId}-cycle`}
-            name="billingCycle"
-            value={formData.billingCycle || "monthly"}
-            onChange={handleChange}
-          >
-            <option value="monthly">매월 결제</option>
-            <option value="yearly">매년 결제</option>
-          </Select>
-        </div>
-      </div>
-
-      {/* Yearly plans need the month too, or there is no date to count down to */}
-      {formData.billingCycle === "yearly" && (
-        <div className="space-y-1.5">
-          <label htmlFor={`${fieldId}-month`} className={FIELD_LABEL}>
-            결제 월
-          </label>
-          <Select
-            id={`${fieldId}-month`}
-            name="billingMonth"
-            value={String(formData.billingMonth ?? "")}
-            onChange={handleChange}
-          >
-            <option value="">선택해주세요</option>
-            {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
-              <option key={month} value={String(month)}>
-                {month}월
-              </option>
-            ))}
-          </Select>
-          <p className="text-[11px] text-muted-foreground">
-            결제 월을 넣어야 D-day·알림·캘린더가 맞아요.
-          </p>
-        </div>
-      )}
-
-      <div className="space-y-1.5">
-        <label htmlFor={`${fieldId}-trial`} className={FIELD_LABEL}>
-          무료 체험 종료일 <span className="font-normal text-muted-foreground">(선택)</span>
-        </label>
-        <Input
-          id={`${fieldId}-trial`}
-          type="date"
-          name="trialEndsAt"
-          value={formData.trialEndsAt ?? ""}
-          onChange={handleChange}
-        />
-        <p className="text-[11px] text-muted-foreground break-keep">
-          유료로 바뀌는 날이에요. 그전까지는 지출에서 빼고, 끝나기 전에 알려 드려요. 모르면 비워
-          두세요(지금 결제 중으로 봐요).
-        </p>
-      </div>
-
-      {cycle === "yearly" && preset && !formData.planId && (
-        <p className="text-[11px] text-muted-foreground break-keep">
-          {plans.length > 0 ? `${preset.nameKo}의 연 요금은 목록에 없어요. ` : ""}
-          1년치 결제액을 적어 주세요(월 요금 × 12와 다를 수 있어요).
-        </p>
-      )}
+      <BillingFields
+        idPrefix={fieldId}
+        formData={formData}
+        preset={preset}
+        onChange={handleChange}
+        onPaidOn={pickPaidOn}
+      />
 
       <button
         type="button"
@@ -555,41 +355,13 @@ export function SubForm({
         <div className="space-y-4">
           <SharingFields idPrefix={fieldId} formData={formData} onChange={handleSharingChange} />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label htmlFor={`${fieldId}-account`} className={FIELD_LABEL}>
-                가입한 계정
-              </label>
-              <Input
-                id={`${fieldId}-account`}
-                name="linkedAccountName"
-                value={signInAccount}
-                onChange={(e) => setSignInAccount(e.target.value)}
-                placeholder="예: 가족 계정 abc@gmail.com"
-                autoComplete="off"
-                maxLength={120}
-              />
-            </div>
-
-            {/* Payment Method Selector */}
-            <div className="space-y-1.5">
-              <label htmlFor={`${fieldId}-payment`} className={FIELD_LABEL}>
-                결제 수단
-              </label>
-              <Select
-                id={`${fieldId}-payment`}
-                name="paymentMethod"
-                value={formData.paymentMethod || "credit_card"}
-                onChange={handleChange}
-              >
-                {PAYMENT_METHOD_OPTIONS.map((pm) => (
-                  <option key={pm.value} value={pm.value}>
-                    {pm.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
+          <AccountPaymentFields
+            idPrefix={fieldId}
+            account={signInAccount}
+            onAccountChange={setSignInAccount}
+            paymentMethod={formData.paymentMethod}
+            onChange={handleChange}
+          />
 
           {showServiceFields && (
             <ServiceLinkFields
