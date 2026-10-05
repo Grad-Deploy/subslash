@@ -3,12 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { Check, ChevronDown, Smartphone } from "lucide-react";
-import { formatCurrency } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { BrandAppIcon } from "@components/brand/Brand";
-import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { UnitCostCalculator } from "./UnitCostCalculator";
-import { SAMPLES, sampleName } from "./samples";
+import { PhoneFrame } from "./PhoneFrame";
+import { SampleChargeCard } from "./SampleChargeCard";
+import { SAMPLES, SAMPLE_NOTE, SAMPLE_TOTAL } from "./samples";
 
 /**
  * 첫 화면(소개)의 칸들. 내려 읽으며 무엇을 하는 서비스인지만 알리고, 쓰는 것은 대시보드로 넘긴다. 모양은
@@ -49,14 +49,6 @@ export function AppDownloadPending({ className }: { className?: string }) {
 /** 뒤 장면의 요소가 차례로 떠오르게 하는 지연(globals.css의 `hero-in`). */
 const heroDelay = (i: number) => ({ "--hero-delay": `${80 + i * 110}ms` }) as React.CSSProperties;
 
-// 세 서비스가 모두 원화일 때만 합계를 쓴다. 통화가 섞이면 더한 숫자가 뜻이 없다.
-const sampleTotal = SAMPLES.every((s) => s.currency === "KRW")
-  ? formatCurrency(
-      SAMPLES.reduce((sum, s) => sum + s.amount, 0),
-      "KRW",
-    )
-  : null;
-
 /**
  * 첫 칸. 스크롤 애니메이션을 아는 브라우저에서는 화면에 머문 채로 장면이 바뀐다 — 질문과 결제 알림이 차례로
  * 쌓이고("모르는 사이 매달 …"), 그다음 '가격 말고 1회당 단가로.'가 떠오른다. 모르는 브라우저와 움직임 줄이기는
@@ -86,36 +78,19 @@ export function LandingOpening({
           </div>
           <ul className="flex w-full max-w-[440px] flex-col gap-2.5">
             {SAMPLES.map((sample, i) => (
-              <li
+              <SampleChargeCard
                 key={sample.preset.id}
-                className={cn(
-                  `opening-notif-${i}`,
-                  "flex items-center gap-3.5 rounded-[1.25rem] border bg-card px-4 py-[clamp(0.5rem,1.5vh,0.875rem)] shadow-[0_16px_32px_-20px_rgba(9,9,11,0.25)]",
-                )}
-              >
-                <ServiceLogo presetId={sample.preset.id} name={sample.preset.nameKo} size={40} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex justify-between gap-2 text-[15px] font-bold">
-                    <span className="truncate">{sampleName(sample)}</span>
-                    <span className="shrink-0 text-[13px] font-medium text-muted-foreground">
-                      결제일
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-[15px] tabular-nums text-muted-foreground">
-                    {formatCurrency(sample.amount, sample.currency)} 결제 완료
-                  </p>
-                </div>
-              </li>
+                sample={sample}
+                className={cn(`opening-notif-${i}`, "py-[clamp(0.5rem,1.5vh,0.875rem)]")}
+              />
             ))}
           </ul>
-          {sampleTotal && (
+          {SAMPLE_TOTAL && (
             <div className="opening-total text-center">
               <p className="text-[clamp(1.375rem,2.6vw,2rem)] font-extrabold tracking-[-0.035em]">
-                모르는 사이 매달 <span className="text-red-500 tabular-nums">{sampleTotal}</span>
+                모르는 사이 매달 <span className="text-red-500 tabular-nums">{SAMPLE_TOTAL}</span>
               </p>
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                예시예요 · 서비스 목록 기준 요금
-              </p>
+              <p className="mt-1.5 text-xs text-muted-foreground">{SAMPLE_NOTE}</p>
             </div>
           )}
         </div>
@@ -191,41 +166,6 @@ export function LandingCalculator() {
         <UnitCostCalculator />
       </div>
     </section>
-  );
-}
-
-/** 앱 화면 캡처(1080×1920)를 담는 폰 테두리. */
-function PhoneFrame({
-  src,
-  alt,
-  className,
-  screenClassName,
-  loading,
-}: {
-  src: string;
-  alt: string;
-  className?: string;
-  screenClassName?: string;
-  loading?: "lazy";
-}) {
-  return (
-    <div
-      className={cn(
-        "bg-zinc-950 p-2.5 shadow-[0_60px_100px_-40px_rgba(9,9,11,0.5)] ring-1 ring-transparent dark:ring-zinc-700",
-        className,
-      )}
-    >
-      {/* 앱 빌드는 정적 내보내기라 next/image의 최적화를 쓸 수 없다(ServiceLogo와 같다). */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt={alt}
-        width={1080}
-        height={1920}
-        loading={loading}
-        className={cn("block w-full bg-white object-cover", screenClassName)}
-      />
-    </div>
   );
 }
 
