@@ -2,53 +2,14 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import {
-  POPULAR_SERVICES,
   calculateCostPerUse,
   formatCurrency,
   getRiskLevel,
-  planCurrency,
-  type Currency,
   type RiskLevel,
-  type ServicePreset,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
-
-/**
- * 체험용으로 고를 수 있는 서비스. 요금은 여기 적지 않고 서비스 목록에서 읽는다. 요금제가
- * 여럿인 서비스는 어느 요금제인지 정해 두고 화면에도 적는다 — '넷플릭스 월 ₩17,000'이라고만
- * 쓰면 넷플릭스 요금이 그 값 하나인 것처럼 읽힌다.
- */
-const SAMPLE_PICKS: ReadonlyArray<{ id: string; planId?: string }> = [
-  { id: "netflix", planId: "premium" },
-  { id: "coupang-wow" },
-  { id: "youtube-premium", planId: "premium" },
-];
-
-interface Sample {
-  preset: ServicePreset;
-  planName: string | null;
-  amount: number;
-  currency: Currency;
-}
-
-// 서비스 목록에서 요금을 찾지 못한 견본은 뺀다. 요금 없이는 1회 단가를 계산할 수 없다.
-const SAMPLES: Sample[] = SAMPLE_PICKS.flatMap(({ id, planId }): Sample[] => {
-  const preset = POPULAR_SERVICES.find((s) => s.id === id);
-  if (!preset) return [];
-  if (planId) {
-    const plan = preset.plans?.find((p) => p.id === planId);
-    if (!plan) return [];
-    return [
-      { preset, planName: plan.name, amount: plan.amount, currency: planCurrency(preset, plan) },
-    ];
-  }
-  if (preset.defaultAmount === null) return [];
-  return [{ preset, planName: null, amount: preset.defaultAmount, currency: preset.currency }];
-});
-
-/** 탭에는 괄호 속 부연("쿠팡 와우 (쿠팡플레이)")을 빼고 짧게 쓴다. */
-const shortName = (preset: ServicePreset) => preset.nameKo.replace(/\s*\(.*\)$/, "");
+import { SAMPLES, sampleName, shortName, type Sample } from "./samples";
 
 // 밝은 배경에서는 진한 색, 어두운 배경에서는 밝은 색이어야 읽힌다.
 const riskColor: Record<RiskLevel, string> = {
@@ -69,7 +30,7 @@ function verdict(uses: number, risk: RiskLevel, amountText: string) {
 }
 
 /**
- * 1회 단가 계산기. 소개 페이지 첫 칸의 오른쪽이다 — 서비스와 횟수를 움직여 보며 "가격 말고 1회당 얼마"를
+ * 1회 단가 계산기. 소개 페이지 '1회당 단가' 칸의 오른쪽이다 — 서비스와 횟수를 움직여 보며 "가격 말고 1회당 얼마"를
  * 직접 느끼게 한다. 등록은 이 칸이 아니라 대시보드에서 한다.
  */
 export function UnitCostCalculator() {
@@ -148,7 +109,7 @@ function HeroResult({
   uses: number;
   onUsesChange: (n: number) => void;
 }) {
-  const { preset, planName, amount, currency } = sample;
+  const { amount, currency } = sample;
   const costPerUse = calculateCostPerUse(amount, uses);
   const risk = getRiskLevel(costPerUse, amount, uses);
   const amountText = formatCurrency(amount, currency);
@@ -158,8 +119,7 @@ function HeroResult({
   return (
     <>
       <p className="mt-7 text-base font-medium text-foreground sm:text-[17px]">
-        {shortName(preset)}
-        {planName ? ` ${planName}` : ""} · 월 {amountText}
+        {sampleName(sample)} · 월 {amountText}
       </p>
       <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
         목록 기준 요금 · 등록할 때 바꿀 수 있어요
@@ -178,7 +138,7 @@ function HeroResult({
           value={uses}
           onChange={(e) => onUsesChange(Number(e.target.value))}
           aria-valuetext={`${uses}회`}
-          className="h-7 flex-1 cursor-pointer accent-primary"
+          className="h-7 flex-1 cursor-pointer accent-red-500"
         />
         <span className="w-[3.25rem] shrink-0 text-right text-xl font-bold tabular-nums text-foreground">
           {uses}회
