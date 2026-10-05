@@ -16,7 +16,8 @@ import { cn } from "@lib/utils";
  *
  * 모양은 Claude Design 프로젝트의 'App Onboarding.dc.html'을 따른다. 화면 캡처는 웹 소개와 같은 샘플
  * 데이터 캡처(`public/landing/`)이고 그렇게 밝힌다. 첫 장의 서비스 로고는 확인한 로고(`BRAND_LOGOS`)만 쓴다.
- * 움직임(첫 장이 떠오름, 타일이 떠다님, 마지막 장에 멈추면 슬래시를 그음)은 움직임 줄이기를 켜면 하지 않는다.
+ * 움직임(첫 장이 떠오름, 기능 장의 폰 그림이 넘기는 만큼 올라옴, 타일이 떠다님, 마지막 장에 멈추면 슬래시를 그음)은
+ * 움직임 줄이기를 켜면 하지 않는다.
  */
 
 const EASE = "cubic-bezier(.22,1,.36,1)";
@@ -155,26 +156,44 @@ function HeroSlide() {
   );
 }
 
+/**
+ * 기능 장이 들어오는 정도(`--enter`, 0~1)에 묶은 움직임. 0이면 옆 장에 있고 1이면 제자리다. 값은 넘기는
+ * 손가락(스크롤 위치)을 따라 매 프레임 바뀌므로 폰 그림이 넘기는 만큼 아래에서 올라오고, 나갈 때는 그만큼
+ * 내려간다. 따로 재생하는 애니메이션이 아니라 중간에 끊기거나 다시 시작하지 않는다. 값이 없으면(움직임 줄이기,
+ * 스크립트 전) 1로 보아 제자리에 그린다.
+ */
+const RISE_TEXT: CSSProperties = {
+  opacity: "calc(0.35 + 0.65 * var(--enter, 1))",
+  transform: "translateY(calc((1 - var(--enter, 1)) * 14px))",
+};
+const RISE_PHONE: CSSProperties = {
+  opacity: "calc(0.2 + 0.8 * var(--enter, 1))",
+  transform:
+    "translateY(calc((1 - var(--enter, 1)) * 96px)) scale(calc(0.9 + 0.1 * var(--enter, 1)))",
+  transformOrigin: "50% 100%",
+  willChange: "transform, opacity",
+};
+
 function FeatureSlide({ feature }: { feature: (typeof FEATURES)[number] }) {
   return (
     <div className="flex h-full flex-col items-center pt-[calc(env(safe-area-inset-top)+68px)]">
-      <h2 data-a className="text-[32px] font-black tracking-[-0.045em]">
+      <h2 className="text-[32px] font-black tracking-[-0.045em]" style={RISE_TEXT}>
         {feature.name}
       </h2>
       <p
-        data-a
         className="mt-2.5 px-8 text-center text-[17px] leading-normal text-balance text-muted-foreground"
+        style={RISE_TEXT}
       >
         {feature.title}
       </p>
-      <p data-a className="mt-1 text-xs text-muted-foreground/80">
+      <p className="mt-1 text-xs text-muted-foreground/80" style={RISE_TEXT}>
         샘플 데이터로 찍은 화면
       </p>
       {/* 폰 그림은 화면 높이에 맞춰 줄인다. 아래쪽은 넘기기 막대 뒤로 잘려도 된다. 테두리는 웹 소개의 PhoneFrame처럼
           검게 둔다 — 바탕(muted)과 비슷한 회색으로 두면 테두리가 보이지 않았다. */}
       <div
-        data-a
         className="mt-6 w-[min(304px,calc((100svh-env(safe-area-inset-top)-200px)*0.5625))] rounded-[48px] bg-zinc-950 p-[9px] shadow-[0_40px_80px_-30px_rgba(9,9,11,0.45)] ring-1 ring-transparent dark:ring-zinc-600"
+        style={RISE_PHONE}
       >
         <div className="overflow-hidden rounded-[39px] bg-card">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -302,15 +321,34 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
+    const slides = [...track.querySelectorAll<HTMLElement>("[data-slide]")];
+    const motion = !reduceMotion();
+    let frame = 0;
+    // 장마다 들어온 정도를 --enter로 적는다. 끝으로 갈수록 천천히 서도록 ease-out으로 굽힌다.
+    const paint = () => {
+      frame = 0;
+      const width = track.clientWidth;
+      if (width === 0) return;
+      const position = track.scrollLeft / width;
+      slides.forEach((slide, i) => {
+        const p = Math.max(0, 1 - Math.abs(position - i));
+        slide.style.setProperty("--enter", (1 - (1 - p) ** 2).toFixed(3));
+      });
+    };
     const onScroll = () => {
       const width = track.clientWidth;
       if (width === 0) return;
       const nearest = Math.round(track.scrollLeft / width);
       setIndex(nearest);
       if (Math.abs(track.scrollLeft - nearest * width) < 2) setSettled(nearest);
+      if (motion && !frame) frame = requestAnimationFrame(paint);
     };
+    if (motion) paint();
     track.addEventListener("scroll", onScroll, { passive: true });
-    return () => track.removeEventListener("scroll", onScroll);
+    return () => {
+      track.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+    };
   }, []);
 
   // 첫 장의 타일이 천천히 떠다닌다.
@@ -330,9 +368,9 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
     return () => anims.forEach((a) => a.cancel());
   }, []);
 
-  // 첫 장의 글과 그림은 소개가 열릴 때 한 번 차례로 떠오른다. 다른 장에는 들어올 때 떠오르는 움직임을 두지
-  // 않는다 — 장이 바뀌는 것은 넘기는 도중(다음 장이 절반 들어온 때)이라, 이미 보이던 글과 그림이 그 순간 사라졌다가
-  // 넘김이 끝난 뒤 아래에서 다시 떠올랐다. 옆으로 넘어가는 움직임만으로 충분하다.
+  // 첫 장의 글과 그림은 소개가 열릴 때 한 번 차례로 떠오른다. 기능 장은 장이 바뀔 때 애니메이션을 다시 틀지
+  // 않고 넘기는 위치(--enter)를 따라 떠오른다 — 장이 바뀌는 것은 넘기는 도중(다음 장이 절반 들어온 때)이라, 그때
+  // 애니메이션을 틀면 이미 보이던 글과 그림이 사라졌다가 넘김이 끝난 뒤 아래에서 다시 떠올랐다.
   useEffect(() => {
     const slide = rootRef.current?.querySelector('[data-slide="0"]');
     if (!slide || reduceMotion()) return;
