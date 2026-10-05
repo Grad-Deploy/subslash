@@ -488,8 +488,8 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import`)는 SubSlash가 G
 덮어 보여 준다. 모양은 Claude Design의 `App Onboarding v2.dc.html`(문제 · 답 · 1회당 단가 계산기 · 기능 3장 · 직접 해 보기)이고,
 마지막 장에서 쓰는 구독을 고르거나 샘플·로그인으로 가면 다시 띄우지 않는다(`lib/welcome`, 기기 저장소). 고른 서비스는 바로
 등록하지 않고 대시보드에 넘겨(`queueWelcomePicks`) 등록 창을 하나씩 연다(`useAddSubscriptionFlow`의 `openQueue`) — 요금제가
-여럿인 서비스의 요금과 결제일은 사용자가 정해야 하므로, 고르는 칸에도 요금제가 하나뿐인 서비스만 금액을 적는다. 예전 환영
-화면과 키를 달리 둬 기존 사용자도 업데이트 뒤 한 번 본다 — 소개를 크게 바꿔 다시 보여 주려면 키를 바꾼다. 웹 번들에 들어가지
+여럿인 서비스의 요금과 결제일은 사용자가 정해야 하므로, 고르는 칸에도 요금제가 하나뿐인 서비스만 금액을 적는다. 소개를 크게
+바꿀 때마다 키를 바꿔(지금은 `subslash-onboarding-v2-seen`) 예전 소개를 본 사용자도 업데이트 뒤 새 소개를 한 번 본다. 웹 번들에 들어가지
 않도록 `virtual:app-launch-flow`로만 불러온다(`AppLaunch`).
 
 ## 앱(Capacitor)에 담을 화면
