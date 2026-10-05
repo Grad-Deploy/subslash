@@ -416,8 +416,10 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const inMonth = (iso?: string) =>
         !!iso && Date.parse(iso) >= from && Date.parse(iso) <= ctx.now.getTime();
       const added = subs.filter((sub) => inMonth(sub.createdAt));
+      // 이번 달에 등록하고 이번 달에 해지한 구독은 지난달에도 없던 것이라 비교에서 뺀다. 넣으면 늘지 않은 돈이
+      // '줄었어요'로 나왔다.
       const removed = ctx.subscriptions.filter(
-        (sub) => sub.status === "killed" && inMonth(sub.killedAt),
+        (sub) => sub.status === "killed" && inMonth(sub.killedAt) && !inMonth(sub.createdAt),
       );
       const notes = [
         "앱에는 달마다 쓴 돈의 기록이 없어, 이번 달에 등록·해지한 구독으로만 비교해요.",
