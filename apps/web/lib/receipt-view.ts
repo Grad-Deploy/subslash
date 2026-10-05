@@ -70,6 +70,18 @@ export function receiptFootnotes(receipt: Receipt): string[] {
       }`,
     );
   }
+  // 달러 결제를 어느 환율로 바꿨는지. 고시 환율도 카드사가 청구한 환율은 아니다.
+  const { historical, current } = receipt.fx;
+  if (historical > 0) {
+    notes.push(
+      "지난 달러 결제는 결제일의 고시 환율(ECB 기준)로 바꿨어요. 카드사 환율과 조금 다를 수 있어요.",
+    );
+  }
+  if (current > 0) {
+    notes.push(
+      `지난 달러 결제 ${current}건은 그날 환율을 받지 못해 지금 설정한 환율로 계산했어요.`,
+    );
+  }
   if (!receipt.isComplete) {
     notes.push(
       receipt.upcomingCount > 0

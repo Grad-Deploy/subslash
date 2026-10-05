@@ -30,3 +30,4 @@ export * from "./utils/storagePlan";
 export * from "./utils/planAlternatives";
 export * from "./utils/killRecord";
 export * from "./utils/receipt";
+export * from "./utils/historicalRate";
