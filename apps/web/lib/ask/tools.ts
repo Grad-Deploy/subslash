@@ -94,9 +94,12 @@ export const ASK_TOOLS = {
     computedBy: "sumMyMonthDefendedKRW / sumMyYearDefendedKRW",
   },
   compareLastMonth: {
-    description: "이번 달 구독비가 지난달보다 늘었는지 줄었는지.",
+    description:
+      "지난달과 비교해 구독비가 늘었는지 줄었는지. 이번 달에 새로 등록하거나 해지한 구독으로 답한다.",
     params: {},
-    computedBy: "새로 만들어야 함 — 등록일·해지일로 지난달 합계를 다시 계산",
+    // 앱에는 달별 지출 기록이 없다. 등록일(createdAt)은 구독을 시작한 날이 아니라 앱에 적은 날이라, 그걸로 '지난달
+    // 합계'를 다시 만들면 지난주에 적은 오래된 구독이 이번 달에 늘어난 돈이 된다. 그래서 이번 달에 바뀐 것만 말한다.
+    computedBy: "이번 달 createdAt·killedAt + getMyMonthlyAmountKRW",
   },
   help: {
     description: "앱 사용법·기능 설명 질문. 도움말 AI로 넘긴다.",

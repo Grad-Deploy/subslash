@@ -41,6 +41,25 @@ export function isGmailAutoImportOpen(now: Date = new Date()): boolean {
 }
 
 /**
+ * '리포트에 물어보기'(AI)를 여는 날(YYYY-MM-DD, 한국 시간 0시). 사용자가 적은 질문 문장이 외부 AI 회사로 나가므로
+ * (구독 기록은 나가지 않는다 — lib/ask) 방침에 처리 위탁과 그 회사를 먼저 게시한 뒤에 정한다. null이거나 그날 전이면
+ * API·화면 모두 닫힌다. 날짜가 와도 서버에 모델·키(`ASK_PROVIDER`·`ASK_MODEL`·키)가 없으면 닫힌 채다.
+ */
+export const ASK_REPORT_STARTS_ON: string | null = null;
+
+/** '리포트에 물어보기'가 열렸는지. 테스트 서버는 Gmail 자동 가져오기처럼 스위치로 연다. */
+export function isAskReportOpen(now: Date = new Date()): boolean {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_ASK_REPORT_TEST_OPEN === "true"
+  ) {
+    return true;
+  }
+  if (!ASK_REPORT_STARTS_ON) return false;
+  return now.getTime() >= new Date(`${ASK_REPORT_STARTS_ON}T00:00:00+09:00`).getTime();
+}
+
+/**
  * Gmail 자동 가져오기가 구독 후보에 같은 서비스의 이전 결제 메일들(받은 날·금액)을 더해 저장하기 시작하는
  * 날(YYYY-MM-DD, 한국 시간 0시). 이미 연 기능에 저장 항목이 하나 늘어나는 변경이라, 방침에 먼저 게시하고
  * 그날부터 저장한다. null이면 닫혀 있다 — 서버는 이전 결제 메일을 저장하지 않고 후보에 싣지 않는다.
