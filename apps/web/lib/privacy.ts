@@ -41,22 +41,22 @@ export function isGmailAutoImportOpen(now: Date = new Date()): boolean {
 }
 
 /**
- * '리포트에 물어보기'(AI)를 여는 날(YYYY-MM-DD, 한국 시간 0시). 사용자가 적은 질문 문장이 외부 AI 회사로 나가므로
- * (구독 기록은 나가지 않는다 — lib/ask) 방침에 처리 위탁과 그 회사를 먼저 게시한 뒤에 정한다. null이거나 그날 전이면
- * API·화면 모두 닫힌다. 날짜가 와도 서버에 모델·키(`ASK_PROVIDER`·`ASK_MODEL`·키)가 없으면 닫힌 채다.
+ * AI에게 묻는 기능('리포트에 물어보기'·도움말 AI)을 여는 날(YYYY-MM-DD, 한국 시간 0시). 둘 다 사용자가 적은 질문 문장이
+ * 외부 AI 회사로 나가므로(구독 기록은 나가지 않는다 — lib/ask) 방침에 처리 위탁과 그 회사를 먼저 게시한 뒤에 정한다.
+ * null이거나 그날 전이면 API·화면 모두 닫힌다. 날짜가 와도 서버에 모델·키(`ASK_PROVIDER`·`ASK_MODEL`·키)가 없으면 닫힌 채다.
  */
-export const ASK_REPORT_STARTS_ON: string | null = null;
+export const AI_ASK_STARTS_ON: string | null = null;
 
-/** '리포트에 물어보기'가 열렸는지. 테스트 서버는 Gmail 자동 가져오기처럼 스위치로 연다. */
-export function isAskReportOpen(now: Date = new Date()): boolean {
+/** AI에게 묻는 기능이 열렸는지. 테스트 서버는 Gmail 자동 가져오기처럼 스위치로 연다. */
+export function isAiAskOpen(now: Date = new Date()): boolean {
   if (
     process.env.NODE_ENV !== "production" &&
-    process.env.NEXT_PUBLIC_ASK_REPORT_TEST_OPEN === "true"
+    process.env.NEXT_PUBLIC_AI_ASK_TEST_OPEN === "true"
   ) {
     return true;
   }
-  if (!ASK_REPORT_STARTS_ON) return false;
-  return now.getTime() >= new Date(`${ASK_REPORT_STARTS_ON}T00:00:00+09:00`).getTime();
+  if (!AI_ASK_STARTS_ON) return false;
+  return now.getTime() >= new Date(`${AI_ASK_STARTS_ON}T00:00:00+09:00`).getTime();
 }
 
 /**
