@@ -1,13 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useIsClient } from "@hooks/useIsClient";
 import { useRouter } from "next/navigation";
 import { IS_APP_BUILD } from "@lib/platform";
 import { useCheckInFlow, useReminderPrompt } from "@hooks/useCheckInFlow";
 import { useAddSubscriptionFlow } from "@hooks/useAddSubscriptionFlow";
 import { useStore } from "../../lib/store";
-import { Subscription, formatCurrency, getActionQueue, getNextBillingHint } from "@subslash/shared";
+import {
+  POPULAR_SERVICES,
+  Subscription,
+  formatCurrency,
+  getActionQueue,
+  getNextBillingHint,
+} from "@subslash/shared";
+import { takeWelcomePicks } from "@lib/welcome";
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { ActionQueue } from "../../components/dashboard/ActionQueue";
 import { BillingCalendar } from "../../components/dashboard/BillingCalendar";
@@ -86,6 +93,16 @@ export default function Dashboard() {
   // 구독 추가 창과 등록 처리(내 구독과 같은 흐름, hooks/useAddSubscriptionFlow).
   const addFlow = useAddSubscriptionFlow({ showToast, reminder });
   const openAdd = addFlow.open;
+  // 앱 소개 마지막 장에서 고른 서비스가 있으면 등록 창을 차례로 연다. 요금제·결제일은 창마다 사용자가 정한다.
+  useEffect(() => {
+    const presets = takeWelcomePicks().flatMap((id) => {
+      const preset = POPULAR_SERVICES.find((p) => p.id === id);
+      return preset ? [preset] : [];
+    });
+    addFlow.openQueue(presets);
+    // 화면을 처음 열 때 한 번만 받는다(받으면 비워진다).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // 앱 계산서에서 이어서 해지하기(hooks/useKillSeries).
   const killSeries = useKillSeries((sub) => setGuideTarget(sub));
 
