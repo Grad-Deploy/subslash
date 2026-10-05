@@ -144,9 +144,13 @@ select option {
  * 소개 페이지(/)의 움직임. 모두 CSS로만 하고, 움직임 줄이기를 켠 사람에게는 아무것도 하지 않아 처음부터
  * 보인다 — JS로 숨겼다가 보이게 하면, 스크립트가 늦거나 멈춘 화면에서 글이 숨은 채로 남는다.
  *
- * - hero-in: 첫 칸의 요소가 차례로 떠오른다(`--hero-delay`).
- * - hero-slash: '몇 번' 아래의 빨간 막대가 왼쪽부터 그어진다.
+ * - opening-*: 첫 칸의 장면(components/home/Landing의 LandingOpening). 스크롤 애니메이션을 아는 브라우저에서만
+ *   칸이 길어지고(340vh) 화면에 머문 채 앞 장면(질문·결제 알림, opening-a)에서 뒤 장면(시작하기, opening-b)으로
+ *   바뀐다. 진행은 칸이 화면을 덮는 동안(contain 0%~100%)이고, 키프레임의 %가 그 진행이다. 모르면 앞 장면 없이
+ *   뒤 장면만 보인다.
+ * - hero-in: 뒤 장면의 요소가 차례로 떠오른다(`--hero-delay`).
  * - scroll-reveal: 칸이 화면에 들어올 때 떠오른다(스크롤 애니메이션을 아는 브라우저만).
+ * - landing-parallax-*: '한눈에 보기'의 가운데·옆 폰이 스크롤을 따라 다른 속도로 움직인다(같은 조건).
  * - cta-slash: 마지막 칸의 빨간 슬래시가 화면에 들어올 때 그어진다(같은 조건).
  * - landing-progress: 읽은 만큼 차오르는 맨 위의 빨간 줄(같은 조건, 모르면 그리지 않는다).
  */
@@ -172,15 +176,6 @@ select option {
   }
 }
 
-@keyframes landing-slash {
-  from {
-    scale: 0 1;
-  }
-  to {
-    scale: 1 1;
-  }
-}
-
 @keyframes landing-draw {
   from {
     stroke-dashoffset: 1;
@@ -199,6 +194,149 @@ select option {
   }
 }
 
+@keyframes landing-parallax-side {
+  from {
+    transform: translateY(90px);
+  }
+  to {
+    transform: translateY(-90px);
+  }
+}
+
+@keyframes landing-parallax-center {
+  from {
+    transform: translateY(-24px);
+  }
+  to {
+    transform: translateY(24px);
+  }
+}
+
+/* 첫 칸. 기본은 뒤 장면만 화면 높이로 보인다. */
+.opening-a,
+.opening-hint {
+  display: none;
+}
+
+.opening-b {
+  display: flex;
+  min-height: calc(100svh - 8rem);
+}
+
+/* 앞 장면: 질문이 뜨고(4~14%), 알림이 하나씩 쌓이고(16~46%), 합계가 나온 뒤(48~56%) 물러난다(62~74%). */
+@keyframes opening-q2 {
+  0%,
+  4% {
+    opacity: 0;
+    transform: translateY(20px);
+    animation-timing-function: ease-in-out;
+  }
+  14%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes opening-notif-0 {
+  0%,
+  16% {
+    opacity: 0;
+    transform: translateY(32px) scale(0.96);
+    animation-timing-function: ease-in-out;
+  }
+  26%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes opening-notif-1 {
+  0%,
+  26% {
+    opacity: 0;
+    transform: translateY(32px) scale(0.96);
+    animation-timing-function: ease-in-out;
+  }
+  36%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes opening-notif-2 {
+  0%,
+  36% {
+    opacity: 0;
+    transform: translateY(32px) scale(0.96);
+    animation-timing-function: ease-in-out;
+  }
+  46%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes opening-total {
+  0%,
+  48% {
+    opacity: 0;
+    transform: translateY(20px);
+    animation-timing-function: ease-in-out;
+  }
+  56%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes opening-a-out {
+  0%,
+  62% {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    animation-timing-function: ease-in-out;
+  }
+  74%,
+  100% {
+    opacity: 0;
+    transform: scale(0.92);
+    pointer-events: none;
+  }
+}
+
+/* 뒤 장면: 앞 장면이 물러나는 끝에 겹쳐 떠오른다(72~86%). 다 뜨기 전에는 누를 수 없다. */
+@keyframes opening-b-in {
+  0%,
+  72% {
+    opacity: 0;
+    transform: translateY(48px);
+    pointer-events: none;
+    animation-timing-function: ease-in-out;
+  }
+  86%,
+  100% {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+}
+
+@keyframes opening-hint-out {
+  from {
+    opacity: 1;
+  }
+  6%,
+  to {
+    opacity: 0;
+  }
+}
+
 .landing-progress {
   display: none;
 }
@@ -206,10 +344,6 @@ select option {
 @media (prefers-reduced-motion: no-preference) {
   .hero-in {
     animation: landing-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--hero-delay, 500ms) backwards;
-  }
-
-  .hero-slash {
-    animation: landing-slash 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 0.7s backwards;
   }
 
   @supports (animation-timeline: view()) {
@@ -224,6 +358,97 @@ select option {
       animation: landing-draw linear both;
       animation-timeline: view();
       animation-range: entry 20% cover 50%;
+    }
+
+    .landing-parallax-side,
+    .landing-parallax-center {
+      animation: landing-parallax-side linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 100%;
+    }
+
+    .landing-parallax-center {
+      animation-name: landing-parallax-center;
+    }
+
+    /* 첫 칸의 장면. 칸이 길어지고 무대(opening-stage)는 헤더 아래에 머문다. */
+    .opening {
+      height: 340vh;
+      view-timeline: --opening block;
+    }
+
+    .opening-stage {
+      position: sticky;
+      top: 4rem;
+      height: calc(100svh - 4rem);
+      overflow: hidden;
+    }
+
+    .opening-a,
+    .opening-b {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      min-height: 0;
+    }
+
+    .opening-a,
+    .opening-b,
+    .opening-hint,
+    .opening-q2,
+    .opening-total,
+    [class*="opening-notif-"] {
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-duration: auto;
+      animation-timeline: --opening;
+      animation-range: contain 0% contain 100%;
+    }
+
+    .opening-a {
+      animation-name: opening-a-out;
+    }
+
+    .opening-b {
+      animation-name: opening-b-in;
+    }
+
+    .opening-q2 {
+      animation-name: opening-q2;
+    }
+
+    .opening-total {
+      animation-name: opening-total;
+    }
+
+    .opening-notif-0 {
+      animation-name: opening-notif-0;
+    }
+
+    .opening-notif-1 {
+      animation-name: opening-notif-1;
+    }
+
+    .opening-notif-2 {
+      animation-name: opening-notif-2;
+    }
+
+    .opening-hint {
+      position: absolute;
+      inset: auto 0 1.75rem 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted-foreground);
+      animation-name: opening-hint-out;
+    }
+
+    /* 키보드로 뒤 장면의 버튼에 왔으면, 스크롤하지 않았어도 보이고 눌리게 한다. */
+    .opening-b:focus-within {
+      animation: none;
     }
   }
 }

@@ -58,15 +58,33 @@ export function useAddSubscriptionFlow({
   // 앱: 등록 직후 체크인이 이 사람의 첫 체크인인지. 맞으면 결제 알림을 한 번 묻는다.
   const [firstEverCheckIn, setFirstEverCheckIn] = useState(false);
 
+  // 차례로 열 서비스(앱 소개에서 여럿 고른 것). 창 하나를 닫으면(등록했든 닫았든) 다음 서비스로 연다.
+  const [queue, setQueue] = useState<{ presets: ServicePreset[]; at: number } | null>(null);
+
   const open = (next: AddOptions = {}) => {
     setOptions(next);
     setFormKey((k) => k + 1);
     setIsOpen(true);
   };
 
+  /** 여러 서비스의 등록 창을 하나씩 연다. 요금제·결제일은 창마다 사용자가 정한다. */
+  const openQueue = (presets: ServicePreset[]) => {
+    if (presets.length === 0) return;
+    setQueue({ presets, at: 0 });
+    open({ preset: presets[0] });
+  };
+
   const close = () => {
     setIsOpen(false);
     setAddedSub(null);
+    if (!queue) return;
+    const at = queue.at + 1;
+    if (at >= queue.presets.length) {
+      setQueue(null);
+      return;
+    }
+    setQueue({ ...queue, at });
+    open({ preset: queue.presets[at] });
   };
 
   const submit = (data: SubscriptionFormData, allowDuplicate = false) => {
@@ -113,6 +131,11 @@ export function useAddSubscriptionFlow({
             <DialogHeader>
               <DialogTitle>
                 {options.preset ? `${options.preset.nameKo} 등록` : "새 구독 등록"}
+                {queue && queue.presets.length > 1 && (
+                  <span className="ml-1.5 text-sm font-medium text-muted-foreground tabular-nums">
+                    {queue.at + 1}/{queue.presets.length}
+                  </span>
+                )}
               </DialogTitle>
               <DialogDescription>서비스를 고르거나 직접 입력하세요.</DialogDescription>
             </DialogHeader>
@@ -133,6 +156,7 @@ export function useAddSubscriptionFlow({
 
   return {
     open,
+    openQueue,
     /** 등록 창. 화면 아무 곳에나 그린다(포털로 뜬다). */
     dialog,
     duplicateDialog:

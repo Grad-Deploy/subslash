@@ -63,13 +63,15 @@ test.describe("해지한 구독의 상태 (E2E)", () => {
         timeout: 1_000,
       });
     }).toPass({ timeout: 30_000 });
-    const hero = page.getByRole("region", { name: /한 달에 몇 번 써요/ });
+    const hero = page.getByRole("region", { name: /1회당 단가로/ });
     await expect(hero.getByRole("link", { name: "웹에서 바로 시작하기 →" })).toBeVisible();
     await expect(page.getByText(/구독 중 \d+개/)).toHaveCount(0);
   });
 
   test("구독 중과 해지한 구독이 섞여 있으면 구독 중인 것만 센다", async ({ page }) => {
     await seedOnce(page, [killedNetflix, activeMelon]);
+    // 소개 첫 칸은 스크롤해야 뒤 장면의 버튼이 눌린다. 움직임 줄이기에서는 처음부터 보인다.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
 
     const start = page.getByRole("link", { name: "구독 중 1개 · 대시보드로 →" });

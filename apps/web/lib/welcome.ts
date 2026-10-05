@@ -18,6 +18,22 @@ function preferencesModule() {
   return import("@capacitor/preferences");
 }
 
+// 소개 마지막 장에서 고른 서비스. 대시보드가 받아 등록 창을 차례로 연다(useAddSubscriptionFlow의 openQueue).
+// 소개와 대시보드는 같은 화면 안에서 옮겨 가므로 메모리에만 둔다 — 앱을 껐다 켜면 고른 것은 남지 않는다.
+let pendingPicks: string[] = [];
+
+/** 소개에서 고른 서비스 id를 대시보드에 넘긴다. */
+export function queueWelcomePicks(ids: string[]): void {
+  pendingPicks = [...ids];
+}
+
+/** 넘겨받은 서비스 id. 한 번 받으면 비운다 — 대시보드를 다시 열 때마다 등록 창이 뜨지 않게. */
+export function takeWelcomePicks(): string[] {
+  const ids = pendingPicks;
+  pendingPicks = [];
+  return ids;
+}
+
 /** 읽기 실패 시 true를 돌려준다 — 오류로 매번 소개가 뜨는 것보다 안 뜨는 쪽이 낫다. */
 export async function hasSeenWelcome(): Promise<boolean> {
   if (!IS_APP_BUILD) return true;
