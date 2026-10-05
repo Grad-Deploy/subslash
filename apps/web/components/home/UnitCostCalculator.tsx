@@ -9,7 +9,8 @@ import {
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
-import { SAMPLES, sampleName, shortName, type Sample } from "./samples";
+import { shortServiceName } from "@lib/service-name";
+import { SAMPLES, sampleName, type Sample } from "./samples";
 
 // 밝은 배경에서는 진한 색, 어두운 배경에서는 밝은 색이어야 읽힌다.
 const riskColor: Record<RiskLevel, string> = {
@@ -60,7 +61,7 @@ export function UnitCostCalculator() {
               )}
             >
               <ServiceLogo presetId={sample.preset.id} name={sample.preset.nameKo} size={22} />
-              {shortName(sample.preset)}
+              {shortServiceName(sample.preset)}
             </button>
           );
         })}
