@@ -77,7 +77,7 @@ const TILE_SURFACE: CSSProperties = {
   ].join(", "),
 };
 
-function Tile({ children, x, y }: { children: ReactNode; x: number; y: number }) {
+function Tile({ children, x, y }: { children: ReactNode; x: number; y: number | string }) {
   return (
     <div data-tile className="absolute size-[68px]" style={{ left: x, top: y }}>
       {/* 바닥 그림자. 타일 바로 아래 가운데에 둥글게 두고, 가운데가 가장 진하고 바깥으로 갈수록 사라진다. 타일과
@@ -180,21 +180,22 @@ function HeroSlide() {
         className="absolute inset-y-0 left-1/2 w-[390px] -translate-x-1/2 [--tile-d1:#ececee] [--tile-d2:#e4e4e7] [--tile-d3:#dcdce0] [--tile-d4:#d4d4d8] [--tile-hi:#ffffff] dark:[--tile-d1:#52525b] dark:[--tile-d2:#46464d] dark:[--tile-d3:#3f3f46] dark:[--tile-d4:#35353b] dark:[--tile-hi:rgba(255,255,255,.08)]"
       >
         <div className="absolute top-[calc(env(safe-area-inset-top))] inset-x-0 bottom-0">
-          {/* 타일은 위에서, 빨간 판은 아래에서 자리를 잡아 화면이 짧을수록 판의 윗선이 올라온다. 오른쪽일수록 선이
-              높으므로 오른쪽 아래의 메일 타일을 올려, 높이 740px(360×740)인 화면까지 타일이 선을 넘지 않게 둔다. 그림은 390px 폭이라 360px 화면에서는 양옆이 15px씩
-              잘리므로, 양 끝 타일(달력·메일)은 그만큼 안쪽에 둬 잘리지 않게 한다. */}
+          {/* 배치는 처음 디자인을 따른다 — 왼쪽(달력·유튜브)과 오른쪽(넷플릭스·메일)이 위아래로 짝을 이루고 쿠팡이
+              가운데에 온다. 그림은 390px 폭이라 360px 화면에서는 양옆이 15px씩 잘리므로 달력은 안쪽(22)에 둔다.
+              타일은 위에서, 빨간 판은 아래에서 자리를 잡아 화면이 짧을수록 판의 윗선이 올라오고 오른쪽일수록 높다.
+              그래서 오른쪽 아래의 메일만 화면이 짧으면(약 780px 미만) 선을 넘지 않을 만큼 올라온다. */}
           <Tile x={268} y={238}>
             <LogoGlyph logo={BRAND_LOGOS.netflix} />
           </Tile>
           <Tile x={30} y={372}>
             <LogoGlyph logo={BRAND_LOGOS["youtube-premium"]} />
           </Tile>
-          <Tile x={280} y={312}>
+          <Tile x={292} y="min(352px, calc(100svh - 430px))">
             <span className="flex size-full items-center justify-center bg-muted">
               <Mail className="size-[18px] text-red-500" strokeWidth={2} />
             </span>
           </Tile>
-          <Tile x={26} y={262}>
+          <Tile x={22} y={262}>
             <span className="flex size-full items-center justify-center bg-muted">
               <CalendarDays className="size-[18px] text-foreground" strokeWidth={2} />
             </span>
