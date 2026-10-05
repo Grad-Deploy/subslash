@@ -7,9 +7,11 @@
  */
 import { IS_APP_BUILD } from "./platform";
 
-// 예전 환영 화면(AppWelcome)은 "subslash-welcome-seen"에 적었다. 소개 슬라이드로 바꾸면서 키를 새로 둬,
-// 예전 화면을 이미 넘긴 사용자도 업데이트 뒤 소개를 한 번 본다. 소개를 크게 바꿔 다시 보여 줄 때도 키를 바꾼다.
-const KEY = "subslash-onboarding-seen";
+// 소개를 크게 바꿔 다시 보여 줄 때는 키를 바꾼다 — 예전 키에 '봤다'가 남은 사용자도 업데이트 뒤 새 소개를 한 번 본다.
+// - "subslash-welcome-seen": 예전 환영 화면(AppWelcome)
+// - "subslash-onboarding-seen": 첫 소개 슬라이드(App Onboarding)
+// - "subslash-onboarding-v2-seen": 지금 소개(App Onboarding v2 — 문제·답·계산기·직접 해 보기)
+const KEY = "subslash-onboarding-v2-seen";
 
 // 플러그인 객체(Preferences)를 Promise의 결과로 돌려주면 안 된다. Capacitor 플러그인은 없는
 // 메서드도 호출할 수 있는 척하는 프록시라, Promise가 then을 찾아 부르면 "Preferences.then() is
