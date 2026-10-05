@@ -3,6 +3,7 @@ import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { isSameService } from "./chargeHistory";
 import { formatKRW, getBilledAmount, toKRW } from "./currency";
 import { isInTrial } from "./date";
+import type { RateOn } from "./historicalRate";
 import {
   getMyAnnualAmountKRW,
   getMyMonthlyAmountKRW,
@@ -30,8 +31,10 @@ import {
  * - 이번 달에 아직 오지 않은 결제일: 지금 구독 중이면 '결제 예정'으로 넣는다(`upcomingDates`). 다음 달
  *   이후는 넣지 않는다.
  *
- * 금액은 내 몫(나눠 내면 나눈 뒤, 세금 포함)을 사용자 환율로 원 환산한 값이다. 지출 합계
- * (`sumMyMonthlyKRW`)와 같은 기준이다.
+ * 금액은 내 몫(나눠 내면 나눈 뒤, 세금 포함)을 원 환산한 값이다. 지출 합계(`sumMyMonthlyKRW`)와 같은 기준이다.
+ * 달러 결제는 이미 지난 결제면 결제일의 고시 환율(`rateOn`, utils/historicalRate)로 바꾼다 — 지금 환율로 바꾸면
+ * 환율이 움직인 만큼 그때 낸 돈과 다른 숫자가 된다. 그날 환율을 모르거나 아직 오지 않은 결제(결제 예정)는
+ * 사용자 환율(`rate`)로 바꾸고, 몇 건을 어느 쪽으로 바꿨는지 `fx`에 센다.
  */
 
 export type ReceiptPeriod =
@@ -86,6 +89,11 @@ export interface Receipt {
   defendedUnknownCount: number;
   /** 이 기간에 해지한 구독. */
   killed: { subscriptionId: string; name: string; killedOn: string }[];
+  /**
+   * 이미 지난 달러 결제를 어느 환율로 바꿨는지. `historical`은 결제일의 고시 환율, `current`는 그날 환율을
+   * 몰라 지금 사용자 환율로 바꾼 건수. 결제 예정은 세지 않는다(앞으로의 환율은 모른다).
+   */
+  fx: { historical: number; current: number };
   excluded: {
     /** 결제 월을 모르는 연간 구독 수. */
     undated: number;
@@ -213,8 +221,24 @@ export function buildReceipt(
   period: ReceiptPeriod,
   rate: number = DEFAULT_EXCHANGE_RATE,
   now: Date = new Date(),
+  /** 결제일의 고시 환율. 없으면(아직 받지 못함) 모든 달러 결제를 `rate`로 바꾼다. */
+  rateOn?: RateOn,
 ): Receipt {
   const today = startOfDay(now);
+  const fx = { historical: 0, current: 0 };
+  /**
+   * 그 날의 결제를 원으로 바꿀 환율. 달러가 아니면 쓰이지 않는다. 아직 오지 않은 날은 지금 환율이다.
+   * `count`면 지난 달러 결제로 세어 `fx`에 남긴다.
+   */
+  const rateFor = (sub: Subscription, date: Date, count: boolean): number => {
+    if (sub.currency !== "USD" || date > today) return rate;
+    const historical = rateOn?.(dateOnly(date)) ?? null;
+    if (count) {
+      if (historical === null) fx.current += 1;
+      else fx.historical += 1;
+    }
+    return historical ?? rate;
+  };
   const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
   const lines: ReceiptLine[] = [];
@@ -244,6 +268,8 @@ export function buildReceipt(
       : [];
 
     const chargeDates: Date[] = [];
+    /** 기록(결제일)으로 넣은 날. 결제 메일로 넣은 날(`evidenced`)은 빼고. */
+    const recordedDates: Date[] = [];
     const upcomingDates: Date[] = [];
     const evidenced: { date: Date; record: ChargeRecord }[] = [];
     let hadBeforeRegistration = false;
@@ -282,6 +308,7 @@ export function buildReceipt(
         continue;
       }
       chargeDates.push(charge);
+      recordedDates.push(charge);
       if (upcoming) upcomingDates.push(charge);
     }
 
@@ -289,16 +316,23 @@ export function buildReceipt(
     if (hadTrial) excluded.trial += 1;
     if (chargeDates.length === 0) continue;
 
-    const perCharge =
-      sub.billingCycle === "yearly"
-        ? getMyAnnualAmountKRW(sub, rate)
-        : getMyMonthlyAmountKRW(sub, rate);
-    const billedPerCharge = toKRW(getBilledAmount(sub), sub.currency, rate);
-    const recorded = chargeDates.length - evidenced.length;
+    // 결제 한 번의 내 몫·청구액. 결제일마다 그날의 환율로 바꾼다.
+    let recordedMine = 0;
+    let recordedBilled = 0;
+    for (const date of recordedDates) {
+      const dayRate = rateFor(sub, date, true);
+      recordedMine +=
+        sub.billingCycle === "yearly"
+          ? getMyAnnualAmountKRW(sub, dayRate)
+          : getMyMonthlyAmountKRW(sub, dayRate);
+      recordedBilled += toKRW(getBilledAmount(sub), sub.currency, dayRate);
+    }
     // 결제 메일의 금액은 카드에 청구된 값이다. 나눠 내면 지금 나누는 비율로 내 몫을 계산한다.
     const billedNow = getBilledAmount(sub);
     const myRatio = isShared(sub) && billedNow > 0 ? getMyShareAmount(sub) / billedNow : 1;
-    const evidencedBilled = evidenced.map(({ record }) => toKRW(record.amount, sub.currency, rate));
+    const evidencedBilled = evidenced.map(({ date, record }) =>
+      toKRW(record.amount, sub.currency, rateFor(sub, date, true)),
+    );
     const evidencedMine = evidencedBilled.map((billed) => Math.round(billed * myRatio));
     const log = lastUsesLogIn(sub.id, logs, period);
 
@@ -309,16 +343,20 @@ export function buildReceipt(
       chargeDates: chargeDates.map(dateOnly),
       upcomingDates: upcomingDates.map(dateOnly),
       evidencedDates: evidenced.map(({ date }) => dateOnly(date)),
-      amountKRW: perCharge * recorded + evidencedMine.reduce((total, value) => total + value, 0),
-      billedKRW:
-        billedPerCharge * recorded + evidencedBilled.reduce((total, value) => total + value, 0),
+      amountKRW: recordedMine + evidencedMine.reduce((total, value) => total + value, 0),
+      billedKRW: recordedBilled + evidencedBilled.reduce((total, value) => total + value, 0),
       shared: isShared(sub),
       billingCycle: sub.billingCycle,
       killedOn: killed && inPeriod(killed, period) ? dateOnly(killed) : null,
       usage: log
         ? {
             count: log.usageCount,
-            costPerUseKRW: toKRW(log.costPerUse, sub.currency, rate),
+            // 체크인할 때 계산한 1회 단가라 그날의 환율로 바꾼다.
+            costPerUseKRW: toKRW(
+              log.costPerUse,
+              sub.currency,
+              rateFor(sub, dayOf(log.checkedAt) ?? today, false),
+            ),
             checkedAt: log.checkedAt,
           }
         : null,
@@ -328,15 +366,20 @@ export function buildReceipt(
   lines.sort((a, b) => b.amountKRW - a.amountKRW || a.name.localeCompare(b.name, "ko"));
 
   // 해지 덕분에 나가지 않은 돈. 결제일이 이미 지난 것만 — 아직 오지 않은 결제일의 금액은 '지킨 돈'이
-  // 아니라 '지킬 돈'이다. 달마다 그 달 결제일이 지난 해지 구독만 골라 방어액 계산에 넘긴다.
+  // 아니라 '지킬 돈'이다. 달마다 그 달 결제일이 지난 해지 구독을 그 결제일의 환율로 센다.
   const killedSubs = subscriptions.filter((sub) => sub.status === "killed");
   let defendedKRW = 0;
   for (const { year, monthIndex } of monthsOf(period)) {
-    const passed = killedSubs.filter((sub) => {
+    for (const sub of killedSubs) {
       const charge = chargeDateIn(sub, year, monthIndex);
-      return charge !== null && charge <= today;
-    });
-    defendedKRW += sumMyMonthDefendedKRW(passed, year, monthIndex + 1, rate).amount;
+      if (charge === null || charge > today) continue;
+      defendedKRW += sumMyMonthDefendedKRW(
+        [sub],
+        year,
+        monthIndex + 1,
+        rateFor(sub, charge, false),
+      ).amount;
+    }
   }
   const defendedUnknownCount = sumMyYearDefendedKRW(killedSubs, period.year, rate).unknownCount;
 
@@ -368,6 +411,7 @@ export function buildReceipt(
     defendedUnknownCount,
     killed,
     excluded,
+    fx,
   };
 }
 
