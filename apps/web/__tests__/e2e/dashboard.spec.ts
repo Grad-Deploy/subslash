@@ -11,9 +11,9 @@ test.describe("Dashboard (E2E)", () => {
     await page.goto("/");
     await page
       .getByRole("link", { name: /웹에서 바로 시작하기/ })
-      .first()
+      .last()
       .click();
-    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 30_000 });
     await expect(page.getByRole("heading", { name: "쓰고 있는 구독을 골라보세요" })).toBeVisible({
       timeout: 30_000,
     });
@@ -78,6 +78,8 @@ test.describe("Dashboard (E2E)", () => {
       );
     });
 
+    // 소개 첫 칸은 스크롤해야 뒤 장면(시작하기·샘플)이 눌린다. 움직임 줄이기에서는 처음부터 보인다.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     await page.getByRole("button", { name: /샘플로 둘러보기/ }).click();
     const banner = page.getByRole("status").filter({ hasText: "샘플로 체험하는 중입니다." });
@@ -105,6 +107,8 @@ test.describe("Dashboard (E2E)", () => {
   });
 
   test("체험 중에 새로고침하면 샘플이 사라진다", async ({ page }) => {
+    // 소개 첫 칸은 스크롤해야 뒤 장면(시작하기·샘플)이 눌린다. 움직임 줄이기에서는 처음부터 보인다.
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     await page.getByRole("button", { name: /샘플로 둘러보기/ }).click();
     await expect(page.getByText("샘플로 체험하는 중입니다.")).toBeVisible({ timeout: 30_000 });
