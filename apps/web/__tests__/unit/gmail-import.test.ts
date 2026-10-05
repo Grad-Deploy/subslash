@@ -466,6 +466,7 @@ describe("원클릭 연결 웹 앱", () => {
       stored?: Record<string, string>;
     } = {},
   ) {
+    const titles: string[] = [];
     const html: string[] = [];
     const fetched: {
       url: string;
@@ -585,7 +586,10 @@ describe("원클릭 연결 웹 앱", () => {
       HtmlService: {
         createHtmlOutput: (content: string) => {
           html.push(content);
-          const output = { setTitle: () => output, addMetaTag: () => output };
+          const output = {
+            setTitle: (title: string) => (titles.push(title), output),
+            addMetaTag: () => output,
+          };
           return output;
         },
       },
@@ -648,6 +652,7 @@ describe("원클릭 연결 웹 앱", () => {
     };
 
     return {
+      titles,
       api,
       connect,
       html,
@@ -802,6 +807,61 @@ describe("원클릭 연결 웹 앱", () => {
     run.connect({ code: "c", origin: ORIGIN, client: "app" });
     run.connect({ code: "c", origin: ORIGIN });
     expect(run.html[run.html.length - 1]).toContain(`href="${ORIGIN}/import"`);
+  });
+
+  it("앱이 돌아올 스킴을 보냈으면 끝 화면이 그 앱을 열고, 막히면 누를 버튼을 둔다", () => {
+    // 창을 닫으라는 말만으로는 인앱 브라우저를 닫는 법을 모르는 사람이 화면에 남았다.
+    for (const [parameter, flow] of [
+      [{ code: "signed-code", origin: ORIGIN, client: "app", return: "com.subslash.app" }, "gmail"],
+      [
+        {
+          action: "calendar",
+          code: "plan-code",
+          origin: ORIGIN,
+          client: "app",
+          return: "com.subslash.app.dev",
+        },
+        "calendar",
+      ],
+    ] as const) {
+      const run = runWebApp();
+      run.connect(parameter);
+      // 캘린더 끝 화면은 doGet이 바로 돌려주고(앱을 여는 스크립트 포함), Gmail은 로딩 화면이 바꿔 넣는다.
+      const page = run.html.join("");
+      const returnUrl = `${parameter.return}://oauth-done?flow=${flow}`;
+      expect(page).toContain(`href="${returnUrl}"`);
+      expect(page).toContain("SubSlash 앱으로 돌아가기");
+      // 웹사이트로 가는 링크는 여전히 두지 않는다.
+      expect(run.html.join("")).not.toContain(`href="${ORIGIN}`);
+    }
+    // 로딩 화면은 끝 화면을 보인 뒤 같은 주소로 앱을 열어 본다.
+    const run = runWebApp();
+    run.connect({ code: "c", origin: ORIGIN, client: "app", return: "com.subslash.app" });
+    expect(run.html[0]).toContain('var RETURN_URL = "com.subslash.app://oauth-done?flow=gmail"');
+  });
+
+  it("캘린더 등록 화면의 제목줄은 'Gmail 연결'이 아니라 '캘린더 등록'이다", () => {
+    // 인앱 브라우저 위쪽 제목이 'SubSlash Gmail 연결'이라 캘린더를 등록한 사람이 헷갈렸다.
+    const calendar = runWebApp();
+    calendar.api.doGet({ parameter: { action: "calendar", code: "plan-code", origin: ORIGIN } });
+    expect(calendar.titles).toEqual(["SubSlash 캘린더 등록"]);
+
+    const gmail = runWebApp();
+    gmail.api.doGet({ parameter: { code: "c", origin: ORIGIN } });
+    expect(gmail.titles).toEqual(["SubSlash Gmail 연결"]);
+  });
+
+  it("목록에 없는 스킴이나 웹에서 온 스킴으로는 앱을 열지 않는다", () => {
+    // 아무 스킴이나 받으면 이 화면이 남의 앱을 여는 데 쓰인다.
+    const app = runWebApp();
+    app.connect({ code: "c", origin: ORIGIN, client: "app", return: "evil-app" });
+    expect(app.html.join("")).not.toContain("evil-app");
+    expect(app.html[app.html.length - 1]).toContain("이 창을 닫으면 SubSlash 앱으로 돌아갑니다");
+
+    const web = runWebApp();
+    web.connect({ code: "c", origin: ORIGIN, return: "com.subslash.app" });
+    expect(web.html.join("")).not.toContain("com.subslash.app://");
+    expect(web.html[web.html.length - 1]).toContain(`href="${ORIGIN}/import"`);
   });
 
   it("코드를 바꾸지 못하면 서버가 알려 준 이유를 보여주고 아무것도 설치하지 않는다", () => {

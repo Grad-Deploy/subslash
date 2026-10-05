@@ -1,4 +1,5 @@
 import { KNOWN_RECEIPT_SENDER_DOMAINS } from "@subslash/shared";
+import { APP_RETURN_SCHEMES } from "../app-return";
 import { MAIL_HELPERS } from "./mail-helpers";
 
 /**
@@ -90,14 +91,33 @@ var MAX_BODY_CHARS = 1500;
 var PARALLEL_FETCH = true;
 
 // SubSlash 앱(모바일)에서 왔는지. 앱은 이 화면을 인앱 브라우저로 열고, 창을 닫으면 앱으로 돌아간다.
-// 그래서 앱에서 왔을 때는 '돌아가기' 링크를 두지 않는다 — 인앱 브라우저 안에서 웹사이트가 열려,
-// 웹에 로그인돼 있으면 찾은 구독을 웹이 먼저 받아 가고 앱에는 오지 않는다.
+// 그래서 앱에서 왔을 때는 웹사이트로 가는 '돌아가기' 링크를 두지 않는다 — 인앱 브라우저 안에서 웹사이트가
+// 열려, 웹에 로그인돼 있으면 찾은 구독을 웹이 먼저 받아 가고 앱에는 오지 않는다.
 var FROM_APP = false;
+
+// 앱이 돌아올 주소의 스킴(앱 ID). 이 목록에 있는 것만 받는다 — 아무 스킴이나 받으면 이 화면이 남의 앱을
+// 여는 데 쓰인다. 있으면 끝 화면이 그 앱을 열고('<스킴>://oauth-done?flow=…'), 막히면 누르는 버튼을 둔다.
+// 창을 닫으라는 말만으로는 인앱 브라우저를 닫는 법을 모르는 사람이 화면에 남았다. 주소에는 무엇을
+// 마쳤는지(flow)만 싣는다.
+var APP_RETURN_SCHEMES = __RETURN_SCHEMES__;
+var RETURN_SCHEME = "";
+var FLOW = "gmail";
+
+function setClient(client, scheme, flow) {
+  FROM_APP = String(client || "") === "app";
+  RETURN_SCHEME = FROM_APP && APP_RETURN_SCHEMES.indexOf(String(scheme || "")) !== -1 ? String(scheme) : "";
+  FLOW = flow;
+}
+
+function appReturnUrl() {
+  return RETURN_SCHEME ? RETURN_SCHEME + "://oauth-done?flow=" + encodeURIComponent(FLOW) : "";
+}
 
 function doGet(e) {
   var params = (e && e.parameter) || {};
   var origin = String(params.origin || "");
-  FROM_APP = String(params.client || "") === "app";
+  var flow = String(params.action || "") === "calendar" ? "calendar" : "gmail";
+  setClient(params.client, params["return"], flow);
   if (ALLOWED_ORIGINS.indexOf(origin) === -1) {
     return connectPage(
       "연결할 수 없습니다",
@@ -116,7 +136,7 @@ function doGet(e) {
 // 로딩 화면을 돌려주고 화면이 google.script.run으로 두 단계(connectAccount → scanRecent)를 부른다.
 // 단계가 끝날 때마다 문구를 바꾼다 — 진행률은 알 수 없으므로 지어내지 않는다.
 function loadingPage(origin, code) {
-  var args = scriptJson([code, origin, FROM_APP ? "app" : ""]);
+  var args = scriptJson([code, origin, FROM_APP ? "app" : "", RETURN_SCHEME]);
   return HtmlService.createHtmlOutput(
     "<style>" +
       "@keyframes subslash-spin{to{transform:rotate(360deg)}}" +
@@ -130,13 +150,15 @@ function loadingPage(origin, code) {
       "</div>" +
       "<script>" +
       "var ARGS = " + args + ";" +
-      "function show(html) { document.getElementById('root').innerHTML = html; }" +
+      "var RETURN_URL = " + scriptJson(appReturnUrl()) + ";" +
+      // 끝 화면을 보이고 앱으로 돌아가 본다. 인앱 브라우저가 사용자 동작 없는 이동을 막으면 화면의 버튼이 남는다.
+      "function show(html) { document.getElementById('root').innerHTML = html; if (RETURN_URL) { try { window.top.location.href = RETURN_URL; } catch (e) {} } }" +
       "function fail(error) { show(" + scriptJson(pageHtml("연결하지 못했습니다", "잠시 뒤 SubSlash에서 다시 연결해 주세요.", origin)) + "); }" +
       "google.script.run.withFailureHandler(fail).withSuccessHandler(function (result) {" +
       "  if (!result.ok) return show(result.html);" +
       "  document.getElementById('step').textContent = " + scriptJson("최근 " + RECENT_DAYS + "일 결제 메일을 확인하는 중") + ";" +
-      "  google.script.run.withFailureHandler(fail).withSuccessHandler(show).scanRecent(ARGS[1], ARGS[2]);" +
-      "}).connectAccount(ARGS[0], ARGS[1], ARGS[2]);" +
+      "  google.script.run.withFailureHandler(fail).withSuccessHandler(show).scanRecent(ARGS[1], ARGS[2], ARGS[3]);" +
+      "}).connectAccount(ARGS[0], ARGS[1], ARGS[2], ARGS[3]);" +
       "</script>",
   )
     .setTitle("SubSlash Gmail 연결")
@@ -144,8 +166,8 @@ function loadingPage(origin, code) {
 }
 
 // 로딩 화면이 부르는 첫 단계. 코드를 토큰으로 바꾸고 2주 검사를 건다. { ok, html }을 돌려준다.
-function connectAccount(code, origin, client) {
-  FROM_APP = String(client || "") === "app";
+function connectAccount(code, origin, client, scheme) {
+  setClient(client, scheme, "gmail");
   if (ALLOWED_ORIGINS.indexOf(origin) === -1) {
     return { ok: false, html: pageHtml("연결할 수 없습니다", "허용되지 않은 주소에서 왔습니다. SubSlash에서 다시 연결해 주세요.", null) };
   }
@@ -189,8 +211,8 @@ function connectAccount(code, origin, client) {
 }
 
 // 로딩 화면이 부르는 둘째 단계. 최근 메일을 보내고 나머지 1년 치를 트리거에 맡긴다. 완료 화면을 돌려준다.
-function scanRecent(origin, client) {
-  FROM_APP = String(client || "") === "app";
+function scanRecent(origin, client, scheme) {
+  setClient(client, scheme, "gmail");
   var properties = PropertiesService.getUserProperties();
   if (!properties.getProperty("token") || properties.getProperty("origin") !== origin) {
     return pageHtml("연결하지 못했습니다", "SubSlash에서 다시 연결해 주세요.", ALLOWED_ORIGINS.indexOf(origin) === -1 ? null : origin);
@@ -434,18 +456,30 @@ function clearBillingEvents(calendarId) {
 
 // backPath는 '돌아가기'가 열 SubSlash 화면이다. 캘린더는 버튼이 있던 '내 구독'으로 돌려보낸다.
 function connectPage(title, message, origin, backPath) {
+  var returnUrl = appReturnUrl();
   return HtmlService.createHtmlOutput(
     '<div style="font-family:sans-serif;line-height:1.6;padding:8px">' +
       pageHtml(title, message, origin, backPath) +
-      "</div>",
+      "</div>" +
+      // 로딩 화면과 같이 앱으로 돌아가 본다. 막히면 버튼이 남는다.
+      (returnUrl
+        ? "<script>try { window.top.location.href = " + scriptJson(returnUrl) + "; } catch (e) {}</script>"
+        : ""),
   )
-    .setTitle("SubSlash Gmail 연결")
+    // 캘린더 등록도 이 화면을 쓴다. 제목줄(인앱 브라우저·탭)이 'Gmail 연결'이면 무엇을 한 화면인지 헷갈린다.
+    .setTitle(FLOW === "calendar" ? "SubSlash 캘린더 등록" : "SubSlash Gmail 연결")
     .addMetaTag("viewport", "width=device-width, initial-scale=1");
 }
 
 // 결과 화면의 내용. 로딩 화면은 이 HTML로 자기 내용을 바꾼다.
 function pageHtml(title, message, origin, backPath) {
-  var back = FROM_APP
+  var returnUrl = appReturnUrl();
+  var back = returnUrl
+    ? '<p><a href="' + escapeHtml(returnUrl) + '" target="_top" ' +
+      'style="display:inline-block;padding:12px 20px;border-radius:10px;background:#18181b;color:#fff;text-decoration:none;font-weight:700">' +
+      "SubSlash 앱으로 돌아가기</a></p>" +
+      '<p style="color:#71717a;font-size:14px">버튼이 열리지 않으면 이 창을 닫아도 앱으로 돌아갑니다.</p>'
+    : FROM_APP
     ? '<p style="font-weight:700">이 창을 닫으면 SubSlash 앱으로 돌아갑니다.</p>'
     : origin
       ? '<p><a href="' + escapeHtml(origin + (backPath || "/import")) + '" target="_top" ' +
@@ -463,9 +497,8 @@ function pageHtml(title, message, origin, backPath) {
  */
 export function gmailConnectWebApp(origins: string[]): string {
   return (
-    CONNECT_WEB_APP.replace("__ORIGINS__", () => JSON.stringify(origins)).replace(
-      "__SENDER_DOMAINS__",
-      () => JSON.stringify(KNOWN_RECEIPT_SENDER_DOMAINS),
-    ) + MAIL_HELPERS
+    CONNECT_WEB_APP.replace("__ORIGINS__", () => JSON.stringify(origins))
+      .replace("__SENDER_DOMAINS__", () => JSON.stringify(KNOWN_RECEIPT_SENDER_DOMAINS))
+      .replace("__RETURN_SCHEMES__", () => JSON.stringify(APP_RETURN_SCHEMES)) + MAIL_HELPERS
   );
 }
