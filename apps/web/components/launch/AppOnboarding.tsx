@@ -52,8 +52,14 @@ const FEATURES = [
 const SLIDE_COUNT = FEATURES.length + 2;
 const LAST = SLIDE_COUNT - 1;
 
-/** 등각으로 눕힌 판. 타일과 폰 그림이 같은 각도로 눕는다. */
+/** 등각으로 눕힌 판. 폰 그림이 이 각도로 눕는다(타일은 `TILE_ISO`). */
 const ISO: CSSProperties = { transform: "rotateX(55deg) rotateZ(-45deg)" };
+
+/**
+ * 타일은 폰보다 더 눕힌다(62°). 폰과 같은 55°로 세우면 바닥에서 비스듬히 서 있는 판처럼 보여 어색했다. 더
+ * 눕히면(68°) 로고가 납작해져 알아보기 어렵다.
+ */
+const TILE_ISO: CSSProperties = { transform: "rotateX(62deg) rotateZ(-45deg)" };
 
 /**
  * 눕힌 타일. 폰보다 약하게, 얇은 판이 떠 있는 정도로만 입체를 준다.
@@ -81,12 +87,12 @@ function Tile({ children, x, y }: { children: ReactNode; x: number; y: number })
       <div
         data-float-shadow
         aria-hidden
-        className="absolute top-[67px] left-0 h-4 w-[76px] rounded-[50%] bg-[radial-gradient(closest-side,rgba(9,9,11,.2),rgba(9,9,11,.08)_55%,transparent)] dark:bg-[radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,.18)_55%,transparent)]"
+        className="absolute top-[61px] left-0 h-4 w-[76px] rounded-[50%] bg-[radial-gradient(closest-side,rgba(9,9,11,.2),rgba(9,9,11,.08)_55%,transparent)] dark:bg-[radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,.18)_55%,transparent)]"
       />
       <div data-float>
         <div
           className="relative flex size-[68px] items-center justify-center rounded-xl bg-card"
-          style={{ ...ISO, ...TILE_SURFACE }}
+          style={{ ...TILE_ISO, ...TILE_SURFACE }}
         >
           {/* 판을 눕힌 만큼 되돌려, 로고는 바로 서 보이게 한다. */}
           <span className="flex size-[34px] rotate-45 items-center justify-center overflow-hidden rounded-[28%]">
