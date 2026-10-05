@@ -3,7 +3,7 @@ import { resetAllRateLimits } from "@lib/rate-limit";
 import { POST, resetAskCache } from "@/api/ask/route";
 
 const ENV = {
-  NEXT_PUBLIC_ASK_REPORT_TEST_OPEN: "true",
+  NEXT_PUBLIC_AI_ASK_TEST_OPEN: "true",
   ASK_PROVIDER: "anthropic",
   ASK_MODEL: "test-model",
   ANTHROPIC_API_KEY: "k",
@@ -41,9 +41,9 @@ afterEach(() => {
 
 describe("POST /api/ask", () => {
   it("열리지 않았거나 모델·키가 없으면 AI를 부르지 않는다", async () => {
-    vi.stubEnv("NEXT_PUBLIC_ASK_REPORT_TEST_OPEN", "");
+    vi.stubEnv("NEXT_PUBLIC_AI_ASK_TEST_OPEN", "");
     expect((await ask("안 쓰는 구독")).status).toBe(503);
-    vi.stubEnv("NEXT_PUBLIC_ASK_REPORT_TEST_OPEN", "true");
+    vi.stubEnv("NEXT_PUBLIC_AI_ASK_TEST_OPEN", "true");
     vi.stubEnv("ANTHROPIC_API_KEY", "");
     expect((await ask("안 쓰는 구독")).status).toBe(503);
     expect(upstream).not.toHaveBeenCalled();

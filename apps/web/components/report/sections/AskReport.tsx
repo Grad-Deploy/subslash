@@ -108,10 +108,10 @@ export function AskReport({
               ))}
               {result.goHelp && (
                 <Link
-                  href="/help"
+                  href={`/help?q=${encodeURIComponent(asked ?? "")}`}
                   className="inline-block text-xs font-bold underline underline-offset-2"
                 >
-                  도움말 열기
+                  도움말에서 찾아보기
                 </Link>
               )}
               <p className="text-[11px] text-muted-foreground">
