@@ -4,6 +4,7 @@ import React from "react";
 import { CATEGORY_LABELS, formatCurrency, type DiscoveredSubscription } from "@subslash/shared";
 import { Badge } from "../ui/badge";
 import { cn } from "@lib/utils";
+import { cycleText } from "./cycleText";
 
 /** 결제 문자·메일에서 찾은 후보 한 줄(웹의 결제 문자로 불러오기). 누르면 고르기·풀기가 바뀐다. */
 export function DiscoveredRow({
@@ -93,7 +94,7 @@ export function DiscoveredRow({
           {formatCurrency(item.amount, item.currency)}
         </div>
         <div className="text-[11px] text-muted-foreground">
-          {item.isCanceled ? "해지 완료됨" : `매월 ${item.billingDay}일 결제`}
+          {item.isCanceled ? "해지 완료됨" : cycleText(item)}
         </div>
       </div>
     </div>
