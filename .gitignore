@@ -72,3 +72,4 @@ apps/mobile/android/app/src/main/res/xml/config.xml
 *.jks
 *.keystore
 credentials.json
+apps/web/scripts/ask-eval/results/
