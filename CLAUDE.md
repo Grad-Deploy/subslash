@@ -485,8 +485,13 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import`)는 SubSlash가 G
   verifier는 기기에 10분 적어 두고(`lib/app-oauth`) 돌아오는 길·앱 복귀·다음 실행 어디서든 한 번만 받아 간다.
   인앱 브라우저가 여는 웹 화면에는 사이트 메뉴·Gmail 받기 상자를 두지 않는다(`SiteChrome`의 목록에 더한다).
   인앱 브라우저에 띄우는 외부 화면(Apps Script 웹 앱)도 웹사이트로 가는 링크를 두지 않는다 — 서버가
-  앱 출처의 요청에 `client=app`을 붙이면 웹 앱은 '창을 닫으면 앱으로 돌아갑니다'를 띄운다. 링크를 두면
+  앱 출처의 요청에 `client=app`을 붙이면 웹 앱은 웹사이트 대신 앱으로 돌아가는 길을 둔다. 링크를 두면
   인앱 브라우저에 웹이 열리고, 웹에 로그인돼 있으면 찾은 구독을 웹이 먼저 받아 가 앱에는 오지 않는다.
+  Gmail 연결·캘린더 등록도 간편 로그인처럼 앱의 돌아오는 주소로 돌아온다: 앱이 API 주소에 `return=<앱 ID>`를
+  붙이고(`withAppReturn`), 서버가 목록(`APP_RETURN_SCHEMES`)에 있는 것만 웹 앱에 넘기면, 웹 앱의 끝 화면이
+  `<앱 ID>://oauth-done?flow=gmail|calendar`로 앱을 열어 본다. Apps Script 화면은 틀 안에서 돌아 사용자 동작 없는
+  이동이 막힐 수 있으므로 'SubSlash 앱으로 돌아가기' 버튼을 함께 둔다. 스킴이 없으면(예전 앱) 예전처럼 창을
+  닫으라고만 말한다. 웹 앱 코드를 고쳤으므로 운영자가 다시 배포해야 반영된다.
 - 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은
   `capacitor://localhost`(iOS)나 `https://localhost`(안드로이드)다.
 - 페이지에 동적 경로(`[id]`)를 새로 만들지 않는다. 브라우저에서 만든 ID로는 페이지를 미리

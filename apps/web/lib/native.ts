@@ -137,6 +137,15 @@ export async function appReturnScheme(): Promise<string | null> {
   }
 }
 
+/**
+ * 앱이면 API 주소에 돌아올 스킴(`return=<앱 ID>`)을 붙인다. Gmail 연결·캘린더 등록처럼 인앱 브라우저에서 바깥
+ * 화면(Apps Script 웹 앱)을 거치는 흐름은 서버가 이 값을 그 화면에 넘기고, 끝 화면이 이 앱을 연다. 웹이면 그대로다.
+ */
+export async function withAppReturn<P extends `/api/${string}`>(path: P): Promise<P> {
+  const scheme = await appReturnScheme();
+  return scheme ? (`${path}?return=${encodeURIComponent(scheme)}` as P) : path;
+}
+
 export interface SharePayload {
   title: string;
   /** 링크까지 담은 문장. */
