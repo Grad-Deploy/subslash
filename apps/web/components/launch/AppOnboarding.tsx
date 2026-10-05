@@ -403,7 +403,11 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
       if (width === 0) return;
       const nearest = Math.round(track.scrollLeft / width);
       setIndex(nearest);
-      if (Math.abs(track.scrollLeft - nearest * width) < 2) setSettled(nearest);
+      // 제자리는 장 폭에 대한 비율로 본다. 화면 폭이 소수(392.7px 등)면 clientWidth는 반올림한 값이라, 뒤 장일수록
+      // scrollLeft와 '장 번호 × clientWidth'의 차이가 몇 px씩 쌓여 마지막 장에 서도 제자리로 보지 못했다(슬래시가
+      // 그려지지 않음). 끝까지 넘겼으면 그것도 제자리다.
+      const atEnd = track.scrollLeft >= track.scrollWidth - width - 1;
+      if (Math.abs(track.scrollLeft / width - nearest) < 0.01 || atEnd) setSettled(nearest);
       if (motion && !frame) frame = requestAnimationFrame(paint);
     };
     if (motion) paint();
