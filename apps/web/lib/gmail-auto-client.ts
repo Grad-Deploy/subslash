@@ -14,6 +14,7 @@ import {
   coveredServices,
 } from "@subslash/shared";
 import { apiFetch, readApiError } from "./api";
+import { withAppReturn } from "./native";
 
 /**
  * Gmail 자동 가져오기의 브라우저 쪽.
@@ -79,7 +80,7 @@ export async function createGmailLink(): Promise<string> {
  * 허용하면 웹 앱이 이 계정의 연결을 새로 발급한다 — 예전 스크립트는 그때부터 거절된다.
  */
 export async function startGmailConnect(): Promise<string> {
-  const response = await apiFetch("/api/gmail/connect", {
+  const response = await apiFetch(await withAppReturn("/api/gmail/connect"), {
     method: "POST",
   });
   if (!response.ok)
