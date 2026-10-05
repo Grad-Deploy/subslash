@@ -83,14 +83,14 @@ function LogoGlyph({ logo }: { logo: BrandLogo }) {
 }
 
 /**
- * 첫 장에 눕혀 놓은 폰. 판 하나에 옆면 그림자 한 줄이면 화면만 붙인 납작한 판으로 보여, 두께(1px씩 쌓은
- * 그림자 14겹 — 맨 위 두 겹은 금속 테두리의 빛), 바닥에 떨어지는 그림자, 옆 버튼, 카메라 구멍, 유리 반사를 둔다.
- * 그림자는 판의 좌표에서 오른쪽 아래로 쌓여, 등각으로 눕히면 아래로 두께가 보인다.
+ * 첫 장에 눕혀 놓은 폰. 판 하나에 옆면 그림자 한 줄이면 화면만 붙인 납작한 판으로 보이고, 검은 옆면을 두껍게
+ * 쌓으면(14px) 벽돌처럼 보여 실제 폰과 멀어졌다. 옆면은 1px씩 쌓은 5겹으로 얇게 두고, 밝은 금속에서 어두운
+ * 쪽으로 옅어지게 칠해 정면의 검은 베젤과 이어지게 한다. 그림자는 판의 좌표에서 오른쪽 아래로 쌓여, 등각으로
+ * 눕히면 아래로 두께가 보인다. 바닥 그림자·옆 버튼·카메라 구멍·유리 반사로 입체감을 더한다.
  */
-const PHONE_DEPTH = Array.from(
-  { length: 14 },
-  (_, i) => `${i + 1}px ${i + 1}px 0 ${i < 2 ? "#52525b" : "#18181b"}`,
-).join(", ");
+const PHONE_DEPTH = ["#71717a", "#52525b", "#3f3f46", "#333338", "#27272a"]
+  .map((color, i) => `${i + 1}px ${i + 1}px 0 ${color}`)
+  .join(", ");
 
 function IsoPhone() {
   return (
@@ -104,9 +104,9 @@ function IsoPhone() {
           boxShadow: `inset 0 0 0 1.5px rgba(255,255,255,.14), inset 0 0 0 3px #09090b, ${PHONE_DEPTH}`,
         }}
       >
-        {/* 옆 버튼(전원·음량). 옆면 두께만큼 바깥에 둔다. */}
-        <span className="absolute top-[150px] -right-[17px] h-[46px] w-1 rounded-[2px] bg-zinc-700" />
-        <span className="absolute top-[215px] -right-[17px] h-[70px] w-1 rounded-[2px] bg-zinc-700" />
+        {/* 옆 버튼(전원·음량). 옆면 두께 바로 바깥에 얇게 둔다. */}
+        <span className="absolute top-[150px] -right-[7px] h-[46px] w-[3px] rounded-[2px] bg-zinc-600" />
+        <span className="absolute top-[215px] -right-[7px] h-[70px] w-[3px] rounded-[2px] bg-zinc-600" />
         <div className="relative overflow-hidden rounded-[30px] bg-white">
           {/* 앱 빌드는 정적 내보내기라 next/image의 최적화를 쓸 수 없다(Landing과 같다). */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
