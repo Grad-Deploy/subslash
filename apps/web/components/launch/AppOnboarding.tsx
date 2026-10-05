@@ -16,7 +16,7 @@ import { cn } from "@lib/utils";
  *
  * 모양은 Claude Design 프로젝트의 'App Onboarding.dc.html'을 따른다. 화면 캡처는 웹 소개와 같은 샘플
  * 데이터 캡처(`public/landing/`)이고 그렇게 밝힌다. 첫 장의 서비스 로고는 확인한 로고(`BRAND_LOGOS`)만 쓴다.
- * 움직임(장이 들어올 때 떠오름, 타일이 떠다님, 마지막 장의 슬래시)은 움직임 줄이기를 켜면 하지 않는다.
+ * 움직임(첫 장이 떠오름, 타일이 떠다님, 마지막 장에 멈추면 슬래시를 그음)은 움직임 줄이기를 켜면 하지 않는다.
  */
 
 const EASE = "cubic-bezier(.22,1,.36,1)";
@@ -296,13 +296,18 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
     });
   };
 
-  // 넘긴 만큼을 지금 장으로 본다. 넘기는 것은 브라우저의 스크롤 스냅이 맡는다.
+  // 넘긴 만큼을 지금 장으로 본다. 넘기는 것은 브라우저의 스크롤 스냅이 맡는다. index는 다음 장이 절반 들어오면
+  // 바뀌고(점·버튼), settled는 넘김이 끝나 장이 제자리에 섰을 때만 바뀐다(마지막 장의 슬래시).
+  const [settled, setSettled] = useState(0);
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
     const onScroll = () => {
-      if (track.clientWidth === 0) return;
-      setIndex(Math.round(track.scrollLeft / track.clientWidth));
+      const width = track.clientWidth;
+      if (width === 0) return;
+      const nearest = Math.round(track.scrollLeft / width);
+      setIndex(nearest);
+      if (Math.abs(track.scrollLeft - nearest * width) < 2) setSettled(nearest);
     };
     track.addEventListener("scroll", onScroll, { passive: true });
     return () => track.removeEventListener("scroll", onScroll);
@@ -325,9 +330,11 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
     return () => anims.forEach((a) => a.cancel());
   }, []);
 
-  // 장이 들어올 때 글과 그림이 차례로 떠오른다. 마지막 장은 로고의 슬래시를 긋는다.
+  // 첫 장의 글과 그림은 소개가 열릴 때 한 번 차례로 떠오른다. 다른 장에는 들어올 때 떠오르는 움직임을 두지
+  // 않는다 — 장이 바뀌는 것은 넘기는 도중(다음 장이 절반 들어온 때)이라, 이미 보이던 글과 그림이 그 순간 사라졌다가
+  // 넘김이 끝난 뒤 아래에서 다시 떠올랐다. 옆으로 넘어가는 움직임만으로 충분하다.
   useEffect(() => {
-    const slide = rootRef.current?.querySelector(`[data-slide="${index}"]`);
+    const slide = rootRef.current?.querySelector('[data-slide="0"]');
     if (!slide || reduceMotion()) return;
     const anims = [...slide.querySelectorAll("[data-a]")].map((el, k) =>
       el.animate(
@@ -338,21 +345,35 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
         { duration: 700, delay: 60 + k * 90, easing: EASE, fill: "backwards" },
       ),
     );
-    const path = slashRef.current;
-    if (index === LAST && path) {
-      const len = path.getTotalLength();
-      anims.push(
-        path.animate(
-          [
-            { strokeDasharray: `${len}`, strokeDashoffset: `${len}` },
-            { strokeDasharray: `${len}`, strokeDashoffset: "0" },
-          ],
-          { duration: 650, delay: 300, easing: EASE, fill: "backwards" },
-        ),
-      );
-    }
     return () => anims.forEach((a) => a.cancel());
-  }, [index]);
+  }, []);
+
+  // 마지막 장의 로고 슬래시는 처음부터 지워 두고, 그 장에 멈춰 섰을 때 한 번 긋는다. 들어오는 도중에 숨기면
+  // 보이던 슬래시가 사라졌다가 다시 그어진다.
+  const slashDrawnRef = useRef(false);
+  useEffect(() => {
+    const path = slashRef.current;
+    if (!path || reduceMotion()) return;
+    const len = path.getTotalLength();
+    path.style.strokeDasharray = `${len}`;
+    path.style.strokeDashoffset = `${len}`;
+  }, []);
+  useEffect(() => {
+    const path = slashRef.current;
+    if (settled !== LAST || !path || slashDrawnRef.current || reduceMotion()) return;
+    slashDrawnRef.current = true;
+    const len = path.getTotalLength();
+    const anim = path.animate([{ strokeDashoffset: `${len}` }, { strokeDashoffset: "0" }], {
+      duration: 650,
+      delay: 120,
+      easing: EASE,
+      fill: "forwards",
+    });
+    anim.onfinish = () => {
+      path.style.strokeDashoffset = "0";
+      anim.cancel();
+    };
+  }, [settled]);
 
   const slideLabels = ["소개", ...FEATURES.map((f) => f.name), "시작하기"];
 
