@@ -181,19 +181,20 @@ function HeroSlide() {
       >
         <div className="absolute top-[calc(env(safe-area-inset-top))] inset-x-0 bottom-0">
           {/* 타일은 위에서, 빨간 판은 아래에서 자리를 잡아 화면이 짧을수록 판의 윗선이 올라온다. 오른쪽일수록 선이
-              높으므로 오른쪽 아래의 메일 타일을 올려, 높이 740px(360×740)인 화면까지 타일이 선을 넘지 않게 둔다. */}
+              높으므로 오른쪽 아래의 메일 타일을 올려, 높이 740px(360×740)인 화면까지 타일이 선을 넘지 않게 둔다. 그림은 390px 폭이라 360px 화면에서는 양옆이 15px씩
+              잘리므로, 양 끝 타일(달력·메일)은 그만큼 안쪽에 둬 잘리지 않게 한다. */}
           <Tile x={268} y={238}>
             <LogoGlyph logo={BRAND_LOGOS.netflix} />
           </Tile>
           <Tile x={30} y={372}>
             <LogoGlyph logo={BRAND_LOGOS["youtube-premium"]} />
           </Tile>
-          <Tile x={290} y={312}>
+          <Tile x={280} y={312}>
             <span className="flex size-full items-center justify-center bg-muted">
               <Mail className="size-[18px] text-red-500" strokeWidth={2} />
             </span>
           </Tile>
-          <Tile x={-14} y={262}>
+          <Tile x={26} y={262}>
             <span className="flex size-full items-center justify-center bg-muted">
               <CalendarDays className="size-[18px] text-foreground" strokeWidth={2} />
             </span>
