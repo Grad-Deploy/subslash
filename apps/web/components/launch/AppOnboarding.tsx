@@ -59,8 +59,7 @@ const ISO: CSSProperties = { transform: "rotateX(55deg) rotateZ(-45deg)" };
  * 눕힌 타일. 폰보다 약하게, 얇은 판이 떠 있는 정도로만 입체를 준다.
  * - 옆면: 1px씩 쌓은 4겹(--tile-d1~4). 위에서 아래로 조금씩 어두워져 판의 두께로 읽힌다.
  * - 윗면: 흰 면은 평평하게 두고, 왼쪽 위 가장자리에 하이라이트(--tile-hi), 오른쪽 아래에 옅은 음영만 둔다.
- * - 그림자: 바로 아래의 진한 접촉 그림자와 넓게 퍼지는 옅은 그림자 두 겹. 판의 좌표에서 오른쪽 아래로 밀면
- *   등각으로 눕혔을 때 아래로 떨어진다.
+ * - 그림자: 타일 바로 아래 바닥에 둥글게 둔다(`Tile` 안의 설명).
  */
 const TILE_SURFACE: CSSProperties = {
   boxShadow: [
@@ -75,13 +74,19 @@ const TILE_SURFACE: CSSProperties = {
 
 function Tile({ children, x, y }: { children: ReactNode; x: number; y: number }) {
   return (
-    <div data-float className="absolute" style={{ left: x, top: y }}>
-      <div className="relative" style={ISO}>
-        <div className="absolute inset-0 translate-x-[11px] translate-y-[11px] rounded-[14px] bg-zinc-950/[.09] blur-[12px]" />
-        <div className="absolute inset-0 translate-x-[6px] translate-y-[6px] rounded-xl bg-zinc-950/20 blur-[3px]" />
+    <div data-tile className="absolute" style={{ left: x, top: y }}>
+      {/* 바닥 그림자. 타일과 같이 눕히면 등각 각도 때문에 오른쪽 아래로 길게 늘어져, 눕히지 않은 화면 좌표에서
+          타일 바로 아래에 둥근 그림자로 둔다. 가운데가 가장 진하고 바깥으로 갈수록 사라진다. 타일과 사이를 조금
+          띄워 떠 있는 것처럼 보이게 하고, 타일이 떠오르면 바닥에 남아 작아지고 옅어진다(아래 움직임). */}
+      <div
+        data-float-shadow
+        aria-hidden
+        className="absolute top-[67px] left-0 h-4 w-[76px] rounded-[50%] bg-[radial-gradient(closest-side,rgba(9,9,11,.2),rgba(9,9,11,.08)_55%,transparent)] dark:bg-[radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,.18)_55%,transparent)]"
+      />
+      <div data-float>
         <div
           className="relative flex size-[68px] items-center justify-center rounded-xl bg-card"
-          style={TILE_SURFACE}
+          style={{ ...ISO, ...TILE_SURFACE }}
         >
           {/* 판을 눕힌 만큼 되돌려, 로고는 바로 서 보이게 한다. */}
           <span className="flex size-[34px] rotate-45 items-center justify-center overflow-hidden rounded-[28%]">
@@ -406,16 +411,35 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     const root = rootRef.current;
     if (!root || reduceMotion()) return;
-    const anims = [...root.querySelectorAll("[data-float]")].map((el, i) =>
-      el.animate(
-        [
-          { transform: "translateY(0)" },
-          { transform: "translateY(-12px)" },
-          { transform: "translateY(0)" },
-        ],
-        { duration: 3200 + i * 420, delay: -i * 600, iterations: Infinity, easing: "ease-in-out" },
-      ),
-    );
+    // 타일이 떠오르면 바닥 그림자는 제자리에서 작아지고 옅어진다. 둘은 같은 시간·같은 박자로 움직인다.
+    const anims = [...root.querySelectorAll("[data-tile]")].flatMap((tile, i) => {
+      const timing: KeyframeAnimationOptions = {
+        duration: 3200 + i * 420,
+        delay: -i * 600,
+        iterations: Infinity,
+        easing: "ease-in-out",
+      };
+      const card = tile.querySelector("[data-float]");
+      const shadow = tile.querySelector("[data-float-shadow]");
+      return [
+        card?.animate(
+          [
+            { transform: "translateY(0)" },
+            { transform: "translateY(-12px)" },
+            { transform: "translateY(0)" },
+          ],
+          timing,
+        ),
+        shadow?.animate(
+          [
+            { transform: "scale(1)", opacity: 1 },
+            { transform: "scale(.82)", opacity: 0.7 },
+            { transform: "scale(1)", opacity: 1 },
+          ],
+          timing,
+        ),
+      ].filter((a): a is Animation => a !== undefined);
+    });
     return () => anims.forEach((a) => a.cancel());
   }, []);
 
