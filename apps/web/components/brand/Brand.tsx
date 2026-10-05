@@ -72,6 +72,48 @@ export function BrandWordmark({ className }: { className?: string }) {
   );
 }
 
+/**
+ * 앱 아이콘(`app/icon.svg`와 같은 그림). 테마와 관계없이 검은 바탕이라, 어두운 화면에서는 바탕과 구분되게
+ * 테두리를 둔다. `slashClassName`은 슬래시를 긋는 움직임(globals.css의 `cta-slash`)을 붙일 때 쓴다 — 길이를
+ * 1로 재(pathLength) 두므로 그 움직임이 선의 실제 길이를 몰라도 된다.
+ */
+export function BrandAppIcon({
+  className,
+  slashClassName,
+  style,
+}: {
+  className?: string;
+  slashClassName?: string;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <svg
+      viewBox="0 0 512 512"
+      aria-hidden
+      style={style}
+      className={cn(
+        "rounded-[24%] shadow-[0_30px_60px_-24px_rgba(9,9,11,0.45)] dark:ring-1 dark:ring-zinc-700",
+        className,
+      )}
+    >
+      <rect width="512" height="512" rx="123" fill="#09090B" />
+      <g transform="rotate(-6 256 256)">
+        <rect x="63" y="102" width="258" height="213" rx="52" fill="#52525B" />
+        <rect x="178" y="197" width="271" height="209" rx="54" fill="#FAFAFA" />
+      </g>
+      <path
+        d="M92 422 L420 102"
+        pathLength={1}
+        className={slashClassName}
+        stroke="#EF4444"
+        strokeWidth="51"
+        strokeLinecap="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
 /** 마크와 워드마크를 나란히. 상단 바와 같이 좁은 자리에 쓴다. */
 export function BrandLockup({ className }: { className?: string }) {
   return (
