@@ -55,18 +55,39 @@ const LAST = SLIDE_COUNT - 1;
 /** 등각으로 눕힌 판. 타일과 폰 그림이 같은 각도로 눕는다. */
 const ISO: CSSProperties = { transform: "rotateX(55deg) rotateZ(-45deg)" };
 
-/** 눕힌 타일. 옆면은 그림자로 그린다. */
+/**
+ * 눕힌 타일. 폰보다 약하게, 얇은 판이 떠 있는 정도로만 입체를 준다.
+ * - 옆면: 1px씩 쌓은 4겹(--tile-d1~4). 위에서 아래로 조금씩 어두워져 판의 두께로 읽힌다.
+ * - 윗면: 흰 면은 평평하게 두고, 왼쪽 위 가장자리에 하이라이트(--tile-hi), 오른쪽 아래에 옅은 음영만 둔다.
+ * - 그림자: 바로 아래의 진한 접촉 그림자와 넓게 퍼지는 옅은 그림자 두 겹. 판의 좌표에서 오른쪽 아래로 밀면
+ *   등각으로 눕혔을 때 아래로 떨어진다.
+ */
+const TILE_SURFACE: CSSProperties = {
+  boxShadow: [
+    "inset 1px 1px 0 var(--tile-hi)",
+    "inset -1px -1px 0 rgba(9,9,11,.05)",
+    "1px 1px 0 var(--tile-d1)",
+    "2px 2px 0 var(--tile-d2)",
+    "3px 3px 0 var(--tile-d3)",
+    "4px 4px 0 var(--tile-d4)",
+  ].join(", "),
+};
+
 function Tile({ children, x, y }: { children: ReactNode; x: number; y: number }) {
   return (
     <div data-float className="absolute" style={{ left: x, top: y }}>
-      <div
-        className="flex size-[68px] items-center justify-center rounded-xl bg-card shadow-[5px_5px_0_var(--tile-side),0_18px_30px_-10px_rgba(9,9,11,0.18)]"
-        style={ISO}
-      >
-        {/* 판을 눕힌 만큼 되돌려, 로고는 바로 서 보이게 한다. */}
-        <span className="flex size-[34px] rotate-45 items-center justify-center overflow-hidden rounded-[28%]">
-          {children}
-        </span>
+      <div className="relative" style={ISO}>
+        <div className="absolute inset-0 translate-x-[11px] translate-y-[11px] rounded-[14px] bg-zinc-950/[.09] blur-[12px]" />
+        <div className="absolute inset-0 translate-x-[6px] translate-y-[6px] rounded-xl bg-zinc-950/20 blur-[3px]" />
+        <div
+          className="relative flex size-[68px] items-center justify-center rounded-xl bg-card"
+          style={TILE_SURFACE}
+        >
+          {/* 판을 눕힌 만큼 되돌려, 로고는 바로 서 보이게 한다. */}
+          <span className="flex size-[34px] rotate-45 items-center justify-center overflow-hidden rounded-[28%]">
+            {children}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -148,7 +169,7 @@ function HeroSlide() {
       {/* 그림은 390px 폭의 디자인 좌표 그대로 두고 가운데에 놓는다. */}
       <div
         aria-hidden
-        className="absolute inset-y-0 left-1/2 w-[390px] -translate-x-1/2 [--tile-side:#e4e4e7] dark:[--tile-side:#3f3f46]"
+        className="absolute inset-y-0 left-1/2 w-[390px] -translate-x-1/2 [--tile-d1:#ececee] [--tile-d2:#e4e4e7] [--tile-d3:#dcdce0] [--tile-d4:#d4d4d8] [--tile-hi:#ffffff] dark:[--tile-d1:#52525b] dark:[--tile-d2:#46464d] dark:[--tile-d3:#3f3f46] dark:[--tile-d4:#35353b] dark:[--tile-hi:rgba(255,255,255,.08)]"
       >
         <div className="absolute top-[calc(env(safe-area-inset-top))] inset-x-0 bottom-0">
           <Tile x={268} y={238}>
