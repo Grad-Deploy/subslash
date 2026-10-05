@@ -466,6 +466,7 @@ describe("원클릭 연결 웹 앱", () => {
       stored?: Record<string, string>;
     } = {},
   ) {
+    const titles: string[] = [];
     const html: string[] = [];
     const fetched: {
       url: string;
@@ -585,7 +586,10 @@ describe("원클릭 연결 웹 앱", () => {
       HtmlService: {
         createHtmlOutput: (content: string) => {
           html.push(content);
-          const output = { setTitle: () => output, addMetaTag: () => output };
+          const output = {
+            setTitle: (title: string) => (titles.push(title), output),
+            addMetaTag: () => output,
+          };
           return output;
         },
       },
@@ -648,6 +652,7 @@ describe("원클릭 연결 웹 앱", () => {
     };
 
     return {
+      titles,
       api,
       connect,
       html,
@@ -833,6 +838,17 @@ describe("원클릭 연결 웹 앱", () => {
     const run = runWebApp();
     run.connect({ code: "c", origin: ORIGIN, client: "app", return: "com.subslash.app" });
     expect(run.html[0]).toContain('var RETURN_URL = "com.subslash.app://oauth-done?flow=gmail"');
+  });
+
+  it("캘린더 등록 화면의 제목줄은 'Gmail 연결'이 아니라 '캘린더 등록'이다", () => {
+    // 인앱 브라우저 위쪽 제목이 'SubSlash Gmail 연결'이라 캘린더를 등록한 사람이 헷갈렸다.
+    const calendar = runWebApp();
+    calendar.api.doGet({ parameter: { action: "calendar", code: "plan-code", origin: ORIGIN } });
+    expect(calendar.titles).toEqual(["SubSlash 캘린더 등록"]);
+
+    const gmail = runWebApp();
+    gmail.api.doGet({ parameter: { code: "c", origin: ORIGIN } });
+    expect(gmail.titles).toEqual(["SubSlash Gmail 연결"]);
   });
 
   it("목록에 없는 스킴이나 웹에서 온 스킴으로는 앱을 열지 않는다", () => {
