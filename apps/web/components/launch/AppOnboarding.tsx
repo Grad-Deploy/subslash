@@ -56,46 +56,43 @@ const LAST = SLIDE_COUNT - 1;
 const ISO: CSSProperties = { transform: "rotateX(55deg) rotateZ(-45deg)" };
 
 /**
- * 타일은 폰보다 더 눕힌다(62°). 폰과 같은 55°로 세우면 바닥에서 비스듬히 서 있는 판처럼 보여 어색했다. 더
- * 눕히면(68°) 로고가 납작해져 알아보기 어렵다.
+ * 타일은 앱 아이콘(둥근 사각형)을 뒤로만 50° 눕힌다. 폰처럼 마름모로 돌려 눕히면 아이콘이 아니라 바닥 타일처럼
+ * 보였다. 돌리지 않으므로 로고도 되돌릴 필요가 없다.
  */
-const TILE_ISO: CSSProperties = { transform: "rotateX(62deg) rotateZ(-45deg)" };
+const TILE_ISO: CSSProperties = { transform: "rotateX(50deg)" };
 
 /**
- * 눕힌 타일. 폰보다 약하게, 얇은 판이 떠 있는 정도로만 입체를 준다.
- * - 옆면: 1px씩 쌓은 4겹(--tile-d1~4). 위에서 아래로 조금씩 어두워져 판의 두께로 읽힌다.
- * - 윗면: 흰 면은 평평하게 두고, 왼쪽 위 가장자리에 하이라이트(--tile-hi), 오른쪽 아래에 옅은 음영만 둔다.
+ * 눕힌 앱 아이콘. 폰보다 약하게, 얇은 판이 떠 있는 정도로만 입체를 준다.
+ * - 옆면: 아래로 1px씩 쌓은 4겹(--tile-d1~4). 위에서 아래로 조금씩 어두워져 판의 두께로 읽힌다.
+ * - 윗면: 흰 면은 평평하게 두고 위 가장자리에 하이라이트(--tile-hi)만 둔다.
  * - 그림자: 타일 바로 아래 바닥에 둥글게 둔다(`Tile` 안의 설명).
  */
 const TILE_SURFACE: CSSProperties = {
   boxShadow: [
-    "inset 1px 1px 0 var(--tile-hi)",
-    "inset -1px -1px 0 rgba(9,9,11,.05)",
-    "1px 1px 0 var(--tile-d1)",
-    "2px 2px 0 var(--tile-d2)",
-    "3px 3px 0 var(--tile-d3)",
-    "4px 4px 0 var(--tile-d4)",
+    "inset 0 1px 0 var(--tile-hi)",
+    "0 1px 0 var(--tile-d1)",
+    "0 2px 0 var(--tile-d2)",
+    "0 3px 0 var(--tile-d3)",
+    "0 4px 0 var(--tile-d4)",
   ].join(", "),
 };
 
 function Tile({ children, x, y }: { children: ReactNode; x: number; y: number }) {
   return (
-    <div data-tile className="absolute" style={{ left: x, top: y }}>
-      {/* 바닥 그림자. 타일과 같이 눕히면 등각 각도 때문에 오른쪽 아래로 길게 늘어져, 눕히지 않은 화면 좌표에서
-          타일 바로 아래에 둥근 그림자로 둔다. 가운데가 가장 진하고 바깥으로 갈수록 사라진다. 타일과 사이를 조금
-          띄워 떠 있는 것처럼 보이게 하고, 타일이 떠오르면 바닥에 남아 작아지고 옅어진다(아래 움직임). */}
+    <div data-tile className="absolute size-[68px]" style={{ left: x, top: y }}>
+      {/* 바닥 그림자. 타일 바로 아래 가운데에 둥글게 두고, 가운데가 가장 진하고 바깥으로 갈수록 사라진다. 타일과
+          사이를 조금 띄워 떠 있는 것처럼 보이게 하고, 타일이 떠오르면 바닥에 남아 작아지고 옅어진다(아래 움직임). */}
       <div
         data-float-shadow
         aria-hidden
-        className="absolute top-[61px] left-0 h-4 w-[76px] rounded-[50%] bg-[radial-gradient(closest-side,rgba(9,9,11,.2),rgba(9,9,11,.08)_55%,transparent)] dark:bg-[radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,.18)_55%,transparent)]"
+        className="absolute top-[54px] left-0 h-3.5 w-[68px] rounded-[50%] bg-[radial-gradient(closest-side,rgba(9,9,11,.2),rgba(9,9,11,.08)_55%,transparent)] dark:bg-[radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,.18)_55%,transparent)]"
       />
-      <div data-float>
+      <div data-float className="flex size-full items-center justify-center">
         <div
-          className="relative flex size-[68px] items-center justify-center rounded-xl bg-card"
+          className="flex size-[60px] items-center justify-center rounded-[26%] bg-card"
           style={{ ...TILE_ISO, ...TILE_SURFACE }}
         >
-          {/* 판을 눕힌 만큼 되돌려, 로고는 바로 서 보이게 한다. */}
-          <span className="flex size-[34px] rotate-45 items-center justify-center overflow-hidden rounded-[28%]">
+          <span className="flex size-[30px] items-center justify-center overflow-hidden rounded-[28%]">
             {children}
           </span>
         </div>
@@ -183,13 +180,15 @@ function HeroSlide() {
         className="absolute inset-y-0 left-1/2 w-[390px] -translate-x-1/2 [--tile-d1:#ececee] [--tile-d2:#e4e4e7] [--tile-d3:#dcdce0] [--tile-d4:#d4d4d8] [--tile-hi:#ffffff] dark:[--tile-d1:#52525b] dark:[--tile-d2:#46464d] dark:[--tile-d3:#3f3f46] dark:[--tile-d4:#35353b] dark:[--tile-hi:rgba(255,255,255,.08)]"
       >
         <div className="absolute top-[calc(env(safe-area-inset-top))] inset-x-0 bottom-0">
+          {/* 타일은 위에서, 빨간 판은 아래에서 자리를 잡아 화면이 짧을수록 판의 윗선이 올라온다. 오른쪽일수록 선이
+              높으므로 오른쪽 아래의 메일 타일을 올려, 높이 740px(360×740)인 화면까지 타일이 선을 넘지 않게 둔다. */}
           <Tile x={268} y={238}>
             <LogoGlyph logo={BRAND_LOGOS.netflix} />
           </Tile>
           <Tile x={30} y={372}>
             <LogoGlyph logo={BRAND_LOGOS["youtube-premium"]} />
           </Tile>
-          <Tile x={292} y={352}>
+          <Tile x={290} y={312}>
             <span className="flex size-full items-center justify-center bg-muted">
               <Mail className="size-[18px] text-red-500" strokeWidth={2} />
             </span>
