@@ -4,11 +4,14 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { ArrowRight, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { POPULAR_SERVICES, formatCurrency, type ServicePreset } from "@subslash/shared";
-import { BrandWordmark } from "@components/brand/Brand";
+import { BrandAppIcon, BrandWordmark } from "@components/brand/Brand";
 import { PROVIDER_LOOK } from "@components/auth/SocialLoginButtons";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { UnitCostCalculator } from "@components/home/UnitCostCalculator";
-import { SAMPLES, sampleName } from "@components/home/samples";
+import { PhoneFrame } from "@components/home/PhoneFrame";
+import { SampleChargeCard } from "@components/home/SampleChargeCard";
+import { SAMPLES, SAMPLE_NOTE, SAMPLE_TOTAL } from "@components/home/samples";
+import { shortServiceName } from "@lib/service-name";
 import { useStore } from "@lib/store";
 import { isSocialLoginOpen } from "@lib/privacy";
 import { markWelcomeSeen, queueWelcomePicks } from "@lib/welcome";
@@ -73,16 +76,6 @@ const PICKS: ServicePreset[] = ["netflix", "coupang-wow", "youtube-premium"].fla
   return preset ? [preset] : [];
 });
 
-/** 탭·목록에는 괄호 속 부연("쿠팡 와우 (쿠팡플레이)")을 뺀다. */
-const shortName = (preset: ServicePreset) => preset.nameKo.replace(/\s*\(.*\)$/, "");
-
-const sampleTotal = SAMPLES.every((s) => s.currency === "KRW")
-  ? formatCurrency(
-      SAMPLES.reduce((sum, s) => sum + s.amount, 0),
-      "KRW",
-    )
-  : null;
-
 /**
  * 장이 들어오는 정도(`--enter`, 0~1)에 묶은 움직임. 0이면 옆 장에 있고 1이면 제자리다. 값은 넘기는
  * 손가락(스크롤 위치)을 따라 매 프레임 바뀌므로 글과 그림이 넘기는 만큼 아래에서 올라오고, 나갈 때는 그만큼
@@ -127,35 +120,18 @@ function ProblemSlide() {
       </p>
       <ul className="mt-10 flex flex-col gap-2.5">
         {SAMPLES.map((sample) => (
-          <li
-            key={sample.preset.id}
-            data-n
-            className="flex items-center gap-3.5 rounded-[20px] border bg-card px-4 py-3.5 shadow-[0_16px_32px_-20px_rgba(9,9,11,0.25)]"
-          >
-            <ServiceLogo presetId={sample.preset.id} name={sample.preset.nameKo} size={40} />
-            <div className="min-w-0 flex-1">
-              <div className="flex justify-between gap-2 text-[15px] font-bold">
-                <span className="truncate">{sampleName(sample)}</span>
-                <span className="shrink-0 text-[13px] font-medium text-muted-foreground">
-                  결제일
-                </span>
-              </div>
-              <p className="mt-0.5 text-[15px] tabular-nums text-muted-foreground">
-                {formatCurrency(sample.amount, sample.currency)} 결제 완료
-              </p>
-            </div>
-          </li>
+          <SampleChargeCard key={sample.preset.id} sample={sample} data-n />
         ))}
       </ul>
       <div className="flex-1" />
-      {sampleTotal && (
+      {SAMPLE_TOTAL && (
         <div data-n>
           <p className="text-[26px] leading-[1.3] font-black tracking-[-0.04em]">
             모르는 사이 매달
             <br />
-            <span className="text-red-500 tabular-nums">{sampleTotal}</span>
+            <span className="text-red-500 tabular-nums">{SAMPLE_TOTAL}</span>
           </p>
-          <p className="mt-1.5 text-xs text-muted-foreground">예시예요 · 서비스 목록 기준 요금</p>
+          <p className="mt-1.5 text-xs text-muted-foreground">{SAMPLE_NOTE}</p>
         </div>
       )}
     </div>
@@ -168,7 +144,8 @@ function AnswerSlide({ slashRef }: { slashRef: React.Ref<SVGPathElement> }) {
       className="flex h-full flex-col items-center justify-center px-7 pb-[calc(env(safe-area-inset-bottom)+112px)] text-center"
       style={RISE_TEXT}
     >
-      <AnswerIcon slashRef={slashRef} />
+      {/* 슬래시는 이 장에 멈춰 섰을 때 긋는다(slashRef). */}
+      <BrandAppIcon className="size-[104px]" slashRef={slashRef} />
       <p className="mt-8 text-[15px] font-semibold text-muted-foreground">구독 디톡스</p>
       <h2 className="mt-2.5 text-[48px] leading-[1.08] font-black tracking-[-0.05em]">
         가격 말고
@@ -179,31 +156,6 @@ function AnswerSlide({ slashRef }: { slashRef: React.Ref<SVGPathElement> }) {
         한 달에 몇 번 쓰는지 체크하면 안 쓰는 구독이 보여요. 해지 경로까지 알려 드려요.
       </p>
     </div>
-  );
-}
-
-/** 앱 아이콘. 슬래시는 이 장에 멈춰 섰을 때 긋는다(ref로 움직인다). icon.svg·BrandAppIcon과 같은 좌표다. */
-function AnswerIcon({ slashRef }: { slashRef: React.Ref<SVGPathElement> }) {
-  return (
-    <svg
-      viewBox="0 0 512 512"
-      aria-hidden
-      className="size-[104px] rounded-[24%] shadow-[0_30px_60px_-24px_rgba(9,9,11,0.45)] dark:ring-1 dark:ring-zinc-700"
-    >
-      <rect width="512" height="512" rx="123" fill="#09090B" />
-      <g transform="rotate(-6 256 256)">
-        <rect x="63" y="102" width="258" height="213" rx="52" fill="#52525B" />
-        <rect x="178" y="197" width="271" height="209" rx="54" fill="#FAFAFA" />
-      </g>
-      <path
-        ref={slashRef}
-        d="M92 422 L420 102"
-        stroke="#EF4444"
-        strokeWidth="51"
-        strokeLinecap="round"
-        fill="none"
-      />
-    </svg>
   );
 }
 
@@ -240,21 +192,14 @@ function FeatureSlide({ feature }: { feature: (typeof FEATURES)[number] }) {
         <p className="mt-1 text-xs text-muted-foreground/80">샘플 데이터로 찍은 화면</p>
       </div>
       {/* 폰 윗부분만 보인다. 아래쪽은 넘기기 막대 뒤로 잘려도 된다. */}
-      <div
-        className="mx-auto mt-7 w-[290px] rounded-t-[46px] bg-zinc-950 px-2.5 pt-2.5 ring-1 ring-transparent dark:ring-zinc-700"
+      <PhoneFrame
+        src={feature.image}
+        alt={feature.alt}
+        draggable={false}
+        className="mx-auto mt-7 w-[290px] rounded-t-[46px] pb-0 shadow-none"
+        screenClassName="h-[440px] rounded-t-[36px] object-top"
         style={RISE_PHONE}
-      >
-        {/* 앱 빌드는 정적 내보내기라 next/image의 최적화를 쓸 수 없다(Landing과 같다). */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={feature.image}
-          alt={feature.alt}
-          width={1080}
-          height={1920}
-          draggable={false}
-          className="block h-[440px] w-full rounded-t-[36px] bg-white object-cover object-top"
-        />
-      </div>
+      />
     </div>
   );
 }
@@ -317,7 +262,7 @@ function TrySlide({
             >
               <ServiceLogo presetId={preset.id} name={preset.nameKo} size={40} />
               <span className="min-w-0 flex-1">
-                <span className="block text-base font-bold">{shortName(preset)}</span>
+                <span className="block text-base font-bold">{shortServiceName(preset)}</span>
                 <span className="mt-0.5 block text-sm text-muted-foreground">
                   {preset.defaultAmount !== null
                     ? `월 ${formatCurrency(preset.defaultAmount, preset.currency)}`
@@ -500,21 +445,19 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
   }, []);
 
   // 둘째 장의 로고 슬래시는 처음부터 지워 두고, 그 장에 멈춰 섰을 때 한 번 긋는다. 들어오는 도중에 숨기면
-  // 보이던 슬래시가 사라졌다가 다시 그어진다.
+  // 보이던 슬래시가 사라졌다가 다시 그어진다. 선의 길이는 1로 재 두었다(BrandAppIcon의 pathLength).
   const slashDrawnRef = useRef(false);
   useEffect(() => {
     const path = slashRef.current;
     if (!path || reduceMotion()) return;
-    const len = path.getTotalLength();
-    path.style.strokeDasharray = `${len}`;
-    path.style.strokeDashoffset = `${len}`;
+    path.style.strokeDasharray = "1";
+    path.style.strokeDashoffset = "1";
   }, []);
   useEffect(() => {
     const path = slashRef.current;
     if (settled !== ANSWER || !path || slashDrawnRef.current || reduceMotion()) return;
     slashDrawnRef.current = true;
-    const len = path.getTotalLength();
-    const anim = path.animate([{ strokeDashoffset: `${len}` }, { strokeDashoffset: "0" }], {
+    const anim = path.animate([{ strokeDashoffset: "1" }, { strokeDashoffset: "0" }], {
       duration: 650,
       delay: 120,
       easing: EASE,

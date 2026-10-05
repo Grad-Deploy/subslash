@@ -74,16 +74,18 @@ export function BrandWordmark({ className }: { className?: string }) {
 
 /**
  * 앱 아이콘(`app/icon.svg`와 같은 그림). 테마와 관계없이 검은 바탕이라, 어두운 화면에서는 바탕과 구분되게
- * 테두리를 둔다. `slashClassName`은 슬래시를 긋는 움직임(globals.css의 `cta-slash`)을 붙일 때 쓴다 — 길이를
- * 1로 재(pathLength) 두므로 그 움직임이 선의 실제 길이를 몰라도 된다.
+ * 테두리를 둔다. 슬래시를 긋는 움직임은 CSS면 `slashClassName`(globals.css의 `cta-slash`), JS면 `slashRef`로
+ * 붙인다 — 길이를 1로 재(pathLength) 두므로 어느 쪽이든 dasharray·dashoffset을 0~1로 쓰면 된다.
  */
 export function BrandAppIcon({
   className,
   slashClassName,
+  slashRef,
   style,
 }: {
   className?: string;
   slashClassName?: string;
+  slashRef?: React.Ref<SVGPathElement>;
   style?: React.CSSProperties;
 }) {
   return (
@@ -102,6 +104,7 @@ export function BrandAppIcon({
         <rect x="178" y="197" width="271" height="209" rx="54" fill="#FAFAFA" />
       </g>
       <path
+        ref={slashRef}
         d="M92 422 L420 102"
         pathLength={1}
         className={slashClassName}
