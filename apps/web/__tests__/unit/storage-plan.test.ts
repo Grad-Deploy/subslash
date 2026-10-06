@@ -42,13 +42,33 @@ describe("저장 공간 요금제 계산", () => {
     expect(storagePlanFit({ name: "네이버 MYBOX", planId: "x" }, 10)).toBeNull();
   });
 
-  it("구글 원도 계산한다", () => {
-    const fit = storagePlanFit(
-      { name: "구글 원", cancelUrl: "https://one.google.com/about/plans", planId: "ai-plus" },
-      3,
-    );
-    expect(fit?.usedGB).toBe(60);
-    expect(fit?.smaller?.planName).toBe("베이직 100GB");
+  it("구글 원도 계산하지만, AI가 함께 있는 요금제는 AI가 빠지는 요금제를 권하지 않는다", () => {
+    const googleOne = (planId: string) => ({
+      name: "구글 원",
+      cancelUrl: "https://one.google.com/about/plans",
+      planId,
+    });
+    // AI 프로 5TB에 약 5GB — 용량만 보면 베이직 100GB에 들어가지만 베이직에는 Gemini가 없다.
+    const pro = storagePlanFit(googleOne("ai-pro"), 0.1);
+    expect(pro?.usedGB).toBe(5);
+    expect(pro?.smaller).toBeNull();
+    expect(pro?.bundledExtras).toBe("Google AI Pro의 Gemini 기능");
+
+    const plus = storagePlanFit(googleOne("ai-plus"), 3);
+    expect(plus?.usedGB).toBe(60);
+    expect(plus?.smaller).toBeNull();
+    expect(plus?.bundledExtras).toBe("Google AI Plus의 Gemini 기능");
+
+    // 용량만으로도 더 작은 요금제에 들어가지 않으면 함께 주는 것을 핑계로 말하지 않는다.
+    expect(storagePlanFit(googleOne("ai-plus"), 90)?.bundledExtras).toBeNull();
+
+    const message = evaluateMetric("storage", "구글 원", 29000, 1, "KRW", pro).shockMessage;
+    expect(message).not.toContain("베이직");
+    expect(message).toContain("용량만으로 판단하지 않아요");
+  });
+
+  it("함께 주는 것이 없는 요금제는 예전처럼 더 작은 요금제를 권한다", () => {
+    expect(storagePlanFit(icloud("2tb"), 5)?.bundledExtras).toBeNull();
   });
 
   it("체크인 결과: 요금제를 알면 추측하지 않고 계산으로 말한다", () => {

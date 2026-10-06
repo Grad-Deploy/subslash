@@ -28,6 +28,11 @@ export interface ServicePlan {
    * 사용 비율로 더 작은 요금제에 들어가는지 계산한다(utils/storagePlan).
    */
   storageGB?: number;
+  /**
+   * 용량 말고도 이 요금제가 함께 주는 것(구글 원 AI 프로의 Gemini 등). 적어 두면 용량만 보고 이것이
+   * 빠지는 요금제를 권하지 않는다(utils/storagePlan) — 이 요금제를 내는 이유가 용량이 아닐 수 있다.
+   */
+  extras?: string;
 }
 
 export interface ServicePreset {
@@ -711,8 +716,20 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     defaultAmount: null,
     plans: [
       { id: "basic", name: "베이직 100GB", amount: 2400, storageGB: 100 },
-      { id: "ai-plus", name: "Google AI Plus 2TB", amount: 11900, storageGB: 2000 },
-      { id: "ai-pro", name: "Google AI Pro 5TB", amount: 29000, storageGB: 5000 },
+      {
+        id: "ai-plus",
+        name: "Google AI Plus 2TB",
+        amount: 11900,
+        storageGB: 2000,
+        extras: "Google AI Plus의 Gemini 기능",
+      },
+      {
+        id: "ai-pro",
+        name: "Google AI Pro 5TB",
+        amount: 29000,
+        storageGB: 5000,
+        extras: "Google AI Pro의 Gemini 기능",
+      },
     ],
     currency: "KRW",
     cancelUrl: "https://one.google.com/about/plans",
