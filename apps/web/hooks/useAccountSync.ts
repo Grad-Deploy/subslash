@@ -2,8 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { create } from "zustand";
-import { apiFetch } from "@lib/api";
-import { createBackup, parseBackup } from "@lib/backup";
+import { createBackup } from "@lib/backup";
+import {
+  fetchSnapshot,
+  fetchSnapshotSummary,
+  saveSnapshot,
+  type SnapshotSummary,
+} from "@lib/account-snapshot-client";
 import {
   decideSync,
   isEmptyRecords,
@@ -13,15 +18,6 @@ import {
 } from "@lib/account-sync";
 import { DEFAULT_ACCOUNT_SYNC, realRecords, useStore, type BackupData } from "@lib/store";
 import { useAuth } from "./useAuth";
-
-/** 계정에 저장된 기록의 요약(app/api/account/snapshot). */
-export interface SnapshotSummary {
-  savedAt: string;
-  subscriptionCount: number;
-  killedCount: number;
-  usageLogCount: number;
-  linkedAccountCount: number;
-}
 
 export type RecordCounts = Omit<SnapshotSummary, "savedAt">;
 
@@ -70,42 +66,35 @@ function counts(data: BackupData): RecordCounts {
 
 class Unauthorized extends Error {}
 
-async function fetchSummary(): Promise<SnapshotSummary | null> {
-  const res = await apiFetch("/api/account/snapshot?summary=1");
-  if (res.status === 404) return null;
+/** 실패한 응답을 던진다. 로그아웃(401)은 따로 가려 경고를 남기지 않는다. */
+function fail(res: Response, what: string): never {
   if (res.status === 401) throw new Unauthorized();
-  if (!res.ok) throw new Error(`계정 기록 요약을 받지 못했습니다 (${res.status})`);
-  return (await res.json()).summary;
+  throw new Error(`${what} (${res.status})`);
+}
+
+async function fetchSummary(): Promise<SnapshotSummary | null> {
+  const result = await fetchSnapshotSummary();
+  if (result.kind === "failed") fail(result.res, "계정 기록 요약을 받지 못했습니다");
+  return result.kind === "ok" ? result.summary : null;
 }
 
 async function fetchFull(): Promise<{ summary: SnapshotSummary; data: BackupData } | null> {
-  const res = await apiFetch("/api/account/snapshot");
-  if (res.status === 404) return null;
-  if (res.status === 401) throw new Unauthorized();
-  if (!res.ok) throw new Error(`계정 기록을 받지 못했습니다 (${res.status})`);
-  const body = await res.json();
-  // 서버가 검사한 기록이지만, 이 앱이 읽을 수 있는지 파일 복원과 같은 검사를 한 번 더 한다.
-  const parsed = parseBackup(JSON.stringify(body.backup));
-  if (!parsed.ok) throw new Error(`계정 기록을 읽을 수 없습니다: ${parsed.error}`);
-  return { summary: body.summary, data: parsed.data };
+  const result = await fetchSnapshot();
+  if (result.kind === "failed") fail(result.res, "계정 기록을 받지 못했습니다");
+  if (result.kind === "none") return null;
+  if (!result.backup.ok) throw new Error(`계정 기록을 읽을 수 없습니다: ${result.backup.error}`);
+  return { summary: result.summary, data: result.backup.data };
 }
 
 type PushResult =
   { ok: true; summary: SnapshotSummary } | { ok: false; current: SnapshotSummary | null };
 
 async function push(condition: SaveCondition): Promise<PushResult> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (condition.kind === "none") headers["If-None-Match"] = "*";
-  else headers["If-Match"] = `"${condition.savedAt}"`;
-  const res = await apiFetch("/api/account/snapshot", {
-    method: "PUT",
-    headers,
-    body: JSON.stringify(createBackup(localData())),
-  });
-  if (res.status === 409) return { ok: false, current: (await res.json()).summary ?? null };
-  if (res.status === 401) throw new Unauthorized();
-  if (!res.ok) throw new Error(`계정에 올리지 못했습니다 (${res.status})`);
-  return { ok: true, summary: (await res.json()).summary };
+  const result = await saveSnapshot(createBackup(localData()), condition);
+  if (result.kind === "failed") fail(result.res, "계정에 올리지 못했습니다");
+  return result.kind === "ok"
+    ? { ok: true, summary: result.summary }
+    : { ok: false, current: result.current };
 }
 
 /** 이 판과 지금 기록으로 맞췄다고 기억한다. */
