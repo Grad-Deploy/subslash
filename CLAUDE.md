@@ -180,6 +180,15 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 부르면, 눌러서 첫 화면만 보고 해지된 줄 아는 사람이 생긴다. 서버는 http(s) 주소만 받는다. 알림을
 며칠 전에 띄울지는 등록 화면에서 고른다. 예전의 캘린더 피드(webcal)는 결제 알림 메일과 함께 그만뒀다.
 
+구글 원 저장 공간 체크인의 'Google 계정에서 확인'은 Gmail 연결과 **다른** SubSlash 소유 Apps Script 웹 앱이다
+(`lib/storage-quota`, 파일은 `pnpm --filter @subslash/web storage:web-app`, 주소는 `NEXT_PUBLIC_STORAGE_QUOTA_WEB_APP_URL` —
+없으면 버튼이 없다). Gmail 웹 앱에 드라이브 권한을 더하면 이미 연결한 사람은 그 권한에 동의하지 않은 채라 2주 검사가
+멈출 수 있어 나눴다. 권한은 `drive.file` 하나이고(Drive `about.get`의 `storageQuota`), 읽은 한도·사용량은 그 화면에만
+보여 준다 — SubSlash로 보내거나 앱으로 되돌려 받지 않고 사용자가 본 비율을 적는다. 가족 요금제·회사 계정의 한도는
+내 요금제 용량이 아니라서 확인 없이 적으면 틀린 권유가 된다. 1% 미만이라도 쓰면 1%로 적게 한다(0%는 '아무것도 두지
+않음'). 요금제가 용량 말고도 주는 것(`ServicePlan.extras`, 구글 원 AI 프로의 Gemini)이 있으면 용량만 보고 그것이
+빠지는 요금제를 권하지 않는다(`storagePlanFit`의 `bundledExtras`).
+
 연결은 두 갈래다. 복사 방식은 사용자가 자기 계정에 스크립트를 붙여 넣어 Google 심사 대상이 아니다.
 원클릭('Gmail 연결하기')은 **SubSlash 소유** Apps Script 웹 앱(접속한 사용자로 실행)이라 Google 심사 전에는
 '확인되지 않은 앱' 경고와 새 사용자 100명 제한이 있고, 그 이상은 제한 권한 심사·연례 보안 평가가

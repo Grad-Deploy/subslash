@@ -12,6 +12,7 @@ import {
   PRIVACY_OFFICER,
 } from "@lib/privacy";
 import { siteOpenGraph } from "@lib/site-metadata";
+import { storageQuotaWebAppUrl } from "@lib/storage-quota";
 
 /** "2026-10-01" → "2026년 10월 1일". */
 function koreanDate(isoDate: string): string {
@@ -330,6 +331,17 @@ export default function PrivacyPage() {
                     실행해 결제 메일을 읽고 SubSlash로 보냄 — 연결 토큰과 마지막 검사 시각 보관.
                     &lsquo;구글 캘린더에 등록하기&rsquo;를 쓴 경우, 같은 방식으로 구독
                     이름·금액·결제일을 받아 이용자의 캘린더에 일정으로 씀
+                  </td>
+                  <td className="px-3 py-2">국외(Google 데이터센터)</td>
+                </tr>
+              )}
+              {storageQuotaWebAppUrl() && (
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-medium">Google</td>
+                  <td className="px-3 py-2">
+                    구글 원 체크인에서 &lsquo;Google 계정에서 확인&rsquo;을 쓴 경우, SubSlash의 Apps
+                    Script를 이용자 권한으로 실행해 계정 저장 용량(한도·사용량)을 이용자 화면에만
+                    보여 줌 — SubSlash로 보내거나 보관하지 않음
                   </td>
                   <td className="px-3 py-2">국외(Google 데이터센터)</td>
                 </tr>

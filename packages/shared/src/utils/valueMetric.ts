@@ -328,8 +328,11 @@ function metricMessage(
       if (quantity === 0) return `${name}에 아무것도 두지 않았다면 요금제가 필요 없을 수 있어요.`;
       if (storageFit) {
         const used = `${storageFit.planName} 중 ${quantity}%(${formatStorageGB(storageFit.usedGB)})를 쓰고 있어요.`;
-        return storageFit.smaller
-          ? `${name} ${used} ${storageFit.smaller.planName} 요금제(${money(storageFit.smaller.amount)})에도 여유 있게 들어가요.`
+        if (storageFit.smaller) {
+          return `${name} ${used} ${storageFit.smaller.planName} 요금제(${money(storageFit.smaller.amount)})에도 여유 있게 들어가요.`;
+        }
+        return storageFit.bundledExtras
+          ? `${name} ${used} 용량만 보면 더 작은 요금제에 들어가지만, 그 요금제에는 ${storageFit.bundledExtras}이 없어 용량만으로 판단하지 않아요.`
           : `${name} ${used} 더 작은 요금제에는 여유 있게 들어가지 않아요.`;
       }
       return quantity < 50

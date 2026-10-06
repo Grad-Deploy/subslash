@@ -11,6 +11,10 @@ import { findPresetForSubscription, type ServicePlan } from "../constants/servic
  *
  * 무료 용량(아이클라우드 5GB 등)은 요금제 목록에 없어 권하지 않는다. 금액은 요금표 가격끼리 나란히
  * 보여 주고 '아낀다'로 바꾸지 않는다 — 가족과 나누는 요금제면 내 몫은 그보다 작다.
+ *
+ * 용량 말고도 함께 주는 것(`extras`, 구글 원 AI 프로의 Gemini)이 있는 요금제는 그것이 빠지는 요금제를
+ * 권하지 않는다. AI 프로 5TB에 3GB를 두었다고 '베이직 100GB에 들어가요'라고 하면, AI를 쓰려고 내는
+ * 사람에게 AI를 끊으라고 권하게 된다. 그 대신 용량만으로는 판단하지 않는다고 말한다(`bundledExtras`).
  */
 export interface StoragePlanFit {
   planName: string;
@@ -18,6 +22,11 @@ export interface StoragePlanFit {
   usedGB: number;
   /** 쓰는 양이 들어가는 더 싼 요금제. 없으면 null. */
   smaller: { planName: string; capacityGB: number; amount: number } | null;
+  /**
+   * 용량만 보면 더 싼 요금제에 들어가지만, 그 요금제에는 이 요금제가 함께 주는 것(`extras`)이 없어 권하지
+   * 않았을 때 그 이름. 그 밖에는 null.
+   */
+  bundledExtras: string | null;
 }
 
 /** 더 작은 요금제로 옮겨도 이만큼은 비어 있어야 권한다 — 꽉 차면 곧 모자란다. */
@@ -36,7 +45,7 @@ export function storagePlanFit(sub: StorageSub, percent: number): StoragePlanFit
   if (!plan?.storageGB) return null;
   const usedGB = (plan.storageGB * Math.min(100, Math.max(0, percent))) / 100;
   const plans = findPresetForSubscription(sub)?.plans ?? [];
-  const candidates = plans.filter(
+  const fits = plans.filter(
     (p) =>
       p.storageGB &&
       // 용량이 같은 다른 결제처의 요금제(네이버 MYBOX의 웹 2TB와 App Store 2TB)는 '더 작은 요금제'가
@@ -46,6 +55,7 @@ export function storagePlanFit(sub: StorageSub, percent: number): StoragePlanFit
       (p.billingCycle ?? "monthly") === (plan.billingCycle ?? "monthly") &&
       usedGB <= p.storageGB * HEADROOM,
   );
+  const candidates = plan.extras ? fits.filter((p) => p.extras === plan.extras) : fits;
   const cheapest = candidates.sort((a, b) => a.amount - b.amount)[0];
   return {
     planName: plan.name,
@@ -54,6 +64,7 @@ export function storagePlanFit(sub: StorageSub, percent: number): StoragePlanFit
     smaller: cheapest
       ? { planName: cheapest.name, capacityGB: cheapest.storageGB!, amount: cheapest.amount }
       : null,
+    bundledExtras: !cheapest && fits.length > 0 ? (plan.extras ?? null) : null,
   };
 }
 
