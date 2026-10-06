@@ -21,6 +21,27 @@ function previousDay(date: string): string {
   return prev.toISOString().slice(0, 10);
 }
 
+/** 기기 시간대의 날짜를 `YYYY-MM-DD`로. */
+export function localYmd(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/**
+ * 그 날의 결제를 원으로 바꿀 환율. 달러이고 이미 지난 날이면 그날의 고시 환율, 아니면(원화, 아직 오지 않은 날,
+ * 그날 환율을 모름, `rateOn` 없음) 사용자 환율 `rate`다.
+ */
+export function rateForCharge(
+  currency: string,
+  date: Date,
+  rate: number,
+  rateOn: RateOn | undefined,
+  now: Date,
+): number {
+  if (currency !== "USD" || !rateOn || date.getTime() > now.getTime()) return rate;
+  return rateOn(localYmd(date)) ?? rate;
+}
+
 /** 고시일 → 환율 표로 `RateOn`을 만든다. 결제일에 고시가 없으면 그 전 고시일의 환율을 쓴다. */
 export function rateOnFromTable(rates: Readonly<Record<string, number>>): RateOn {
   return (date) => {
