@@ -31,7 +31,12 @@ export default defineConfig({
     command: "pnpm dev",
     url: "http://localhost:3000",
     // Gmail 자동 가져오기는 시작일(lib/privacy.ts) 전이라 꺼져 있다. 테스트 서버에서만 연다.
-    env: { NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN: "true" },
+    // 구글 원 체크인의 '사용량 측정'은 웹 앱 주소가 있어야 보인다. 테스트는 이 주소를 가로채 가짜 웹 앱을 띄운다.
+    env: {
+      NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN: "true",
+      NEXT_PUBLIC_STORAGE_QUOTA_WEB_APP_URL:
+        "https://script.google.com/macros/s/e2e-storage-quota/exec",
+    },
     reuseExistingServer: !process.env.CI,
   },
 });
