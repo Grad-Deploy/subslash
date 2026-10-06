@@ -18,6 +18,7 @@
     "db:apply": "tsx scripts/db-migrate/apply.ts",
     "check:cancel-links": "tsx scripts/cancel-links/run.ts",
     "gmail:web-app": "tsx scripts/gmail-web-app/write.ts",
+    "storage:web-app": "tsx scripts/storage-quota-web-app/write.ts",
     "ask:eval": "tsx scripts/ask-eval/run.ts"
   },
   "dependencies": {
