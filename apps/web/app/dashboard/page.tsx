@@ -7,22 +7,14 @@ import { IS_APP_BUILD } from "@lib/platform";
 import { useCheckInFlow, useReminderPrompt } from "@hooks/useCheckInFlow";
 import { useAddSubscriptionFlow } from "@hooks/useAddSubscriptionFlow";
 import { useStore } from "../../lib/store";
-import {
-  POPULAR_SERVICES,
-  Subscription,
-  formatCurrency,
-  getActionQueue,
-  getNextBillingHint,
-} from "@subslash/shared";
+import { POPULAR_SERVICES, getActionQueue, getNextBillingHint } from "@subslash/shared";
 import { takeWelcomePicks } from "@lib/welcome";
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { ActionQueue } from "../../components/dashboard/ActionQueue";
 import { BillingCalendar } from "../../components/dashboard/BillingCalendar";
 import { MonthlyValueReport } from "../../components/dashboard/MonthlyValueReport";
-import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
 import { Button } from "../../components/ui/button";
-import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { usePhoneUsageStore } from "../../hooks/usePhoneUsage";
@@ -31,7 +23,7 @@ import { AppStartChecklist } from "../../components/app-start/AppStartChecklist"
 import { AppServicePicker } from "../../components/app-start/AppServicePicker";
 import { FirstCheckInCard } from "../../components/app-start/FirstCheckInCard";
 import { useToast } from "@hooks/useToast";
-import { useKillSeries } from "@hooks/useKillSeries";
+import { useDashboardActions } from "@hooks/useDashboardActions";
 import { SavedMoneyLink } from "../../components/dashboard/SavedMoneyLink";
 import {
   AppAddButton,
@@ -56,11 +48,6 @@ export default function Dashboard() {
   const {
     subscriptions,
     usageLogs,
-    killSubscription,
-    reviveSubscription,
-    confirmKillVerified,
-    dismissCancelNotice,
-    confirmSubscriptionPrice,
     checkIn,
     getActiveSubscriptions,
     getKilledSubscriptions,
@@ -76,18 +63,17 @@ export default function Dashboard() {
 
   const mounted = useIsClient();
   const [isAutoImportOpen, setIsAutoImportOpen] = useState(false);
-  const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
-
-  const [chargedTarget, setChargedTarget] = useState<Subscription | null>(null);
 
   const { showToast, toast } = useToast();
+  // 해지 안내·가격 확인 같은 '지금 결정할 것'의 처리와 그 창(hooks/useDashboardActions).
+  const actions = useDashboardActions(showToast);
 
   // 결제 알림 묻기와 체크인 창(내 구독과 같은 흐름, hooks/useCheckInFlow).
   const reminder = useReminderPrompt(showToast);
   const checkInFlow = useCheckInFlow({
     showToast,
     reminder,
-    onKill: (id) => handleCancelGuide(id),
+    onKill: (id) => actions.openGuide(id),
   });
   const handleOpenCheckIn = checkInFlow.open;
   // 구독 추가 창과 등록 처리(내 구독과 같은 흐름, hooks/useAddSubscriptionFlow).
@@ -103,8 +89,6 @@ export default function Dashboard() {
     // 화면을 처음 열 때 한 번만 받는다(받으면 비워진다).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // 앱 계산서에서 이어서 해지하기(hooks/useKillSeries).
-  const killSeries = useKillSeries((sub) => setGuideTarget(sub));
 
   if (!mounted) {
     return (
@@ -121,8 +105,6 @@ export default function Dashboard() {
   const now = new Date();
   const queue = getActionQueue(subscriptions, usageLogs, now, rate);
   const nextBilling = getNextBillingHint(subscriptions, now);
-
-  const findSub = (id: string) => subscriptions.find((s) => s.id === id);
 
   // 첫 사용 안내(서비스 고르기 → 첫 체크인). 웹과 앱이 같다. 체험(샘플) 중에는 보이지 않는다 —
   // 샘플은 사용자의 기록이 아니다. 기기 알림 체크리스트는 앱에만 있다(알림이 기기 기능이라).
@@ -147,68 +129,6 @@ export default function Dashboard() {
     />
   );
 
-  // 실제 해지는 서비스 쪽에서 해야 하므로 가이드를 먼저 열고, 마쳤다고
-  // 알려줄 때만 완료로 기록한다.
-  const handleCancelGuide = (id: string) => {
-    const sub = findSub(id);
-    if (sub) setGuideTarget(sub);
-  };
-
-  // 계산서에서 해지 안내를 열 때. 뒤에 남은 구독을 기억해 두었다가 해지를 마치면 다음 것을 묻는다.
-  const handleReceiptCancelGuide = (id: string, rest: string[] = []) => {
-    killSeries.start(id, rest);
-    handleCancelGuide(id);
-  };
-
-  const confirmKill = (target: Subscription) => {
-    killSubscription(target.id);
-    showToast(`${target.name} 해지 완료로 기록`);
-    killSeries.advance(target);
-  };
-
-  // 가이드에서 '해지 완료했어요'를 누른 것이 곧 확인이다 — 예전에는 확인 창을 한 번 더 띄웠다.
-  const handleConfirmKilled = (id: string) => {
-    const sub = findSub(id);
-    if (sub) confirmKill(sub);
-  };
-
-  const handleConfirmPrice = (id: string, newAmount?: number) => {
-    const sub = findSub(id);
-    if (!sub) return;
-    confirmSubscriptionPrice(id, newAmount);
-    showToast(
-      newAmount !== undefined
-        ? `${sub.name} 요금을 ${formatCurrency(newAmount, sub.currency)}으로 바꿨어요.`
-        : `${sub.name} 요금 확인 완료`,
-    );
-  };
-
-  // 해지 뒤 첫 결제일에 결제가 없었다는 답만이 해지를 확인해 준다.
-  const handleKillNotCharged = (id: string) => {
-    const sub = findSub(id);
-    if (!sub) return;
-    confirmKillVerified(id);
-    showToast(`${sub.name} 결제 멈춤 확인`);
-  };
-
-  // 해지 알림 메일이 온 구독. 사용자가 해지했다고 답해야 기록한다 — 메일은 제목 낱말로 가린 것이다.
-  const handleCancelNoticeKilled = (id: string) => {
-    const sub = findSub(id);
-    if (sub) confirmKill(sub);
-  };
-
-  const handleCancelNoticeDismissed = (id: string) => {
-    const sub = findSub(id);
-    if (!sub) return;
-    dismissCancelNotice(id);
-    showToast(`${sub.name}은(는) 구독 중으로 둘게요`);
-  };
-
-  const handleKillCharged = (id: string) => {
-    const sub = findSub(id);
-    if (sub) setChargedTarget(sub);
-  };
-
   // 샘플은 내 구독에 더하지 않고 잠시 동안만 보여준다(store의 DemoSession).
   const handleLoadDemo = () => {
     startDemo();
@@ -221,19 +141,14 @@ export default function Dashboard() {
     nextBilling,
     activeCount: activeSubs.length,
     onCheckIn: handleOpenCheckIn,
-    onCancelGuide: handleCancelGuide,
-    onConfirmPrice: handleConfirmPrice,
-    onKillNotCharged: handleKillNotCharged,
-    onKillCharged: handleKillCharged,
-    onCancelNoticeKilled: handleCancelNoticeKilled,
-    onCancelNoticeDismissed: handleCancelNoticeDismissed,
+    ...actions.handlers,
     onAddFirst: () => openAdd(),
   };
   const unusedAlerts = AppUnusedAlerts && (
     <AppUnusedAlerts
       subscriptions={activeSubs}
       usageLogs={usageLogs}
-      onCancelGuide={handleCancelGuide}
+      onCancelGuide={actions.openGuide}
     />
   );
 
@@ -371,7 +286,7 @@ export default function Dashboard() {
               subscriptions={activeSubs}
               usageLogs={usageLogs}
               now={now}
-              onCancelGuide={handleReceiptCancelGuide}
+              onCancelGuide={actions.openReceiptGuide}
               onCheckIn={handleOpenCheckIn}
             />
           ) : (
@@ -379,7 +294,7 @@ export default function Dashboard() {
               subscriptions={activeSubs}
               usageLogs={usageLogs}
               now={now}
-              onCancelGuide={handleCancelGuide}
+              onCancelGuide={actions.openGuide}
               onCheckIn={handleOpenCheckIn}
             />
           )}
@@ -431,38 +346,7 @@ export default function Dashboard() {
         onRegistered={reminder.askAfterImport}
       />
 
-      <CancelGuideModal
-        subscription={guideTarget}
-        isOpen={!!guideTarget}
-        onClose={() => setGuideTarget(null)}
-        onConfirmKilled={handleConfirmKilled}
-      />
-
-      {/* 앱 계산서에서 이어서 해지할 때만 뜬다. */}
-      {killSeries.dialogs}
-
-      {chargedTarget && (
-        <ConfirmDialog
-          isOpen={!!chargedTarget}
-          onClose={() => setChargedTarget(null)}
-          onConfirm={() => {
-            // 결제가 됐다면 지금도 돈이 나가는 구독이다. 해지 기록을 지우고 가이드를
-            // 다시 연다. 해지를 마치고 다시 완료를 누르면 해지일이 오늘로 잡혀,
-            // 이미 나간 달은 절약에서 저절로 빠진다.
-            reviveSubscription(chargedTarget.id);
-            const revived = useStore
-              .getState()
-              .subscriptions.find((s) => s.id === chargedTarget.id);
-            if (revived) setGuideTarget(revived);
-            showToast(`${chargedTarget.name} 구독 중으로 되돌림`);
-            setChargedTarget(null);
-          }}
-          title="해지가 안 됐을 수 있어요"
-          description={`해지 후에도 결제됐다면 해지가 끝나지 않았을 수 있어요.\n구독 중으로 되돌리고 해지 가이드를 열어요.`}
-          confirmText="되돌리고 가이드 열기"
-          cancelText="취소"
-        />
-      )}
+      {actions.dialogs}
     </div>
   );
 }
