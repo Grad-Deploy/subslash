@@ -5,18 +5,16 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Download, Share2 } from "lucide-react";
 import {
-  RATE_LOOKBACK_DAYS,
   buildReceipt,
   formatReceiptPeriod,
   formatReceiptText,
   previousMonth,
   type ReceiptPeriod,
-  type Subscription,
 } from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
-import { useHistoricalRates } from "@hooks/useHistoricalRates";
+import { rateRangeFor, useHistoricalRates } from "@hooks/useHistoricalRates";
 import { copyText, saveImage, shareText } from "@lib/native";
 import { webUrl } from "@lib/api";
 import { parseReceiptPeriod, receiptHref, receiptNumber } from "@lib/receipt-view";
@@ -44,35 +42,14 @@ function shift(period: ReceiptPeriod, step: number): ReceiptPeriod {
   return { kind: "month", year: date.getFullYear(), month: date.getMonth() + 1 };
 }
 
-function ymd(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-/**
- * 그 기간의 지난 달러 결제를 바꿀 고시 환율을 받을 구간. 주말·연휴에 결제했으면 그 전 고시일을 찾으므로 며칠
- * 앞에서 시작하고, 오늘 뒤는 받지 않는다. 달러 구독이 없으면 받지 않는다(null).
- */
-function rateRange(
-  subscriptions: readonly Subscription[],
-  period: ReceiptPeriod,
-  now: Date,
-): { from: string; to: string } | null {
-  if (!subscriptions.some((sub) => sub.currency === "USD")) return null;
-  const start =
-    period.kind === "month"
-      ? new Date(period.year, period.month - 1, 1)
-      : new Date(period.year, 0, 1);
-  const end =
-    period.kind === "month"
-      ? new Date(period.year, period.month, 0)
-      : new Date(period.year, 11, 31);
-  const from = new Date(
-    start.getFullYear(),
-    start.getMonth(),
-    start.getDate() - RATE_LOOKBACK_DAYS,
-  );
-  return { from: ymd(from), to: ymd(end < now ? end : now) };
+/** 영수증 기간의 첫날과 마지막 날. */
+function periodBounds(period: ReceiptPeriod): { start: Date; end: Date } {
+  return period.kind === "month"
+    ? {
+        start: new Date(period.year, period.month - 1, 1),
+        end: new Date(period.year, period.month, 0),
+      }
+    : { start: new Date(period.year, 0, 1), end: new Date(period.year, 11, 31) };
 }
 
 function isFuture(period: ReceiptPeriod, now: Date): boolean {
@@ -106,7 +83,10 @@ function ReceiptFromQuery() {
   }, [params, now]);
 
   // 지난 달러 결제는 결제일의 고시 환율로 바꾼다. 받는 동안은 숫자가 바뀌어 보이지 않게 기다린다.
-  const range = useMemo(() => rateRange(subscriptions, period, now), [subscriptions, period, now]);
+  const range = useMemo(() => {
+    const { start, end } = periodBounds(period);
+    return rateRangeFor(subscriptions, start, end, now);
+  }, [subscriptions, period, now]);
   const { rateOn, loading: ratesLoading } = useHistoricalRates(range);
 
   const receipt = useMemo(

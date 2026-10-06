@@ -2,6 +2,7 @@ import type { Subscription } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { getNextBillingDateFor } from "./date";
 import { getFirstBillingDateAfterKill, getKillCheckStatus } from "./killCheck";
+import { rateForCharge, type RateOn } from "./historicalRate";
 import {
   getMyAnnualAmountKRW,
   getMyMonthDefendedAmountKRW,
@@ -68,14 +69,18 @@ export function getDefendedBetweenKRW(
   sub: Subscription,
   range: DefenseRange,
   rate: number = DEFAULT_EXCHANGE_RATE,
+  /** 결제일의 고시 환율(utils/historicalRate). 주면 지난 달러 결제일마다 그날의 환율로 바꾼다. */
+  rateOn?: RateOn,
+  now: Date = new Date(),
 ): number | null {
   let date = getFirstBillingDateAfterKill(sub);
   if (!date) return null;
 
-  const charge = chargeKRW(sub, rate);
   let total = 0;
   for (let i = 0; date && date.getTime() < range.to.getTime() && i < MAX_BILLING_DATES; i += 1) {
-    if (!range.from || date.getTime() >= range.from.getTime()) total += charge;
+    if (!range.from || date.getTime() >= range.from.getTime()) {
+      total += chargeKRW(sub, rateForCharge(sub.currency, date, rate, rateOn, now));
+    }
     // 결제일 당일을 기준으로 넘기면 그다음 결제일이 나온다.
     date = getNextBillingDateFor(sub, date);
   }
@@ -93,6 +98,8 @@ export function getSavingsTiers(
   now: Date = new Date(),
   rate: number = DEFAULT_EXCHANGE_RATE,
   range?: DefenseRange,
+  /** 결제일의 고시 환율. 주면 지난 결제일의 금액을 그날의 환율로 바꾼다(연말 결산). */
+  rateOn?: RateOn,
 ): SavingsTiers {
   const killed = subs.filter((sub) => sub.status === "killed");
   const today = startOfDay(now);
@@ -106,7 +113,7 @@ export function getSavingsTiers(
 
   for (const sub of killed) {
     const check = getKillCheckStatus(sub, now);
-    const amount = getDefendedBetweenKRW(sub, { from: range?.from, to }, rate);
+    const amount = getDefendedBetweenKRW(sub, { from: range?.from, to }, rate, rateOn, now);
     if (!check || check.state === "unknown" || amount === null) {
       unknownCount += 1;
       continue;
