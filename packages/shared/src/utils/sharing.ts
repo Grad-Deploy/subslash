@@ -1,5 +1,6 @@
 import { BillingCycle, Currency } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
+import { rateForCharge, type RateOn } from "./historicalRate";
 import {
   formatAmount,
   formatKRW,
@@ -297,16 +298,41 @@ export function getYearDefendedSeries(
   targetYear: number,
   rate: number = DEFAULT_EXCHANGE_RATE,
   now: Date = new Date(),
+  /**
+   * 결제일의 고시 환율(utils/historicalRate). 주면 지난 달의 달러 결제를 그 결제일의 환율로 바꾼다 — 연말 결산이
+   * 지난 결제를 지금 환율로 셈하지 않게. 아직 오지 않은 달은 지금 환율이다.
+   */
+  rateOn?: RateOn,
 ): YearDefendedSeries {
   const known = subs.filter((sub) => getMyYearDefendedAmountKRW(sub, targetYear, rate) !== null);
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
 
+  /** 그 달의 결제일(짧은 달은 말일). 그날의 환율을 고르는 데만 쓴다. */
+  const chargeDay = (sub: DefendedSubscription, month: number): Date => {
+    const lastDay = new Date(targetYear, month, 0).getDate();
+    return new Date(targetYear, month - 1, Math.min(Math.max(1, sub.billingDay || 1), lastDay));
+  };
+  const monthAmount = (month: number): number =>
+    rateOn
+      ? known.reduce(
+          (total, sub) =>
+            total +
+            (getMyMonthDefendedAmountKRW(
+              sub,
+              targetYear,
+              month,
+              rateForCharge(sub.currency, chargeDay(sub, month), rate, rateOn, now),
+            ) ?? 0),
+          0,
+        )
+      : sumMyMonthDefendedKRW(known, targetYear, month, rate).amount;
+
   const months = Array.from({ length: 12 }, (_, index): MonthDefended => {
     const month = index + 1;
     return {
       month,
-      amount: sumMyMonthDefendedKRW(known, targetYear, month, rate).amount,
+      amount: monthAmount(month),
       isFuture: targetYear > currentYear || (targetYear === currentYear && month > currentMonth),
     };
   });

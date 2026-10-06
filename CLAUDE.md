@@ -47,10 +47,11 @@ Next.js 15 App Router + Zustand(localStorage) + Drizzle/Turso.
 USD 환산 환율은 상수가 아니라 사용자 설정값이다. 컴포넌트에서는
 `useExchangeRate()`로 받아 넘긴다. 헬퍼의 기본 인자(`DEFAULT_EXCHANGE_RATE`)에
 기대면 "내 환율을 쓴다"고 적힌 화면 옆에 1,350으로 계산한 값이 나온다.
-구독 영수증처럼 **지난** 결제를 원화로 보여 줄 때는 지금 환율이 아니라 결제일의 고시 환율(ECB, `/api/fx/history` →
-`useHistoricalRates` → `buildReceipt`의 `rateOn`)로 바꾼다 — 지금 환율로 바꾸면 그때 낸 돈과 다른 숫자가 된다. 고시가 없는
+구독 영수증·연말 결산처럼 **지난** 결제를 원화로 보여 줄 때는 지금 환율이 아니라 결제일의 고시 환율(ECB, `/api/fx/history` →
+`useHistoricalRates` → `buildReceipt`·`buildYearInReview`·`getSavingsTiers`의 `rateOn`)로 바꾼다 — 지금 환율로 바꾸면 그때 낸 돈과 다른 숫자가 된다. 고시가 없는
 주말·연휴는 그 전 고시일의 환율을 쓰고(`rateOnFromTable`), 그래도 모르거나 아직 오지 않은 결제는 사용자 환율로 바꾸며
-그렇게 바꾼 건수를 영수증에 적는다(`receipt.fx`). 고시 환율도 카드사가 청구한 환율은 아니라고 적는다.
+그렇게 바꾼 건수를 영수증에 적는다(`receipt.fx`). 고시 환율도 카드사가 청구한 환율은 아니라고 적는다. 연말 결산의 지출 구성처럼
+지금 구독을 앞으로 1년 낸다고 셈한 값은 지난 결제가 아니라 지금 환율이다.
 
 체크인은 "지난 30일 동안 몇 번"을 묻는다. 나누는 값은 한 달치 내 몫
 (`getMyMonthlyShareAmount`)이어야 한다. 연 결제액을 그대로 나누면 12배가 된다.

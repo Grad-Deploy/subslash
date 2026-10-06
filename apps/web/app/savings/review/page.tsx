@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useMemo, useState } from "react";
 import { useIsClient } from "@hooks/useIsClient";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -14,6 +14,7 @@ import {
 } from "@subslash/shared";
 import { useStore } from "../../../lib/store";
 import { useExchangeRate } from "../../../hooks/useExchangeRate";
+import { rateRangeFor, useHistoricalRates } from "../../../hooks/useHistoricalRates";
 import { buildReviewShareSearchParams } from "../../../lib/share-review";
 import { webUrl } from "../../../lib/api";
 import { shareText } from "../../../lib/native";
@@ -72,20 +73,29 @@ function YearInReviewContent() {
   const rate = useExchangeRate();
   const mounted = useIsClient();
   const [copied, setCopied] = useState(false);
-
-  if (!mounted) return <LoadingScreen />;
-
-  const now = new Date();
+  const [now] = useState(() => new Date());
   const currentYear = now.getFullYear();
   const year = readYear(searchParams.get("year"), currentYear);
-  const review = buildYearInReview(subscriptions, usageLogs, year, rate, now);
+  // 지난 달러 결제(막은 결제·체크인)는 그날의 고시 환율로 바꾼다. 받는 동안은 숫자가 바뀌어 보이지 않게 기다린다.
+  const range = useMemo(
+    () => rateRangeFor(subscriptions, new Date(year, 0, 1), new Date(year, 11, 31), now),
+    [subscriptions, year, now],
+  );
+  const { rateOn, loading: ratesLoading } = useHistoricalRates(range);
+
+  if (!mounted || ratesLoading) return <LoadingScreen />;
+
+  const review = buildYearInReview(subscriptions, usageLogs, year, rate, now, rateOn);
   const { defended, checkIns } = review;
   const scope = review.isComplete ? `${year}년` : `${year}년 지금까지`;
   // 막은 결제 가운데, 그 해 결제일에 결제가 멈춘 것을 확인한 금액.
-  const yearTiers = getSavingsTiers(subscriptions, now, rate, {
-    from: new Date(year, 0, 1),
-    to: new Date(year + 1, 0, 1),
-  });
+  const yearTiers = getSavingsTiers(
+    subscriptions,
+    now,
+    rate,
+    { from: new Date(year, 0, 1), to: new Date(year + 1, 0, 1) },
+    rateOn,
+  );
   const spendingType = review.spendingType ? describeSpendingType(review.spendingType) : null;
   // 해지도 막은 결제도 없으면 공유할 결산이 없다. ₩0짜리 카드를 퍼뜨리지 않는다.
   const canShare = review.killedThisYear.length > 0 || defended.pastAmount > 0;
@@ -195,6 +205,14 @@ function YearInReviewContent() {
           <p className="text-[11px] text-amber-700 dark:text-amber-300">
             결제 월을 모르는 연간 구독 {defended.unknownCount}건은 언제 결제되는지 알 수 없어
             빠졌습니다.
+          </p>
+        )}
+        {/* 달러 구독이 있을 때만. 고시 환율도 카드사가 청구한 환율은 아니다. */}
+        {range && (
+          <p className="text-[11px] text-muted-foreground">
+            {rateOn
+              ? "달러 구독의 지난 결제와 체크인 1회당 비용은 그날의 고시 환율(ECB 기준)로 바꿨어요. 카드사 환율과 조금 다를 수 있어요. 앞으로 지킬 금액과 지출 구성은 지금 설정한 환율이에요."
+              : "결제일의 환율을 받지 못해 달러 금액은 지금 설정한 환율로 계산했어요."}
           </p>
         )}
       </section>
