@@ -13,20 +13,20 @@ import { useAuth } from "../../hooks/useAuth";
 import { requestAccountSync } from "../../hooks/useAccountSync";
 import { Button } from "../ui/button";
 import { ConfirmDialog } from "../ui/confirm-dialog";
-import { apiFetch, readApiError } from "@lib/api";
+import { readApiError } from "@lib/api";
+import {
+  deleteSnapshot,
+  fetchSnapshot,
+  fetchSnapshotSummary,
+  saveSnapshot,
+  type SnapshotSummary,
+} from "@lib/account-snapshot-client";
 import { saveFile } from "@lib/native";
+import { describeOverwrite, describeRestore, formatSavedAt, savedSummaryLine } from "./backupText";
 
 type ParsedBackup = Extract<BackupParseResult, { ok: true }>;
 /** 어디서 가져온 기록인지에 따라 확인 창의 말이 달라진다. */
 type PendingRestore = ParsedBackup & { source: "file" | "account" };
-
-interface SnapshotSummary {
-  savedAt: string;
-  subscriptionCount: number;
-  killedCount: number;
-  usageLogCount: number;
-  linkedAccountCount: number;
-}
 
 type AccountSnapshotState =
   | { kind: "loading" }
@@ -38,33 +38,18 @@ interface DataBackupCardProps {
   onMessage: (message: string) => void;
 }
 
-function formatBackupDate(iso: string | null): string | null {
-  if (!iso) return null;
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return null;
-  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
-}
-
-function formatSavedAt(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "알 수 없는 시각";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${formatBackupDate(iso)} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
 /** 계정에 저장된 기록의 요약. 화면 상태는 바꾸지 않고 보여줄 결과만 돌려준다. */
-async function fetchSnapshotSummary(): Promise<AccountSnapshotState> {
+async function loadSnapshotState(): Promise<AccountSnapshotState> {
   try {
-    const res = await apiFetch("/api/account/snapshot?summary=1", {});
-    if (res.status === 404) return { kind: "none" };
-    if (!res.ok) {
+    const result = await fetchSnapshotSummary();
+    if (result.kind === "none") return { kind: "none" };
+    if (result.kind === "failed") {
       return {
         kind: "error",
-        message: await readApiError(res, "계정에 저장된 기록을 확인하지 못했습니다."),
+        message: await readApiError(result.res, "계정에 저장된 기록을 확인하지 못했습니다."),
       };
     }
-    const data = await res.json();
-    return { kind: "saved", summary: data.summary };
+    return { kind: "saved", summary: result.summary };
   } catch {
     return { kind: "error", message: "네트워크에 문제가 있어 확인하지 못했습니다." };
   }
@@ -110,7 +95,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
   useEffect(() => {
     if (!account) return;
     let cancelled = false;
-    void fetchSnapshotSummary().then((next) => {
+    void loadSnapshotState().then((next) => {
       if (!cancelled) setSnapshot(next);
     });
     return () => {
@@ -125,12 +110,16 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     (accountSync.accountId === null || accountSync.accountId === account.id);
   const hasAccountRecord = snapshot.kind === "saved" || (syncOn && !!accountSync.baseSavedAt);
 
-  const currentBackup = () =>
-    createBackup({ subscriptions, usageLogs, accounts, exchangeRate }, new Date());
+  const currentBackup = (now = new Date()) =>
+    createBackup({ subscriptions, usageLogs, accounts, exchangeRate }, now);
+  const localCounts = {
+    subscriptionCount: subscriptions.length,
+    usageLogCount: usageLogs.length,
+  };
 
   const handleExport = async () => {
     const now = new Date();
-    const backup = createBackup({ subscriptions, usageLogs, accounts, exchangeRate }, now);
+    const backup = currentBackup(now);
     setError(null);
     try {
       // 앱에서는 공유 창이 열린다. 사용자가 닫았으면 저장하지 않은 것이니 저장했다고 말하지 않는다.
@@ -184,18 +173,19 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     setBusy(true);
     setAccountError(null);
     try {
-      const res = await apiFetch("/api/account/snapshot", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(currentBackup()),
-      });
-      if (!res.ok) {
-        setAccountError(await readApiError(res, "계정에 저장하지 못했습니다."));
+      // 자동 동기화를 끈 기기에서 누르는 것이라 판 조건 없이 덮는다. 덮기 전에 확인은 받았다.
+      const result = await saveSnapshot(currentBackup());
+      if (result.kind !== "ok") {
+        // 조건 없이 올리므로 판이 어긋나는(409) 일은 없다.
+        setAccountError(
+          result.kind === "failed"
+            ? await readApiError(result.res, "계정에 저장하지 못했습니다.")
+            : "계정에 저장하지 못했습니다.",
+        );
         return;
       }
-      const data = await res.json();
-      setSnapshot({ kind: "saved", summary: data.summary });
-      onMessage(`계정에 저장 (구독 ${data.summary.subscriptionCount}개)`);
+      setSnapshot({ kind: "saved", summary: result.summary });
+      onMessage(`계정에 저장 (구독 ${result.summary.subscriptionCount}개)`);
     } catch {
       setAccountError("네트워크에 문제가 있어 계정에 저장하지 못했습니다.");
     } finally {
@@ -213,20 +203,23 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     setBusy(true);
     setAccountError(null);
     try {
-      const res = await apiFetch("/api/account/snapshot");
-      if (!res.ok) {
-        setAccountError(await readApiError(res, "계정에 저장된 기록을 불러오지 못했습니다."));
-        if (res.status === 404) setSnapshot({ kind: "none" });
+      const result = await fetchSnapshot();
+      if (result.kind === "none") {
+        setAccountError("계정에 저장된 기록이 없습니다.");
+        setSnapshot({ kind: "none" });
         return;
       }
-      const data = await res.json();
-      // 서버가 검사한 기록이지만, 이 앱이 읽을 수 있는지 파일 복원과 같은 검사를 한 번 더 한다.
-      const result = parseBackup(JSON.stringify(data.backup));
-      if (!result.ok) {
-        setAccountError(`계정에 저장된 기록을 읽을 수 없습니다. ${result.error}`);
+      if (result.kind === "failed") {
+        setAccountError(
+          await readApiError(result.res, "계정에 저장된 기록을 불러오지 못했습니다."),
+        );
         return;
       }
-      setPending({ ...result, source: "account" });
+      if (!result.backup.ok) {
+        setAccountError(`계정에 저장된 기록을 읽을 수 없습니다. ${result.backup.error}`);
+        return;
+      }
+      setPending({ ...result.backup, source: "account" });
     } catch {
       setAccountError("네트워크에 문제가 있어 불러오지 못했습니다.");
     } finally {
@@ -238,11 +231,9 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     setBusy(true);
     setAccountError(null);
     try {
-      const res = await apiFetch("/api/account/snapshot", {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        setAccountError(await readApiError(res, "계정에 저장된 기록을 지우지 못했습니다."));
+      const result = await deleteSnapshot();
+      if (result.kind === "failed") {
+        setAccountError(await readApiError(result.res, "계정에 저장된 기록을 지우지 못했습니다."));
         return;
       }
       setSnapshot({ kind: "none" });
@@ -256,38 +247,6 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     }
   };
 
-  const describePending = (restore: PendingRestore): string => {
-    const subs = restore.data.subscriptions;
-    const killed = subs.filter((sub) => sub.status === "killed").length;
-    const date = formatBackupDate(restore.exportedAt);
-    const label = restore.source === "account" ? "계정에 저장된 기록" : "백업";
-    const lines = [
-      `이 기기의 기록을 ${label} 내용으로 바꿔요.`,
-      "",
-      `${label}${date ? ` (${date})` : ""}: 구독 ${subs.length}개 (해지 ${killed}개), 체크인 ${restore.data.usageLogs.length}건`,
-      `지금: 구독 ${subscriptions.length}개, 체크인 ${usageLogs.length}건`,
-      "",
-      "지금 기록은 합쳐지지 않고 사라져요. 필요하면 먼저 '백업 파일 저장'을 누르세요.",
-    ];
-    if (syncOn) {
-      lines.push("자동 동기화 중이라 다른 기기의 기록도 바뀌어요.");
-    }
-    return lines.join("\n");
-  };
-
-  const describeOverwrite = (): string => {
-    if (snapshot.kind !== "saved") return "";
-    const saved = snapshot.summary;
-    return [
-      "계정 기록을 이 기기의 기록으로 바꿔요.",
-      "",
-      `계정 (${formatSavedAt(saved.savedAt)}): 구독 ${saved.subscriptionCount}개 (해지 ${saved.killedCount}개), 체크인 ${saved.usageLogCount}건`,
-      `지금: 구독 ${subscriptions.length}개, 체크인 ${usageLogs.length}건`,
-      "",
-      "합쳐지지 않고 바뀌어요.",
-    ].join("\n");
-  };
-
   const snapshotLine = (): string => {
     switch (snapshot.kind) {
       case "loading":
@@ -296,10 +255,8 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
         return "계정에 저장한 기록이 없어요.";
       case "error":
         return snapshot.message;
-      case "saved": {
-        const s = snapshot.summary;
-        return `마지막 저장 ${formatSavedAt(s.savedAt)} · 구독 ${s.subscriptionCount}개 (해지 ${s.killedCount}개), 체크인 ${s.usageLogCount}건`;
-      }
+      case "saved":
+        return savedSummaryLine(snapshot.summary);
     }
   };
 
@@ -433,7 +390,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
             setPending(null);
           }}
           title={pending.source === "account" ? "계정에서 불러오기" : "백업에서 복원"}
-          description={describePending(pending)}
+          description={describeRestore(pending, localCounts, syncOn)}
           confirmText={pending.source === "account" ? "불러오기" : "복원"}
           cancelText="취소"
           variant="destructive"
@@ -449,7 +406,9 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
             void saveToAccount();
           }}
           title="계정에 저장"
-          description={describeOverwrite()}
+          description={
+            snapshot.kind === "saved" ? describeOverwrite(snapshot.summary, localCounts) : ""
+          }
           confirmText="저장"
           cancelText="취소"
           variant="destructive"
