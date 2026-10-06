@@ -3,6 +3,7 @@ import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { CATEGORY_LABELS } from "../constants/categories";
 import { toKRW } from "./currency";
 import { getYearDefendedSeries, sumMyAnnualKRW, type YearDefendedSeries } from "./sharing";
+import { rateForCharge, type RateOn } from "./historicalRate";
 
 export interface CategorySpend {
   category: SubscriptionCategory;
@@ -19,7 +20,7 @@ export interface CheckInStanding {
   iconUrl?: string;
   /** 그 해에 해지한 구독이면 true. 결산에는 끊은 구독의 가성비도 들어간다. */
   killed: boolean;
-  /** 그 해 마지막 체크인의 1회당 비용을 사용자 환율로 원화 환산한 값. */
+  /** 그 해 마지막 체크인의 1회당 비용(원). 달러면 체크인한 날의 고시 환율로 바꾼다(`rateOn`이 있을 때). */
   costPerUseKRW: number;
   usageCount: number;
   checkedAt: string;
@@ -121,6 +122,10 @@ export function describeSpendingType(type: SpendingType): {
  *
  * 모든 수치는 앱이 실제로 가진 기록에서만 나온다. 해지 날짜가 없는 구독은
  * 어느 해에 넣을지 몰라 따로 세고, 가성비는 그 해에 한 체크인만 쓴다.
+ *
+ * 달러 금액: 지킨 돈(지난 결제일)과 체크인 1회당 비용은 지난 일이라, `rateOn`을 주면 그날의 고시 환율로 바꾼다
+ * (utils/historicalRate) — 지금 환율로 바꾸면 그때의 금액과 달라진다. 지출 구성(`categorySpend`)은 지금 구독을
+ * 앞으로 1년 낸다고 셈한 값이라 지금 환율(`rate`)이다.
  */
 export function buildYearInReview(
   subs: Subscription[],
@@ -128,6 +133,7 @@ export function buildYearInReview(
   year: number,
   rate: number = DEFAULT_EXCHANGE_RATE,
   now: Date = new Date(),
+  rateOn?: RateOn,
 ): YearInReview {
   const killed = subs.filter((sub) => sub.status === "killed");
   const active = subs.filter((sub) => sub.status === "active");
@@ -175,7 +181,11 @@ export function buildYearInReview(
           name: sub.name,
           iconUrl: sub.iconUrl,
           killed: sub.status === "killed",
-          costPerUseKRW: toKRW(latest.costPerUse, sub.currency, rate),
+          costPerUseKRW: toKRW(
+            latest.costPerUse,
+            sub.currency,
+            rateForCharge(sub.currency, new Date(latest.checkedAt), rate, rateOn, now),
+          ),
           usageCount: latest.usageCount,
           checkedAt: latest.checkedAt,
         },
@@ -188,7 +198,7 @@ export function buildYearInReview(
   return {
     year,
     isComplete,
-    defended: getYearDefendedSeries(killed, year, rate, now),
+    defended: getYearDefendedSeries(killed, year, rate, now, rateOn),
     killedThisYear,
     killedAtUnknown,
     categorySpend,

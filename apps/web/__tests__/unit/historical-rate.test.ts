@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { buildReceipt, rateOnFromTable, type Subscription } from "@subslash/shared";
+import {
+  buildReceipt,
+  buildYearInReview,
+  getSavingsTiers,
+  rateOnFromTable,
+  type Subscription,
+  type UsageLog,
+} from "@subslash/shared";
 import { receiptFootnotes } from "@lib/receipt-view";
 import { GET } from "@/api/fx/history/route";
 
@@ -135,6 +142,48 @@ describe("buildReceipt — 지난 달러 결제의 환율", () => {
     );
     expect(receipt.lines[0].amountKRW).toBe(13500);
     expect(receipt.fx).toEqual({ historical: 0, current: 0 });
+  });
+});
+
+describe("연말 결산 — 지난 달러 결제의 환율", () => {
+  // 7월 5일에 해지하고 결제가 멈춘 것을 확인한 20달러 구독. 7·8·9월 10일 결제가 막혔고, 10~12월은 앞으로다.
+  const killed = usd({
+    id: "killed",
+    status: "killed",
+    killedAt: new Date(2026, 6, 5).toISOString(),
+    killVerifiedAt: new Date(2026, 6, 11).toISOString(),
+  });
+  const rateOn = rateOnFromTable({ "2026-07-10": 1250, "2026-08-10": 1300, "2026-09-10": 1350 });
+  const yearRange = { from: new Date(2026, 0, 1), to: new Date(2027, 0, 1) };
+
+  it("막은 결제는 그 결제일의 환율로, 앞으로 지킬 금액은 지금 환율로 센다", () => {
+    const review = buildYearInReview([killed], [], 2026, CURRENT, NOW, rateOn);
+    expect(review.defended.pastAmount).toBe(20 * (1250 + 1300 + 1350));
+    expect(review.defended.scheduledAmount).toBe(3 * 20 * CURRENT);
+    expect(review.defended.months[7].amount).toBe(20 * 1300);
+  });
+
+  it("결제가 멈춘 것을 확인한 지킨 돈도 결제일의 환율로 센다", () => {
+    const tiers = getSavingsTiers([killed], NOW, CURRENT, yearRange, rateOn);
+    expect(tiers.confirmed).toBe(20 * (1250 + 1300 + 1350));
+    // 넘기지 않으면 예전처럼 지금 환율이다.
+    expect(getSavingsTiers([killed], NOW, CURRENT, yearRange).confirmed).toBe(3 * 20 * CURRENT);
+  });
+
+  it("체크인 1회당 비용은 체크인한 날의 환율로 바꾼다", () => {
+    const log: UsageLog = {
+      id: "log-1",
+      subscriptionId: "chatgpt",
+      month: "2026-08",
+      usageCount: 4,
+      costPerUse: 5,
+      riskLevel: "yellow",
+      checkedAt: new Date(2026, 7, 10, 12).toISOString(),
+    };
+    const review = buildYearInReview([usd()], [log], 2026, CURRENT, NOW, rateOn);
+    expect(review.checkIns[0].costPerUseKRW).toBe(5 * 1300);
+    // 지출 구성은 앞으로 1년의 예상이라 지금 환율이다.
+    expect(review.activeAnnualKRW).toBe(20 * 12 * CURRENT);
   });
 });
 
