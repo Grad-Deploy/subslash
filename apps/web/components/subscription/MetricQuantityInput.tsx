@@ -166,7 +166,7 @@ export function MetricQuantityInput({
         <p className="text-center text-[11px] leading-relaxed text-muted-foreground">{spec.hint}</p>
       )}
 
-      {metric === "storage" && <GoogleStorageCheck subscription={subscription} />}
+      {metric === "storage" && <GoogleStorageCheck subscription={subscription} onMeasured={set} />}
 
       {/* 무료 요금제가 있는 AI·업무 도구는 쓴 날만으로 판단하지 않는다. */}
       {metric === "days" && asksFreeTier(subscription) && (

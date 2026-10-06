@@ -339,9 +339,10 @@ export default function PrivacyPage() {
                 <tr className="border-t">
                   <td className="px-3 py-2 font-medium">Google</td>
                   <td className="px-3 py-2">
-                    구글 원 체크인에서 &lsquo;Google 계정에서 확인&rsquo;을 쓴 경우, SubSlash의 Apps
-                    Script를 이용자 권한으로 실행해 계정 저장 용량(한도·사용량)을 이용자 화면에만
-                    보여 줌 — SubSlash로 보내거나 보관하지 않음
+                    구글 원 체크인에서 &lsquo;사용량 측정&rsquo;을 쓴 경우, SubSlash의 Apps Script를
+                    이용자 권한으로 실행해 계정 저장 용량(한도·사용량)을 읽고 이용자의
+                    브라우저·앱으로만 돌려줘 체크인 칸에 채움 — SubSlash 서버로 보내거나 보관하지
+                    않음
                   </td>
                   <td className="px-3 py-2">국외(Google 데이터센터)</td>
                 </tr>

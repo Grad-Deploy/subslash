@@ -10,7 +10,8 @@ import { usePathname } from "next/navigation";
  * 있어, 누르면 인앱 브라우저(또는 카카오톡이 돌려보낸 Chrome) 안에서 웹 대시보드로 이어졌다. 그 브라우저가
  * 웹에 로그인돼 있으면 GmailDiscoveryInbox가 찾은 구독을 웹으로 받아 가 앱에는 오지 않을 수도 있었다.
  */
-const BRIDGE_PATHS = ["/oauth/done"];
+// 용량 측정의 끝 화면(/storage-quota/done)은 측정값을 체크인 창에 넘기고 닫히는 탭이라 사이트 메뉴가 필요 없다.
+const BRIDGE_PATHS = ["/oauth/done", "/storage-quota/done"];
 
 export function isBridgePath(pathname: string | null): boolean {
   return !!pathname && BRIDGE_PATHS.some((path) => pathname.startsWith(path));
