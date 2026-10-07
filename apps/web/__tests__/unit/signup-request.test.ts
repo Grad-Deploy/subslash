@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readSignupResponse, signupRequestBody } from "@lib/signup-request";
+import { messages } from "@lib/i18n/messages";
+
+const FALLBACK = messages.ko.auth.signup;
 
 const VALUES = {
   username: "sean_1",
@@ -31,6 +34,7 @@ describe("readSignupResponse", () => {
       false,
       { error: "이미 쓰는 아이디입니다.", fieldErrors: { username: "이미 쓰는 아이디입니다." } },
       "sean@example.com",
+      FALLBACK,
     );
     expect(outcome).toEqual({
       ok: false,
@@ -41,12 +45,12 @@ describe("readSignupResponse", () => {
   });
 
   it("확인 전 계정에 막힌 주소면 적은 주소를 남긴다", () => {
-    const outcome = readSignupResponse(false, { emailPending: true }, "sean@example.com");
+    const outcome = readSignupResponse(false, { emailPending: true }, "sean@example.com", FALLBACK);
     expect(outcome).toMatchObject({ ok: false, pendingEmail: "sean@example.com" });
   });
 
   it("본문을 읽지 못한 실패는 일반 문구를 쓴다", () => {
-    expect(readSignupResponse(false, {}, "a@b.co")).toMatchObject({
+    expect(readSignupResponse(false, {}, "a@b.co", FALLBACK)).toMatchObject({
       formError: "가입을 처리하지 못했습니다.",
       fieldErrors: {},
     });
@@ -60,6 +64,7 @@ describe("readSignupResponse", () => {
         emailVerification: { status: "sent", message: "확인 메일을 보냈습니다." },
       },
       "x@y.co",
+      FALLBACK,
     );
     expect(outcome).toEqual({
       ok: true,
@@ -68,7 +73,7 @@ describe("readSignupResponse", () => {
   });
 
   it("메일 결과를 모르면 보냈다고 단정하지 않는다", () => {
-    const outcome = readSignupResponse(true, {}, "sean@example.com");
+    const outcome = readSignupResponse(true, {}, "sean@example.com", FALLBACK);
     expect(outcome).toEqual({
       ok: true,
       notice: {

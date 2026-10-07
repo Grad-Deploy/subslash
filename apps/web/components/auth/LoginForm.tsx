@@ -9,6 +9,7 @@ import { Button } from "@components/ui/button";
 import { enterAfterLogin } from "@hooks/useAuth";
 import { apiFetch } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
+import { useKnownText, useT } from "@lib/i18n";
 
 /**
  * 로그인 폼.
@@ -23,6 +24,9 @@ export function LoginForm() {
   const [errors, setErrors] = useState<{ identifier?: string; password?: string }>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const t = useT().auth.login;
+  // 검사·서버 문구는 한국어로 오므로 보여 줄 때 화면 언어로 바꾼다(lib/i18n/known-text).
+  const known = useKnownText();
 
   const update = (field: "identifier" | "password") => (value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -52,14 +56,14 @@ export function LoginForm() {
 
       if (!res.ok) {
         setErrors(data?.fieldErrors ?? {});
-        setFormError(data?.error ?? "로그인하지 못했습니다.");
+        setFormError(data?.error ?? t.failed);
         return;
       }
 
       // 헤더가 곧바로 로그인 상태로 바뀌도록, 이동하기 전에 공유 상태를 갱신한다.
       await enterAfterLogin(router);
     } catch {
-      setFormError("네트워크에 문제가 있어 로그인하지 못했습니다. 잠시 후 다시 시도해주세요.");
+      setFormError(t.network);
     } finally {
       setSubmitting(false);
     }
@@ -69,27 +73,27 @@ export function LoginForm() {
     <HydratedForm onSubmit={handleSubmit} noValidate className="space-y-4">
       <div className="space-y-1.5">
         <label htmlFor="identifier" className="text-xs font-bold text-foreground">
-          아이디 또는 이메일
+          {t.identifier}
         </label>
         <Input
           id="identifier"
           name="identifier"
           autoComplete="username"
-          placeholder="아이디 또는 you@example.com"
+          placeholder={t.identifierPlaceholder}
           value={form.identifier}
           onChange={(e) => update("identifier")(e.target.value)}
           aria-invalid={Boolean(errors.identifier)}
         />
         {errors.identifier && (
           <p className="text-[11px] font-medium text-destructive" role="alert">
-            {errors.identifier}
+            {known(errors.identifier)}
           </p>
         )}
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor="password" className="text-xs font-bold text-foreground">
-          비밀번호
+          {t.password}
         </label>
         <Input
           id="password"
@@ -102,19 +106,19 @@ export function LoginForm() {
         />
         {errors.password && (
           <p className="text-[11px] font-medium text-destructive" role="alert">
-            {errors.password}
+            {known(errors.password)}
           </p>
         )}
       </div>
 
       {formError && (
         <p role="alert" className="text-sm font-medium text-destructive">
-          {formError}
+          {known(formError)}
         </p>
       )}
 
       <Button type="submit" className="w-full h-11 font-bold rounded-xl" disabled={submitting}>
-        {submitting ? "로그인하는 중..." : "로그인"}
+        {submitting ? t.submitting : t.submit}
       </Button>
 
       <p className="text-xs text-center text-muted-foreground">
@@ -122,14 +126,14 @@ export function LoginForm() {
           href="/forgot-password"
           className="font-semibold text-primary underline underline-offset-4"
         >
-          비밀번호를 잊으셨나요?
+          {t.forgot}
         </Link>
       </p>
 
       <p className="text-xs text-center text-muted-foreground">
-        아직 계정이 없으신가요?{" "}
+        {t.noAccount}{" "}
         <Link href="/signup" className="font-semibold text-primary underline underline-offset-4">
-          회원가입
+          {t.signup}
         </Link>
       </p>
     </HydratedForm>

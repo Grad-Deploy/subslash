@@ -3,6 +3,7 @@
 import React, { useEffect, useSyncExternalStore } from "react";
 import { appReturnUrl, isAppReturnScheme } from "@lib/app-return";
 import { oauthErrorMessageFrom } from "@lib/oauth-messages";
+import { useT } from "@lib/i18n";
 import { providerLabel } from "@lib/oauth-providers";
 
 const subscribe = () => () => {};
@@ -20,7 +21,8 @@ const readSearch = () => window.location.search;
 export function OAuthDone() {
   const search = useSyncExternalStore(subscribe, readSearch, () => "");
   const params = new URLSearchParams(search);
-  const error = search ? oauthErrorMessageFrom(params) : null;
+  const t = useT();
+  const error = search ? oauthErrorMessageFrom(params, t.oauth) : null;
   const linked = params.get("oauthLinked");
   const scheme = params.get("app");
   const result = new URLSearchParams(params);

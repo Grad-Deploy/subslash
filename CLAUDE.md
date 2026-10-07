@@ -501,6 +501,10 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import`)는 SubSlash가 G
 서버 렌더링·하이드레이션은 한국어로 그리고 그 뒤 기기 언어로 다시 그린다. `<html lang>`은 `localeInitScript`와
 `LocaleEffects`가 맞춘다. 서비스 목록·요금·원화·개인정보처리방침은 한국 기준이라 옮기지 않는다. 아직 옮기지 않은
 화면, 서버가 돌려주는 오류 문구, `@subslash/shared`가 만드는 문구는 한국어로 보인다 — 화면 단위로 옮겨 간다.
+입력 검사(`@subslash/shared`)와 서버 응답은 한국어 문장을 돌려준다 — 서버와 같은 함수라 언어마다 나누지 않고, 보여 주는
+자리에서 `useKnownText()`(`lib/i18n/known-text`의 표)로 바꾼다. 표에 없는 문장은 원문을 보인다. 검사 함수나 서버 문구를 고치면
+표도 고친다(`known-text.test.ts`가 갈래마다 확인한다). 화면을 연 뒤 비동기로 붙이는 문구는 `useLatestT()`로 읽는다 — 첫 화면은
+한국어로 그린 뒤 다시 그리므로 effect가 잡아 둔 문구는 한국어일 수 있다.
 E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-KR"`로 열고, 영어 화면은 `i18n.spec.ts`가 본다.
 
 ## 첫 화면(소개)
