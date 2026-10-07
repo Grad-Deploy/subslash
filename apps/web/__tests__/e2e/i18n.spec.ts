@@ -40,4 +40,11 @@ test.describe("화면 언어 (E2E)", () => {
       ).toBeVisible();
     }
   });
+
+  test("설정의 백업 칸도 영어다", async ({ page }) => {
+    await page.goto("/settings");
+    await page.getByRole("button", { name: /Backup & account storage/ }).click({ timeout: 30_000 });
+    await expect(page.getByRole("heading", { name: "Data backup" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save backup file" })).toBeVisible();
+  });
 });
