@@ -9,6 +9,9 @@ export default defineConfig({
   reporter: "html",
   use: {
     baseURL: "http://localhost:3000",
+    // 화면 언어는 기기 언어를 따른다(lib/i18n). 테스트는 한국어 문구로 찾으므로 한국어 기기로 연다 —
+    // 영어 화면은 i18n.spec.ts가 locale을 바꿔 본다.
+    locale: "ko-KR",
     trace: "on-first-retry",
   },
   projects: [

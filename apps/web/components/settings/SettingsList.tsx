@@ -13,6 +13,7 @@ import { LocalReminderCard } from "./LocalReminderCard";
 import { DataBackupCard } from "./DataBackupCard";
 import { DeviceUsageCard } from "./DeviceUsageCard";
 import { AppSheet } from "./app/AppSheet";
+import { useT } from "@lib/i18n";
 
 type SheetKey = "reminder" | "backup" | "usage";
 
@@ -20,11 +21,6 @@ interface SettingsListProps {
   onMessage: (message: string) => void;
   /** 전체 초기화 확인 창을 연다. 확인 창과 삭제는 설정 화면(SettingsScreen)이 맡는다. */
   onClearAll: () => void;
-}
-
-function reminderSummary(enabled: boolean, daysBefore: number) {
-  if (!enabled) return "꺼짐";
-  return `${daysBefore === 0 ? "당일" : `${daysBefore}일 전`} 오전 9시`;
 }
 
 /**
@@ -37,6 +33,7 @@ function reminderSummary(enabled: boolean, daysBefore: number) {
  */
 export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
   const [sheet, setSheet] = useState<SheetKey | null>(null);
+  const t = useT().settings.list;
   const [reminder] = useLocalReminderSettings();
   const subscriptionCount = useStore((state) => state.subscriptions.length);
   const demo = useStore((state) => Boolean(state.demo));
@@ -57,12 +54,12 @@ export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
   return (
     <div className="space-y-4">
       {IS_APP_BUILD && (
-        <Group title="알림">
+        <Group title={t.reminders}>
           <Row
             icon={<Bell className="size-4" />}
-            title="이 기기 결제 알림"
-            detail="결제일 전에 이 휴대폰으로 알려요"
-            status={reminderSummary(reminder.enabled, reminder.daysBefore)}
+            title={t.reminderTitle}
+            detail={t.reminderDetail}
+            status={reminder.enabled ? t.reminderAt(reminder.daysBefore) : t.off}
             statusOn={reminder.enabled}
             onClick={() => setSheet("reminder")}
           />
@@ -70,51 +67,47 @@ export function SettingsList({ onMessage, onClearAll }: SettingsListProps) {
       )}
 
       {usageOpen && (
-        <Group title="측정">
+        <Group title={t.measurement}>
           <Row
             icon={<Activity className="size-4" />}
-            title="여러 기기 사용 측정"
-            detail="기기를 오가며 쓴 구독을 이어서 세요"
-            status={IS_APP_BUILD ? (measuring ? "켜짐" : "꺼짐") : undefined}
+            title={t.usageTitle}
+            detail={t.usageDetail}
+            status={IS_APP_BUILD ? (measuring ? t.on : t.off) : undefined}
             statusOn={measuring}
             onClick={() => setSheet("usage")}
           />
         </Group>
       )}
 
-      <Group title="데이터">
+      <Group title={t.data}>
         <Row
           icon={<HardDrive className="size-4" />}
-          title="백업 · 계정 저장"
-          detail={syncOn ? "계정과 자동으로 맞추는 중" : "파일로 저장하거나 로그인해 두기"}
+          title={t.backupTitle}
+          detail={syncOn ? t.backupSyncing : t.backupDetail}
           onClick={() => setSheet("backup")}
         />
         {subscriptionCount > 0 && (
           <Row
             danger
             icon={<Trash2 className="size-4" />}
-            title={demo ? "샘플 체험 끝내기" : "전체 초기화"}
-            detail={
-              demo
-                ? `샘플 구독 ${subscriptionCount}건 치우기`
-                : `구독 ${subscriptionCount}건과 기록 삭제`
-            }
+            title={demo ? t.endDemo : t.clearAll}
+            detail={demo ? t.endDemoDetail(subscriptionCount) : t.clearAllDetail(subscriptionCount)}
             onClick={onClearAll}
           />
         )}
       </Group>
 
       {IS_APP_BUILD && (
-        <AppSheet open={sheet === "reminder"} onClose={close} label="이 기기 결제 알림">
+        <AppSheet open={sheet === "reminder"} onClose={close} label={t.reminderTitle}>
           <LocalReminderCard onMessage={onMessage} />
         </AppSheet>
       )}
       {usageOpen && (
-        <AppSheet open={sheet === "usage"} onClose={close} label="여러 기기 사용 측정">
+        <AppSheet open={sheet === "usage"} onClose={close} label={t.usageTitle}>
           <DeviceUsageCard onMessage={onMessage} />
         </AppSheet>
       )}
-      <AppSheet open={sheet === "backup"} onClose={close} label="백업 · 계정 저장">
+      <AppSheet open={sheet === "backup"} onClose={close} label={t.backupTitle}>
         <DataBackupCard onMessage={onMessage} />
       </AppSheet>
     </div>

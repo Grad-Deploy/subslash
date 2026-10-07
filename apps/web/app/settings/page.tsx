@@ -29,5 +29,5 @@ export default function SettingsPage() {
       </div>
     );
   }
-  return <SettingsScreen storageNote="지금 기록은 이 브라우저에만 저장돼요" />;
+  return <SettingsScreen storedOn="web" />;
 }

@@ -8,6 +8,7 @@ import { ChevronDown, CircleHelp, LogIn, LogOut, Settings, User } from "lucide-r
 import { useAuth } from "@hooks/useAuth";
 import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
+import { useT } from "@lib/i18n";
 
 const itemClass =
   "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none";
@@ -23,6 +24,8 @@ export function AccountMenu() {
   });
   const pathname = usePathname();
   const { account, loading, logout } = useAuth();
+  const messages = useT();
+  const t = messages.shell.account;
 
   // 다른 화면으로 가면 닫는다. effect로 닫으면 렌더링이 한 번 더 일어나 렌더링 중에 맞춘다.
   const [menuPath, setMenuPath] = useState(pathname);
@@ -44,7 +47,7 @@ export function AccountMenu() {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={account ? `계정 메뉴 (${account.username})` : "계정 메뉴"}
+        aria-label={account ? t.menuFor(account.username) : t.menu}
         className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {/*
@@ -75,7 +78,7 @@ export function AccountMenu() {
         <div
           ref={menuRef}
           role="menu"
-          aria-label="계정 메뉴"
+          aria-label={t.menu}
           className="absolute right-0 top-full z-50 mt-2 w-64 rounded-xl border bg-card p-1.5 text-card-foreground shadow-lg"
         >
           {/* 로그인 여부를 아직 모르면 머리글을 비워 둔다 — 틀린 상태를 먼저 보여주지 않는다. */}
@@ -83,10 +86,10 @@ export function AccountMenu() {
             <>
               <div className="px-2.5 pb-2 pt-1.5">
                 <p className="truncate text-sm font-semibold">
-                  {account ? account.username : "로그인하지 않음"}
+                  {account ? account.username : t.signedOut}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {account ? account.email : "기록은 이 브라우저에 저장돼요."}
+                  {account ? account.email : t.storedInBrowser}
                 </p>
               </div>
               <div className="my-1 h-px bg-border" role="separator" />
@@ -96,7 +99,8 @@ export function AccountMenu() {
           {account ? (
             // 나이·성별을 가입에서 뺐으므로, 적고 싶은 사람이 찾아갈 곳이 필요하다.
             <Link href="/me" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
-              <User className="h-4 w-4 text-muted-foreground" aria-hidden="true" />내 정보
+              <User className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              {t.me}
             </Link>
           ) : (
             !loading && (
@@ -107,7 +111,7 @@ export function AccountMenu() {
                 onClick={() => setOpen(false)}
               >
                 <LogIn className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                로그인 / 회원가입
+                {t.loginOrSignup}
               </Link>
             )
           )}
@@ -115,12 +119,12 @@ export function AccountMenu() {
           {!account && !loading && (
             <Link href="/me" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
               <User className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-              데이터 백업
+              {t.backup}
             </Link>
           )}
           {!account && !loading && (
             <p className="px-2.5 pb-1.5 text-[11px] leading-relaxed text-muted-foreground">
-              로그인하면 여러 기기에서 같은 기록을 쓸 수 있어요.
+              {t.syncHint}
             </p>
           )}
 
@@ -135,7 +139,7 @@ export function AccountMenu() {
               onClick={() => setOpen(false)}
             >
               <Settings className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-              설정
+              {messages.shell.nav.settings}
             </Link>
           )}
 
@@ -145,7 +149,7 @@ export function AccountMenu() {
           */}
           <Link href="/help" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
             <CircleHelp className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            도움말 · 문의
+            {t.help}
           </Link>
 
           {account && (
@@ -153,7 +157,7 @@ export function AccountMenu() {
               <div className="my-1 h-px bg-border" role="separator" />
               <button type="button" role="menuitem" className={itemClass} onClick={run(logout)}>
                 <LogOut className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                로그아웃
+                {t.logout}
               </button>
             </>
           )}

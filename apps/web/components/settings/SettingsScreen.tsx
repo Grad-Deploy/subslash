@@ -8,6 +8,8 @@ import { useAuth } from "@hooks/useAuth";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { ExchangeRateNote } from "./ExchangeRateNote";
 import { SettingsList } from "./SettingsList";
+import { LanguagePicker } from "./LanguagePicker";
+import { useT } from "@lib/i18n";
 
 /**
  * 설정 화면(`/settings`, 웹·앱). 켜고 끄고 연결하는 것을 여기에 모은다 — 예전에는 구독 관리 위쪽(자동 체크인
@@ -19,15 +21,16 @@ import { SettingsList } from "./SettingsList";
  * 아니라 상단 바의 화면 모드 버튼(ThemeMenu)에 있다 — 설정에 들어가지 않아도 바로 바꿀 수 있게.
  */
 export function SettingsScreen({
-  storageNote,
+  storedOn,
   children,
 }: {
   /** 로그인하지 않았을 때 기록이 어디 있는지(앱은 '이 폰', 웹은 '이 브라우저'). */
-  storageNote: string;
+  storedOn: "app" | "web";
   /** 계정 줄 아래에 끼울 기기 전용 칸(앱의 폰 사용 기록 체크인). */
   children?: React.ReactNode;
 }) {
   const { account, loading } = useAuth();
+  const t = useT().settings;
   const subscriptions = useStore((state) => state.subscriptions);
   const hasUSD = subscriptions.some((sub) => sub.currency === "USD" && sub.status === "active");
   const demo = useStore((state) => state.demo);
@@ -43,14 +46,11 @@ export function SettingsScreen({
 
   const active = subscriptions.filter((sub) => sub.status === "active");
   const killed = subscriptions.filter((sub) => sub.status === "killed");
-  const syncedWarning =
-    accountSync.enabled && accountSync.baseSavedAt
-      ? "\n자동 동기화가 켜져 있어 다른 기기의 기록도 지워져요."
-      : "";
+  const syncedWarning = accountSync.enabled && accountSync.baseSavedAt ? t.clear.syncedWarning : "";
 
   return (
     <div className="mx-auto max-w-2xl space-y-5 py-2">
-      <h1 className="text-2xl font-black tracking-tight">설정</h1>
+      <h1 className="text-2xl font-black tracking-tight">{t.title}</h1>
 
       {/* 계정 — 로그인 여부를 아직 모르면 비워 둔다(틀린 상태를 먼저 보여주지 않는다). */}
       {!loading &&
@@ -71,8 +71,8 @@ export function SettingsScreen({
               <LogIn className="size-5" aria-hidden />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-base font-bold">로그인 / 회원가입</span>
-              <span className="block text-xs text-muted-foreground">{storageNote}</span>
+              <span className="block text-base font-bold">{t.loginOrSignup}</span>
+              <span className="block text-xs text-muted-foreground">{t.storageNote[storedOn]}</span>
             </span>
             <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           </Link>
@@ -86,14 +86,17 @@ export function SettingsScreen({
       {/* 환율 — 달러 구독이 있을 때만 보인다(ExchangeRateNote도 스스로 가린다). 제목만 남지 않게 같이 가린다. */}
       {hasUSD && (
         <section className="space-y-2">
-          <h2 className="px-1 text-xs font-bold text-muted-foreground">환율</h2>
+          <h2 className="px-1 text-xs font-bold text-muted-foreground">{t.exchangeRate.section}</h2>
           <ExchangeRateNote />
         </section>
       )}
 
+      {/* 언어 — 기기 언어를 따르거나 직접 고른다. 기기의 것이라 백업·동기화에 넣지 않는다. */}
+      <LanguagePicker />
+
       {/* 정보 */}
       <section className="space-y-2">
-        <h2 className="px-1 text-xs font-bold text-muted-foreground">정보</h2>
+        <h2 className="px-1 text-xs font-bold text-muted-foreground">{t.info.section}</h2>
         <div className="divide-y overflow-hidden rounded-2xl border">
           {/* 도움말(자주 묻는 질문 + 문의). 앱은 이 설정 탭이 도움말로 가는 길이다. */}
           <Link href="/help" className="flex items-center gap-3 px-3 py-3">
@@ -101,10 +104,8 @@ export function SettingsScreen({
               <CircleHelp className="size-4" aria-hidden />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-bold">도움말 · 문의</span>
-              <span className="block text-xs text-muted-foreground">
-                자주 묻는 질문과 문의 메일
-              </span>
+              <span className="block text-sm font-bold">{t.info.help}</span>
+              <span className="block text-xs text-muted-foreground">{t.info.helpDetail}</span>
             </span>
             <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           </Link>
@@ -112,7 +113,7 @@ export function SettingsScreen({
             <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary">
               <Shield className="size-4" aria-hidden />
             </span>
-            <span className="min-w-0 flex-1 text-sm font-bold">개인정보처리방침</span>
+            <span className="min-w-0 flex-1 text-sm font-bold">{t.info.privacy}</span>
             <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           </Link>
         </div>
@@ -126,20 +127,19 @@ export function SettingsScreen({
           // 체험 중이면 샘플만 치우고 체험을 끝낸다(store의 clearSubscriptions).
           const wasDemo = Boolean(demo);
           clearSubscriptions();
-          showToast(
-            wasDemo ? "샘플 체험을 끝냈어요. 내 구독은 그대로예요." : "구독 기록을 모두 지웠어요",
-          );
+          showToast(wasDemo ? t.clear.demoEnded : t.clear.cleared);
         }}
         centered
-        title={demo ? "샘플 체험을 끝낼까요?" : "모두 지울까요?"}
+        title={demo ? t.clear.demoTitle : t.clear.title}
         description={
           demo
-            ? `샘플 ${subscriptions.length}건을 치워요.\n내 구독은 그대로예요.`
+            ? t.clear.demoDescription(subscriptions.length)
             : killed.length > 0
-              ? `구독 ${subscriptions.length}건(구독 중 ${active.length}, 해지 ${killed.length})과\n절약 기록이 지워져요.${syncedWarning}`
-              : `구독 ${subscriptions.length}건이 지워져요.${syncedWarning}`
+              ? t.clear.withKilled(subscriptions.length, active.length, killed.length) +
+                syncedWarning
+              : t.clear.onlyActive(subscriptions.length) + syncedWarning
         }
-        confirmText={demo ? "체험 끝내기" : "모두 삭제"}
+        confirmText={demo ? t.clear.demoConfirm : t.clear.confirm}
         variant="destructive"
       />
 
