@@ -47,4 +47,17 @@ test.describe("화면 언어 (E2E)", () => {
     await expect(page.getByRole("heading", { name: "Data backup" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Save backup file" })).toBeVisible();
   });
+
+  test("로그인·가입 화면과 입력 검사 문구도 영어다", async ({ page }) => {
+    await page.goto("/login");
+    await expect(page.getByRole("heading", { level: 1, name: "Log in" })).toBeVisible();
+    await page.getByRole("button", { name: "Log in", exact: true }).click({ timeout: 30_000 });
+    // 검사 함수는 서버와 같아 한국어 문장을 돌려준다. 화면은 그것을 영어로 바꿔 보인다.
+    await expect(page.getByText("Enter your username or email.")).toBeVisible();
+
+    await page.goto("/signup");
+    await expect(page.getByRole("heading", { level: 1, name: "Sign up" })).toBeVisible();
+    await page.getByLabel("Username").fill("AB");
+    await expect(page.getByText("Usernames must be")).toBeVisible();
+  });
 });

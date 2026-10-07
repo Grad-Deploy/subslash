@@ -6,6 +6,7 @@ import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { HydratedForm } from "@components/ui/hydrated-form";
 import { useSignupForm } from "@hooks/useSignupForm";
+import { useKnownText, useT } from "@lib/i18n";
 import { ResendVerificationButton } from "./ResendVerificationButton";
 import { SignupDone } from "./SignupDone";
 import { Field, OptionalProfileFields, Over14Checkbox, statusProps } from "./SignupFields";
@@ -16,17 +17,19 @@ import { Field, OptionalProfileFields, Over14Checkbox, statusProps } from "./Sig
 export function SignupForm() {
   const signup = useSignupForm();
   const { form, status, update, touch, errors } = signup;
+  const t = useT().auth.signup;
+  const known = useKnownText();
 
   if (signup.done) return <SignupDone notice={signup.done} />;
 
   return (
     <HydratedForm onSubmit={signup.handleSubmit} noValidate className="space-y-4">
-      <Field label="아이디" htmlFor="username" status={status.username}>
+      <Field label={t.username} htmlFor="username" status={status.username}>
         <Input
           id="username"
           name="username"
           autoComplete="username"
-          placeholder={`영문 소문자·숫자·밑줄 ${USERNAME_MIN}~${USERNAME_MAX}자`}
+          placeholder={t.usernamePlaceholder(USERNAME_MIN, USERNAME_MAX)}
           value={form.username}
           onChange={(e) => update("username")(e.target.value)}
           onBlur={() => touch("username")}
@@ -34,7 +37,7 @@ export function SignupForm() {
         />
       </Field>
 
-      <Field label="이메일" htmlFor="email" status={status.email}>
+      <Field label={t.email} htmlFor="email" status={status.email}>
         <Input
           id="email"
           name="email"
@@ -56,24 +59,23 @@ export function SignupForm() {
       {signup.blockedEmail && (
         <div className="space-y-2 rounded-xl border border-dashed p-3 text-[11px] leading-relaxed text-muted-foreground">
           <p>
-            직접 가입해 두었다면{" "}
+            {t.blockedBefore}
             <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
-              로그인
+              {t.blockedLogin}
             </Link>
-            하면 됩니다. 가입한 적이 없다면, 이 주소로 확인 메일을 받아 &lsquo;제가 가입하지
-            않았어요&rsquo;를 누르세요. 그 계정이 지워지고 이 주소로 가입할 수 있습니다.
+            {t.blockedAfter}
           </p>
-          <ResendVerificationButton email={signup.blockedEmail} label="이 주소로 확인 메일 받기" />
+          <ResendVerificationButton email={signup.blockedEmail} label={t.blockedResend} />
         </div>
       )}
 
-      <Field label="비밀번호" htmlFor="password" status={status.password}>
+      <Field label={t.password} htmlFor="password" status={status.password}>
         <Input
           id="password"
           name="password"
           type="password"
           autoComplete="new-password"
-          placeholder={`${PASSWORD_MIN}자 이상`}
+          placeholder={t.passwordPlaceholder(PASSWORD_MIN)}
           value={form.password}
           onChange={(e) => update("password")(e.target.value)}
           onBlur={() => touch("password")}
@@ -81,13 +83,13 @@ export function SignupForm() {
         />
       </Field>
 
-      <Field label="비밀번호 확인" htmlFor="passwordConfirm" status={status.passwordConfirm}>
+      <Field label={t.passwordConfirm} htmlFor="passwordConfirm" status={status.passwordConfirm}>
         <Input
           id="passwordConfirm"
           name="passwordConfirm"
           type="password"
           autoComplete="new-password"
-          placeholder="위와 같은 비밀번호를 한 번 더"
+          placeholder={t.passwordConfirmPlaceholder}
           value={form.passwordConfirm}
           onChange={(e) => update("passwordConfirm")(e.target.value)}
           onBlur={() => touch("passwordConfirm")}
@@ -112,17 +114,16 @@ export function SignupForm() {
 
       {signup.formError && (
         <p role="alert" className="text-sm font-medium text-destructive">
-          {signup.formError}
+          {known(signup.formError)}
         </p>
       )}
 
       <p className="text-[11px] leading-relaxed text-muted-foreground">
-        가입하면 아이디·이메일과 비밀번호의 해시를 저장합니다. 무엇을 얼마나 보관하고 어떻게
-        지우는지는{" "}
+        {t.storageBefore}
         <Link href="/privacy" className="font-semibold text-primary underline underline-offset-4">
-          개인정보처리방침
+          {t.storagePrivacy}
         </Link>
-        에 있습니다.
+        {t.storageAfter}
       </p>
 
       <Button
@@ -130,13 +131,13 @@ export function SignupForm() {
         className="w-full h-11 font-bold rounded-xl"
         disabled={signup.submitting}
       >
-        {signup.submitting ? "가입하는 중..." : "회원가입"}
+        {signup.submitting ? t.submitting : t.submit}
       </Button>
 
       <p className="text-xs text-center text-muted-foreground">
-        이미 계정이 있으신가요?{" "}
+        {t.haveAccount}{" "}
         <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
-          로그인
+          {t.login}
         </Link>
       </p>
     </HydratedForm>

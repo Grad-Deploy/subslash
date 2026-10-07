@@ -20,6 +20,7 @@ import {
   signupRequestBody,
   type VerificationNotice,
 } from "@lib/signup-request";
+import { useT } from "@lib/i18n";
 
 const EMPTY = {
   username: "",
@@ -50,6 +51,7 @@ const EMAIL_CHECK_DELAY_MS = 500;
  * 서버가 다시 한다. 서버가 필드별 오류를 돌려주면 그걸 그대로 붙인다.
  */
 export function useSignupForm() {
+  const t = useT().auth.signup;
   const [form, setForm] = useState(EMPTY);
   const [isOver14, setIsOver14State] = useState(false);
   // 선택 항목. 비워도 가입된다.
@@ -164,7 +166,7 @@ export function useSignupForm() {
         body: signupRequestBody(values),
       });
       const data = await res.json().catch(() => ({}));
-      const outcome = readSignupResponse(res.ok, data, normalizedEmail);
+      const outcome = readSignupResponse(res.ok, data, normalizedEmail, t);
 
       if (!outcome.ok) {
         setErrors(outcome.fieldErrors);
@@ -179,7 +181,7 @@ export function useSignupForm() {
       await refreshAuth();
       setDone(outcome.notice);
     } catch {
-      setFormError("네트워크에 문제가 있어 가입하지 못했습니다. 잠시 후 다시 시도해주세요.");
+      setFormError(t.network);
     } finally {
       setSubmitting(false);
     }
