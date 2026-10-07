@@ -6,18 +6,17 @@ import { useStore, isValidExchangeRate, type ExchangeRateSource } from "@lib/sto
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { apiUrl } from "@lib/api";
+import { useLocale, useT } from "@lib/i18n";
 
-const SOURCE_LABEL: Record<ExchangeRateSource, string> = {
-  default: "기본값",
-  manual: "직접 입력",
-  ecb: "ECB 고시 환율",
-};
-
-function formatUpdatedAt(iso: string | null): string {
+function formatUpdatedAt(iso: string | null, locale: string): string {
   if (!iso) return "";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+  return date.toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 /**
@@ -37,12 +36,15 @@ export function ExchangeRateNote() {
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
+  const t = useT().settings.exchangeRate;
+  const locale = useLocale();
 
   const hasUSD = subscriptions.some((sub) => sub.currency === "USD" && sub.status === "active");
   if (!hasUSD) return null;
 
   const rate = exchangeRate.rate ?? DEFAULT_EXCHANGE_RATE;
-  const updatedAt = formatUpdatedAt(exchangeRate.updatedAt);
+  const updatedAt = formatUpdatedAt(exchangeRate.updatedAt, locale);
+  const sourceLabel: Record<ExchangeRateSource, string> = t.sources;
 
   const openEditor = () => {
     setDraft(String(rate));
@@ -53,7 +55,7 @@ export function ExchangeRateNote() {
   const save = () => {
     const parsed = Number(draft.replace(/,/g, "").trim());
     if (!isValidExchangeRate(parsed)) {
-      setError("1보다 크고 100,000 이하인 숫자를 입력해주세요.");
+      setError(t.invalid);
       return;
     }
     setExchangeRate(parsed, "manual");
@@ -75,7 +77,7 @@ export function ExchangeRateNote() {
       setIsEditing(false);
     } catch {
       // The rate already in use stays in use; saying so beats a silent no-op.
-      setError("환율을 불러오지 못했습니다. 지금 값을 그대로 사용합니다.");
+      setError(t.fetchFailed);
     } finally {
       setIsFetching(false);
     }
@@ -85,17 +87,16 @@ export function ExchangeRateNote() {
     <div className="rounded-2xl border bg-card px-4 py-3 text-xs">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-muted-foreground">
-          USD 구독은 <strong className="text-foreground">$1 = ₩{rate.toLocaleString()}</strong>{" "}
-          기준으로 환산했습니다
+          {t.convertedAt(rate.toLocaleString())}
           <span className="opacity-70">
             {" "}
-            ({SOURCE_LABEL[exchangeRate.source]}
+            ({sourceLabel[exchangeRate.source]}
             {updatedAt && ` · ${updatedAt}`})
           </span>
         </p>
         {!isEditing && (
           <Button variant="outline" size="sm" onClick={openEditor}>
-            환율 변경
+            {t.change}
           </Button>
         )}
       </div>
@@ -110,13 +111,13 @@ export function ExchangeRateNote() {
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               className="h-8 w-32 text-xs"
-              aria-label="USD 대비 원화 환율"
+              aria-label={t.inputLabel}
             />
             <Button size="sm" onClick={save}>
-              저장
+              {t.save}
             </Button>
             <Button variant="outline" size="sm" onClick={fetchLatest} disabled={isFetching}>
-              {isFetching ? "불러오는 중..." : "최신 환율 불러오기"}
+              {isFetching ? t.fetching : t.fetchLatest}
             </Button>
             <Button
               variant="ghost"
@@ -126,16 +127,13 @@ export function ExchangeRateNote() {
                 setIsEditing(false);
               }}
             >
-              기본값(₩{DEFAULT_EXCHANGE_RATE.toLocaleString()})으로
+              {t.reset(DEFAULT_EXCHANGE_RATE.toLocaleString())}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
-              취소
+              {t.cancel}
             </Button>
           </div>
-          <p className="text-muted-foreground opacity-80">
-            고시 환율은 카드사 청구액과 다릅니다. 카드사는 자체 수수료를 더해 청구하므로, 명세서와
-            맞추려면 그 금액에서 역산한 값을 직접 넣는 편이 정확합니다.
-          </p>
+          <p className="text-muted-foreground opacity-80">{t.cardNote}</p>
           {error && <p className="text-destructive">{error}</p>}
         </div>
       )}
