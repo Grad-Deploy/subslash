@@ -4,12 +4,13 @@ import React from "react";
 import { useDropdownMenu } from "@hooks/useDropdownMenu";
 import { Check, Monitor, Moon, Sun } from "lucide-react";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 import { useTheme, type ThemePreference } from "./ThemeProvider";
 
-const OPTIONS: { value: ThemePreference; label: string; detail?: string; Icon: typeof Sun }[] = [
-  { value: "system", label: "자동", detail: "기기 설정 따라", Icon: Monitor },
-  { value: "light", label: "라이트", Icon: Sun },
-  { value: "dark", label: "다크", Icon: Moon },
+const OPTIONS: { value: ThemePreference; Icon: typeof Sun }[] = [
+  { value: "system", Icon: Monitor },
+  { value: "light", Icon: Sun },
+  { value: "dark", Icon: Moon },
 ];
 
 /**
@@ -22,6 +23,8 @@ const OPTIONS: { value: ThemePreference; label: string; detail?: string; Icon: t
  */
 export function ThemeMenu() {
   const { preference, setPreference } = useTheme();
+  const t = useT().shell.theme;
+  const labelOf = (value: ThemePreference) => t[value];
   const { open, setOpen, rootRef, triggerRef, menuRef } = useDropdownMenu({
     items: '[role="menuitemradio"]',
     // 지금 고른 모드에 포커스를 둔다.
@@ -38,7 +41,7 @@ export function ThemeMenu() {
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={`화면 모드 (${current.label})`}
+        aria-label={t.current(labelOf(current.value))}
         className="group relative flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <current.Icon className="h-5 w-5" aria-hidden="true" />
@@ -48,11 +51,13 @@ export function ThemeMenu() {
         <div
           ref={menuRef}
           role="menu"
-          aria-label="화면 모드"
+          aria-label={t.label}
           className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border bg-card p-1.5 text-card-foreground shadow-lg"
         >
           {/* 바뀐 모습을 바로 보도록 고른 뒤에도 메뉴를 열어 둔다. */}
-          {OPTIONS.map(({ value, label, detail, Icon }) => {
+          {OPTIONS.map(({ value, Icon }) => {
+            const label = labelOf(value);
+            const detail = value === "system" ? t.systemDetail : undefined;
             const selected = preference === value;
             return (
               <button
