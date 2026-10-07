@@ -3,6 +3,7 @@
 import React, { useEffect } from "react";
 import { DEMO_DURATION_MS, isDemoExpired, useStore } from "@lib/store";
 import { Button } from "../ui/button";
+import { useT } from "@lib/i18n";
 
 /** 체험 시간이 지났는지 다시 보는 간격. */
 const CHECK_INTERVAL_MS = 30 * 1000;
@@ -17,6 +18,7 @@ const CHECK_INTERVAL_MS = 30 * 1000;
 export function DemoBanner() {
   const demo = useStore((state) => state.demo);
   const endDemo = useStore((state) => state.endDemo);
+  const t = useT().shell.demo;
 
   useEffect(() => {
     if (!demo) return;
@@ -42,12 +44,10 @@ export function DemoBanner() {
     >
       <div className="container mx-auto flex max-w-6xl flex-col gap-2 px-4 py-2.5 text-xs sm:flex-row sm:items-center sm:justify-between">
         <p className="leading-relaxed break-keep">
-          <strong>샘플로 체험하는 중입니다.</strong> 지금 보이는 구독은 예시이고 내 구독과 섞이지
-          않습니다. 여기서 바꾼 내용은 저장되지 않고, 새로고침하거나 {DEMO_DURATION_MS / 60_000}분이
-          지나면 체험이 끝납니다.
+          <strong>{t.title}</strong> {t.body(DEMO_DURATION_MS / 60_000)}
         </p>
         <Button size="sm" variant="outline" className="shrink-0 bg-background" onClick={endDemo}>
-          체험 끝내기
+          {t.end}
         </Button>
       </div>
     </div>

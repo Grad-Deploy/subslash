@@ -126,7 +126,15 @@ test.describe("설정 화면 (E2E)", () => {
     page,
   }) => {
     await page.goto("/settings");
-    await page.getByRole("link", { name: /도움말 · 문의/ }).click({ timeout: 30_000 });
+    // 로그인 여부를 받으면 맨 위에 계정 줄이 끼어 아래 칸이 밀린다. 누를 자리를 잡은 뒤 밀리면 빈 곳을 누르므로,
+    // 계정 줄이 그려진 뒤에 누른다. 같은 이름의 링크가 푸터에도 있어 설정 본문 안에서 찾는다.
+    await expect(page.getByRole("link", { name: /로그인 \/ 회원가입/ })).toBeVisible({
+      timeout: 30_000,
+    });
+    await page
+      .getByRole("main")
+      .getByRole("link", { name: /도움말 · 문의/ })
+      .click({ timeout: 30_000 });
     await expect(page).toHaveURL(/\/help$/, { timeout: 30_000 });
     await expect(page.getByRole("heading", { name: "도움말", exact: true })).toBeVisible();
 

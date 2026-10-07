@@ -14,6 +14,7 @@ import { AccountSyncConflictDialog } from "../account/AccountSyncConflictDialog"
 import { cn } from "@lib/utils";
 import { BrandLockup } from "../brand/Brand";
 import { IS_APP_BUILD } from "@lib/platform";
+import { useT } from "@lib/i18n";
 
 // 폰 사용 기록으로 자동 체크인(안드로이드 앱 전용). 폰 기록 코드가 웹 번들에 들어가지 않게 떼어 부른다.
 const AppAutoCheckIn = IS_APP_BUILD
@@ -29,12 +30,6 @@ const AppCalendarButton = IS_APP_BUILD
     })
   : null;
 
-const navLinks = [
-  { name: "대시보드", href: "/dashboard" },
-  { name: "내 구독", href: "/subs" },
-  { name: "리포트", href: "/report" },
-] as const;
-
 /**
  * 상단 바는 탐색과 계정만 맡는다. 자동 불러오기처럼 무언가를 만드는 버튼은
  * 그 일을 하는 화면(대시보드·내 구독) 본문에 있다.
@@ -44,6 +39,12 @@ const navLinks = [
  */
 export function Header() {
   const pathname = usePathname();
+  const t = useT();
+  const navLinks = [
+    { name: t.shell.nav.dashboard, href: "/dashboard" },
+    { name: t.shell.nav.subs, href: "/subs" },
+    { name: t.shell.nav.report, href: "/report" },
+  ];
 
   // 익명 통계에 참여한 기기면 구독이 바뀔 때 요약을 다시 보낸다.
   useStatsContribution();
@@ -73,7 +74,10 @@ export function Header() {
             )}
 
             {/* 좁은 화면에서는 하단 탭(BottomNav)이 같은 역할을 한다. */}
-            <nav className="hidden h-full items-center gap-6 md:flex" aria-label="주요 메뉴">
+            <nav
+              className="hidden h-full items-center gap-6 md:flex"
+              aria-label={t.shell.nav.label}
+            >
               {navLinks.map((link) => {
                 // 절약 기록(/savings)은 따로 탭이 없어, 같은 결과를 보는 리포트 탭에 불을 켠다.
                 const isActive =
@@ -111,7 +115,7 @@ export function Header() {
                 <div className="-ml-2 hidden items-center sm:flex">
                   <Link
                     href="/settings"
-                    aria-label="설정"
+                    aria-label={t.shell.nav.settings}
                     aria-current={pathname?.startsWith("/settings") ? "page" : undefined}
                     className={cn(
                       "group relative flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -125,7 +129,7 @@ export function Header() {
                       className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs font-medium text-background opacity-0 shadow transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
                       aria-hidden="true"
                     >
-                      설정
+                      {t.shell.nav.settings}
                     </span>
                   </Link>
                 </div>

@@ -19,7 +19,7 @@ export function AppSettingsPage() {
   const active = subscriptions.filter((sub) => sub.status === "active");
 
   return (
-    <SettingsScreen storageNote="지금 기록은 이 폰에만 저장돼요">
+    <SettingsScreen storedOn="app">
       {/* 체크인 — 폰 기록 자동 체크인(예전 구독 관리 위쪽 카드) */}
       {phoneStatus !== "unsupported" && phoneStatus !== "loading" && (
         <section className="space-y-2">
