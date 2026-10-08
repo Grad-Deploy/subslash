@@ -142,6 +142,71 @@ const EN: [RegExp, (...groups: string[]) => string][] = [
     () => "Couldn't send the confirmation email. Please try again shortly.",
   ],
   [/^확인 메일을 보내지 못했습니다\.$/, () => "Couldn't send the confirmation email."],
+
+  // 비밀번호 재설정 메일(describeResetOutcome)
+  [
+    /^(.+)로 비밀번호 재설정 메일을 보냈습니다\. 링크는 (\d+)분 동안 한 번만 쓸 수 있습니다\. 받은편지함에 없으면 스팸함도 확인해주세요\.$/,
+    (email, m) =>
+      `We sent a password reset email to ${email}. The link works once, for ${m} minutes. If it's not in your inbox, check your spam folder.`,
+  ],
+  [
+    /^이 주소로 메일을 너무 자주 보냈습니다\. (\d+)(초|분|시간) 뒤에 다시 요청할 수 있습니다\.$/,
+    (n, unit) =>
+      `Too many emails were sent to this address. You can ask again in ${n} ${
+        { 초: "second", 분: "minute", 시간: "hour" }[unit] ?? unit
+      }${n === "1" ? "" : "s"}.`,
+  ],
+  [
+    /^이 서버에는 메일 발송이 설정돼 있지 않아 재설정 메일을 보내지 못했습니다\.$/,
+    () => "Email sending isn't set up on this server, so the reset email wasn't sent.",
+  ],
+  [
+    /^재설정 메일을 보내지 못했습니다\. 잠시 뒤 다시 요청해주세요\.$/,
+    () => "Couldn't send the reset email. Please try again shortly.",
+  ],
+  [/^재설정 메일을 보내지 못했습니다\.$/, () => "Couldn't send the reset email."],
+  [/^이 이메일로 가입한 계정이 없습니다\.$/, () => "No account is signed up with this email."],
+
+  // 내 정보·비밀번호·탈퇴·로그인 방법
+  [/^로그인이 필요합니다\.$/, () => "You need to log in."],
+  [/^내 정보를 저장하지 못했습니다\.$/, () => "Couldn't save your details."],
+  [/^지금 비밀번호를 입력해주세요\.$/, () => "Enter your current password."],
+  [/^지금 비밀번호가 맞지 않습니다\.$/, () => "Your current password is incorrect."],
+  [
+    /^지금 비밀번호와 다른 비밀번호를 정해주세요\.$/,
+    () => "Choose a password different from your current one.",
+  ],
+  [
+    /^다른 곳에서 비밀번호가 먼저 바뀌었습니다\. 새 비밀번호로 다시 로그인해주세요\.$/,
+    () => "Your password was changed elsewhere first. Log in again with the new password.",
+  ],
+  [
+    /^비밀번호를 바꾸지 못했습니다\. 잠시 후 다시 시도해주세요\.$/,
+    () => "Couldn't change the password. Please try again shortly.",
+  ],
+  [/^비밀번호를 바꾸지 못했습니다\.$/, () => "Couldn't change the password."],
+  [/^비밀번호가 맞지 않습니다\.$/, () => "The password is incorrect."],
+  [/^재설정 링크를 처리하지 못했습니다\.$/, () => "Couldn't process the reset link."],
+  [/^확인 링크를 처리하지 못했습니다\.$/, () => "Couldn't process the confirmation link."],
+  [
+    /^이미 확인된 계정이라 이 링크로는 지울 수 없습니다\.$/,
+    () => "This account is already confirmed, so this link can't delete it.",
+  ],
+  [
+    /^탈퇴를 처리하지 못했습니다\. 잠시 후 다시 시도해주세요\.$/,
+    () => "Couldn't delete the account. Please try again shortly.",
+  ],
+  [/^확인을 위해 '(.+)'를 입력해주세요\.$/, (word) => `Type '${word}' to confirm.`],
+  [/^로그인 방법을 불러오지 못했습니다\.$/, () => "Couldn't load your login methods."],
+  [/^연결을 시작하지 못했습니다\.$/, () => "Couldn't start connecting."],
+  [/^연결을 끊지 못했습니다\.$/, () => "Couldn't disconnect."],
+  [/^이미 연결돼 있어요\.$/, () => "It's already connected."],
+  [/^지금은 연결할 수 없어요\.$/, () => "Can't connect right now."],
+  [
+    /^로그인할 방법이 하나뿐이라 끊을 수 없어요\. 비밀번호를 만들거나 다른 계정을 먼저 연결해 주세요\.$/,
+    () =>
+      "It's your only way to log in, so it can't be disconnected. Create a password or connect another account first.",
+  ],
 ];
 
 /** 표에 있는 한국어 문장이면 그 언어로, 아니면 그대로. */
