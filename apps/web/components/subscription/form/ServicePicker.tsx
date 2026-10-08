@@ -23,7 +23,8 @@ const PICK_CATEGORY_ORDER: SubscriptionCategory[] = [
  */
 export type PickTab = SubscriptionCategory | "all" | "bundle";
 
-const isBundle = (service: ServicePreset) => (service.includes?.length ?? 0) > 0;
+const isBundle = (service: ServicePreset) =>
+  (service.includes?.length ?? 0) > 0 || service.bundleTab === true;
 
 /** 그 탭에 보일 서비스. 결합 상품은 '결합 상품' 탭에만 있고 분류 탭에는 없다('전체'에는 있다). */
 function inTab(service: ServicePreset, tab: PickTab): boolean {
