@@ -12,6 +12,7 @@ import * as overview from "./overview";
 import * as receipt from "./receipt";
 import * as receiptView from "./receiptView";
 import * as reportPage from "./reportPage";
+import * as savings from "./savings";
 import * as settings from "./settings";
 import * as shell from "./shell";
 import * as subs from "./subs";
@@ -35,6 +36,7 @@ export const messages = {
     checkin: checkin.ko,
     form: form.ko,
     ...appSmall.ko,
+    ...savings.ko,
     ...receiptView.ko,
     ...ask.ko,
     ...reportPage.ko,
@@ -55,6 +57,7 @@ export const messages = {
     checkin: checkin.en,
     form: form.en,
     ...appSmall.en,
+    ...savings.en,
     ...receiptView.en,
     ...ask.en,
     ...reportPage.en,

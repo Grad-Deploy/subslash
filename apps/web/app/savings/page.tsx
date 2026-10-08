@@ -11,7 +11,6 @@ import {
   getBilledAmount,
   getMyAnnualAmountKRW,
   getMyMonthlyAmountKRW,
-  getSavingsEquivalent,
   getSavingsEquivalents,
   getSavingsTiers,
   getDetoxLevel,
@@ -35,6 +34,8 @@ import { Spinner } from "../../components/ui/spinner";
 import { PiggyBank } from "lucide-react";
 import { copyText } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
+import { useT } from "@lib/i18n";
+import { rewardHeadline } from "@lib/i18n/savings-text";
 import dynamic from "next/dynamic";
 
 // 앱에서는 좁은 화면용 절약 현황을 쓴다. 웹 사용자가 이 코드를 받지 않도록 앱 빌드에서만 불러온다.
@@ -50,6 +51,8 @@ export default function SavingsPage() {
 
 function SavingsDashboard() {
   const router = useRouter();
+  const t = useT();
+  const p = t.savings.page;
   const { getKilledSubscriptions, reviveSubscription } = useStore();
   const rate = useExchangeRate();
   const mounted = useIsClient();
@@ -69,7 +72,7 @@ function SavingsDashboard() {
   const tiers = getSavingsTiers(killedSubs, now, rate);
   const annualSavings = tiers.annualRunRate;
   const equivalents = getSavingsEquivalents(annualSavings);
-  const headlineEquivalent = getSavingsEquivalent(annualSavings)[0] ?? "";
+  const headlineEquivalent = rewardHeadline(t, annualSavings);
   // 레벨은 지킨 돈으로 매긴다. 1년치 요금으로 매기면 해지 버튼 한 번에 오른다.
   const detoxLevel = getDetoxLevel(tiers.confirmed, killedSubs.length);
 
@@ -98,11 +101,16 @@ function SavingsDashboard() {
     // 남에게 보이는 문장이라 지킨 돈이 없으면 1년치 요금을 '아낄 예정'으로만 적는다.
     const savingsLine =
       tiers.confirmed > 0
-        ? `구독을 해지해 ${formatKRW(tiers.confirmed)}을 지켰고, 해지를 유지하면 1년에 ${formatKRW(annualSavings)}을 아낍니다!`
-        : `구독을 해지해 1년에 ${formatKRW(annualSavings)}을 아낄 예정입니다!`;
-    const text = `SubSlash 구독 디톡스 ${detoxLevel.levelLabel} ${detoxLevel.title}\n${savingsLine} ${headlineEquivalent}\n결과 보기: ${shareUrl}`;
+        ? t.savings.share.confirmedLine(formatKRW(tiers.confirmed), formatKRW(annualSavings))
+        : t.savings.share.plannedLine(formatKRW(annualSavings));
+    const text = t.savings.share.text(
+      `${detoxLevel.levelLabel} ${t.value.detoxTitle[detoxLevel.level as 0 | 1 | 2 | 3 | 4 | 5]}`,
+      savingsLine,
+      headlineEquivalent,
+      shareUrl,
+    );
     // 공유 창을 열었거나 사용자가 닫았으면 끝이다. 공유할 수 없는 환경이면 복사로 넘어간다.
-    if (await shareText({ title: "SubSlash 구독 디톡스 결과", text, url: shareUrl })) return;
+    if (await shareText({ title: t.savings.share.title, text, url: shareUrl })) return;
     await copyToClipboard(text);
   };
 
@@ -110,14 +118,14 @@ function SavingsDashboard() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black tracking-tight">절약 & 방어 자산 현황</h1>
-          <p className="text-sm text-muted-foreground">해지로 아끼는 돈과 실제로 지킨 돈이에요.</p>
+          <h1 className="text-2xl font-black tracking-tight">{p.title}</h1>
+          <p className="text-sm text-muted-foreground">{p.subtitle}</p>
         </div>
         <Link
           href="/savings/review"
           className="text-sm font-semibold text-foreground underline underline-offset-4 hover:text-muted-foreground"
         >
-          올해 구독 결산 보기 →
+          {p.reviewLink}
         </Link>
       </div>
 
@@ -125,12 +133,10 @@ function SavingsDashboard() {
         <div className="text-center py-20 border border-dashed rounded-2xl space-y-4">
           <PiggyBank className="mx-auto size-12 text-muted-foreground" aria-hidden />
           <div className="space-y-1">
-            <h3 className="text-xl font-bold">아직 해지한 구독이 없어요</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-              대시보드에서 잘 안 쓰는 구독을 해지해 보세요.
-            </p>
+            <h3 className="text-xl font-bold">{p.emptyTitle}</h3>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto">{p.emptyHint}</p>
           </div>
-          <Button onClick={() => router.push("/dashboard")}>대시보드로 가기 →</Button>
+          <Button onClick={() => router.push("/dashboard")}>{p.goDashboard}</Button>
         </div>
       ) : (
         <div className="space-y-6">
@@ -166,19 +172,20 @@ function SavingsDashboard() {
 
             {/* Reward Equivalent Cards — only the tiers the savings actually cover */}
             <div className="min-w-0 space-y-3 lg:col-span-2">
-              <h3 className="font-bold text-base">1년 동안 아끼면 누릴 수 있는 보상</h3>
+              <h3 className="font-bold text-base">{p.rewardsTitle}</h3>
               {equivalents.length === 0 ? (
                 <div className="p-4 border border-dashed rounded-2xl text-sm text-muted-foreground">
-                  연간 ₩5,000부터 보여요.
+                  {p.rewardsEmpty}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-3">
                   {equivalents.map((item) => (
-                    <div key={item.label} className="p-4 border rounded-2xl bg-card space-y-1">
-                      <p className="text-xs text-muted-foreground">{item.label} 환산</p>
+                    <div key={item.key} className="p-4 border rounded-2xl bg-card space-y-1">
+                      <p className="text-xs text-muted-foreground">
+                        {p.rewardOf(t.savings.rewardNames[item.key])}
+                      </p>
                       <p className="text-lg font-bold text-foreground">
-                        {item.label} {item.count.toLocaleString()}
-                        {item.unit}
+                        {t.value.reward[item.key](item.count)}
                       </p>
                     </div>
                   ))}
@@ -190,9 +197,9 @@ function SavingsDashboard() {
           {/* Defended Subscriptions List with Actions */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-base">해지한 구독 목록 ({killedSubs.length})</h3>
+              <h3 className="font-bold text-base">{p.killedTitle(killedSubs.length)}</h3>
               <Button size="sm" variant="outline" onClick={handleShare}>
-                {copied ? "복사했어요" : "결과 공유하기"}
+                {copied ? p.copied : p.share}
               </Button>
             </div>
 
@@ -217,7 +224,7 @@ function SavingsDashboard() {
                         {sub.name}
                       </h4>
                       <p className="text-xs text-emerald-600 font-medium">
-                        연 {formatKRW(getMyAnnualAmountKRW(sub, rate))} 아끼는 중
+                        {p.annualSaving(formatKRW(getMyAnnualAmountKRW(sub, rate)))}
                       </p>
                       <KillCheckLabel subscription={sub} now={now} />
                     </div>
@@ -230,11 +237,11 @@ function SavingsDashboard() {
                           {formatCurrency(getBilledAmount(sub), sub.currency)}
                           <span className="text-xs font-normal text-muted-foreground">
                             {" "}
-                            (월 {formatKRW(getMyMonthlyAmountKRW(sub, rate))})
+                            {p.monthlyBilled(formatKRW(getMyMonthlyAmountKRW(sub, rate)))}
                           </span>
                         </>
                       ) : (
-                        <>월 {formatCurrency(getBilledAmount(sub), sub.currency)}</>
+                        <>{p.perMonth(formatCurrency(getBilledAmount(sub), sub.currency))}</>
                       )}
                     </span>
                     <Button
@@ -243,7 +250,7 @@ function SavingsDashboard() {
                       className="text-xs"
                       onClick={() => setReviveTarget(sub)}
                     >
-                      다시 살리기
+                      {p.revive}
                     </Button>
                   </div>
                 </div>
@@ -263,10 +270,10 @@ function SavingsDashboard() {
               setReviveTarget(null);
             }
           }}
-          title="구독 다시 살리기"
-          description={`'${reviveTarget.name}'을(를) 다시 구독 중으로 바꿀까요?\n절약 기록에서 빠져요.`}
-          confirmText="다시 살리기"
-          cancelText="취소"
+          title={t.subs.confirm.reviveHeading}
+          description={t.subs.confirm.reviveBody(reviveTarget.name)}
+          confirmText={t.subs.confirm.reviveConfirm}
+          cancelText={t.subs.confirm.cancel}
         />
       )}
     </div>

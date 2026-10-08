@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { formatKRW } from "@subslash/shared";
 import { AppSheet } from "../../settings/app/AppSheet";
 import { useMonthlyIncome } from "./useMonthlyIncome";
+import { useT } from "@lib/i18n";
 
 /**
  * 색. 구독비는 중립 잉크, 해지로 줄인 몫은 절약 그래프와 같은 에메랄드다. 빨강·초록 조합은
@@ -23,26 +24,12 @@ function pct(part: number, whole: number): string {
  * 단위 버튼. 숫자를 친 바로 뒤에 누르면 그 숫자에 단위를 붙이고(3 → 십만 = 30만 원),
  * 그렇지 않으면 한 단위를 더한다(30만 원 → 십만 = 40만 원). 토스의 금액 입력과 같은 방식이다.
  */
-const UNITS = [
-  { label: "만", value: 10_000 },
-  { label: "십만", value: 100_000 },
-  { label: "백만", value: 1_000_000 },
-  { label: "천만", value: 10_000_000 },
-] as const;
+const UNIT_VALUES = [10_000, 100_000, 1_000_000, 10_000_000] as const;
 
 /** 입력 상한(100억 원). 자릿수를 잘못 붙여 비율이 무의미해지는 것을 막는다. */
 const MAX_INCOME = 10_000_000_000;
 
 /** 3,450,000 → "345만 원", 12,345,678 → "1,234만 5,678원". 입력 칸 아래에 읽기 쉬운 금액으로 보여준다. */
-function toKoreanWon(value: number): string {
-  const man = Math.floor(value / 10_000);
-  const rest = value % 10_000;
-  if (man === 0) return `${rest.toLocaleString("ko-KR")}원`;
-  return rest === 0
-    ? `${man.toLocaleString("ko-KR")}만 원`
-    : `${man.toLocaleString("ko-KR")}만 ${rest.toLocaleString("ko-KR")}원`;
-}
-
 /**
  * 월 수입 대비 구독비. 지금 내는 구독비(활성 구독 월 환산)와 해지로 줄인 몫(해지한 구독 월 환산)을
  * 사용자가 넣은 월 수입에 견준다. 수입을 넣지 않았으면 비율 대신 입력 안내만 보여준다.
@@ -55,36 +42,36 @@ export function AppIncomeRate({
   activeMonthly: number;
   killedMonthly: number;
 }) {
+  const t = useT();
+  const n = t.savings.income;
   const [income, setIncome] = useMonthlyIncome();
   const [open, setOpen] = useState(false);
 
   return (
     <section className="rounded-2xl border bg-card p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-[14.5px] font-extrabold tracking-tight">월 수입 대비 구독비</h2>
+        <h2 className="text-[14.5px] font-extrabold tracking-tight">{n.title}</h2>
         {income && (
           <button
             type="button"
             onClick={() => setOpen(true)}
             className="text-[11px] font-bold text-muted-foreground underline underline-offset-4"
           >
-            수입 수정
+            {n.edit}
           </button>
         )}
       </div>
 
       {!income ? (
         <div className="py-2 text-center">
-          <p className="mt-1 text-[13.5px] font-bold">구독비가 수입의 몇 %일까요?</p>
-          <p className="mt-1 text-[11.5px] text-muted-foreground">
-            월 수입을 넣으면 해지 전후 비율을 보여드려요.
-          </p>
+          <p className="mt-1 text-[13.5px] font-bold">{n.askTitle}</p>
+          <p className="mt-1 text-[11.5px] text-muted-foreground">{n.askHint}</p>
           <button
             type="button"
             onClick={() => setOpen(true)}
             className="mt-3 h-10 rounded-xl bg-primary px-4 text-[13px] font-extrabold text-primary-foreground"
           >
-            월 수입 입력하기
+            {n.enter}
           </button>
         </div>
       ) : (
@@ -122,6 +109,7 @@ function Rate({
 }) {
   // 구독비가 월 수입을 넘으면 원은 꽉 찬 채 주황으로 칠하고, 비율보다 할 일을 먼저 보여준다.
   // 대개 수입을 잘못 넣었거나(자릿수·단위) 정말 구독이 많은 경우라, 둘 다 고를 수 있게 한다.
+  const n = useT().savings.income;
   const over = activeMonthly > income;
   const before = activeMonthly + killedMonthly;
   // 원은 둘레 100을 기준으로 그린다. 조각 사이에 표면색 틈을 둔다.
@@ -132,9 +120,7 @@ function Rate({
 
   return (
     <>
-      <p className="mt-0.5 text-[11.5px] text-muted-foreground">
-        월 수입 {formatKRW(income)} 기준 (직접 입력)
-      </p>
+      <p className="mt-0.5 text-[11.5px] text-muted-foreground">{n.basis(formatKRW(income))}</p>
       <div className="mt-3 flex items-center gap-4">
         <div className="relative size-[104px] shrink-0">
           <svg viewBox="0 0 36 36" className="size-full -rotate-90" aria-hidden>
@@ -177,18 +163,18 @@ function Rate({
               <p className="text-[22px] leading-none font-black tracking-tight tabular-nums">
                 {pct(activeMonthly, income)}
               </p>
-              <p className="mt-1 text-[10px] text-muted-foreground">지금 구독비</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">{n.now}</p>
             </div>
           </div>
         </div>
         <dl className="grid min-w-0 flex-1 gap-1.5 text-[11.5px]">
-          <LegendRow swatch={SPEND_BG} label="지금 구독비" value={activeMonthly} />
+          <LegendRow swatch={SPEND_BG} label={n.now} value={activeMonthly} />
           {killedMonthly > 0 && (
-            <LegendRow swatch={SAVED_BG} label="해지로 줄인 몫" value={killedMonthly} />
+            <LegendRow swatch={SAVED_BG} label={n.savedPart} value={killedMonthly} />
           )}
           <LegendRow
             swatch="bg-secondary ring-1 ring-border"
-            label="나머지"
+            label={n.rest}
             value={Math.max(0, income - activeMonthly - killedMonthly)}
           />
         </dl>
@@ -197,18 +183,17 @@ function Rate({
       {over && (
         <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs dark:border-amber-800 dark:bg-amber-950/40">
           <p className="font-bold text-amber-800 dark:text-amber-300">
-            구독비가 월 수입보다 {formatKRW(activeMonthly - income)} 많아요
+            {n.over(formatKRW(activeMonthly - income))}
           </p>
           <p className="mt-1 leading-relaxed text-amber-900/80 dark:text-amber-200/80">
-            수입을 잘못 넣었다면 고쳐 주세요. 맞다면 대시보드 계산서의 &lsquo;쉬어가도 될
-            구독&rsquo;부터 정리해 보세요.
+            {n.overHint}
           </p>
           <button
             type="button"
             onClick={onEditIncome}
             className="mt-2 rounded-lg border border-amber-300 bg-background px-2.5 py-1 font-bold text-amber-900 dark:border-amber-700 dark:text-amber-200"
           >
-            수입 다시 넣기
+            {n.reenter}
           </button>
         </div>
       )}
@@ -217,16 +202,16 @@ function Rate({
         <>
           {/* 막대 길이는 해지 전 구독비를 끝으로 둔다. 비율은 오른쪽 글자로 읽는다. */}
           <div className="mt-3 grid gap-2 text-[11px]">
-            <CompareRow label="해지 전" rate={pct(before, income)}>
+            <CompareRow label={n.before} rate={pct(before, income)}>
               <span className={SPEND_BG} style={{ width: `${(activeMonthly / before) * 100}%` }} />
               <span className={SAVED_BG} style={{ width: `${(killedMonthly / before) * 100}%` }} />
             </CompareRow>
-            <CompareRow label="지금" rate={pct(activeMonthly, income)}>
+            <CompareRow label={n.current} rate={pct(activeMonthly, income)}>
               <span className={SPEND_BG} style={{ width: `${(activeMonthly / before) * 100}%` }} />
             </CompareRow>
           </div>
           <p className="mt-2.5 text-[11.5px] font-bold text-emerald-700 dark:text-emerald-300">
-            ▼ 구독비 비중 {diff < 10 ? diff.toFixed(1) : Math.round(diff)}%p 줄었어요
+            {n.lowered(diff < 10 ? diff.toFixed(1) : String(Math.round(diff)))}
           </p>
         </>
       )}
@@ -276,7 +261,7 @@ function IncomeSheet({
   onSave: (value: number | null) => void;
 }) {
   return (
-    <AppSheet open={open} onClose={onClose} label="월 수입 입력">
+    <AppSheet open={open} onClose={onClose} label={useT().savings.income.sheet}>
       {/* 열 때마다 저장된 값에서 새로 시작하도록 key로 다시 만든다. */}
       {open && <IncomeForm key={initial ?? 0} initial={initial} onSave={onSave} />}
     </AppSheet>
@@ -290,6 +275,7 @@ function IncomeForm({
   initial: number | null;
   onSave: (value: number | null) => void;
 }) {
+  const n = useT().savings.income;
   const [value, setValue] = useState(initial ?? 0);
   // 방금 친 숫자가 만 원보다 작으면(3, 250 같은 '몇 만'의 숫자) 단위 버튼이 곱하고, 아니면 더한다.
   // 이미 원 단위로 다 친 금액(2,500,000)에 단위를 곱해 자릿수가 튀지 않게 한다.
@@ -303,44 +289,39 @@ function IncomeForm({
 
   return (
     <div className="pt-1">
-      <h2 className="text-lg font-black tracking-tight">월 수입을 알려주세요</h2>
-      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-        월급·용돈·생활비 예산 중 하나를 넣어요. 구독비가 수입의 몇 %인지 계산하는 데만 쓰고, 이
-        기기에만 저장해요.
-      </p>
+      <h2 className="text-lg font-black tracking-tight">{n.formTitle}</h2>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{n.formHint}</p>
       <label className="mt-4 flex items-center gap-1.5 rounded-2xl border px-3 py-2.5 focus-within:ring-2 focus-within:ring-ring">
         <span className="text-xl font-black text-muted-foreground">₩</span>
         <input
           inputMode="numeric"
           autoFocus
-          value={value ? value.toLocaleString("ko-KR") : ""}
+          value={value ? value.toLocaleString(n.numberLocale) : ""}
           onChange={(e) => {
             setValue(Math.min(MAX_INCOME, Number(e.target.value.replace(/[^0-9]/g, "")) || 0));
             setJustTyped(true);
           }}
           placeholder="0"
-          aria-label="월 수입(원)"
+          aria-label={n.ariaLabel}
           className="min-w-0 flex-1 bg-transparent text-[22px] font-black tabular-nums outline-none placeholder:text-muted-foreground"
         />
-        <span className="text-xs text-muted-foreground">/ 월</span>
+        <span className="text-xs text-muted-foreground">{n.perMonth}</span>
       </label>
       <p
         className="mt-1.5 min-h-4 px-1 text-xs font-semibold text-muted-foreground"
         aria-live="polite"
       >
-        {value > 0
-          ? `월 ${toKoreanWon(value)}`
-          : "숫자를 쓰고 단위를 누르면 붙어요 (3 → 십만 = 30만 원)"}
+        {value > 0 ? n.readout(n.won(value)) : n.unitHint}
       </p>
       <div className="mt-2 flex flex-wrap gap-1.5">
-        {UNITS.map((unit) => (
+        {UNIT_VALUES.map((unitValue, index) => (
           <button
-            key={unit.value}
+            key={unitValue}
             type="button"
-            onClick={() => applyUnit(unit.value)}
+            onClick={() => applyUnit(unitValue)}
             className="rounded-full border px-3 py-1 text-[11.5px] font-bold"
           >
-            {multiplies ? unit.label : `+${unit.label}`}
+            {multiplies ? n.units[index] : `+${n.units[index]}`}
           </button>
         ))}
         {value > 0 && (
@@ -352,7 +333,7 @@ function IncomeForm({
             }}
             className="rounded-full border px-3 py-1 text-[11.5px] font-bold text-muted-foreground"
           >
-            지우기
+            {n.clear}
           </button>
         )}
       </div>
@@ -362,7 +343,7 @@ function IncomeForm({
         onClick={() => onSave(value)}
         className="mt-5 h-12 w-full rounded-xl bg-primary text-sm font-extrabold text-primary-foreground disabled:opacity-40"
       >
-        저장
+        {n.save}
       </button>
       {initial && (
         <button
@@ -370,7 +351,7 @@ function IncomeForm({
           onClick={() => onSave(null)}
           className="mt-1 h-10 w-full text-[12.5px] font-semibold text-muted-foreground"
         >
-          입력한 수입 지우기
+          {n.removeSaved}
         </button>
       )}
     </div>

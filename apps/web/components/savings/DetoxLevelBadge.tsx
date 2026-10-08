@@ -3,6 +3,7 @@
 import React from "react";
 import { Award } from "lucide-react";
 import { formatKRW, getDetoxLevel } from "@subslash/shared";
+import { useT } from "@lib/i18n";
 
 interface DetoxLevelBadgeProps {
   /** 결제가 멈춘 것을 확인한 지킨 돈(KRW). 1년치 요금이 아니다. */
@@ -22,7 +23,10 @@ export function DetoxLevelBadge({
   variant = "card",
   className = "",
 }: DetoxLevelBadgeProps) {
+  const t = useT();
+  const d = t.savings.detox;
   const level = getDetoxLevel(savings, killCount);
+  const title = t.value.detoxTitle[level.level as 0 | 1 | 2 | 3 | 4 | 5];
 
   if (variant === "inline") {
     return (
@@ -30,7 +34,7 @@ export function DetoxLevelBadge({
         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 ${className}`}
       >
         <span>
-          {level.levelLabel} {level.title}
+          {level.levelLabel} {title}
         </span>
       </span>
     );
@@ -43,25 +47,23 @@ export function DetoxLevelBadge({
           <Award className="size-8 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden />
           <div>
             <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              구독 디톡스 레벨
+              {d.label}
             </p>
             <p className="text-lg font-black tracking-tight">
               <span className="text-emerald-600 dark:text-emerald-400">{level.levelLabel}</span>{" "}
-              {level.title}
+              {title}
             </p>
           </div>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-[11px] text-muted-foreground">지킨 돈</p>
+          <p className="text-[11px] text-muted-foreground">{d.saved}</p>
           <p className="text-sm font-bold font-mono">{formatKRW(savings)}</p>
         </div>
       </div>
 
       {showProgress &&
         (level.nextThreshold === null ? (
-          <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            최고 레벨입니다. 더 지킬 구독이 남아있는지 점검해보세요.
-          </p>
+          <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{d.max}</p>
         ) : (
           <div className="space-y-1.5">
             <div className="w-full h-2 bg-secondary/70 rounded-full overflow-hidden">
@@ -71,9 +73,11 @@ export function DetoxLevelBadge({
               />
             </div>
             <p className="text-[11px] text-muted-foreground">
-              <strong className="text-foreground">{formatKRW(level.remainingToNext ?? 0)}</strong>을
-              더 지키면 <strong className="text-foreground">{level.nextTitle}</strong>
-              (Lv.{level.level + 1})로 올라갑니다.
+              {d.next(
+                formatKRW(level.remainingToNext ?? 0),
+                t.value.detoxTitle[(level.level + 1) as 0 | 1 | 2 | 3 | 4 | 5],
+                level.level + 1,
+              )}
             </p>
           </div>
         ))}

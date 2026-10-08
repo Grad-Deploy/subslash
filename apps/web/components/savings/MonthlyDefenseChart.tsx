@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Subscription, formatKRW, getYearDefendedSeries } from "@subslash/shared";
 import { cn } from "../../lib/utils";
 import { niceCeil } from "@lib/chart-scale";
+import { useT } from "@lib/i18n";
 
 interface MonthlyDefenseChartProps {
   killedSubscriptions: Subscription[];
@@ -32,6 +33,7 @@ export function MonthlyDefenseChart({
   killedSubscriptions,
   exchangeRate,
 }: MonthlyDefenseChartProps) {
+  const d = useT().savings.defense;
   const now = new Date();
   const year = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
@@ -42,7 +44,7 @@ export function MonthlyDefenseChart({
   const series = getYearDefendedSeries(killedSubscriptions, year, exchangeRate, now);
   const scaleMax = niceCeil(Math.max(...series.months.map((m) => m.amount)));
   const active = series.months[activeMonth - 1];
-  const pastLabel = currentMonth === 1 ? "1월에 막은 결제" : `1~${currentMonth}월에 막은 결제`;
+  const pastLabel = d.past(currentMonth);
 
   return (
     <section
@@ -51,12 +53,9 @@ export function MonthlyDefenseChart({
     >
       <div className="space-y-1">
         <h3 id="monthly-defense-title" className="font-bold text-base flex items-center gap-1.5">
-          {year}년 월별 방어액
+          {d.title(year)}
         </h3>
-        <p className="text-xs text-muted-foreground">
-          해지 뒤 결제일마다 빠져나가지 않았을 금액입니다. 결제가 실제로 멈췄는지 확인하기 전 금액도
-          들어 있고, 확인된 금액은 맨 위 &lsquo;지킨 돈&rsquo;에 있습니다.
-        </p>
+        <p className="text-xs text-muted-foreground">{d.intro}</p>
       </div>
 
       <dl className="grid grid-cols-2 gap-3">
@@ -65,28 +64,25 @@ export function MonthlyDefenseChart({
           <dd className="text-lg font-bold text-foreground">{formatKRW(series.pastAmount)}</dd>
         </div>
         <div className="p-3 rounded-xl bg-muted/60">
-          <dt className="text-[11px] text-muted-foreground">
-            {currentMonth < 12 ? `${currentMonth + 1}~12월에 지킬 예정` : "남은 달 없음"}
-          </dt>
+          <dt className="text-[11px] text-muted-foreground">{d.future(currentMonth)}</dt>
           <dd className="text-lg font-bold text-foreground">{formatKRW(series.scheduledAmount)}</dd>
         </div>
       </dl>
 
       {scaleMax === 0 ? (
         <p className="p-4 border border-dashed rounded-xl text-xs text-muted-foreground">
-          올해는 해지한 구독의 결제일이 아직 한 번도 돌아오지 않았습니다. 결제일이 지나면 그 달에
-          방어액이 쌓입니다.
+          {d.empty}
         </p>
       ) : (
         <>
           <div className="flex items-center gap-4 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className={cn("w-3 h-3 rounded-[3px]", DEFENDED)} aria-hidden />
-              막은 결제
+              {d.blocked}
             </span>
             <span className="flex items-center gap-1.5">
               <span className={cn("w-3 h-3 rounded-[3px]", SCHEDULED)} aria-hidden />
-              예정 (해지하지 않았다면 나갔을 금액)
+              {d.scheduled}
             </span>
           </div>
 
@@ -114,7 +110,7 @@ export function MonthlyDefenseChart({
                       onMouseEnter={() => setActiveMonth(m.month)}
                       onFocus={() => setActiveMonth(m.month)}
                       onClick={() => setActiveMonth(m.month)}
-                      aria-label={`${m.month}월 ${formatKRW(m.amount)} ${m.isFuture ? "예정" : "막음"}`}
+                      aria-label={d.barLabel(m.month, formatKRW(m.amount), m.isFuture)}
                       aria-pressed={m.month === activeMonth}
                     >
                       {m.amount > 0 && (
@@ -141,7 +137,7 @@ export function MonthlyDefenseChart({
                         : "text-muted-foreground",
                     )}
                   >
-                    {m.month}월
+                    {d.month(m.month)}
                   </span>
                 ))}
               </div>
@@ -150,33 +146,33 @@ export function MonthlyDefenseChart({
 
           <p className="text-xs text-muted-foreground" aria-live="polite">
             <strong className="text-sm text-foreground">{formatKRW(active.amount)}</strong> ·{" "}
-            {active.month}월{" "}
+            {d.month(active.month)}{" "}
             {active.isFuture
-              ? "예정 — 해지하지 않았다면 나갔을 금액"
+              ? d.activeScheduled
               : active.month === currentMonth
-                ? "이번 달 막은 결제"
-                : "막은 결제"}
+                ? d.activeNow
+                : d.activePast}
           </p>
 
           <details className="text-xs">
             <summary className="cursor-pointer text-muted-foreground font-medium">
-              표로 보기
+              {d.table}
             </summary>
             <table className="mt-2 w-full text-left tabular-nums">
               <thead>
                 <tr className="text-muted-foreground">
-                  <th className="py-1 font-medium">월</th>
-                  <th className="py-1 font-medium text-right">금액</th>
-                  <th className="py-1 font-medium text-right">구분</th>
+                  <th className="py-1 font-medium">{d.colMonth}</th>
+                  <th className="py-1 font-medium text-right">{d.colAmount}</th>
+                  <th className="py-1 font-medium text-right">{d.colKind}</th>
                 </tr>
               </thead>
               <tbody>
                 {series.months.map((m) => (
                   <tr key={m.month} className="border-t border-border">
-                    <td className="py-1">{m.month}월</td>
+                    <td className="py-1">{d.month(m.month)}</td>
                     <td className="py-1 text-right">{formatKRW(m.amount)}</td>
                     <td className="py-1 text-right text-muted-foreground">
-                      {m.isFuture ? "예정" : "막음"}
+                      {m.isFuture ? d.kindScheduled : d.kindBlocked}
                     </td>
                   </tr>
                 ))}
@@ -188,8 +184,7 @@ export function MonthlyDefenseChart({
 
       {series.unknownCount > 0 && (
         <p className="text-[11px] text-amber-700 dark:text-amber-300">
-          결제 월을 모르는 연간 구독 {series.unknownCount}건은 어느 달에 결제되는지 알 수 없어
-          그래프에서 빠졌습니다. 구독 상세에서 결제 월을 지정하면 반영됩니다.
+          {d.unknown(series.unknownCount)}
         </p>
       )}
     </section>
