@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import type { DiscoveredSubscription } from "@subslash/shared";
 import { Badge } from "../ui/badge";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 import { DiscoveredRow } from "./DiscoveredRow";
 
 type CategoryFilter = "all" | "ott" | "ai" | "other";
@@ -15,12 +16,7 @@ function inFilter(item: DiscoveredSubscription, filter: CategoryFilter): boolean
   return item.category !== "ott" && item.category !== "ai";
 }
 
-const FILTERS: ReadonlyArray<{ id: CategoryFilter; label: string }> = [
-  { id: "all", label: "전체" },
-  { id: "ott", label: "OTT" },
-  { id: "ai", label: "AI" },
-  { id: "other", label: "기타" },
-];
+const FILTER_IDS: readonly CategoryFilter[] = ["all", "ott", "ai", "other"];
 
 /** 찾은 후보 목록. 몇 건인지와 분류 칩으로 걸러 보기, 줄을 눌러 고르기. */
 export function DiscoveredResults({
@@ -33,6 +29,13 @@ export function DiscoveredResults({
   note: string | null;
   onToggle: (id: string) => void;
 }) {
+  const r = useT().importing.results;
+  const labels: Record<CategoryFilter, string> = {
+    all: r.all,
+    ott: "OTT",
+    ai: "AI",
+    other: r.other,
+  };
   const [filter, setFilter] = useState<CategoryFilter>("all");
   const shown = items.filter((item) => inFilter(item, filter));
 
@@ -41,9 +44,9 @@ export function DiscoveredResults({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-border/50">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-            <span>검색된 구독 서비스</span>
+            <span>{r.title}</span>
             <Badge variant="secondary" className="text-xs font-bold">
-              {items.length}건
+              {r.count(items.length)}
             </Badge>
             {note && (
               <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
@@ -54,7 +57,7 @@ export function DiscoveredResults({
         </div>
 
         <div className="flex items-center gap-1.5 flex-wrap">
-          {FILTERS.map(({ id, label }) => (
+          {FILTER_IDS.map((id) => (
             <button
               key={id}
               type="button"
@@ -66,7 +69,7 @@ export function DiscoveredResults({
                   : "bg-muted/40 hover:bg-muted text-muted-foreground border-border",
               )}
             >
-              {label} ({items.filter((item) => inFilter(item, id)).length})
+              {labels[id]} ({items.filter((item) => inFilter(item, id)).length})
             </button>
           ))}
         </div>
@@ -75,7 +78,7 @@ export function DiscoveredResults({
       <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
         {shown.length === 0 ? (
           <div className="p-4 text-center text-xs text-muted-foreground border border-dashed rounded-xl">
-            이 분류에는 없어요.
+            {r.none}
           </div>
         ) : (
           shown.map((item) => (

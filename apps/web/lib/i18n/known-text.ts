@@ -31,6 +31,12 @@ const EN: [RegExp, (...groups: string[]) => string][] = [
     () => "This format works. Whether the username is taken is checked when you sign up.",
   ],
 
+  // Gmail 가져오기
+  [
+    /^가져온 메일 내용을 읽지 못했습니다\. Apps Script 화면에서 버튼을 다시 눌러주세요\.$/,
+    () => "Couldn't read the imported emails. Tap the button again on the Apps Script screen.",
+  ],
+
   // 서비스 주소(구독 등록 폼)
   [/^주소를 확인해주세요\. \(예: service\.com\)$/, () => "Check the address (e.g. service.com)."],
 

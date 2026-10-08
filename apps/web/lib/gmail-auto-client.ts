@@ -341,9 +341,9 @@ export function discoveryToCandidate(
     selected: !killed && !stale,
     isWithin30Days: !stale,
     statusReason: killed
-      ? "해지로 기록한 서비스인데 결제 메일이 왔습니다. 해지가 됐는지 확인해 주세요"
+      ? { type: "killed-charged" }
       : stale
-        ? `마지막 결제 메일이 ${daysAgo}일 전이라 지금도 결제 중인지 알 수 없습니다`
-        : "결제 메일에서 찾았지만 어떤 서비스인지 확실하지 않습니다",
+        ? { type: "stale", daysAgo: daysAgo ?? 0 }
+        : { type: "unsure" },
   };
 }

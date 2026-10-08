@@ -272,7 +272,8 @@ export interface DiscoveredSubscription {
   /** 같은 서비스의 결제 메일들(가장 최근 것 포함, 이른 순). 해지 알림은 넣지 않는다. */
   chargeHistory?: ChargeRecord[];
   daysAgo?: number;
-  statusReason?: string;
+  /** 왜 이 후보가 이 상태인지. 문장은 화면이 언어에 맞게 만든다. */
+  statusReason?: DiscoveryStatus;
   /**
    * 마지막 결제 메일이 아직 최근인지. 이름과 달리 기준은 결제 주기마다 다르다
    * (`STALE_AFTER_DAYS` — 월간 35일·연간 370일). 연간 구독의 영수증은 1년에 한 번뿐이라
@@ -283,3 +284,21 @@ export interface DiscoveredSubscription {
   cancellationDate?: string;
   cancellationSnippet?: string;
 }
+
+/**
+ * 불러오기 후보의 상태 이유.
+ * - `sms-canceled`·`sms-paid`: 붙여 넣은 문자에서 해지 알림 / 결제 승인을 봤다
+ * - `mail-canceled`: 가장 최근 메일이 해지·취소 알림이다
+ * - `stale`: 마지막 결제 메일이 오래돼 지금도 결제 중인지 모른다
+ * - `recent`: 며칠 전 결제 메일을 확인했다
+ * - `killed-charged`: 해지로 기록한 서비스인데 결제 메일이 왔다
+ * - `unsure`: 결제 메일에서 찾았지만 어떤 서비스인지 확실하지 않다
+ */
+export type DiscoveryStatus =
+  | { type: "sms-canceled" }
+  | { type: "sms-paid" }
+  | { type: "mail-canceled" }
+  | { type: "stale"; daysAgo: number }
+  | { type: "recent"; daysAgo: number }
+  | { type: "killed-charged" }
+  | { type: "unsure" };

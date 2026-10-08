@@ -3,9 +3,11 @@
 import React, { useState } from "react";
 import { Button } from "../ui/button";
 import { copyText } from "@lib/native";
+import { useT } from "@lib/i18n";
 
 /** 사용자가 Apps Script 편집기에 붙여 넣을 코드와 복사 버튼. */
 export function CopyBlock({ label, code }: { label: string; code: string }) {
+  const c = useT().importing.copy;
   const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
 
   const copy = async () => {
@@ -22,7 +24,7 @@ export function CopyBlock({ label, code }: { label: string; code: string }) {
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-semibold">{label}</span>
         <Button size="sm" variant="outline" onClick={copy}>
-          {status === "copied" ? "복사됨" : `${label} 복사`}
+          {status === "copied" ? c.copied : c.copy(label)}
         </Button>
       </div>
       <pre className="max-h-48 overflow-auto rounded-lg bg-muted p-3 text-[11px] leading-snug">
@@ -30,7 +32,7 @@ export function CopyBlock({ label, code }: { label: string; code: string }) {
       </pre>
       {status === "failed" && (
         <p className="text-xs text-amber-700 dark:text-amber-300" role="status">
-          자동으로 복사하지 못했습니다. 위 코드를 직접 선택해 복사해주세요.
+          {c.failed}
         </p>
       )}
     </div>

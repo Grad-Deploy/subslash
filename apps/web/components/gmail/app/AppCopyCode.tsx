@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 import { copyText } from "@lib/native";
 
 /**
@@ -9,6 +10,7 @@ import { copyText } from "@lib/native";
  * 복사가 막힌 기기에서만 펼쳐서 직접 고를 수 있게 한다.
  */
 export function AppCopyCode({ label, code }: { label: string; code: string }) {
+  const c = useT().importing.copy;
   const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
   const [expanded, setExpanded] = useState(false);
 
@@ -36,7 +38,7 @@ export function AppCopyCode({ label, code }: { label: string; code: string }) {
               : "bg-primary text-primary-foreground",
           )}
         >
-          {status === "copied" ? "복사됨" : "복사"}
+          {status === "copied" ? c.appCopied : c.appCopy}
         </button>
       </div>
       {expanded && (
@@ -46,7 +48,7 @@ export function AppCopyCode({ label, code }: { label: string; code: string }) {
       )}
       {status === "failed" && (
         <p className="px-3 pb-2 text-xs text-amber-700 dark:text-amber-300" role="status">
-          자동으로 복사하지 못했어요. 위 코드를 길게 눌러 직접 복사해 주세요.
+          {c.appFailed}
         </p>
       )}
     </div>
