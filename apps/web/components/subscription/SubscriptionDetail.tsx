@@ -87,15 +87,15 @@ export function SubscriptionDetail({
     // 된다 — 그 기록은 멀쩡히 살아 있다.
     return (
       <div className={cn("text-center py-20 space-y-4", className)}>
-        <Title className="text-2xl font-bold">이 기기에는 이 구독이 없어요</Title>
+        <Title className="text-2xl font-bold">{t.detail.missingTitle}</Title>
         <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
-          다른 기기에서 등록했거나 지운 구독이에요.{" "}
+          {t.detail.missingBody}
           <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
-            로그인
+            {t.detail.login}
           </Link>
-          하면 기기끼리 기록이 맞춰져요.
+          {t.detail.missingAfter}
         </p>
-        <Button onClick={onLeave}>← 구독 목록</Button>
+        <Button onClick={onLeave}>{t.detail.backToList}</Button>
       </div>
     );
   }
@@ -106,7 +106,7 @@ export function SubscriptionDetail({
   const handleEditSubmit = (data: SubscriptionFormData) => {
     updateSubscription(sub.id, data);
     setIsEditOpen(false);
-    showToast("저장했어요");
+    showToast(t.detail.saved);
   };
 
   const handleOpenCheckIn = () => {
@@ -118,10 +118,10 @@ export function SubscriptionDetail({
     try {
       const res = checkIn(sub.id, count);
       setCheckInResult(res);
-      showToast("체크인 완료");
+      showToast(t.detail.checkedIn);
     } catch (error) {
       console.error(error);
-      showToast("저장하지 못했어요. 다시 시도해 주세요.");
+      showToast(t.detail.saveFailed);
     }
   };
 
@@ -132,7 +132,7 @@ export function SubscriptionDetail({
   const executeConfirm = () => {
     if (confirmType === "revive") {
       reviveSubscription(sub.id);
-      showToast(`${sub.name} 구독 중으로 되돌림`);
+      showToast(t.detail.revived(sub.name));
     } else if (confirmType === "delete") {
       deleteSubscription(sub.id);
       onLeave();
@@ -154,7 +154,7 @@ export function SubscriptionDetail({
         </button>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)}>
-            정보 수정
+            {t.detail.edit}
           </Button>
           <Button
             variant="ghost"
@@ -162,7 +162,7 @@ export function SubscriptionDetail({
             className="text-destructive hover:bg-destructive/10"
             onClick={() => setConfirmType("delete")}
           >
-            삭제
+            {t.detail.delete}
           </Button>
         </div>
       </div>
@@ -195,8 +195,8 @@ export function SubscriptionDetail({
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>구독 정보 수정</DialogTitle>
-            <DialogDescription>금액·결제일·해지 링크를 고쳐요.</DialogDescription>
+            <DialogTitle>{t.detail.editTitle}</DialogTitle>
+            <DialogDescription>{t.detail.editDescription}</DialogDescription>
           </DialogHeader>
           <div className="py-2">
             <SubForm
@@ -228,7 +228,7 @@ export function SubscriptionDetail({
         onConfirmKilled={() => {
           // 가이드에서 '해지 완료했어요'를 누른 것이 곧 확인이다.
           killSubscription(sub.id);
-          showToast(`${sub.name} 해지 완료로 기록`);
+          showToast(t.detail.killRecorded(sub.name));
         }}
       />
 
