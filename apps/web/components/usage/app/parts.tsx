@@ -3,8 +3,10 @@
 import React from "react";
 import { type Subscription, formatKRW } from "@subslash/shared";
 import { cn } from "@lib/utils";
-import { formatDuration, monthlyTotals, type UsageHistory } from "@lib/usage/history";
-import { RANGE_LABEL, type UsageRange } from "@lib/usage/value";
+import { monthlyTotals, type UsageHistory } from "@lib/usage/history";
+import { type UsageRange } from "@lib/usage/value";
+import { useT, type Messages } from "@lib/i18n";
+import { formatDurationText } from "@lib/i18n/duration";
 import { ServiceLogo } from "../../subscription/ServiceLogo";
 
 /** '₩ 17,000'처럼 기호 뒤를 한 칸 띄운다(계산서와 같은 표기). */
@@ -36,6 +38,7 @@ export function RangeTabs({
   onChange: (range: UsageRange) => void;
   label: string;
 }) {
+  const t = useT();
   return (
     <div role="tablist" aria-label={label} className="flex gap-1 rounded-xl bg-secondary p-1">
       {RANGES.map((range) => (
@@ -52,7 +55,7 @@ export function RangeTabs({
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          {RANGE_LABEL[range]}
+          {t.usageApp.range[range]}
         </button>
       ))}
     </div>
@@ -72,9 +75,9 @@ export function StatTile({ label, value, unit }: { label: string; value: string;
 }
 
 /** 'M월 D일' */
-export function monthDay(date: string): string {
+export function monthDay(t: Messages, date: string): string {
   const [, m, d] = date.split("-");
-  return `${Number(m)}월 ${Number(d)}일`;
+  return t.usageApp.monthDay(Number(m), Number(d));
 }
 
 /** 사용 시간 막대 하나. `ms`가 null이면 그때의 기록이 없다(0분과 다르다). */
@@ -89,17 +92,21 @@ export interface UsageBar {
 
 /** 최근 12달의 달별 막대. 기록이 하루도 없는 달은 null이다. */
 export function monthBars(
+  t: Messages,
   history: UsageHistory,
   packages: readonly string[],
   now: Date,
 ): UsageBar[] {
-  return monthlyTotals(history, packages, now).map((m) => ({
-    key: m.month,
-    label: m.label,
-    showLabel: true,
-    ms: m.totals.coveredDays > 0 ? m.totals.usedMs : null,
-    spoken: m.label,
-  }));
+  return monthlyTotals(history, packages, now).map((m) => {
+    const label = t.usageApp.month(Number(m.month.slice(5)));
+    return {
+      key: m.month,
+      label,
+      showLabel: true,
+      ms: m.totals.coveredDays > 0 ? m.totals.usedMs : null,
+      spoken: label,
+    };
+  });
 }
 
 /**
@@ -108,6 +115,7 @@ export function monthBars(
  * 읽는 기계에는 막대 대신 목록을 준다.
  */
 export function UsageBarChart({ bars }: { bars: UsageBar[] }) {
+  const t = useT();
   const maxMs = Math.max(1, ...bars.map((bar) => bar.ms ?? 0));
   return (
     <div>
@@ -138,7 +146,7 @@ export function UsageBarChart({ bars }: { bars: UsageBar[] }) {
       <ul className="sr-only">
         {bars.map((bar) => (
           <li key={bar.key}>
-            {bar.spoken}: {bar.ms === null ? "기록 없음" : formatDuration(bar.ms)}
+            {bar.spoken}: {bar.ms === null ? t.usageApp.noRecord : formatDurationText(t, bar.ms)}
           </li>
         ))}
       </ul>
