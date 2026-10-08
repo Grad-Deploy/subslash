@@ -1,6 +1,7 @@
 import React from "react";
 import { Check, X } from "lucide-react";
 import type { LiveStatus } from "@lib/signup-status";
+import { useKnownText } from "@lib/i18n";
 
 /**
  * 비밀번호·아이디 칸 아래에 붙는 상태 표시. 가입·재설정·비밀번호 변경이 함께 쓴다 — 칸마다
@@ -22,6 +23,8 @@ const TONE_TEXT = {
 
 /** 색만으로 구분하지 않도록 아이콘을 함께 붙이고, 화면 낭독기가 바뀐 상태를 읽게 한다. */
 export function StatusMessage({ id, status }: { id: string; status: LiveStatus }) {
+  // 상태 문구는 서버와 같은 검사 함수에서 한국어로 온다. 보여 줄 때 화면 언어로 바꾼다.
+  const known = useKnownText();
   const iconClass = "w-3.5 h-3.5 shrink-0";
   return (
     <p id={id} aria-live="polite" className="text-[11px] font-medium">
@@ -32,7 +35,7 @@ export function StatusMessage({ id, status }: { id: string; status: LiveStatus }
           ) : (
             <X className={iconClass} aria-hidden />
           )}
-          {status.message}
+          {known(status.message)}
         </span>
       )}
     </p>

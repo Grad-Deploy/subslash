@@ -8,6 +8,7 @@ import { Select } from "@components/ui/select";
 import { cn } from "@lib/utils";
 import type { LiveStatus } from "@lib/signup-status";
 import { StatusMessage, statusBorder } from "./LiveStatusMessage";
+import { useKnownText, useT } from "@lib/i18n";
 
 /** 회원가입 폼(SignupForm)의 칸들. 상태는 useSignupForm이 갖고, 여기는 그리기만 한다. */
 
@@ -62,15 +63,17 @@ export function OptionalProfileFields({
   ageError?: string;
   genderError?: string;
 }) {
+  const t = useT().auth.signup;
+  const known = useKnownText();
   return (
     <fieldset className="space-y-2 rounded-xl border px-3.5 py-3">
       <legend className="px-1 text-xs font-bold text-foreground">
-        나이·성별 <span className="font-normal text-muted-foreground">(선택)</span>
+        {t.profileTitle} <span className="font-normal text-muted-foreground">{t.optional}</span>
       </legend>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <label htmlFor="signup-age" className="sr-only">
-            나이
+            {t.age}
           </label>
           <Input
             id="signup-age"
@@ -79,7 +82,7 @@ export function OptionalProfileFields({
             inputMode="numeric"
             min={MIN_AGE}
             max={MAX_AGE}
-            placeholder="만 나이"
+            placeholder={t.agePlaceholder}
             value={age}
             onChange={(e) => onAgeChange(e.target.value)}
             aria-invalid={Boolean(ageError)}
@@ -87,7 +90,7 @@ export function OptionalProfileFields({
         </div>
         <div className="space-y-1">
           <label htmlFor="signup-gender" className="sr-only">
-            성별
+            {t.gender}
           </label>
           <Select
             id="signup-gender"
@@ -96,10 +99,10 @@ export function OptionalProfileFields({
             onChange={(e) => onGenderChange(e.target.value)}
             aria-invalid={Boolean(genderError)}
           >
-            <option value="">성별 선택 안 함</option>
+            <option value="">{t.genderNone}</option>
             {GENDER_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {t.genders[option.value]}
               </option>
             ))}
           </Select>
@@ -107,12 +110,10 @@ export function OptionalProfileFields({
       </div>
       {(ageError || genderError) && (
         <p className="text-[11px] font-medium text-destructive" role="alert">
-          {ageError ?? genderError}
+          {known(ageError ?? genderError ?? "")}
         </p>
       )}
-      <p className="text-[11px] text-muted-foreground">
-        비워도 가입돼요. &lsquo;내 정보&rsquo;에서 언제든 바꾸거나 지울 수 있어요.
-      </p>
+      <p className="text-[11px] text-muted-foreground">{t.profileNote}</p>
     </fieldset>
   );
 }
@@ -126,6 +127,8 @@ export function Over14Checkbox({
   onChange: (checked: boolean) => void;
   error?: string;
 }) {
+  const t = useT().auth.signup;
+  const known = useKnownText();
   return (
     <div className="space-y-1.5">
       <label
@@ -145,8 +148,8 @@ export function Over14Checkbox({
           aria-invalid={Boolean(error)}
         />
         <span>
-          <strong>만 {MIN_AGE}세 이상입니다.</strong>{" "}
-          <span className="text-muted-foreground">(필수)</span>
+          <strong>{t.over14(MIN_AGE)}</strong>{" "}
+          <span className="text-muted-foreground">{t.required}</span>
         </span>
       </label>
       {error && (
@@ -155,7 +158,7 @@ export function Over14Checkbox({
           role="alert"
         >
           <X className="w-3.5 h-3.5 shrink-0" aria-hidden />
-          {error}
+          {known(error)}
         </p>
       )}
     </div>
