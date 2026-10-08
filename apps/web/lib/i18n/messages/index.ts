@@ -1,9 +1,13 @@
 import * as auth from "./auth";
 import * as backup from "./backup";
+import * as dashboard from "./dashboard";
 import * as deviceUsage from "./deviceUsage";
 import * as oauth from "./oauth";
+import * as overview from "./overview";
+import * as receipt from "./receipt";
 import * as settings from "./settings";
 import * as shell from "./shell";
+import * as value from "./value";
 
 /**
  * 영역별 문구를 언어마다 모은다. 영역을 더하면 여기 두 줄에 함께 넣는다 — 영어 쪽이 빠지면 타입 검사가 잡는다.
@@ -16,6 +20,10 @@ export const messages = {
     deviceUsage: deviceUsage.ko,
     auth: auth.ko,
     oauth: oauth.ko,
+    dashboard: dashboard.ko,
+    value: value.ko,
+    overview: overview.ko,
+    ...receipt.ko,
   },
   en: {
     shell: shell.en,
@@ -24,6 +32,10 @@ export const messages = {
     deviceUsage: deviceUsage.en,
     auth: auth.en,
     oauth: oauth.en,
+    dashboard: dashboard.en,
+    value: value.en,
+    overview: overview.en,
+    ...receipt.en,
   },
 } satisfies Record<string, unknown>;
 

@@ -2,6 +2,7 @@
 
 import type { Subscription } from "@subslash/shared";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../../ui/dialog";
+import { useT } from "@lib/i18n";
 import { AppSubRow } from "./AppSubRow";
 
 /**
@@ -20,14 +21,15 @@ export function AppNextKillDialog({
   onContinue: () => void;
   onStop: () => void;
 }) {
+  const s = useT().series;
   return (
     <Dialog open onOpenChange={(open) => !open && onStop()}>
       <DialogContent className="sm:max-w-sm">
         <DialogTitle className="text-center text-lg font-black tracking-tight">
-          다음 구독도 정리할까요?
+          {s.nextTitle}
         </DialogTitle>
         <DialogDescription className="mt-1 text-center text-xs text-muted-foreground">
-          쉬어가도 될 구독{remaining > 0 ? ` · 이 다음에 ${remaining}개 더` : " · 마지막"}
+          {s.nextHint(remaining)}
         </DialogDescription>
 
         <div className="mt-4">
@@ -40,14 +42,14 @@ export function AppNextKillDialog({
             onClick={onContinue}
             className="h-11 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground"
           >
-            이어서 해지 안내 열기
+            {s.next}
           </button>
           <button
             type="button"
             onClick={onStop}
             className="h-11 rounded-xl border text-sm font-bold text-muted-foreground"
           >
-            그만하기
+            {s.stop}
           </button>
         </div>
       </DialogContent>

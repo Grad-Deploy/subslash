@@ -365,6 +365,39 @@ export function formatQuantity(metric: ValueMetric, quantity: number): string {
   }
 }
 
+/** 수량 옆에 붙는 단가 한 마디에 들어가는 값. 문장은 `formatUnitCost`(한국어)나 화면이 만든다. */
+export type UnitCostPart =
+  | { type: "per-use"; cost: number }
+  | { type: "per-day"; cost: number }
+  | { type: "per-hour"; cost: number }
+  | { type: "not-used" }
+  /** 회비의 몇 %를 돌려받았는지. */
+  | { type: "benefit-returned"; percent: number };
+
+/** 용량은 단가가 뜻이 없어 null이다. */
+export function unitCostPart(
+  metric: ValueMetric,
+  costPerUse: number,
+  quantity: number,
+): UnitCostPart | null {
+  switch (metric) {
+    case "uses":
+      return { type: "per-use", cost: costPerUse };
+    case "days":
+      return quantity === 0 ? { type: "not-used" } : { type: "per-day", cost: costPerUse };
+    case "hours":
+      return quantity === 0 ? { type: "not-used" } : { type: "per-hour", cost: costPerUse };
+    case "benefit": {
+      // costPerUse × quantity가 한 달치 내 몫이다.
+      const monthly = quantity === 0 ? costPerUse : costPerUse * quantity;
+      if (monthly <= 0) return null;
+      return { type: "benefit-returned", percent: Math.round((quantity / monthly) * 100) };
+    }
+    case "storage":
+      return null;
+  }
+}
+
 /**
  * 수량 옆에 붙는 단가 한 마디. '1회당 ₩3,000', '하루당 ₩1,000', '시간당 ₩500', '회비의 80% 돌려받음'.
  * 용량은 단가가 뜻이 없어 null이다.
@@ -375,21 +408,19 @@ export function formatUnitCost(
   quantity: number,
   currency: Currency,
 ): string | null {
-  switch (metric) {
-    case "uses":
-      return `1회당 ${formatCurrency(costPerUse, currency)}`;
-    case "days":
-      return quantity === 0 ? "안 썼어요" : `하루당 ${formatCurrency(costPerUse, currency)}`;
-    case "hours":
-      return quantity === 0 ? "안 썼어요" : `시간당 ${formatCurrency(costPerUse, currency)}`;
-    case "benefit": {
-      // costPerUse × quantity가 한 달치 내 몫이다.
-      const monthly = quantity === 0 ? costPerUse : costPerUse * quantity;
-      if (monthly <= 0) return null;
-      return `회비의 ${Math.round((quantity / monthly) * 100)}% 돌려받음`;
-    }
-    case "storage":
-      return null;
+  const part = unitCostPart(metric, costPerUse, quantity);
+  if (!part) return null;
+  switch (part.type) {
+    case "per-use":
+      return `1회당 ${formatCurrency(part.cost, currency)}`;
+    case "per-day":
+      return `하루당 ${formatCurrency(part.cost, currency)}`;
+    case "per-hour":
+      return `시간당 ${formatCurrency(part.cost, currency)}`;
+    case "not-used":
+      return "안 썼어요";
+    case "benefit-returned":
+      return `회비의 ${part.percent}% 돌려받음`;
   }
 }
 

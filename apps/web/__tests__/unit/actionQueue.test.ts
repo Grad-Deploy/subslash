@@ -8,6 +8,8 @@ import {
   type Subscription,
   type UsageLog,
 } from "@subslash/shared";
+import { messages } from "@lib/i18n/messages";
+import { describeActionReason } from "@lib/i18n/action-reason";
 
 const NOW = new Date("2026-09-10T09:00:00+09:00");
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -52,6 +54,10 @@ function log(subscriptionId: string, overrides: Partial<UsageLog> = {}): UsageLo
   };
 }
 
+/** 한국어 화면에 보이는 그 줄의 이유 문장. */
+const reasonText = (item: { reason: Parameters<typeof describeActionReason>[1] }) =>
+  describeActionReason(messages.ko, item.reason);
+
 describe("getActionQueue", () => {
   it(`결제가 다가와도 ${RECENT_CHECK_IN_DAYS}일 안에 체크인한 구독에는 체크인을 다시 묻지 않는다`, () => {
     // 대시보드에서 체크인하자마자 같은 구독에 '체크인' 버튼이 다시 떠 체크인이 안 된 것처럼 보였다.
@@ -65,7 +71,7 @@ describe("getActionQueue", () => {
     const [item] = getActionQueue([sub], beforeWindow, NOW);
     expect(item.kind).toBe("billing-soon");
     expect(item.verb).toBe("check-in");
-    expect(item.reason).toContain(`마지막 체크인이 ${RECENT_CHECK_IN_DAYS}일 전`);
+    expect(reasonText(item)).toContain(`마지막 체크인이 ${RECENT_CHECK_IN_DAYS}일 전`);
   });
 
   it("체크인한 적이 없으면 결제 전에 체크인을 묻는다", () => {
@@ -104,7 +110,7 @@ describe("getActionQueue", () => {
     const sub = subDueIn(3);
     const [item] = getActionQueue([sub], [log(sub.id)], NOW);
     expect(item.amountAtStake).toBe(17000);
-    expect(item.reason).toContain("₩17,000");
+    expect(reasonText(item)).toContain("₩17,000");
   });
 
   it("공유 구독은 내 몫만 걸린 금액으로 센다", () => {
@@ -156,7 +162,7 @@ describe("getActionQueue", () => {
     ];
     const [item] = getActionQueue([sub], logs, NOW);
     expect(item.kind).toBe("stale-check-in");
-    expect(item.reason).toContain(`${STALE_CHECK_IN_DAYS + 5}일 전`);
+    expect(reasonText(item)).toContain(`${STALE_CHECK_IN_DAYS + 5}일 전`);
   });
 
   it("가장 최근 체크인만 본다", () => {
@@ -253,9 +259,9 @@ describe("getActionQueue", () => {
     const [item] = getActionQueue([sub], logs, NOW, 1400);
 
     expect(item.currency).toBe("USD");
-    expect(item.reason).toContain("1회당 $10.00");
-    expect(item.reason).not.toContain("₩10");
-    expect(item.reason).toContain("₩28,000");
+    expect(reasonText(item)).toContain("1회당 $10.00");
+    expect(reasonText(item)).not.toContain("₩10");
+    expect(reasonText(item)).toContain("₩28,000");
   });
 
   it("USD 구독의 요금 확인 문구는 달러로 적는다", () => {
@@ -270,7 +276,7 @@ describe("getActionQueue", () => {
     const [item] = getActionQueue([sub], logs, NOW);
 
     expect(item.kind).toBe("price-check");
-    expect(item.reason).toContain("$20.00");
+    expect(reasonText(item)).toContain("$20.00");
   });
 });
 
@@ -331,15 +337,15 @@ describe("해지했는데 결제 메일이 온 구독", () => {
       NOW,
     );
 
-    expect(item.reason).toContain("2026.09.05");
-    expect(item.reason).toContain("₩13,900");
+    expect(reasonText(item)).toContain("2026.09.05");
+    expect(reasonText(item)).toContain("₩13,900");
   });
 
   it("금액을 모르면 날짜만 적는다", () => {
     const [item] = getActionQueue([killed({ chargedAfterKillAt: "2026.09.05" })], [], NOW);
 
-    expect(item.reason).toContain("2026.09.05");
-    expect(item.reason).not.toContain("₩");
+    expect(reasonText(item)).toContain("2026.09.05");
+    expect(reasonText(item)).not.toContain("₩");
   });
 
   it("증거가 있으면 '해지 확인'은 묻지 않는다 — 같은 구독을 두 번 올리지 않는다", () => {
@@ -369,11 +375,11 @@ describe("결제 메일 금액이 등록된 청구액과 다른 구독", () => {
     );
 
     expect(item.kind).toBe("amount-changed");
-    expect(item.reason).toContain("₩17,000");
-    expect(item.reason).toContain("₩13,900");
-    expect(item.reason).toContain("2026.09.05");
+    expect(reasonText(item)).toContain("₩17,000");
+    expect(reasonText(item)).toContain("₩13,900");
+    expect(reasonText(item)).toContain("2026.09.05");
     // 요금표를 조회하지 않으므로 "올랐다"고 말하지 않는다.
-    expect(item.reason).not.toContain("올랐");
+    expect(reasonText(item)).not.toContain("올랐");
   });
 
   it("세금이 따로 붙는 구독은 청구액과 견준다", () => {
@@ -392,7 +398,7 @@ describe("결제 메일 금액이 등록된 청구액과 다른 구독", () => {
     );
 
     // 등록 금액 $10이 아니라 세금 포함 $11과 비교해 보여준다.
-    expect(item.reason).toContain("$11.00");
+    expect(reasonText(item)).toContain("$11.00");
   });
 
   it("결제가 코앞이면 그쪽이 먼저다 — 한 구독은 한 줄만 만든다", () => {
@@ -440,8 +446,8 @@ describe("무료 체험 중인 구독", () => {
 
     expect(item.kind).toBe("trial-ending");
     expect(item.daysUntilBilling).toBe(3);
-    expect(item.reason).toContain("무료 체험");
-    expect(item.reason).toContain("₩17,000");
+    expect(reasonText(item)).toContain("무료 체험");
+    expect(reasonText(item)).toContain("₩17,000");
     expect(item.amountAtStake).toBe(17000);
   });
 

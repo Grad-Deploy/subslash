@@ -5,6 +5,7 @@ import { CalendarDays, ChevronRight } from "lucide-react";
 import { formatDday, getDaysUntilBillingFor, isInTrial, type Subscription } from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 import { AppSheet } from "../../settings/app/AppSheet";
 import { BillingCalendar } from "../BillingCalendar";
 
@@ -43,8 +44,9 @@ function CalendarSheet({
   active: Subscription[];
   now: Date;
 }) {
+  const c = useT().overview.calendar;
   return (
-    <AppSheet open={open} onClose={onClose} label="결제 달력">
+    <AppSheet open={open} onClose={onClose} label={c.sheet}>
       <div className="pt-1">
         <BillingCalendar subscriptions={active} now={now} />
       </div>
@@ -58,6 +60,7 @@ function CalendarSheet({
  */
 export function AppCalendarButton() {
   const now = useMemo(() => new Date(), []);
+  const c = useT().overview.calendar;
   const { active, next } = useUpcoming(now);
   const [open, setOpen] = useState(false);
   const soon = next !== null && next.days <= SOON_DAYS;
@@ -66,7 +69,7 @@ export function AppCalendarButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={soon ? `결제 달력 · ${SOON_DAYS}일 안에 결제 있음` : "결제 달력"}
+        aria-label={soon ? c.sheetSoon(SOON_DAYS) : c.sheet}
         className="relative flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
       >
         <CalendarDays className="size-5" aria-hidden />
@@ -88,6 +91,7 @@ export function AppCalendarButton() {
  */
 export function AppNextBilling() {
   const now = useMemo(() => new Date(), []);
+  const c = useT().overview.calendar;
   const { active, next, leftThisMonth } = useUpcoming(now);
   const [open, setOpen] = useState(false);
   if (active.length === 0) return null;
@@ -103,7 +107,7 @@ export function AppNextBilling() {
           <span className="block truncate text-sm font-bold">
             {next ? (
               <>
-                다음 결제 · {next.sub.name}{" "}
+                {c.next} · {next.sub.name}{" "}
                 <span
                   className={cn(
                     next.days <= SOON_DAYS ? "text-destructive" : "text-muted-foreground",
@@ -114,11 +118,12 @@ export function AppNextBilling() {
                 </span>
               </>
             ) : (
-              "결제일을 아는 구독이 없어요"
+              c.noKnownDate
             )}
           </span>
           <span className="block text-xs text-muted-foreground">
-            {leftThisMonth > 0 ? `이번 달 남은 결제 ${leftThisMonth}건 · ` : ""}달력 보기
+            {leftThisMonth > 0 ? c.leftThisMonth(leftThisMonth) : ""}
+            {c.viewCalendar}
           </span>
         </span>
         <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
