@@ -1,3 +1,4 @@
+import * as appSmall from "./appSmall";
 import * as auth from "./auth";
 import * as backup from "./backup";
 import * as checkin from "./checkin";
@@ -30,6 +31,7 @@ export const messages = {
     subs: subs.ko,
     checkin: checkin.ko,
     form: form.ko,
+    ...appSmall.ko,
     ...detail.ko,
     ...receipt.ko,
   },
@@ -46,6 +48,7 @@ export const messages = {
     subs: subs.en,
     checkin: checkin.en,
     form: form.en,
+    ...appSmall.en,
     ...detail.en,
     ...receipt.en,
   },
