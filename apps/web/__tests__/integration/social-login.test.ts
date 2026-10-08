@@ -213,6 +213,23 @@ describe("회원 탈퇴", () => {
     expect(again.created).toBe(true);
     expect(await deleteAccount(again.account.id)).toBe(true);
   });
+
+  it("영어 화면의 확인 글자 DELETE로도 탈퇴한다", async () => {
+    const { account } = await resolveOAuthAccount("google", GOOGLE, { over14: true });
+    await storeAppClaim(s256("d".repeat(43)), account.id);
+    const claim = await claimRoute(
+      appRequest("http://localhost/api/auth/oauth/claim", { verifier: "d".repeat(43) }),
+    );
+    const { sessionToken } = await claim.json();
+    const response = await deleteRoute(
+      new NextRequest("http://localhost/api/auth/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionToken}` },
+        body: JSON.stringify({ confirmText: "DELETE" }),
+      }),
+    );
+    expect(response.status).toBe(200);
+  });
 });
 
 describe("로그인 방법 잇기", () => {
