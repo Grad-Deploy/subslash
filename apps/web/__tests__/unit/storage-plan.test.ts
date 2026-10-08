@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { messages } from "@lib/i18n/messages";
+import { describeCheckInOutcome } from "@lib/i18n/check-in-outcome";
 import { evaluateMetric, formatStorageGB, storagePlanFit } from "@subslash/shared";
 
 const icloud = (planId?: string) => ({
@@ -6,6 +8,10 @@ const icloud = (planId?: string) => ({
   cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
   planId,
 });
+
+/** 한국어 화면에 보이는 체크인 결과 문장. */
+const shock = (result: { outcome: Parameters<typeof describeCheckInOutcome>[1] }) =>
+  describeCheckInOutcome(messages.ko, result.outcome);
 
 describe("저장 공간 요금제 계산", () => {
   it("2TB의 40%(약 800GB)는 200GB 요금제에 들어가지 않는다", () => {
@@ -62,7 +68,7 @@ describe("저장 공간 요금제 계산", () => {
     // 용량만으로도 더 작은 요금제에 들어가지 않으면 함께 주는 것을 핑계로 말하지 않는다.
     expect(storagePlanFit(googleOne("ai-plus"), 90)?.bundledExtras).toBeNull();
 
-    const message = evaluateMetric("storage", "구글 원", 29000, 1, "KRW", pro).shockMessage;
+    const message = shock(evaluateMetric("storage", "구글 원", 29000, 1, "KRW", pro));
     expect(message).not.toContain("베이직");
     expect(message).toContain("용량만으로 판단하지 않아요");
   });
@@ -81,7 +87,7 @@ describe("저장 공간 요금제 계산", () => {
       storagePlanFit(icloud("2tb"), 5),
     );
     expect(fits.riskLevel).toBe("yellow");
-    expect(fits.shockMessage).toContain("200GB 요금제(₩4,400)");
+    expect(shock(fits)).toContain("200GB 요금제(₩4,400)");
 
     const tooBig = evaluateMetric(
       "storage",
@@ -92,11 +98,11 @@ describe("저장 공간 요금제 계산", () => {
       storagePlanFit(icloud("2tb"), 40),
     );
     expect(tooBig.riskLevel).toBe("green");
-    expect(tooBig.shockMessage).toContain("약 800GB");
-    expect(tooBig.shockMessage).toContain("들어가지 않아요");
+    expect(shock(tooBig)).toContain("약 800GB");
+    expect(shock(tooBig)).toContain("들어가지 않아요");
 
     const unknown = evaluateMetric("storage", "아이클라우드", 14000, 40, "KRW", null);
-    expect(unknown.shockMessage).not.toContain("충분할 수 있어요");
+    expect(shock(unknown)).not.toContain("충분할 수 있어요");
   });
 
   it("용량 글자", () => {

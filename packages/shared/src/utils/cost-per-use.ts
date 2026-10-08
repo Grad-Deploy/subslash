@@ -19,26 +19,6 @@ export function formatCurrency(amount: number, currency: Currency): string {
   return `$${amount.toFixed(2)}`;
 }
 
-export function formatShockMessage(
-  serviceName: string,
-  amount: number,
-  usageCount: number,
-  currency: Currency,
-): string {
-  const formattedAmount = formatCurrency(amount, currency);
-
-  if (usageCount === 0) {
-    return `이번 달 ${formattedAmount}을 공중에 버리셨습니다. 지금 바로 킬(Kill) 스위치를 켜세요.`;
-  }
-
-  if (usageCount === 1) {
-    return `이번 달 ${serviceName} 1회를 ${formattedAmount}에 이용하셨습니다.`;
-  }
-
-  const costPerUseFormatted = formatCurrency(calculateCostPerUse(amount, usageCount), currency);
-  return `이번 달 ${serviceName} 1회당 ${costPerUseFormatted}을 지출하셨습니다.`;
-}
-
 export interface SavingsEquivalent {
   /** Language-neutral id, so a screen can name the reward in its own language. */
   key: "latte" | "chicken" | "dinner" | "trip";

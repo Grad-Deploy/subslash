@@ -1,3 +1,4 @@
+import type { Messages } from "@lib/i18n/messages";
 import {
   clampQuantity,
   findPresetForSubscription,
@@ -99,25 +100,27 @@ export interface StorageCheckIn {
 export function storageCheckInFrom(
   sub: Pick<Subscription, "name" | "cancelUrl" | "planId" | "sharingCount">,
   result: StorageQuotaResult,
+  /** 지금 언어의 문구(`messages`의 `checkin.storage`). */
+  text: Messages["checkin"]["storage"],
 ): StorageCheckIn {
   if (!result.ok) {
     return {
       quantity: null,
-      message: "Google에서 용량을 받지 못했어요. 잠시 뒤 다시 측정해 주세요.",
+      message: text.failed,
     };
   }
   const { usage, limit } = result;
   if (!limit) {
     return {
       quantity: null,
-      message: "이 Google 계정은 한도가 정해져 있지 않아 비율을 셀 수 없어요. 직접 적어 주세요.",
+      message: text.noLimit,
     };
   }
-  const measured = `Google 계정 한도 ${formatQuotaBytes(limit)} 중 ${formatQuotaBytes(usage)}를 쓰고 있어요.`;
+  const measured = text.measured(formatQuotaBytes(limit), formatQuotaBytes(usage));
   if ((sub.sharingCount ?? 1) > 1) {
     return {
       quantity: null,
-      message: `${measured} 가족과 나누는 구독이라 이 계정의 사용량만으로는 요금제 전체의 비율을 알 수 없어 채우지 않았어요.`,
+      message: text.family(measured),
     };
   }
   const plan = storagePlanFit(sub, 0);
@@ -126,15 +129,15 @@ export function storageCheckInFrom(
     if (ratio < 0.9 || ratio > 1.1) {
       return {
         quantity: null,
-        message: `${measured} 등록한 요금제(${plan.planName})와 한도가 달라 채우지 않았어요. 다른 계정이거나 가족·회사 계정의 한도일 수 있어요.`,
+        message: text.planMismatch(measured, plan.planName),
       };
     }
   }
   const percent = (usage / limit) * 100;
   // 0%는 '아무것도 두지 않음'이다. 조금이라도 쓰면 1% 이상으로 적는다.
   const quantity = usage > 0 ? Math.max(1, clampQuantity("storage", percent)) : 0;
-  const note = usage > 0 && percent < 1 ? " 1% 미만이라 1%로 채웠어요." : "";
-  const unknownPlan = plan ? "" : " 요금제를 골라 두면 한도가 요금제와 맞는지 확인해요.";
+  const note = usage > 0 && percent < 1 ? text.underOne : "";
+  const unknownPlan = plan ? "" : text.choosePlan;
   return { quantity, message: `${measured}${note}${unknownPlan}` };
 }
 

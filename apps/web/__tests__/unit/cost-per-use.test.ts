@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
+import { messages } from "@lib/i18n/messages";
+import { describeCheckInOutcome } from "@lib/i18n/check-in-outcome";
 import {
   calculateCostPerUse,
   getRiskLevel,
-  formatShockMessage,
   formatCurrency,
   getSavingsEquivalent,
   getSavingsEquivalents,
@@ -55,30 +56,49 @@ describe("Cost Per Use Utils", () => {
     });
   });
 
-  describe("formatShockMessage", () => {
+  describe("describeCheckInOutcome (횟수)", () => {
+    const uses = (quantity: number, monthly = 17000, currency: "KRW" | "USD" = "KRW") =>
+      describeCheckInOutcome(messages.ko, {
+        metric: "uses",
+        serviceName: "Netflix",
+        monthly,
+        quantity,
+        currency,
+        storageFit: null,
+        freeTierEnough: false,
+      });
+
     it('0회 이용: "공중에 버리셨습니다" 포함', () => {
-      const msg = formatShockMessage("Netflix", 17000, 0, "KRW");
-      expect(msg).toContain("공중에 버리셨습니다");
+      expect(uses(0)).toContain("공중에 버리셨습니다");
     });
 
     it('1회 이용: "1회를" 포함', () => {
-      const msg = formatShockMessage("Netflix", 17000, 1, "KRW");
-      expect(msg).toContain("1회를");
+      expect(uses(1)).toContain("1회를");
     });
 
     it('다회 이용: "1회당" 포함', () => {
-      const msg = formatShockMessage("Netflix", 17000, 5, "KRW");
-      expect(msg).toContain("1회당");
+      expect(uses(5)).toContain("1회당");
     });
 
     it("KRW 통화: ₩ 기호 포함", () => {
-      const msg = formatShockMessage("Netflix", 17000, 1, "KRW");
-      expect(msg).toContain("₩");
+      expect(uses(1)).toContain("₩");
     });
 
     it("USD 통화: $ 기호 포함", () => {
-      const msg = formatShockMessage("Netflix", 9.99, 1, "USD");
-      expect(msg).toContain("$");
+      expect(uses(1, 9.99, "USD")).toContain("$");
+    });
+
+    it("영어로도 같은 값을 말한다", () => {
+      const text = describeCheckInOutcome(messages.en, {
+        metric: "uses",
+        serviceName: "Netflix",
+        monthly: 17000,
+        quantity: 5,
+        currency: "KRW",
+        storageFit: null,
+        freeTierEnough: false,
+      });
+      expect(text).toBe("This month Netflix cost you ₩3,400 per use.");
     });
   });
 

@@ -1,12 +1,7 @@
 import type { Currency, RiskLevel, Subscription, UsageLog } from "../types";
 import { findPresetForSubscription } from "../constants/services";
-import {
-  calculateCostPerUse,
-  formatCurrency,
-  formatShockMessage,
-  getRiskLevel,
-} from "./cost-per-use";
-import { formatStorageGB, type StoragePlanFit } from "./storagePlan";
+import { calculateCostPerUse, formatCurrency, getRiskLevel } from "./cost-per-use";
+import type { StoragePlanFit } from "./storagePlan";
 
 /**
  * 구독의 돈값을 무엇으로 재는지.
@@ -270,10 +265,28 @@ export function metricRiskLevel(
   }
 }
 
+/**
+ * 체크인 결과의 문장에 들어갈 값. 문장은 화면이 언어에 맞게 만든다 — 이 모듈은 서버도 쓰므로 한 언어의
+ * 문장을 만들지 않는다.
+ */
+export interface CheckInOutcome {
+  metric: ValueMetric;
+  serviceName: string;
+  /** 한 달치 내 몫(구독 통화). */
+  monthly: number;
+  /** 지표의 수량(횟수·일·시간·혜택 금액·용량 %). */
+  quantity: number;
+  currency: Currency;
+  /** 저장 공간 구독의 요금제 계산. 요금제를 모르거나 저장 공간이 아니면 null. */
+  storageFit: StoragePlanFit | null;
+  /** 쓴 날로 재는 구독이 "무료 요금제로 충분했다"고 답했고 한 번이라도 썼다. */
+  freeTierEnough: boolean;
+}
+
 export interface MetricEvaluation {
   costPerUse: number;
   riskLevel: RiskLevel;
-  shockMessage: string;
+  outcome: CheckInOutcome;
 }
 
 /** 체크인 하나를 평가한다(스토어의 checkIn이 쓴다). */
@@ -288,57 +301,19 @@ export function evaluateMetric(
   /** 무료 요금제로 충분했는지의 답(쓴 날로 재는 구독만). 묻지 않았으면 null. */
   freeTier?: FreeTierAnswer | null,
 ): MetricEvaluation {
-  const costPerUse = calculateCostPerUse(monthlyShare, quantity);
-  const message = metricMessage(metric, serviceName, monthlyShare, quantity, currency, storageFit);
   return {
-    costPerUse,
+    costPerUse: calculateCostPerUse(monthlyShare, quantity),
     riskLevel: metricRiskLevel(metric, monthlyShare, quantity, storageFit, freeTier),
-    shockMessage:
-      metric === "days" && quantity > 0 && freeTier === "enough"
-        ? `${message} 무료 요금제로도 충분했다면, 해지하지 않고 무료로 내려도 돼요.`
-        : message,
+    outcome: {
+      metric,
+      serviceName,
+      monthly: monthlyShare,
+      quantity,
+      currency,
+      storageFit: storageFit ?? null,
+      freeTierEnough: metric === "days" && quantity > 0 && freeTier === "enough",
+    },
   };
-}
-
-function metricMessage(
-  metric: ValueMetric,
-  name: string,
-  monthly: number,
-  quantity: number,
-  currency: Currency,
-  storageFit?: StoragePlanFit | null,
-): string {
-  const money = (amount: number) => formatCurrency(amount, currency);
-  switch (metric) {
-    case "uses":
-      return formatShockMessage(name, monthly, quantity, currency);
-    case "days":
-      return quantity === 0
-        ? `최근 30일 동안 ${name}을(를) 하루도 안 썼어요. ${money(monthly)}을 그냥 냈어요.`
-        : `${name}을(를) 쓴 날 하루에 ${money(monthly / quantity)}씩 냈어요.`;
-    case "hours":
-      return quantity === 0
-        ? `최근 30일 동안 ${name}을(를) 안 썼어요. ${money(monthly)}을 그냥 냈어요.`
-        : `${name} 한 시간에 ${money(monthly / quantity)}씩 냈어요.`;
-    case "benefit":
-      return quantity >= monthly
-        ? `회비 ${money(monthly)}보다 많은 ${money(quantity)}을 혜택으로 돌려받았어요.`
-        : `회비 ${money(monthly)} 중 ${money(quantity)}만 혜택으로 돌려받았어요.`;
-    case "storage":
-      if (quantity === 0) return `${name}에 아무것도 두지 않았다면 요금제가 필요 없을 수 있어요.`;
-      if (storageFit) {
-        const used = `${storageFit.planName} 중 ${quantity}%(${formatStorageGB(storageFit.usedGB)})를 쓰고 있어요.`;
-        if (storageFit.smaller) {
-          return `${name} ${used} ${storageFit.smaller.planName} 요금제(${money(storageFit.smaller.amount)})에도 여유 있게 들어가요.`;
-        }
-        return storageFit.bundledExtras
-          ? `${name} ${used} 용량만 보면 더 작은 요금제에 들어가지만, 그 요금제에는 ${storageFit.bundledExtras}이 없어 용량만으로 판단하지 않아요.`
-          : `${name} ${used} 더 작은 요금제에는 여유 있게 들어가지 않아요.`;
-      }
-      return quantity < 50
-        ? `${name} 요금제 용량의 ${quantity}%를 쓰고 있어요. 요금제를 골라 두면 더 작은 요금제에 들어가는지 알려 드려요.`
-        : `${name} 요금제 용량의 ${quantity}%를 쓰고 있어요.`;
-  }
 }
 
 /** 수량만: '12회', '8일', '15시간', '₩12,000', '40%'. 평균처럼 소수가 나올 수 있다. */
