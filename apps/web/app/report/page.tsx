@@ -21,6 +21,7 @@ import { CostPerUseRanking, OtherMetricList } from "@components/report/sections/
 import { PeerComparison } from "@components/report/sections/PeerComparison";
 import { AskReport } from "@components/report/sections/AskReport";
 import { Spinner } from "../../components/ui/spinner";
+import { useT } from "@lib/i18n";
 
 // 폰 사용 기록(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
 const AppUsageReport = IS_APP_BUILD
@@ -38,6 +39,7 @@ const AppUsageReport = IS_APP_BUILD
  */
 export default function ReportPage() {
   const mounted = useIsClient();
+  const t = useT().reportPage;
   const rate = useExchangeRate();
   const subscriptions = useStore((state) => state.subscriptions);
   const usageLogs = useStore((state) => state.usageLogs);
@@ -71,8 +73,8 @@ export default function ReportPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-2">
       <header className="space-y-1">
-        <h1 className="text-2xl font-black tracking-tight">구독 리포트</h1>
-        <p className="text-sm text-muted-foreground">지금 내는 돈과, 제값을 하는지 한눈에.</p>
+        <h1 className="text-2xl font-black tracking-tight">{t.title}</h1>
+        <p className="text-sm text-muted-foreground">{t.subtitle}</p>
       </header>
 
       {/* 매달 1일 앱 알림이 여는 지난달 영수증. 구독이 없어도 해지한 기록이 있으면 볼 것이 있다. */}
@@ -81,13 +83,13 @@ export default function ReportPage() {
       {active.length === 0 ? (
         <section className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-12 text-center">
           <BarChart3 className="size-10 text-muted-foreground" aria-hidden />
-          <p className="font-bold">아직 등록한 구독이 없어요</p>
-          <p className="text-sm text-muted-foreground">구독을 등록하면 여기서 정리해 드려요.</p>
+          <p className="font-bold">{t.emptyTitle}</p>
+          <p className="text-sm text-muted-foreground">{t.emptyHint}</p>
           <Link
             href="/dashboard"
             className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground"
           >
-            구독 등록하러 가기
+            {t.register}
           </Link>
         </section>
       ) : (
@@ -114,7 +116,7 @@ export default function ReportPage() {
         <PeerComparison active={active} rows={rows} monthly={monthly} />
       ) : (
         <section className="rounded-2xl border bg-muted/30 p-4 text-sm text-muted-foreground">
-          다른 사용자와의 비교는 준비 중이에요.
+          {t.peerSoon}
         </section>
       )}
     </div>
