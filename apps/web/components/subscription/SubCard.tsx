@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  CATEGORY_LABELS,
   Subscription,
   formatCurrency,
   formatKRW,
@@ -25,6 +24,7 @@ import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ServiceLogo } from "./ServiceLogo";
 import { copyText } from "@lib/native";
+import { useT } from "@lib/i18n";
 
 interface SubCardProps {
   subscription: Subscription;
@@ -48,6 +48,8 @@ export function SubCard({
   onSelect,
 }: SubCardProps) {
   const isKilled = subscription.status === "killed";
+  const t = useT();
+  const c = t.subs.card;
   const rate = useExchangeRate();
   const [copied, setCopied] = useState(false);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
@@ -69,7 +71,7 @@ export function SubCard({
     <>
       <CopyFallbackDialog
         text={copyFallback}
-        title="정산 문구"
+        title={c.settlementTitle}
         onClose={() => setCopyFallback(null)}
       />
       <Card
@@ -108,24 +110,26 @@ export function SubCard({
                   </Link>
                   {isKilled && (
                     <Badge variant="secondary" className="text-[10px]">
-                      해지 완료
+                      {c.killedBadge}
                     </Badge>
                   )}
                 </div>
                 <p className="text-muted-foreground text-sm mt-1">
-                  {subscription.billingCycle === "yearly" ? "연 " : "월 "}
+                  {subscription.billingCycle === "yearly" ? c.yearly : c.monthly}
                   {formatCurrency(getBilledAmount(subscription), subscription.currency)}
                   {(subscription.currency !== "KRW" || subscription.billingCycle === "yearly") && (
                     <span className="text-xs opacity-80">
                       {" "}
-                      (월 {formatKRW(getMonthlyAmountKRW(subscription, rate))})
+                      {c.monthlyEquiv(formatKRW(getMonthlyAmountKRW(subscription, rate)))}
                     </span>
                   )}
                 </p>
                 {shared && (
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {getSharingCount(subscription)}명이서 나눔 · 내 몫 월{" "}
-                    {formatKRW(getMyMonthlyAmountKRW(subscription, rate))}
+                    {c.sharing(
+                      getSharingCount(subscription),
+                      formatKRW(getMyMonthlyAmountKRW(subscription, rate)),
+                    )}
                   </p>
                 )}
               </div>
@@ -141,7 +145,7 @@ export function SubCard({
           <div className="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
               <Badge variant="outline">
-                {CATEGORY_LABELS[subscription.category] ?? subscription.category}
+                {t.value.category[subscription.category] ?? subscription.category}
               </Badge>
               {/* 계정 이름에는 띄어쓰기 없는 긴 이메일이 들어온다. 카드에서는 말줄임하고, 전체는 상세에 있다. */}
               {subscription.linkedAccountName && (
@@ -160,7 +164,7 @@ export function SubCard({
                   className="h-7 px-2 text-[11px] text-muted-foreground"
                   onClick={copySettlementMessage}
                 >
-                  {copied ? "복사됨" : "정산 문구 복사"}
+                  {copied ? c.copied : c.copySettlement}
                 </Button>
               )}
             </div>
@@ -169,7 +173,7 @@ export function SubCard({
               {isKilled ? (
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => onRevive?.(subscription.id)}>
-                    다시 살리기
+                    {c.revive}
                   </Button>
                   {onDelete && (
                     <Button
@@ -178,17 +182,17 @@ export function SubCard({
                       className="text-destructive hover:bg-destructive/10"
                       onClick={() => onDelete?.(subscription.id)}
                     >
-                      삭제
+                      {c.delete}
                     </Button>
                   )}
                 </div>
               ) : (
                 <>
                   <Button variant="outline" size="sm" onClick={() => onCheckIn?.(subscription.id)}>
-                    체크인
+                    {c.checkIn}
                   </Button>
                   <Button variant="destructive" size="sm" onClick={() => onKill?.(subscription.id)}>
-                    해지하기
+                    {c.kill}
                   </Button>
                 </>
               )}
