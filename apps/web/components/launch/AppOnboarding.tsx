@@ -7,10 +7,11 @@ import { BrandWordmark } from "@components/brand/Brand";
 import { useStore } from "@lib/store";
 import { markWelcomeSeen, queueWelcomePicks } from "@lib/welcome";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 import {
   AnswerSlide,
   CalculatorSlide,
-  FEATURES,
+  FEATURE_IMAGES,
   FeatureSlide,
   ProblemSlide,
 } from "./onboarding/IntroSlides";
@@ -33,20 +34,17 @@ import { PICKS, TrySlide } from "./onboarding/TrySlide";
 
 const EASE = "cubic-bezier(.22,1,.36,1)";
 
-const SLIDE_LABELS = [
-  "문제",
-  "답",
-  "1회당 단가",
-  ...FEATURES.map((f) => f.kicker),
-  "직접 해 보기",
-] as const;
-const SLIDE_COUNT = SLIDE_LABELS.length;
+/** 문제·답·계산기, 기능 셋, 직접 해 보기. 장 이름은 `landing.onboarding`에서 읽는다. */
+const SLIDE_COUNT = 3 + FEATURE_IMAGES.length + 1;
 const LAST = SLIDE_COUNT - 1;
 /** 슬래시를 긋는 장(앱 아이콘이 있는 '답'). */
 const ANSWER = 1;
 
 export function AppOnboarding({ onDone }: { onDone: () => void }) {
   const router = useRouter();
+  const o = useT().landing.onboarding;
+  const [problem, answer, unitCost, tryIt] = o.slideLabels;
+  const slideLabels = [problem, answer, unitCost, ...o.features.map((f) => f.kicker), tryIt];
   const startDemo = useStore((state) => state.startDemo);
   const rootRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -196,7 +194,7 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
           onLogin={() => void finish(() => router.push("/login"))}
         />
       );
-    return <FeatureSlide feature={FEATURES[i - 3]} />;
+    return <FeatureSlide index={i - 3} />;
   };
 
   return (
@@ -208,18 +206,18 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
         style={{ "--hero-delay": "0ms" } as CSSProperties}
         role="region"
         aria-roledescription="carousel"
-        aria-label="SubSlash 소개"
+        aria-label={o.label}
       >
         <div
           ref={trackRef}
           className="absolute inset-0 flex snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {SLIDE_LABELS.map((label, i) => (
+          {slideLabels.map((label, i) => (
             <section
-              key={label}
+              key={i}
               data-slide={i}
               aria-roledescription="slide"
-              aria-label={`${i + 1} / ${SLIDE_COUNT} · ${label}`}
+              aria-label={o.slideAria(i + 1, SLIDE_COUNT, label)}
               aria-hidden={i !== index}
               className="relative h-full w-full shrink-0 snap-start snap-always overflow-hidden"
             >
@@ -241,7 +239,7 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
                 last ? "opacity-0" : "pointer-events-auto",
               )}
             >
-              건너뛰기
+              {o.skip}
             </button>
           </div>
           <div
@@ -259,13 +257,13 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
           )}
         >
           <div className="flex items-center gap-1.5">
-            {SLIDE_LABELS.map((label, i) => (
+            {slideLabels.map((label, i) => (
               <button
-                key={label}
+                key={i}
                 type="button"
                 onClick={() => goTo(i)}
                 tabIndex={last ? -1 : undefined}
-                aria-label={`${i + 1}번째 장 · ${label}`}
+                aria-label={o.dotAria(i + 1, label)}
                 aria-current={i === index ? "step" : undefined}
                 className={cn(
                   "h-2 rounded-full transition-all duration-300",
@@ -280,7 +278,7 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
             tabIndex={last ? -1 : undefined}
             className="flex h-[52px] items-center gap-1.5 rounded-full bg-primary px-6 text-base font-bold text-primary-foreground"
           >
-            다음
+            {o.next}
             <ArrowRight className="size-[18px]" strokeWidth={2.25} aria-hidden />
           </button>
         </div>
