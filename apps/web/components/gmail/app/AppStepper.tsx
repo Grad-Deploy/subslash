@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 
 export interface AppStep {
   title: string;
@@ -25,6 +26,7 @@ export function AppStepper({
   onIndex: (next: number) => void;
   onDone: () => void;
 }) {
+  const back = useT().importing.flow.back;
   const step = steps[index];
   const last = index === steps.length - 1;
 
@@ -55,7 +57,7 @@ export function AppStepper({
           disabled={index === 0}
           className="h-11 w-24 shrink-0 rounded-xl border text-sm font-bold disabled:opacity-40"
         >
-          이전
+          {back}
         </button>
         <button
           type="button"

@@ -52,7 +52,7 @@ function render(tree: unknown, path = ""): string[] {
 }
 
 /** 없을 수 있는 칸(질문 아래 힌트, 단가 앞말)은 빈 글자로 둔다. */
-const OPTIONAL_TEXT = new Set(["hint", "perUnit"]);
+const OPTIONAL_TEXT = new Set(["hint", "perUnit", "step1Before"]);
 
 describe("문구", () => {
   it("영어는 한국어와 같은 칸을 같은 모양으로 갖는다", () => {

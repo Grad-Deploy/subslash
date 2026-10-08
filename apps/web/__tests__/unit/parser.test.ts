@@ -219,7 +219,7 @@ describe("Payment SMS & Receipt Parser", () => {
     expect(results[0].name).toBe("네이버플러스");
     expect(results[0].isCanceled).toBe(true);
     expect(results[0].selected).toBe(false);
-    expect(results[0].statusReason).toContain("해지");
+    expect(results[0].statusReason).toEqual({ type: "sms-canceled" });
   });
 
   it("네이버페이 결제 영수증 이메일 본문(멀티라인 Key-Value)을 정확하게 파싱한다", () => {
@@ -341,7 +341,7 @@ describe("parseReceiptEmails (Gmail 결제 메일)", () => {
     );
 
     expect(item.selected).toBe(false);
-    expect(item.statusReason).toContain("지금도 결제 중인지 알 수 없습니다");
+    expect(item.statusReason).toMatchObject({ type: "stale" });
   });
 
   it("연간 결제 메일은 받은 달을 결제 월로 쓰고, 1년이 안 지났으면 후보로 둔다", () => {

@@ -217,7 +217,7 @@ function parseSingleMessageBlock(
     selected: !isCanceled,
     isCanceled,
     isWithin30Days: !isCanceled,
-    statusReason: isCanceled ? "해지/취소 알림 감지됨 (활성 구독 제외)" : "결제 승인 확인됨",
+    statusReason: isCanceled ? { type: "sms-canceled" } : { type: "sms-paid" },
   };
 }
 
@@ -371,10 +371,10 @@ ${piece.body}`;
         selected: !parsed.isCanceled && !stale,
         isWithin30Days: !parsed.isCanceled && !stale,
         statusReason: parsed.isCanceled
-          ? "가장 최근 메일이 해지·취소 알림입니다 (활성 구독 제외)"
+          ? { type: "mail-canceled" }
           : stale
-            ? `마지막 결제 메일이 ${daysAgo}일 전이라 지금도 결제 중인지 알 수 없습니다`
-            : `${daysAgo}일 전 결제 메일 확인됨`,
+            ? { type: "stale", daysAgo }
+            : { type: "recent", daysAgo },
         chargeHistory: charge ? [{ date: charge, amount: parsed.amount }] : [],
       };
       seen.set(key, candidate);

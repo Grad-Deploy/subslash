@@ -66,7 +66,7 @@ describe("planDiscoveries", () => {
     expect(plan.review.map((d) => d.id)).toEqual(["d1"]);
     const candidate = discoveryToCandidate(plan.review[0], subs);
     expect(candidate.selected).toBe(false);
-    expect(candidate.statusReason).toContain("해지로 기록한 서비스");
+    expect(candidate.statusReason).toEqual({ type: "killed-charged" });
   });
 
   it("마지막 결제 메일이 오래된 후보는 체크를 풀고 며칠 전인지 말한다", () => {
@@ -89,9 +89,7 @@ describe("planDiscoveries", () => {
     expect(candidate.selected).toBe(false);
     expect(candidate.isWithin30Days).toBe(false);
     expect(candidate.daysAgo).toBe(407);
-    expect(candidate.statusReason).toBe(
-      "마지막 결제 메일이 407일 전이라 지금도 결제 중인지 알 수 없습니다",
-    );
+    expect(candidate.statusReason).toEqual({ type: "stale", daysAgo: 407 });
   });
 
   it("연간 구독은 1년쯤 된 영수증을 오래됐다고 하지 않는다", () => {

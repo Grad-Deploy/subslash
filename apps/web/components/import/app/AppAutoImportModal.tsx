@@ -20,14 +20,16 @@ import type { AutoImportModalProps } from "../AutoImportModal";
 import { SAMPLE_NAVER_RECEIPT, SAMPLE_SMS } from "../samples";
 import { cycleText } from "../cycleText";
 import { useOverlayLock } from "@hooks/useOverlayLock";
+import { useT } from "@lib/i18n";
 
 function Status({ item }: { item: DiscoveredSubscription }) {
+  const a = useT().importing.app;
   // '만료'라고 쓰지 않는다. 앱이 아는 것은 마지막 결제가 오래됐다는 것뿐이다(웹 창과 같은 기준).
   const [dot, label] = item.isCanceled
-    ? ["bg-rose-500", "해지됨"]
+    ? ["bg-rose-500", a.statusCanceled]
     : item.isWithin30Days
-      ? ["bg-emerald-500", "최근 결제"]
-      : ["bg-amber-500", "확인 필요"];
+      ? ["bg-emerald-500", a.statusRecent]
+      : ["bg-amber-500", a.statusCheck];
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className={cn("size-1.5 shrink-0 rounded-full", dot)} aria-hidden />
@@ -51,6 +53,8 @@ export function AppAutoImportModal({
   initialResultsNote,
   onRegistered,
 }: AutoImportModalProps) {
+  const t = useT();
+  const a = t.importing.app;
   const isClient = useIsClient();
   const { addBatchSubscriptions, subscriptions } = useStore();
   const rate = useExchangeRate();
@@ -141,12 +145,10 @@ export function AppAutoImportModal({
         <header className="flex shrink-0 items-start justify-between gap-3 px-5 pb-3">
           <div className="min-w-0">
             <h2 id="app-import-title" className="text-lg font-black tracking-tight">
-              {reviewOnly ? "찾은 구독을 확인해요" : "문자로 가져오기"}
+              {reviewOnly ? a.reviewTitle : a.pasteTitle}
             </h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {reviewOnly
-                ? (resultsNote ?? "등록할 구독을 골라 주세요.")
-                : "카드 결제 문자나 영수증을 붙여넣어요."}
+              {reviewOnly ? (resultsNote ?? a.reviewHint) : a.pasteHint}
             </p>
           </div>
           <button
@@ -155,7 +157,7 @@ export function AppAutoImportModal({
             className="-mr-1.5 rounded-full p-1.5 text-muted-foreground hover:bg-secondary"
           >
             <X className="size-5" />
-            <span className="sr-only">닫기</span>
+            <span className="sr-only">{a.close}</span>
           </button>
         </header>
 
@@ -169,7 +171,7 @@ export function AppAutoImportModal({
                   setSmsText(e.target.value);
                   parse(e.target.value);
                 }}
-                placeholder={"여기에 붙여넣기\n\n예) [신한카드] 승인 17,000원 넷플릭스 09/15"}
+                placeholder={a.placeholder}
                 className="w-full resize-none rounded-2xl border bg-card p-3 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <div className="mt-2 flex gap-1.5">
@@ -179,7 +181,7 @@ export function AppAutoImportModal({
                     onClick={clear}
                     className="rounded-full border border-dashed px-3 py-1 text-xs font-semibold text-muted-foreground"
                   >
-                    지우기
+                    {a.clear}
                   </button>
                 ) : (
                   <button
@@ -187,7 +189,7 @@ export function AppAutoImportModal({
                     onClick={fillSample}
                     className="rounded-full border border-dashed px-3 py-1 text-xs font-semibold text-muted-foreground"
                   >
-                    예시로 해보기
+                    {a.sample}
                   </button>
                 )}
               </div>
@@ -197,18 +199,16 @@ export function AppAutoImportModal({
           {/* 금액이 없으면 등록할 수 없다. 지어낼 수 없는 값이라, 할 일 한 줄만 알려 준다. */}
           {!reviewOnly && smsText.trim().length > 0 && items.length === 0 && (
             <div className="mt-4 rounded-2xl border border-dashed p-4 text-center">
-              <p className="text-[13px] font-bold">결제를 찾지 못했어요</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                &lsquo;결제금액&rsquo;이나 &lsquo;OO원&rsquo;이 적힌 줄을 함께 붙여넣어 주세요.
-              </p>
+              <p className="text-[13px] font-bold">{a.noneTitle}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{a.noneBody}</p>
             </div>
           )}
 
           {items.length > 0 && (
             <section className={reviewOnly ? "" : "mt-4"}>
               <div className="mb-1 flex items-baseline justify-between">
-                <p className="text-[13.5px] font-bold">찾은 구독 {items.length}개</p>
-                <p className="text-[11px] text-muted-foreground">눌러서 빼기</p>
+                <p className="text-[13.5px] font-bold">{a.found(items.length)}</p>
+                <p className="text-[11px] text-muted-foreground">{a.tapToRemove}</p>
               </div>
               <ul>
                 {items.map((item) => (
@@ -251,7 +251,7 @@ export function AppAutoImportModal({
                         </span>
                         <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                           <Status item={item} />
-                          {!item.isCanceled && <span>· {cycleText(item)}</span>}
+                          {!item.isCanceled && <span>· {cycleText(t, item)}</span>}
                         </span>
                       </span>
                       <span
@@ -270,14 +270,14 @@ export function AppAutoImportModal({
               {subscriptions.length > 0 && (
                 <details className="group mt-3 rounded-2xl border px-3">
                   <summary className="flex cursor-pointer list-none items-center justify-between py-2.5 text-[12.5px] font-bold">
-                    옵션
+                    {a.options}
                     <ChevronDown
                       className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
                       aria-hidden
                     />
                   </summary>
                   <label className="flex items-center justify-between gap-3 border-t py-2.5 text-[12.5px]">
-                    <span>기존 구독 지우고 등록</span>
+                    <span>{a.replaceOption}</span>
                     <input
                       type="checkbox"
                       checked={replaceExisting}
@@ -287,9 +287,7 @@ export function AppAutoImportModal({
                   </label>
                   {willReplace && (
                     <p className="pb-2.5 text-[11px] text-rose-600 dark:text-rose-400" role="alert">
-                      지금 구독 {subscriptions.length}건
-                      {killedCount > 0 && `(해지한 구독 ${killedCount}건과 절약 기록 포함)`}이
-                      지워져요.
+                      {a.replaceWarning(subscriptions.length, killedCount)}
                     </p>
                   )}
                 </details>
@@ -310,12 +308,10 @@ export function AppAutoImportModal({
                 : "bg-primary text-primary-foreground",
             )}
           >
-            {selected.length === 0
-              ? "등록할 구독이 없어요"
-              : `${willReplace ? "지우고 " : ""}${selected.length}개 등록`}
+            {selected.length === 0 ? a.none : a.register(selected.length, willReplace)}
             {selected.length > 0 && monthlyKRW > 0 && (
               <span className="ml-1.5 text-xs font-semibold opacity-80">
-                월 {formatKRW(monthlyKRW)}
+                {a.monthly(formatKRW(monthlyKRW))}
               </span>
             )}
           </button>
