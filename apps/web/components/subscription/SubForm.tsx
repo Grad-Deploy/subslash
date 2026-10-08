@@ -14,7 +14,7 @@ import {
 } from "@subslash/shared";
 import { Button } from "../ui/button";
 import { IS_APP_BUILD } from "@lib/platform";
-import { useT } from "@lib/i18n";
+import { useServiceNames, useT } from "@lib/i18n";
 import { ServicePicker, type PickTab } from "./form/ServicePicker";
 import { CustomIconPicker } from "./form/CustomIconPicker";
 import { PlanPicker } from "./form/PlanPicker";
@@ -58,6 +58,8 @@ export function SubForm({
   openCustom?: boolean;
 }) {
   const t = useT();
+  // 서비스를 고르면 이름 칸은 지금 언어의 이름으로 채운다. 어느 쪽으로 저장해도 같은 서비스로 알아본다.
+  const names = useServiceNames();
   const isEdit = mode === "edit";
   const fieldId = useId();
 
@@ -183,7 +185,12 @@ export function SubForm({
   };
 
   const pickPreset = (service: ServicePreset) => {
-    setFormData((prev) => ({ ...prev, ...presetFormData(service), iconColor: undefined }));
+    setFormData((prev) => ({
+      ...prev,
+      ...presetFormData(service),
+      name: names.preset(service),
+      iconColor: undefined,
+    }));
     setPreset(service);
     setIsCustom(false);
     setStep("details");

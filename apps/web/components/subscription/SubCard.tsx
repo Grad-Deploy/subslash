@@ -24,7 +24,7 @@ import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ServiceLogo } from "./ServiceLogo";
 import { copyText } from "@lib/native";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 
 interface SubCardProps {
   subscription: Subscription;
@@ -47,6 +47,7 @@ export function SubCard({
   selected = false,
   onSelect,
 }: SubCardProps) {
+  const names = useServiceNames();
   const isKilled = subscription.status === "killed";
   const t = useT();
   const c = t.subs.card;
@@ -106,7 +107,7 @@ export function SubCard({
                     }}
                     className="font-bold text-lg leading-none hover:underline hover:text-primary transition-colors flex items-center gap-1.5"
                   >
-                    <span>{subscription.name}</span>
+                    <span>{names.sub(subscription)}</span>
                   </Link>
                   {isKilled && (
                     <Badge variant="secondary" className="text-[10px]">

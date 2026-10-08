@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import type { CheckInResponse, Subscription } from "@subslash/shared";
 import { useStore } from "@lib/store";
-import { useLatestT } from "@lib/i18n";
+import { useLatestT, useServiceNames } from "@lib/i18n";
 import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt";
 import { useLocalReminderSettings } from "./useLocalReminders";
 import { CheckInModal } from "../components/subscription/CheckInModal";
@@ -88,6 +88,7 @@ export function useCheckInFlow({
   reminder: ReminderPrompt;
   onKill: (id: string) => void;
 }) {
+  const names = useServiceNames();
   const tRef = useLatestT();
   const { subscriptions, usageLogs, checkIn } = useStore();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -105,7 +106,7 @@ export function useCheckInFlow({
     if (usageLogs.length === 0) reminder.askLater(subscription);
     try {
       setResult(checkIn(subscription.id, count));
-      showToast(tRef.current.checkin.flow.done(subscription.name));
+      showToast(tRef.current.checkin.flow.done(names.sub(subscription)));
     } catch (error) {
       console.error(error);
       showToast(tRef.current.checkin.flow.failed);

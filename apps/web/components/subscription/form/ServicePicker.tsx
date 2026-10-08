@@ -1,7 +1,7 @@
 "use client";
 
 import { ServicePreset, type SubscriptionCategory } from "@subslash/shared";
-import { useT } from "@lib/i18n";
+import { useServiceNames, useT } from "@lib/i18n";
 import { describePresetPriceText } from "@lib/i18n/preset-price";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
@@ -57,6 +57,7 @@ export function ServicePicker({
 }) {
   const t = useT();
   const f = t.form.picker;
+  const names = useServiceNames();
   const keyword = query.trim().toLowerCase();
   // 검색어가 있으면 고른 분류와 상관없이 전체에서 찾는다. 분류를 잘못 고른 채
   // 검색하면 목록에 있는 서비스도 '없다'고 보이기 때문이다.
@@ -64,7 +65,8 @@ export function ServicePicker({
     ? popularServices.filter(
         (service) =>
           service.nameKo.toLowerCase().includes(keyword) ||
-          service.name.toLowerCase().includes(keyword),
+          service.name.toLowerCase().includes(keyword) ||
+          (service.nameEn?.toLowerCase().includes(keyword) ?? false),
       )
     : popularServices.filter((service) => inTab(service, category));
   const countOf = (tab: PickTab) => popularServices.filter((service) => inTab(service, tab)).length;
@@ -120,7 +122,7 @@ export function ServicePicker({
             >
               <ServiceLogo presetId={service.id} name={service.nameKo} size={22} />
               <span className="min-w-0">
-                <span className="block text-xs font-bold truncate">{service.nameKo}</span>
+                <span className="block text-xs font-bold truncate">{names.preset(service)}</span>
                 <span className="block text-[11px] text-muted-foreground">
                   {describePresetPriceText(t, service)}
                 </span>

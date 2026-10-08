@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { POPULAR_SERVICES } from "@subslash/shared";
 import { useAuth } from "@hooks/useAuth";
 import { useAccountDeviceUsage } from "@hooks/useAccountDeviceUsage";
 import { ANDROID_PACKAGES, USAGE_RETENTION_DAYS } from "@lib/device-usage";
@@ -20,12 +19,9 @@ import {
 import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { Spinner } from "../ui/spinner";
-import { useLocale, useT } from "@lib/i18n";
+import { useLocale, useServiceNames, useT } from "@lib/i18n";
 
-const MEASURED_SERVICE_NAMES = Object.keys(ANDROID_PACKAGES).map((id) => {
-  const service = POPULAR_SERVICES.find((preset) => preset.id === id);
-  return service?.nameKo ?? service?.name ?? id;
-});
+const MEASURED_SERVICE_IDS = Object.keys(ANDROID_PACKAGES);
 
 function shortDate(epochMs: number, locale: string): string {
   return new Date(epochMs).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US", {
@@ -48,6 +44,7 @@ const errorText = (error: unknown, fallback: string) =>
 export function DeviceUsageCard({ onMessage }: { onMessage: (message: string) => void }) {
   const { account } = useAuth();
   const t = useT().deviceUsage;
+  const names = useServiceNames();
   const locale = useLocale();
   const accountId = account?.id ?? null;
   const measuring = useDeviceUsage((state) => isMeasuringFor(state, accountId));
@@ -167,7 +164,7 @@ export function DeviceUsageCard({ onMessage }: { onMessage: (message: string) =>
           </li>
         </ul>
         <p className="text-xs text-muted-foreground">
-          {t.services(MEASURED_SERVICE_NAMES.join(", "))}
+          {t.services(MEASURED_SERVICE_IDS.map(names.id).join(", "))}
         </p>
       </section>
 

@@ -5,7 +5,9 @@ import { IS_APP_BUILD } from "@lib/platform";
 import { ownerScopedKey, readOwnerScoped } from "@lib/owner-scoped";
 import { realRecords, useStore } from "@lib/store";
 import { planAllReminders, type ReminderText } from "@lib/local-reminders";
-import { useT } from "@lib/i18n";
+import { useLocale, useT } from "@lib/i18n";
+import type { Locale } from "@lib/i18n/config";
+import { subscriptionName } from "@lib/service-name";
 import { checkReminderPermission, replaceScheduledReminders } from "@lib/native-reminders";
 
 /**
@@ -84,13 +86,17 @@ export function useLocalReminderSettings() {
 }
 
 /** 지금 설정과 기록으로 걸 알림 목록. 화면에 개수를 보여줄 때도 쓴다. */
-export function currentPlan(settings: LocalReminderSettings, text?: ReminderText) {
-  return planAllReminders(
-    realRecords(useStore.getState()).subscriptions,
-    settings.daysBefore,
-    new Date(),
-    text,
-  );
+export function currentPlan(
+  settings: LocalReminderSettings,
+  text?: ReminderText,
+  locale: Locale = "ko",
+) {
+  // 알림 제목의 구독 이름도 지금 언어로(서비스 목록에서 고른 이름 그대로인 구독만).
+  const subscriptions = realRecords(useStore.getState()).subscriptions.map((sub) => ({
+    ...sub,
+    name: subscriptionName(sub, locale),
+  }));
+  return planAllReminders(subscriptions, settings.daysBefore, new Date(), text);
 }
 
 const DEBOUNCE_MS = 1000;
@@ -105,6 +111,7 @@ export function useLocalReminderSync() {
   const [settings] = useLocalReminderSettings();
   // 알림은 거는 때의 언어로 적힌다. 언어를 바꾸면 문구가 달라져 다시 건다.
   const text = useT().reminders.notify;
+  const locale = useLocale();
 
   useEffect(() => {
     if (!IS_APP_BUILD) return;
@@ -119,7 +126,7 @@ export function useLocalReminderSync() {
           return;
         }
         if ((await checkReminderPermission()) !== "granted") return;
-        const plan = currentPlan(settings, text);
+        const plan = currentPlan(settings, text, locale);
         const signature = JSON.stringify(plan.map((r) => [r.id, r.at.getTime(), r.title, r.body]));
         if (signature === lastSignature) return;
         await replaceScheduledReminders(plan, text);
@@ -149,5 +156,5 @@ export function useLocalReminderSync() {
       document.removeEventListener("visibilitychange", onVisible);
       if (timer) clearTimeout(timer);
     };
-  }, [settings, text]);
+  }, [settings, text, locale]);
 }

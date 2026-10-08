@@ -3,7 +3,7 @@
 import React from "react";
 import { POPULAR_SERVICES, ServicePreset } from "@subslash/shared";
 import { Subscription } from "@subslash/shared";
-import { useT } from "@lib/i18n";
+import { useServiceNames, useT } from "@lib/i18n";
 import { describePresetPriceText } from "@lib/i18n/preset-price";
 import { ServiceLogo } from "./ServiceLogo";
 
@@ -20,6 +20,7 @@ export function QuickPresetRecommender({
 }: QuickPresetRecommenderProps) {
   const all = useT();
   const t = all.subs.recommend;
+  const names = useServiceNames();
   // Normalize existing names to lowercase for comparison
   const existingNames = new Set(subscriptions.map((s) => s.name.trim().toLowerCase()));
 
@@ -27,9 +28,12 @@ export function QuickPresetRecommender({
   const unaddedPresets = POPULAR_SERVICES.filter((preset) => {
     const nameLower = preset.name.toLowerCase();
     const nameKoLower = preset.nameKo.toLowerCase();
+    // 영어 화면에서 등록하면 영문 이름(nameEn)으로 저장된다.
+    const nameEnLower = preset.nameEn?.toLowerCase();
     return (
       !existingNames.has(nameLower) &&
       !existingNames.has(nameKoLower) &&
+      !(nameEnLower && existingNames.has(nameEnLower)) &&
       !Array.from(existingNames).some(
         (existing) => existing.includes(nameKoLower) || nameKoLower.includes(existing),
       )
@@ -66,7 +70,7 @@ export function QuickPresetRecommender({
               />
               <div className="min-w-0">
                 <p className="font-bold text-xs sm:text-sm text-foreground truncate">
-                  {preset.nameKo}
+                  {names.preset(preset)}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
                   {describePresetPriceText(all, preset)}

@@ -1,7 +1,7 @@
 import React from "react";
 import { formatCurrency } from "@subslash/shared";
 import { cn } from "@lib/utils";
-import { useT } from "@lib/i18n";
+import { useLocale, useT } from "@lib/i18n";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { sampleName, type Sample } from "./samples";
 
@@ -15,6 +15,7 @@ export function SampleChargeCard({
   ...rest
 }: { sample: Sample } & React.LiHTMLAttributes<HTMLLIElement>) {
   const s = useT().landing.sample;
+  const locale = useLocale();
   return (
     <li
       className={cn(
@@ -26,7 +27,7 @@ export function SampleChargeCard({
       <ServiceLogo presetId={sample.preset.id} name={sample.preset.nameKo} size={40} />
       <div className="min-w-0 flex-1">
         <div className="flex justify-between gap-2 text-[15px] font-bold">
-          <span className="truncate">{sampleName(sample)}</span>
+          <span className="truncate">{sampleName(sample, locale)}</span>
           <span className="shrink-0 text-[13px] font-medium text-muted-foreground">{s.due}</span>
         </div>
         <p className="mt-0.5 text-[15px] tabular-nums text-muted-foreground">

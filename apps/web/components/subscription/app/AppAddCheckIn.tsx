@@ -8,7 +8,7 @@ import {
   getMyMonthlyShareAmount,
   metricForSubscription,
 } from "@subslash/shared";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { useStore } from "@lib/store";
 import { ServiceLogo } from "../ServiceLogo";
 import { DialogDescription, DialogTitle } from "../../ui/dialog";
@@ -34,6 +34,7 @@ export function AppAddCheckIn({
   /** 창을 닫는다. recorded는 체크인을 저장했을 때의 횟수. */
   onDone: (recorded?: number) => void;
 }) {
+  const names = useServiceNames();
   const c = useT().checkin;
   const checkIn = useStore((s) => s.checkIn);
   const [count, setCount] = useState(0);
@@ -60,7 +61,7 @@ export function AppAddCheckIn({
             <Check className="size-3.5" aria-hidden />
             {c.addCheckIn.registered}
           </p>
-          <p className="truncate text-base font-black tracking-tight">{subscription.name}</p>
+          <p className="truncate text-base font-black tracking-tight">{names.sub(subscription)}</p>
         </div>
         <p className="ml-auto shrink-0 text-[13px] font-extrabold tabular-nums">
           {spaced(formatCurrency(monthly, subscription.currency))}

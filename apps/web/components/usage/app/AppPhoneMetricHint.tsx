@@ -6,7 +6,7 @@ import { type Subscription } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import { lastDays } from "@lib/usage/history";
-import { useT } from "@lib/i18n";
+import { useLocale, useT } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
 import { packageBreakdown, packagesFor } from "@lib/usage/packages";
 import { subUsage } from "@lib/usage/value";
@@ -31,6 +31,7 @@ export function AppPhoneMetricHint({
 }) {
   const t = useT();
   const m = t.usageMore;
+  const locale = useLocale();
   const rate = useExchangeRate();
   const { status, history, installed } = usePhoneUsage();
   const [accessOpen, setAccessOpen] = useState(false);
@@ -83,7 +84,7 @@ export function AppPhoneMetricHint({
 
   const { totals } = measured;
   const covered = Math.min(30, totals.coveredDays);
-  const breakdown = packageBreakdown(packages, totals.byPackage);
+  const breakdown = packageBreakdown(packages, totals.byPackage, locale);
   return (
     <div className="space-y-1 rounded-2xl bg-secondary/60 px-3 py-2.5 text-xs leading-relaxed">
       <p>

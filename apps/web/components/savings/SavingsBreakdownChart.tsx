@@ -12,7 +12,7 @@ import {
 } from "@subslash/shared";
 import { DetoxLevelBadge } from "./DetoxLevelBadge";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 
 interface SavingsBreakdownChartProps {
   killedSubscriptions: Subscription[];
@@ -23,6 +23,7 @@ export function SavingsBreakdownChart({
   killedSubscriptions,
   exchangeRate,
 }: SavingsBreakdownChartProps) {
+  const names = useServiceNames();
   const t = useT();
   const b = t.savings.breakdown;
   const currentYear = new Date().getFullYear();
@@ -117,7 +118,7 @@ export function SavingsBreakdownChart({
                   fallbackEmoji={item.iconUrl}
                   size={18}
                 />
-                <span className="font-semibold text-foreground">{item.name}</span>
+                <span className="font-semibold text-foreground">{names.sub(item)}</span>
                 <span className="text-[10px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
                   {t.value.category[item.category] ?? item.category}
                 </span>

@@ -2,12 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  POPULAR_SERVICES,
-  findPresetForSubscription,
-  formatKRW,
-  type Subscription,
-} from "@subslash/shared";
+import { findPresetForSubscription, formatKRW, type Subscription } from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { isStatsAgeBandOpen } from "@lib/privacy";
 import { fetchStatsSummary, useStatsSharing, withdrawContribution } from "@lib/stats-client";
@@ -15,14 +10,9 @@ import { STATS_SAMPLE_ENABLED, sampleStatsSummary } from "@lib/stats-sample";
 import { STATS_MIN_PARTICIPANTS, type ServiceStats, type StatsSummary } from "@lib/stats";
 import { Button } from "@components/ui/button";
 import { Spinner } from "@components/ui/spinner";
-import { useLatestT, useT } from "@lib/i18n";
+import { useLatestT, useServiceNames, useT } from "@lib/i18n";
 import { AgeComparison } from "../AgeComparison";
 import type { ValueRow } from "../valueRows";
-
-function presetName(presetId: string): string {
-  const preset = POPULAR_SERVICES.find((service) => service.id === presetId);
-  return preset?.nameKo ?? preset?.name ?? presetId;
-}
 
 /**
  * 다른 사용자와의 비교. 요약은 참여하지 않아도 볼 수 있다 — 먼저 보여 줘야 참여할 이유가 생긴다.
@@ -38,6 +28,8 @@ export function PeerComparison({
   monthly: number;
 }) {
   const p = useT().reportPage.peer;
+  const names = useServiceNames();
+  const presetName = names.id;
   const tRef = useLatestT();
   const enabled = useStatsSharing((state) => state.enabled);
   const token = useStatsSharing((state) => state.token);

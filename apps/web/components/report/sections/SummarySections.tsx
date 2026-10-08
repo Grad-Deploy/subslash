@@ -1,10 +1,10 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ReceiptText } from "lucide-react";
-import { formatKRW, previousMonth, serviceNameOf, type findBundleOverlaps } from "@subslash/shared";
+import { formatKRW, previousMonth, type findBundleOverlaps } from "@subslash/shared";
 import { IS_APP_BUILD } from "@lib/platform";
 import { receiptHref } from "@lib/receipt-view";
-import { useT } from "@lib/i18n";
+import { useServiceNames, useT } from "@lib/i18n";
 
 // 요약 칸의 금액을 칸에 맞춰 줄인다(앱 전용). 웹은 지금처럼 자른다.
 const AppFitText = IS_APP_BUILD
@@ -86,6 +86,7 @@ export function BundleOverlapNotice({
   overlaps: ReturnType<typeof findBundleOverlaps>;
 }) {
   const o = useT().reportPage.overlap;
+  const names = useServiceNames();
   if (overlaps.length === 0) return null;
   return (
     <section
@@ -96,7 +97,7 @@ export function BundleOverlapNotice({
       {overlaps.map(({ bundle, other, serviceIds }) => (
         <p key={`${bundle.id}-${other.id}`} className="text-xs leading-relaxed">
           <b>{bundle.name}</b>
-          {o.middle(serviceIds.map(serviceNameOf).join(", "))}
+          {o.middle(serviceIds.map(names.id).join(", "))}
           <b>{other.name}</b>
           {o.after}
         </p>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { type ValueReportItem, isInTrial } from "@subslash/shared";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { cn } from "@lib/utils";
 import styles from "./AppValueReceipt.module.css";
 import { AppSavingsLink } from "../../savings/app/AppSavingsLink";
@@ -40,6 +40,7 @@ export function ValueReceiptPaper({
   onCheckIn: (id: string) => void;
   onCancelGuide: (id: string, rest?: string[]) => void;
 }) {
+  const names = useServiceNames();
   const [expanded, setExpanded] = useState(false);
   const t = useT();
   const r = t.receipt;
@@ -94,7 +95,7 @@ export function ValueReceiptPaper({
               const body = (
                 <>
                   <span className="flex items-baseline gap-1.5 text-[13px] font-bold">
-                    <span className="min-w-0 truncate">{item.sub.name}</span>
+                    <span className="min-w-0 truncate">{names.sub(item.sub)}</span>
                     <span className={styles.leader} aria-hidden />
                     <span className="shrink-0 font-mono tabular-nums">
                       {won(item.monthlyAmountKRW)}
@@ -115,7 +116,7 @@ export function ValueReceiptPaper({
                     <button
                       type="button"
                       onClick={action.run}
-                      aria-label={`${item.sub.name} ${action.label}`}
+                      aria-label={`${names.sub(item.sub)} ${action.label}`}
                       className="-mx-2 block w-[calc(100%+1rem)] rounded-lg px-2 py-1.5 text-left active:bg-secondary"
                     >
                       {body}

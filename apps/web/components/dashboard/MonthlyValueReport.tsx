@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Subscription, UsageLog, getMonthlyValueSummary, formatKRW } from "@subslash/shared";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import {
   describeWastedItem,
   describeWasteSuggestion,
@@ -26,6 +26,7 @@ export function MonthlyValueReport({
   onCancelGuide,
   onCheckIn,
 }: MonthlyValueReportProps) {
+  const names = useServiceNames();
   const rate = useExchangeRate();
   const t = useT();
   const r = t.report;
@@ -61,7 +62,7 @@ export function MonthlyValueReport({
                   key={item.sub.id}
                   className="flex justify-between items-center text-xs text-muted-foreground"
                 >
-                  <span>{item.sub.name}</span>
+                  <span>{names.sub(item.sub)}</span>
                   <span>({describeWorthItem(t, item)})</span>
                 </div>
               ))}
@@ -82,7 +83,7 @@ export function MonthlyValueReport({
                   key={item.sub.id}
                   className="flex justify-between items-center text-xs text-muted-foreground"
                 >
-                  <span>{item.sub.name}</span>
+                  <span>{names.sub(item.sub)}</span>
                   <span>{describeWastedItem(t, item)}</span>
                 </div>
               ))}
@@ -100,7 +101,7 @@ export function MonthlyValueReport({
             <div className="pl-6 flex flex-col gap-1.5">
               {summary.unknownItems.map((item) => (
                 <div key={item.sub.id} className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">{item.sub.name}</span>
+                  <span className="text-muted-foreground">{names.sub(item.sub)}</span>
                   <button
                     onClick={() => onCheckIn(item.sub.id)}
                     className="text-[10px] bg-secondary px-2 py-0.5 rounded-full hover:bg-secondary/80 transition-colors"

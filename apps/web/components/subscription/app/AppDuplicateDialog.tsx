@@ -1,8 +1,8 @@
 "use client";
 
-import { type Subscription, findPresetForSubscription, serviceNameOf } from "@subslash/shared";
+import { type Subscription, findPresetForSubscription } from "@subslash/shared";
 import { sharedServices } from "@lib/duplicate-subscription";
-import { useT } from "@lib/i18n";
+import { useServiceNames, useT } from "@lib/i18n";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../../ui/dialog";
 import { AppSubRow } from "../../dashboard/app/AppSubRow";
 
@@ -25,6 +25,7 @@ export function AppDuplicateDialog({
   // 같은 서비스가 아니라 결합 상품과 그 안의 서비스가 겹치는 경우(배민클럽 + 유튜브 프리미엄 ↔
   // 유튜브 프리미엄). 결합 상품을 결제하면서 원래 구독을 끊지 않아 두 번 내는 일이 실제로 있다.
   const d = useT().form.duplicate;
+  const names = useServiceNames();
   const samePreset =
     !candidate ||
     findPresetForSubscription(candidate)?.id === findPresetForSubscription(existing)?.id;
@@ -36,7 +37,7 @@ export function AppDuplicateDialog({
           {shared.length > 0 ? d.titleBundle : d.titleSame}
         </DialogTitle>
         <DialogDescription className="mt-1 text-center text-xs text-muted-foreground">
-          {shared.length > 0 ? d.bodyBundle(shared.map(serviceNameOf).join(", ")) : d.bodySame}
+          {shared.length > 0 ? d.bodyBundle(shared.map(names.id).join(", ")) : d.bodySame}
         </DialogDescription>
         <div className="mt-4">
           <AppSubRow subscription={existing} />

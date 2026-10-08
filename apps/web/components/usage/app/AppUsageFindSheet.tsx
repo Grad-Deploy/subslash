@@ -14,17 +14,21 @@ import {
 } from "@lib/usage/suggest";
 import { AppSheet } from "../../settings/app/AppSheet";
 import { Spinner } from "../../ui/spinner";
-import { useT } from "@lib/i18n";
+import { useLocale, useT } from "@lib/i18n";
+import { presetName } from "@lib/service-name";
+import type { Locale } from "@lib/i18n/config";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 import { SuggestionCard } from "./AppSubscriptionSuggestions";
 
 // 보는 앱의 이름으로 적는다(유튜브 프리미엄은 유튜브 뮤직 앱, 쿠팡 와우는 쿠팡플레이 앱).
-const SERVICE_NAMES = SUGGESTABLE_SERVICES.map(
-  (id) =>
-    SUGGEST_SIGNALS[id]?.appName ??
-    POPULAR_SERVICES.find((preset) => preset.id === id)?.nameKo ??
-    id,
-).join("·");
+function serviceNames(locale: Locale): string {
+  return SUGGESTABLE_SERVICES.map((id) => {
+    const signal = SUGGEST_SIGNALS[id];
+    if (signal) return locale === "en" ? signal.appNameEn : signal.appName;
+    const preset = POPULAR_SERVICES.find((service) => service.id === id);
+    return preset ? presetName(preset, locale) : id;
+  }).join(locale === "en" ? ", " : "·");
+}
 
 /**
  * '구독 추가 › 폰 사용 기록에서 찾기'(안드로이드 앱). '사용 기록 액세스'가 꺼져 있으면 먼저 켜는 안내를
@@ -44,6 +48,7 @@ export function AppUsageFindSheet({
   onPick: (preset: ServicePreset) => void;
 }) {
   const f = useT().usageMore.find;
+  const SERVICE_NAMES = serviceNames(useLocale());
   const { status, history, refreshing } = usePhoneUsage();
   const subscriptions = useStore((state) => realRecords(state).subscriptions);
   const [bundlesFor, setBundlesFor] = useState<string | null>(null);

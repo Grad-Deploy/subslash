@@ -11,7 +11,7 @@ import {
 } from "@subslash/shared";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { ServiceLogo } from "../ServiceLogo";
 
 /**
@@ -33,6 +33,7 @@ export function SubscriptionSummaryCard({
   onKill: () => void;
   onRevive: () => void;
 }) {
+  const names = useServiceNames();
   const Title = headingLevel;
   const t = useT();
   const s = t.detail.summary;
@@ -64,7 +65,7 @@ export function SubscriptionSummaryCard({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Title className="min-w-0 text-2xl font-black break-keep [overflow-wrap:anywhere]">
-                {sub.name}
+                {names.sub(sub)}
               </Title>
               <Badge variant={isKilled ? "secondary" : "default"} className="whitespace-nowrap">
                 {isKilled ? s.killed : s.active}

@@ -3,7 +3,7 @@
 import React from "react";
 import type { Subscription } from "@subslash/shared";
 import { IS_APP_BUILD } from "@lib/platform";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { SubjectChip } from "./SubjectChip";
 
@@ -25,6 +25,7 @@ export function SubscriptionActionConfirm({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const names = useServiceNames();
   const revive = action.type === "revive";
   const t = useT().subs.confirm;
   return (
@@ -49,8 +50,8 @@ export function SubscriptionActionConfirm({
             ? t.reviveNote
             : t.deleteNote
           : revive
-            ? t.reviveBody(action.sub.name)
-            : t.deleteBody(action.sub.name)
+            ? t.reviveBody(names.sub(action.sub))
+            : t.deleteBody(names.sub(action.sub))
       }
       confirmText={revive ? t.reviveConfirm : t.deleteConfirm}
       cancelText={t.cancel}
