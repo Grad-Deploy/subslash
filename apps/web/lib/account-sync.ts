@@ -84,14 +84,15 @@ export function decideSync(base: SyncBase, local: LocalView, server: ServerView)
   return { kind: "ask", reason: "both-changed", savedAt: server.savedAt };
 }
 
-/** 기록의 지문(FNV-1a, 16진수). 같은 내용이면 기기와 상관없이 같은 값이다. */
+/**
+ * 기록의 지문(FNV-1a, 16진수). 같은 내용이면 기기와 상관없이 같은 값이다.
+ *
+ * 자동으로 맞추는 고시 환율(`source: "ecb"`)은 값을 빼고 '자동'이라는 것만 넣는다. 기기마다 하루 한 번 저절로
+ * 바뀌는 값이라, 넣으면 기기마다 날마다 다시 올리고 두 기기가 '양쪽이 따로 바뀌었다'며 어느 기록을 쓸지 묻는다.
+ */
 export function recordsHash(data: BackupData): string {
-  const text = JSON.stringify([
-    data.subscriptions,
-    data.usageLogs,
-    data.accounts,
-    data.exchangeRate,
-  ]);
+  const rate = data.exchangeRate?.source === "ecb" ? { source: "ecb" } : data.exchangeRate;
+  const text = JSON.stringify([data.subscriptions, data.usageLogs, data.accounts, rate]);
   let hash = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) {
     hash ^= text.charCodeAt(i);
