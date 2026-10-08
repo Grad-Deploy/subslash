@@ -1,7 +1,5 @@
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
+import { one } from "../english";
 
 /** 내 구독 목록: 제목·탭·분류 칩·카드·표·해지 완료 목록·확인 창. 등록 폼·상세·체크인은 다른 영역이다. */
 export const ko = {

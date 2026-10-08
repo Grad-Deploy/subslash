@@ -1,19 +1,5 @@
 import type { Widen } from "../types";
-
-const EN_MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+import { MONTHS_SHORT } from "../english";
 
 /** 대시보드의 '지금 결정할 것'. 각 줄이 왜 떴는지는 `lib/i18n/action-reason`이 아래 문장 틀에 값을 넣어 만든다. */
 export const ko = {
@@ -164,6 +150,6 @@ export const en: Widen<typeof ko> = {
     resubscribe: (date) =>
       `When you cancelled, you asked to be reminded on ${date}. See whether it's time to use it again. If not, just clear the reminder.`,
     killCheckDate: (year, month, day, sameYear) =>
-      sameYear ? `${EN_MONTHS[month - 1]} ${day}` : `${EN_MONTHS[month - 1]} ${day}, ${year}`,
+      sameYear ? `${MONTHS_SHORT[month - 1]} ${day}` : `${MONTHS_SHORT[month - 1]} ${day}, ${year}`,
   },
 };

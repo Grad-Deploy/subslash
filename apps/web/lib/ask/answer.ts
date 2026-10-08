@@ -8,7 +8,6 @@ import {
   getPlanAlternatives,
   isInTrial,
   metricOfLog,
-  serviceNameOf,
   sumMyAnnualKRW,
   sumMyMonthDefendedKRW,
   sumMyMonthlyKRW,
@@ -18,6 +17,8 @@ import {
 } from "@subslash/shared";
 import { buildValueRows } from "../../components/report/valueRows";
 import { latestFreshLog } from "@lib/stats";
+import { serviceIdName, subscriptionName } from "@lib/service-name";
+import type { Locale } from "@lib/i18n/config";
 import { describeQuantityText } from "@lib/i18n/check-in-text";
 import type { Messages } from "@lib/i18n/messages";
 import type { AskCall } from "./tools";
@@ -51,6 +52,8 @@ export interface AskContext {
   now: Date;
   /** 지금 언어의 문구. 답 문장은 이 틀에 값을 넣어 만든다. */
   t: Messages;
+  /** 지금 언어. 서비스·구독 이름을 이 언어로 쓴다(lib/service-name). 주지 않으면 한국어다. */
+  locale?: Locale;
 }
 
 function answer(
@@ -76,10 +79,13 @@ const normalize = (text: string) => text.toLowerCase().replace(/[\s·.\-_]/g, ""
 export function matchSubscriptions(query: string, subscriptions: Subscription[]): Subscription[] {
   const wanted = normalize(query);
   if (wanted.length < 2) return [];
-  return subscriptions.filter((sub) => {
-    const name = normalize(sub.name);
-    return name.includes(wanted) || wanted.includes(name);
-  });
+  // 영어로 물으면("Netflix") 한국어 이름으로 등록한 구독(넷플릭스)도 맞춘다 — 서비스 목록의 영문 이름으로도 견준다.
+  return subscriptions.filter((sub) =>
+    [sub.name, subscriptionName(sub, "en")].some((raw) => {
+      const name = normalize(raw);
+      return name.includes(wanted) || wanted.includes(name);
+    }),
+  );
 }
 
 function startOfMonth(now: Date): Date {
@@ -88,6 +94,8 @@ function startOfMonth(now: Date): Date {
 
 export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
   const k = ctx.t.ask;
+  const locale = ctx.locale ?? "ko";
+  const nameOf = (sub: { name: string; cancelUrl?: string }) => subscriptionName(sub, locale);
   const args = call.args ?? {};
   const noSubscriptions = () => answer(k.noSubs.headline, k.noSubs.source, [], [k.noSubs.note]);
   const dateText = (date: Date) => k.upcoming.date(date.getMonth() + 1, date.getDate());
@@ -140,7 +148,7 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         inCategory
           .map((sub) => ({ sub, monthly: getMyMonthlyAmountKRW(sub, ctx.rate) }))
           .sort((a, b) => b.monthly - a.monthly)
-          .map(({ sub, monthly }) => ({ label: sub.name, value: formatKRW(monthly) })),
+          .map(({ sub, monthly }) => ({ label: nameOf(sub), value: formatKRW(monthly) })),
         trialNote,
       );
     }
@@ -160,10 +168,10 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         row.usageCount === 0 ? k.rank.perZero : k.rank.perUse(formatKRW(row.costPerUse ?? 0));
       return answer(
         worst
-          ? k.rank.worst(top[0].sub.name, per(top[0]))
-          : k.rank.best(top[0].sub.name, per(top[0])),
+          ? k.rank.worst(nameOf(top[0].sub), per(top[0]))
+          : k.rank.best(nameOf(top[0].sub), per(top[0])),
         k.rank.source,
-        top.map((row) => ({ label: row.sub.name, value: per(row) })),
+        top.map((row) => ({ label: nameOf(row.sub), value: per(row) })),
         rows.length < subs.length ? [k.rank.skipped] : [],
       );
     }
@@ -180,7 +188,7 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         k.low.some(red.length),
         k.low.source,
         red.map((sub) => ({
-          label: sub.name,
+          label: nameOf(sub),
           value: k.low.monthly(formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))),
         })),
         notes,
@@ -205,7 +213,7 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         k.upcoming.some(days, due.length),
         k.upcoming.source,
         due.map(({ sub, next }) => ({
-          label: k.upcoming.row(dateText(next as Date), sub.name),
+          label: k.upcoming.row(dateText(next as Date), nameOf(sub)),
           value: formatKRW(
             getMyMonthlyAmountKRW(sub, ctx.rate) * (sub.billingCycle === "yearly" ? 12 : 1),
           ),
@@ -227,7 +235,7 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         k.trials.some(ending.length, days),
         k.trials.source,
         ending.map(({ sub, left }) => ({
-          label: sub.name,
+          label: nameOf(sub),
           value: left === 0 ? k.trials.today : k.trials.left(left ?? 0),
         })),
       );
@@ -236,8 +244,10 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
     case "overlaps": {
       if (active.length === 0) return noSubscriptions();
       const bundle = findBundleOverlaps(active).map((item) => ({
-        label: `${item.bundle.name} · ${item.other.name}`,
-        value: k.overlaps.bundleValue(item.serviceIds.map(serviceNameOf).join(", ")),
+        label: `${nameOf(item.bundle)} · ${nameOf(item.other)}`,
+        value: k.overlaps.bundleValue(
+          item.serviceIds.map((id) => serviceIdName(id, locale)).join(", "),
+        ),
       }));
       const byCategory = new Map<string, Subscription[]>();
       for (const sub of subs)
@@ -249,7 +259,7 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
             ctx.t.value.category[category as Subscription["category"]],
             list.length,
           ),
-          value: list.map((sub) => sub.name).join(", "),
+          value: list.map((sub) => nameOf(sub)).join(", "),
         }));
       if (bundle.length === 0 && crowded.length === 0)
         return answer(k.overlaps.none, k.overlaps.source);
@@ -273,17 +283,17 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         return answer(
           s.many(query, matches.length),
           s.source,
-          matches.map((sub) => ({ label: sub.name, value: "" })),
+          matches.map((sub) => ({ label: nameOf(sub), value: "" })),
         );
       }
       const sub = matches[0];
       if (call.tool === "cheaperPlan") {
         const plans = getPlanAlternatives(sub, ctx.usageLogs, ctx.now);
-        if (plans.state === "none") return answer(s.noPlans(sub.name), s.plansSource);
+        if (plans.state === "none") return answer(s.noPlans(nameOf(sub)), s.plansSource);
         if (plans.state === "plan-unknown") {
-          return answer(s.planUnknown(sub.name), s.plansSource, [], [s.planUnknownNote]);
+          return answer(s.planUnknown(nameOf(sub)), s.plansSource, [], [s.planUnknownNote]);
         }
-        if (plans.alternatives.length === 0) return answer(s.cheapest(sub.name), s.plansSource);
+        if (plans.alternatives.length === 0) return answer(s.cheapest(nameOf(sub)), s.plansSource);
         const best = plans.alternatives[0];
         return answer(
           s.best(best.planName, formatKRW(best.yearlySaving)),
@@ -298,7 +308,7 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const next = getNextBillingDateFor(sub, ctx.now);
       const log = latestFreshLog(ctx.usageLogs, sub.id, ctx.now);
       return answer(
-        s.detail(sub.name, formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))),
+        s.detail(nameOf(sub), formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))),
         s.detailSource,
         [
           {
@@ -356,11 +366,11 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         c.source,
         [
           ...removed.map((sub) => ({
-            label: c.killed(sub.name),
+            label: c.killed(nameOf(sub)),
             value: `−${formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))}`,
           })),
           ...added.map((sub) => ({
-            label: c.added(sub.name),
+            label: c.added(nameOf(sub)),
             value: `+${formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))}`,
           })),
         ],

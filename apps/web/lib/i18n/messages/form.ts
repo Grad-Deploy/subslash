@@ -1,22 +1,7 @@
 import { CUSTOM_ICON_COLORS } from "../../custom-icon";
 import type { Widen } from "../types";
+import { MONTHS_SHORT, one } from "../english";
 
-const EN_MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
 const colorLabel = (id: (typeof CUSTOM_ICON_COLORS)[number]["id"]): string =>
   CUSTOM_ICON_COLORS.find((color) => color.id === id)?.label ?? id;
 
@@ -294,7 +279,7 @@ export const en: Widen<typeof ko> = {
     yearly: "Billed yearly",
     month: "Billing month",
     choose: "Choose",
-    monthOption: (month) => EN_MONTHS[Number(month) - 1] ?? String(month),
+    monthOption: (month) => MONTHS_SHORT[Number(month) - 1] ?? String(month),
     monthHint: "Add the billing month so the D-day, reminders and calendar are right.",
     trial: "Free trial end date",
     optional: "(optional)",

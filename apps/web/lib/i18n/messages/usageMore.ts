@@ -1,8 +1,5 @@
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
-const plural = (n: number, word: string) => `${n} ${one(n) ? word : `${word}s`}`;
+import { countOf } from "../english";
 
 /**
  * 앱의 폰 사용 기록 중 체크인 칸의 한 줄·자동 체크인·구독 후보·안 쓴 구독 알림·켜기 안내. 앱 이름(유튜브 뮤직
@@ -137,12 +134,12 @@ export const en: Widen<typeof ko> = {
     phoneBadge: "Phone record",
     tvTabletMissing: "Watching on a TV, PC, or tablet isn't included.",
     within: (covered) =>
-      Number(covered) < 30 ? `in the ${plural(covered, "day")} on record` : "in the last 30 days",
+      Number(covered) < 30 ? `in the ${countOf(covered, "day")} on record` : "in the last 30 days",
     hint: {
       notOpened: "Not opened on this phone.",
       notOpenedAfter: " If you used it on a TV, PC, or tablet, pick on the bar.",
       usedBefore: (within) => `On this phone, ${within} you used it `,
-      usedOpens: (opens, duration) => `${plural(opens, "time")} · ${duration}`,
+      usedOpens: (opens, duration) => `${countOf(opens, "time")} · ${duration}`,
       usedAfter: ". We set the bar to match.",
       notInstalledBar:
         "This service's app isn't on this phone. If you used it on another device, pick on the bar.",
@@ -153,7 +150,7 @@ export const en: Widen<typeof ko> = {
       fillOpens: "Load how many times you used it on this phone",
       fillDays: "Load how many days you used it on this phone",
       fillHours: "Load how many hours you used it on this phone",
-      usedDays: (days, duration) => `${plural(days, "day")} · ${duration}`,
+      usedDays: (days, duration) => `${countOf(days, "day")} · ${duration}`,
       usedAfterPlain: ". ",
       fitted: "We filled the field to match.",
       underHour: "Under an hour, so the field is left empty.",
@@ -163,14 +160,15 @@ export const en: Widen<typeof ko> = {
     auto: {
       title: "Auto check-in from phone records",
       off: "It's off. Please check in yourself.",
-      waiting: (days) => `Starts on its own once ${plural(days, "day")} of phone records build up.`,
+      waiting: (days) =>
+        `Starts on its own once ${countOf(days, "day")} of phone records build up.`,
       on: "Checks in on its own from the last 30 days of phone records. Subscriptions not used on this phone and ones where your own count is higher are left as they are.",
-      progress: (done, total) => `${done} / ${plural(total, "day")}`,
-      left: (days) => `${plural(days, "day")} left`,
+      progress: (done, total) => `${done} / ${countOf(total, "day")}`,
+      left: (days) => `${countOf(days, "day")} left`,
       status: (on) => `Auto check-in ${on ? "on" : "off"}`,
       statusOff: "Please check in yourself",
-      statusWaiting: (days) => `Starts once ${plural(days, "day")} of phone records build up`,
-      statusSoon: (days) => `Starts in ${plural(days, "day")}`,
+      statusWaiting: (days) => `Starts once ${countOf(days, "day")} of phone records build up`,
+      statusSoon: (days) => `Starts in ${countOf(days, "day")}`,
       statusOn: "Matches your phone records automatically",
       settings: "Settings",
       turnOn: "Turn on",
@@ -179,11 +177,11 @@ export const en: Widen<typeof ko> = {
     suggest: {
       sectionLabel: "Subscriptions found in phone records",
       recent: (days) =>
-        Number(days) >= 30 ? "In the last 30 days" : `In the last ${plural(days, "day")}`,
+        Number(days) >= 30 ? "In the last 30 days" : `In the last ${countOf(days, "day")}`,
       killedTitle: (name) => `You cancelled ${name}, but you're using it again`,
       title: (name) => `${name} — are you subscribed?`,
       used: (period, app, duration, days) =>
-        `${period}, you used ${app ? `the ${app} app` : "it"} on this phone for ${duration} on ${plural(days, "day")}.`,
+        `${period}, you used ${app ? `the ${app} app` : "it"} on this phone for ${duration} on ${countOf(days, "day")}.`,
       killedBody: "If you subscribed again, register it anew.",
       newBody: "It's a service you haven't registered.",
       share: "If you split it with family or friends, enter how many when you register.",
@@ -198,21 +196,21 @@ export const en: Widen<typeof ko> = {
       viaBundle: "I get it in a bundle",
       notPaying: "I don't pay for it",
       notPayingNote: (days) =>
-        `“I don't pay for it” covers a family account, free viewing, or not subscribing. We won't ask for ${plural(days, "day")}.`,
+        `“I don't pay for it” covers a family account, free viewing, or not subscribing. We won't ask for ${countOf(days, "day")}.`,
     },
     alerts: {
       sectionLabel: "Subscriptions seen in phone records",
-      unusedTitle: (name, days) => `You haven't opened the ${name} app in ${plural(days, "day")}`,
+      unusedTitle: (name, days) => `You haven't opened the ${name} app in ${countOf(days, "day")}`,
       unusedReason: (days, amount) =>
-        `${amount} will be charged ${Number(days) === 0 ? "today" : `in ${plural(days, "day")}`}. If you haven't watched on a laptop or tablet either, it's fine to take a break.`,
+        `${amount} will be charged ${Number(days) === 0 ? "today" : `in ${countOf(days, "day")}`}. If you haven't watched on a laptop or tablet either, it's fine to take a break.`,
       priceyTitle: (name, amount) => `${name}, ${amount} per hour`,
       priceyReason: (days, duration, ratio) =>
-        `Used only ${duration} in the last ${plural(days, "day")}. That's ${ratio}× pricier than your other subscriptions.`,
+        `Used only ${duration} in the last ${countOf(days, "day")}. That's ${ratio}× pricier than your other subscriptions.`,
       cancelGuide: "See how to cancel",
       otherDevice: "I watched on another device",
       fine: "It's fine",
       batchTitle: "Check in all at once from phone records",
-      batchBody: (count) => `Fill in ${plural(count, "subscription")} that need a check-in`,
+      batchBody: (count) => `Fill in ${countOf(count, "subscription")} that need a check-in`,
       fillButton: "Fill in",
     },
     access: {
@@ -249,12 +247,12 @@ export const en: Widen<typeof ko> = {
       accessTitle2: "from phone usage history?",
       accessBody: (names) =>
         `Turn on “Usage access” in Android settings and we'll check how much you used the ${names} apps on this phone to find subscriptions you haven't registered.`,
-      covered: (days) => `Found using ${plural(days, "day")} of records from the last 30 days.`,
+      covered: (days) => `Found using ${countOf(days, "day")} of records from the last 30 days.`,
       noRecords: "No records read yet.",
       scope: (names) => `We look for ${names}; watching on a TV or PC isn't included.`,
       none: "No unregistered streaming services found",
       fewDays: (days) =>
-        `Only ${plural(days, "day")} of records so far. Use it a few more days and look again.`,
+        `Only ${countOf(days, "day")} of records so far. Use it a few more days and look again.`,
       noneEnough: "You've registered them all, or no app was used for over 1 hour or 3 days.",
     },
   },

@@ -1,4 +1,5 @@
 import React from "react";
+import { MONTHS_LONG } from "@lib/i18n/english";
 
 /** "2026-10-01" → "2026년 10월 1일". */
 export function koreanDate(isoDate: string): string {
@@ -6,27 +7,12 @@ export function koreanDate(isoDate: string): string {
   return `${year}년 ${month}월 ${day}일`;
 }
 
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
 /** "2026-10-01" 또는 "2026년 10월 1일" → "October 1, 2026". 읽지 못하면 받은 그대로. */
 export function englishDate(date: string): string {
   const match = /^(\d{4})(?:-|년\s*)(\d{1,2})(?:-|월\s*)(\d{1,2})일?$/.exec(date.trim());
   if (!match) return date;
   const [, year, month, day] = match;
-  return `${MONTHS[Number(month) - 1]} ${Number(day)}, ${year}`;
+  return `${MONTHS_LONG[Number(month) - 1]} ${Number(day)}, ${year}`;
 }
 
 /**

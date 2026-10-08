@@ -1,8 +1,5 @@
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
-const plural = (n: number, word: string) => `${n} ${one(n) ? word : `${word}s`}`;
+import { countOf } from "../english";
 
 /** 여러 기기 사용 측정의 리포트 칸·구독 상세 한 줄(`components/usage/MeasuredUsage`). */
 export const ko = {
@@ -36,7 +33,7 @@ export const ko = {
 
 export const en: Widen<typeof ko> = {
   measured: {
-    count: (n) => plural(n, "time"),
+    count: (n) => countOf(n, "time"),
     atLeast: (value) => `At least ${value}`,
     zeroTime: "0 min",
     zeroCount: "0 times",
@@ -51,9 +48,9 @@ export const en: Widen<typeof ko> = {
     titleAmount: "Usage across all devices",
     titleCount: "Uses across all devices",
     subtitle: (devices) =>
-      `Last 30 days · ${plural(devices, "device")} · continuing within 30 minutes counts once, even on another device`,
+      `Last 30 days · ${countOf(devices, "device")} · continuing within 30 minutes counts once, even on another device`,
     handoff: (n) =>
-      `${plural(n, "switch")} between devices counted as one`.replace("switchs", "switches"),
+      `${countOf(n, "switch")} between devices counted as one`.replace("switchs", "switches"),
     notIncluded: "Watching on a TV, PC, or iPhone isn't included.",
     screenOff:
       " Time is how long the app was on screen, so listening with the screen off isn't included.",
@@ -61,9 +58,9 @@ export const en: Widen<typeof ko> = {
     differs:
       " It may differ from the “This phone” numbers above — use that continues across phone and tablet counts once.",
     lineBefore: "On measured devices in the last 30 days: ",
-    lineDevices: (devices) => `Counted across ${plural(devices, "device")}`,
+    lineDevices: (devices) => `Counted across ${countOf(devices, "device")}`,
     lineHandoff: (n) =>
-      ` (including ${plural(n, "switch")} between devices)`.replace("switchs", "switches"),
+      ` (including ${countOf(n, "switch")} between devices)`.replace("switchs", "switches"),
     lineAfter: ". Watching on a TV or PC isn't included, so add it when you check in.",
   },
 };

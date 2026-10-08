@@ -1,24 +1,5 @@
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
-const plural = (n: number, singular: string, pluralForm: string) =>
-  one(n) ? singular : pluralForm;
-const EN_MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-const monthName = (month: number) => EN_MONTHS[Number(month) - 1] ?? String(month);
+import { monthLong, pluralOf } from "../english";
 
 /**
  * 구독 불러오기: 결제 문자 붙여 넣기, Gmail 결제 메일 가져오기(웹 안내·앱 안내·자동 가져오기). 카드 문자 예시와
@@ -320,7 +301,7 @@ export const en: Widen<typeof ko> = {
   importing: {
     locale: "en-US",
     cycle: {
-      yearly: (month, day) => `Yearly, ${monthName(month)} ${day}`,
+      yearly: (month, day) => `Yearly, ${monthLong(month)} ${day}`,
       yearlyUnset: "Yearly · billing month not set",
       monthly: (day) => `Monthly, day ${day}`,
     },
@@ -330,8 +311,8 @@ export const en: Widen<typeof ko> = {
       "mail-canceled":
         "The most recent email is a cancellation notice (left out of active subscriptions)",
       stale: (days) =>
-        `The last payment email was ${days} ${plural(days, "day", "days")} ago, so we can't tell if you're still paying`,
-      recent: (days) => `Payment email from ${days} ${plural(days, "day", "days")} ago confirmed`,
+        `The last payment email was ${days} ${pluralOf(days, "day", "days")} ago, so we can't tell if you're still paying`,
+      recent: (days) => `Payment email from ${days} ${pluralOf(days, "day", "days")} ago confirmed`,
       "killed-charged":
         "You recorded this as cancelled, but a payment email came. Check that the cancellation went through",
       unsure: "Found in a payment email, but we're not sure which service it is",
@@ -368,18 +349,18 @@ export const en: Widen<typeof ko> = {
       noneUnknown:
         "With no service name it's “Unknown payment”, and with no payment date it's today.",
       replaceWith: (count, killed) =>
-        `Delete the ${count} previously registered ${plural(count, "subscription", "subscriptions")}${killed > 0 ? ` (including ${killed} cancelled)` : ""} and register these results fresh`,
+        `Delete the ${count} previously registered ${pluralOf(count, "subscription", "subscriptions")}${killed > 0 ? ` (including ${killed} cancelled)` : ""} and register these results fresh`,
       replaceNew: "Register as new subscriptions",
       clearResults: "Clear results",
       clearAll: "Delete all previous records",
       confirmClear: (count, killed) =>
-        `Reset all ${count} registered ${plural(count, "subscription", "subscriptions")}?${
+        `Reset all ${count} registered ${pluralOf(count, "subscription", "subscriptions")}?${
           killed > 0 ? `\nThe savings records of ${killed} cancelled will also be deleted.` : ""
         }`,
       confirmClearYes: "Delete all",
       cancel: "Cancel",
       registerReplace: (count) => `Delete previous records and register ${count}`,
-      register: (count) => `Register ${count} ${plural(count, "subscription", "subscriptions")}`,
+      register: (count) => `Register ${count} ${pluralOf(count, "subscription", "subscriptions")}`,
       monthly: (amount) => `(${amount}/month)`,
     },
     app: {
@@ -393,7 +374,7 @@ export const en: Widen<typeof ko> = {
       sample: "Try an example",
       noneTitle: "Couldn't find a payment",
       noneBody: "Paste the line that shows the payment amount along with it.",
-      found: (count) => `${count} ${plural(count, "subscription", "subscriptions")} found`,
+      found: (count) => `${count} ${pluralOf(count, "subscription", "subscriptions")} found`,
       tapToRemove: "Tap to leave out",
       statusCanceled: "Cancelled",
       statusRecent: "Recent payment",
@@ -401,7 +382,7 @@ export const en: Widen<typeof ko> = {
       options: "Options",
       replaceOption: "Delete existing subscriptions and register",
       replaceWarning: (count, killed) =>
-        `Your ${count} current ${plural(count, "subscription", "subscriptions")}${killed > 0 ? ` (including ${killed} cancelled and their savings records)` : ""} will be deleted.`,
+        `Your ${count} current ${pluralOf(count, "subscription", "subscriptions")}${killed > 0 ? ` (including ${killed} cancelled and their savings records)` : ""} will be deleted.`,
       none: "No subscriptions to add",
       register: (count, replace) => `${replace ? "Delete and register " : "Register "}${count}`,
       monthly: (amount) => `${amount}/month`,
@@ -435,11 +416,11 @@ export const en: Widen<typeof ko> = {
       errorTitle: "Couldn't import the emails",
       noneTitle: "Couldn't find any subscription payments",
       noneBody: (count) =>
-        `No payment emails were found among ${count} ${plural(count, "email", "emails")}. Try adding a word from the payment email's subject to SEARCH_QUERY.`,
+        `No payment emails were found among ${count} ${pluralOf(count, "email", "emails")}. Try adding a word from the payment email's subject to SEARCH_QUERY.`,
       showGuide: "See the setup guide",
       foundTitle: "Check the subscriptions we found",
       toList: "Subscriptions",
-      foundNote: (count) => `From ${count} Gmail ${plural(count, "email", "emails")}`,
+      foundNote: (count) => `From ${count} Gmail ${pluralOf(count, "email", "emails")}`,
       metaTitle: "Find subscriptions in Gmail · SubSlash",
     },
     copy: {
@@ -452,17 +433,17 @@ export const en: Widen<typeof ko> = {
     },
     inbox: {
       registered: (count) =>
-        `Registered ${count} ${plural(count, "subscription", "subscriptions")} from Gmail payment emails:`,
+        `Registered ${count} ${pluralOf(count, "subscription", "subscriptions")} from Gmail payment emails:`,
       registeredAfter: ". The amounts were read from emails, so please check them once.",
       undo: "Undo",
       close: "Close",
       review: (count) =>
-        `${count} ${plural(count, "subscription needs", "subscriptions need")} checking from Gmail payment emails`,
+        `${count} ${pluralOf(count, "subscription needs", "subscriptions need")} checking from Gmail payment emails`,
       reviewAfter: " found.",
       check: "Check",
       discard: "Discard",
       discardConfirm: (count) =>
-        `Discard the ${count} ${plural(count, "candidate", "candidates")} without registering? If a new payment email arrives at the next scan, they'll be found again.`,
+        `Discard the ${count} ${pluralOf(count, "candidate", "candidates")} without registering? If a new payment email arrives at the next scan, they'll be found again.`,
       note: "From the automatic Gmail scan",
     },
     older: {
@@ -494,10 +475,11 @@ export const en: Widen<typeof ko> = {
       needLoginAfter: " to use this.",
       checking: "Checking the connection…",
       linked: (date) => `Connected · since ${date}`,
-      lastScan: (date, count) => `Last scan ${date} · ${count} ${plural(count, "email", "emails")}`,
+      lastScan: (date, count) =>
+        `Last scan ${date} · ${count} ${pluralOf(count, "email", "emails")}`,
       noMail: "No emails received yet. Check that you ran setup in Apps Script.",
       pending: (count) =>
-        ` · ${count} ${plural(count, "candidate", "candidates")} waiting to be fetched`,
+        ` · ${count} ${pluralOf(count, "candidate", "candidates")} waiting to be fetched`,
       reconnectButton: "Reconnect Gmail",
       connectButton: "Connect Gmail",
       permissionNote:

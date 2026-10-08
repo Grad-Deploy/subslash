@@ -1,24 +1,7 @@
 import type { Widen } from "../types";
+import { MONTHS_SHORT, pluralOf } from "../english";
 
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
-const plural = (n: number, singular: string, pluralForm: string) =>
-  one(n) ? singular : pluralForm;
-const EN_MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-const monthShort = (month: number) => EN_MONTHS[Number(month) - 1] ?? String(month);
+const monthShort = (month: number) => MONTHS_SHORT[Number(month) - 1] ?? String(month);
 
 /** 한국어로 읽는 원화: '30만 원', '12만 3,400원'. */
 function koWon(raw: number): string {
@@ -388,7 +371,7 @@ export const en: Widen<typeof ko> = {
       answerLink: "Answer on the dashboard →",
     },
     killedCard: {
-      services: (count) => `${count} ${plural(count, "service", "services")}`,
+      services: (count) => `${count} ${pluralOf(count, "service", "services")}`,
     },
     defense: {
       title: (year) => `Protected money by month, ${year}`,
@@ -417,7 +400,7 @@ export const en: Widen<typeof ko> = {
       kindScheduled: "Scheduled",
       kindBlocked: "Blocked",
       unknown: (count) =>
-        `${count} yearly ${plural(count, "subscription", "subscriptions")} with an unknown billing month can't be placed in a month, so ${plural(count, "it is", "they are")} left out of the chart. Set the billing month in the subscription details to include ${plural(count, "it", "them")}.`,
+        `${count} yearly ${pluralOf(count, "subscription", "subscriptions")} with an unknown billing month can't be placed in a month, so ${pluralOf(count, "it is", "they are")} left out of the chart. Set the billing month in the subscription details to include ${pluralOf(count, "it", "them")}.`,
     },
     breakdown: {
       title: "Savings by service",
@@ -428,7 +411,7 @@ export const en: Widen<typeof ko> = {
       yearEndNote:
         "Includes the remaining billing dates. What you've kept so far and what is still to come are split in the monthly chart.",
       yearEndUnknown: (count) =>
-        `${count} yearly ${plural(count, "subscription", "subscriptions")} with an unknown billing month can't be told apart as before or after cancelling, so ${plural(count, "it is", "they are")} left out of the total. Set the billing month in the subscription details to include ${plural(count, "it", "them")}.`,
+        `${count} yearly ${pluralOf(count, "subscription", "subscriptions")} with an unknown billing month can't be told apart as before or after cancelling, so ${pluralOf(count, "it is", "they are")} left out of the total. Set the billing month in the subscription details to include ${pluralOf(count, "it", "them")}.`,
       top: (name, percent) => `Cancelling ${name} accounts for ${percent}% of all savings.`,
       total: (amount) => `Total ${amount}`,
     },
@@ -453,7 +436,7 @@ export const en: Widen<typeof ko> = {
       scheduledNote: (amount) =>
         `Another ${amount} will be kept by the end of the year. It's what would have been charged had you not cancelled.`,
       unknownNote: (count) =>
-        `${count} yearly ${plural(count, "subscription", "subscriptions")} with an unknown billing month ${plural(count, "was", "were")} left out because we can't tell when ${plural(count, "it is", "they are")} charged.`,
+        `${count} yearly ${pluralOf(count, "subscription", "subscriptions")} with an unknown billing month ${pluralOf(count, "was", "were")} left out because we can't tell when ${pluralOf(count, "it is", "they are")} charged.`,
       fxHistorical:
         "Past dollar payments and the cost per use at check-in were converted at the published rate of that day (ECB). It may differ slightly from your card company's rate. Amounts still to be kept and the spending breakdown use the rate you set now.",
       fxCurrent:
@@ -462,7 +445,7 @@ export const en: Widen<typeof ko> = {
       killedNone: (year) => `You didn't cancel any subscriptions in ${year}.`,
       killedDay: (month, day) => `${monthShort(month)} ${day}`,
       killedAtUnknown: (count) =>
-        `${count} without a recorded cancellation date ${plural(count, "was", "were")} left out because we can't tell which year ${plural(count, "it was", "they were")} cancelled.`,
+        `${count} without a recorded cancellation date ${pluralOf(count, "was", "were")} left out because we can't tell which year ${pluralOf(count, "it was", "they were")} cancelled.`,
       spendTitle: "Spending breakdown of your current subscriptions",
       spendPast: "The subscriptions you had in past years aren't recorded, so they can't be shown.",
       spendNone: "You have no subscriptions right now.",
@@ -479,14 +462,14 @@ export const en: Widen<typeof ko> = {
       priciestLabel: "Most expensive per use",
       mostUsedLabel: "Used most often",
       perUseValue: (amount, count) =>
-        `${amount} per use · ${count} ${plural(count, "use", "uses")}`,
-      mostUsedValue: (count) => `${count} ${plural(count, "use", "uses")} in 30 days`,
+        `${amount} per use · ${count} ${pluralOf(count, "use", "uses")}`,
+      mostUsedValue: (count) => `${count} ${pluralOf(count, "use", "uses")} in 30 days`,
       killedMark: "(cancelled)",
       checkInsNote: (year) =>
         `Based on each service's last check-in of ${year}. The number of uses is what you entered at check-in, so it may differ from your real usage.`,
       shareTitle: (year) => `SubSlash ${year} subscription review`,
       shareText: (scope, killed, blocked, confirmedLine, type, url) =>
-        `SubSlash ${scope} subscription review\nCancelled ${killed} ${plural(killed, "subscription", "subscriptions")} · charges blocked by cancelling ${blocked}${confirmedLine}${type ? `\nSpending type: ${type}` : ""}\nSee the review: ${url}`,
+        `SubSlash ${scope} subscription review\nCancelled ${killed} ${pluralOf(killed, "subscription", "subscriptions")} · charges blocked by cancelling ${blocked}${confirmedLine}${type ? `\nSpending type: ${type}` : ""}\nSee the review: ${url}`,
       shareConfirmed: (amount) => ` · of which kept ${amount}`,
       dateLocale: "en-US",
     },
@@ -549,10 +532,10 @@ export const en: Widen<typeof ko> = {
       upcomingTitle: "Upcoming protection",
       upcomingNote: "Days you would have been charged",
       today: "Today",
-      inDays: (days) => `In ${days} ${plural(days, "day", "days")}`,
+      inDays: (days) => `In ${days} ${pluralOf(days, "day", "days")}`,
       dayMonth: (month) => monthShort(month),
       undated: (count) =>
-        `${count} without a billing month ${plural(count, "is", "are")} left out because the date is unknown.`,
+        `${count} without a billing month ${pluralOf(count, "is", "are")} left out because the date is unknown.`,
       rewardsTitle: "A year of savings buys",
       rewardsEmpty: "Shown from ₩5,000 a year.",
       killedTitle: (count) => `Cancelled subscriptions ${count}`,
@@ -586,7 +569,7 @@ export const en: Widen<typeof ko> = {
       scheduled: "Scheduled",
       untilYearEnd: (amount) => `Another +${amount} will be blocked by the end of the year`,
       unknown: (count) =>
-        `${count} ${plural(count, "subscription", "subscriptions")} couldn't be put in the chart because the billing month is unknown.`,
+        `${count} ${pluralOf(count, "subscription", "subscriptions")} couldn't be put in the chart because the billing month is unknown.`,
       cumulativeLabel: "Protected money so far this year",
     },
     income: {
