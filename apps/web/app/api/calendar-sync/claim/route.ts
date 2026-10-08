@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { isGmailAutoImportOpen } from "@lib/privacy";
 import { appUrl } from "@lib/email";
-import { CALENDAR_NAME, buildCalendarEvents, claimCalendarSyncPlan } from "@lib/calendar-sync";
+import {
+  CALENDAR_NAMES,
+  buildCalendarEvents,
+  calendarNameFor,
+  claimCalendarSyncPlan,
+} from "@lib/calendar-sync";
 import { logError } from "@lib/log";
 
 /**
@@ -28,7 +33,9 @@ export async function POST(request: NextRequest) {
       );
     }
     return NextResponse.json({
-      calendarName: CALENDAR_NAME,
+      calendarName: calendarNameFor(plan.lang ?? "ko"),
+      // 다른 언어로 만든 SubSlash 캘린더도 찾아 같은 캘린더에 쓰고 이름만 바꾼다.
+      calendarNames: Object.values(CALENDAR_NAMES),
       events: buildCalendarEvents(plan, { appUrl: appUrl() }),
     });
   } catch (error) {

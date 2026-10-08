@@ -9,10 +9,10 @@ import { ConfirmDialog } from "@components/ui/confirm-dialog";
 import { apiFetch } from "@lib/api";
 import { releaseRecordsToGuest } from "@lib/records-owner";
 import { HydratedForm } from "@components/ui/hydrated-form";
-import { useKnownText, useLatestT, useT } from "@lib/i18n";
+import { useKnownText, useLatestT, useLocale, useT } from "@lib/i18n";
 
-/** 비밀번호 없는 계정이 탈퇴할 때 서버가 받는 확인 글자. 화면 언어와 상관없이 이 글자다. */
-const CONFIRM_WORD = "탈퇴";
+/** 비밀번호 없는 계정이 탈퇴할 때 입력하는 확인 글자. 서버는 두 글자를 모두 받는다(app/api/auth/account). */
+const CONFIRM_WORDS = { ko: "탈퇴", en: "DELETE" } as const;
 
 /**
  * 회원 탈퇴. 비밀번호를 한 번 더 받고, 확인 창을 거쳐 지운다.
@@ -25,6 +25,7 @@ export function DeleteAccountSection() {
   const r = a.remove;
   const tRef = useLatestT();
   const known = useKnownText();
+  const CONFIRM_WORD = CONFIRM_WORDS[useLocale()];
   const { account, loading } = useAuth();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);

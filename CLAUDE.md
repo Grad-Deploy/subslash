@@ -173,7 +173,8 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 아래(구독 중 탭)에 둔다 — 금액·결제일을 확인하고 고친 뒤 그 자리에서 누르는 것이다. 설정 화면에 두었더니 이런
 기능이 있는지 찾기 어려웠다. SubSlash는 캘린더 권한을 받지
 않는다 — 버튼을 누르면 브라우저가 구독 중인 구독의 이름·금액·결제일을 계획으로 맡기고, 웹 앱이
-접속한 사람의 권한으로 그 계획을 받아 **자기** 'SubSlash 결제일' 캘린더에 쓴다. 계획은 주소에 싣지
+접속한 사람의 권한으로 그 계획을 받아 **자기** 'SubSlash 결제일' 캘린더에 쓴다(영어 화면에서 등록하면 'SubSlash Billing Days', `lib/calendar-names` — 웹 앱은 두 이름을 모두
+SubSlash 캘린더로 알아보고 등록한 언어의 이름으로 바꾼다. 일정 메모도 그 언어다). 계획은 주소에 싣지
 않고(`calendar_sync_plans`, 1회용 코드는 해시만) 받아 가면 곧바로, 늦어도 10분이면 지운다. 캘린더
 쓰기는 전체 교체다 — 전에 SubSlash가 쓴 일정(`extendedProperties.private.subslash`)만 지우고 다시
 쓴다. 날짜 계산과 RRULE은 `lib/ics.ts`의 함수를 쓴다. 일정 메모에는 해지 주소를

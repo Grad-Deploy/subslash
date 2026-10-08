@@ -140,8 +140,8 @@ describe("translateKnownText", () => {
     expect(en(describeSendOutcome({ status: "sent" }, "sean@example.com"))).toContain(
       "sean@example.com",
     );
-    // 탈퇴 확인 글자는 서버가 받는 글자 그대로라 옮기지 않는다.
-    expect(en("확인을 위해 '탈퇴'를 입력해주세요.")).toBe("Type '탈퇴' to confirm.");
+    // 서버는 '탈퇴'와 'DELETE'를 모두 받는다. 영어 화면에는 영어 확인 글자를 안내한다.
+    expect(en("확인을 위해 '탈퇴'를 입력해주세요.")).toBe("Type 'DELETE' to confirm.");
     expect(en(tooManyRequestsMessage(600))).toBe("Too many requests. Try again in 10 minutes.");
     expect(en("잘못된 이메일 주소입니다. 혹시 you@gmail.com 아닌가요?")).toBe(
       "That email address looks wrong. Did you mean you@gmail.com?",
