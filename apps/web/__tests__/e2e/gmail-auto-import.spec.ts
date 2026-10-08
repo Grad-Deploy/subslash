@@ -248,6 +248,10 @@ test.describe("Gmail 자동 가져오기 (E2E)", () => {
       timeout: 30_000,
     });
     await expect(page.getByRole("button", { name: "자동 가져오기 켜기" })).toHaveCount(0);
+    // 한 번만 가져오는 스크립트 붙여 넣기도 접혀 있다가 누르면 펼쳐진다.
+    await expect(page.getByRole("heading", { name: "직접 실행해서 가져오기" })).toHaveCount(0);
+    await page.getByRole("button", { name: /스크립트를 직접 붙여 넣어 가져오기/ }).click();
+    await expect(page.getByRole("heading", { name: "직접 실행해서 가져오기" })).toBeVisible();
 
     await page.getByRole("button", { name: /경고 없이 직접 설치하기/ }).click();
     await expect(page.getByRole("button", { name: "자동 가져오기 켜기" })).toBeVisible();

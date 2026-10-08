@@ -116,6 +116,10 @@ export const ko = {
       intro:
         "한 번 설정하면 최근 결제 메일에서 구독을 찾아 줘요. 메일은 서버를 거치지 않고 이 브라우저에서만 읽어요.",
       direct: "직접 실행해서 가져오기",
+      directShow: "다른 방법: 스크립트를 직접 붙여 넣어 가져오기",
+      directHide: "직접 붙여 넣는 방법 접기",
+      directNote:
+        "로그인 없이 한 번만 가져올 때 쓰는 방법이에요. 내 Google 계정에 스크립트를 붙여 넣고 실행해야 해요.",
       step1Before: "",
       step1Link: "Apps Script 새 프로젝트",
       step1After: "를 만드세요.",
@@ -407,6 +411,10 @@ export const en: Widen<typeof ko> = {
       intro:
         "Set it up once and it finds subscriptions in your recent payment emails. Emails don't pass through a server; they're read only in this browser.",
       direct: "Run it yourself to import",
+      directShow: "Another way: paste a script yourself to import",
+      directHide: "Hide the paste-it-yourself method",
+      directNote:
+        "Use this to import once without logging in. You paste a script into your own Google account and run it.",
       step1Before: "Create a ",
       step1Link: "new Apps Script project",
       step1After: ".",
