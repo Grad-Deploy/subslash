@@ -113,6 +113,11 @@ export interface ServicePreset {
    * 따로 구독하고 있으면 두 번 내는 것일 수 있다고 알린다(utils/bundles).
    */
   includes?: string[];
+  /**
+   * 구성을 고르는 멤버십이라 결합 상품 탭에 둔다(네이버플러스). `includes`가 없어도 — 무엇을 골랐는지 모르면
+   * 구성을 적지 않는다 — 단독 서비스와 섞이지 않게 한다.
+   */
+  bundleTab?: boolean;
   /** 결합 구성·요금제 요금을 확인한 곳. 요금이 바뀌면 여기부터 다시 본다. */
   sourceUrl?: string;
 }
@@ -457,11 +462,74 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     nameEn: "Naver Plus",
     category: "shopping",
     defaultAmount: 4900,
+    // 디지털 콘텐츠를 매달 하나 고르는 멤버십이라 결합 상품 탭에 둔다. 넷플릭스·스포티파이를 골랐으면 아래의
+    // '네이버플러스 + …'로 등록해야 따로 낸 같은 서비스와 겹치는지 알 수 있다.
+    bundleTab: true,
+    priceNote:
+      "넷플릭스나 스포티파이를 골랐다면 '네이버플러스 + 넷플릭스'·'네이버플러스 + 스포티파이'로 등록해 주세요.",
     currency: "KRW",
     cancelUrl: "https://nid.naver.com/membership/my",
     cancelUrlKind: "direct",
     cancelGuide:
       "1. 네이버플러스 멤버십 마이페이지 접속\n2. 우측 상단 설정(톱니바퀴) 아이콘 클릭\n3. [네이버플러스 멤버십 관리] 클릭\n4. 하단의 [네이버플러스 멤버십 해지하기] 클릭",
+  },
+  {
+    id: "naver-plus-netflix",
+    name: "Naver Plus + Netflix",
+    nameKo: "네이버플러스 + 넷플릭스",
+    nameEn: "Naver Plus + Netflix",
+    category: "ott",
+    // 멤버십(월 4,900원)에 넷플릭스 광고형 스탠다드가 들어 있고, 추가 결제로 스탠다드(+6,500원)·프리미엄
+    // (+10,000원)으로 올린다. 추가 요금은 2026년 7월부터의 값이다(heraldk 2026-06-25).
+    defaultAmount: null,
+    plans: [
+      { id: "ads", name: "광고형 스탠다드", amount: 4900 },
+      { id: "standard", name: "스탠다드 (추가 결제)", amount: 11400 },
+      { id: "premium", name: "프리미엄 (추가 결제)", amount: 14900 },
+    ],
+    priceNote: "추가 결제 요금은 2026년 7월부터의 값이에요. 결제 화면의 금액과 다르면 고쳐 주세요.",
+    currency: "KRW",
+    cancelUrl: "https://nid.naver.com/membership/my",
+    cancelUrlKind: "direct",
+    cancelGuide:
+      "1. 네이버플러스 멤버십 마이페이지 접속\n2. 우측 상단 설정(톱니바퀴) 아이콘 클릭\n3. [네이버플러스 멤버십 관리] 클릭\n4. 하단의 [네이버플러스 멤버십 해지하기] 클릭\n— 넷플릭스 혜택과 추가 결제도 함께 끝나요",
+    includes: ["naver-plus", "netflix"],
+    sourceUrl: "https://www.heraldk.com/article/2026062503400080336",
+  },
+  {
+    id: "naver-plus-spotify",
+    name: "Naver Plus + Spotify Premium Basic",
+    nameKo: "네이버플러스 + 스포티파이 프리미엄 베이직",
+    nameEn: "Naver Plus + Spotify Premium Basic",
+    category: "music",
+    // 디지털 콘텐츠로 스포티파이 프리미엄 베이직을 고른 멤버십(월 4,900원, 추가 결제 없음).
+    defaultAmount: 4900,
+    currency: "KRW",
+    cancelUrl: "https://nid.naver.com/membership/my",
+    cancelUrlKind: "direct",
+    cancelGuide:
+      "1. 네이버플러스 멤버십 마이페이지 접속\n2. 우측 상단 설정(톱니바퀴) 아이콘 클릭\n3. [네이버플러스 멤버십 관리] 클릭\n4. 하단의 [네이버플러스 멤버십 해지하기] 클릭\n— 스포티파이 혜택도 함께 끝나요",
+    includes: ["naver-plus", "spotify"],
+    sourceUrl: "https://www.newsis.com/view/NISX20251128_0003420668",
+  },
+  {
+    id: "naver-plus-netflix-spotify",
+    name: "Naver Plus + Netflix + Spotify",
+    nameKo: "네이버플러스 + 넷플릭스 + 스포티파이",
+    nameEn: "Naver Plus + Netflix + Spotify",
+    category: "ott",
+    // 넷플릭스 광고형 스탠다드를 고르고 스포티파이 프리미엄 베이직을 추가 구독(+5,900원)한 값(월 10,800원,
+    // 뉴시스 2025-11-28). 넷플릭스를 업그레이드했다면 그 추가 요금이 더해진다 — 확인한 조합만 적는다.
+    defaultAmount: 10800,
+    priceNote:
+      "넷플릭스 광고형 + 스포티파이 추가 구독 기준이에요. 넷플릭스를 업그레이드했다면 금액을 고쳐 주세요.",
+    currency: "KRW",
+    cancelUrl: "https://nid.naver.com/membership/my",
+    cancelUrlKind: "direct",
+    cancelGuide:
+      "1. 네이버플러스 멤버십 마이페이지 접속\n2. 우측 상단 설정(톱니바퀴) 아이콘 클릭\n3. [네이버플러스 멤버십 관리] 클릭\n4. 하단의 [네이버플러스 멤버십 해지하기] 클릭\n— 넷플릭스·스포티파이 혜택과 추가 구독도 함께 끝나요",
+    includes: ["naver-plus", "netflix", "spotify"],
+    sourceUrl: "https://www.newsis.com/view/NISX20251128_0003420668",
   },
   {
     id: "baemin-club",
