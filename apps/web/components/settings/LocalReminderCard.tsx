@@ -30,7 +30,8 @@ export function LocalReminderCard({ onMessage }: LocalReminderCardProps) {
   const [settings, update] = useLocalReminderSettings();
   const [permission, setPermission] = useState<ReminderPermission | null>(null);
   const [busy, setBusy] = useState(false);
-  const t = useT().settings.reminder;
+  const all = useT();
+  const t = all.settings.reminder;
   const subscriptions = useStore((state) => realRecords(state).subscriptions);
 
   // 설정에서 권한을 바꾸고 돌아올 수 있으므로 화면에 돌아올 때마다 다시 확인한다.
@@ -65,7 +66,7 @@ export function LocalReminderCard({ onMessage }: LocalReminderCardProps) {
 
   const sendTest = async () => {
     try {
-      await sendTestReminder();
+      await sendTestReminder(all.reminders.notify);
       onMessage(t.testSent);
     } catch {
       onMessage(t.testFailed);

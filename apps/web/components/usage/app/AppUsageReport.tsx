@@ -8,7 +8,9 @@ import { cn } from "@lib/utils";
 import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
-import { firstRecordedDay, formatDuration } from "@lib/usage/history";
+import { firstRecordedDay } from "@lib/usage/history";
+import { useT } from "@lib/i18n";
+import { formatDurationText } from "@lib/i18n/duration";
 import { MEASURED_USAGE_PACKAGES, packagesFor } from "@lib/usage/packages";
 import {
   RANGE_DAYS,
@@ -26,11 +28,7 @@ import { UsageLine, isUnused, type SortKey, type UsageReportLine } from "./AppUs
 import { UsageCard } from "./AppUsageCard";
 import { RangeTabs, StatTile, SubLogo, UsageBarChart, monthBars, monthDay } from "./parts";
 
-const SORT_LABEL: Record<SortKey, string> = {
-  value: "가성비",
-  time: "사용 시간",
-  opens: "쓴 횟수",
-};
+const SORT_KEYS: SortKey[] = ["value", "time", "opens"];
 
 /**
  * 잰 것이 앞, 앱 없음·기록 없음이 뒤. 가성비는 안 쓴 것 → 비쌈 → 애매 → 잘 씀(평가 전이면 '잘 씀'까지 먼 순),
@@ -59,6 +57,9 @@ function compare(sort: SortKey) {
  * 두 시간 보는 경우).
  */
 export function AppUsageReport({ active }: { active: Subscription[] }) {
+  const t = useT();
+  const u = t.usageApp;
+  const r = u.report;
   const rate = useExchangeRate();
   const { status, history, installed } = usePhoneUsage();
   const [range, setRange] = useState<UsageRange>("month");
@@ -88,8 +89,8 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
 
   const months = useMemo(() => {
     const packages = [...new Set(mapped.flatMap((sub) => packagesFor(sub) ?? []))];
-    return monthBars(history, packages.length > 0 ? packages : MEASURED_USAGE_PACKAGES, now);
-  }, [mapped, history, now]);
+    return monthBars(t, history, packages.length > 0 ? packages : MEASURED_USAGE_PACKAGES, now);
+  }, [t, mapped, history, now]);
 
   // 카드는 기간 탭과 관계없이 늘 최근 30일이다(체크인과 같은 기준).
   const card = useMemo(
@@ -110,14 +111,12 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
             <Smartphone className="size-4" aria-hidden />
           </span>
           <div className="min-w-0">
-            <h2 className="text-base font-bold">구독 사용 현황</h2>
-            <p className="text-sm text-muted-foreground">
-              폰 사용 기록을 연결하면 구독 앱을 얼마나 썼는지, 시간당 얼마였는지 보여 드려요.
-            </p>
+            <h2 className="text-base font-bold">{u.title}</h2>
+            <p className="text-sm text-muted-foreground">{r.offBody}</p>
           </div>
         </div>
         <Button className="w-full" onClick={() => setAccessOpen(true)}>
-          폰 사용 기록 연결하기
+          {u.connect}
         </Button>
         <AppUsageAccessSheet open={accessOpen} onClose={() => setAccessOpen(false)} />
       </section>
@@ -136,29 +135,31 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
     <section className="space-y-4 pt-1" aria-labelledby="usage-heading">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="usage-heading" className="text-base font-bold">
-          구독 사용 현황
+          {u.title}
         </h2>
         <span className="text-xs text-muted-foreground">
-          이 폰 기준
-          {covered > 0 && covered < RANGE_DAYS[range] && ` · 기록 ${covered}일`}
+          {u.thisPhone}
+          {covered > 0 && covered < RANGE_DAYS[range] && r.recordedSuffix(covered)}
         </span>
       </div>
 
-      <RangeTabs value={range} onChange={setRange} label="기간" />
+      <RangeTabs value={range} onChange={setRange} label={u.rangeLabel} />
 
       <div className="grid grid-cols-2 gap-2">
-        <StatTile label="구독 앱 사용 시간" value={formatDuration(totalMs)} />
-        <StatTile label="구독 앱 쓴 횟수" value={totalOpens.toLocaleString("ko-KR")} unit="회" />
+        <StatTile label={r.totalTime} value={formatDurationText(t, totalMs)} />
+        <StatTile
+          label={r.totalOpens}
+          value={totalOpens.toLocaleString("ko-KR")}
+          unit={u.timesUnit}
+        />
       </div>
 
       {covered === 0 ? (
-        <p className="rounded-2xl bg-secondary/50 p-4 text-sm text-muted-foreground">
-          아직 쌓인 기록이 없어요. 내일부터 이 폰의 사용 기록이 여기에 쌓여요.
-        </p>
+        <p className="rounded-2xl bg-secondary/50 p-4 text-sm text-muted-foreground">{r.empty}</p>
       ) : (
         <>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="정렬">
-            {(Object.keys(SORT_LABEL) as SortKey[]).map((key) => (
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label={r.sortLabel}>
+            {SORT_KEYS.map((key) => (
               <button
                 key={key}
                 type="button"
@@ -171,15 +172,13 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
                     : "text-muted-foreground",
                 )}
               >
-                {SORT_LABEL[key]}
+                {r.sort[key]}
               </button>
             ))}
           </div>
 
           {sort === "value" && range !== "month" && (
-            <p className="text-xs text-muted-foreground">
-              가성비는 기간과 관계없이 최근 30일로 봐요.
-            </p>
+            <p className="text-xs text-muted-foreground">{r.valueRecent}</p>
           )}
 
           <ul className="divide-y rounded-2xl border">
@@ -198,12 +197,8 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
           </ul>
 
           <p className="text-xs text-muted-foreground">
-            {sort === "value"
-              ? "막대가 꽉 차면 '잘 씀'이에요(한 달에 OTT 4회 · AI 10일(하루 5분 이상) · 음악 10시간, 체크인과 같은 기준). 평가는 기록이 30일 쌓이면 나와요."
-              : "막대를 모두 더하면 100%예요. 색은 가성비 평가예요."}{" "}
-            TV·PC에서 본 건 빠져 있어요.
-            {unmappedCount > 0 &&
-              ` 멤버십이나 PC에서 쓰는 구독 ${unmappedCount}개는 폰 기록으로 알 수 없어 빠졌어요.`}
+            {sort === "value" ? r.legendValue : r.legendShare} {r.tvMissing}
+            {unmappedCount > 0 && r.unmapped(unmappedCount)}
           </p>
         </>
       )}
@@ -211,15 +206,11 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
       {hasYear && (
         <div className="space-y-3 rounded-2xl border p-4">
           <div className="flex items-baseline justify-between gap-3">
-            <h3 className="text-sm font-bold">1년 추이</h3>
-            <span className="text-xs text-muted-foreground">달별 사용 시간</span>
+            <h3 className="text-sm font-bold">{r.yearTitle}</h3>
+            <span className="text-xs text-muted-foreground">{r.yearSub}</span>
           </div>
           <UsageBarChart bars={months} />
-          {since && (
-            <p className="text-xs text-muted-foreground">
-              {monthDay(since)}부터 이 폰에 쌓은 기록이에요. 점선은 기록이 없는 달이에요.
-            </p>
-          )}
+          {since && <p className="text-xs text-muted-foreground">{r.since(monthDay(t, since))}</p>}
         </div>
       )}
     </section>
@@ -228,7 +219,7 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
   return (
     <>
       <UsageCard rows={card} onOpen={() => setSheetOpen(true)} />
-      <AppSheet open={sheetOpen} onClose={() => setSheetOpen(false)} label="구독 사용 현황">
+      <AppSheet open={sheetOpen} onClose={() => setSheetOpen(false)} label={u.title}>
         {detail}
       </AppSheet>
     </>

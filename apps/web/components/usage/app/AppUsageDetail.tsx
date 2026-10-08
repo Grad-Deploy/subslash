@@ -4,15 +4,11 @@ import React, { useMemo, useState } from "react";
 import { Smartphone } from "lucide-react";
 import { metricForSubscription, type Subscription } from "@subslash/shared";
 import { cn } from "@lib/utils";
+import { useT, type Messages } from "@lib/i18n";
+import { formatDurationPreciseText, formatDurationText } from "@lib/i18n/duration";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
-import {
-  formatDuration,
-  formatDurationPrecise,
-  lastDays,
-  totalsFor,
-  type UsageHistory,
-} from "@lib/usage/history";
+import { lastDays, totalsFor, type UsageHistory } from "@lib/usage/history";
 import { packageBreakdown, packagesFor } from "@lib/usage/packages";
 import {
   LEVEL_STYLE,
@@ -26,15 +22,14 @@ import {
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 import { RangeTabs, StatTile, UsageBarChart, monthBars, won, type UsageBar } from "./parts";
 
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
-
 function bars(
+  t: Messages,
   range: UsageRange,
   history: UsageHistory,
   packages: readonly string[],
   now: Date,
 ): UsageBar[] {
-  if (range === "year") return monthBars(history, packages, now);
+  if (range === "year") return monthBars(t, history, packages, now);
   const dates = lastDays(now, RANGE_DAYS[range]);
   return dates.map((date, i) => {
     const [y, m, d] = date.split("-").map(Number);
@@ -42,10 +37,10 @@ function bars(
     const totals = totalsFor(history, packages, [date]);
     return {
       key: date,
-      label: range === "week" ? WEEKDAYS[day.getDay()] : `${m}/${d}`,
+      label: range === "week" ? t.usageApp.weekdays[day.getDay()] : `${m}/${d}`,
       showLabel: range === "week" || i === 0 || i === dates.length - 1 || i === 14,
       ms: totals.coveredDays > 0 ? totals.usedMs : null,
-      spoken: `${m}월 ${d}일`,
+      spoken: t.usageApp.monthDay(m, d),
     };
   });
 }
@@ -55,6 +50,8 @@ function bars(
  * 1주는 날별, 1달은 날별(30칸), 1년은 달별 막대. 가성비는 체크인과 같게 최근 30일 기준이다.
  */
 export function AppUsageDetail({ subscription }: { subscription: Subscription }) {
+  const t = useT();
+  const u = t.usageApp;
   const rate = useExchangeRate();
   const { status, history, installed } = usePhoneUsage();
   const [range, setRange] = useState<UsageRange>("week");
@@ -63,8 +60,8 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
   const now = useMemo(() => new Date(), []);
 
   const series = useMemo(
-    () => (packages ? bars(range, history, packages, now) : []),
-    [range, history, packages, now],
+    () => (packages ? bars(t, range, history, packages, now) : []),
+    [t, range, history, packages, now],
   );
 
   if (!packages || status === "loading" || status === "unsupported") return null;
@@ -79,10 +76,8 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
         >
           <Smartphone className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-bold">폰 사용 기록 연결하기</span>
-            <span className="block text-xs text-muted-foreground">
-              이 구독 앱을 얼마나 썼는지 기간별로 보여 드려요
-            </span>
+            <span className="block text-sm font-bold">{u.connect}</span>
+            <span className="block text-xs text-muted-foreground">{u.detail.connectBody}</span>
           </span>
         </button>
         <AppUsageAccessSheet open={accessOpen} onClose={() => setAccessOpen(false)} />
@@ -98,22 +93,20 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
     <section className="space-y-4 rounded-2xl border p-4" aria-labelledby="sub-usage-heading">
       <div className="flex items-baseline justify-between gap-3">
         <h3 id="sub-usage-heading" className="text-lg font-bold">
-          사용 현황
+          {u.detail.title}
         </h3>
-        <span className="text-xs text-muted-foreground">이 폰 기준</span>
+        <span className="text-xs text-muted-foreground">{u.thisPhone}</span>
       </div>
 
       {period.state === "not-installed" ? (
-        <p className="text-sm text-muted-foreground">
-          이 폰에 앱이 없어요. 다른 기기에서 쓴다면 체크인으로 알려 주세요.
-        </p>
+        <p className="text-sm text-muted-foreground">{u.detail.notInstalled}</p>
       ) : (
         <>
-          <RangeTabs value={range} onChange={setRange} label="기간" />
+          <RangeTabs value={range} onChange={setRange} label={u.rangeLabel} />
 
           <div className="grid grid-cols-2 gap-2">
-            <StatTile label="사용 시간" value={formatDuration(period.totals.usedMs)} />
-            <StatTile label="쓴 횟수" value={String(period.totals.opens)} unit="회" />
+            <StatTile label={u.usedTime} value={formatDurationText(t, period.totals.usedMs)} />
+            <StatTile label={u.opens} value={String(period.totals.opens)} unit={u.timesUnit} />
           </div>
 
           {/* 앱이 여럿인 구독(유튜브 프리미엄 = 유튜브 + 유튜브 뮤직)은 앱마다 나눠 보여 준다. */}
@@ -123,23 +116,20 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
                 <li key={row.pkg} className="flex justify-between gap-3">
                   <span className="font-semibold">{row.label}</span>
                   <span className="tabular-nums text-muted-foreground">
-                    {formatDuration(row.usedMs)} · {row.opens}회
+                    {formatDurationText(t, row.usedMs)} · {u.times(row.opens)}
                   </span>
                 </li>
               ))}
             </ul>
           )}
           {period.totals.listenMs !== null && (
-            <p className="text-[11px] text-muted-foreground">
-              사용 시간에는 화면을 끄고 들은 재생 시간(재생 알림이 떠 있던 시간)도 들어가요.
-              일시정지 시간이 섞일 수 있어요.
-            </p>
+            <p className="text-[11px] text-muted-foreground">{u.detail.listenNote}</p>
           )}
 
           <div>
             <UsageBarChart bars={series} />
             {series.some((bar) => bar.ms === null) && (
-              <p className="mt-2 text-xs text-muted-foreground">점선은 기록이 없는 때예요.</p>
+              <p className="mt-2 text-xs text-muted-foreground">{u.detail.dashed}</p>
             )}
           </div>
 
@@ -162,23 +152,26 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
  * 늘리면 '시간당 5,400만 원'처럼 쓴 적 없는 크기의 숫자가 된다. 그때는 쓴 시간과 그동안 낸 돈을 그대로 보인다.
  */
 function ValueTiles({ view, usage }: { view: MetricView; usage: SubUsage }) {
+  const t = useT();
+  const u = t.usageApp;
+  const d = u.detail;
   const days = Math.min(30, usage.totals.coveredDays);
   const style = view.level ? LEVEL_STYLE[view.level] : null;
-  const used = formatDurationPrecise(usage.totals.usedMs);
+  const used = formatDurationPreciseText(t, usage.totals.usedMs);
   const measured =
     view.metric === "uses"
-      ? `최근 ${days}일 ${usage.totals.opens}회`
+      ? d.measuredUses(days, usage.totals.opens)
       : view.metric === "days"
-        ? `최근 ${days}일 중 ${usage.totals.activeDays}일`
-        : `최근 ${days}일 ${used}`;
+        ? d.measuredDays(days, usage.totals.activeDays)
+        : d.measuredHours(days, used);
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-bold">이 구독의 가성비</p>
+      <p className="text-sm font-bold">{d.valueTitle}</p>
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-2xl bg-secondary/60 px-3 py-2.5">
           <p className="text-[11px] text-muted-foreground">
-            {view.short ? "쓴 시간 동안 낸 돈" : view.perLabel}
+            {view.short ? d.shortLabel : u.per[view.metric]}
           </p>
           <p className="text-lg font-black tracking-tight tabular-nums">
             {view.short
@@ -189,33 +182,29 @@ function ValueTiles({ view, usage }: { view: MetricView; usage: SubUsage }) {
           </p>
           <p className={cn("text-[11px]", style ? style.text : "text-muted-foreground")}>
             {view.short
-              ? `${used}만 써서 시간당은 계산하지 않았어요`
+              ? d.shortNote(used)
               : view.unitKRW === null
                 ? view.metric === "uses"
-                  ? `최근 ${days}일 동안 1분 넘게 연 적이 없어요`
+                  ? d.noneUses(days)
                   : view.metric === "days"
-                    ? `최근 ${days}일 동안 쓴 날이 없어요`
-                    : `최근 ${days}일 동안 안 썼어요`
+                    ? d.noneDays(days)
+                    : d.noneHours(days)
                 : measured}
-            {style && !view.short && view.unitKRW !== null && ` · ${style.label}`}
-            {view.pendingDays > 0 && ` · 평가까지 ${view.pendingDays}일`}
+            {view.level && !view.short && view.unitKRW !== null && ` · ${u.level[view.level]}`}
+            {view.pendingDays > 0 && ` · ${u.pending(view.pendingDays)}`}
           </p>
         </div>
         <div className="rounded-2xl bg-secondary/60 px-3 py-2.5">
           <p className="text-[11px] text-muted-foreground">
-            {view.metric === "hours" ? "쓴 날" : "사용 시간"}
+            {view.metric === "hours" ? d.activeDays : u.usedTime}
           </p>
           <p className="text-lg font-black tracking-tight tabular-nums">
-            {view.metric === "hours" ? `${usage.totals.activeDays}일` : used}
+            {view.metric === "hours" ? d.days(usage.totals.activeDays) : used}
           </p>
-          <p className="text-[11px] text-muted-foreground">
-            최근 {days}일 · {usage.totals.opens}회 열었어요
-          </p>
+          <p className="text-[11px] text-muted-foreground">{d.opened(days, usage.totals.opens)}</p>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground">
-        TV·PC에서 쓴 건 빠져 있어요. 체크인은 이 숫자를 채워 두고 고칠 수 있게 해요.
-      </p>
+      <p className="text-xs text-muted-foreground">{d.tvNote}</p>
     </div>
   );
 }

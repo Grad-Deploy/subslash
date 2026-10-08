@@ -3,7 +3,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { ServicePreset, Subscription } from "@subslash/shared";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
-import { formatDuration } from "@lib/usage/history";
+import { useT } from "@lib/i18n";
+import { formatDurationText } from "@lib/i18n/duration";
 import { readDeviceValue, SUGGEST_DISMISSED_KEY, writeDeviceValue } from "@lib/usage/storage";
 import {
   dismissUntil,
@@ -42,6 +43,7 @@ export function AppSubscriptionSuggestions({
   subscriptions: Subscription[];
   onAdd: (preset: ServicePreset) => void;
 }) {
+  const t = useT();
   const { status, history } = usePhoneUsage();
   const [dismissed, setDismissed] = useState<SuggestDismissMap | null>(null);
   const [bundlesFor, setBundlesFor] = useState<string | null>(null);
@@ -76,7 +78,7 @@ export function AppSubscriptionSuggestions({
   };
 
   return (
-    <section className="space-y-2" aria-label="폰 기록으로 찾은 구독">
+    <section className="space-y-2" aria-label={t.usageMore.suggest.sectionLabel}>
       {suggestions.map((suggestion) => (
         <SuggestionCard
           key={suggestion.preset.id}
@@ -106,10 +108,14 @@ export function SuggestionCard({
   /** '내가 내지 않아요'. 주지 않으면 그 버튼과 안내를 두지 않는다(사용자가 직접 찾은 목록). */
   onDismiss?: () => void;
 }) {
+  const t = useT();
+  const s = t.usageMore.suggest;
   const { preset, totals, killed, bundles, appName, note } = suggestion;
+  // 안내 글은 서비스 id로 지금 언어의 것을 찾는다. 표에 없으면 원문을 쓴다.
+  const noteText = note ? (s.notes[preset.id] ?? note) : null;
   const name = preset.nameKo || preset.name;
   // 기록이 30일을 다 덮지 못했으면 덮은 날만큼이라고 적는다.
-  const period = totals.coveredDays >= 30 ? "최근 30일" : `최근 ${totals.coveredDays}일`;
+  const period = s.recent(totals.coveredDays);
 
   return (
     <div className="space-y-3 rounded-2xl border p-4">
@@ -118,22 +124,28 @@ export function SuggestionCard({
         <div className="min-w-0 flex-1 space-y-0.5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-bold">
-              {killed ? `해지한 ${name}, 다시 쓰고 있어요` : `${name}, 구독 중인가요?`}
+              {killed ? s.killedTitle(name) : s.title(name)}
             </span>
-            <span className="text-[11px] font-semibold text-muted-foreground">폰 기록</span>
+            <span className="text-[11px] font-semibold text-muted-foreground">
+              {t.usageMore.phoneBadge}
+            </span>
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            {period} 이 폰{appName ? `의 ${appName} 앱` : ""}에서 {formatDuration(totals.usedMs)},{" "}
-            {totals.activeDays}일 썼어요.{" "}
-            {killed ? "다시 구독했다면 새로 등록해요." : "등록하지 않은 서비스예요."} 가족·친구와
-            나눠 내면 등록할 때 인원을 적어요.{note ? ` ${note}` : ""}
+            {s.used(
+              period,
+              appName ?? null,
+              formatDurationText(t, totals.usedMs),
+              totals.activeDays,
+            )}{" "}
+            {killed ? s.killedBody : s.newBody} {s.share}
+            {noteText ? ` ${noteText}` : ""}
           </p>
         </div>
       </div>
 
       {showBundles ? (
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">어느 상품으로 받나요?</p>
+          <p className="text-xs text-muted-foreground">{s.whichBundle}</p>
           <div className="flex flex-wrap gap-2">
             {bundles.map((bundle) => (
               <Button
@@ -151,25 +163,22 @@ export function SuggestionCard({
       ) : (
         <div className="flex flex-wrap gap-2">
           <Button size="sm" className="flex-1 text-xs font-bold" onClick={() => onAdd(preset)}>
-            {killed ? "다시 구독했어요" : "내가 구독 중"}
+            {killed ? s.resubscribed : s.subscribed}
           </Button>
           {bundles.length > 0 && (
             <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={onShowBundles}>
-              결합 상품으로 받아요
+              {s.viaBundle}
             </Button>
           )}
           {onDismiss && (
             <Button size="sm" variant="ghost" className="flex-1 text-xs" onClick={onDismiss}>
-              내가 내지 않아요
+              {s.notPaying}
             </Button>
           )}
         </div>
       )}
       {onDismiss && (
-        <p className="text-[11px] text-muted-foreground">
-          &lsquo;내가 내지 않아요&rsquo;는 가족 계정·무료 시청·구독 안 함이에요.{" "}
-          {SUGGEST_DISMISS_DAYS}일 동안 묻지 않아요.
-        </p>
+        <p className="text-[11px] text-muted-foreground">{s.notPayingNote(SUGGEST_DISMISS_DAYS)}</p>
       )}
     </div>
   );

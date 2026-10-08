@@ -5,7 +5,9 @@ import { Smartphone } from "lucide-react";
 import { type Subscription } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
-import { formatDuration, lastDays } from "@lib/usage/history";
+import { lastDays } from "@lib/usage/history";
+import { useT } from "@lib/i18n";
+import { formatDurationText } from "@lib/i18n/duration";
 import { packageBreakdown, packagesFor } from "@lib/usage/packages";
 import { subUsage } from "@lib/usage/value";
 import { measuredQuantity } from "@lib/usage/auto-checkin";
@@ -27,6 +29,8 @@ export function AppPhoneMetricHint({
   metric: "days" | "hours";
   onMeasured: (quantity: number | null) => void;
 }) {
+  const t = useT();
+  const m = t.usageMore;
   const rate = useExchangeRate();
   const { status, history, installed } = usePhoneUsage();
   const [accessOpen, setAccessOpen] = useState(false);
@@ -58,9 +62,9 @@ export function AppPhoneMetricHint({
         >
           <Smartphone className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           <span className="min-w-0 flex-1">
-            <span className="block font-bold">폰 사용 기록으로 채우기</span>
+            <span className="block font-bold">{m.hint.fill}</span>
             <span className="block text-muted-foreground">
-              {metric === "days" ? "이 폰에서 며칠 썼는지" : "이 폰에서 몇 시간 썼는지"} 불러와요
+              {metric === "days" ? m.hint.fillDays : m.hint.fillHours}
             </span>
           </span>
         </button>
@@ -72,9 +76,7 @@ export function AppPhoneMetricHint({
   if (!measured) {
     return (
       <p className="rounded-2xl bg-secondary/60 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
-        {usage?.state === "not-installed"
-          ? "이 폰에는 이 서비스의 앱이 없어요. 다른 기기에서 썼다면 직접 적어 주세요."
-          : "이 폰의 사용 기록은 오늘부터 쌓여요. 내일부터 여기서 채울 수 있어요."}
+        {usage?.state === "not-installed" ? m.hint.notInstalledInput : m.hint.building}
       </p>
     );
   }
@@ -85,29 +87,23 @@ export function AppPhoneMetricHint({
   return (
     <div className="space-y-1 rounded-2xl bg-secondary/60 px-3 py-2.5 text-xs leading-relaxed">
       <p>
-        이 폰에서 {covered < 30 ? `기록이 있는 ${covered}일 동안` : "최근 30일 동안"}{" "}
+        {m.hint.usedBefore(m.within(covered))}
         <b>
           {metric === "days"
-            ? `${totals.activeDays}일 · ${formatDuration(totals.usedMs)}`
-            : formatDuration(totals.usedMs)}
-        </b>{" "}
-        썼어요.{" "}
-        {quantity && quantity > 0
-          ? "칸을 여기에 맞춰 뒀어요."
-          : metric === "hours"
-            ? "1시간이 안 돼 칸은 비워 뒀어요."
-            : ""}
+            ? m.hint.usedDays(totals.activeDays, formatDurationText(t, totals.usedMs))
+            : formatDurationText(t, totals.usedMs)}
+        </b>
+        {m.hint.usedAfterPlain}
+        {quantity && quantity > 0 ? m.hint.fitted : metric === "hours" ? m.hint.underHour : ""}
       </p>
       {breakdown.length > 0 && (
         <p className="text-muted-foreground">
-          {breakdown.map((row) => `${row.label} ${formatDuration(row.usedMs)}`).join(" · ")}
+          {breakdown.map((row) => `${row.label} ${formatDurationText(t, row.usedMs)}`).join(" · ")}
         </p>
       )}
       <p className="text-muted-foreground">
-        {totals.listenMs === null && metric === "hours"
-          ? "화면을 끄고 들은 재생은 아직 재지 못한 날이 있어 빠져 있을 수 있어요. "
-          : ""}
-        TV·PC·태블릿에서 본 건 빠져 있어요.
+        {totals.listenMs === null && metric === "hours" ? m.hint.listenMissing : ""}
+        {m.tvTabletMissing}
       </p>
     </div>
   );

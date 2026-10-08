@@ -14,6 +14,7 @@ import {
 } from "@lib/usage/suggest";
 import { AppSheet } from "../../settings/app/AppSheet";
 import { Spinner } from "../../ui/spinner";
+import { useT } from "@lib/i18n";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 import { SuggestionCard } from "./AppSubscriptionSuggestions";
 
@@ -42,6 +43,7 @@ export function AppUsageFindSheet({
   onClose: () => void;
   onPick: (preset: ServicePreset) => void;
 }) {
+  const f = useT().usageMore.find;
   const { status, history, refreshing } = usePhoneUsage();
   const subscriptions = useStore((state) => realRecords(state).subscriptions);
   const [bundlesFor, setBundlesFor] = useState<string | null>(null);
@@ -64,7 +66,7 @@ export function AppUsageFindSheet({
   // 권한을 확인하는 동안에도 누른 것이 보이게 한다.
   if (status === "loading") {
     return (
-      <AppSheet open={open} onClose={onClose} label="폰 사용 기록에서 찾기">
+      <AppSheet open={open} onClose={onClose} label={f.label}>
         <div className="flex justify-center py-10">
           <Spinner className="size-5" />
         </div>
@@ -79,17 +81,12 @@ export function AppUsageFindSheet({
         onClose={onClose}
         title={
           <>
-            폰 사용 기록으로
+            {f.accessTitle1}
             <br />
-            구독을 찾을까요?
+            {f.accessTitle2}
           </>
         }
-        description={
-          <>
-            안드로이드 설정의 &lsquo;사용 기록 액세스&rsquo;를 켜면, {SERVICE_NAMES} 앱을 이 폰에서
-            얼마나 썼는지 보고 등록하지 않은 구독을 찾아요.
-          </>
-        }
+        description={f.accessBody(SERVICE_NAMES)}
       />
     );
   }
@@ -100,15 +97,12 @@ export function AppUsageFindSheet({
   };
 
   return (
-    <AppSheet open={open} onClose={onClose} label="폰 사용 기록에서 찾기">
+    <AppSheet open={open} onClose={onClose} label={f.label}>
       <div className="space-y-4 pt-1">
         <div className="space-y-1">
-          <h2 className="text-lg font-black tracking-tight">폰 사용 기록에서 찾기</h2>
+          <h2 className="text-lg font-black tracking-tight">{f.label}</h2>
           <p className="text-xs text-muted-foreground">
-            {coveredDays > 0
-              ? `최근 30일 중 ${coveredDays}일치 기록으로 찾았어요.`
-              : "아직 읽은 기록이 없어요."}{" "}
-            {SERVICE_NAMES}를 찾고, TV·PC에서 본 것은 빠져요.
+            {coveredDays > 0 ? f.covered(coveredDays) : f.noRecords} {f.scope(SERVICE_NAMES)}
           </p>
         </div>
 
@@ -131,11 +125,9 @@ export function AppUsageFindSheet({
         ) : (
           <div className="flex flex-col items-center gap-2 rounded-2xl bg-secondary/50 px-4 py-6 text-center">
             <SearchX className="size-6 text-muted-foreground" aria-hidden />
-            <p className="text-sm font-bold">등록하지 않은 OTT를 찾지 못했어요</p>
+            <p className="text-sm font-bold">{f.none}</p>
             <p className="text-xs text-muted-foreground">
-              {coveredDays < SUGGEST_MIN_COVERED_DAYS
-                ? `기록이 ${coveredDays}일치뿐이에요. 며칠 더 쓰고 다시 찾아보세요.`
-                : "이미 모두 등록했거나, 1시간·3일 넘게 쓴 앱이 없어요."}
+              {coveredDays < SUGGEST_MIN_COVERED_DAYS ? f.fewDays(coveredDays) : f.noneEnough}
             </p>
           </div>
         )}

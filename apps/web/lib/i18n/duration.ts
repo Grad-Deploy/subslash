@@ -10,3 +10,9 @@ export function formatDurationText(t: Messages, ms: number): string {
   if (hours === 0) return d.minutes(rest);
   return rest === 0 ? d.hours(hours) : d.hoursMinutes(hours, rest);
 }
+
+/** '12시간 10분', '40분', 1분이 안 되면 '12초'. `lib/usage/history`의 `formatDurationPrecise`와 같은 뜻이다. */
+export function formatDurationPreciseText(t: Messages, ms: number): string {
+  if (ms > 0 && ms < 60_000) return t.usageApp.seconds(Math.max(1, Math.round(ms / 1000)));
+  return formatDurationText(t, ms);
+}

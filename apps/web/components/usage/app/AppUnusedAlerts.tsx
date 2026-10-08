@@ -12,7 +12,9 @@ import {
 } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage, usePhoneUsageStore } from "@hooks/usePhoneUsage";
-import { addDays, dayKey, formatDuration, lastDays } from "@lib/usage/history";
+import { addDays, dayKey, lastDays } from "@lib/usage/history";
+import { useT } from "@lib/i18n";
+import { formatDurationText } from "@lib/i18n/duration";
 import { median, subUsage, type SubUsage } from "@lib/usage/value";
 import { Button } from "../../ui/button";
 import { AppBatchCheckIn } from "./AppBatchCheckIn";
@@ -59,6 +61,8 @@ export function AppUnusedAlerts({
   usageLogs: UsageLog[];
   onCancelGuide: (subscriptionId: string) => void;
 }) {
+  const t = useT();
+  const al = t.usageMore.alerts;
   const rate = useExchangeRate();
   const { status, history, installed, snooze } = usePhoneUsage();
   const [batchOpen, setBatchOpen] = useState(false);
@@ -84,8 +88,8 @@ export function AppUnusedAlerts({
       list.push({
         kind: "unused",
         usage: u,
-        title: `${u.sub.name} 앱을 ${u.totals.coveredDays}일 동안 안 열었어요`,
-        reason: `${days === 0 ? "오늘" : `${days}일 뒤`} ${amount}이 결제돼요. 노트북·태블릿에서도 안 봤다면 쉬어가도 괜찮아요.`,
+        title: al.unusedTitle(u.sub.name, u.totals.coveredDays),
+        reason: al.unusedReason(days, amount),
       });
     }
 
@@ -102,8 +106,12 @@ export function AppUnusedAlerts({
       list.push({
         kind: "pricey",
         usage: u,
-        title: `${u.sub.name}, 시간당 ${won(u.hourlyKRW as number)}`,
-        reason: `최근 ${u.totals.coveredDays}일 ${formatDuration(u.totals.ms)}만 썼어요. 내 다른 구독보다 ${Math.floor(ratio)}배 비싸요.`,
+        title: al.priceyTitle(u.sub.name, won(u.hourlyKRW as number)),
+        reason: al.priceyReason(
+          u.totals.coveredDays,
+          formatDurationText(t, u.totals.ms),
+          Math.floor(ratio),
+        ),
       });
     }
 
@@ -116,7 +124,7 @@ export function AppUnusedAlerts({
     ).length;
 
     return { alerts: list, needCheckIn: need };
-  }, [subscriptions, usageLogs, history, installed, snooze, rate, now, today]);
+  }, [t, al, subscriptions, usageLogs, history, installed, snooze, rate, now, today]);
 
   if (status !== "on" || (alerts.length === 0 && needCheckIn === 0)) return null;
 
@@ -124,7 +132,7 @@ export function AppUnusedAlerts({
     usePhoneUsageStore.getState().snoozeUntil(sub.id, snoozeUntil(sub, now));
 
   return (
-    <section className="space-y-2" aria-label="폰 기록으로 본 구독">
+    <section className="space-y-2" aria-label={al.sectionLabel}>
       {alerts.map((alert) => (
         <div
           key={alert.usage.sub.id}
@@ -139,7 +147,9 @@ export function AppUnusedAlerts({
             <div className="min-w-0 flex-1 space-y-0.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm font-bold">{alert.title}</span>
-                <span className="text-[11px] font-semibold text-muted-foreground">폰 기록</span>
+                <span className="text-[11px] font-semibold text-muted-foreground">
+                  {t.usageMore.phoneBadge}
+                </span>
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">{alert.reason}</p>
             </div>
@@ -151,7 +161,7 @@ export function AppUnusedAlerts({
               variant={alert.kind === "unused" ? "default" : "outline"}
               onClick={() => onCancelGuide(alert.usage.sub.id)}
             >
-              해지 안내 보기
+              {al.cancelGuide}
             </Button>
             <Button
               size="sm"
@@ -159,7 +169,7 @@ export function AppUnusedAlerts({
               className="flex-1 text-xs"
               onClick={() => snoozeSub(alert.usage.sub)}
             >
-              {alert.kind === "unused" ? "다른 기기에서 봤어요" : "괜찮아요"}
+              {alert.kind === "unused" ? al.otherDevice : al.fine}
             </Button>
           </div>
         </div>
@@ -168,8 +178,8 @@ export function AppUnusedAlerts({
       {needCheckIn > 0 && (
         <div className="flex items-center justify-between gap-3 rounded-2xl border p-4">
           <div className="min-w-0">
-            <p className="text-sm font-bold">폰 기록으로 한 번에 체크인</p>
-            <p className="text-xs text-muted-foreground">체크인 필요 {needCheckIn}개를 채워요</p>
+            <p className="text-sm font-bold">{al.batchTitle}</p>
+            <p className="text-xs text-muted-foreground">{al.batchBody(needCheckIn)}</p>
           </div>
           <Button
             size="sm"
@@ -178,7 +188,7 @@ export function AppUnusedAlerts({
               setBatchOpen(true);
             }}
           >
-            채우기
+            {al.fillButton}
           </Button>
         </div>
       )}

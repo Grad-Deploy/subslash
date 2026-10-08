@@ -10,14 +10,10 @@ import { fetchGmailLink, type GmailLinkState } from "@lib/gmail-auto-client";
 import { leaveForExternal } from "@lib/native";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
+import { useLatestT, useT } from "@lib/i18n";
 
-/** 일정 알림을 띄울 때. 0은 결제일 아침이다. */
-const REMINDER_DAY_OPTIONS = [
-  { value: 0, label: "결제일 아침" },
-  { value: 1, label: "결제 1일 전" },
-  { value: 3, label: "결제 3일 전" },
-  { value: 7, label: "결제 7일 전" },
-] as const;
+/** 웹 앱이 만드는 캘린더의 이름. 화면 언어와 상관없이 이 이름으로 만든다. */
+const CALENDAR_NAME = "SubSlash 결제일";
 
 /**
  * 구독의 결제일을 내 구글 캘린더에 반복 일정으로 넣는다.
@@ -30,6 +26,8 @@ const REMINDER_DAY_OPTIONS = [
  * 일정에 적은 알림이 캘린더 앱에서 뜬다 — 웹에서 결제일을 알리는 길은 이것이다(결제 알림 메일은 그만뒀다).
  */
 export function GoogleCalendarSync() {
+  const c = useT().reminders.calendar;
+  const tRef = useLatestT();
   const { account, loading } = useAuth();
   const subscriptions = useStore((state) => realRecords(state).subscriptions);
   const [reminderDays, setReminderDays] = useState(3);
@@ -68,7 +66,7 @@ export function GoogleCalendarSync() {
       // 앱 웹뷰가 통째로 나가면 담아 둔 화면을 잃고 돌아올 길이 없다.
       leaveForExternal(await startCalendarSync(entries, reminderDays), () => setBusy(false));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "캘린더 등록을 시작하지 못했습니다.");
+      setError(e instanceof Error ? e.message : tRef.current.reminders.calendar.startFailed);
       setBusy(false);
     }
   };
@@ -76,39 +74,35 @@ export function GoogleCalendarSync() {
   return (
     <section className="space-y-3 rounded-2xl border p-4">
       <div className="space-y-1">
-        <h2 className="text-base font-bold">구글 캘린더에 결제일 등록</h2>
-        <p className="text-muted-foreground">
-          &lsquo;SubSlash 결제일&rsquo; 캘린더를 만들어 결제일을 반복 일정으로 넣어요. 다른 캘린더는
-          건드리지 않아요.
-        </p>
+        <h2 className="text-base font-bold">{c.title}</h2>
+        <p className="text-muted-foreground">{c.body(CALENDAR_NAME)}</p>
       </div>
 
       {loading ? null : !account ? (
         <p className="text-muted-foreground">
-          쓰려면{" "}
+          {c.loginBefore}
           <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
-            로그인
+            {c.login}
           </Link>
-          이 필요해요.
+          {c.loginAfter}
         </p>
       ) : !link || !link.open ? null : !link.connectAvailable ? (
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          이 서버에는 구글 캘린더 등록이 설정되어 있지 않습니다.
-        </p>
+        <p className="text-xs leading-relaxed text-muted-foreground">{c.notConfigured}</p>
       ) : (
         <>
           <p className="rounded-xl bg-muted/50 p-3 text-xs leading-relaxed">
-            지금 올릴 결제일 <strong>{willSync}건</strong>
-            {undated > 0 && ` · 결제 월을 적지 않은 연간 구독 ${undated}건은 뺍니다`}
+            {c.willSyncBefore}
+            <strong>{c.willSync(willSync)}</strong>
+            {undated > 0 && c.undated(undated)}
           </p>
           <label className="flex items-center gap-2 text-xs">
-            <span className="shrink-0 font-semibold">일정 알림</span>
+            <span className="shrink-0 font-semibold">{c.reminder}</span>
             <Select
               value={String(reminderDays)}
               onChange={(e) => setReminderDays(Number(e.target.value))}
               className="w-auto"
             >
-              {REMINDER_DAY_OPTIONS.map((option) => (
+              {c.days.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -116,20 +110,14 @@ export function GoogleCalendarSync() {
             </Select>
           </label>
           <Button disabled={busy || willSync === 0} onClick={() => void sync()}>
-            구글 캘린더에 등록하기
+            {c.submit}
           </Button>
-          {willSync === 0 && (
-            <p className="text-xs text-muted-foreground">
-              올릴 구독이 없어요. 연간 구독이라면 상세에서 결제 월을 적어 주세요.
-            </p>
-          )}
+          {willSync === 0 && <p className="text-xs text-muted-foreground">{c.nothing}</p>}
           <ul className="list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-muted-foreground">
-            <li>
-              구독 이름·금액·결제일이 Google로 전달돼요. 서버는 최대 10분만 들고 있다가 지워요.
-            </li>
-            <li>구독을 고쳤다면 다시 누르세요. 자동으로 바뀌지 않아요.</li>
-            <li>&lsquo;확인되지 않은 앱&rsquo; 경고가 나오면 &lsquo;고급&rsquo;에서 계속하세요.</li>
-            <li>그만두려면 &lsquo;SubSlash 결제일&rsquo; 캘린더를 지우세요.</li>
+            {c.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+            <li>{c.stop(CALENDAR_NAME)}</li>
           </ul>
         </>
       )}

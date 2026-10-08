@@ -5,7 +5,8 @@ import { ChevronRight } from "lucide-react";
 import { sumMyMonthlyKRW } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useExchangeRate } from "@hooks/useExchangeRate";
-import { formatDuration } from "@lib/usage/history";
+import { useT } from "@lib/i18n";
+import { formatDurationText } from "@lib/i18n/duration";
 import { LEVEL_STYLE, compareValue, type MetricView, type SubUsage } from "@lib/usage/value";
 import { isUnused } from "./AppUsageLine";
 import { won } from "./parts";
@@ -51,6 +52,9 @@ export function UsageCard({
   rows: { usage: SubUsage; view: MetricView }[];
   onOpen: () => void;
 }) {
+  const t = useT();
+  const u = t.usageApp;
+  const c = u.card;
   const rate = useExchangeRate();
   const covered = Math.max(0, ...rows.map((row) => row.usage.totals.coveredDays));
   const totalMs = rows.reduce((sum, row) => sum + row.usage.totals.usedMs, 0);
@@ -60,11 +64,7 @@ export function UsageCard({
 
   let body: React.ReactNode;
   if (covered === 0) {
-    body = (
-      <span className="mt-2 block text-sm text-muted-foreground">
-        오늘부터 이 폰의 사용 기록을 쌓는 중이에요.
-      </span>
-    );
+    body = <span className="mt-2 block text-sm text-muted-foreground">{c.building}</span>;
   } else if (pendingDays > 0) {
     const top = [...rows]
       .sort((a, b) => b.usage.totals.usedMs - a.usage.totals.usedMs)
@@ -74,16 +74,16 @@ export function UsageCard({
       <>
         <span className="mt-2.5 flex gap-5">
           <span>
-            <span className="block text-[11px] text-muted-foreground">사용 시간</span>
+            <span className="block text-[11px] text-muted-foreground">{u.usedTime}</span>
             <span className="text-xl font-black tracking-tight tabular-nums">
-              {formatDuration(totalMs)}
+              {formatDurationText(t, totalMs)}
             </span>
           </span>
           <span>
-            <span className="block text-[11px] text-muted-foreground">쓴 횟수</span>
+            <span className="block text-[11px] text-muted-foreground">{u.opens}</span>
             <span className="text-xl font-black tracking-tight tabular-nums">
               {totalOpens.toLocaleString("ko-KR")}
-              <span className="ml-0.5 text-xs font-bold">회</span>
+              <span className="ml-0.5 text-xs font-bold">{u.timesUnit}</span>
             </span>
           </span>
         </span>
@@ -95,19 +95,16 @@ export function UsageCard({
                 name={row.usage.sub.name}
                 width={Math.max(3, (row.usage.totals.usedMs / totalMs) * 100)}
                 barClassName="bg-foreground/70"
-                value={formatDuration(row.usage.totals.usedMs)}
+                value={formatDurationText(t, row.usage.totals.usedMs)}
                 valueClassName="tabular-nums"
               />
             ))}
-            <span className="text-[11px] text-muted-foreground">
-              막대는 전체 사용 시간 중 차지하는 몫이에요.
-            </span>
+            <span className="text-[11px] text-muted-foreground">{c.barShare}</span>
           </span>
         )}
         {unusedRows.length > 0 && (
           <span className={cn("mt-2 block text-xs font-semibold", LEVEL_STYLE.red.text)}>
-            {covered}일 동안 한 번도 안 연 구독:{" "}
-            {unusedRows.map((row) => row.usage.sub.name).join(" · ")}
+            {c.neverOpened(covered, unusedRows.map((row) => row.usage.sub.name).join(" · "))}
           </span>
         )}
       </>
@@ -123,22 +120,25 @@ export function UsageCard({
         {pricey.length > 0 ? (
           <span className="mt-2 block">
             <span className="block text-xl font-black tracking-tight">
-              아까운 구독 <span className={LEVEL_STYLE.red.text}>{pricey.length}개</span>
+              {c.priceyBefore}
+              <span className={LEVEL_STYLE.red.text}>{c.priceyCount(pricey.length)}</span>
             </span>
             <span className="block truncate text-xs text-muted-foreground">
-              {pricey.map((row) => row.usage.sub.name).join(" · ")} — 한 달{" "}
-              {won(
-                sumMyMonthlyKRW(
-                  pricey.map((row) => row.usage.sub),
-                  rate,
+              {c.priceyMonthly(
+                pricey.map((row) => row.usage.sub.name).join(" · "),
+                won(
+                  sumMyMonthlyKRW(
+                    pricey.map((row) => row.usage.sub),
+                    rate,
+                  ),
                 ),
               )}
             </span>
           </span>
         ) : (
           <span className="mt-2 block">
-            <span className="block text-xl font-black tracking-tight">모두 제값을 하고 있어요</span>
-            <span className="block text-xs text-muted-foreground">이 폰에서 잰 것 기준이에요</span>
+            <span className="block text-xl font-black tracking-tight">{c.allGood}</span>
+            <span className="block text-xs text-muted-foreground">{c.allGoodNote}</span>
           </span>
         )}
         <span className="mt-3 grid gap-2">
@@ -153,14 +153,12 @@ export function UsageCard({
                   unused ? 0 : Math.max(3, Math.min(100, (row.view.have30 / row.view.goal) * 100))
                 }
                 barClassName={LEVEL_STYLE[level].bar}
-                value={unused ? "안 씀" : LEVEL_STYLE[level].label}
+                value={unused ? u.unused : u.level[level]}
                 valueClassName={LEVEL_STYLE[level].text}
               />
             );
           })}
-          <span className="text-[11px] text-muted-foreground">
-            막대가 꽉 차면 &lsquo;잘 씀&rsquo;이에요.
-          </span>
+          <span className="text-[11px] text-muted-foreground">{c.fullBar}</span>
         </span>
       </>
     );
@@ -173,9 +171,9 @@ export function UsageCard({
       className="block w-full rounded-2xl border p-4 text-left hover:bg-muted/50"
     >
       <span className="flex items-baseline justify-between gap-3">
-        <span className="text-base font-bold">구독 사용 현황</span>
+        <span className="text-base font-bold">{u.title}</span>
         <span className="text-xs text-muted-foreground">
-          이 폰 · {covered > 0 && covered < 30 ? `기록 ${covered}일` : "최근 30일"}
+          {covered > 0 && covered < 30 ? c.recorded(covered) : c.recent}
         </span>
       </span>
       {body}
@@ -188,11 +186,11 @@ export function UsageCard({
           {covered === 0
             ? ""
             : pendingDays > 0
-              ? `가성비 평가까지 ${pendingDays}일`
-              : `사용 ${formatDuration(totalMs)} · ${totalOpens.toLocaleString("ko-KR")}회`}
+              ? c.pendingFooter(pendingDays)
+              : c.totalFooter(formatDurationText(t, totalMs), totalOpens.toLocaleString("ko-KR"))}
         </span>
         <span className="flex items-center gap-0.5 font-bold">
-          자세히 보기 <ChevronRight className="size-3.5" aria-hidden />
+          {c.more} <ChevronRight className="size-3.5" aria-hidden />
         </span>
       </span>
     </button>

@@ -9,6 +9,7 @@ import { packagesFor } from "@lib/usage/packages";
 import { AUTO_CHECKIN_DAYS, daysUntilAutoCheckIn } from "@lib/usage/auto-checkin";
 import { readAutoCheckIn, writeAutoCheckIn } from "@lib/usage/storage";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 import { Button } from "../../ui/button";
 import { AppBatchCheckIn } from "./AppBatchCheckIn";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
@@ -37,6 +38,7 @@ export function AppPhoneCheckInButton({
    */
   autoStatus?: boolean;
 }) {
+  const a = useT().usageMore.auto;
   const { status, history } = usePhoneUsage();
   const [autoOn, setAutoOn] = useState(readAutoCheckIn);
   const [accessOpen, setAccessOpen] = useState(false);
@@ -61,13 +63,13 @@ export function AppPhoneCheckInButton({
       {autoSwitch && status === "on" && (
         <div className="flex w-full items-start gap-3 rounded-2xl border px-3 py-2.5 md:max-w-md">
           <div className="min-w-0 flex-1 text-xs leading-relaxed">
-            <p className="font-bold">폰 기록으로 자동 체크인</p>
+            <p className="font-bold">{a.title}</p>
             <p className="text-muted-foreground">
               {!autoOn
-                ? "꺼져 있어요. 체크인은 직접 해 주세요."
+                ? a.off
                 : remaining === null || remaining > 0
-                  ? `폰 기록이 ${AUTO_CHECKIN_DAYS}일 쌓이면 알아서 해요.`
-                  : "최근 30일 폰 기록으로 알아서 체크인해요. 이 폰에서 안 쓴 구독과 직접 센 숫자가 더 큰 구독은 그대로 둬요."}
+                  ? a.waiting(AUTO_CHECKIN_DAYS)
+                  : a.on}
             </p>
             {/* 얼마나 쌓였는지를 막대로. 지금 바로 하는 길은 구독 관리의 상태 줄·버튼이 맡아 여기선 적지 않는다. */}
             {autoOn && remaining !== null && remaining > 0 && (
@@ -85,9 +87,9 @@ export function AppPhoneCheckInButton({
                 </span>
                 <p className="mt-1 flex justify-between text-[11.5px]">
                   <span className="text-muted-foreground tabular-nums">
-                    {AUTO_CHECKIN_DAYS - remaining} / {AUTO_CHECKIN_DAYS}일
+                    {a.progress(AUTO_CHECKIN_DAYS - remaining, AUTO_CHECKIN_DAYS)}
                   </span>
-                  <b>{remaining}일 남았어요</b>
+                  <b>{a.left(remaining)}</b>
                 </p>
               </>
             )}
@@ -96,7 +98,7 @@ export function AppPhoneCheckInButton({
             type="button"
             role="switch"
             aria-checked={autoOn}
-            aria-label="폰 기록으로 자동 체크인"
+            aria-label={a.title}
             onClick={() => {
               writeAutoCheckIn(!autoOn);
               setAutoOn(!autoOn);
@@ -149,20 +151,20 @@ export function AppPhoneCheckInButton({
             )}
           />
           <span className="min-w-0 flex-1 break-keep">
-            <b>자동 체크인 {autoOn ? "켜짐" : "꺼짐"}</b>
+            <b>{a.status(autoOn)}</b>
             <span className="text-muted-foreground">
               {" · "}
               {!autoOn
-                ? "직접 체크인해 주세요"
+                ? a.statusOff
                 : remaining === null
-                  ? `폰 기록이 ${AUTO_CHECKIN_DAYS}일 쌓이면 알아서 해요`
+                  ? a.statusWaiting(AUTO_CHECKIN_DAYS)
                   : remaining > 0
-                    ? `${remaining}일 뒤부터 알아서 해요`
-                    : "폰 기록으로 알아서 맞춰요"}
+                    ? a.statusSoon(remaining)
+                    : a.statusOn}
             </span>
           </span>
           <span className="flex shrink-0 items-center font-bold text-muted-foreground">
-            {autoOn ? "설정" : "켜기"}
+            {autoOn ? a.settings : a.turnOn}
             <ChevronRight className="size-3.5" aria-hidden />
           </span>
         </Link>
@@ -180,7 +182,8 @@ export function AppPhoneCheckInButton({
             setBatchOpen(true);
           }}
         >
-          <Smartphone className="size-4" aria-hidden />폰 기록으로 체크인
+          <Smartphone className="size-4" aria-hidden />
+          {a.batch}
         </Button>
       )}
       <AppUsageAccessSheet open={accessOpen} onClose={() => setAccessOpen(false)} />
