@@ -15,17 +15,17 @@ export function shortServiceName(preset: ServicePreset, locale: Locale = "ko"): 
 }
 
 /**
- * 등록한 구독의 화면 이름. 이름은 사용자 기록이라 바꾸지 않고, 서비스 목록에서 고른 그대로의 이름(한국어
- * `nameKo`나 영문 `nameEn`)일 때만 지금 언어의 이름으로 보인다. 사용자가 고쳐 적은 이름은 그대로다.
+ * 등록한 구독의 화면 이름. 이름은 사용자 기록이라 바꾸지 않고, 영어 화면에서 서비스 목록의 한국어 이름
+ * (`nameKo`) 그대로인 구독만 영문 이름으로 보인다. 한국어 화면은 적힌 그대로다 — 'Netflix'처럼 영문으로 적은
+ * 이름을 '넷플릭스'로 바꾸면, 사용자가 적은 이름이 화면에서 사라진다. 사용자가 고쳐 적은 이름도 그대로다.
  */
 export function subscriptionName(
   sub: { name: string; cancelUrl?: string },
   locale: Locale = "ko",
 ): string {
+  if (locale !== "en") return sub.name;
   const preset = findPresetForSubscription(sub);
-  if (!preset) return sub.name;
-  const name = sub.name.trim();
-  if (name !== preset.nameKo && name !== preset.nameEn) return sub.name;
+  if (!preset || sub.name.trim() !== preset.nameKo) return sub.name;
   return presetName(preset, locale);
 }
 
