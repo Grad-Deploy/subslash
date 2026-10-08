@@ -13,7 +13,7 @@ import {
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage, usePhoneUsageStore } from "@hooks/usePhoneUsage";
 import { addDays, dayKey, lastDays } from "@lib/usage/history";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
 import { median, subUsage, type SubUsage } from "@lib/usage/value";
 import { Button } from "../../ui/button";
@@ -61,6 +61,7 @@ export function AppUnusedAlerts({
   usageLogs: UsageLog[];
   onCancelGuide: (subscriptionId: string) => void;
 }) {
+  const names = useServiceNames();
   const t = useT();
   const al = t.usageMore.alerts;
   const rate = useExchangeRate();
@@ -88,7 +89,7 @@ export function AppUnusedAlerts({
       list.push({
         kind: "unused",
         usage: u,
-        title: al.unusedTitle(u.sub.name, u.totals.coveredDays),
+        title: al.unusedTitle(names.sub(u.sub), u.totals.coveredDays),
         reason: al.unusedReason(days, amount),
       });
     }
@@ -106,7 +107,7 @@ export function AppUnusedAlerts({
       list.push({
         kind: "pricey",
         usage: u,
-        title: al.priceyTitle(u.sub.name, won(u.hourlyKRW as number)),
+        title: al.priceyTitle(names.sub(u.sub), won(u.hourlyKRW as number)),
         reason: al.priceyReason(
           u.totals.coveredDays,
           formatDurationText(t, u.totals.ms),
@@ -124,7 +125,7 @@ export function AppUnusedAlerts({
     ).length;
 
     return { alerts: list, needCheckIn: need };
-  }, [t, al, subscriptions, usageLogs, history, installed, snooze, rate, now, today]);
+  }, [t, al, names, subscriptions, usageLogs, history, installed, snooze, rate, now, today]);
 
   if (status !== "on" || (alerts.length === 0 && needCheckIn === 0)) return null;
 

@@ -5,7 +5,7 @@ import { ChevronRight } from "lucide-react";
 import { sumMyMonthlyKRW } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useExchangeRate } from "@hooks/useExchangeRate";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
 import { LEVEL_STYLE, compareValue, type MetricView, type SubUsage } from "@lib/usage/value";
 import { isUnused } from "./AppUsageLine";
@@ -52,6 +52,7 @@ export function UsageCard({
   rows: { usage: SubUsage; view: MetricView }[];
   onOpen: () => void;
 }) {
+  const names = useServiceNames();
   const t = useT();
   const u = t.usageApp;
   const c = u.card;
@@ -104,7 +105,7 @@ export function UsageCard({
         )}
         {unusedRows.length > 0 && (
           <span className={cn("mt-2 block text-xs font-semibold", LEVEL_STYLE.red.text)}>
-            {c.neverOpened(covered, unusedRows.map((row) => row.usage.sub.name).join(" · "))}
+            {c.neverOpened(covered, unusedRows.map((row) => names.sub(row.usage.sub)).join(" · "))}
           </span>
         )}
       </>
@@ -125,7 +126,7 @@ export function UsageCard({
             </span>
             <span className="block truncate text-xs text-muted-foreground">
               {c.priceyMonthly(
-                pricey.map((row) => row.usage.sub.name).join(" · "),
+                pricey.map((row) => names.sub(row.usage.sub)).join(" · "),
                 won(
                   sumMyMonthlyKRW(
                     pricey.map((row) => row.usage.sub),

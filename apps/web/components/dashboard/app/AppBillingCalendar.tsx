@@ -5,7 +5,7 @@ import { CalendarDays, ChevronRight } from "lucide-react";
 import { formatDday, getDaysUntilBillingFor, isInTrial, type Subscription } from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { cn } from "@lib/utils";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { AppSheet } from "../../settings/app/AppSheet";
 import { BillingCalendar } from "../BillingCalendar";
 
@@ -90,6 +90,7 @@ export function AppCalendarButton() {
  * 가까운 결제를 한 줄로 남기고 누르면 같은 달력을 연다.
  */
 export function AppNextBilling() {
+  const names = useServiceNames();
   const now = useMemo(() => new Date(), []);
   const c = useT().overview.calendar;
   const { active, next, leftThisMonth } = useUpcoming(now);
@@ -107,7 +108,7 @@ export function AppNextBilling() {
           <span className="block truncate text-sm font-bold">
             {next ? (
               <>
-                {c.next} · {next.sub.name}{" "}
+                {c.next} · {names.sub(next.sub)}{" "}
                 <span
                   className={cn(
                     next.days <= SOON_DAYS ? "text-destructive" : "text-muted-foreground",

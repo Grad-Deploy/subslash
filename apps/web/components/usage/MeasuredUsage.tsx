@@ -12,7 +12,7 @@ import { useAccountDeviceUsage } from "@hooks/useAccountDeviceUsage";
 import { isMeasurableService } from "@lib/device-usage";
 import { IS_APP_BUILD } from "@lib/platform";
 import type { DeviceUsageView } from "@lib/device-usage-server";
-import { useT, type Messages } from "@lib/i18n";
+import { useT, type Messages, useServiceNames } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
 
 /** 이 구독을 잴 수 있으면 서비스 id. 앱으로 쓰지 않는 구독(멤버십 등)은 재지 않는다. */
@@ -67,6 +67,7 @@ function PartialNote({ view }: { view: DeviceUsageView }) {
  * 최소치라, 체크인(사용자가 센 횟수)을 대신하지 않는다.
  */
 export function MeasuredUsageSection({ subscriptions }: { subscriptions: Subscription[] }) {
+  const names = useServiceNames();
   const t = useT();
   const m = t.measured;
   const { available, view, error } = useAccountDeviceUsage();
@@ -121,7 +122,7 @@ export function MeasuredUsageSection({ subscriptions }: { subscriptions: Subscri
           return (
             <li key={sub.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
               <div className="min-w-0">
-                <p className="truncate font-semibold">{sub.name}</p>
+                <p className="truncate font-semibold">{names.sub(sub)}</p>
                 {usage.handoffCount > 0 && (
                   <p className="text-xs text-muted-foreground">{m.handoff(usage.handoffCount)}</p>
                 )}

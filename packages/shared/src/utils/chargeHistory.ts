@@ -1,4 +1,5 @@
 import type { ChargeRecord, Currency, Subscription } from "../types";
+import { serviceNameKey } from "../constants/services";
 
 /**
  * 결제 메일에서 모은 결제 기록(`Subscription.chargeHistory`).
@@ -62,7 +63,7 @@ export function isSameService(
   a: { name: string; currency: Currency },
   b: { name: string; currency: Currency },
 ): boolean {
-  return a.name.trim().toLowerCase() === b.name.trim().toLowerCase() && a.currency === b.currency;
+  return serviceNameKey(a.name) === serviceNameKey(b.name) && a.currency === b.currency;
 }
 
 /**

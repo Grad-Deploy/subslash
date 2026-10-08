@@ -11,7 +11,7 @@ import {
   type Subscription,
   metricForSubscription,
 } from "@subslash/shared";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { RiskBadge } from "@components/dashboard/RiskBadge";
 import { useStoredFlag } from "@hooks/useStoredFlag";
@@ -27,6 +27,7 @@ interface FirstCheckInCardProps {
  * 묻는다. 계산은 스토어의 checkIn과 같게 한 달치 내 몫(getMyMonthlyShareAmount)으로 나눈다.
  */
 export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardProps) {
+  const names = useServiceNames();
   const t = useT();
   const f = t.appSmall.first;
   const [count, setCount] = useState<number | null>(null);
@@ -46,7 +47,10 @@ export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardPro
     .join(" · ");
 
   return (
-    <section className="rounded-2xl border bg-card p-4" aria-label={f.label(subscription.name)}>
+    <section
+      className="rounded-2xl border bg-card p-4"
+      aria-label={f.label(names.sub(subscription))}
+    >
       <div className="flex items-center gap-2.5">
         <ServiceLogo
           name={subscription.name}
@@ -56,7 +60,7 @@ export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardPro
           size={34}
         />
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold">{subscription.name}</p>
+          <p className="truncate text-sm font-bold">{names.sub(subscription)}</p>
           <p className="text-[11.5px] text-muted-foreground tabular-nums">{planLine}</p>
         </div>
       </div>

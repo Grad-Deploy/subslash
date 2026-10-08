@@ -20,7 +20,7 @@ import type { AutoImportModalProps } from "../AutoImportModal";
 import { SAMPLE_NAVER_RECEIPT, SAMPLE_SMS } from "../samples";
 import { cycleText } from "../cycleText";
 import { useOverlayLock } from "@hooks/useOverlayLock";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 
 function Status({ item }: { item: DiscoveredSubscription }) {
   const a = useT().importing.app;
@@ -53,6 +53,7 @@ export function AppAutoImportModal({
   initialResultsNote,
   onRegistered,
 }: AutoImportModalProps) {
+  const names = useServiceNames();
   const t = useT();
   const a = t.importing.app;
   const isClient = useIsClient();
@@ -247,7 +248,7 @@ export function AppAutoImportModal({
                             item.isCanceled && "line-through",
                           )}
                         >
-                          {item.name}
+                          {names.sub(item)}
                         </span>
                         <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                           <Status item={item} />

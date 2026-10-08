@@ -85,15 +85,23 @@ export const PACKAGE_LABELS: Readonly<Record<string, string>> = {
   "com.coupang.mobile.play": "쿠팡플레이",
 };
 
+/** 영어 화면의 앱 이름. 앱 스토어에 올라간 영문 이름이다. */
+export const PACKAGE_LABELS_EN: Readonly<Record<string, string>> = {
+  "com.google.android.youtube": "YouTube",
+  "com.google.android.apps.youtube.music": "YouTube Music",
+  "com.coupang.mobile.play": "Coupang Play",
+};
+
 /** 구독의 앱별 사용 시간을 보여 줄 줄들. 앱이 하나뿐이면 빈 배열(나눌 것이 없다). */
 export function packageBreakdown(
   packages: readonly string[],
   byPackage: Record<string, { usedMs: number; opens: number }>,
+  locale: "ko" | "en" = "ko",
 ): { pkg: string; label: string; usedMs: number; opens: number }[] {
   if (packages.length < 2) return [];
   return packages.map((pkg) => ({
     pkg,
-    label: PACKAGE_LABELS[pkg] ?? pkg,
+    label: (locale === "en" ? PACKAGE_LABELS_EN[pkg] : undefined) ?? PACKAGE_LABELS[pkg] ?? pkg,
     usedMs: byPackage[pkg]?.usedMs ?? 0,
     opens: byPackage[pkg]?.opens ?? 0,
   }));

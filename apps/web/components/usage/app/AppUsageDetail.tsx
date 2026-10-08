@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import { Smartphone } from "lucide-react";
 import { metricForSubscription, type Subscription } from "@subslash/shared";
 import { cn } from "@lib/utils";
-import { useT, type Messages } from "@lib/i18n";
+import { useLocale, useT, type Messages } from "@lib/i18n";
 import { formatDurationPreciseText, formatDurationText } from "@lib/i18n/duration";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
@@ -52,6 +52,7 @@ function bars(
 export function AppUsageDetail({ subscription }: { subscription: Subscription }) {
   const t = useT();
   const u = t.usageApp;
+  const locale = useLocale();
   const rate = useExchangeRate();
   const { status, history, installed } = usePhoneUsage();
   const [range, setRange] = useState<UsageRange>("week");
@@ -110,9 +111,9 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
           </div>
 
           {/* 앱이 여럿인 구독(유튜브 프리미엄 = 유튜브 + 유튜브 뮤직)은 앱마다 나눠 보여 준다. */}
-          {packageBreakdown(packages, period.totals.byPackage).length > 0 && (
+          {packageBreakdown(packages, period.totals.byPackage, locale).length > 0 && (
             <ul className="space-y-1 rounded-xl bg-secondary/50 px-3 py-2 text-xs">
-              {packageBreakdown(packages, period.totals.byPackage).map((row) => (
+              {packageBreakdown(packages, period.totals.byPackage, locale).map((row) => (
                 <li key={row.pkg} className="flex justify-between gap-3">
                   <span className="font-semibold">{row.label}</span>
                   <span className="tabular-nums text-muted-foreground">

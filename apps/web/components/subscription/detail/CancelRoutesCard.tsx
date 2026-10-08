@@ -10,7 +10,7 @@ import {
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { copyText, openExternal } from "@lib/native";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { Button, WRAPPING_BUTTON } from "../../ui/button";
 
 /** 해지 경로 안내 — 가입한 계정, 결제 수단, 해지하러 갈 곳, 저장해 둔 단계를 한곳에 모은다. */
@@ -23,6 +23,7 @@ export function CancelRoutesCard({
   onMessage: (message: string) => void;
   onOpenGuide: () => void;
 }) {
+  const names = useServiceNames();
   const t = useT().detail;
   const paymentMethod = PAYMENT_METHOD_OPTIONS.find((p) => p.value === sub.paymentMethod);
   const cancelUrlKind = getCancelUrlKind(sub.cancelUrl);
@@ -102,8 +103,8 @@ export function CancelRoutesCard({
                     ),
                   )
                 : cancelUrlKind === "direct"
-                  ? t.link.cancelPage(sub.name)
-                  : t.link.open(sub.name)}
+                  ? t.link.cancelPage(names.sub(sub))
+                  : t.link.open(names.sub(sub))}
             </Button>
             {route.kind !== "direct" && (
               <p className="text-[11px] text-muted-foreground text-center">

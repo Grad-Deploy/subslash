@@ -37,13 +37,14 @@ import { useIsClient } from "@hooks/useIsClient";
 import { Spinner } from "../../components/ui/spinner";
 import { Receipt, ShieldCheck } from "lucide-react";
 import { useToast } from "@hooks/useToast";
-import { useLatestT, useT } from "@lib/i18n";
+import { useLatestT, useT, useServiceNames } from "@lib/i18n";
 
 /**
  * 내 구독. 위에서부터 제목·불러오기, 구독 중/해지 완료 탭, 분류·보기 방식, 목록이고, 넓은 화면(xl)에서는
  * 목록 오른쪽에 고른 구독의 상세 칸을 둔다. 칸마다의 모양은 components/subscription/list에 있다.
  */
 export default function SubscriptionsPage() {
+  const names = useServiceNames();
   const {
     subscriptions,
     usageLogs,
@@ -123,7 +124,7 @@ export default function SubscriptionsPage() {
     const sub = findSub(id);
     if (!sub) return;
     killSubscription(sub.id);
-    showToast(tRef.current.subs.page.killRecorded(sub.name));
+    showToast(tRef.current.subs.page.killRecorded(names.sub(sub)));
   };
 
   const askConfirm = (type: "revive" | "delete") => (id: string) => {
@@ -138,7 +139,7 @@ export default function SubscriptionsPage() {
     const { type, sub } = confirmAction;
     if (type === "revive") {
       reviveSubscription(sub.id);
-      showToast(tRef.current.subs.page.revived(sub.name));
+      showToast(tRef.current.subs.page.revived(names.sub(sub)));
     } else {
       deleteSubscription(sub.id);
       showToast(tRef.current.subs.page.deleted);

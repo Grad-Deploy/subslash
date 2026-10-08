@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import type { ServicePreset } from "@subslash/shared";
+import { presetName, serviceIdName, shortServiceName, subscriptionName } from "../service-name";
 import { messages, type Messages } from "./messages";
 import { useLocale } from "./locale";
 
@@ -27,4 +29,21 @@ export function useLatestT() {
     ref.current = t;
   }, [t]);
   return ref;
+}
+
+/**
+ * 구독·서비스 이름을 지금 언어로. 서비스 목록에서 고른 이름 그대로인 구독만 바꾸고, 사용자가 적은 이름은
+ * 그대로 둔다(lib/service-name). `const name = useServiceNames(); name.sub(sub)`처럼 쓴다.
+ */
+export function useServiceNames() {
+  const locale = useLocale();
+  return useMemo(
+    () => ({
+      sub: (sub: { name: string; cancelUrl?: string }) => subscriptionName(sub, locale),
+      preset: (preset: ServicePreset) => presetName(preset, locale),
+      short: (preset: ServicePreset) => shortServiceName(preset, locale),
+      id: (serviceId: string) => serviceIdName(serviceId, locale),
+    }),
+    [locale],
+  );
 }

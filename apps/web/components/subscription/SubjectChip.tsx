@@ -1,5 +1,6 @@
 "use client";
 
+import { useServiceNames } from "@lib/i18n";
 import React from "react";
 import type { Subscription } from "@subslash/shared";
 import { ServiceLogo } from "./ServiceLogo";
@@ -13,6 +14,7 @@ export function SubjectChip({
 }: {
   sub: Pick<Subscription, "name" | "cancelUrl" | "iconUrl" | "iconColor">;
 }) {
+  const names = useServiceNames();
   return (
     <span className="inline-flex max-w-full items-center gap-2 rounded-xl bg-secondary px-2.5 py-1.5 text-sm font-bold">
       <ServiceLogo
@@ -22,7 +24,7 @@ export function SubjectChip({
         fallbackColor={sub.iconColor}
         size={20}
       />
-      <span className="truncate">{sub.name}</span>
+      <span className="truncate">{names.sub(sub)}</span>
     </span>
   );
 }

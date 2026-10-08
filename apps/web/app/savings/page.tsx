@@ -34,7 +34,7 @@ import { Spinner } from "../../components/ui/spinner";
 import { PiggyBank } from "lucide-react";
 import { copyText } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { rewardHeadline } from "@lib/i18n/savings-text";
 import dynamic from "next/dynamic";
 
@@ -50,6 +50,7 @@ export default function SavingsPage() {
 }
 
 function SavingsDashboard() {
+  const names = useServiceNames();
   const router = useRouter();
   const t = useT();
   const p = t.savings.page;
@@ -91,7 +92,7 @@ function SavingsDashboard() {
       annual: annualSavings,
       count: killedSubs.length,
       verifiedCount: tiers.verifiedCount,
-      names: killedSubs.map((sub) => sub.name),
+      names: killedSubs.map((sub) => names.sub(sub)),
     });
     return webUrl(`/savings/share?${params.toString()}`);
   };
@@ -221,7 +222,7 @@ function SavingsDashboard() {
                     />
                     <div className="min-w-0">
                       <h4 className="font-bold text-sm line-through text-muted-foreground">
-                        {sub.name}
+                        {names.sub(sub)}
                       </h4>
                       <p className="text-xs text-emerald-600 font-medium">
                         {p.annualSaving(formatKRW(getMyAnnualAmountKRW(sub, rate)))}

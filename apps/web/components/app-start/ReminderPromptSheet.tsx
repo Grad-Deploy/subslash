@@ -13,7 +13,7 @@ import {
 } from "@lib/native-reminders";
 import { subscriptionDetailHref } from "@lib/routes";
 import { cn } from "@lib/utils";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 
 interface ReminderPromptSheetProps {
   open: boolean;
@@ -36,6 +36,7 @@ export function ReminderPromptSheet({
   subscription,
   onEnabled,
 }: ReminderPromptSheetProps) {
+  const names = useServiceNames();
   const t = useT();
   const p = t.reminders.prompt;
   const router = useRouter();
@@ -134,7 +135,7 @@ export function ReminderPromptSheet({
 
         {billingUnknown && subscription && (
           <p className="mt-3 rounded-xl bg-secondary px-3 py-2 text-xs leading-relaxed">
-            {p.unknownBilling(subscription.name)}{" "}
+            {p.unknownBilling(names.sub(subscription))}{" "}
             <button
               type="button"
               className="font-bold underline underline-offset-2"

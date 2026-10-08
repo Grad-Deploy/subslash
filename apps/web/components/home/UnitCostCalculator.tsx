@@ -8,7 +8,7 @@ import {
   type RiskLevel,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
-import { useT, type Messages } from "@lib/i18n";
+import { useLocale, useT, type Messages } from "@lib/i18n";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { shortServiceName } from "@lib/service-name";
 import { SAMPLES, sampleName, type Sample } from "./samples";
@@ -42,6 +42,7 @@ function verdict(
  */
 export function UnitCostCalculator() {
   const c = useT().landing.calc;
+  const locale = useLocale();
   const [selectedId, setSelectedId] = useState<string>(SAMPLES[0]?.preset.id ?? "");
   const [uses, setUses] = useState(4);
 
@@ -68,7 +69,7 @@ export function UnitCostCalculator() {
               )}
             >
               <ServiceLogo presetId={sample.preset.id} name={sample.preset.nameKo} size={22} />
-              {shortServiceName(sample.preset)}
+              {shortServiceName(sample.preset, locale)}
             </button>
           );
         })}
@@ -118,6 +119,7 @@ function HeroResult({
   onUsesChange: (n: number) => void;
 }) {
   const c = useT().landing.calc;
+  const locale = useLocale();
   const { amount, currency } = sample;
   const costPerUse = calculateCostPerUse(amount, uses);
   const risk = getRiskLevel(costPerUse, amount, uses);
@@ -128,7 +130,7 @@ function HeroResult({
   return (
     <>
       <p className="mt-7 text-base font-medium text-foreground sm:text-[17px]">
-        {c.line(sampleName(sample), amountText)}
+        {c.line(sampleName(sample, locale), amountText)}
       </p>
       <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{c.basis}</p>
 
