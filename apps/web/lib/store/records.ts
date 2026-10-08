@@ -90,7 +90,7 @@ export function buildCheckInLog(
   const quantity = clampQuantity(metric, usageCount);
   // 무료 요금제로 충분했는지의 답은 묻는 구독(쓴 날로 재는, 무료 요금제가 있는 서비스)에만 쓴다.
   const freeTier = metric === "days" && asksFreeTier(sub) ? (sub.freeTierAnswer ?? null) : null;
-  const { costPerUse, riskLevel, shockMessage } = evaluateMetric(
+  const { costPerUse, riskLevel, outcome } = evaluateMetric(
     metric,
     sub.name,
     monthlyShare,
@@ -114,7 +114,7 @@ export function buildCheckInLog(
     ...(options?.source ? { source: options.source } : {}),
     ...(freeTier ? { freeTier } : {}),
   };
-  return { log, response: { shockMessage, riskLevel, costPerUse } };
+  return { log, response: { outcome, riskLevel, costPerUse } };
 }
 
 /** 가장 최근 체크인이 빨강인지. 체크인이 없으면 위험으로 보지 않는다(모름). */

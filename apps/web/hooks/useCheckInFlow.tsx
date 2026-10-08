@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import type { CheckInResponse, Subscription } from "@subslash/shared";
 import { useStore } from "@lib/store";
+import { useLatestT } from "@lib/i18n";
 import { markReminderPrompted, shouldPromptReminder } from "@lib/reminder-prompt";
 import { useLocalReminderSettings } from "./useLocalReminders";
 import { CheckInModal } from "../components/subscription/CheckInModal";
@@ -21,6 +22,7 @@ type Toast = (message: string) => void;
  * 특정 구독 없이 묻는다.
  */
 export function useReminderPrompt(showToast: Toast) {
+  const tRef = useLatestT();
   const [reminderSettings] = useLocalReminderSettings();
   const [subscription, setSubscription] = useState<Subscription | null | undefined>(undefined);
   // 체크인·불러오기 창이 닫히면 물을 구독. false면 묻지 않는다(창 위에 겹쳐 띄우지 않으려고 미룬다).
@@ -64,7 +66,7 @@ export function useReminderPrompt(showToast: Toast) {
         onClose={() => setSubscription(undefined)}
         onEnabled={() => {
           setSubscription(undefined);
-          showToast("결제 알림을 켰어요. 몇 초 뒤 시험 알림이 떠요.");
+          showToast(tRef.current.checkin.flow.reminderOn);
         }}
       />
     ),
@@ -86,6 +88,7 @@ export function useCheckInFlow({
   reminder: ReminderPrompt;
   onKill: (id: string) => void;
 }) {
+  const tRef = useLatestT();
   const { subscriptions, usageLogs, checkIn } = useStore();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [result, setResult] = useState<CheckInResponse | undefined>(undefined);
@@ -102,10 +105,10 @@ export function useCheckInFlow({
     if (usageLogs.length === 0) reminder.askLater(subscription);
     try {
       setResult(checkIn(subscription.id, count));
-      showToast(`${subscription.name} 체크인 완료`);
+      showToast(tRef.current.checkin.flow.done(subscription.name));
     } catch (error) {
       console.error(error);
-      showToast("체크인하지 못했어요. 다시 시도해 주세요.");
+      showToast(tRef.current.checkin.flow.failed);
     }
   };
 

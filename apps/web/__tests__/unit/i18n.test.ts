@@ -40,14 +40,19 @@ function shape(tree: unknown, prefix = ""): Record<string, string> {
  * 함수 문구를 아무 값으로 불러 빈 문구가 아닌지 본다. 인자는 글자 "2"로 넘긴다 — 숫자 인자(`n - 1`)와 글자
  * 인자(`label.toLowerCase()`)를 함께 받는 값이다.
  */
-function render(tree: unknown): string[] {
+function render(tree: unknown, path = ""): string[] {
   if (typeof tree === "string") return [tree];
   if (typeof tree === "function") {
     const args = Array.from({ length: tree.length }, () => "2");
     return [String((tree as (...a: unknown[]) => unknown)(...args))];
   }
-  return Object.values(tree as Record<string, unknown>).flatMap(render);
+  return Object.entries(tree as Record<string, unknown>)
+    .filter(([key, value]) => !(value === "" && OPTIONAL_TEXT.has(key)))
+    .flatMap(([key, value]) => render(value, path ? path + "." + key : key));
 }
+
+/** 없을 수 있는 칸(질문 아래 힌트, 단가 앞말)은 빈 글자로 둔다. */
+const OPTIONAL_TEXT = new Set(["hint", "perUnit"]);
 
 describe("문구", () => {
   it("영어는 한국어와 같은 칸을 같은 모양으로 갖는다", () => {

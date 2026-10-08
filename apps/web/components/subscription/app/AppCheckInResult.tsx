@@ -10,24 +10,22 @@ import {
   getMyMonthlyShareAmount,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 import { Button, WRAPPING_BUTTON } from "../../ui/button";
 
 /** 계산서와 같은 말을 쓴다(뽕 뽑은 구독 / 쉬어가도 될 구독). 색만으로 말하지 않게 늘 글자를 붙인다. */
-const TONE: Record<RiskLevel, { label: string; dot: string; bar: string; text: string }> = {
+const TONE: Record<RiskLevel, { dot: string; bar: string; text: string }> = {
   green: {
-    label: "뽕 뽑는 중",
     dot: "bg-emerald-500 dark:bg-emerald-400",
     bar: "bg-emerald-500 dark:bg-emerald-400",
     text: "text-emerald-700 dark:text-emerald-400",
   },
   yellow: {
-    label: "애매해요",
     dot: "bg-amber-500 dark:bg-amber-400",
     bar: "bg-amber-500 dark:bg-amber-400",
     text: "text-amber-700 dark:text-amber-400",
   },
   red: {
-    label: "쉬어가도 될 구독",
     dot: "bg-red-500 dark:bg-red-400",
     bar: "bg-red-500 dark:bg-red-400",
     text: "text-red-700 dark:text-red-400",
@@ -60,7 +58,9 @@ export function AppCheckInResult({
   fallbackLink?: { label: string; open: () => void };
   onClose: () => void;
 }) {
+  const r = useT().checkin.appResult;
   const tone = TONE[result.riskLevel];
+  const toneLabel = { green: r.green, yellow: r.yellow, red: r.red }[result.riskLevel];
   const monthly = getMyMonthlyShareAmount(subscription);
   const money = (amount: number) => spaced(formatCurrency(amount, subscription.currency));
   const breakEven = getBreakEvenInfo(monthly, count);
@@ -69,12 +69,12 @@ export function AppCheckInResult({
 
   const note =
     count === 0
-      ? `최근 30일 동안 안 썼어요. 쉬어가면 한 달 ${money(monthly)}를 아껴요.`
+      ? r.unusedNote(money(monthly))
       : result.riskLevel === "red"
-        ? `쉬어가면 한 달 ${money(monthly)}를 아껴요.`
+        ? r.redNote(money(monthly))
         : remaining > 0
-          ? `${remaining}번 더 쓰면 본전이에요.`
-          : "낸 돈 이상으로 쓰고 있어요.";
+          ? r.remainingNote(remaining)
+          : r.doneNote;
 
   const suggestCancel = result.riskLevel !== "green";
 
@@ -83,22 +83,20 @@ export function AppCheckInResult({
       <div className="space-y-1 text-center">
         <p className={cn("inline-flex items-center gap-1.5 text-sm font-bold", tone.text)}>
           <span className={cn("size-2 rounded-full", tone.dot)} aria-hidden />
-          {tone.label}
+          {toneLabel}
         </p>
-        <p className="text-xs text-muted-foreground">1회당</p>
+        <p className="text-xs text-muted-foreground">{r.perUse}</p>
         <p className="text-[40px] leading-tight font-black tracking-tight tabular-nums">
           {count === 0 ? "—" : money(result.costPerUse)}
         </p>
-        <p className="text-xs text-muted-foreground">
-          최근 30일 {count}회 · 한 달 {money(monthly)}
-        </p>
+        <p className="text-xs text-muted-foreground">{r.summary(count, money(monthly))}</p>
       </div>
 
       <div className="space-y-2 rounded-2xl bg-secondary/60 p-4">
         <div className="flex items-baseline justify-between text-xs">
-          <span className="font-bold">본전까지</span>
+          <span className="font-bold">{r.toBreakEven}</span>
           <span className="text-muted-foreground tabular-nums">
-            {Math.min(count, breakEven.breakEvenUsage)} / {breakEven.breakEvenUsage}회
+            {r.progress(Math.min(count, breakEven.breakEvenUsage), breakEven.breakEvenUsage)}
           </span>
         </div>
         <div
@@ -107,7 +105,7 @@ export function AppCheckInResult({
           aria-valuemin={0}
           aria-valuemax={breakEven.breakEvenUsage}
           aria-valuenow={Math.min(count, breakEven.breakEvenUsage)}
-          aria-label="본전까지 사용 횟수"
+          aria-label={r.progressLabel}
         >
           <div className={cn("h-full rounded-full", tone.bar)} style={{ width: `${progress}%` }} />
         </div>
@@ -121,7 +119,7 @@ export function AppCheckInResult({
             className="h-12 w-full rounded-xl text-base font-bold"
             onClick={onCancelGuide}
           >
-            해지 안내 보기
+            {r.cancelGuide}
           </Button>
         ) : suggestCancel && fallbackLink ? (
           <Button
@@ -137,7 +135,7 @@ export function AppCheckInResult({
           className={cn("w-full", !suggestCancel && "h-12 rounded-xl text-base font-bold")}
           onClick={onClose}
         >
-          {suggestCancel ? "계속 쓸게요" : "확인"}
+          {suggestCancel ? r.keep : r.confirm}
         </Button>
       </div>
     </div>

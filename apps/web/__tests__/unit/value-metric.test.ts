@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { messages } from "@lib/i18n/messages";
+import { describeCheckInOutcome } from "@lib/i18n/check-in-outcome";
 import {
   asksFreeTier,
   clampQuantity,
@@ -26,6 +28,10 @@ function sub(overrides: Partial<Subscription>): Subscription {
     ...overrides,
   } as Subscription;
 }
+
+/** 한국어 화면에 보이는 체크인 결과 문장. */
+const shock = (result: { outcome: Parameters<typeof describeCheckInOutcome>[1] }) =>
+  describeCheckInOutcome(messages.ko, result.outcome);
 
 describe("metricForSubscription", () => {
   it("서비스 목록의 서비스는 그 서비스의 지표로 잰다", () => {
@@ -94,12 +100,12 @@ describe("무료 요금제로 충분했는지", () => {
 
   it("무료로 내려도 된다는 말은 쓴 날이 있고 무료로 충분했을 때만 붙인다", () => {
     const enough = evaluateMetric("days", "ChatGPT Plus", 29000, 20, "KRW", null, "enough");
-    expect(enough.shockMessage).toContain("무료로 내려도 돼요");
+    expect(shock(enough)).toContain("무료로 내려도 돼요");
     expect(
-      evaluateMetric("days", "ChatGPT Plus", 29000, 0, "KRW", null, "enough").shockMessage,
+      shock(evaluateMetric("days", "ChatGPT Plus", 29000, 0, "KRW", null, "enough")),
     ).not.toContain("무료로 내려도");
     expect(
-      evaluateMetric("days", "ChatGPT Plus", 29000, 20, "KRW", null, "needed").shockMessage,
+      shock(evaluateMetric("days", "ChatGPT Plus", 29000, 20, "KRW", null, "needed")),
     ).not.toContain("무료로 내려도");
   });
 });
@@ -109,7 +115,7 @@ describe("evaluateMetric", () => {
     const result = evaluateMetric("hours", "멜론", 10000, 20, "KRW");
     expect(result.costPerUse).toBe(500);
     expect(result.riskLevel).toBe("green");
-    expect(result.shockMessage).toContain("한 시간에 ₩500");
+    expect(shock(result)).toContain("한 시간에 ₩500");
   });
 
   it("범위를 넘는 값은 자른다", () => {

@@ -8,8 +8,6 @@ import {
   type ValueMetric,
   clampQuantity,
   calculateCostPerUse,
-  formatStorageGB,
-  formatUnitCost,
   getMyMonthlyShareAmount,
   storagePlanFit,
   asksFreeTier,
@@ -18,6 +16,9 @@ import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { useT } from "@lib/i18n";
+import { unitCostText } from "@lib/i18n/check-in-text";
+import { unitCostPart } from "@subslash/shared";
 import { FreeTierQuestion } from "./FreeTierQuestion";
 import { GoogleStorageCheck } from "./GoogleStorageCheck";
 
@@ -27,14 +28,6 @@ const AppPhoneMetricHint = IS_APP_BUILD
       ssr: false,
     })
   : null;
-
-/** 빠른 선택 버튼의 글자. 혜택은 '1만'처럼 줄인다. */
-function presetLabel(metric: ValueMetric, value: number): string {
-  if (metric === "benefit") {
-    return value === 0 ? "0원" : value % 10000 === 0 ? `${value / 10000}만` : `${value / 1000}천`;
-  }
-  return `${value}${METRIC_SPECS[metric].unit}`;
-}
 
 /**
  * 횟수가 아닌 것으로 재는 구독의 체크인 입력(쓴 날·시간·혜택 금액·용량 %). 웹과 앱이 같이 쓴다. 횟수는
@@ -55,22 +48,27 @@ export function MetricQuantityInput({
   onChange: (quantity: number) => void;
 }) {
   const spec = METRIC_SPECS[metric];
+  const t = useT();
+  const c = t.checkin;
+  const text = c.metric[metric];
+  /** 빠른 선택 버튼의 글자. 혜택은 '1만'처럼 줄인다. */
+  const presetLabel = (preset: number) =>
+    metric === "benefit" ? c.input.presetBenefit(preset) : c.input.presetLabel(preset, text.unit);
   const quantity = value ?? 0;
   const step = metric === "benefit" ? 1000 : 1;
   const monthly = getMyMonthlyShareAmount(subscription);
   const unitCost =
     value === null
       ? null
-      : formatUnitCost(
-          metric,
-          calculateCostPerUse(monthly, quantity),
-          quantity,
+      : unitCostText(
+          t,
+          unitCostPart(metric, calculateCostPerUse(monthly, quantity), quantity),
           subscription.currency,
         );
   // 저장 공간: 요금제를 알면 비율을 용량으로 바꿔 옆에 보여 준다. 설정 화면에는 GB로 나오기 때문이다.
   const storageFit = metric === "storage" ? storagePlanFit(subscription, quantity) : null;
   const storageLine = storageFit
-    ? `${storageFit.planName} 중 ${formatStorageGB(storageFit.usedGB)}`
+    ? c.input.storageOf(storageFit.planName, c.input.storageGB(storageFit.usedGB))
     : null;
   // 사용자가 손댄 뒤에는 폰 기록으로 덮지 않는다.
   const touched = useRef(false);
@@ -106,11 +104,11 @@ export function MetricQuantityInput({
             value === null && "text-muted-foreground/50",
           )}
         >
-          {metric === "benefit" ? quantity.toLocaleString("ko-KR") : quantity}
-          <span className="ml-0.5 text-[15px] font-extrabold">{spec.unit}</span>
+          {metric === "benefit" ? quantity.toLocaleString(c.input.benefitNumberLocale) : quantity}
+          <span className="ml-0.5 text-[15px] font-extrabold">{text.unit}</span>
         </p>
         <p className="min-h-4 text-xs text-muted-foreground">
-          {value === null ? "골라 주세요" : (unitCost ?? storageLine)}
+          {value === null ? c.input.choose : (unitCost ?? storageLine)}
         </p>
       </div>
 
@@ -120,7 +118,7 @@ export function MetricQuantityInput({
           variant="outline"
           size="icon"
           className="h-11 w-11 rounded-xl text-lg font-bold"
-          aria-label={`${step}${spec.unit} 빼기`}
+          aria-label={c.input.decrease(step, text.unit)}
           onClick={() => set(quantity - step)}
         >
           -
@@ -130,7 +128,7 @@ export function MetricQuantityInput({
           inputMode="numeric"
           min={0}
           max={spec.max}
-          aria-label={spec.question}
+          aria-label={text.question}
           className="w-32 text-center text-xl font-black h-12 rounded-xl"
           value={value === null ? "" : quantity}
           onChange={(e) => set(Number(e.target.value.replace(/[^0-9]/g, "")) || 0)}
@@ -140,7 +138,7 @@ export function MetricQuantityInput({
           variant="outline"
           size="icon"
           className="h-11 w-11 rounded-xl text-lg font-bold"
-          aria-label={`${step}${spec.unit} 더하기`}
+          aria-label={c.input.increase(step, text.unit)}
           onClick={() => set(quantity + step)}
         >
           +
@@ -157,13 +155,13 @@ export function MetricQuantityInput({
             className="rounded-lg text-xs"
             onClick={() => set(preset)}
           >
-            {presetLabel(metric, preset)}
+            {presetLabel(preset)}
           </Button>
         ))}
       </div>
 
-      {spec.hint && (
-        <p className="text-center text-[11px] leading-relaxed text-muted-foreground">{spec.hint}</p>
+      {text.hint && (
+        <p className="text-center text-[11px] leading-relaxed text-muted-foreground">{text.hint}</p>
       )}
 
       {metric === "storage" && <GoogleStorageCheck subscription={subscription} onMeasured={set} />}
@@ -185,11 +183,15 @@ export function MetricQuantityInput({
       {metric === "benefit" && evidence && (
         <p className="rounded-xl bg-secondary/60 px-3 py-2 text-center text-[11px] leading-relaxed">
           <b>
-            Gmail에서 {evidence.since.slice(5).replace("-", "월 ")}일 이후 주문 메일{" "}
-            {evidence.count}통
+            {c.input.orderEvidence(
+              c.input.sinceDate(
+                Number(evidence.since.slice(5, 7)),
+                Number(evidence.since.slice(8, 10)),
+              ),
+              evidence.count,
+            )}
           </b>
-          을 찾았어요. 가져온 메일 안에서 센 것이라 실제보다 적을 수 있어요. 그 주문에서 받은 무료
-          배송·할인을 더해 주세요.
+          {c.input.orderEvidenceNote}
         </p>
       )}
     </div>

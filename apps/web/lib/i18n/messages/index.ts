@@ -1,5 +1,6 @@
 import * as auth from "./auth";
 import * as backup from "./backup";
+import * as checkin from "./checkin";
 import * as dashboard from "./dashboard";
 import * as deviceUsage from "./deviceUsage";
 import * as oauth from "./oauth";
@@ -25,6 +26,7 @@ export const messages = {
     value: value.ko,
     overview: overview.ko,
     subs: subs.ko,
+    checkin: checkin.ko,
     ...receipt.ko,
   },
   en: {
@@ -38,6 +40,7 @@ export const messages = {
     value: value.en,
     overview: overview.en,
     subs: subs.en,
+    checkin: checkin.en,
     ...receipt.en,
   },
 } satisfies Record<string, unknown>;
