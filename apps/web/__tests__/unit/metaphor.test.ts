@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { messages } from "@lib/i18n/messages";
+import { describeBreakEven, describeUsageMetaphor } from "@lib/i18n/check-in-outcome";
 import {
   getUsageMetaphor,
   getBreakEvenInfo,
@@ -11,31 +13,37 @@ import {
 /** 화면이 넘기는 사용자 환율. 헬퍼에는 기본값이 없다 — 잊으면 타입이 잡는다. */
 const RATE = 1400;
 
+/** 한국어 화면에 보이는 비유 문장(tone은 그대로). */
+const metaphor = (...args: Parameters<typeof getUsageMetaphor>) => {
+  const raw = getUsageMetaphor(...args);
+  return { tone: raw.tone, ...describeUsageMetaphor(messages.ko, raw) };
+};
+
 describe("Metaphor and Value Calculation Utils", () => {
   describe("getUsageMetaphor", () => {
     it("0회 사용 시 쉬어가기 추천 메타포 반환", () => {
-      const result = getUsageMetaphor(17000, "KRW", 0, "넷플릭스", RATE);
+      const result = metaphor(17000, "KRW", 0, "넷플릭스", RATE);
       expect(result.tone).toBe("danger");
       expect(result.message).toContain("잠시 구독을 쉬어가면");
     });
 
     it("1회 사용 시 OTT 세이브 기회 메타포 반환", () => {
-      const result = getUsageMetaphor(17000, "KRW", 1, "넷플릭스", RATE);
+      const result = metaphor(17000, "KRW", 1, "넷플릭스", RATE);
       expect(result.tone).toBe("danger");
       expect(result.comparison).toContain("영화관 티켓");
       expect(result.message).toContain("세이브");
     });
 
     it("충분히 많이 사용(10회) 시 가성비 달성 메타포 반환", () => {
-      const result = getUsageMetaphor(17000, "KRW", 10, "넷플릭스", RATE);
+      const result = metaphor(17000, "KRW", 10, "넷플릭스", RATE);
       expect(result.tone).toBe("safe");
       expect(result.message).toContain("본전 달성 완료");
     });
 
     it("USD는 넘겨받은 환율로 바꾼다 — 상수 1,350에 기대지 않는다", () => {
       // 비유는 원으로 환산한 금액에서 나온다. 환율이 두 배면 세는 개수도 두 배가 되어야 한다.
-      expect(getUsageMetaphor(20, "USD", 1, "Claude", 1000).comparison).toContain("1.3장");
-      expect(getUsageMetaphor(20, "USD", 1, "Claude", 2000).comparison).toContain("2.7장");
+      expect(metaphor(20, "USD", 1, "Claude", 1000).comparison).toContain("1.3장");
+      expect(metaphor(20, "USD", 1, "Claude", 2000).comparison).toContain("2.7장");
     });
   });
 
@@ -44,21 +52,21 @@ describe("Metaphor and Value Calculation Utils", () => {
       const info = getBreakEvenInfo(17000, 0, 8);
       expect(info.progressPercent).toBe(0);
       expect(info.level).toBe("danger");
-      expect(info.remainingMessage).toContain("이용이 아직 없어요");
+      expect(describeBreakEven(messages.ko, info)).toContain("이용이 아직 없어요");
     });
 
     it("5회 사용 시 약 63% 및 주의 단계 반환", () => {
       const info = getBreakEvenInfo(17000, 5, 8);
       expect(info.progressPercent).toBe(63);
       expect(info.level).toBe("warning");
-      expect(info.remainingMessage).toContain("3회 더 이용하면 달성");
+      expect(describeBreakEven(messages.ko, info)).toContain("3회 더 이용하면 달성");
     });
 
     it("8회 이상 사용 시 100% 이상 및 달성 단계 반환", () => {
       const info = getBreakEvenInfo(17000, 10, 8);
       expect(info.progressPercent).toBe(125);
       expect(info.level).toBe("safe");
-      expect(info.remainingMessage).toContain("본전 달성 완료");
+      expect(describeBreakEven(messages.ko, info)).toContain("본전 달성 완료");
     });
   });
 

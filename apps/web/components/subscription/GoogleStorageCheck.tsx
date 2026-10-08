@@ -18,6 +18,7 @@ import {
 } from "@lib/storage-quota";
 import { Button } from "../ui/button";
 import { Spinner } from "../ui/spinner";
+import { useLatestT, useT } from "@lib/i18n";
 
 type Sub = Pick<Subscription, "name" | "cancelUrl" | "planId" | "sharingCount">;
 
@@ -34,6 +35,8 @@ export function GoogleStorageCheck({
   onMeasured: (quantity: number) => void;
 }) {
   const base = storageQuotaWebAppUrl();
+  const s = useT().checkin.storage;
+  const tRef = useLatestT();
   const [waiting, setWaiting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   // 이번에 누른 측정. 다른 측정(예전 탭)의 값은 받지 않는다.
@@ -47,7 +50,11 @@ export function GoogleStorageCheck({
     if (!result || result.state !== stateRef.current) return;
     stateRef.current = null;
     setWaiting(false);
-    const checkIn = storageCheckInFrom(latest.current.subscription, result);
+    const checkIn = storageCheckInFrom(
+      latest.current.subscription,
+      result,
+      tRef.current.checkin.storage,
+    );
     setMessage(checkIn.message);
     if (checkIn.quantity !== null) latest.current.onMeasured(checkIn.quantity);
   };
@@ -100,7 +107,7 @@ export function GoogleStorageCheck({
         // 값 없이 창을 닫았다(예전 앱이라 돌아올 주소가 없거나, 측정 전에 닫음).
         stateRef.current = null;
         setWaiting(false);
-        setMessage("측정값을 받지 못했어요. 웹 앱 화면의 비율을 직접 적거나 다시 측정해 주세요.");
+        setMessage(tRef.current.checkin.storage.noValue);
       });
       return;
     }
@@ -121,13 +128,10 @@ export function GoogleStorageCheck({
         ) : (
           <Gauge className="mr-1 h-3.5 w-3.5" aria-hidden />
         )}
-        Google 계정에서 사용량 측정
+        {s.measure}
       </Button>
       <p className="text-[11px] leading-relaxed text-muted-foreground" aria-live="polite">
-        {message ??
-          (waiting
-            ? "열린 화면에서 Google 권한을 허용하면 비율을 채워요."
-            : "Google 계정의 저장 용량을 읽어 비율을 채워요. 숫자는 SubSlash 서버로 보내지 않아요.")}
+        {message ?? (waiting ? s.waiting : s.idle)}
       </p>
     </div>
   );

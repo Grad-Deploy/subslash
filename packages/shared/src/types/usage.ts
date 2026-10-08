@@ -1,4 +1,5 @@
 import { RiskLevel } from "./subscription";
+import type { CheckInOutcome } from "../utils/valueMetric";
 
 export interface UsageLog {
   id: string;
@@ -28,7 +29,8 @@ export interface UsageLog {
 export interface CheckInResponse {
   costPerUse: number;
   riskLevel: RiskLevel;
-  shockMessage: string;
+  /** 결과 문장에 들어갈 값. 문장은 화면이 만든다. */
+  outcome: CheckInOutcome;
 }
 
 export interface DashboardStats {

@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import { messages } from "@lib/i18n/messages";
+import { describeCheckInOutcome } from "@lib/i18n/check-in-outcome";
 import {
   useStore,
   migrateSeededAccounts,
@@ -671,7 +673,7 @@ describe("체크인 1회 단가", () => {
     );
 
     expect(result.costPerUse).toBe(5000);
-    expect(result.shockMessage).toContain("₩5,000");
+    expect(describeCheckInOutcome(messages.ko, result.outcome)).toContain("₩5,000");
   });
 
   it("나눠 쓰는 구독은 내 몫으로만 계산한다", () => {
