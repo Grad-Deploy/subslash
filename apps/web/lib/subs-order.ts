@@ -15,12 +15,6 @@ import {
 
 export type AppSubsSort = "billing" | "amount" | "value";
 
-export const APP_SUBS_SORT_LABEL: Record<AppSubsSort, string> = {
-  billing: "결제일 순",
-  amount: "금액 순",
-  value: "가성비 순",
-};
-
 const RISK_ORDER: Record<RiskLevel, number> = { red: 0, yellow: 1, green: 2 };
 
 /**
