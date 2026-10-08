@@ -53,11 +53,12 @@ export function toCalendarPlanEntries(subscriptions: Subscription[]): CalendarPl
 export async function startCalendarSync(
   entries: CalendarPlanEntryInput[],
   reminderDays: number,
+  lang: "ko" | "en" = "ko",
 ): Promise<string> {
   const response = await apiFetch(await withAppReturn("/api/calendar-sync"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ entries, reminderDays }),
+    body: JSON.stringify({ entries, reminderDays, lang }),
   });
   if (!response.ok) {
     throw new Error(await readApiError(response, "캘린더 등록을 시작하지 못했습니다."));

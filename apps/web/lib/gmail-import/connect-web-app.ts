@@ -364,7 +364,11 @@ function calendarPage(origin, code) {
 
   var plan = JSON.parse(response.getContentText());
   try {
-    var written = writeBillingEvents(plan.calendarName, plan.events || []);
+    var written = writeBillingEvents(
+      plan.calendarName,
+      plan.calendarNames || [plan.calendarName],
+      plan.events || [],
+    );
     return connectPage(
       "구글 캘린더에 등록했습니다",
       "'" + plan.calendarName + "' 캘린더에 결제일 " + written + "건을 넣었습니다. " +
@@ -383,8 +387,8 @@ function calendarPage(origin, code) {
 }
 
 // 결제일 일정을 전부 다시 쓴다. 미러·백업과 같은 규칙이다 — 합치지 않고 통째로 바꾼다.
-function writeBillingEvents(calendarName, events) {
-  var calendarId = billingCalendarId(calendarName);
+function writeBillingEvents(calendarName, knownNames, events) {
+  var calendarId = billingCalendarId(calendarName, knownNames);
   clearBillingEvents(calendarId);
   for (var i = 0; i < events.length; i++) {
     var event = events[i];
@@ -411,12 +415,12 @@ function writeBillingEvents(calendarName, events) {
 }
 
 // 전용 캘린더를 찾거나 만든다. 기본 캘린더에 쓰지 않는다 — 그러면 지울 때 하나씩 지워야 한다.
-function billingCalendarId(calendarName) {
+function billingCalendarId(calendarName, knownNames) {
   var properties = PropertiesService.getUserProperties();
   var saved = properties.getProperty("calendarId");
   if (saved) {
     try {
-      return Calendar.Calendars.get(saved).id;
+      return renameIfNeeded(Calendar.Calendars.get(saved), calendarName);
     } catch (error) {
       // 사용자가 캘린더를 지웠다. 아래에서 다시 만든다.
       properties.deleteProperty("calendarId");
@@ -425,15 +429,23 @@ function billingCalendarId(calendarName) {
 
   var list = Calendar.CalendarList.list({ maxResults: 250 }).items || [];
   for (var i = 0; i < list.length; i++) {
-    if (list[i].summary === calendarName && list[i].accessRole === "owner") {
+    if (knownNames.indexOf(list[i].summary) >= 0 && list[i].accessRole === "owner") {
       properties.setProperty("calendarId", list[i].id);
-      return list[i].id;
+      return renameIfNeeded(list[i], calendarName);
     }
   }
 
   var created = Calendar.Calendars.insert({ summary: calendarName, timeZone: "Asia/Seoul" });
   properties.setProperty("calendarId", created.id);
   return created.id;
+}
+
+// 다른 언어로 등록했던 SubSlash 캘린더면 이번에 등록한 언어의 이름으로 바꾼다. 일정은 그대로 다시 쓴다.
+function renameIfNeeded(calendar, calendarName) {
+  if (calendar.summary !== calendarName) {
+    Calendar.Calendars.patch({ summary: calendarName }, calendar.id);
+  }
+  return calendar.id;
 }
 
 // 전에 SubSlash가 쓴 일정만 지운다. 같은 캘린더에 사용자가 직접 넣은 일정은 남는다.

@@ -49,6 +49,17 @@ describe("calendarEligible", () => {
 });
 
 describe("eventDescription — 일정 메모", () => {
+  it("영어로 등록하면 메모도 영어로 쓴다", () => {
+    const text = eventDescription(
+      { ...netflix, name: "Netflix", cancelUrl: "https://www.netflix.com/cancelplan" },
+      "https://subslash.me/subs/detail?id=sub-1",
+      "en",
+    );
+    expect(text).toContain("verified cancel page");
+    expect(text).toContain("View or edit the subscription");
+    expect(text).not.toMatch(/[가-힣]/);
+  });
+
   it("해지 주소가 있으면 메모에 적는다", () => {
     const text = eventDescription(
       { ...netflix, cancelUrl: "https://www.netflix.com/cancelplan" },

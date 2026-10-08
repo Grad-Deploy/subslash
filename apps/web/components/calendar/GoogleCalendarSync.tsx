@@ -10,10 +10,9 @@ import { fetchGmailLink, type GmailLinkState } from "@lib/gmail-auto-client";
 import { leaveForExternal } from "@lib/native";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
-import { useLatestT, useT } from "@lib/i18n";
-
-/** 웹 앱이 만드는 캘린더의 이름. 화면 언어와 상관없이 이 이름으로 만든다. */
-const CALENDAR_NAME = "SubSlash 결제일";
+import { useLatestT, useLocale, useT } from "@lib/i18n";
+import { subscriptionName } from "@lib/service-name";
+import { calendarNameFor } from "@lib/calendar-names";
 
 /**
  * 구독의 결제일을 내 구글 캘린더에 반복 일정으로 넣는다.
@@ -28,6 +27,9 @@ const CALENDAR_NAME = "SubSlash 결제일";
 export function GoogleCalendarSync() {
   const c = useT().reminders.calendar;
   const tRef = useLatestT();
+  // 캘린더 이름·일정 메모·구독 이름을 지금 화면의 언어로 쓴다(웹 앱이 이 언어의 이름으로 만들거나 바꾼다).
+  const locale = useLocale();
+  const CALENDAR_NAME = calendarNameFor(locale);
   const { account, loading } = useAuth();
   const subscriptions = useStore((state) => realRecords(state).subscriptions);
   const [reminderDays, setReminderDays] = useState(3);
@@ -42,7 +44,14 @@ export function GoogleCalendarSync() {
       .catch(() => setLink(null));
   }, [account]);
 
-  const entries = useMemo(() => toCalendarPlanEntries(subscriptions), [subscriptions]);
+  const entries = useMemo(
+    () =>
+      toCalendarPlanEntries(subscriptions).map((entry) => ({
+        ...entry,
+        name: subscriptionName({ name: entry.name, cancelUrl: entry.cancelUrl }, locale),
+      })),
+    [subscriptions, locale],
+  );
   // 결제 월을 모르는 연간 구독은 올릴 날짜가 없다. 매달 결제가 있는 것처럼 열한 번 더 찍히는
   // 대신 빼고, 몇 건을 뺐는지 말한다.
   const undated = useMemo(
@@ -64,7 +73,9 @@ export function GoogleCalendarSync() {
     try {
       // Google 권한 화면으로 간다. 웹에서는 이 탭이 그대로 가고, 앱에서는 인앱 브라우저로 연다 —
       // 앱 웹뷰가 통째로 나가면 담아 둔 화면을 잃고 돌아올 길이 없다.
-      leaveForExternal(await startCalendarSync(entries, reminderDays), () => setBusy(false));
+      leaveForExternal(await startCalendarSync(entries, reminderDays, locale), () =>
+        setBusy(false),
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : tRef.current.reminders.calendar.startFailed);
       setBusy(false);

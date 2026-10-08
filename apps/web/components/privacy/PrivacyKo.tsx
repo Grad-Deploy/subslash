@@ -212,7 +212,8 @@ export function PrivacyKo() {
             <li>
               구글 캘린더에 결제일 등록: 맡아 둔 구독 목록은 웹 앱이 받아 가면 곧바로 지우고, 받아
               가지 않아도 10분이 지나면 쓸 수 없으며 다음 등록 때 지웁니다. 캘린더에 들어간 일정은
-              구글 캘린더에서 &lsquo;SubSlash 결제일&rsquo; 캘린더를 지워야 없어집니다.
+              구글 캘린더에서 &lsquo;SubSlash 결제일&rsquo;(영어 화면에서 등록했다면 &lsquo;SubSlash
+              Billing Days&rsquo;) 캘린더를 지워야 없어집니다.
             </li>
           )}
           {DEVICE_USAGE_STARTS_ON && (
@@ -397,7 +398,7 @@ export function PrivacyKo() {
             삭제: 내 정보의 &lsquo;회원 탈퇴&rsquo;와 &lsquo;계정에서 지우기&rsquo;로 직접 지울 수
             있습니다.
             {SOCIAL_LOGIN_STARTS_ON &&
-              " 구글·카카오·네이버로 가입해 비밀번호가 없는 계정은 비밀번호 대신 '탈퇴'를 입력해 탈퇴합니다. 그 회사의 계정 설정에서 SubSlash 연결을 끊는 것만으로는 SubSlash 계정과 기록이 지워지지 않으니, 지우려면 회원 탈퇴를 해 주세요."}
+              " 구글·카카오·네이버로 가입해 비밀번호가 없는 계정은 비밀번호 대신 '탈퇴'(영어 화면에서는 'DELETE')를 입력해 탈퇴합니다. 그 회사의 계정 설정에서 SubSlash 연결을 끊는 것만으로는 SubSlash 계정과 기록이 지워지지 않으니, 지우려면 회원 탈퇴를 해 주세요."}
           </li>
           <li>
             처리정지: 서버에서 일어나는 처리는 그 기능을 끄면 곧바로 멈춥니다 — 내 정보에서 기기마다

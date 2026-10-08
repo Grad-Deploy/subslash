@@ -22,7 +22,9 @@ import { logError } from "@lib/log";
 const PASSWORD_CHECK_FAILURES: RateLimitRule = { limit: 10, windowMs: 15 * 60 * 1000 };
 
 /** 비밀번호가 없는 계정이 탈퇴할 때 입력하는 글자. 화면(DeleteAccountSection)과 같아야 한다. */
+/** 비밀번호 없는 계정의 탈퇴 확인 글자. 화면 언어마다 보여 주는 글자가 달라 둘 다 받는다. */
 const DELETE_CONFIRM_TEXT = "탈퇴";
+const DELETE_CONFIRM_TEXTS = [DELETE_CONFIRM_TEXT, "DELETE"];
 
 async function deleteAndSignOut(accountId: string) {
   await deleteAccount(accountId);
@@ -62,7 +64,8 @@ export async function DELETE(request: NextRequest) {
     // 소셜 로그인으로만 가입해 비밀번호가 없는 계정은 확인 글자를 받는다. 비밀번호를 먼저 만들게 하면
     // 탈퇴하려는 사람을 메일 한 통 더 거치게 한다(개인정보 보호법 — 가입보다 어렵게 하지 않는다).
     if (!hasPassword(account.passwordHash)) {
-      if (body?.confirmText !== DELETE_CONFIRM_TEXT) {
+      const typed = typeof body?.confirmText === "string" ? body.confirmText.trim() : "";
+      if (!DELETE_CONFIRM_TEXTS.includes(typed)) {
         const message = `확인을 위해 '${DELETE_CONFIRM_TEXT}'를 입력해주세요.`;
         return NextResponse.json(
           { error: message, fieldErrors: { confirmText: message } },

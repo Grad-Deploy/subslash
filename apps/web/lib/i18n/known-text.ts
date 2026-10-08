@@ -196,7 +196,8 @@ const EN: [RegExp, (...groups: string[]) => string][] = [
     /^탈퇴를 처리하지 못했습니다\. 잠시 후 다시 시도해주세요\.$/,
     () => "Couldn't delete the account. Please try again shortly.",
   ],
-  [/^확인을 위해 '(.+)'를 입력해주세요\.$/, (word) => `Type '${word}' to confirm.`],
+  // 서버는 '탈퇴'와 'DELETE'를 모두 받으므로 영어 화면에는 영어 확인 글자를 안내한다.
+  [/^확인을 위해 '탈퇴'를 입력해주세요\.$/, () => "Type 'DELETE' to confirm."],
   [/^로그인 방법을 불러오지 못했습니다\.$/, () => "Couldn't load your login methods."],
   [/^연결을 시작하지 못했습니다\.$/, () => "Couldn't start connecting."],
   [/^연결을 끊지 못했습니다\.$/, () => "Couldn't disconnect."],
