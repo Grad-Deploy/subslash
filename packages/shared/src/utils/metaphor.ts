@@ -2,7 +2,6 @@ import { Currency, Subscription, UsageLog } from "../types";
 import { calculateCostPerUse, getRiskLevel } from "./cost-per-use";
 import { formatAmount, formatKRW, toKRW } from "./currency";
 import { getMyMonthlyShareAmount, getMyMonthlyAmountKRW } from "./sharing";
-import { describeCheckIn, metricOfLog } from "./valueMetric";
 
 // ─────────────────────────────────────────────────────────
 // 1. 실체감 환산 메타포
@@ -192,7 +191,18 @@ export interface ValueReportItem {
   monthlyAmountKRW: number;
   status: "worth-it" | "wasted" | "unknown";
   costPerUse: number | null;
-  reason: string;
+}
+
+/**
+ * 절약 기회의 일상 환산. 문장은 화면이 만든다 — 한 구독이면 그 이름을, 여럿이면 "자주 쓰지 않는 구독"을 말한다.
+ */
+export interface WasteSuggestion {
+  /** 쉬어가기 대상이 하나면 그 구독 이름. 여럿이면 null. */
+  name: string | null;
+  item: MetaphorKey;
+  /** 소비재 몇 개 값인지. */
+  count: number;
+  amountKRW: number;
 }
 
 export interface MonthlyValueSummary {
@@ -203,8 +213,8 @@ export interface MonthlyValueSummary {
   worthItItems: ValueReportItem[];
   wastedItems: ValueReportItem[];
   unknownItems: ValueReportItem[];
-  /** 절약 기회의 일상 소비재 환산 문구. */
-  wasteSuggestion: string | null;
+  /** 절약 기회의 일상 소비재 환산. */
+  wasteSuggestion: WasteSuggestion | null;
 }
 
 /**
@@ -248,7 +258,6 @@ export function getMonthlyValueSummary(
         monthlyAmountKRW: krw,
         status: "unknown",
         costPerUse: null,
-        reason: "체크인 기록이 없어 가성비를 판단할 수 없습니다.",
       });
       continue;
     }
@@ -263,7 +272,6 @@ export function getMonthlyValueSummary(
         monthlyAmountKRW: krw,
         status: "worth-it",
         costPerUse: cpu,
-        reason: describeCheckIn(log, sub.currency),
       });
     } else {
       wastedItems.push({
@@ -272,10 +280,6 @@ export function getMonthlyValueSummary(
         monthlyAmountKRW: krw,
         status: "wasted",
         costPerUse: cpu,
-        reason:
-          log.usageCount === 0 && metricOfLog(log) !== "storage"
-            ? "이번 달 미사용 · 쉬어가기 추천"
-            : `${describeCheckIn(log, sub.currency)} · 지출 다이어트 추천`,
       });
     }
   }
@@ -285,18 +289,15 @@ export function getMonthlyValueSummary(
   const unknownKRW = unknownItems.reduce((s, i) => s + i.monthlyAmountKRW, 0);
 
   // 지출 다이어트 기회의 일상 환산
-  let wasteSuggestion: string | null = null;
+  let wasteSuggestion: WasteSuggestion | null = null;
   if (wastedKRW > 0) {
-    const items = [...METAPHOR_ITEMS].sort(
-      (a, b) => Math.abs(a.price - wastedKRW) - Math.abs(b.price - wastedKRW),
-    );
-    const best = items[0];
-    const count = wastedKRW / best.price;
-    if (wastedItems.length === 1) {
-      wasteSuggestion = `이번 달 ${wastedItems[0].sub.name}을(를) 잠시 쉬어가면 ${best.label} ${formatCount(count)}${best.unit} 값(${formatKRW(wastedKRW)})을 아낄 수 있어요.`;
-    } else {
-      wasteSuggestion = `자주 쓰지 않는 구독을 정리하면 매달 ${best.label} ${formatCount(count)}${best.unit} 값(${formatKRW(wastedKRW)})을 내 지갑에 세이브할 수 있어요.`;
-    }
+    const { key, count } = pickMetaphorItem(wastedKRW);
+    wasteSuggestion = {
+      name: wastedItems.length === 1 ? wastedItems[0].sub.name : null,
+      item: key,
+      count,
+      amountKRW: wastedKRW,
+    };
   }
 
   return {

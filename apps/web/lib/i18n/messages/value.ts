@@ -1,3 +1,4 @@
+import { CATEGORY_LABELS, DETOX_LEVEL_TIERS } from "@subslash/shared";
 import type { Widen } from "../types";
 
 /**
@@ -38,6 +39,24 @@ export const ko = {
     notUsed: "안 썼어요",
     benefitReturned: (percent: number) => `회비의 ${percent}% 돌려받음`,
   },
+  /** 구독 분류 이름. 한국어는 `CATEGORY_LABELS`가 원문이다. */
+  category: CATEGORY_LABELS,
+  /** 디톡스 레벨 칭호(레벨 번호가 키). 한국어는 `DETOX_LEVEL_TIERS`가 원문이다. */
+  detoxTitle: {
+    0: DETOX_LEVEL_TIERS[0].title,
+    1: DETOX_LEVEL_TIERS[1].title,
+    2: DETOX_LEVEL_TIERS[2].title,
+    3: DETOX_LEVEL_TIERS[3].title,
+    4: DETOX_LEVEL_TIERS[4].title,
+    5: DETOX_LEVEL_TIERS[5].title,
+  },
+  /** 아낀 돈으로 살 수 있는 것: '맛있는 치킨 3마리'. */
+  reward: {
+    latte: (n: number) => `카페 라떼 ${n}잔`,
+    chicken: (n: number) => `맛있는 치킨 ${n}마리`,
+    dinner: (n: number) => `고급 레스토랑 저녁 ${n}회`,
+    trip: (n: number) => `가까운 해외 여행 ${n}회`,
+  },
   /** 금액과 가장 가까운 소비재 몇 개 값인지. */
   metaphor: {
     coffee: (n: number) => `커피 ${koCount(n)}잔`,
@@ -48,6 +67,28 @@ export const ko = {
 };
 
 export const en: Widen<typeof ko> = {
+  category: {
+    ott: "OTT",
+    music: "Music",
+    cloud: "Cloud",
+    shopping: "Shopping",
+    ai: "AI tools",
+    other: "Other",
+  },
+  detoxTitle: {
+    0: "Getting ready",
+    1: "Subscription sprout",
+    2: "Detox explorer",
+    3: "Smart slasher",
+    4: "Spending defense commander",
+    5: "Subscription killer · minimalist",
+  },
+  reward: {
+    latte: (n) => `${n} café ${Number(n) === 1 ? "latte" : "lattes"}`,
+    chicken: (n) => `${n} ${Number(n) === 1 ? "order" : "orders"} of fried chicken`,
+    dinner: (n) => `${n} fine-dining ${Number(n) === 1 ? "dinner" : "dinners"}`,
+    trip: (n) => `${n} nearby overseas ${Number(n) === 1 ? "trip" : "trips"}`,
+  },
   checkIn: {
     uses: (n) => (n === 1 ? "1 use" : `${n} uses`),
     days: (n) => `${n} of 30 days used`,
