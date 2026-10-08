@@ -2,7 +2,6 @@ import { Currency, Subscription, UsageLog } from "../types";
 import { calculateCostPerUse, getRiskLevel } from "./cost-per-use";
 import { formatAmount, formatKRW, toKRW } from "./currency";
 import { getMyMonthlyShareAmount, getMyMonthlyAmountKRW } from "./sharing";
-import { describeCheckIn, metricOfLog } from "./valueMetric";
 
 // ─────────────────────────────────────────────────────────
 // 1. 실체감 환산 메타포
@@ -18,11 +17,22 @@ export interface UsageMetaphor {
 
 /** 일상 소비재 기준표 — 가장 가까운 것 하나를 고른다. */
 const METAPHOR_ITEMS = [
-  { label: "커피", unit: "잔", price: 5000 },
-  { label: "영화관 티켓", unit: "장", price: 15000 },
-  { label: "치킨", unit: "마리", price: 20000 },
-  { label: "배달팁", unit: "회", price: 3000 },
+  { key: "coffee", label: "커피", unit: "잔", price: 5000 },
+  { key: "movie", label: "영화관 티켓", unit: "장", price: 15000 },
+  { key: "chicken", label: "치킨", unit: "마리", price: 20000 },
+  { key: "delivery", label: "배달팁", unit: "회", price: 3000 },
 ] as const;
+
+/** 비유에 쓰는 소비재. 글자는 화면이 언어에 맞게 붙인다. */
+export type MetaphorKey = (typeof METAPHOR_ITEMS)[number]["key"];
+
+/** 금액(원)과 가장 가까운 소비재와, 그 소비재 몇 개 값인지. */
+export function pickMetaphorItem(amountKRW: number): { key: MetaphorKey; count: number } {
+  const best = [...METAPHOR_ITEMS].sort(
+    (a, b) => Math.abs(a.price - amountKRW) - Math.abs(b.price - amountKRW),
+  )[0];
+  return { key: best.key, count: amountKRW / best.price };
+}
 
 /**
  * 1회당 단가나 총 금액을 일상 소비재로 환산한다.
@@ -181,7 +191,18 @@ export interface ValueReportItem {
   monthlyAmountKRW: number;
   status: "worth-it" | "wasted" | "unknown";
   costPerUse: number | null;
-  reason: string;
+}
+
+/**
+ * 절약 기회의 일상 환산. 문장은 화면이 만든다 — 한 구독이면 그 이름을, 여럿이면 "자주 쓰지 않는 구독"을 말한다.
+ */
+export interface WasteSuggestion {
+  /** 쉬어가기 대상이 하나면 그 구독 이름. 여럿이면 null. */
+  name: string | null;
+  item: MetaphorKey;
+  /** 소비재 몇 개 값인지. */
+  count: number;
+  amountKRW: number;
 }
 
 export interface MonthlyValueSummary {
@@ -192,8 +213,8 @@ export interface MonthlyValueSummary {
   worthItItems: ValueReportItem[];
   wastedItems: ValueReportItem[];
   unknownItems: ValueReportItem[];
-  /** 절약 기회의 일상 소비재 환산 문구. */
-  wasteSuggestion: string | null;
+  /** 절약 기회의 일상 소비재 환산. */
+  wasteSuggestion: WasteSuggestion | null;
 }
 
 /**
@@ -237,7 +258,6 @@ export function getMonthlyValueSummary(
         monthlyAmountKRW: krw,
         status: "unknown",
         costPerUse: null,
-        reason: "체크인 기록이 없어 가성비를 판단할 수 없습니다.",
       });
       continue;
     }
@@ -252,7 +272,6 @@ export function getMonthlyValueSummary(
         monthlyAmountKRW: krw,
         status: "worth-it",
         costPerUse: cpu,
-        reason: describeCheckIn(log, sub.currency),
       });
     } else {
       wastedItems.push({
@@ -261,10 +280,6 @@ export function getMonthlyValueSummary(
         monthlyAmountKRW: krw,
         status: "wasted",
         costPerUse: cpu,
-        reason:
-          log.usageCount === 0 && metricOfLog(log) !== "storage"
-            ? "이번 달 미사용 · 쉬어가기 추천"
-            : `${describeCheckIn(log, sub.currency)} · 지출 다이어트 추천`,
       });
     }
   }
@@ -274,18 +289,15 @@ export function getMonthlyValueSummary(
   const unknownKRW = unknownItems.reduce((s, i) => s + i.monthlyAmountKRW, 0);
 
   // 지출 다이어트 기회의 일상 환산
-  let wasteSuggestion: string | null = null;
+  let wasteSuggestion: WasteSuggestion | null = null;
   if (wastedKRW > 0) {
-    const items = [...METAPHOR_ITEMS].sort(
-      (a, b) => Math.abs(a.price - wastedKRW) - Math.abs(b.price - wastedKRW),
-    );
-    const best = items[0];
-    const count = wastedKRW / best.price;
-    if (wastedItems.length === 1) {
-      wasteSuggestion = `이번 달 ${wastedItems[0].sub.name}을(를) 잠시 쉬어가면 ${best.label} ${formatCount(count)}${best.unit} 값(${formatKRW(wastedKRW)})을 아낄 수 있어요.`;
-    } else {
-      wasteSuggestion = `자주 쓰지 않는 구독을 정리하면 매달 ${best.label} ${formatCount(count)}${best.unit} 값(${formatKRW(wastedKRW)})을 내 지갑에 세이브할 수 있어요.`;
-    }
+    const { key, count } = pickMetaphorItem(wastedKRW);
+    wasteSuggestion = {
+      name: wastedItems.length === 1 ? wastedItems[0].sub.name : null,
+      item: key,
+      count,
+      amountKRW: wastedKRW,
+    };
   }
 
   return {
@@ -304,26 +316,16 @@ export function getMonthlyValueSummary(
 // 4. ActionQueue 트리거용 — 저사용 + 결제 임박 판정
 // ─────────────────────────────────────────────────────────
 
-/** 결제 임박 + 저사용 구독을 위한 지출 다이어트 제안 문구 생성. */
-export function getLowUsageBillingMessage(
+/**
+ * 결제 임박 + 저사용 구독의 지출 다이어트 제안에 쓸 값. 문장은 화면이 언어에 맞게 만든다 — 아낄 한 달치 내 몫(구독
+ * 통화)과, 그 금액과 가장 가까운 소비재 몇 개 값인지.
+ */
+export function getLowUsageBillingFigures(
   sub: Subscription,
-  usageCount: number,
-  daysUntilBilling: number,
   /** 부르는 쪽이 반드시 넘긴다. 기본값을 두면 화면이 잊었을 때 타입이 잡아 주지 못한다. */
   rate: number,
-): string {
+): { amount: number; currency: Currency; item: MetaphorKey; count: number } {
   const amount = getMyMonthlyShareAmount(sub);
-  const amountKRW = toKRW(amount, sub.currency, rate);
-  const formatted = formatAmount(amount, sub.currency);
-
-  // 가장 비슷한 소비재
-  const best = [...METAPHOR_ITEMS].sort(
-    (a, b) => Math.abs(a.price - amountKRW) - Math.abs(b.price - amountKRW),
-  )[0];
-  const count = amountKRW / best.price;
-
-  if (usageCount === 0) {
-    return `이번 달 이용이 아직 없었어요. ${daysUntilBilling}일 뒤 자동 갱신 전에 잠시 구독을 멈추고 ${best.label} ${formatCount(count)}${best.unit} 값(${formatted})을 아껴볼까요?`;
-  }
-  return `이번 달은 ${usageCount}회만 이용했어요. ${daysUntilBilling}일 뒤 갱신 전에 잠시 쉬어가면 ${best.label} ${formatCount(count)}${best.unit} 값(${formatted})을 지킬 수 있어요.`;
+  const { key, count } = pickMetaphorItem(toKRW(amount, sub.currency, rate));
+  return { amount, currency: sub.currency, item: key, count };
 }

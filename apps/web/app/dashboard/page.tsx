@@ -24,6 +24,7 @@ import { AppServicePicker } from "../../components/app-start/AppServicePicker";
 import { FirstCheckInCard } from "../../components/app-start/FirstCheckInCard";
 import { useToast } from "@hooks/useToast";
 import { useDashboardActions } from "@hooks/useDashboardActions";
+import { useT } from "@lib/i18n";
 import { SavedMoneyLink } from "../../components/dashboard/SavedMoneyLink";
 import {
   AppAddButton,
@@ -56,6 +57,7 @@ export default function Dashboard() {
     demo,
   } = useStore();
   const router = useRouter();
+  const t = useT().overview.page;
   const rate = useExchangeRate();
   // 폰 사용 기록을 읽을 수 없는 곳(웹·iOS)에는 '폰 사용 기록으로 찾기'를 두지 않는다.
   const phoneUsageStatus = usePhoneUsageStore((state) => state.status);
@@ -132,7 +134,7 @@ export default function Dashboard() {
   // 샘플은 내 구독에 더하지 않고 잠시 동안만 보여준다(store의 DemoSession).
   const handleLoadDemo = () => {
     startDemo();
-    showToast("샘플 체험 시작 · 내 구독과 섞이지 않아요");
+    showToast(t.demoStarted);
   };
 
   // '지금 결정할 것' 목록. 앱은 접기 묶음 안에, 웹은 그대로 그린다 — 속성은 같다.
@@ -167,8 +169,8 @@ export default function Dashboard() {
       {/* Action Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight">오늘의 구독 점검</h1>
-          <p className="text-sm text-muted-foreground">결정이 필요한 구독만 모았어요.</p>
+          <h1 className="text-2xl font-black tracking-tight">{t.title}</h1>
+          <p className="text-sm text-muted-foreground">{t.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           {/*
@@ -184,10 +186,10 @@ export default function Dashboard() {
                 onClick={() => setIsAutoImportOpen(true)}
                 className="font-semibold border-primary/30 text-primary hover:bg-primary/10 gap-1.5"
               >
-                자동 불러오기
+                {t.autoImport}
               </Button>
               <Button size="sm" onClick={() => openAdd()} className="font-bold">
-                + 새 구독 등록
+                {t.addNew}
               </Button>
             </>
           )}
@@ -220,7 +222,7 @@ export default function Dashboard() {
               subscription={firstCheckInSub}
               onSubmit={(count) => {
                 checkIn(firstCheckInSub.id, count);
-                showToast(`${firstCheckInSub.name} 사용 횟수를 기록했습니다.`);
+                showToast(t.checkInRecorded(firstCheckInSub.name));
                 // 체크리스트의 다음 단계(결제 알림)를 바로 이어서 묻는다. 이미 켰으면 묻지 않는다.
                 reminder.askNow(firstCheckInSub);
               }}
@@ -302,7 +304,7 @@ export default function Dashboard() {
 
         {/* 앱은 월 고정지출과 지킨 돈 한 줄을 가성비 계산서 카드가 맡고, 자세한 절약은 절약 현황으로 넘긴다. */}
         {!IS_APP_BUILD && (
-          <aside className="space-y-4 lg:sticky lg:top-20" aria-label="이번 달 요약">
+          <aside className="space-y-4 lg:sticky lg:top-20" aria-label={t.summaryLabel}>
             {/* 지출 한 줄 */}
             {/* 구독이 없을 때 '월 고정지출 ₩0'은 할 일을 가리기만 한다. */}
             {!isEmpty && (

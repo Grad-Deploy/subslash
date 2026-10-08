@@ -8,6 +8,8 @@ import {
   type Subscription,
   type UsageLog,
 } from "@subslash/shared";
+import { messages } from "@lib/i18n/messages";
+import { describeActionReason } from "@lib/i18n/action-reason";
 import { useStore } from "../../lib/store";
 
 /** 현지 시각 정오. 표준시가 달라도 날짜가 밀리지 않게 한다. */
@@ -30,6 +32,10 @@ function killedSub(overrides: Partial<Subscription> = {}): Subscription {
     ...overrides,
   };
 }
+
+/** 한국어 화면에 보이는 그 줄의 이유 문장. */
+const reasonText = (item: { reason: Parameters<typeof describeActionReason>[1] }) =>
+  describeActionReason(messages.ko, item.reason);
 
 describe("getFirstBillingDateAfterKill", () => {
   it("결제일 전에 해지하면 그달 결제일", () => {
@@ -134,15 +140,15 @@ describe("행동 큐의 해지 확인", () => {
     const [item] = getActionQueue([killedSub()], [], NOW);
     expect(item.kind).toBe("verify-kill");
     expect(item.verb).toBe("verify-kill");
-    expect(item.reason).toContain("9월 15일");
+    expect(reasonText(item)).toContain("9월 15일");
     // 카드에 찍히는 것은 전체 금액이다.
-    expect(item.reason).toContain("₩17,000");
+    expect(reasonText(item)).toContain("₩17,000");
     expect(item.daysUntilBilling).toBeNull();
   });
 
   it("공유 구독도 카드에 찍히는 전체 금액으로 묻는다", () => {
     const [item] = getActionQueue([killedSub({ sharingCount: 4 })], [], NOW);
-    expect(item.reason).toContain("₩17,000");
+    expect(reasonText(item)).toContain("₩17,000");
   });
 
   it("첫 결제일 전이거나 이미 확인한 해지는 올리지 않는다", () => {

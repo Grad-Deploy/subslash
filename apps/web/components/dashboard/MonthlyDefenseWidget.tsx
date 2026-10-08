@@ -9,6 +9,7 @@ import {
   splitThisMonthDefendedKRW,
 } from "@subslash/shared";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
+import { useT } from "@lib/i18n";
 
 interface MonthlyDefenseWidgetProps {
   killedSubscriptions: Subscription[];
@@ -24,6 +25,7 @@ interface MonthlyDefenseWidgetProps {
  */
 export function MonthlyDefenseWidget({ killedSubscriptions }: MonthlyDefenseWidgetProps) {
   const rate = useExchangeRate();
+  const d = useT().overview.defense;
   const now = new Date();
   const month = now.getMonth() + 1;
 
@@ -45,25 +47,21 @@ export function MonthlyDefenseWidget({ killedSubscriptions }: MonthlyDefenseWidg
       className="p-5 border rounded-2xl bg-card shadow-sm space-y-3"
     >
       <h3 id="month-billing-heading" className="font-bold text-base">
-        {month}월 결제일 현황
+        {d.title(month)}
       </h3>
 
       <dl className="grid grid-cols-2 gap-3">
         <div className="p-3 rounded-xl bg-muted/60">
-          <dt className="text-[11px] text-muted-foreground">해지 뒤 지나간 결제일</dt>
+          <dt className="text-[11px] text-muted-foreground">{d.passed}</dt>
           <dd className="text-lg font-bold text-foreground">{formatKRW(passed)}</dd>
         </div>
         <div className="p-3 rounded-xl bg-muted/60">
-          <dt className="text-[11px] text-muted-foreground">남은 결제일 (해지를 유지하면)</dt>
+          <dt className="text-[11px] text-muted-foreground">{d.upcoming}</dt>
           <dd className="text-lg font-bold text-foreground">{formatKRW(upcoming)}</dd>
         </div>
       </dl>
 
-      {passed === 0 && upcoming === 0 && (
-        <p className="text-xs text-muted-foreground">
-          이번 달에는 해지 뒤에 돌아오는 결제일이 없습니다.
-        </p>
-      )}
+      {passed === 0 && upcoming === 0 && <p className="text-xs text-muted-foreground">{d.none}</p>}
 
       {(comparison.current.amount > 0 || comparison.previous.amount > 0) && (
         <MonthOverMonthLine
@@ -75,18 +73,10 @@ export function MonthlyDefenseWidget({ killedSubscriptions }: MonthlyDefenseWidg
         />
       )}
 
-      {hasUnverified && (
-        <p className="text-[11px] text-muted-foreground">
-          결제가 멈췄는지 아직 확인하지 않은 해지도 들어 있습니다. 확인된 금액은 위 &lsquo;지킨
-          돈&rsquo;에 있습니다.
-        </p>
-      )}
+      {hasUnverified && <p className="text-[11px] text-muted-foreground">{d.unverified}</p>}
 
       {unknownCount > 0 && (
-        <p className="text-[11px] text-amber-700 dark:text-amber-300">
-          결제 월을 모르는 연간 구독 {unknownCount}건은 이번 달 결제 여부를 알 수 없어 합계에서
-          빠졌습니다. 구독 상세에서 결제 월을 지정하면 반영됩니다.
-        </p>
+        <p className="text-[11px] text-amber-700 dark:text-amber-300">{d.unknown(unknownCount)}</p>
       )}
     </section>
   );
@@ -110,17 +100,13 @@ function MonthOverMonthLine({
   previous: number;
   change: number;
 }) {
+  const d = useT().overview.defense;
   const verdict =
-    change > 0
-      ? `지난달보다 ${formatKRW(change)} 더 막습니다`
-      : change < 0
-        ? `지난달보다 ${formatKRW(-change)} 적습니다`
-        : "지난달과 같습니다";
+    change > 0 ? d.more(formatKRW(change)) : change < 0 ? d.less(formatKRW(-change)) : d.same;
 
   return (
     <p className="text-xs text-muted-foreground">
-      해지로 막는 결제: {currentMonth}월 {formatKRW(current)} · {previousMonth}월{" "}
-      {formatKRW(previous)} —{" "}
+      {d.blocked(currentMonth, formatKRW(current), previousMonth, formatKRW(previous))}
       <span
         className={
           change > 0

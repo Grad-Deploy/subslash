@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getActionQueue, matchCancelNotices, type Subscription } from "@subslash/shared";
+import { messages } from "@lib/i18n/messages";
+import { describeActionReason } from "@lib/i18n/action-reason";
 
 /**
  * 구독 중인 서비스의 마지막 메일이 해지·취소 알림일 때(utils/cancelNotice). 제목 낱말로 가린 알림이라
@@ -30,6 +32,10 @@ const NOTICE = {
   isCanceled: true,
   receiptDate: "2026.09.20",
 };
+
+/** 한국어 화면에 보이는 그 줄의 이유 문장. */
+const reasonText = (item: { reason: Parameters<typeof describeActionReason>[1] }) =>
+  describeActionReason(messages.ko, item.reason);
 
 describe("해지 알림을 구독에 짝짓기", () => {
   it("구독 중인 같은 서비스에 메일 날짜를 적는다", () => {
@@ -76,8 +82,8 @@ describe("행동 큐의 해지 알림 줄", () => {
     const [item] = getActionQueue([sub({ cancelNoticeAt: "2026.09.20" })], [], NOW);
     expect(item.kind).toBe("cancel-notice");
     expect(item.verb).toBe("confirm-cancel");
-    expect(item.reason).toContain("2026.09.20");
-    expect(item.reason).toContain("해지했다면");
+    expect(reasonText(item)).toContain("2026.09.20");
+    expect(reasonText(item)).toContain("해지했다면");
   });
 
   it("결제가 코앞이어도 이 줄 하나만 올린다 — 해지했다면 체크인할 일도 없다", () => {

@@ -8,6 +8,7 @@ import {
   type BillingSchedule,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 
 /**
  * Uses the shared billing-date helpers so the badge always agrees with the
@@ -53,14 +54,15 @@ export function DdayCountdown({
   className?: string;
 }) {
   const { dDay, timeLeft } = useLocalDday(subscription);
+  const t = useT().overview.dday;
 
   // A yearly plan with no billing month has no date to count down to. Showing
   // a number here would be inventing one.
   if (dDay === null) {
     return (
       <div className={cn("flex flex-col items-end", className)}>
-        <div className="text-xs font-semibold text-muted-foreground">결제 월 미설정</div>
-        <div className="text-[10px] text-muted-foreground opacity-80">연간 결제일을 알려주세요</div>
+        <div className="text-xs font-semibold text-muted-foreground">{t.billingMonthUnset}</div>
+        <div className="text-[10px] text-muted-foreground opacity-80">{t.tellYearlyDate}</div>
       </div>
     );
   }
