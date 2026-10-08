@@ -11,6 +11,7 @@ import { claimPendingLogin, clearPendingLogin, savePendingLogin } from "@lib/app
 import { isKakaoNativeAvailable, kakaoNativeLogin } from "@lib/kakao-native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { oauthErrorMessage, oauthErrorMessageFrom } from "@lib/oauth-messages";
+import { useLatestT, useT } from "@lib/i18n";
 
 interface Provider {
   id: "google" | "kakao" | "naver";
@@ -33,10 +34,10 @@ interface Provider {
  */
 export const PROVIDER_LOOK: Record<
   Provider["id"],
-  { label: string; className: string; mark: React.ReactNode }
+  { label: "kakao" | "naver" | "google"; className: string; mark: React.ReactNode }
 > = {
   kakao: {
-    label: "카카오 로그인",
+    label: "kakao",
     className:
       "border-transparent bg-[#FEE500] text-[#191919] hover:bg-[#FEE500] hover:text-[#191919]",
     mark: (
@@ -49,7 +50,7 @@ export const PROVIDER_LOOK: Record<
     ),
   },
   naver: {
-    label: "네이버 로그인",
+    label: "naver",
     className: "border-transparent bg-[#03A94D] text-white hover:bg-[#03A94D] hover:text-white",
     mark: (
       // eslint-disable-next-line @next/next/no-img-element
@@ -57,7 +58,7 @@ export const PROVIDER_LOOK: Record<
     ),
   },
   google: {
-    label: "Google 계정으로 로그인",
+    label: "google",
     className: "border-[#747775] bg-white text-[#1F1F1F] hover:bg-white hover:text-[#1F1F1F]",
     mark: (
       // eslint-disable-next-line @next/next/no-img-element
@@ -94,6 +95,8 @@ async function makeVerifier(): Promise<{ verifier: string; challenge: string }> 
  */
 export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
+  const t = useT();
+  const latest = useLatestT();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [isOver14, setIsOver14] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,23 +107,25 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
   useEffect(() => {
     let cancelled = false;
     // 제공자에서 돌아온 실패 이유(서버가 ?oauthError=로 넘긴다). 목록과 함께 그린다.
-    const returned = oauthErrorMessageFrom(new URLSearchParams(window.location.search));
+    const search = new URLSearchParams(window.location.search);
+    // 응답을 받은 뒤에 문구를 붙인다 — 그때는 화면 언어가 정해져 있다.
+    const returned = () => oauthErrorMessageFrom(search, latest.current.oauth);
     apiFetch("/api/auth/oauth/providers")
       .then((res) => (res.ok ? res.json() : { providers: [] }))
       .then((data: { providers?: Provider[]; native?: string[] }) => {
         if (cancelled) return;
         setProviders(Array.isArray(data.providers) ? data.providers : []);
         setNative(Array.isArray(data.native) ? data.native : []);
-        setError(returned);
+        setError(returned());
       })
       .catch(() => {
         // 목록을 못 받으면 버튼을 두지 않는다. 아이디 로그인은 그대로 된다.
-        if (!cancelled) setError(returned);
+        if (!cancelled) setError(returned());
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [latest]);
 
   if (providers.length === 0) {
     return error ? (
@@ -133,7 +138,7 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
   const start = async (provider: Provider) => {
     setError(null);
     if (mode === "signup" && !isOver14) {
-      setError(`만 ${MIN_AGE}세 이상인지 먼저 확인해 주세요.`);
+      setError(t.auth.social.over14First(MIN_AGE));
       return;
     }
     const params = new URLSearchParams({ next: "/dashboard" });
@@ -160,7 +165,7 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
         router.push("/signup?oauthError=need-age");
         return;
       }
-      setError(oauthErrorMessageFrom(result));
+      setError(oauthErrorMessageFrom(result, t.oauth));
     };
 
     // 카카오톡이 있으면 브라우저 없이 카카오톡으로 로그인한다(lib/kakao-native). 예전 앱·키 없는 빌드·서버가
@@ -194,7 +199,7 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
           }
           const claimed = await claimPendingLogin();
           // none: 창에서 취소했거나, 앱 복귀(NativeAppEffects)가 먼저 받아 갔다.
-          if (claimed === "failed") setError(oauthErrorMessage("server"));
+          if (claimed === "failed") setError(oauthErrorMessage("server", latest.current.oauth));
           if (claimed !== "ok") return;
           await enterAfterLogin(router);
         } finally {
@@ -208,7 +213,7 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
     <div className="space-y-3">
       <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
         <span className="h-px flex-1 bg-border" />
-        또는 간편 {mode === "signup" ? "가입" : "로그인"}
+        {t.auth.social.divider(mode)}
         <span className="h-px flex-1 bg-border" />
       </div>
       {mode === "signup" && (
@@ -223,8 +228,8 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
             }}
           />
           <span>
-            <strong>만 {MIN_AGE}세 이상입니다.</strong>{" "}
-            <span className="text-muted-foreground">(간편 가입 필수)</span>
+            <strong>{t.auth.social.over14(MIN_AGE)}</strong>{" "}
+            <span className="text-muted-foreground">{t.auth.social.over14Required}</span>
           </span>
         </label>
       )}
@@ -242,7 +247,7 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
                 disabled={busy}
                 onClick={() => void start(provider)}
               >
-                {provider.label}로 계속하기
+                {t.auth.social.continueWith(provider.label)}
               </Button>
             );
           }
@@ -256,7 +261,7 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
               onClick={() => void start(provider)}
             >
               <span className="absolute left-4 flex items-center">{look.mark}</span>
-              {look.label}
+              {t.auth.social[look.label]}
             </Button>
           );
         })}
@@ -266,10 +271,7 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
           {error}
         </p>
       )}
-      <p className="text-[11px] leading-relaxed text-muted-foreground">
-        처음이면 그 계정으로 가입돼요. 받는 것은 이메일과 회원 번호(되돌릴 수 없는 형태로
-        저장)뿐이에요.
-      </p>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">{t.auth.social.note}</p>
     </div>
   );
 }

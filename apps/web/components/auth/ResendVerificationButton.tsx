@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@components/ui/button";
 import { apiFetch } from "@lib/api";
+import { useKnownText, useT } from "@lib/i18n";
 
 type SendStatus = { tone: "ok" | "error"; message: string } | null;
 
@@ -16,6 +17,9 @@ type SendStatus = { tone: "ok" | "error"; message: string } | null;
 export function ResendVerificationButton({ email, label }: { email?: string; label: string }) {
   const [status, setStatus] = useState<SendStatus>(null);
   const [sending, setSending] = useState(false);
+  const t = useT().auth.resend;
+  // 결과 문구는 서버가 한국어로 정한다. 보여 줄 때 화면 언어로 바꾼다.
+  const known = useKnownText();
 
   const send = async () => {
     setSending(true);
@@ -29,12 +33,12 @@ export function ResendVerificationButton({ email, label }: { email?: string; lab
       const data = await res.json().catch(() => ({}));
       setStatus({
         tone: data?.status === "sent" ? "ok" : "error",
-        message: data?.message ?? data?.error ?? "확인 메일을 보내지 못했습니다.",
+        message: data?.message ?? data?.error ?? t.failed,
       });
     } catch {
       setStatus({
         tone: "error",
-        message: "네트워크에 문제가 있어 보내지 못했습니다. 잠시 후 다시 시도해주세요.",
+        message: t.network,
       });
     } finally {
       setSending(false);
@@ -44,7 +48,7 @@ export function ResendVerificationButton({ email, label }: { email?: string; lab
   return (
     <div className="space-y-1.5">
       <Button type="button" variant="outline" size="sm" onClick={send} disabled={sending}>
-        {sending ? "보내는 중..." : label}
+        {sending ? t.sending : label}
       </Button>
       {status && (
         <p
@@ -55,7 +59,7 @@ export function ResendVerificationButton({ email, label }: { email?: string; lab
               : "text-[11px] font-medium text-destructive"
           }
         >
-          {status.message}
+          {known(status.message)}
         </p>
       )}
     </div>

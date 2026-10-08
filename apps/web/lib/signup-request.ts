@@ -65,12 +65,14 @@ export function readSignupResponse(
   data: SignupResponseBody | null | undefined,
   /** 사용자가 적은 주소를 정규화한 값. 응답에 주소가 없으면 이것을 쓴다. */
   normalizedEmail: string,
+  /** 응답에 문구가 없을 때 쓰는 화면 언어의 문구. */
+  fallback: { failed: string; unknownMail: string },
 ): SignupOutcome {
   if (!ok) {
     return {
       ok: false,
       fieldErrors: data?.fieldErrors ?? {},
-      formError: data?.error ?? "가입을 처리하지 못했습니다.",
+      formError: data?.error ?? fallback.failed,
       pendingEmail: data?.emailPending ? normalizedEmail : null,
     };
   }
@@ -79,7 +81,7 @@ export function readSignupResponse(
     notice: {
       email: data?.account?.email ?? normalizedEmail,
       sent: data?.emailVerification?.status === "sent",
-      message: data?.emailVerification?.message ?? "확인 메일을 보냈는지 알 수 없습니다.",
+      message: data?.emailVerification?.message ?? fallback.unknownMail,
     },
   };
 }
