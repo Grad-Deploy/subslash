@@ -1,5 +1,6 @@
 import { Check, ListChecks, MailSearch } from "lucide-react";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 import styles from "./AppImportFlow.module.css";
 
 /**
@@ -9,11 +10,7 @@ import styles from "./AppImportFlow.module.css";
 const GMAIL_PATH =
   "M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z";
 
-const STEPS = [
-  { key: "connect", label: ["Gmail", "연결"] },
-  { key: "scan", label: ["2주마다", "자동 검사"] },
-  { key: "register", label: ["앱에서", "골라 등록"] },
-] as const;
+const STEP_KEYS = ["connect", "scan", "register"] as const;
 
 /**
  * 결제 메일 불러오기가 하는 일(연결 → 검사 → 등록)을 앱 아이콘 세 칸이 차례로 켜지는 짧은
@@ -21,12 +18,9 @@ const STEPS = [
  * '동작 줄이기'를 켠 기기에서는 처음부터 마지막 모습으로 둔다. 움직임은 AppImportFlow.module.css.
  */
 export function AppImportFlow() {
+  const f = useT().importing.flow;
   return (
-    <div
-      className={cn(styles.flow, "mx-1 mt-5 mb-2")}
-      role="img"
-      aria-label="Gmail을 연결하면 2주마다 자동으로 결제 메일을 검사하고, 앱에서 골라 등록해요"
-    >
+    <div className={cn(styles.flow, "mx-1 mt-5 mb-2")} role="img" aria-label={f.aria}>
       <span className={cn(styles.track, styles.track1)} aria-hidden>
         <i className={styles.fill} />
       </span>
@@ -34,8 +28,8 @@ export function AppImportFlow() {
         <i className={styles.fill} />
       </span>
       <div className={styles.steps}>
-        {STEPS.map((step, i) => (
-          <div key={step.key} className={styles.step}>
+        {STEP_KEYS.map((key, i) => (
+          <div key={key} className={styles.step}>
             <div
               className={cn(
                 styles.tile,
@@ -62,9 +56,9 @@ export function AppImportFlow() {
               </span>
             </div>
             <p className={cn(styles.label, "text-center text-[11.5px] leading-snug font-bold")}>
-              {step.label[0]}
+              {f[key][0]}
               <br />
-              {step.label[1]}
+              {f[key][1]}
             </p>
           </div>
         ))}

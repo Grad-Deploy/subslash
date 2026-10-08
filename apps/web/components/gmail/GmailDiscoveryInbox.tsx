@@ -16,6 +16,7 @@ import {
 import { AutoImportModal } from "../import/AutoImportModal";
 import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
+import { useT } from "@lib/i18n";
 
 /** 화면으로 돌아올 때 다시 묻기까지의 간격. */
 const RECHECK_AFTER_MS = 60_000;
@@ -28,6 +29,7 @@ const RECHECK_AFTER_MS = 60_000;
  * 되돌리기를 보여준다. 확실하지 않은 후보는 사용자가 고를 때까지 서버에 남겨 둔다. 샘플 체험 중에는 받지 않는다 — 등록하면 체험이 끝나 버린다.
  */
 export function GmailDiscoveryInbox() {
+  const i = useT().importing.inbox;
   const { account } = useAuth();
   const demo = useStore((state) => state.demo);
   const addBatchSubscriptions = useStore((state) => state.addBatchSubscriptions);
@@ -168,18 +170,15 @@ export function GmailDiscoveryInbox() {
         {registered && (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="leading-relaxed break-keep">
-              {" "}
-              <strong>
-                Gmail 결제 메일에서 구독 {registered.names.length}건을 등록했습니다:
-              </strong>{" "}
-              {registered.names.join(", ")}. 금액은 메일에서 읽은 값이니 한 번 확인해 주세요.
+              <strong>{i.registered(registered.names.length)}</strong> {registered.names.join(", ")}
+              {i.registeredAfter}
             </p>
             <div className="flex shrink-0 gap-2">
               <Button size="sm" variant="outline" className="bg-background" onClick={undo}>
-                되돌리기
+                {i.undo}
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setRegistered(null)}>
-                닫기
+                {i.close}
               </Button>
             </div>
           </div>
@@ -189,8 +188,8 @@ export function GmailDiscoveryInbox() {
           <div className="space-y-2">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="leading-relaxed break-keep">
-                <strong>Gmail 결제 메일에서 확인이 필요한 구독 {review.length}건</strong>을
-                찾았습니다.
+                <strong>{i.review(review.length)}</strong>
+                {i.reviewAfter}
               </p>
               <div className="flex shrink-0 gap-2">
                 <Button
@@ -199,17 +198,17 @@ export function GmailDiscoveryInbox() {
                   className="bg-background"
                   onClick={() => setReviewOpen(true)}
                 >
-                  확인하기
+                  {i.check}
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setConfirmDiscard(true)}>
-                  버리기
+                  {i.discard}
                 </Button>
               </div>
             </div>
             {confirmDiscard && (
               <InlineConfirm
-                message={`찾은 후보 ${review.length}건을 등록하지 않고 버릴까요? 다음 검사에서 새 결제 메일이 오면 다시 찾습니다.`}
-                confirmText="버리기"
+                message={i.discardConfirm(review.length)}
+                confirmText={i.discard}
                 onCancel={() => setConfirmDiscard(false)}
                 onConfirm={acknowledgeReview}
               />
@@ -223,7 +222,7 @@ export function GmailDiscoveryInbox() {
           isOpen
           onClose={() => setReviewOpen(false)}
           initialDiscovered={review.map((item) => discoveryToCandidate(item, subscriptions))}
-          initialResultsNote="Gmail 자동 검사에서"
+          initialResultsNote={i.note}
           onRegistered={acknowledgeReview}
         />
       )}
