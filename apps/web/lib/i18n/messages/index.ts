@@ -7,6 +7,7 @@ import * as overview from "./overview";
 import * as receipt from "./receipt";
 import * as settings from "./settings";
 import * as shell from "./shell";
+import * as subs from "./subs";
 import * as value from "./value";
 
 /**
@@ -23,6 +24,7 @@ export const messages = {
     dashboard: dashboard.ko,
     value: value.ko,
     overview: overview.ko,
+    subs: subs.ko,
     ...receipt.ko,
   },
   en: {
@@ -35,6 +37,7 @@ export const messages = {
     dashboard: dashboard.en,
     value: value.en,
     overview: overview.en,
+    subs: subs.en,
     ...receipt.en,
   },
 } satisfies Record<string, unknown>;

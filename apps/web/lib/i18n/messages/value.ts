@@ -38,6 +38,13 @@ export const ko = {
     perHour: (cost: string) => `시간당 ${cost}`,
     notUsed: "안 썼어요",
     benefitReturned: (percent: number) => `회비의 ${percent}% 돌려받음`,
+    /** 표의 단가 칸처럼 좁은 자리: '₩1,000/일', '안 씀', '80% 환급', '40% 사용'. */
+    shortPerDay: (cost: string) => `${cost}/일`,
+    shortPerHour: (cost: string) => `${cost}/시간`,
+    shortNotUsed: "안 씀",
+    shortReturned: (percent: number) => `${percent}% 환급`,
+    shortStorage: (percent: number) => `${percent}% 사용`,
+    shortNone: "-",
   },
   /** 구독 분류 이름. 한국어는 `CATEGORY_LABELS`가 원문이다. */
   category: CATEGORY_LABELS,
@@ -100,6 +107,12 @@ export const en: Widen<typeof ko> = {
     perHour: (cost) => `${cost} per hour`,
     notUsed: "Not used",
     benefitReturned: (percent) => `${percent}% of the fee earned back`,
+    shortPerDay: (cost) => `${cost}/day`,
+    shortPerHour: (cost) => `${cost}/hour`,
+    shortNotUsed: "Unused",
+    shortReturned: (percent) => `${percent}% back`,
+    shortStorage: (percent) => `${percent}% used`,
+    shortNone: "-",
   },
   metaphor: {
     coffee: (n) => {

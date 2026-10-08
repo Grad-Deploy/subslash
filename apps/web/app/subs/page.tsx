@@ -37,6 +37,7 @@ import { useIsClient } from "@hooks/useIsClient";
 import { Spinner } from "../../components/ui/spinner";
 import { Receipt, ShieldCheck } from "lucide-react";
 import { useToast } from "@hooks/useToast";
+import { useLatestT, useT } from "@lib/i18n";
 
 /**
  * 내 구독. 위에서부터 제목·불러오기, 구독 중/해지 완료 탭, 분류·보기 방식, 목록이고, 넓은 화면(xl)에서는
@@ -54,6 +55,8 @@ export default function SubscriptionsPage() {
   } = useStore();
   const rate = useExchangeRate();
   const router = useRouter();
+  const t = useT().subs;
+  const tRef = useLatestT();
 
   const mounted = useIsClient();
   const [tab, setTab] = useState<SubsTab>("active");
@@ -120,7 +123,7 @@ export default function SubscriptionsPage() {
     const sub = findSub(id);
     if (!sub) return;
     killSubscription(sub.id);
-    showToast(`${sub.name} 해지 완료로 기록`);
+    showToast(tRef.current.subs.page.killRecorded(sub.name));
   };
 
   const askConfirm = (type: "revive" | "delete") => (id: string) => {
@@ -135,10 +138,10 @@ export default function SubscriptionsPage() {
     const { type, sub } = confirmAction;
     if (type === "revive") {
       reviveSubscription(sub.id);
-      showToast(`${sub.name} 구독 중으로 되돌림`);
+      showToast(tRef.current.subs.page.revived(sub.name));
     } else {
       deleteSubscription(sub.id);
-      showToast("삭제했어요");
+      showToast(tRef.current.subs.page.deleted);
     }
     setConfirmAction(null);
   };
@@ -166,9 +169,9 @@ export default function SubscriptionsPage() {
       */}
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-black tracking-tight">구독 관리</h1>
+          <h1 className="text-2xl font-black tracking-tight">{t.page.title}</h1>
           <Button onClick={() => addFlow.open()} className="hidden font-bold md:inline-flex">
-            + 구독 추가
+            {t.page.add}
           </Button>
         </div>
         {/* 앱은 이 두 버튼 대신 떠 있는 + 하나로 고른다(AppAddButton). */}
@@ -179,14 +182,14 @@ export default function SubscriptionsPage() {
               onClick={() => router.push("/import")}
               className="font-semibold"
             >
-              결제 메일에서 찾기
+              {t.page.findInMail}
             </Button>
             <Button
               variant="outline"
               onClick={() => setIsAutoImportOpen(true)}
               className="font-semibold"
             >
-              문자 붙여넣기
+              {t.page.pasteText}
             </Button>
           </div>
         )}
@@ -194,7 +197,7 @@ export default function SubscriptionsPage() {
         {AppPhoneCheckInButton && (
           <AppPhoneCheckInButton
             subscriptions={activeSubs}
-            onDone={(count) => showToast(`${count}개 체크인했어요`)}
+            onDone={(count) => showToast(tRef.current.subs.page.checkedIn(count))}
             autoSwitch={false}
             autoStatus
           />
@@ -227,17 +230,17 @@ export default function SubscriptionsPage() {
               {filteredActive.length === 0 ? (
                 <SubsEmptyState
                   Icon={Receipt}
-                  title="구독 중인 서비스가 없어요"
+                  title={t.page.emptyActive}
                   action={
                     <Button
                       size="sm"
                       onClick={() => (AppAddButton ? setAddMenuOpen(true) : addFlow.open())}
                     >
-                      + 구독 추가
+                      {t.page.add}
                     </Button>
                   }
                 >
-                  구독을 등록해 보세요.
+                  {t.page.emptyActiveHint}
                 </SubsEmptyState>
               ) : (
                 <>
@@ -264,8 +267,8 @@ export default function SubscriptionsPage() {
           ) : (
             <div className="space-y-4">
               {filteredKilled.length === 0 ? (
-                <SubsEmptyState Icon={ShieldCheck} title="아직 해지한 구독이 없어요">
-                  &lsquo;지금 해지하기&rsquo;로 기록하면 여기에 모여요.
+                <SubsEmptyState Icon={ShieldCheck} title={t.page.emptyKilled}>
+                  {t.page.emptyKilledHint}
                 </SubsEmptyState>
               ) : (
                 <div className="space-y-3">
@@ -274,8 +277,10 @@ export default function SubscriptionsPage() {
                   {!AppKilledList && (
                     <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl text-xs text-emerald-800 dark:text-emerald-300">
                       {/* 해지를 유지하면 아낄 금액이다. 이미 지킨 돈은 절약 현황이 따로 센다. */}
-                      해지한 구독 {filteredKilled.length}개 · 해지를 유지하면 매달{" "}
-                      <strong>{formatKRW(sumMyMonthlyKRW(filteredKilled, rate))}</strong>을 아껴요.
+                      {t.page.killedSummary(
+                        filteredKilled.length,
+                        formatKRW(sumMyMonthlyKRW(filteredKilled, rate)),
+                      )}
                     </div>
                   )}
 
@@ -329,7 +334,7 @@ export default function SubscriptionsPage() {
         <button
           onClick={() => addFlow.open()}
           className="md:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-2xl text-2xl font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-30"
-          aria-label="Add Subscription"
+          aria-label={t.page.addAria}
         >
           +
         </button>

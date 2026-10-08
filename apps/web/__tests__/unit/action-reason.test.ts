@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { describeActionReason } from "@lib/i18n/action-reason";
-import { describeCheckInText } from "@lib/i18n/check-in-text";
+import { describeCheckInText, shortUnitCostText } from "@lib/i18n/check-in-text";
 import { messages } from "@lib/i18n/messages";
-import { describeCheckIn } from "@subslash/shared";
+import { describeCheckIn, shortUnitCost } from "@subslash/shared";
 
 describe("행동 큐 이유 문장", () => {
   it("영어로도 값을 그대로 넣어 만든다", () => {
@@ -66,5 +66,20 @@ describe("describeCheckInText", () => {
     expect(describeCheckInText(messages.en, { usageCount: 5, costPerUse: 3400 }, "KRW")).toBe(
       "5 uses · ₩3,400 per use",
     );
+  });
+
+  it("표의 짧은 단가도 한국어는 shortUnitCost와 같고 영어는 단위를 영어로 쓴다", () => {
+    const logs = [
+      { usageCount: 5, costPerUse: 3400 },
+      { metric: "days", usageCount: 8, costPerUse: 2500 },
+      { metric: "days", usageCount: 0, costPerUse: 2500 },
+      { metric: "hours", usageCount: 15, costPerUse: 500 },
+      { metric: "benefit", usageCount: 6000, costPerUse: 1.315 },
+      { metric: "storage", usageCount: 40, costPerUse: 110 },
+    ] as const;
+    for (const log of logs) {
+      expect(shortUnitCostText(messages.ko, log, "KRW")).toBe(shortUnitCost(log, "KRW"));
+    }
+    expect(shortUnitCostText(messages.en, logs[1], "KRW")).toBe("₩2,500/day");
   });
 });

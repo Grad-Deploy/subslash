@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { subscriptionDetailHref } from "@lib/routes";
 import {
-  CATEGORY_LABELS,
   STALE_CHECK_IN_DAYS,
   Subscription,
   UsageLog,
@@ -20,14 +19,14 @@ import {
   sumMyMonthlyKRW,
   toKRW,
   type RiskLevel,
-  formatQuantity,
   metricOfLog,
-  shortUnitCost,
 } from "@subslash/shared";
 import { Button } from "../ui/button";
 import { cn } from "@lib/utils";
 import { isWideScreen } from "@lib/wide-screen";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
+import { useLocale, useT } from "@lib/i18n";
+import { describeQuantityText, shortUnitCostText } from "@lib/i18n/check-in-text";
 import { ServiceLogo } from "./ServiceLogo";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -52,10 +51,6 @@ const RISK_TEXT: Record<RiskLevel, string> = {
   yellow: "text-amber-600 dark:text-amber-400",
   red: "text-rose-600 dark:text-rose-400",
 };
-
-function daysAgoLabel(days: number): string {
-  return days <= 0 ? "오늘" : `${days}일 전`;
-}
 
 function value(row: Row, key: SortKey): string | number | null {
   switch (key) {
@@ -115,6 +110,10 @@ export function SubTable({
 }: SubTableProps) {
   const wideHidden = sidePanel ? "xl:hidden" : "";
   const rate = useExchangeRate();
+  const t = useT();
+  const s = t.subs.table;
+  const locale = useLocale();
+  const daysAgoLabel = (days: number) => (days <= 0 ? s.today : s.daysAgo(days));
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>(
     mode === "active" ? { key: "nextBilling", dir: "asc" } : { key: "killedAt", dir: "desc" },
   );
@@ -151,7 +150,7 @@ export function SubTable({
     if (right === null) return -1;
     const cmp =
       typeof left === "string" && typeof right === "string"
-        ? left.localeCompare(right, "ko")
+        ? left.localeCompare(right, locale)
         : Number(left) - Number(right);
     return sort.dir === "asc" ? cmp : -cmp;
   });
@@ -198,21 +197,21 @@ export function SubTable({
       <table className="w-full text-sm">
         <thead className="bg-muted/50 text-xs text-muted-foreground">
           <tr>
-            {sortHeader("name", "서비스", "left")}
+            {sortHeader("name", s.name, "left")}
             <th scope="col" className={cn("px-4 py-2.5 text-right font-medium", wideHidden)}>
-              요금
+              {s.price}
             </th>
-            {sortHeader("myMonthly", "내 몫(월)")}
+            {sortHeader("myMonthly", s.myMonthly)}
             {mode === "active" ? (
               <>
-                {sortHeader("nextBilling", "다음 결제")}
-                {sortHeader("costPerUse", "단가")}
+                {sortHeader("nextBilling", s.nextBilling)}
+                {sortHeader("costPerUse", s.unitCost)}
               </>
             ) : (
-              sortHeader("killedAt", "해지일")
+              sortHeader("killedAt", s.killedAt)
             )}
             <th scope="col" className={cn("px-4 py-2.5 text-right font-medium", wideHidden)}>
-              <span className="sr-only">동작</span>
+              <span className="sr-only">{s.actions}</span>
             </th>
           </tr>
         </thead>
@@ -252,17 +251,17 @@ export function SubTable({
                       {sub.name}
                     </Link>
                     <p className="text-[11px] text-muted-foreground">
-                      {CATEGORY_LABELS[sub.category] ?? sub.category}
+                      {t.value.category[sub.category] ?? sub.category}
                     </p>
                   </div>
                 </div>
               </td>
               <td className={cn("px-4 py-3 text-right tabular-nums whitespace-nowrap", wideHidden)}>
-                {sub.billingCycle === "yearly" ? "연 " : "월 "}
+                {sub.billingCycle === "yearly" ? t.subs.card.yearly : t.subs.card.monthly}
                 {formatCurrency(getBilledAmount(sub), sub.currency)}
                 {isShared(sub) && (
                   <p className="text-[11px] text-muted-foreground">
-                    {getSharingCount(sub)}명이서 나눔
+                    {s.sharingBy(getSharingCount(sub))}
                   </p>
                 )}
               </td>
@@ -273,7 +272,7 @@ export function SubTable({
                 <>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     {days === null ? (
-                      <span className="text-xs text-muted-foreground">결제 월 미설정</span>
+                      <span className="text-xs text-muted-foreground">{s.billingMonthUnset}</span>
                     ) : (
                       <span
                         className={cn(
@@ -291,29 +290,26 @@ export function SubTable({
                         <span
                           className={cn("font-semibold tabular-nums", RISK_TEXT[latest.riskLevel])}
                         >
-                          {shortUnitCost(latest, sub.currency)}
+                          {shortUnitCostText(t, latest, sub.currency)}
                         </span>
                         <p className="text-[11px] text-muted-foreground">
-                          {formatQuantity(metricOfLog(latest), latest.usageCount)}
+                          {describeQuantityText(t, metricOfLog(latest), latest.usageCount)}
                           {checkedDaysAgo !== null && ` · ${daysAgoLabel(checkedDaysAgo)}`}
                           {checkedDaysAgo !== null && checkedDaysAgo > STALE_CHECK_IN_DAYS && (
-                            <span className="text-amber-600 dark:text-amber-400">
-                              {" "}
-                              · 다시 체크인
-                            </span>
+                            <span className="text-amber-600 dark:text-amber-400"> {s.recheck}</span>
                           )}
                         </p>
                       </>
                     ) : (
-                      <span className="text-xs text-muted-foreground">체크인 기록 없음</span>
+                      <span className="text-xs text-muted-foreground">{s.noCheckIn}</span>
                     )}
                   </td>
                 </>
               ) : (
                 <td className="px-4 py-3 text-right text-xs text-muted-foreground whitespace-nowrap">
                   {killedAtMs === null
-                    ? "날짜 모름"
-                    : new Date(killedAtMs).toLocaleDateString("ko-KR", {
+                    ? s.unknownDate
+                    : new Date(killedAtMs).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US", {
                         year: "numeric",
                         month: "short",
                         day: "numeric",
@@ -325,16 +321,16 @@ export function SubTable({
                   {mode === "active" ? (
                     <>
                       <Button variant="outline" size="sm" onClick={() => onCheckIn?.(sub.id)}>
-                        체크인
+                        {t.subs.card.checkIn}
                       </Button>
                       <Button variant="destructive" size="sm" onClick={() => onKill?.(sub.id)}>
-                        해지하기
+                        {t.subs.card.kill}
                       </Button>
                     </>
                   ) : (
                     <>
                       <Button variant="outline" size="sm" onClick={() => onRevive?.(sub.id)}>
-                        다시 살리기
+                        {t.subs.card.revive}
                       </Button>
                       {onDelete && (
                         <Button
@@ -343,7 +339,7 @@ export function SubTable({
                           className="text-destructive hover:bg-destructive/10"
                           onClick={() => onDelete(sub.id)}
                         >
-                          삭제
+                          {t.subs.card.delete}
                         </Button>
                       )}
                     </>
@@ -357,7 +353,7 @@ export function SubTable({
           <tfoot className="border-t bg-muted/30 text-xs">
             <tr>
               <td className="px-4 py-2.5 font-medium text-muted-foreground" colSpan={2}>
-                합계 {subscriptions.length}건
+                {s.total(subscriptions.length)}
               </td>
               <td className="px-4 py-2.5 text-right font-bold tabular-nums">
                 {formatKRW(sumMyMonthlyKRW(subscriptions, rate))}
