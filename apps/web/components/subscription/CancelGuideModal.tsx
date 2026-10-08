@@ -11,12 +11,12 @@ import {
   getCancelUrlKind,
   getServiceHomeUrl,
   parseCancelGuideSteps,
-  paymentCancelLabel,
 } from "@subslash/shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { openExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
+import { useT } from "@lib/i18n";
 import { ServiceLogo } from "./ServiceLogo";
 import { PlanAlternatives } from "./PlanAlternatives";
 
@@ -41,6 +41,7 @@ export function CancelGuideModal({
   onClose,
   onConfirmKilled,
 }: CancelGuideModalProps) {
+  const t = useT().detail;
   // 해지 화면(다른 앱·인앱 브라우저)에 다녀온 구독. 돌아오면 창 맨 위에서 마쳤는지 묻는다 — '해지
   // 완료했어요'는 긴 창의 맨 아래라, 돌아와서 그냥 닫으면 해지가 기록되지 않았다.
   const leftFor = React.useRef<string | null>(null);
@@ -95,9 +96,9 @@ export function CancelGuideModal({
               fallbackColor={sub.iconColor}
               size={20}
             />
-            <span className="min-w-0 [overflow-wrap:anywhere]">{sub.name} 해지 가이드</span>
+            <span className="min-w-0 [overflow-wrap:anywhere]">{t.guide.title(sub.name)}</span>
           </DialogTitle>
-          <DialogDescription>링크가 안 열리면 아래 단계를 따라가세요.</DialogDescription>
+          <DialogDescription>{t.guide.description}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -107,10 +108,9 @@ export function CancelGuideModal({
               className="space-y-3 rounded-xl border border-primary/40 bg-primary/5 p-3"
             >
               <div className="space-y-1">
-                <p className="text-sm font-bold">해지를 마쳤나요?</p>
+                <p className="text-sm font-bold">{t.guide.askTitle}</p>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  해지 화면에서 돌아왔어요. 마쳤다면 기록해 두세요. 앱은 해지 여부를 직접 확인할 수
-                  없어요.
+                  {t.guide.askBody}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -119,7 +119,7 @@ export function CancelGuideModal({
                   className="flex-1 rounded-xl"
                   onClick={() => setCameBackFor(null)}
                 >
-                  아직이에요
+                  {t.guide.notYet}
                 </Button>
                 <Button
                   variant="destructive"
@@ -129,7 +129,7 @@ export function CancelGuideModal({
                     close();
                   }}
                 >
-                  해지 완료했어요
+                  {t.guide.done}
                 </Button>
               </div>
             </section>
@@ -146,7 +146,7 @@ export function CancelGuideModal({
           {/* 1. 해지 링크 */}
           <section className="space-y-2">
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              1단계 · 해지 화면 열기
+              {t.guide.step1}
             </h4>
 
             {/*
@@ -166,30 +166,34 @@ export function CancelGuideModal({
                     }
                   >
                     {route.source === "payment" && paymentMethod
-                      ? `${paymentCancelLabel(paymentMethod)} (새 창)`
+                      ? t.link.newWindow(
+                          t.link.paymentManage(
+                            paymentMethod.shortName ?? paymentMethod.label,
+                            paymentMethod.directCancelUrlKind === "direct",
+                          ),
+                        )
                       : cancelUrlKind === "direct"
-                        ? `${sub.name} 해지 페이지 열기 (새 창)`
-                        : `${sub.name} 열기 (새 창)`}
+                        ? t.link.cancelPageOpen(sub.name)
+                        : t.link.open(sub.name)}
                   </Button>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     {route.source === "payment"
                       ? `${
                           route.kind === "direct"
-                            ? `${paymentMethod?.label}로 결제했다면 여기서 해지해요.`
-                            : `${paymentMethod?.label}로 결제했다면 여기서 해지해요. 정기결제 목록이 아니라 첫 화면으로 가요.`
+                            ? t.guide.paymentDirect(paymentMethod?.label ?? "")
+                            : t.guide.paymentEntry(paymentMethod?.label ?? "")
                         }${paymentMethod?.guide ? ` ${paymentMethod.guide}` : ""}`
                       : route.kind === "direct"
-                        ? "해지 화면으로 바로 가요."
+                        ? t.guide.direct
                         : route.kind === "entry"
-                          ? "해지 화면이 아니라 첫 화면·계정 화면으로 가요. 아래 단계대로 해지 메뉴를 찾아가세요."
-                          : "직접 입력한 주소예요. 어디로 가는지는 확인하지 않았어요."}
+                          ? t.guide.entry
+                          : t.guide.custom}
                   </p>
                 </div>
               ))
             ) : (
               <p className="text-xs text-muted-foreground p-3 border border-dashed rounded-xl">
-                저장된 해지 링크가 없어요. &lsquo;정보 수정&rsquo;에서 주소를 넣으면 바로가기가
-                생겨요.
+                {t.guide.noLinks}
               </p>
             )}
           </section>
@@ -201,11 +205,10 @@ export function CancelGuideModal({
           {checkLinks.length > 0 && (
             <section className="space-y-2">
               <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                함께 받는 서비스
+                {t.guide.together}
               </h4>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                결합 상품은 위 해지 화면에서 해지해요. 포함된 서비스만 따로 해지할 수 있는지는
-                확인하지 못했어요. 해지한 뒤 각 서비스에서 구독이 끝났는지 확인하세요.
+                {t.guide.togetherNote}
               </p>
               <div className="space-y-2">
                 {checkLinks.map((link) => (
@@ -216,8 +219,8 @@ export function CancelGuideModal({
                     onClick={() => leaveTo(link.url)}
                   >
                     {link.kind === "direct"
-                      ? `${link.name} 구독 상태 확인하기`
-                      : `${link.name} 열기`}
+                      ? t.guide.checkStatus(link.name)
+                      : t.guide.openService(link.name)}
                   </Button>
                 ))}
               </div>
@@ -227,8 +230,7 @@ export function CancelGuideModal({
               */}
               {IS_APP_BUILD && (
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  서비스 앱으로 열리면 뒤로 가기가 그 앱 안에서 움직일 수 있어요. 확인한 뒤 최근 앱
-                  목록에서 SubSlash로 돌아오세요.
+                  {t.guide.appBack}
                 </p>
               )}
             </section>
@@ -238,7 +240,7 @@ export function CancelGuideModal({
           {(accountUrl || homeUrl) && (
             <section className="space-y-2">
               <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                링크가 안 열릴 때
+                {t.guide.fallback}
               </h4>
               <div className="space-y-2">
                 {accountUrl && (
@@ -248,10 +250,10 @@ export function CancelGuideModal({
                       className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
                       onClick={() => leaveTo(accountUrl)}
                     >
-                      계정 관리 페이지로 이동 시도
+                      {t.guide.tryAccount}
                     </Button>
                     <p className="text-[11px] text-muted-foreground break-all">
-                      {accountUrl} — 흔한 주소 형태로 추정한 것이라 없을 수 있어요.
+                      {t.guide.guessed(accountUrl)}
                     </p>
                   </div>
                 )}
@@ -262,11 +264,9 @@ export function CancelGuideModal({
                       className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
                       onClick={() => leaveTo(homeUrl)}
                     >
-                      {new URL(homeUrl).hostname} 첫 화면 열기
+                      {t.guide.homeOf(new URL(homeUrl).hostname)}
                     </Button>
-                    <p className="text-[11px] text-muted-foreground">
-                      로그인한 뒤 아래 단계를 따라가세요.
-                    </p>
+                    <p className="text-[11px] text-muted-foreground">{t.guide.homeNote}</p>
                   </div>
                 )}
               </div>
@@ -276,7 +276,7 @@ export function CancelGuideModal({
           {/* 3. 단계별 텍스트 안내 */}
           <section className="space-y-2">
             <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              2단계 · 해지 메뉴까지 가는 길
+              {t.guide.step2}
             </h4>
             {steps.length > 0 ? (
               <ol className="space-y-2">
@@ -291,7 +291,7 @@ export function CancelGuideModal({
               </ol>
             ) : (
               <p className="text-xs text-muted-foreground p-3 border border-dashed rounded-xl">
-                저장된 단계 안내가 없어요. &lsquo;정보 수정&rsquo;에 적어 두면 다음에 편해요.
+                {t.guide.noSteps}
               </p>
             )}
           </section>
@@ -302,23 +302,17 @@ export function CancelGuideModal({
           */}
           {sub.status === "killed" ? (
             <section className="pt-2 border-t space-y-2">
-              <p className="text-[11px] text-muted-foreground">
-                이미 해지한 구독으로 기록되어 있어요. 해지가 안 됐다면 구독 상세에서 &lsquo;다시
-                구독 중으로 변경&rsquo; 후 다시 기록하세요.
-              </p>
+              <p className="text-[11px] text-muted-foreground">{t.guide.alreadyKilled}</p>
               <Button variant="outline" className="w-full rounded-xl" onClick={close}>
-                닫기
+                {t.guide.close}
               </Button>
             </section>
           ) : (
             <section className="pt-2 border-t space-y-2">
-              <p className="text-[11px] text-muted-foreground">
-                해지를 마쳤다면 눌러 주세요. 결제일부터 지킨 돈으로 쌓여요. 앱은 해지 여부를 직접
-                확인할 수 없어요.
-              </p>
+              <p className="text-[11px] text-muted-foreground">{t.guide.doneNote}</p>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 rounded-xl" onClick={close}>
-                  나중에 하기
+                  {t.guide.later}
                 </Button>
                 <Button
                   variant="destructive"
@@ -328,7 +322,7 @@ export function CancelGuideModal({
                     close();
                   }}
                 >
-                  해지 완료했어요
+                  {t.guide.done}
                 </Button>
               </div>
             </section>

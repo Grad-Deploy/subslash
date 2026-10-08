@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
-import { APP_SUBS_SORT_LABEL, type AppSubsSort } from "@lib/subs-order";
+import type { AppSubsSort } from "@lib/subs-order";
+import { useT } from "@lib/i18n";
 import { cn } from "@lib/utils";
 
 /**
@@ -22,6 +23,8 @@ export function AppSortSelect({
   onChange: (sort: AppSubsSort) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const t = useT().subs.sort;
+  const SORT_KEYS: AppSubsSort[] = ["billing", "amount", "value"];
 
   useEffect(() => {
     if (!open) return;
@@ -34,7 +37,7 @@ export function AppSortSelect({
 
   return (
     <div className="flex items-center justify-between px-0.5 text-xs">
-      <span className="text-muted-foreground">{count}개</span>
+      <span className="text-muted-foreground">{t.count(count)}</span>
       <div className="relative">
         <button
           type="button"
@@ -43,7 +46,7 @@ export function AppSortSelect({
           aria-expanded={open}
           className="flex items-center gap-0.5 py-1 pl-2 text-[13px] font-bold"
         >
-          {APP_SUBS_SORT_LABEL[value]}
+          {t[value]}
           <ChevronDown
             className={cn(
               "size-4 text-muted-foreground transition-transform",
@@ -58,10 +61,10 @@ export function AppSortSelect({
             <div
               role="dialog"
               aria-modal="true"
-              aria-label="순서"
+              aria-label={t.label}
               className="absolute right-0 top-full z-50 mt-1 w-36 overflow-hidden rounded-xl border bg-background py-1 shadow-xl dark:bg-secondary animate-in fade-in zoom-in-95"
             >
-              {(Object.keys(APP_SUBS_SORT_LABEL) as AppSubsSort[]).map((key) => (
+              {SORT_KEYS.map((key) => (
                 <button
                   key={key}
                   type="button"
@@ -75,7 +78,7 @@ export function AppSortSelect({
                     value === key ? "font-black" : "font-medium text-muted-foreground",
                   )}
                 >
-                  {APP_SUBS_SORT_LABEL[key]}
+                  {t[key]}
                   {value === key && <Check className="size-4" aria-hidden />}
                 </button>
               ))}

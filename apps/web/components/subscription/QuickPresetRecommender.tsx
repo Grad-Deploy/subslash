@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
-import { POPULAR_SERVICES, ServicePreset, describePresetPrice } from "@subslash/shared";
+import { POPULAR_SERVICES, ServicePreset } from "@subslash/shared";
 import { Subscription } from "@subslash/shared";
+import { useT } from "@lib/i18n";
+import { describePresetPriceText } from "@lib/i18n/preset-price";
 import { ServiceLogo } from "./ServiceLogo";
 
 interface QuickPresetRecommenderProps {
@@ -16,6 +18,8 @@ export function QuickPresetRecommender({
   onSelectPreset,
   maxItems = 6,
 }: QuickPresetRecommenderProps) {
+  const all = useT();
+  const t = all.subs.recommend;
   // Normalize existing names to lowercase for comparison
   const existingNames = new Set(subscriptions.map((s) => s.name.trim().toLowerCase()));
 
@@ -40,12 +44,8 @@ export function QuickPresetRecommender({
     <section className="p-4 sm:p-5 border rounded-2xl bg-card shadow-sm space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-bold text-sm sm:text-base flex items-center gap-1.5">
-            혹시 이 서비스도 구독 중이신가요?
-          </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            놓치기 쉬운 인기 구독 서비스를 탭하여 1초 만에 간편 등록하세요.
-          </p>
+          <h3 className="font-bold text-sm sm:text-base flex items-center gap-1.5">{t.title}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">{t.hint}</p>
         </div>
       </div>
 
@@ -68,7 +68,9 @@ export function QuickPresetRecommender({
                 <p className="font-bold text-xs sm:text-sm text-foreground truncate">
                   {preset.nameKo}
                 </p>
-                <p className="text-[11px] text-muted-foreground">{describePresetPrice(preset)}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {describePresetPriceText(all, preset)}
+                </p>
               </div>
             </div>
             <span className="text-xs font-bold text-primary opacity-80 group-hover:opacity-100 ml-1">

@@ -11,6 +11,7 @@ import {
   type OAuthFlow,
 } from "@lib/oauth";
 import { oauthErrorMessageFrom } from "@lib/oauth-messages";
+import { messages } from "@lib/i18n/messages";
 
 const ENV_KEYS = [
   "GOOGLE_OAUTH_CLIENT_ID",
@@ -146,7 +147,8 @@ describe("fetchProfile", () => {
 });
 
 describe("email-taken 문구", () => {
-  const message = (query: string) => oauthErrorMessageFrom(new URLSearchParams(query));
+  const message = (query: string) =>
+    oauthErrorMessageFrom(new URLSearchParams(query), messages.ko.oauth);
 
   it("그 계정이 로그인하는 방법으로 로그인한 뒤 지금 누른 제공자를 이으라고 말한다", () => {
     expect(message("oauthError=email-taken&oauthVia=google&oauthProvider=kakao")).toBe(

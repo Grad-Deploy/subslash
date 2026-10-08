@@ -1,6 +1,7 @@
 import React from "react";
 import { Progress } from "../ui/progress";
 import { Currency, formatCurrency } from "@subslash/shared";
+import { useT } from "@lib/i18n";
 
 interface CostPerUseBarProps {
   costPerUse: number;
@@ -20,6 +21,7 @@ export function CostPerUseBar({
   currency,
   usageCount,
 }: CostPerUseBarProps) {
+  const b = useT().checkin.bar;
   const ratio =
     usageCount === 0 || monthlyAmount <= 0
       ? 100
@@ -29,14 +31,14 @@ export function CostPerUseBar({
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-end">
-        <span className="text-sm font-medium text-muted-foreground">1회 이용당 비용</span>
+        <span className="text-sm font-medium text-muted-foreground">{b.label}</span>
         <span className="text-xl font-bold">{formatCurrency(costPerUse, currency)}</span>
       </div>
 
       <Progress value={ratio} variant={variant} className="h-3" />
 
       <div className="text-xs text-center text-muted-foreground">
-        총 {usageCount}회 이용 · 월 {formatCurrency(monthlyAmount, currency)} 기준
+        {b.footer(usageCount, formatCurrency(monthlyAmount, currency))}
       </div>
     </div>
   );

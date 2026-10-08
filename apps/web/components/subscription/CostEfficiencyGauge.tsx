@@ -7,6 +7,8 @@ import {
   getMyMonthlyShareAmount,
   formatCurrency,
 } from "@subslash/shared";
+import { useT } from "@lib/i18n";
+import { describeBreakEven } from "@lib/i18n/check-in-outcome";
 
 interface CostEfficiencyGaugeProps {
   subscription: Subscription;
@@ -19,6 +21,8 @@ export function CostEfficiencyGauge({
   usageCount,
   costPerUse,
 }: CostEfficiencyGaugeProps) {
+  const t = useT();
+  const g = t.checkin.gauge;
   const monthlyAmount = getMyMonthlyShareAmount(subscription);
   const breakEvenInfo = getBreakEvenInfo(monthlyAmount, usageCount);
 
@@ -59,11 +63,11 @@ export function CostEfficiencyGauge({
         <span
           className={`min-w-0 font-medium [overflow-wrap:anywhere] ${levelColors[breakEvenInfo.level]}`}
         >
-          {breakEvenInfo.level === "danger" && `지출 다이어트 추천 (회당 ${formattedCostPerUse})`}
-          {breakEvenInfo.level === "warning" && breakEvenInfo.remainingMessage}
-          {breakEvenInfo.level === "safe" && `본전 달성 완료! (회당 ${formattedCostPerUse})`}
+          {breakEvenInfo.level === "danger" && g.diet(formattedCostPerUse)}
+          {breakEvenInfo.level === "warning" && describeBreakEven(t, breakEvenInfo)}
+          {breakEvenInfo.level === "safe" && g.achieved(formattedCostPerUse)}
         </span>
-        <span className="shrink-0 text-[10px] text-muted-foreground">본전 기준선</span>
+        <span className="shrink-0 text-[10px] text-muted-foreground">{g.baseline}</span>
       </div>
     </div>
   );

@@ -2,7 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { Subscription, formatKRW, getSavingsEquivalent, getSavingsTiers } from "@subslash/shared";
+import { Subscription, formatKRW, getSavingsEquivalents, getSavingsTiers } from "@subslash/shared";
+import { useT } from "@lib/i18n";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 
 /**
@@ -14,13 +15,16 @@ import { useExchangeRate } from "../../hooks/useExchangeRate";
  */
 export function SavingsPot({ killedSubscriptions }: { killedSubscriptions: Subscription[] }) {
   const rate = useExchangeRate();
+  const t = useT();
+  const o = t.overview.savings;
 
   if (killedSubscriptions.length === 0) {
     return null;
   }
 
   const tiers = getSavingsTiers(killedSubscriptions, new Date(), rate);
-  const equivalent = getSavingsEquivalent(tiers.annualRunRate)[0];
+  // 살 수 있는 것 중 가장 비싼 하나.
+  const reward = getSavingsEquivalents(tiers.annualRunRate).at(-1);
   const nothingPassedYet = tiers.confirmed === 0 && tiers.pending === 0;
 
   return (
@@ -33,32 +37,27 @@ export function SavingsPot({ killedSubscriptions }: { killedSubscriptions: Subsc
           id="savings-tiers-heading"
           className="text-sm font-bold text-emerald-800 dark:text-emerald-300"
         >
-          지킨 돈
+          {o.title}
         </h2>
         <p className="text-4xl font-black text-emerald-700 dark:text-emerald-300 font-mono">
           {formatKRW(tiers.confirmed)}
         </p>
-        <p className="text-xs text-emerald-900/70 dark:text-emerald-200/70">
-          해지 뒤 결제일이 지났고, 그날 결제가 없었다고 확인한 금액입니다.
-        </p>
+        <p className="text-xs text-emerald-900/70 dark:text-emerald-200/70">{o.confirmedNote}</p>
       </div>
 
       {nothingPassedYet && (
-        <p className="text-xs text-emerald-900/80 dark:text-emerald-200/80">
-          아직 해지 뒤 결제일이 지나지 않았습니다. 첫 결제일이 지나면 결제가 멈췄는지 여쭤볼게요.
-        </p>
+        <p className="text-xs text-emerald-900/80 dark:text-emerald-200/80">{o.nothingPassed}</p>
       )}
 
       {tiers.pending > 0 && (
         <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs space-y-1">
           <p className="font-semibold text-amber-800 dark:text-amber-300">
-            확인 대기 {formatKRW(tiers.pending)} ({tiers.pendingCount}건)
+            {o.pending(formatKRW(tiers.pending), tiers.pendingCount)}
           </p>
           <p className="text-amber-900/80 dark:text-amber-200/80 leading-relaxed">
-            결제일은 지났지만 결제가 멈췄는지 아직 답하지 않은 해지입니다. 답하면 지킨 돈에
-            더해집니다.{" "}
+            {o.pendingNote}{" "}
             <Link href="/dashboard" className="underline underline-offset-2 font-semibold">
-              대시보드에서 답하기 →
+              {o.answerOnDashboard}
             </Link>
           </p>
         </div>
@@ -66,16 +65,15 @@ export function SavingsPot({ killedSubscriptions }: { killedSubscriptions: Subsc
 
       <div className="text-xs text-emerald-900/80 dark:text-emerald-200/80 space-y-0.5">
         <p>
-          <span className="font-semibold">앞으로</span> · 해지를 유지하면 연{" "}
-          {formatKRW(tiers.annualRunRate)} 아끼는 중
+          <span className="font-semibold">{o.ahead}</span> ·{" "}
+          {o.runRate(formatKRW(tiers.annualRunRate))}
         </p>
-        {equivalent && <p>{equivalent}</p>}
+        {reward && <p>{t.value.reward[reward.key](reward.count)}</p>}
       </div>
 
       {tiers.unknownCount > 0 && (
         <p className="text-[11px] text-amber-700 dark:text-amber-300">
-          결제 월이나 해지 날짜를 모르는 {tiers.unknownCount}건은 언제 결제되는지 알 수 없어 지킨
-          돈과 확인 대기에서 빠졌습니다.
+          {o.unknown(tiers.unknownCount)}
         </p>
       )}
     </section>

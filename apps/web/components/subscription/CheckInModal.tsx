@@ -5,15 +5,15 @@ import {
   Subscription,
   CheckInResponse,
   PAYMENT_METHOD_OPTIONS,
-  METRIC_SPECS,
-  describeCheckIn,
   getCancelAndroidApp,
   getCancelRoutes,
   getCancelUrlKind,
-  paymentCancelLabel,
   getMyMonthlyShareAmount,
   metricForSubscription,
 } from "@subslash/shared";
+import { useT } from "@lib/i18n";
+import { describeCheckInText } from "@lib/i18n/check-in-text";
+import { describeCheckInOutcome } from "@lib/i18n/check-in-outcome";
 import { MetricQuantityInput } from "./MetricQuantityInput";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog";
 import { Button, WRAPPING_BUTTON } from "../ui/button";
@@ -63,6 +63,8 @@ export function CheckInModal({
   result,
   initialCount = 0,
 }: CheckInModalProps) {
+  const t = useT();
+  const c = t.checkin;
   const [count, setCount] = useState<number>(initialCount);
   const [copied, setCopied] = useState(false);
 
@@ -106,10 +108,15 @@ export function CheckInModal({
     });
   const cancelButtonLabel =
     usesPaymentMethodUrl && paymentMethodInfo
-      ? `${paymentCancelLabel(paymentMethodInfo)} (새 창)`
+      ? c.modal.newWindow(
+          c.modal.paymentCancel(
+            paymentMethodInfo.shortName ?? paymentMethodInfo.label,
+            paymentMethodInfo.directCancelUrlKind === "direct",
+          ),
+        )
       : cancelUrlKind === "direct"
-        ? `${subscription.name} 해지 페이지 바로가기 (새 창)`
-        : `${subscription.name} 열기 (새 창)`;
+        ? c.modal.cancelPage(subscription.name)
+        : c.modal.openService(subscription.name);
 
   const handleCopyId = async (text: string) => {
     // 복사하지 못했으면 '복사했어요'를 띄우지 않는다. ID는 화면에 그대로 보인다.
@@ -131,7 +138,7 @@ export function CheckInModal({
       >
         <DialogHeader>
           <DialogTitle className="[overflow-wrap:anywhere]">
-            {subscription.name} 이용량 체크인
+            {c.modal.title(subscription.name)}
           </DialogTitle>
         </DialogHeader>
 
@@ -139,7 +146,7 @@ export function CheckInModal({
           <div className="py-4 space-y-6">
             {!byUses ? (
               <>
-                <h3 className="text-center text-base font-bold">{METRIC_SPECS[metric].question}</h3>
+                <h3 className="text-center text-base font-bold">{c.metric[metric].question}</h3>
                 <MetricQuantityInput
                   subscription={subscription}
                   metric={metric}
@@ -149,7 +156,7 @@ export function CheckInModal({
               </>
             ) : AppUsageCountPicker ? (
               <>
-                <h3 className="text-center text-base font-bold">최근 30일 동안 몇 번 썼어요?</h3>
+                <h3 className="text-center text-base font-bold">{c.modal.usesQuestion}</h3>
                 <AppUsageCountPicker
                   subscription={subscription}
                   value={count}
@@ -159,8 +166,9 @@ export function CheckInModal({
             ) : (
               <>
                 <h3 className="text-base text-center font-medium leading-relaxed [overflow-wrap:anywhere]">
-                  지난 30일 동안 <strong className="text-primary">{subscription.name}</strong>을(를)
-                  <br />몇 번 썼나요?
+                  {c.modal.usesQuestionBefore}
+                  <strong className="text-primary">{subscription.name}</strong>
+                  <span className="whitespace-pre-line">{c.modal.usesQuestionAfter}</span>
                 </h3>
 
                 <div className="flex items-center justify-center gap-4">
@@ -197,7 +205,8 @@ export function CheckInModal({
                       className="rounded-lg text-xs"
                       onClick={() => setCount(p)}
                     >
-                      {p}회
+                      {p}
+                      {c.modal.timesUnit}
                     </Button>
                   ))}
                 </div>
@@ -208,7 +217,7 @@ export function CheckInModal({
               className="w-full h-12 font-bold text-base rounded-xl"
               onClick={() => onSubmit(count)}
             >
-              가성비 분석 결과 보기
+              {c.modal.submit}
             </Button>
           </div>
         ) : AppCheckInResult && byUses ? (
@@ -231,7 +240,7 @@ export function CheckInModal({
           <div className="py-4 space-y-5 flex flex-col items-center">
             <div className="text-center space-y-2">
               <h3 className="text-xl sm:text-2xl font-black leading-snug">
-                {result.shockMessage || "결과를 확인하세요"}
+                {describeCheckInOutcome(t, result.outcome) || c.modal.noResult}
               </h3>
               <div className="flex justify-center">
                 <RiskBadge level={result.riskLevel} size="lg" />
@@ -240,7 +249,8 @@ export function CheckInModal({
 
             {!byUses ? (
               <div className="w-full p-4 bg-muted/70 rounded-2xl border text-center text-sm font-bold">
-                {describeCheckIn(
+                {describeCheckInText(
+                  t,
                   { metric, usageCount: count, costPerUse: result.costPerUse },
                   subscription.currency,
                 )}
@@ -276,7 +286,7 @@ export function CheckInModal({
             {/* Smart Cancellation Navigator with Linked Account Info */}
             <div className="w-full p-4 border rounded-2xl bg-card space-y-3 text-xs">
               <div className="font-bold flex items-center justify-between">
-                <span>해지 시 로그인 계정 안내</span>
+                <span>{c.modal.accountTitle}</span>
                 {subscription.linkedAccountName && (
                   <button
                     onClick={() =>
@@ -287,24 +297,25 @@ export function CheckInModal({
                     }
                     className="text-[11px] text-primary underline hover:opacity-80"
                   >
-                    {copied ? "복사했어요" : "ID 복사"}
+                    {copied ? c.modal.copied : c.modal.copyId}
                   </button>
                 )}
               </div>
 
               {subscription.linkedAccountName ? (
                 <p className="text-muted-foreground [overflow-wrap:anywhere]">
-                  이 구독은{" "}
-                  <strong className="text-foreground">{subscription.linkedAccountName}</strong>{" "}
-                  계정으로 로그인해야 해지 메뉴가 보여요.
+                  {c.modal.accountBefore}
+                  <strong className="text-foreground">{subscription.linkedAccountName}</strong>
+                  {c.modal.accountAfter}
                 </p>
               ) : (
-                <p className="text-muted-foreground">가입한 계정으로 로그인하세요.</p>
+                <p className="text-muted-foreground">{c.modal.accountUnknown}</p>
               )}
 
               {paymentMethodInfo && (
                 <div className="text-[11px] text-muted-foreground bg-secondary/70 p-2.5 rounded-xl">
-                  결제 수단: <strong className="text-foreground">{paymentMethodInfo.label}</strong>
+                  {c.modal.paymentMethod}
+                  <strong className="text-foreground">{paymentMethodInfo.label}</strong>
                   {paymentMethodInfo.guide && (
                     <div className="mt-1 opacity-90">{paymentMethodInfo.guide}</div>
                   )}
@@ -331,11 +342,11 @@ export function CheckInModal({
                     onClose();
                   }}
                 >
-                  해지 가이드 열기
+                  {c.modal.openGuide}
                 </Button>
               )}
               <Button variant="ghost" className="w-full" onClick={onClose}>
-                닫기
+                {c.modal.close}
               </Button>
             </DialogFooter>
           </div>

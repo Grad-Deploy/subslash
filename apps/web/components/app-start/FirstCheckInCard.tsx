@@ -9,19 +9,13 @@ import {
   getRiskLevel,
   type RiskLevel,
   type Subscription,
-  checkInQuestion,
+  metricForSubscription,
 } from "@subslash/shared";
+import { useT } from "@lib/i18n";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { RiskBadge } from "@components/dashboard/RiskBadge";
 import { useStoredFlag } from "@hooks/useStoredFlag";
 import { AppUsageCountPicker } from "@components/subscription/app/AppUsageCountPicker";
-
-/** 신호 색의 뜻. 색마다 처음 나올 때 한 번만 보여준다(getRiskLevel 기준). */
-const HINTS: Record<RiskLevel, string> = {
-  red: "빨간색은 요금만큼 쓰지 못했다는 뜻이에요. 다음 달에도 그렇다면 해지를 고민해 볼 때예요.",
-  yellow: "노란색은 애매하다는 뜻이에요. 다음 달에도 이 정도라면 다시 생각해 보세요.",
-  green: "초록색은 요금만큼 잘 쓰고 있다는 뜻이에요.",
-};
 
 interface FirstCheckInCardProps {
   subscription: Subscription;
@@ -33,6 +27,8 @@ interface FirstCheckInCardProps {
  * 묻는다. 계산은 스토어의 checkIn과 같게 한 달치 내 몫(getMyMonthlyShareAmount)으로 나눈다.
  */
 export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardProps) {
+  const t = useT();
+  const f = t.appSmall.first;
   const [count, setCount] = useState<number | null>(null);
 
   const monthly = getMyMonthlyShareAmount(subscription);
@@ -42,15 +38,15 @@ export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardPro
   const [hintSeen, markHintSeen] = useStoredFlag(`subslash_app_hint_${risk ?? "none"}`, true);
   const showHint = risk !== null && !hintSeen;
 
-  const planLine = [subscription.planName, `월 ${formatCurrency(monthly, subscription.currency)}`]
+  const planLine = [
+    subscription.planName,
+    f.perMonth(formatCurrency(monthly, subscription.currency)),
+  ]
     .filter(Boolean)
     .join(" · ");
 
   return (
-    <section
-      className="rounded-2xl border bg-card p-4"
-      aria-label={`${subscription.name} 첫 체크인`}
-    >
+    <section className="rounded-2xl border bg-card p-4" aria-label={f.label(subscription.name)}>
       <div className="flex items-center gap-2.5">
         <ServiceLogo
           name={subscription.name}
@@ -65,25 +61,27 @@ export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardPro
         </div>
       </div>
 
-      <p className="mt-3 mb-2 text-[13px] font-bold">{checkInQuestion(subscription)}</p>
+      <p className="mt-3 mb-2 text-[13px] font-bold">
+        {t.checkin.metric[metricForSubscription(subscription)].question}
+      </p>
 
       {/* 입력은 앱의 다른 체크인(등록 직후·체크인 창)과 같은 단계 막대다. */}
       <AppUsageCountPicker subscription={subscription} value={count} onChange={setCount} />
 
       {count !== null && risk && (
         <div className="mt-3 flex items-center justify-between rounded-xl bg-secondary px-3 py-2.5">
-          <p className="text-[11.5px] text-muted-foreground">이 정도면</p>
+          <p className="text-[11.5px] text-muted-foreground">{f.thisMuch}</p>
           <RiskBadge level={risk} />
         </div>
       )}
 
       {showHint && risk && (
         <div className="relative mt-2 rounded-xl bg-foreground py-2 pr-8 pl-3 text-[11.5px] leading-relaxed text-background">
-          {HINTS[risk]}
+          {f.hints[risk]}
           <button
             type="button"
             onClick={markHintSeen}
-            aria-label="안내 닫기"
+            aria-label={f.closeHint}
             className="absolute top-1.5 right-1.5 rounded p-0.5 opacity-70 hover:opacity-100"
           >
             <X className="size-3.5" aria-hidden />
@@ -101,7 +99,7 @@ export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardPro
         }}
         className="mt-3 h-11 w-full rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-40"
       >
-        기록하기
+        {f.record}
       </button>
     </section>
   );

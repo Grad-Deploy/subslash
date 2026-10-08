@@ -13,17 +13,18 @@ import { cn } from "@lib/utils";
 import { useStore } from "@lib/store";
 import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "@hooks/useExchangeRate";
+import { useT } from "@lib/i18n";
 import { Button } from "../../ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../../ui/dialog";
 import { ServiceLogo } from "../ServiceLogo";
 import { SubjectChip } from "../SubjectChip";
 import { AppSavingsLink } from "../../savings/app/AppSavingsLink";
 
-/** 'YYYY.MM.DD'. 해지일을 모르면 '—'. */
-function killedDate(sub: Subscription): string {
-  if (!sub.killedAt) return "—";
+/** 'YYYY.MM.DD'. 해지일을 모르면 `unknown`('—'). */
+function killedDate(sub: Subscription, unknown: string): string {
+  if (!sub.killedAt) return unknown;
   const date = new Date(sub.killedAt);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return unknown;
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${date.getFullYear()}.${m}.${d}`;
@@ -51,6 +52,8 @@ export function AppKilledList({
   onMessage: (message: string) => void;
 }) {
   const rate = useExchangeRate();
+  const t = useT();
+  const k = t.subs.killedList;
   const hideSubscriptions = useStore((state) => state.hideSubscriptions);
   const unhideSubscriptions = useStore((state) => state.unhideSubscriptions);
   const deleteSubscriptions = useStore((state) => state.deleteSubscriptions);
@@ -82,13 +85,13 @@ export function AppKilledList({
     hideSubscriptions(ids);
     stopSelecting();
     setConfirmIds(null);
-    onMessage(`${ids.length}개를 숨겼어요 · 절약 현황에는 남아요`);
+    onMessage(k.hidden(ids.length));
   };
   const remove = (ids: string[]) => {
     deleteSubscriptions(ids);
     stopSelecting();
     setConfirmIds(null);
-    onMessage(`${ids.length}개를 삭제했어요`);
+    onMessage(k.removed(ids.length));
   };
 
   const confirmSubs = (confirmIds ?? [])
@@ -113,7 +116,7 @@ export function AppKilledList({
               type="button"
               role="checkbox"
               aria-checked={on}
-              aria-label={`${sub.name} 고르기`}
+              aria-label={k.pickAria(sub.name)}
               onClick={() => toggle(sub.id)}
               className={cn(
                 "flex size-6 shrink-0 items-center justify-center rounded-md border-2",
@@ -154,10 +157,10 @@ export function AppKilledList({
                 className="h-8 shrink-0 px-2.5 text-xs"
                 onClick={() => {
                   unhideSubscriptions([sub.id]);
-                  onMessage(`${sub.name}을(를) 다시 보이게 했어요`);
+                  onMessage(k.unhidden(sub.name));
                 }}
               >
-                다시 보이기
+                {k.unhide}
               </Button>
             ) : (
               <span className="flex shrink-0 gap-1">
@@ -167,7 +170,7 @@ export function AppKilledList({
                   className="h-8 px-2.5 text-xs"
                   onClick={() => onRevive(sub.id)}
                 >
-                  다시 살리기
+                  {t.subs.card.revive}
                 </Button>
                 <Button
                   variant="ghost"
@@ -175,7 +178,7 @@ export function AppKilledList({
                   className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10"
                   onClick={() => setConfirmIds([sub.id])}
                 >
-                  삭제
+                  {k.delete}
                 </Button>
               </span>
             ))}
@@ -183,17 +186,17 @@ export function AppKilledList({
         {/* 해지일·월·연 아끼는 돈을 한 칸씩. 절약 현황의 '연 N원 아끼는 중'과 같은 계산이다. */}
         <dl className="mt-2.5 grid grid-cols-3 gap-1.5 border-t pt-2.5">
           <div>
-            <dt className="text-[10.5px] text-muted-foreground">해지일</dt>
-            <dd className="text-[13px] font-bold tabular-nums">{killedDate(sub)}</dd>
+            <dt className="text-[10.5px] text-muted-foreground">{k.killedAt}</dt>
+            <dd className="text-[13px] font-bold tabular-nums">{killedDate(sub, k.unknownDate)}</dd>
           </div>
           <div>
-            <dt className="text-[10.5px] text-muted-foreground">월</dt>
+            <dt className="text-[10.5px] text-muted-foreground">{k.perMonth}</dt>
             <dd className="text-[13px] font-bold tabular-nums">
               {formatKRW(getMyMonthlyAmountKRW(sub, rate))}
             </dd>
           </div>
           <div>
-            <dt className="text-[10.5px] text-muted-foreground">연 아끼는 돈</dt>
+            <dt className="text-[10.5px] text-muted-foreground">{k.perYearSaved}</dt>
             <dd className="text-[13px] font-bold tabular-nums">
               {formatKRW(getMyAnnualAmountKRW(sub, rate))}
             </dd>
@@ -225,18 +228,19 @@ export function AppKilledList({
               >
                 {allPicked && <Check className="size-4" aria-hidden />}
               </span>
-              전체 선택
+              {k.selectAll}
             </button>
             <span className="flex items-center gap-2">
-              <b>{chosen.length}개</b> 선택됨
+              <b>{k.selected(chosen.length)}</b>
+              {k.selectedSuffix}
               <Button variant="outline" size="sm" className="h-8" onClick={stopSelecting}>
-                취소
+                {k.cancel}
               </Button>
             </span>
           </>
         ) : (
           <>
-            <span className="text-muted-foreground">목록 {shown.length}개</span>
+            <span className="text-muted-foreground">{k.listCount(shown.length)}</span>
             {shown.length > 0 && (
               <Button
                 variant="outline"
@@ -244,7 +248,7 @@ export function AppKilledList({
                 className="h-8"
                 onClick={() => setSelecting(true)}
               >
-                선택
+                {k.select}
               </Button>
             )}
           </>
@@ -253,7 +257,7 @@ export function AppKilledList({
 
       {shown.length === 0 ? (
         <p className="rounded-2xl border border-dashed p-4 text-center text-xs text-muted-foreground">
-          보이는 해지 구독이 없어요. 숨긴 구독은 아래에 있어요.
+          {k.noneShown}
         </p>
       ) : (
         <ul className="space-y-2">{shown.map((sub) => card(sub, false))}</ul>
@@ -267,7 +271,7 @@ export function AppKilledList({
             onClick={() => setShowHidden((open) => !open)}
             className="flex w-full items-center justify-between rounded-2xl border border-dashed px-3 py-2.5 text-xs font-semibold text-muted-foreground"
           >
-            <span>숨긴 구독 {hidden.length}개 · 절약 현황에는 남아 있어요</span>
+            <span>{k.hiddenToggle(hidden.length)}</span>
             <ChevronDown
               className={cn("size-4 transition-transform", !showHidden && "-rotate-90")}
               aria-hidden
@@ -285,7 +289,7 @@ export function AppKilledList({
             disabled={chosen.length === 0}
             onClick={() => hide(chosen)}
           >
-            숨기기{chosen.length > 0 && ` ${chosen.length}`}
+            {k.withCount(k.hide, chosen.length)}
           </Button>
           <Button
             variant="destructive"
@@ -293,7 +297,7 @@ export function AppKilledList({
             disabled={chosen.length === 0}
             onClick={() => setConfirmIds(chosen)}
           >
-            삭제{chosen.length > 0 && ` ${chosen.length}`}
+            {k.withCount(k.delete, chosen.length)}
           </Button>
         </div>
       )}
@@ -302,7 +306,7 @@ export function AppKilledList({
         <DialogContent hideClose className="rounded-2xl sm:max-w-sm">
           <div className="break-keep text-center">
             <DialogTitle className="text-lg font-extrabold leading-snug">
-              {confirmSubs.length === 1 ? "삭제할까요?" : `${confirmSubs.length}개를 삭제할까요?`}
+              {confirmSubs.length === 1 ? k.confirmOne : k.confirmMany(confirmSubs.length)}
             </DialogTitle>
             {confirmSubs.length === 1 && (
               <div className="mt-3 flex justify-center">
@@ -310,14 +314,15 @@ export function AppKilledList({
               </div>
             )}
             <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
-              절약 현황에서도 빠지고
+              {k.confirmLine1}
               <br />
-              되돌릴 수 없어요.
+              {k.confirmLine2}
             </p>
             <p className="mt-3 rounded-xl bg-secondary px-3 py-2.5 text-sm leading-relaxed">
-              실수로 넣은 게 아니면
+              {k.hideAdviceLine1}
               <br />
-              <b>숨기기</b>를 추천해요.
+              <b>{k.hideAdviceBold}</b>
+              {k.hideAdviceLine2}
             </p>
           </div>
           <div className="mt-5 flex gap-2">
@@ -326,14 +331,14 @@ export function AppKilledList({
               className="h-12 flex-1 rounded-xl bg-secondary text-base font-bold hover:bg-secondary/80"
               onClick={() => hide(confirmIds ?? [])}
             >
-              숨기기
+              {k.hide}
             </Button>
             <Button
               variant="destructive"
               className="h-12 flex-1 rounded-xl text-base font-bold"
               onClick={() => remove(confirmIds ?? [])}
             >
-              삭제
+              {k.delete}
             </Button>
           </div>
           <button
@@ -341,7 +346,7 @@ export function AppKilledList({
             onClick={() => setConfirmIds(null)}
             className="mt-2 w-full py-2.5 text-sm font-semibold text-muted-foreground"
           >
-            취소
+            {k.cancel}
           </button>
         </DialogContent>
       </Dialog>

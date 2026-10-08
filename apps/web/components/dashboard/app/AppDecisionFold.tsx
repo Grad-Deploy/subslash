@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { formatDday, type ActionItem } from "@subslash/shared";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 
 const FOLDED_KEY = "subslash-dashboard-queue-folded";
 
@@ -37,6 +38,7 @@ export function AppDecisionFold({
   children: (foldButton: React.ReactNode) => React.ReactNode;
 }) {
   const [folded, setFolded] = useState(readFolded);
+  const q = useT().dashboard.queue;
 
   const toggle = () => {
     writeFolded(!folded);
@@ -54,7 +56,7 @@ export function AppDecisionFold({
         className={cn("size-3.5 transition-transform", folded && "-rotate-90")}
         aria-hidden
       />
-      {folded ? "펼치기" : "접기"}
+      {folded ? q.fold.expand : q.fold.collapse}
     </button>
   );
 
@@ -65,17 +67,17 @@ export function AppDecisionFold({
   return (
     <section className="space-y-1">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-xl font-bold tracking-tight">지금 결정할 것 ({items.length})</h2>
+        <h2 className="text-xl font-bold tracking-tight">{q.title(items.length)}</h2>
         {button}
       </div>
       <p className="text-xs text-muted-foreground">
-        가장 급한 것: <span className="font-bold text-foreground">{first.name}</span>
+        {q.fold.mostUrgent} <span className="font-bold text-foreground">{first.name}</span>
         {urgent && (
           <span className="ml-1 font-black text-destructive">
             {formatDday(first.daysUntilBilling as number)}
           </span>
         )}
-        {items.length > 1 && ` 외 ${items.length - 1}건`}
+        {items.length > 1 && q.fold.andMore(items.length - 1)}
       </p>
     </section>
   );

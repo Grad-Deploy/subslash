@@ -23,6 +23,7 @@ import {
 } from "@lib/account-snapshot-client";
 import { saveFile } from "@lib/native";
 import { describeOverwrite, describeRestore, formatSavedAt, savedSummaryLine } from "./backupText";
+import { useT, type Messages } from "@lib/i18n";
 
 type ParsedBackup = Extract<BackupParseResult, { ok: true }>;
 /** 어디서 가져온 기록인지에 따라 확인 창의 말이 달라진다. */
@@ -39,19 +40,19 @@ interface DataBackupCardProps {
 }
 
 /** 계정에 저장된 기록의 요약. 화면 상태는 바꾸지 않고 보여줄 결과만 돌려준다. */
-async function loadSnapshotState(): Promise<AccountSnapshotState> {
+async function loadSnapshotState(t: Messages["backup"]): Promise<AccountSnapshotState> {
   try {
     const result = await fetchSnapshotSummary();
     if (result.kind === "none") return { kind: "none" };
     if (result.kind === "failed") {
       return {
         kind: "error",
-        message: await readApiError(result.res, "계정에 저장된 기록을 확인하지 못했습니다."),
+        message: await readApiError(result.res, t.errors.checkFailed),
       };
     }
     return { kind: "saved", summary: result.summary };
   } catch {
-    return { kind: "error", message: "네트워크에 문제가 있어 확인하지 못했습니다." };
+    return { kind: "error", message: t.errors.checkNetwork };
   }
 }
 
@@ -73,6 +74,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
   const { subscriptions, usageLogs } = realRecords(store);
   const { account, loading: authLoading } = useAuth();
   const fileInput = useRef<HTMLInputElement>(null);
+  const t = useT().backup;
   const [pending, setPending] = useState<PendingRestore | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,13 +97,13 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
   useEffect(() => {
     if (!account) return;
     let cancelled = false;
-    void loadSnapshotState().then((next) => {
+    void loadSnapshotState(t).then((next) => {
       if (!cancelled) setSnapshot(next);
     });
     return () => {
       cancelled = true;
     };
-  }, [account]);
+  }, [account, t]);
 
   // 이 기기가 이 계정과 자동으로 맞추는 중인지. 처음 로그인한 기기는 아직 계정이 적혀 있지 않다.
   const syncOn =
@@ -128,10 +130,10 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
         JSON.stringify(backup, null, 2),
         "application/json",
       );
-      if (saved) onMessage(`백업 파일 저장 (구독 ${subscriptions.length}개)`);
+      if (saved) onMessage(t.exported(subscriptions.length));
     } catch (e) {
       console.error("[backup] 백업 파일을 만들지 못했습니다", e);
-      setError("백업 파일을 만들지 못했습니다. 다시 시도해 주세요.");
+      setError(t.exportFailed);
     }
   };
 
@@ -161,12 +163,12 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
       stoppedReason: null,
     });
     requestAccountSync();
-    onMessage("자동 동기화 켜짐");
+    onMessage(t.sync.turnedOn);
   };
 
   const turnSyncOff = () => {
     setAccountSync({ enabled: false });
-    onMessage("자동 동기화 꺼짐 · 계정 기록은 그대로예요");
+    onMessage(t.sync.turnedOff);
   };
 
   const saveToAccount = async () => {
@@ -179,15 +181,15 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
         // 조건 없이 올리므로 판이 어긋나는(409) 일은 없다.
         setAccountError(
           result.kind === "failed"
-            ? await readApiError(result.res, "계정에 저장하지 못했습니다.")
-            : "계정에 저장하지 못했습니다.",
+            ? await readApiError(result.res, t.errors.saveFailed)
+            : t.errors.saveFailed,
         );
         return;
       }
       setSnapshot({ kind: "saved", summary: result.summary });
-      onMessage(`계정에 저장 (구독 ${result.summary.subscriptionCount}개)`);
+      onMessage(t.savedToAccount(result.summary.subscriptionCount));
     } catch {
-      setAccountError("네트워크에 문제가 있어 계정에 저장하지 못했습니다.");
+      setAccountError(t.errors.saveNetwork);
     } finally {
       setBusy(false);
     }
@@ -205,23 +207,21 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     try {
       const result = await fetchSnapshot();
       if (result.kind === "none") {
-        setAccountError("계정에 저장된 기록이 없습니다.");
+        setAccountError(t.errors.noRecord);
         setSnapshot({ kind: "none" });
         return;
       }
       if (result.kind === "failed") {
-        setAccountError(
-          await readApiError(result.res, "계정에 저장된 기록을 불러오지 못했습니다."),
-        );
+        setAccountError(await readApiError(result.res, t.errors.loadFailed));
         return;
       }
       if (!result.backup.ok) {
-        setAccountError(`계정에 저장된 기록을 읽을 수 없습니다. ${result.backup.error}`);
+        setAccountError(t.errors.unreadable(result.backup.error));
         return;
       }
       setPending({ ...result.backup, source: "account" });
     } catch {
-      setAccountError("네트워크에 문제가 있어 불러오지 못했습니다.");
+      setAccountError(t.errors.loadNetwork);
     } finally {
       setBusy(false);
     }
@@ -233,15 +233,15 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     try {
       const result = await deleteSnapshot();
       if (result.kind === "failed") {
-        setAccountError(await readApiError(result.res, "계정에 저장된 기록을 지우지 못했습니다."));
+        setAccountError(await readApiError(result.res, t.errors.deleteFailed));
         return;
       }
       setSnapshot({ kind: "none" });
       // 켜 둔 채면 다음 변경 때 다시 올라간다. 지운 뜻을 따라 이 기기의 동기화도 끈다.
       setAccountSync({ enabled: false, baseSavedAt: null, baseHash: null });
-      onMessage("계정 기록을 지우고 자동 동기화를 껐어요. 이 기기의 기록은 그대로예요.");
+      onMessage(t.deleted);
     } catch {
-      setAccountError("네트워크에 문제가 있어 지우지 못했습니다.");
+      setAccountError(t.errors.deleteNetwork);
     } finally {
       setBusy(false);
     }
@@ -250,19 +250,19 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
   const snapshotLine = (): string => {
     switch (snapshot.kind) {
       case "loading":
-        return "계정 기록 확인 중…";
+        return t.sync.checking;
       case "none":
-        return "계정에 저장한 기록이 없어요.";
+        return t.sync.none;
       case "error":
         return snapshot.message;
       case "saved":
-        return savedSummaryLine(snapshot.summary);
+        return savedSummaryLine(snapshot.summary, t);
     }
   };
 
   const deleteButton = hasAccountRecord && (
     <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirmDelete(true)}>
-      계정에서 지우기
+      {t.sync.deleteFromAccount}
     </Button>
   );
 
@@ -273,25 +273,23 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
     >
       <div className="space-y-1">
         <h3 id="data-backup-heading" className="font-bold text-sm sm:text-base">
-          데이터 백업
+          {t.title}
         </h3>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          기록은 이 기기에만 있어요. 브라우저를 지우거나 기기를 바꾸기 전에 백업하거나 로그인하세요.
-        </p>
+        <p className="text-xs text-muted-foreground leading-relaxed">{t.intro}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="outline" onClick={() => void handleExport()}>
-          백업 파일 저장
+          {t.exportFile}
         </Button>
         <Button size="sm" variant="outline" onClick={() => fileInput.current?.click()}>
-          백업에서 복원
+          {t.restoreFile}
         </Button>
         <input
           ref={fileInput}
           type="file"
           accept="application/json,.json"
-          aria-label="백업 파일 선택"
+          aria-label={t.chooseFile}
           className="hidden"
           onChange={handleFile}
         />
@@ -299,39 +297,37 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
 
       {error && (
         <p role="alert" className="text-xs text-destructive leading-relaxed">
-          {error} 지금 기록은 바뀌지 않았어요.
+          {error} {t.unchanged}
         </p>
       )}
 
       {!authLoading && (
         <div className="pt-3 border-t space-y-2">
-          <p className="text-xs font-bold text-foreground">계정 동기화</p>
+          <p className="text-xs font-bold text-foreground">{t.sync.title}</p>
           {!account ? (
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              로그인하면 기록이 계정에 저장되고 다른 기기와 자동으로 맞춰져요.{" "}
+              {t.sync.loginHint}{" "}
               <Link
                 href="/login"
                 className="font-semibold text-primary underline underline-offset-4"
               >
-                로그인
+                {t.sync.login}
               </Link>
             </p>
           ) : syncOn ? (
             <>
               <p className="text-[11px] text-muted-foreground" aria-live="polite">
                 {accountSync.lastSyncedAt
-                  ? `자동 동기화 켜짐 · 마지막으로 맞춘 시각 ${formatSavedAt(accountSync.lastSyncedAt)}`
-                  : "자동 동기화 켜짐 · 계정과 맞추는 중…"}
+                  ? t.sync.onSince(formatSavedAt(accountSync.lastSyncedAt, t))
+                  : t.sync.onSyncing}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" disabled={busy} onClick={turnSyncOff}>
-                  자동 동기화 끄기
+                  {t.sync.turnOff}
                 </Button>
                 {deleteButton}
               </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                로그인한 기기끼리 기록을 맞춰요. 양쪽이 따로 바뀌면 어느 쪽을 쓸지 물어요.
-              </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">{t.sync.onNote}</p>
             </>
           ) : (
             <>
@@ -340,8 +336,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
                   role="status"
                   className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed"
                 >
-                  다른 기기에서 계정 기록을 지워 동기화를 멈췄어요. 다시 켜면 이 기기의 기록을
-                  올려요.
+                  {t.sync.deletedElsewhere}
                 </p>
               )}
               <p className="text-[11px] text-muted-foreground" aria-live="polite">
@@ -349,10 +344,10 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" disabled={busy} onClick={turnSyncOn}>
-                  자동 동기화 켜기
+                  {t.sync.turnOn}
                 </Button>
                 <Button size="sm" variant="outline" disabled={busy} onClick={handleSaveToAccount}>
-                  계정에 저장
+                  {t.sync.saveToAccount}
                 </Button>
                 <Button
                   size="sm"
@@ -360,14 +355,11 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
                   disabled={busy || snapshot.kind !== "saved"}
                   onClick={handleLoadFromAccount}
                 >
-                  계정에서 불러오기
+                  {t.sync.loadFromAccount}
                 </Button>
                 {deleteButton}
               </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                자동 동기화가 꺼져 있어요. &lsquo;계정에 저장&rsquo;·&lsquo;계정에서
-                불러오기&rsquo;로 옮기세요.
-              </p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">{t.sync.offNote}</p>
             </>
           )}
           {accountError && (
@@ -384,15 +376,15 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
             replaceAllData(pending.data);
             onMessage(
               pending.source === "account"
-                ? `계정에서 구독 ${pending.data.subscriptions.length}개를 불러왔어요`
-                : `백업에서 구독 ${pending.data.subscriptions.length}개를 복원했어요`,
+                ? t.loadedFromAccount(pending.data.subscriptions.length)
+                : t.restoredFromFile(pending.data.subscriptions.length),
             );
             setPending(null);
           }}
-          title={pending.source === "account" ? "계정에서 불러오기" : "백업에서 복원"}
-          description={describeRestore(pending, localCounts, syncOn)}
-          confirmText={pending.source === "account" ? "불러오기" : "복원"}
-          cancelText="취소"
+          title={pending.source === "account" ? t.dialog.loadTitle : t.dialog.restoreTitle}
+          description={describeRestore(pending, localCounts, syncOn, t)}
+          confirmText={pending.source === "account" ? t.dialog.load : t.dialog.restore}
+          cancelText={t.dialog.cancel}
           variant="destructive"
         />
       )}
@@ -405,12 +397,12 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
             setConfirmOverwrite(false);
             void saveToAccount();
           }}
-          title="계정에 저장"
+          title={t.dialog.saveTitle}
           description={
-            snapshot.kind === "saved" ? describeOverwrite(snapshot.summary, localCounts) : ""
+            snapshot.kind === "saved" ? describeOverwrite(snapshot.summary, localCounts, t) : ""
           }
-          confirmText="저장"
-          cancelText="취소"
+          confirmText={t.dialog.save}
+          cancelText={t.dialog.cancel}
           variant="destructive"
         />
       )}
@@ -423,10 +415,10 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
             setConfirmDelete(false);
             void deleteFromAccount();
           }}
-          title="계정에서 지우기"
-          description="서버의 계정 기록을 지우고 이 기기의 자동 동기화를 꺼요. 이 기기의 기록은 남고, 다른 기기의 동기화는 멈춰요."
-          confirmText="지우기"
-          cancelText="취소"
+          title={t.dialog.deleteTitle}
+          description={t.dialog.deleteDescription}
+          confirmText={t.dialog.delete}
+          cancelText={t.dialog.cancel}
           variant="destructive"
         />
       )}

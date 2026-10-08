@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
+import { Subscription, UsageLog, getMonthlyValueSummary, formatKRW } from "@subslash/shared";
+import { useT } from "@lib/i18n";
 import {
-  Subscription,
-  UsageLog,
-  getMonthlyValueSummary,
-  formatKRW,
-  describeCheckIn,
-} from "@subslash/shared";
+  describeWastedItem,
+  describeWasteSuggestion,
+  describeWorthItem,
+} from "@lib/i18n/value-report";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { Button } from "../ui/button";
 
@@ -27,6 +27,8 @@ export function MonthlyValueReport({
   onCheckIn,
 }: MonthlyValueReportProps) {
   const rate = useExchangeRate();
+  const t = useT();
+  const r = t.report;
   const month = now.getMonth() + 1;
 
   const active = subscriptions.filter((s) => s.status === "active");
@@ -38,10 +40,10 @@ export function MonthlyValueReport({
 
   return (
     <div className="flex flex-col p-5 border rounded-2xl bg-card shadow-sm w-full">
-      <h3 className="text-lg font-bold mb-4">{month}월 구독 가성비 리포트</h3>
+      <h3 className="text-lg font-bold mb-4">{r.title(month)}</h3>
 
       <div className="flex justify-between items-center mb-4 pb-4 border-b">
-        <span className="text-sm font-medium text-muted-foreground">총 구독 지출</span>
+        <span className="text-sm font-medium text-muted-foreground">{r.totalSpend}</span>
         <span className="text-base font-bold">{formatKRW(summary.totalSpendKRW)}</span>
       </div>
 
@@ -50,7 +52,7 @@ export function MonthlyValueReport({
         {summary.worthItItems.length > 0 && (
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center text-emerald-500">
-              <span className="text-sm font-semibold flex items-center gap-1.5">뽕 뽑은 구독</span>
+              <span className="text-sm font-semibold flex items-center gap-1.5">{r.worth}</span>
               <span className="text-sm font-semibold">{formatKRW(summary.worthItKRW)}</span>
             </div>
             <div className="pl-6 flex flex-col gap-1.5">
@@ -60,9 +62,7 @@ export function MonthlyValueReport({
                   className="flex justify-between items-center text-xs text-muted-foreground"
                 >
                   <span>{item.sub.name}</span>
-                  <span>
-                    ({item.log ? describeCheckIn(item.log, item.sub.currency) : "기록 없음"})
-                  </span>
+                  <span>({describeWorthItem(t, item)})</span>
                 </div>
               ))}
             </div>
@@ -73,9 +73,7 @@ export function MonthlyValueReport({
         {summary.wastedItems.length > 0 && (
           <div className="flex flex-col gap-2 mt-2">
             <div className="flex justify-between items-center text-amber-500 dark:text-amber-400">
-              <span className="text-sm font-semibold flex items-center gap-1.5">
-                줄일 수 있는 지출 (쉬어가기 추천)
-              </span>
+              <span className="text-sm font-semibold flex items-center gap-1.5">{r.wasted}</span>
               <span className="text-sm font-semibold">{formatKRW(summary.wastedKRW)}</span>
             </div>
             <div className="pl-6 flex flex-col gap-1.5">
@@ -85,7 +83,7 @@ export function MonthlyValueReport({
                   className="flex justify-between items-center text-xs text-muted-foreground"
                 >
                   <span>{item.sub.name}</span>
-                  <span>{item.reason}</span>
+                  <span>{describeWastedItem(t, item)}</span>
                 </div>
               ))}
             </div>
@@ -96,7 +94,7 @@ export function MonthlyValueReport({
         {summary.unknownItems.length > 0 && (
           <div className="flex flex-col gap-2 mt-2 opacity-70">
             <div className="flex justify-between items-center text-muted-foreground">
-              <span className="text-sm font-semibold flex items-center gap-1.5">판단 불가</span>
+              <span className="text-sm font-semibold flex items-center gap-1.5">{r.unknown}</span>
               <span className="text-sm font-semibold">{formatKRW(summary.unknownKRW)}</span>
             </div>
             <div className="pl-6 flex flex-col gap-1.5">
@@ -107,7 +105,7 @@ export function MonthlyValueReport({
                     onClick={() => onCheckIn(item.sub.id)}
                     className="text-[10px] bg-secondary px-2 py-0.5 rounded-full hover:bg-secondary/80 transition-colors"
                   >
-                    체크인 필요
+                    {r.needsCheckIn}
                   </button>
                 </div>
               ))}
@@ -122,7 +120,7 @@ export function MonthlyValueReport({
         <div className="mt-5 pt-4 border-t flex flex-col gap-3">
           {summary.wasteSuggestion && (
             <div className="text-sm font-medium bg-secondary/50 p-3 rounded-lg flex gap-2 items-center leading-relaxed">
-              <span>{summary.wasteSuggestion}</span>
+              <span>{describeWasteSuggestion(t, summary.wasteSuggestion)}</span>
             </div>
           )}
 
@@ -133,7 +131,7 @@ export function MonthlyValueReport({
                 className="flex-1 text-xs h-10"
                 onClick={() => onCancelGuide(summary.wastedItems[0].sub.id)}
               >
-                지출 줄이기 (해지 안내) →
+                {r.cancelGuide}
               </Button>
             )}
             {summary.unknownItems.length > 0 && (
@@ -142,7 +140,7 @@ export function MonthlyValueReport({
                 className="flex-1 text-xs h-10"
                 onClick={() => onCheckIn(summary.unknownItems[0].sub.id)}
               >
-                체크인하기
+                {r.checkIn}
               </Button>
             )}
           </div>
