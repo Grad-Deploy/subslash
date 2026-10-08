@@ -1,23 +1,5 @@
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
-const plural = (n: number, word: string) => `${n} ${one(n) ? word : `${word}s`}`;
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-const monthName = (m: number) => MONTHS[Number(m) - 1] ?? String(m);
+import { countOf, monthLong } from "../english";
 
 /**
  * 기기 알림 문구(`lib/local-reminders`·`lib/native-reminders`), 알림 켜기 창, 대시보드 '시작하기'와 빈
@@ -110,10 +92,10 @@ export const en: Widen<typeof ko> = {
   reminders: {
     notify: {
       billingTitle: (name, daysBefore) =>
-        `${name} charge ${Number(daysBefore) === 0 ? "today" : `in ${plural(daysBefore, "day")}`}`,
+        `${name} charge ${Number(daysBefore) === 0 ? "today" : `in ${countOf(daysBefore, "day")}`}`,
       billingBody: (month, day, amount) =>
-        `${amount} will be charged on ${monthName(month)} ${day}. Check whether you'll keep using it.`,
-      receiptTitle: (month) => `Your ${monthName(month)} subscription receipt is ready`,
+        `${amount} will be charged on ${monthLong(month)} ${day}. Check whether you'll keep using it.`,
+      receiptTitle: (month) => `Your ${monthLong(month)} subscription receipt is ready`,
       receiptBody:
         "See what you paid for each subscription last month and whether it was worth it.",
       resubscribeTitle: (name) => `Time to take another look at ${name}`,
@@ -128,10 +110,10 @@ export const en: Widen<typeof ko> = {
       close: "Close",
       title: "Remind you before billing days?",
       body: (name, daysBefore) =>
-        `We'll remind you on this phone at 9 AM ${Number(daysBefore) === 0 ? "on the billing day" : `${plural(daysBefore, "day")} before billing`}${name ? ` for ${name}` : ""}. It doesn't go through a server or email, so you don't need to log in.`,
+        `We'll remind you on this phone at 9 AM ${Number(daysBefore) === 0 ? "on the billing day" : `${countOf(daysBefore, "day")} before billing`}${name ? ` for ${name}` : ""}. It doesn't go through a server or email, so you don't need to log in.`,
       whenLabel: "When to remind",
       choice: (daysBefore) =>
-        Number(daysBefore) === 0 ? "Same day" : `${plural(daysBefore, "day")} before`,
+        Number(daysBefore) === 0 ? "Same day" : `${countOf(daysBefore, "day")} before`,
       unknownBilling: (name) => `${name} has no billing date, so no reminder can be set.`,
       addBilling: "Add a billing date",
       denied:
@@ -178,7 +160,7 @@ export const en: Widen<typeof ko> = {
       willSyncBefore: "Billing days to add now: ",
       willSync: (count) => `${count}`,
       undated: (count) =>
-        ` · ${plural(count, "yearly subscription")} without a billing month left out`,
+        ` · ${countOf(count, "yearly subscription")} without a billing month left out`,
       reminder: "Event reminder",
       submit: "Add to Google Calendar",
       nothing:

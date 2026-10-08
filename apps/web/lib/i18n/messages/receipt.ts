@@ -1,22 +1,5 @@
 import type { Widen } from "../types";
-
-const EN_MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-const monthName = (month: number) => EN_MONTHS[Number(month) - 1] ?? String(month);
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
+import { monthLong, one } from "../english";
 
 /** 월간 가성비 리포트(웹)와 가성비 계산서(앱), 대시보드에서 쓰는 해지·가격 확인 처리의 알림. */
 export const ko = {
@@ -99,7 +82,7 @@ export const ko = {
 
 export const en: Widen<typeof ko> = {
   report: {
-    title: (month) => `${monthName(month)} subscription value report`,
+    title: (month) => `${monthLong(month)} subscription value report`,
     totalSpend: "Total subscription spending",
     worth: "Worth it",
     wasted: "Spending you could cut (pause suggested)",
@@ -116,7 +99,7 @@ export const en: Widen<typeof ko> = {
       `Tidy up the subscriptions you rarely use and you could keep ${item} (${amount}) in your wallet every month.`,
   },
   receipt: {
-    title: (month) => `${monthName(month)} value receipt`,
+    title: (month) => `${monthLong(month)} value receipt`,
     summary: (subs, checked) =>
       `${subs} ${one(subs) ? "subscription" : "subscriptions"} · ${checked} checked in`,
     fixed: "Monthly fixed spending",

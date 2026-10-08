@@ -8,7 +8,7 @@ import { answerAsk, type AskAnswer } from "@lib/ask/answer";
 import { askReport } from "@lib/ask/client";
 import { Spinner } from "@components/ui/spinner";
 import { cn } from "@lib/utils";
-import { useLatestT, useT } from "@lib/i18n";
+import { useLatestT, useLocale, useT } from "@lib/i18n";
 
 /**
  * '리포트에 물어보기'. 질문 문장만 서버(AI)로 가고, AI가 고른 도구를 이 기기의 기록으로 계산해 답한다(lib/ask).
@@ -28,6 +28,7 @@ export function AskReport({
   const t = useT();
   const a = t.reportPage.ask;
   const tRef = useLatestT();
+  const locale = useLocale();
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState<string | null>(null);
   const [result, setResult] = useState<AskAnswer | null>(null);
@@ -43,7 +44,7 @@ export function AskReport({
     setResult(null);
     try {
       const call = await askReport(trimmed);
-      setResult(answerAsk(call, { subscriptions, usageLogs, rate, now, t: tRef.current }));
+      setResult(answerAsk(call, { subscriptions, usageLogs, rate, now, t: tRef.current, locale }));
       setQuestion("");
     } catch (e) {
       setError(e instanceof Error ? e.message : tRef.current.reportPage.ask.unavailable);
