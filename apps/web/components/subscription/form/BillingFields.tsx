@@ -2,12 +2,13 @@ import React from "react";
 import type { ServicePreset, SubscriptionFormData } from "@subslash/shared";
 import { Input } from "../../ui/input";
 import { Select } from "../../ui/select";
+import { useT } from "@lib/i18n";
 import { FIELD_LABEL } from "./fieldLabel";
 
 /** 결제일 칸 아래의 빠른 선택. 결제 문자를 보고 바로 등록하는 사람이 많다. */
 const PAID_ON_CHOICES = [
-  { label: "오늘 결제했어요", daysAgo: 0 },
-  { label: "어제", daysAgo: 1 },
+  { key: "paidToday", daysAgo: 0 },
+  { key: "paidYesterday", daysAgo: 1 },
 ] as const;
 
 /**
@@ -27,6 +28,7 @@ export function BillingFields({
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   onPaidOn: (date: Date) => void;
 }) {
+  const f = useT().form.billing;
   const cycle = formData.billingCycle ?? "monthly";
   const plans = preset?.plans ?? [];
   return (
@@ -34,7 +36,7 @@ export function BillingFields({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <label htmlFor={`${idPrefix}-day`} className={FIELD_LABEL}>
-            결제일 (1-31)
+            {f.day}
           </label>
           <Input
             id={`${idPrefix}-day`}
@@ -42,13 +44,14 @@ export function BillingFields({
             min="1"
             max="31"
             name="billingDay"
-            placeholder="예: 15"
+            placeholder={f.dayPlaceholder}
             value={formData.billingDay ?? ""}
             onChange={onChange}
             required
           />
           <div className="flex flex-wrap gap-1.5">
-            {PAID_ON_CHOICES.map(({ label, daysAgo }) => {
+            {PAID_ON_CHOICES.map(({ key, daysAgo }) => {
+              const label = f[key];
               const date = new Date();
               date.setDate(date.getDate() - daysAgo);
               return (
@@ -58,7 +61,7 @@ export function BillingFields({
                   onClick={() => onPaidOn(date)}
                   className="rounded-full border px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-secondary"
                 >
-                  {label}({date.getDate()}일)
+                  {f.paidOnDay(label, date.getDate())}
                 </button>
               );
             })}
@@ -66,7 +69,7 @@ export function BillingFields({
         </div>
         <div className="space-y-1.5">
           <label htmlFor={`${idPrefix}-cycle`} className={FIELD_LABEL}>
-            주기
+            {f.cycle}
           </label>
           <Select
             id={`${idPrefix}-cycle`}
@@ -74,8 +77,8 @@ export function BillingFields({
             value={formData.billingCycle || "monthly"}
             onChange={onChange}
           >
-            <option value="monthly">매월 결제</option>
-            <option value="yearly">매년 결제</option>
+            <option value="monthly">{f.monthly}</option>
+            <option value="yearly">{f.yearly}</option>
           </Select>
         </div>
       </div>
@@ -84,7 +87,7 @@ export function BillingFields({
       {cycle === "yearly" && (
         <div className="space-y-1.5">
           <label htmlFor={`${idPrefix}-month`} className={FIELD_LABEL}>
-            결제 월
+            {f.month}
           </label>
           <Select
             id={`${idPrefix}-month`}
@@ -92,22 +95,20 @@ export function BillingFields({
             value={String(formData.billingMonth ?? "")}
             onChange={onChange}
           >
-            <option value="">선택해주세요</option>
+            <option value="">{f.choose}</option>
             {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
               <option key={month} value={String(month)}>
-                {month}월
+                {f.monthOption(month)}
               </option>
             ))}
           </Select>
-          <p className="text-[11px] text-muted-foreground">
-            결제 월을 넣어야 D-day·알림·캘린더가 맞아요.
-          </p>
+          <p className="text-[11px] text-muted-foreground">{f.monthHint}</p>
         </div>
       )}
 
       <div className="space-y-1.5">
         <label htmlFor={`${idPrefix}-trial`} className={FIELD_LABEL}>
-          무료 체험 종료일 <span className="font-normal text-muted-foreground">(선택)</span>
+          {f.trial} <span className="font-normal text-muted-foreground">{f.optional}</span>
         </label>
         <Input
           id={`${idPrefix}-trial`}
@@ -116,16 +117,12 @@ export function BillingFields({
           value={formData.trialEndsAt ?? ""}
           onChange={onChange}
         />
-        <p className="text-[11px] text-muted-foreground break-keep">
-          유료로 바뀌는 날이에요. 그전까지는 지출에서 빼고, 끝나기 전에 알려 드려요. 모르면 비워
-          두세요(지금 결제 중으로 봐요).
-        </p>
+        <p className="text-[11px] text-muted-foreground break-keep">{f.trialHint}</p>
       </div>
 
       {cycle === "yearly" && preset && !formData.planId && (
         <p className="text-[11px] text-muted-foreground break-keep">
-          {plans.length > 0 ? `${preset.nameKo}의 연 요금은 목록에 없어요. ` : ""}
-          1년치 결제액을 적어 주세요(월 요금 × 12와 다를 수 있어요).
+          {f.yearlyNoPlan(plans.length > 0 ? preset.nameKo : null)}
         </p>
       )}
     </>

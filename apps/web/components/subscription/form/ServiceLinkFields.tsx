@@ -1,6 +1,8 @@
 "use client";
 
 import { Input } from "../../ui/input";
+import { useT } from "@lib/i18n";
+import { useKnownText } from "@lib/i18n";
 import { FIELD_LABEL } from "./fieldLabel";
 
 /**
@@ -22,49 +24,46 @@ export function ServiceLinkFields({
   cancelGuide?: string;
   onCancelGuideChange: (guide: string | undefined) => void;
 }) {
+  const f = useT().form.link;
+  const known = useKnownText();
   return (
     <>
       <div className="space-y-1.5">
         <label htmlFor={`${idPrefix}-url`} className={FIELD_LABEL}>
-          서비스 웹사이트 또는 해지 페이지 주소
+          {f.url}
         </label>
         <Input
           id={`${idPrefix}-url`}
           name="cancelUrl"
           inputMode="url"
-          placeholder="예: service.com"
+          placeholder={f.urlPlaceholder}
           value={url}
           onChange={(e) => onUrlChange(e.target.value)}
           aria-invalid={Boolean(error)}
         />
         {error ? (
           <p className="text-[11px] font-medium text-destructive" role="alert">
-            {error}
+            {known(error)}
           </p>
         ) : (
-          <p className="text-[11px] text-muted-foreground">
-            도메인만 적어도 돼요. 해지 가이드에 이 주소와 추정한 계정 관리 링크(/account)가 생겨요.
-            추정이라 없는 페이지일 수 있어요.
-          </p>
+          <p className="text-[11px] text-muted-foreground">{f.urlHint}</p>
         )}
       </div>
 
       <div className="space-y-1.5">
         <label htmlFor={`${idPrefix}-guide`} className={FIELD_LABEL}>
-          해지 방법 메모
+          {f.guide}
         </label>
         <textarea
           id={`${idPrefix}-guide`}
           name="cancelGuide"
           rows={3}
-          placeholder={"예:\n1. 앱 실행 → 설정\n2. 구독 관리 → 해지"}
+          placeholder={f.guidePlaceholder}
           value={cancelGuide ?? ""}
           onChange={(e) => onCancelGuideChange(e.target.value || undefined)}
           className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
-        <p className="text-[11px] text-muted-foreground">
-          한 줄에 한 단계씩 적으면 해지 가이드에 보여요.
-        </p>
+        <p className="text-[11px] text-muted-foreground">{f.guideHint}</p>
       </div>
     </>
   );

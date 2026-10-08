@@ -2,6 +2,7 @@
 
 import { type Subscription, findPresetForSubscription, serviceNameOf } from "@subslash/shared";
 import { sharedServices } from "@lib/duplicate-subscription";
+import { useT } from "@lib/i18n";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../../ui/dialog";
 import { AppSubRow } from "../../dashboard/app/AppSubRow";
 
@@ -23,6 +24,7 @@ export function AppDuplicateDialog({
 }) {
   // 같은 서비스가 아니라 결합 상품과 그 안의 서비스가 겹치는 경우(배민클럽 + 유튜브 프리미엄 ↔
   // 유튜브 프리미엄). 결합 상품을 결제하면서 원래 구독을 끊지 않아 두 번 내는 일이 실제로 있다.
+  const d = useT().form.duplicate;
   const samePreset =
     !candidate ||
     findPresetForSubscription(candidate)?.id === findPresetForSubscription(existing)?.id;
@@ -31,12 +33,10 @@ export function AppDuplicateDialog({
     <Dialog open onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="sm:max-w-sm">
         <DialogTitle className="text-center text-lg font-black tracking-tight">
-          {shared.length > 0 ? "결합 상품과 겹쳐요" : "이미 등록된 구독이에요"}
+          {shared.length > 0 ? d.titleBundle : d.titleSame}
         </DialogTitle>
         <DialogDescription className="mt-1 text-center text-xs text-muted-foreground">
-          {shared.length > 0
-            ? `${shared.map(serviceNameOf).join(", ")}을(를) 이 구독으로 이미 받고 있어요. 따로 결제하면 두 번 내는 것일 수 있어요. 다른 계정으로 쓰고 있다면 등록해도 돼요.`
-            : "다른 계정으로 따로 내고 있다면 또 등록해도 돼요."}
+          {shared.length > 0 ? d.bodyBundle(shared.map(serviceNameOf).join(", ")) : d.bodySame}
         </DialogDescription>
         <div className="mt-4">
           <AppSubRow subscription={existing} />
@@ -47,14 +47,14 @@ export function AppDuplicateDialog({
             onClick={onCancel}
             className="h-11 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground"
           >
-            등록 안 할게요
+            {d.cancel}
           </button>
           <button
             type="button"
             onClick={onAddAnyway}
             className="h-11 rounded-xl border text-sm font-bold text-muted-foreground"
           >
-            그래도 등록
+            {d.anyway}
           </button>
         </div>
       </DialogContent>

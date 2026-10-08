@@ -2,6 +2,7 @@
 
 import { ServiceLogo } from "../ServiceLogo";
 import { CUSTOM_ICON_COLORS, CUSTOM_ICON_EMOJIS } from "@lib/custom-icon";
+import { useT } from "@lib/i18n";
 import { FIELD_LABEL } from "./fieldLabel";
 
 /**
@@ -20,6 +21,7 @@ export function CustomIconPicker({
   iconColor?: string;
   onChange: (change: { iconUrl?: string } | { iconColor?: string }) => void;
 }) {
+  const f = useT().form.icon;
   return (
     <div className="space-y-3 rounded-xl border bg-muted/40 p-3">
       <div className="flex items-center gap-2.5">
@@ -30,12 +32,12 @@ export function CustomIconPicker({
           size={36}
         />
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold">{name || "이름을 적어주세요"}</p>
-          <p className="text-[11px] text-muted-foreground">목록에서 이렇게 보여요</p>
+          <p className="truncate text-sm font-bold">{name || f.placeholderName}</p>
+          <p className="text-[11px] text-muted-foreground">{f.preview}</p>
         </div>
       </div>
       <fieldset className="space-y-1.5">
-        <legend className={`${FIELD_LABEL} mb-1.5`}>아이콘</legend>
+        <legend className={`${FIELD_LABEL} mb-1.5`}>{f.icon}</legend>
         <div className="grid grid-cols-8 gap-1">
           {CUSTOM_ICON_EMOJIS.map((emoji) => {
             const on = iconUrl === emoji;
@@ -56,7 +58,7 @@ export function CustomIconPicker({
         </div>
       </fieldset>
       <fieldset className="space-y-1.5">
-        <legend className={`${FIELD_LABEL} mb-1.5`}>색</legend>
+        <legend className={`${FIELD_LABEL} mb-1.5`}>{f.color}</legend>
         <div className="flex flex-wrap gap-2">
           {CUSTOM_ICON_COLORS.map((color) => {
             const on = iconColor === color.id;
@@ -64,7 +66,7 @@ export function CustomIconPicker({
               <button
                 key={color.id}
                 type="button"
-                aria-label={color.label}
+                aria-label={f.colors[color.id]}
                 aria-pressed={on}
                 onClick={() => onChange({ iconColor: on ? undefined : color.id })}
                 className={`size-7 rounded-full ring-offset-2 ring-offset-background transition ${

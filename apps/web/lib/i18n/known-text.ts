@@ -31,6 +31,9 @@ const EN: [RegExp, (...groups: string[]) => string][] = [
     () => "This format works. Whether the username is taken is checked when you sign up.",
   ],
 
+  // 서비스 주소(구독 등록 폼)
+  [/^주소를 확인해주세요\. \(예: service\.com\)$/, () => "Check the address (e.g. service.com)."],
+
   // 이메일
   [/^이메일을 입력해주세요\.$/, () => "Enter an email address."],
   [/^이메일이 너무 깁니다\.$/, () => "That email address is too long."],
