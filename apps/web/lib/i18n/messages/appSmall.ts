@@ -1,7 +1,5 @@
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
+import { one } from "../english";
 
 /** 앱의 폰 기록으로 한 번에 체크인, 첫 체크인 카드, 대시보드·계산서의 '지킨 돈' 한 줄. */
 export const ko = {

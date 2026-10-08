@@ -1,8 +1,6 @@
 import { METRIC_SPECS, type ValueMetric } from "@subslash/shared";
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
+import { one } from "../english";
 
 /** 한국어 원문은 `METRIC_SPECS`가 가진다. 없는 칸(힌트·단가 앞말)은 빈 글자로 둔다. */
 function koMetric(metric: ValueMetric) {

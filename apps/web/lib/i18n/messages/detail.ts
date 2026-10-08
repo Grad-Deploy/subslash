@@ -1,4 +1,5 @@
 import type { Widen } from "../types";
+import { MONTHS_LONG } from "../english";
 
 /**
  * 구독 상세와 해지 안내. 결제 수단 이름·안내(`guide`)·사용자가 적은 해지 단계처럼 서비스 목록이나 사용자의
@@ -327,22 +328,8 @@ const en0: Widen<typeof ko0> = {
   },
 };
 
-const EN_MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
 function monthDay(month: number, day: number): string {
-  return `${EN_MONTHS[Number(month) - 1] ?? month} ${day}`;
+  return `${MONTHS_LONG[Number(month) - 1] ?? month} ${day}`;
 }
 
 export const ko = {

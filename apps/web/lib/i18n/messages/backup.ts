@@ -1,19 +1,5 @@
 import type { Widen } from "../types";
-
-const EN_MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+import { MONTHS_SHORT } from "../english";
 
 const subs = (n: number) => `${n} ${n === 1 ? "subscription" : "subscriptions"}`;
 const checkIns = (n: number) => `${n} ${n === 1 ? "check-in" : "check-ins"}`;
@@ -105,7 +91,7 @@ export const ko = {
 };
 
 export const en: Widen<typeof ko> = {
-  date: (year, month, day) => `${EN_MONTHS[month - 1]} ${day}, ${year}`,
+  date: (year, month, day) => `${MONTHS_SHORT[month - 1]} ${day}, ${year}`,
   unknownTime: "unknown time",
   localLine: (subscriptionCount, usageLogCount) =>
     `Now: ${subs(subscriptionCount)}, ${checkIns(usageLogCount)}`,

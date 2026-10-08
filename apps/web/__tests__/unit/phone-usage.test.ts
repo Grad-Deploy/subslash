@@ -7,8 +7,6 @@ import {
   EMPTY_HISTORY,
   MEASURE_VERSION,
   daysToQuery,
-  formatDuration,
-  formatDurationPrecise,
   lastDays,
   mergeUsage,
   monthlyTotals,
@@ -24,7 +22,6 @@ import {
 } from "@lib/usage/packages";
 import {
   GOOD_AT,
-  MIN_HOURLY_MS,
   VERDICT_DAYS,
   compareValue,
   median,
@@ -322,9 +319,6 @@ describe("subUsage", () => {
     const view = metricView(u, "hours");
     expect(view.short).toBe(true);
     expect(view.unitKRW).toBeNull();
-    expect(formatDurationPrecise(500)).toBe("1초");
-    expect(formatDurationPrecise(12_400)).toBe("12초");
-    expect(formatDurationPrecise(MIN_HOURLY_MS)).toBe("1시간");
   });
 
   it("쓴 날로 재는 구독은 하루당 금액으로 말하고, 기록이 30일이 안 되면 30일로 늘린다", () => {
@@ -340,7 +334,7 @@ describe("subUsage", () => {
       1350,
     );
     const view = metricView(u, "days");
-    expect(view.perLabel).toBe("하루당");
+    expect(view.metric).toBe("days");
     expect(view.quantity).toBe(5);
     // 15일 중 5일 → 30일이면 10일 → 17,000 ÷ 10
     expect(view.unitKRW).toBeCloseTo(1700);
@@ -461,13 +455,6 @@ describe("helpers", () => {
       NOW,
     );
     expect(merged.measureVersion).toBe(MEASURE_VERSION);
-  });
-
-  it("formatDuration", () => {
-    expect(formatDuration(0)).toBe("0분");
-    expect(formatDuration(30_000)).toBe("1분 미만");
-    expect(formatDuration(40 * 60_000)).toBe("40분");
-    expect(formatDuration((12 * 60 + 10) * 60_000)).toBe("12시간 10분");
   });
 
   it("median", () => {

@@ -17,25 +17,21 @@ import { packagesFor } from "./packages";
 export type UsageRange = "week" | "month" | "year";
 
 export const RANGE_DAYS: Record<UsageRange, number> = { week: 7, month: 30, year: 365 };
-export const RANGE_LABEL: Record<UsageRange, string> = { week: "1주", month: "1달", year: "1년" };
 
 /**
- * 막대 색과 글자. 기준은 체크인·계산서가 쓰는 getRiskLevel 그대로다(새 기준을 만들지 않는다).
- * 색만으로 말하지 않게 늘 글자를 붙인다.
+ * 막대 색. 기준은 체크인·계산서가 쓰는 getRiskLevel 그대로다(새 기준을 만들지 않는다). 색만으로 말하지
+ * 않게 화면은 늘 평가 글자(`usageApp.level`, 지금 언어)를 붙인다.
  */
-export const LEVEL_STYLE: Record<RiskLevel, { label: string; bar: string; text: string }> = {
+export const LEVEL_STYLE: Record<RiskLevel, { bar: string; text: string }> = {
   red: {
-    label: "비쌈",
     bar: "bg-red-500 dark:bg-red-400",
     text: "text-red-700 dark:text-red-400",
   },
   yellow: {
-    label: "애매",
     bar: "bg-amber-400 dark:bg-amber-400",
     text: "text-amber-700 dark:text-amber-400",
   },
   green: {
-    label: "잘 씀",
     bar: "bg-emerald-500 dark:bg-emerald-400",
     text: "text-emerald-700 dark:text-emerald-400",
   },
@@ -183,11 +179,6 @@ export const VERDICT_DAYS = 30;
  * - 쓴 날·시간: metricRiskLevel의 10일·10시간.
  */
 export const GOOD_AT: Record<"uses" | "days" | "hours", number> = { uses: 4, days: 10, hours: 10 };
-export const GOAL_UNIT: Record<"uses" | "days" | "hours", string> = {
-  uses: "회",
-  days: "일",
-  hours: "시간",
-};
 
 /**
  * 구독의 가성비 한 줄. 체크인과 같은 지표(`metricForSubscription`)로 말한다 — Gemini처럼 '쓴 날'로 재는
@@ -195,8 +186,6 @@ export const GOAL_UNIT: Record<"uses" | "days" | "hours", string> = {
  */
 export interface MetricView {
   metric: "uses" | "days" | "hours";
-  /** '1회당' · '하루당' · '시간당' */
-  perLabel: string;
   /** 단가. 안 썼거나(0) 시간이 1시간도 안 되면 null. 기록이 30일이 안 되면 30일로 늘려 계산한다. */
   unitKRW: number | null;
   /** 시간 지표인데 1시간도 안 썼다 — 단가 대신 쓴 시간과 낸 돈(periodCostKRW)을 보인다. */
@@ -209,7 +198,6 @@ export interface MetricView {
   have30: number;
   /** '잘 씀'이 되는 30일 동안의 양(목표 단위). */
   goal: number;
-  goalUnit: string;
   /** 평가까지 남은 날. 0이면 평가가 나왔다. */
   pendingDays: number;
   /** 평가. 기록이 VERDICT_DAYS가 안 되면 null(보류). */
@@ -226,14 +214,12 @@ export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {
     const have = totals.opens;
     return {
       metric,
-      perLabel: "1회당",
       unitKRW: usage.perOpenKRW,
       short: false,
       quantity: have,
       have,
       have30: have * scale,
       goal: GOOD_AT.uses,
-      goalUnit: GOAL_UNIT.uses,
       pendingDays,
       // 연 적이 없으면(perOpenKRW null) subUsage가 색을 매기지 않는다 — 0회는 비쌈이다.
       level: judge(usage.level ?? "red"),
@@ -244,14 +230,12 @@ export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {
     const per30 = have * scale;
     return {
       metric,
-      perLabel: "하루당",
       unitKRW: per30 > 0 ? monthlyKRW / per30 : null,
       short: false,
       quantity: have,
       have,
       have30: per30,
       goal: GOOD_AT.days,
-      goalUnit: GOAL_UNIT.days,
       pendingDays,
       // 체크인과 같게, 무료로도 충분했다고 답한 구독은 많이 써도 '잘 씀'이 아니다.
       level: judge(
@@ -270,14 +254,12 @@ export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {
   const hoursPer30 = have * scale;
   return {
     metric: "hours",
-    perLabel: "시간당",
     unitKRW: usage.hourlyKRW,
     short: totals.usedMs > 0 && totals.usedMs < MIN_HOURLY_MS,
     quantity: totals.usedMs,
     have,
     have30: hoursPer30,
     goal: GOOD_AT.hours,
-    goalUnit: GOAL_UNIT.hours,
     pendingDays,
     level: judge(metricRiskLevel("hours", monthlyKRW, hoursPer30)),
   };

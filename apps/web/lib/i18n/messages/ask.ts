@@ -1,22 +1,6 @@
 import { josa } from "../../ask/josa";
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
-const EN_MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+import { MONTHS_SHORT, one } from "../english";
 
 /**
  * '리포트에 물어보기'의 답 문장 틀. AI는 도구와 인자만 고르고, 기기가 자기 기록으로 계산해 이 틀에 넣는다
@@ -217,7 +201,7 @@ export const en: Widen<typeof ko> = {
       some: (days, count) =>
         `${count} ${one(count) ? "payment is" : "payments are"} due in the next ${days} days.`,
       source: "Next billing dates · your share of each payment",
-      date: (month, day) => `${EN_MONTHS[Number(month) - 1] ?? month} ${day}`,
+      date: (month, day) => `${MONTHS_SHORT[Number(month) - 1] ?? month} ${day}`,
       row: (date, name) => `${date} ${name}`,
     },
     trials: {

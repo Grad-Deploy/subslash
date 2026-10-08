@@ -301,19 +301,3 @@ export function monthlyTotals(
   }
   return months;
 }
-
-/** '12시간 10분', '40분', 1분이 안 되면 '12초'. 가성비처럼 짧은 시간이 곧 근거인 자리에 쓴다. */
-export function formatDurationPrecise(ms: number): string {
-  if (ms > 0 && ms < 60_000) return `${Math.max(1, Math.round(ms / 1000))}초`;
-  return formatDuration(ms);
-}
-
-/** '12시간 10분', '40분', '1분 미만'. */
-export function formatDuration(ms: number): string {
-  const minutes = Math.floor(ms / 60_000);
-  if (minutes < 1) return ms > 0 ? "1분 미만" : "0분";
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  if (hours === 0) return `${rest}분`;
-  return rest === 0 ? `${hours}시간` : `${hours}시간 ${rest}분`;
-}
