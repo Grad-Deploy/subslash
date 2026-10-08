@@ -10,6 +10,7 @@ import {
 } from "@subslash/shared";
 import { Input } from "../../ui/input";
 import { Select } from "../../ui/select";
+import { useT } from "@lib/i18n";
 import { FIELD_LABEL } from "./fieldLabel";
 
 /**
@@ -28,6 +29,7 @@ export function SharingFields({
   >;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 }) {
+  const f = useT().form.sharing;
   const sharing = (formData.sharingCount ?? 1) > 1;
   const billed =
     typeof formData.amount === "number"
@@ -39,7 +41,7 @@ export function SharingFields({
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <label htmlFor={`${idPrefix}-sharing`} className={FIELD_LABEL}>
-            함께 쓰는 인원
+            {f.people}
           </label>
           <Select
             id={`${idPrefix}-sharing`}
@@ -47,10 +49,10 @@ export function SharingFields({
             value={String(formData.sharingCount ?? 1)}
             onChange={onChange}
           >
-            <option value="1">나 혼자 (1명)</option>
+            <option value="1">{f.alone}</option>
             {[2, 3, 4, 5, 6].map((n) => (
               <option key={n} value={String(n)}>
-                {n}명이서 나눔
+                {f.by(n)}
               </option>
             ))}
           </Select>
@@ -59,7 +61,7 @@ export function SharingFields({
         {sharing && (
           <div className="space-y-1.5">
             <label htmlFor={`${idPrefix}-share`} className={FIELD_LABEL}>
-              내 부담금 <span className="font-normal text-muted-foreground">(선택)</span>
+              {f.myShare} <span className="font-normal text-muted-foreground">{f.optional}</span>
             </label>
             <Input
               id={`${idPrefix}-share`}
@@ -85,7 +87,7 @@ export function SharingFields({
 
       {sharing && (
         <p className="text-[11px] text-muted-foreground">
-          내가 내는 몫은{" "}
+          {f.shareBefore}
           <strong className="text-foreground">
             {formatAmount(
               getMyShareAmount({
@@ -97,7 +99,7 @@ export function SharingFields({
               formData.currency || "KRW",
             )}
           </strong>
-          이에요. 비워 두면 인원수로 나눠요. 지출·절약은 이 금액으로 계산해요.
+          {f.shareAfter}
         </p>
       )}
     </div>

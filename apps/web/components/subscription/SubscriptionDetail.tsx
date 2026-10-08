@@ -24,6 +24,7 @@ import { Button } from "../ui/button";
 import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
 import { useToast } from "@hooks/useToast";
+import { useT } from "@lib/i18n";
 
 // 폰 사용 기록(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
 const AppUsageDetail = IS_APP_BUILD
@@ -74,6 +75,7 @@ export function SubscriptionDetail({
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [confirmType, setConfirmType] = useState<"revive" | "delete" | null>(null);
 
+  const t = useT();
   const { showToast, toast } = useToast();
 
   const sub = subscriptions.find((s) => s.id === id);
@@ -201,7 +203,7 @@ export function SubscriptionDetail({
               mode="edit"
               popularServices={POPULAR_SERVICES}
               initialData={subscriptionFormData(sub)}
-              submitLabel="저장"
+              submitLabel={t.form.save}
               onSubmit={handleEditSubmit}
             />
           </div>

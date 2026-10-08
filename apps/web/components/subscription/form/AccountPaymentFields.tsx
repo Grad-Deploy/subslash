@@ -2,6 +2,7 @@ import React from "react";
 import { PAYMENT_METHOD_OPTIONS, type SubscriptionFormData } from "@subslash/shared";
 import { Input } from "../../ui/input";
 import { Select } from "../../ui/select";
+import { useT } from "@lib/i18n";
 import { FIELD_LABEL } from "./fieldLabel";
 
 /**
@@ -21,18 +22,19 @@ export function AccountPaymentFields({
   paymentMethod: SubscriptionFormData["paymentMethod"] | undefined;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 }) {
+  const f = useT().form.account;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div className="space-y-1.5">
         <label htmlFor={`${idPrefix}-account`} className={FIELD_LABEL}>
-          가입한 계정
+          {f.label}
         </label>
         <Input
           id={`${idPrefix}-account`}
           name="linkedAccountName"
           value={account}
           onChange={(e) => onAccountChange(e.target.value)}
-          placeholder="예: 가족 계정 abc@gmail.com"
+          placeholder={f.placeholder}
           autoComplete="off"
           maxLength={120}
         />
@@ -40,7 +42,7 @@ export function AccountPaymentFields({
 
       <div className="space-y-1.5">
         <label htmlFor={`${idPrefix}-payment`} className={FIELD_LABEL}>
-          결제 수단
+          {f.payment}
         </label>
         <Select
           id={`${idPrefix}-payment`}
