@@ -1,6 +1,8 @@
-import { formatKRW, formatReceiptPeriod, type Receipt } from "@subslash/shared";
+import { formatKRW, type Receipt } from "@subslash/shared";
+import type { Messages } from "@lib/i18n/messages";
 import {
   describeReceiptLine,
+  formatReceiptPeriodText,
   receiptFootnotes,
   receiptNumber,
   receiptPeriodSuffix,
@@ -63,13 +65,18 @@ function barWidths(seed: string): number[] {
   return widths;
 }
 
-export async function renderReceiptImage(receipt: Receipt, issuedAt: Date): Promise<Blob> {
+export async function renderReceiptImage(
+  receipt: Receipt,
+  issuedAt: Date,
+  t: Messages,
+): Promise<Blob> {
+  const v = t.receiptView;
   // 글꼴이 늦게 오면 대체 글꼴로 그려진다. 이미 받아 둔 글꼴만 기다린다.
   await document.fonts?.ready;
 
   const measureCanvas = document.createElement("canvas");
   const measure = measureCanvas.getContext("2d");
-  if (!measure) throw new Error("캔버스를 쓸 수 없습니다");
+  if (!measure) throw new Error(v.image.noCanvas);
 
   const inner = WIDTH - PAD * 2;
   const ops: Op[] = [];
@@ -123,30 +130,33 @@ export async function renderReceiptImage(receipt: Receipt, issuedAt: Date): Prom
   // 머리
   text("SubSlash", { size: 22, weight: 800, align: "center" });
   y += 22;
-  text("구독 영수증", { size: 13, color: MUTED, align: "center" });
+  text(v.title, { size: 13, color: MUTED, align: "center" });
   y += 24;
-  text(`${formatReceiptPeriod(receipt.period)}${receiptPeriodSuffix(receipt)}`, {
+  text(`${formatReceiptPeriodText(t, receipt.period)}${receiptPeriodSuffix(t, receipt)}`, {
     size: 15,
     weight: 700,
     align: "center",
   });
   y += 20;
   text(
-    `No. ${receiptNumber(receipt.period)} · 발행 ${issuedAt.getFullYear()}.${String(issuedAt.getMonth() + 1).padStart(2, "0")}.${String(issuedAt.getDate()).padStart(2, "0")}`,
+    v.issued(
+      receiptNumber(receipt.period),
+      `${issuedAt.getFullYear()}.${String(issuedAt.getMonth() + 1).padStart(2, "0")}.${String(issuedAt.getDate()).padStart(2, "0")}`,
+    ),
     { size: 11, color: MUTED, align: "center" },
   );
   dashed();
 
   // 줄
   if (receipt.lines.length === 0) {
-    text("결제된 구독이 없어요", { size: 14, color: MUTED, align: "center" });
+    text(v.empty, { size: 14, color: MUTED, align: "center" });
     y += 22;
   }
   for (const line of receipt.lines) {
     // 이름과 그 아래 설명은 붙여 쓰고, 다음 구독과는 띄운다.
     row(line.name, formatKRW(line.amountKRW), 15, 600, INK, 18);
     measure.font = font(11);
-    for (const detail of wrap(measure, describeReceiptLine(line, receipt.period), inner)) {
+    for (const detail of wrap(measure, describeReceiptLine(t, line, receipt.period), inner)) {
       text(detail, { size: 11, color: MUTED });
       y += 15;
     }
@@ -155,17 +165,17 @@ export async function renderReceiptImage(receipt: Receipt, issuedAt: Date): Prom
   dashed();
 
   // 합계
-  row(`합계(내 몫) · ${receipt.chargeCount}건`, formatKRW(receipt.totalKRW), 18, 800);
+  row(v.total(receipt.chargeCount), formatKRW(receipt.totalKRW), 18, 800);
   if (receipt.billedTotalKRW !== receipt.totalKRW) {
-    row("카드에 찍힌 금액", formatKRW(receipt.billedTotalKRW), 12, 400, MUTED);
+    row(v.billed, formatKRW(receipt.billedTotalKRW), 12, 400, MUTED);
   }
   if (receipt.defendedKRW > 0) {
-    row("해지로 지킨 돈", formatKRW(receipt.defendedKRW), 14, 700, "#047857");
+    row(v.defended, formatKRW(receipt.defendedKRW), 14, 700, "#047857");
   }
   if (receipt.killed.length > 0) {
     measure.font = font(11);
     const names = receipt.killed.map((k) => k.name).join(", ");
-    for (const detail of wrap(measure, `이 기간에 해지: ${names}`, inner)) {
+    for (const detail of wrap(measure, v.killedIn(names), inner)) {
       text(detail, { size: 11, color: MUTED });
       y += 15;
     }
@@ -173,7 +183,10 @@ export async function renderReceiptImage(receipt: Receipt, issuedAt: Date): Prom
   if (receipt.priciestPerUse?.usage) {
     y += 4;
     measure.font = font(11);
-    const note = `1회가 가장 비쌌던 구독: ${receipt.priciestPerUse.name} (1회 ${formatKRW(receipt.priciestPerUse.usage.costPerUseKRW)})`;
+    const note = v.priciestPlain(
+      receipt.priciestPerUse.name,
+      formatKRW(receipt.priciestPerUse.usage.costPerUseKRW),
+    );
     for (const detail of wrap(measure, note, inner)) {
       text(detail, { size: 11, color: INK });
       y += 15;
@@ -183,7 +196,7 @@ export async function renderReceiptImage(receipt: Receipt, issuedAt: Date): Prom
 
   // 알림
   measure.font = font(10);
-  for (const note of receiptFootnotes(receipt)) {
+  for (const note of receiptFootnotes(t, receipt)) {
     for (const detail of wrap(measure, `· ${note}`, inner)) {
       text(detail, { size: 10, color: MUTED });
       y += 14;
@@ -212,7 +225,7 @@ export async function renderReceiptImage(receipt: Receipt, issuedAt: Date): Prom
   canvas.width = WIDTH * SCALE;
   canvas.height = height * SCALE;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("캔버스를 쓸 수 없습니다");
+  if (!ctx) throw new Error(v.image.noCanvas);
   ctx.scale(SCALE, SCALE);
 
   // 종이 — 아래 가장자리를 톱니 모양으로.
@@ -234,7 +247,7 @@ export async function renderReceiptImage(receipt: Receipt, issuedAt: Date): Prom
 
   return new Promise((resolve, reject) =>
     canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("그림을 만들지 못했습니다"))),
+      (blob) => (blob ? resolve(blob) : reject(new Error(v.image.noBlob))),
       "image/png",
     ),
   );

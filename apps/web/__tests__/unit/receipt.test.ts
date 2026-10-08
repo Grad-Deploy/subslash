@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { buildReceipt, previousMonth, type Subscription, type UsageLog } from "@subslash/shared";
 import { describeReceiptLine, receiptFootnotes } from "@lib/receipt-view";
+import { messages } from "@lib/i18n/messages";
 
 // 2026년 9월 27일 오전 9시(기기 시간대).
 const NOW = new Date(2026, 8, 27, 9, 0);
@@ -306,8 +307,10 @@ describe("영수증 문구 — 결제 메일로 넣은 줄", () => {
       chargeHistory: [{ date: "2026-08-10", amount: 13500 }],
     });
     const august = buildReceipt([shared], [], AUGUST, RATE, NOW);
-    expect(describeReceiptLine(august.lines[0], AUGUST)).toContain("08.10 결제 · 결제 메일로 확인");
-    expect(receiptFootnotes(august)).toContain(
+    expect(describeReceiptLine(messages.ko, august.lines[0], AUGUST)).toContain(
+      "08.10 결제 · 결제 메일로 확인",
+    );
+    expect(receiptFootnotes(messages.ko, august)).toContain(
       "등록하기 전 결제 1건은 Gmail에서 찾은 결제 메일의 날짜와 금액으로 넣었어요. 나눠 내는 구독의 내 몫은 지금 나누는 비율로 계산했어요.",
     );
   });

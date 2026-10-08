@@ -1,4 +1,5 @@
 import * as appSmall from "./appSmall";
+import * as ask from "./ask";
 import * as auth from "./auth";
 import * as backup from "./backup";
 import * as checkin from "./checkin";
@@ -9,6 +10,7 @@ import * as form from "./form";
 import * as oauth from "./oauth";
 import * as overview from "./overview";
 import * as receipt from "./receipt";
+import * as receiptView from "./receiptView";
 import * as reportPage from "./reportPage";
 import * as settings from "./settings";
 import * as shell from "./shell";
@@ -33,6 +35,8 @@ export const messages = {
     checkin: checkin.ko,
     form: form.ko,
     ...appSmall.ko,
+    ...receiptView.ko,
+    ...ask.ko,
     ...reportPage.ko,
     ...detail.ko,
     ...receipt.ko,
@@ -51,6 +55,8 @@ export const messages = {
     checkin: checkin.en,
     form: form.en,
     ...appSmall.en,
+    ...receiptView.en,
+    ...ask.en,
     ...reportPage.en,
     ...detail.en,
     ...receipt.en,

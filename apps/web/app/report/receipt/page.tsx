@@ -4,20 +4,21 @@ import React, { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Download, Share2 } from "lucide-react";
-import {
-  buildReceipt,
-  formatReceiptPeriod,
-  formatReceiptText,
-  previousMonth,
-  type ReceiptPeriod,
-} from "@subslash/shared";
+import { buildReceipt, previousMonth, type ReceiptPeriod } from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { rateRangeFor, useHistoricalRates } from "@hooks/useHistoricalRates";
 import { copyText, saveImage, shareText } from "@lib/native";
 import { webUrl } from "@lib/api";
-import { parseReceiptPeriod, receiptHref, receiptNumber } from "@lib/receipt-view";
+import {
+  formatReceiptPeriodText,
+  formatReceiptShareText,
+  parseReceiptPeriod,
+  receiptHref,
+  receiptNumber,
+} from "@lib/receipt-view";
+import { useLatestT, useT } from "@lib/i18n";
 import { renderReceiptImage } from "@lib/receipt-image";
 import { ReceiptPaper } from "@components/report/ReceiptPaper";
 import { Button } from "@components/ui/button";
@@ -68,6 +69,9 @@ function ReceiptFromQuery() {
   const router = useRouter();
   const params = useSearchParams();
   const mounted = useIsClient();
+  const t = useT();
+  const tRef = useLatestT();
+  const v = t.receiptView;
   const rate = useExchangeRate();
   const subscriptions = useStore((state) => state.subscriptions);
   const usageLogs = useStore((state) => state.usageLogs);
@@ -112,26 +116,26 @@ function ReceiptFromQuery() {
   const saveAsImage = async () => {
     setBusy(true);
     try {
-      const image = await renderReceiptImage(receipt, now);
+      const image = await renderReceiptImage(receipt, now, tRef.current);
       const saved = await saveImage(`subslash-receipt-${receiptNumber(period)}.png`, image);
-      if (saved) flash("영수증 이미지를 저장했어요");
+      if (saved) flash(tRef.current.receiptView.page.imageSaved);
     } catch (error) {
       console.error("[receipt] 이미지를 만들지 못했습니다", error);
-      flash("이미지를 만들지 못했어요. 글로 공유해 보세요.");
+      flash(tRef.current.receiptView.page.imageFailed);
     } finally {
       setBusy(false);
     }
   };
 
   const shareAsText = async () => {
-    const text = formatReceiptText(receipt);
+    const text = formatReceiptShareText(tRef.current, receipt);
     const shared = await shareText({
-      title: `${formatReceiptPeriod(period)} 구독 영수증`,
+      title: v.paperLabel(formatReceiptPeriodText(tRef.current, period)),
       text,
       url: webUrl("/"),
     });
     if (shared) return;
-    if (await copyText(text)) flash("영수증 글을 복사했어요");
+    if (await copyText(text)) flash(tRef.current.receiptView.page.textCopied);
     else setCopyFallback(text);
   };
 
@@ -148,14 +152,18 @@ function ReceiptFromQuery() {
 
       <header className="space-y-3">
         <Link href="/report" className="text-sm font-medium text-muted-foreground">
-          ← 리포트
+          {v.page.back}
         </Link>
-        <h1 className="text-2xl font-black tracking-tight">구독 영수증</h1>
-        <div role="tablist" aria-label="영수증 기간" className="inline-flex rounded-xl border p-1">
+        <h1 className="text-2xl font-black tracking-tight">{v.title}</h1>
+        <div
+          role="tablist"
+          aria-label={v.page.tabsLabel}
+          className="inline-flex rounded-xl border p-1"
+        >
           {(
             [
-              ["month", "월", monthView],
-              ["year", "연말 결산", yearView],
+              ["month", v.page.month, monthView],
+              ["year", v.page.year, yearView],
             ] as const
           ).map(([kind, label, target]) => (
             <Link
@@ -177,7 +185,7 @@ function ReceiptFromQuery() {
         </div>
       </header>
 
-      <nav className="flex items-center justify-between" aria-label="다른 기간">
+      <nav className="flex items-center justify-between" aria-label={v.page.otherPeriods}>
         <Button
           variant="ghost"
           size="sm"
@@ -185,7 +193,7 @@ function ReceiptFromQuery() {
           onClick={() => router.replace(receiptHref(previous))}
         >
           <ChevronLeft className="size-4" aria-hidden />
-          {formatReceiptPeriod(previous)}
+          {formatReceiptPeriodText(t, previous)}
         </Button>
         <Button
           variant="ghost"
@@ -193,7 +201,7 @@ function ReceiptFromQuery() {
           disabled={!canGoForward}
           onClick={() => router.replace(receiptHref(next))}
         >
-          {canGoForward ? formatReceiptPeriod(next) : "다음"}
+          {canGoForward ? formatReceiptPeriodText(t, next) : v.page.next}
           <ChevronRight className="size-4" aria-hidden />
         </Button>
       </nav>
@@ -205,31 +213,28 @@ function ReceiptFromQuery() {
       <div className="grid grid-cols-2 gap-2">
         <Button variant="outline" disabled={busy} onClick={() => void saveAsImage()}>
           {busy ? <Spinner className="size-4" /> : <Download className="size-4" aria-hidden />}
-          이미지로 저장
+          {v.page.saveImage}
         </Button>
         <Button onClick={() => void shareAsText()}>
           <Share2 className="size-4" aria-hidden />
-          공유하기
+          {v.page.share}
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
-        영수증은 이 기기의 기록으로 만들어요. 저장하거나 공유할 때만 기기 밖으로 나가요. 서비스
-        이름이 적혀 있으니 보내기 전에 확인하세요.
-      </p>
+      <p className="text-xs text-muted-foreground">{v.page.privacy}</p>
 
       {period.kind === "year" && (
         <Link
           href={`/savings/review?year=${period.year}`}
           className="flex items-center justify-between rounded-2xl border p-4 text-sm font-semibold hover:bg-muted/50"
         >
-          {period.year}년 결산 자세히 보기
+          {v.page.yearDetail(period.year)}
           <ChevronRight className="size-4" aria-hidden />
         </Link>
       )}
 
       <CopyFallbackDialog
         text={copyFallback}
-        title="구독 영수증"
+        title={v.title}
         onClose={() => setCopyFallback(null)}
       />
     </div>
