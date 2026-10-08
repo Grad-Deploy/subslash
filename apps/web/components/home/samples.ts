@@ -6,6 +6,7 @@ import {
   type ServicePreset,
 } from "@subslash/shared";
 import { shortServiceName } from "@lib/service-name";
+import type { Locale } from "@lib/i18n/config";
 
 /**
  * 소개(웹 `/`·앱 첫 실행)의 견본 서비스. 첫 장면의 결제 알림과 1회 단가 계산기가 같은 목록을 쓴다. 요금은 여기
@@ -41,8 +42,8 @@ export const SAMPLES: Sample[] = SAMPLE_PICKS.flatMap(({ id, planId }): Sample[]
 });
 
 /** 요금제까지 붙인 이름("넷플릭스 프리미엄"). */
-export const sampleName = ({ preset, planName }: Sample) =>
-  `${shortServiceName(preset)}${planName ? ` ${planName}` : ""}`;
+export const sampleName = ({ preset, planName }: Sample, locale: Locale = "ko") =>
+  `${shortServiceName(preset, locale)}${planName ? ` ${planName}` : ""}`;
 
 /**
  * 결제 알림 견본의 한 달 합계("모르는 사이 매달 …"). 모두 원화일 때만 쓴다 — 통화가 섞이면 더한 숫자가 뜻이 없다.

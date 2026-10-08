@@ -6,7 +6,7 @@ import { useStore } from "@lib/store";
 import { CancelGuideModal } from "../components/subscription/CancelGuideModal";
 import { ConfirmDialog } from "../components/ui/confirm-dialog";
 import { useKillSeries } from "./useKillSeries";
-import { useLatestT, useT } from "@lib/i18n";
+import { useLatestT, useT, useServiceNames } from "@lib/i18n";
 
 /**
  * 대시보드의 '지금 결정할 것'(ActionQueue)과 계산서가 부르는 처리. 해지 안내·해지 확인·가격 확인·해지 알림
@@ -16,6 +16,7 @@ import { useLatestT, useT } from "@lib/i18n";
  * 실제 해지는 서비스 쪽에서 해야 하므로 가이드를 먼저 열고, 마쳤다고 알려줄 때만 완료로 기록한다.
  */
 export function useDashboardActions(showToast: (message: string) => void) {
+  const names = useServiceNames();
   const {
     killSubscription,
     reviveSubscription,
@@ -40,7 +41,7 @@ export function useDashboardActions(showToast: (message: string) => void) {
 
   const confirmKill = (target: Subscription) => {
     killSubscription(target.id);
-    showToast(tRef.current.actions.killRecorded(target.name));
+    showToast(tRef.current.actions.killRecorded(names.sub(target)));
     killSeries.advance(target);
   };
 
@@ -60,8 +61,8 @@ export function useDashboardActions(showToast: (message: string) => void) {
       const a = tRef.current.actions;
       showToast(
         newAmount !== undefined
-          ? a.priceUpdated(sub.name, formatCurrency(newAmount, sub.currency))
-          : a.priceConfirmed(sub.name),
+          ? a.priceUpdated(names.sub(sub), formatCurrency(newAmount, sub.currency))
+          : a.priceConfirmed(names.sub(sub)),
       );
     },
     // 해지 뒤 첫 결제일에 결제가 없었다는 답만이 해지를 확인해 준다.
@@ -69,7 +70,7 @@ export function useDashboardActions(showToast: (message: string) => void) {
       const sub = findSub(id);
       if (!sub) return;
       confirmKillVerified(id);
-      showToast(tRef.current.actions.killVerified(sub.name));
+      showToast(tRef.current.actions.killVerified(names.sub(sub)));
     },
     onKillCharged: (id: string) => {
       const sub = findSub(id);
@@ -80,7 +81,7 @@ export function useDashboardActions(showToast: (message: string) => void) {
       const sub = findSub(id);
       if (!sub) return;
       dismissCancelNotice(id);
-      showToast(tRef.current.actions.stillSubscribed(sub.name));
+      showToast(tRef.current.actions.stillSubscribed(names.sub(sub)));
     },
   };
 

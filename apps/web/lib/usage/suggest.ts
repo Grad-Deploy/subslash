@@ -43,16 +43,18 @@ export const SUGGESTABLE_SERVICES: readonly string[] = [
  *   근거가 약하다는 것을 카드에 함께 적는다.
  */
 export const SUGGEST_SIGNALS: Readonly<
-  Record<string, { packages: readonly string[]; appName: string; note?: string }>
+  Record<string, { packages: readonly string[]; appName: string; appNameEn: string; note?: string }>
 > = {
   "youtube-premium": {
     packages: ["com.google.android.apps.youtube.music"],
     appName: "유튜브 뮤직",
+    appNameEn: "YouTube Music",
     note: "유튜브 뮤직만 따로 내면(뮤직 프리미엄) 직접 입력으로 등록해요.",
   },
   "coupang-wow": {
     packages: SUGGEST_ONLY_PACKAGES["coupang-wow"] ?? [],
     appName: "쿠팡플레이",
+    appNameEn: "Coupang Play",
     note: "쿠팡플레이는 와우 회원이 아니어도 광고를 보며 무료로 볼 수 있어요.",
   },
 };
@@ -80,6 +82,8 @@ export interface SubscriptionSuggestion {
   bundles: ServicePreset[];
   /** 서비스 이름과 다른 앱으로 찾았으면 그 앱 이름(SUGGEST_SIGNALS). */
   appName?: string;
+  /** 영어 화면의 앱 이름. */
+  appNameEn?: string;
   /** 쓴다는 것만으로 구독이라 하기 어려운 까닭. 카드에 함께 적는다. */
   note?: string;
 }
@@ -130,6 +134,7 @@ export function findSubscriptionSuggestions(
       killed: killed.has(id),
       bundles: bundlesIncluding(id),
       appName: signal?.appName,
+      appNameEn: signal?.appNameEn,
       note: signal?.note,
     });
   }

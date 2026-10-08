@@ -20,7 +20,7 @@ import { Button } from "../../../components/ui/button";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { Spinner } from "../../../components/ui/spinner";
 import { copyText } from "@lib/native";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { describeSpendingTypeText } from "@lib/i18n/savings-text";
 
 /** 이보다 이른 해는 이 앱에 기록이 있을 수 없다. */
@@ -42,6 +42,7 @@ function LoadingScreen() {
 }
 
 function Standing({ label, item, value }: { label: string; item: CheckInStanding; value: string }) {
+  const names = useServiceNames();
   const mark = useT().savings.review.killedMark;
   return (
     <div className="p-3 rounded-xl bg-muted/60 space-y-0.5">
@@ -53,7 +54,7 @@ function Standing({ label, item, value }: { label: string; item: CheckInStanding
           size={16}
           className="align-text-bottom"
         />{" "}
-        {item.name}
+        {names.sub(item)}
         {item.killed && (
           <span className="ml-1 text-[11px] font-medium text-muted-foreground">{mark}</span>
         )}
@@ -64,6 +65,7 @@ function Standing({ label, item, value }: { label: string; item: CheckInStanding
 }
 
 function YearInReviewContent() {
+  const names = useServiceNames();
   const searchParams = useSearchParams();
   const { subscriptions, usageLogs } = useStore();
   const rate = useExchangeRate();
@@ -116,7 +118,7 @@ function YearInReviewContent() {
       blocked: defended.pastAmount,
       confirmed: yearTiers.confirmed,
       killedCount: review.killedThisYear.length,
-      names: review.killedThisYear.map((sub) => sub.name),
+      names: review.killedThisYear.map((sub) => names.sub(sub)),
       spendingType: review.spendingType,
     });
     const url = webUrl(`/savings/review/share?${params.toString()}`);
@@ -245,7 +247,7 @@ function YearInReviewContent() {
                   size={14}
                   className="align-text-bottom"
                 />{" "}
-                {sub.name}
+                {names.sub(sub)}
                 <span className="ml-1 text-muted-foreground">
                   · {formatDay(sub.killedAt as string)}
                 </span>

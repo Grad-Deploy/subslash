@@ -11,7 +11,7 @@ import {
   getMyMonthlyShareAmount,
   metricForSubscription,
 } from "@subslash/shared";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { describeCheckInText } from "@lib/i18n/check-in-text";
 import { describeCheckInOutcome } from "@lib/i18n/check-in-outcome";
 import { MetricQuantityInput } from "./MetricQuantityInput";
@@ -63,6 +63,7 @@ export function CheckInModal({
   result,
   initialCount = 0,
 }: CheckInModalProps) {
+  const names = useServiceNames();
   const t = useT();
   const c = t.checkin;
   const [count, setCount] = useState<number>(initialCount);
@@ -115,8 +116,8 @@ export function CheckInModal({
           ),
         )
       : cancelUrlKind === "direct"
-        ? c.modal.cancelPage(subscription.name)
-        : c.modal.openService(subscription.name);
+        ? c.modal.cancelPage(names.sub(subscription))
+        : c.modal.openService(names.sub(subscription));
 
   const handleCopyId = async (text: string) => {
     // 복사하지 못했으면 '복사했어요'를 띄우지 않는다. ID는 화면에 그대로 보인다.
@@ -138,7 +139,7 @@ export function CheckInModal({
       >
         <DialogHeader>
           <DialogTitle className="[overflow-wrap:anywhere]">
-            {c.modal.title(subscription.name)}
+            {c.modal.title(names.sub(subscription))}
           </DialogTitle>
         </DialogHeader>
 
@@ -167,7 +168,7 @@ export function CheckInModal({
               <>
                 <h3 className="text-base text-center font-medium leading-relaxed [overflow-wrap:anywhere]">
                   {c.modal.usesQuestionBefore}
-                  <strong className="text-primary">{subscription.name}</strong>
+                  <strong className="text-primary">{names.sub(subscription)}</strong>
                   <span className="whitespace-pre-line">{c.modal.usesQuestionAfter}</span>
                 </h3>
 

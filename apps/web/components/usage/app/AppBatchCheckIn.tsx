@@ -13,7 +13,7 @@ import { useStore } from "@lib/store";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import { lastDays } from "@lib/usage/history";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
 import { measuredQuantity } from "@lib/usage/auto-checkin";
 import { subUsage } from "@lib/usage/value";
@@ -54,6 +54,7 @@ export function AppBatchCheckIn({
   subscriptions: Subscription[];
   onDone?: (count: number) => void;
 }) {
+  const names = useServiceNames();
   const rate = useExchangeRate();
   const { history, installed } = usePhoneUsage();
   const t = useT();
@@ -157,7 +158,7 @@ export function AppBatchCheckIn({
                       type="button"
                       role="checkbox"
                       aria-checked={pick.checked}
-                      aria-label={b.pick(row.sub.name)}
+                      aria-label={b.pick(names.sub(row.sub))}
                       disabled={disabled}
                       onClick={() => update(row.sub.id, { checked: !pick.checked })}
                       className={cn(
@@ -172,7 +173,7 @@ export function AppBatchCheckIn({
                     </button>
                     <SubLogo sub={row.sub} size={32} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold">{row.sub.name}</p>
+                      <p className="truncate text-sm font-bold">{names.sub(row.sub)}</p>
                       <p className="text-xs text-muted-foreground">
                         {disabled
                           ? b.notInstalled
@@ -187,7 +188,7 @@ export function AppBatchCheckIn({
                       <div className="flex shrink-0 items-center gap-1">
                         <button
                           type="button"
-                          aria-label={b.minus(row.sub.name, unit)}
+                          aria-label={b.minus(names.sub(row.sub), unit)}
                           onClick={() =>
                             update(row.sub.id, {
                               count: Math.max(0, pick.count - 1),
@@ -204,7 +205,7 @@ export function AppBatchCheckIn({
                         </span>
                         <button
                           type="button"
-                          aria-label={b.plus(row.sub.name, unit)}
+                          aria-label={b.plus(names.sub(row.sub), unit)}
                           onClick={() =>
                             update(row.sub.id, {
                               count: Math.min(max, pick.count + 1),

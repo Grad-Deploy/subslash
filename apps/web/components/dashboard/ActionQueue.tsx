@@ -7,7 +7,7 @@ import { Button } from "../ui/button";
 import { subscriptionDetailHref } from "@lib/routes";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { ListChecks } from "lucide-react";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { describeActionReason } from "@lib/i18n/action-reason";
 
 interface ActionQueueProps {
@@ -67,6 +67,7 @@ export function ActionQueue({
   headerAction,
   lead,
 }: ActionQueueProps) {
+  const names = useServiceNames();
   const router = useRouter();
   const t = useT();
   const q = t.dashboard.queue;
@@ -143,7 +144,7 @@ export function ActionQueue({
 
             <div className="flex-1 min-w-0 space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-sm">{item.name}</span>
+                <span className="font-bold text-sm">{names.sub(item)}</span>
                 {/* 해지한 구독이 활성 구독 사이에 섞여 보이므로 무엇을 묻는지 붙인다. */}
                 {item.kind === "verify-kill" && (
                   <span className="text-[11px] font-semibold text-primary">{q.tagVerifyKill}</span>

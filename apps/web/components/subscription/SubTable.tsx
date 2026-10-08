@@ -25,7 +25,7 @@ import { Button } from "../ui/button";
 import { cn } from "@lib/utils";
 import { isWideScreen } from "@lib/wide-screen";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
-import { useLocale, useT } from "@lib/i18n";
+import { useLocale, useT, useServiceNames } from "@lib/i18n";
 import { describeQuantityText, shortUnitCostText } from "@lib/i18n/check-in-text";
 import { ServiceLogo } from "./ServiceLogo";
 
@@ -108,6 +108,7 @@ export function SubTable({
   onOrderChange,
   sidePanel = false,
 }: SubTableProps) {
+  const names = useServiceNames();
   const wideHidden = sidePanel ? "xl:hidden" : "";
   const rate = useExchangeRate();
   const t = useT();
@@ -248,7 +249,7 @@ export function SubTable({
                         mode === "killed" && "line-through text-muted-foreground",
                       )}
                     >
-                      {sub.name}
+                      {names.sub(sub)}
                     </Link>
                     <p className="text-[11px] text-muted-foreground">
                       {t.value.category[sub.category] ?? sub.category}

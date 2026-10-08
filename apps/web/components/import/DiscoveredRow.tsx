@@ -2,7 +2,7 @@
 
 import React from "react";
 import { formatCurrency, type DiscoveredSubscription } from "@subslash/shared";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { Badge } from "../ui/badge";
 import { cn } from "@lib/utils";
 import { cycleText } from "./cycleText";
@@ -16,6 +16,7 @@ export function DiscoveredRow({
   item: DiscoveredSubscription;
   onToggle: () => void;
 }) {
+  const names = useServiceNames();
   const t = useT();
   const r = t.importing.row;
   return (
@@ -45,7 +46,7 @@ export function DiscoveredRow({
                 item.isCanceled && "line-through opacity-70",
               )}
             >
-              {item.name}
+              {names.sub(item)}
             </span>
             {item.emailProvider === "naver" ? (
               <Badge className="bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] py-0 border-0">

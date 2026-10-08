@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 import type { Subscription } from "@subslash/shared";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { subscriptionDetailHref } from "@lib/routes";
+import { useServiceNames } from "@lib/i18n";
 
 /** 리포트의 구독 목록 한 줄. 누르면 구독 상세로 간다. */
 function ReportRow({
@@ -15,6 +16,7 @@ function ReportRow({
   detail: ReactNode;
   trailing?: ReactNode;
 }) {
+  const names = useServiceNames();
   return (
     <li>
       <Link
@@ -29,7 +31,7 @@ function ReportRow({
           size={32}
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{sub.name}</p>
+          <p className="truncate font-semibold">{names.sub(sub)}</p>
           <p className="text-xs text-muted-foreground">{detail}</p>
         </div>
         {trailing}

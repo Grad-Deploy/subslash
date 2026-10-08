@@ -24,7 +24,7 @@ import { Button } from "../ui/button";
 import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
 import { useToast } from "@hooks/useToast";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 
 // 폰 사용 기록(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
 const AppUsageDetail = IS_APP_BUILD
@@ -59,6 +59,7 @@ export function SubscriptionDetail({
   headingLevel = "h1",
   className,
 }: SubscriptionDetailProps) {
+  const names = useServiceNames();
   const {
     subscriptions,
     usageLogs,
@@ -132,7 +133,7 @@ export function SubscriptionDetail({
   const executeConfirm = () => {
     if (confirmType === "revive") {
       reviveSubscription(sub.id);
-      showToast(t.detail.revived(sub.name));
+      showToast(t.detail.revived(names.sub(sub)));
     } else if (confirmType === "delete") {
       deleteSubscription(sub.id);
       onLeave();
@@ -228,7 +229,7 @@ export function SubscriptionDetail({
         onConfirmKilled={() => {
           // 가이드에서 '해지 완료했어요'를 누른 것이 곧 확인이다.
           killSubscription(sub.id);
-          showToast(t.detail.killRecorded(sub.name));
+          showToast(t.detail.killRecorded(names.sub(sub)));
         }}
       />
 

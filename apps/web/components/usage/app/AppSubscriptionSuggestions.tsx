@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { ServicePreset, Subscription } from "@subslash/shared";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
-import { useT } from "@lib/i18n";
+import { useLocale, useServiceNames, useT } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
 import { readDeviceValue, SUGGEST_DISMISSED_KEY, writeDeviceValue } from "@lib/usage/storage";
 import {
@@ -110,10 +110,13 @@ export function SuggestionCard({
 }) {
   const t = useT();
   const s = t.usageMore.suggest;
-  const { preset, totals, killed, bundles, appName, note } = suggestion;
+  const locale = useLocale();
+  const names = useServiceNames();
+  const { preset, totals, killed, bundles, appName, appNameEn, note } = suggestion;
+  const app = (locale === "en" ? appNameEn : undefined) ?? appName;
   // 안내 글은 서비스 id로 지금 언어의 것을 찾는다. 표에 없으면 원문을 쓴다.
   const noteText = note ? (s.notes[preset.id] ?? note) : null;
-  const name = preset.nameKo || preset.name;
+  const name = names.preset(preset);
   // 기록이 30일을 다 덮지 못했으면 덮은 날만큼이라고 적는다.
   const period = s.recent(totals.coveredDays);
 
@@ -131,12 +134,7 @@ export function SuggestionCard({
             </span>
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            {s.used(
-              period,
-              appName ?? null,
-              formatDurationText(t, totals.usedMs),
-              totals.activeDays,
-            )}{" "}
+            {s.used(period, app ?? null, formatDurationText(t, totals.usedMs), totals.activeDays)}{" "}
             {killed ? s.killedBody : s.newBody} {s.share}
             {noteText ? ` ${noteText}` : ""}
           </p>
@@ -155,7 +153,7 @@ export function SuggestionCard({
                 className="text-xs"
                 onClick={() => onAdd(bundle)}
               >
-                {bundle.nameKo || bundle.name}
+                {names.preset(bundle)}
               </Button>
             ))}
           </div>

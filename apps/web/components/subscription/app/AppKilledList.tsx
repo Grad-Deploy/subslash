@@ -13,7 +13,7 @@ import { cn } from "@lib/utils";
 import { useStore } from "@lib/store";
 import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "@hooks/useExchangeRate";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { Button } from "../../ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../../ui/dialog";
 import { ServiceLogo } from "../ServiceLogo";
@@ -51,6 +51,7 @@ export function AppKilledList({
   onRevive: (id: string) => void;
   onMessage: (message: string) => void;
 }) {
+  const names = useServiceNames();
   const rate = useExchangeRate();
   const t = useT();
   const k = t.subs.killedList;
@@ -116,7 +117,7 @@ export function AppKilledList({
               type="button"
               role="checkbox"
               aria-checked={on}
-              aria-label={k.pickAria(sub.name)}
+              aria-label={k.pickAria(names.sub(sub))}
               onClick={() => toggle(sub.id)}
               className={cn(
                 "flex size-6 shrink-0 items-center justify-center rounded-md border-2",
@@ -139,14 +140,14 @@ export function AppKilledList({
               onClick={() => toggle(sub.id)}
               className="min-w-0 flex-1 truncate text-left text-sm font-bold"
             >
-              {sub.name}
+              {names.sub(sub)}
             </button>
           ) : (
             <Link
               href={subscriptionDetailHref(sub.id)}
               className="min-w-0 flex-1 truncate text-sm font-bold"
             >
-              {sub.name}
+              {names.sub(sub)}
             </Link>
           )}
           {!selecting &&
@@ -157,7 +158,7 @@ export function AppKilledList({
                 className="h-8 shrink-0 px-2.5 text-xs"
                 onClick={() => {
                   unhideSubscriptions([sub.id]);
-                  onMessage(k.unhidden(sub.name));
+                  onMessage(k.unhidden(names.sub(sub)));
                 }}
               >
                 {k.unhide}
