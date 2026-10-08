@@ -1,9 +1,10 @@
 "use client";
 
 import React from "react";
-import { POPULAR_SERVICES, ServicePreset, describePresetPrice } from "@subslash/shared";
+import { POPULAR_SERVICES, ServicePreset } from "@subslash/shared";
 import { Subscription } from "@subslash/shared";
 import { useT } from "@lib/i18n";
+import { describePresetPriceText } from "@lib/i18n/preset-price";
 import { ServiceLogo } from "./ServiceLogo";
 
 interface QuickPresetRecommenderProps {
@@ -17,7 +18,8 @@ export function QuickPresetRecommender({
   onSelectPreset,
   maxItems = 6,
 }: QuickPresetRecommenderProps) {
-  const t = useT().subs.recommend;
+  const all = useT();
+  const t = all.subs.recommend;
   // Normalize existing names to lowercase for comparison
   const existingNames = new Set(subscriptions.map((s) => s.name.trim().toLowerCase()));
 
@@ -66,7 +68,9 @@ export function QuickPresetRecommender({
                 <p className="font-bold text-xs sm:text-sm text-foreground truncate">
                   {preset.nameKo}
                 </p>
-                <p className="text-[11px] text-muted-foreground">{describePresetPrice(preset)}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {describePresetPriceText(all, preset)}
+                </p>
               </div>
             </div>
             <span className="text-xs font-bold text-primary opacity-80 group-hover:opacity-100 ml-1">

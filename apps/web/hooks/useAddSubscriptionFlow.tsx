@@ -9,6 +9,7 @@ import {
   type SubscriptionFormData,
 } from "@subslash/shared";
 import { useStore } from "@lib/store";
+import { useLatestT, useT } from "@lib/i18n";
 import { findDuplicateSubscription } from "@lib/duplicate-subscription";
 import { AppAddCheckIn, AppDuplicateDialog } from "../components/subscription/app/appParts";
 import { SubForm } from "../components/subscription/SubForm";
@@ -45,6 +46,8 @@ export function useAddSubscriptionFlow({
   reminder: ReminderPrompt;
 }) {
   const { subscriptions, usageLogs, addSubscription } = useStore();
+  const t = useT();
+  const tRef = useLatestT();
   const [isOpen, setIsOpen] = useState(false);
   const [options, setOptions] = useState<AddOptions>({});
   const [formKey, setFormKey] = useState(0);
@@ -102,7 +105,7 @@ export function useAddSubscriptionFlow({
       return;
     }
     close();
-    showToast(`${data.name} 등록 완료`);
+    showToast(tRef.current.form.dialog.added(data.name));
   };
 
   // 앱: 등록 직후 등록 창 자리에 그릴 사용 횟수 묻기.
@@ -116,8 +119,8 @@ export function useAddSubscriptionFlow({
           if (recorded !== undefined && firstEverCheckIn) reminder.askNow(addedSub);
           showToast(
             recorded === undefined
-              ? `${addedSub.name} 등록 완료`
-              : `${addedSub.name} 등록 · ${recorded}회 기록`,
+              ? tRef.current.form.dialog.added(addedSub.name)
+              : tRef.current.form.dialog.addedWithCheckIn(addedSub.name, recorded),
           );
         }}
       />
@@ -130,14 +133,16 @@ export function useAddSubscriptionFlow({
           <>
             <DialogHeader>
               <DialogTitle>
-                {options.preset ? `${options.preset.nameKo} 등록` : "새 구독 등록"}
+                {options.preset
+                  ? t.form.dialog.titlePreset(options.preset.nameKo)
+                  : t.form.dialog.titleNew}
                 {queue && queue.presets.length > 1 && (
                   <span className="ml-1.5 text-sm font-medium text-muted-foreground tabular-nums">
                     {queue.at + 1}/{queue.presets.length}
                   </span>
                 )}
               </DialogTitle>
-              <DialogDescription>서비스를 고르거나 직접 입력하세요.</DialogDescription>
+              <DialogDescription>{t.form.dialog.description}</DialogDescription>
             </DialogHeader>
             <div className="py-2">
               <SubForm

@@ -7,6 +7,7 @@ import {
   planCurrency,
   yearlyDiscountOf,
 } from "@subslash/shared";
+import { useT } from "@lib/i18n";
 import { FIELD_LABEL } from "./fieldLabel";
 
 /**
@@ -26,9 +27,10 @@ export function PlanPicker({
   required: boolean;
   onPick: (plan: ServicePlan) => void;
 }) {
+  const f = useT().form.plan;
   return (
     <fieldset className="space-y-1.5">
-      <legend className={`${FIELD_LABEL} mb-1.5`}>요금제</legend>
+      <legend className={`${FIELD_LABEL} mb-1.5`}>{f.legend}</legend>
       <div className="grid grid-cols-2 gap-2">
         {plans.map((plan) => {
           const checked = selectedPlanId === plan.id;
@@ -54,13 +56,16 @@ export function PlanPicker({
               />
               <span className="block text-xs font-bold">{plan.name}</span>
               <span className="block text-[11px] text-muted-foreground">
-                {(plan.billingCycle ?? "monthly") === "yearly" ? "연" : "월"}{" "}
+                {(plan.billingCycle ?? "monthly") === "yearly" ? f.yearly : f.monthly}{" "}
                 {formatAmount(plan.amount, currency)}
               </span>
               {discount && (
                 <span className="block text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                  월 {formatAmount(plan.amount / 12, currency)}꼴 · 월 결제보다 연{" "}
-                  {formatAmount(discount.saved, currency)} 적게 ({discount.percent}%)
+                  {f.saves(
+                    formatAmount(plan.amount / 12, currency),
+                    formatAmount(discount.saved, currency),
+                    discount.percent,
+                  )}
                 </span>
               )}
             </label>

@@ -2,6 +2,7 @@
 
 import { ServicePreset, type Currency, formatAmount, getBilledAmount } from "@subslash/shared";
 import { Select } from "../../ui/select";
+import { useT } from "@lib/i18n";
 import { FIELD_LABEL } from "./fieldLabel";
 
 /**
@@ -23,10 +24,11 @@ export function TaxField({
   currency: Currency;
   onChange: (taxRate: number | undefined) => void;
 }) {
+  const f = useT().form.tax;
   return (
     <div className="space-y-1.5">
       <label htmlFor={id} className={FIELD_LABEL}>
-        세금
+        {f.label}
       </label>
       <Select
         id={id}
@@ -37,22 +39,23 @@ export function TaxField({
           onChange(value === "none" ? undefined : Number(value));
         }}
       >
-        <option value="none">금액에 포함 · 따로 붙지 않음</option>
-        <option value="10">부가세 10% 별도</option>
+        <option value="none">{f.none}</option>
+        <option value="10">{f.vat10}</option>
         {/* 백업 등으로 들어온 다른 세율도 고친 적 없이 사라지지 않게 보여준다. */}
         {taxRate && taxRate !== 10 ? (
-          <option value={String(taxRate)}>세금 {taxRate}% 별도</option>
+          <option value={String(taxRate)}>{f.other(taxRate)}</option>
         ) : null}
       </Select>
       <p className="text-[11px] text-muted-foreground break-keep">
-        {preset?.taxRate
-          ? `한국 결제 시 ${preset.nameKo}에 부가세 ${preset.taxRate}%가 붙어요. 사업자 결제라 안 붙으면 '금액에 포함'으로 바꾸세요.`
-          : "해외 서비스는 부가세 10%가 붙기도 해요. 카드 명세서와 비교해 고르세요."}
+        {preset?.taxRate ? f.hintPreset(preset.nameKo, preset.taxRate) : f.hintOverseas}
       </p>
       {taxRate && typeof amount === "number" ? (
         <p className="text-[11px] font-semibold text-foreground">
-          카드에 청구되는 금액: {formatAmount(getBilledAmount({ amount, taxRate }), currency)} (요금{" "}
-          {formatAmount(amount, currency)} + 부가세 {taxRate}%)
+          {f.billed(
+            formatAmount(getBilledAmount({ amount, taxRate }), currency),
+            formatAmount(amount, currency),
+            taxRate,
+          )}
         </p>
       ) : null}
     </div>

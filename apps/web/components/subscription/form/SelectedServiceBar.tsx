@@ -1,6 +1,7 @@
 import React from "react";
 import { SquarePen } from "lucide-react";
 import type { ServicePreset, SubscriptionFormData } from "@subslash/shared";
+import { useT } from "@lib/i18n";
 import { ServiceLogo } from "../ServiceLogo";
 
 /** 새로 등록할 때 폼 맨 위의 '고른 서비스' 줄. 요금을 어떻게 채우는지 한 줄로 알리고, 다른 서비스로 돌아간다. */
@@ -15,6 +16,7 @@ export function SelectedServiceBar({
   formData: Partial<SubscriptionFormData>;
   onChangeService: () => void;
 }) {
+  const f = useT().form.selected;
   const plans = preset?.plans ?? [];
   return (
     <div className="flex items-center justify-between gap-3 p-3 rounded-xl border bg-muted/40">
@@ -31,17 +33,17 @@ export function SelectedServiceBar({
           />
         )}
         <div className="min-w-0">
-          <p className="text-sm font-bold truncate">{isCustom ? "직접 입력" : formData.name}</p>
+          <p className="text-sm font-bold truncate">{isCustom ? f.custom : formData.name}</p>
           <p className="text-[11px] text-muted-foreground break-keep">
             {isCustom
-              ? "목록에 없는 서비스"
+              ? f.notListed
               : plans.length > 0
                 ? preset?.plansIncomplete
-                  ? "요금제를 고르거나, 목록에 없으면 결제한 금액을 적어 주세요."
-                  : "요금제를 고르면 요금이 채워져요."
+                  ? f.pickOrType
+                  : f.pickPlan
                 : typeof preset?.defaultAmount === "number"
-                  ? "기본 요금이에요. 다르면 고쳐 주세요."
-                  : "요금을 적어 주세요."}
+                  ? f.basePrice
+                  : f.typePrice}
           </p>
         </div>
       </div>
@@ -50,7 +52,7 @@ export function SelectedServiceBar({
         onClick={onChangeService}
         className="shrink-0 text-xs font-semibold text-primary hover:underline"
       >
-        다른 서비스
+        {f.change}
       </button>
     </div>
   );
