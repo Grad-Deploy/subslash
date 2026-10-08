@@ -12,7 +12,9 @@ import { cn } from "@lib/utils";
 import { useStore } from "@lib/store";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
-import { formatDuration, lastDays } from "@lib/usage/history";
+import { lastDays } from "@lib/usage/history";
+import { useT } from "@lib/i18n";
+import { formatDurationText } from "@lib/i18n/duration";
 import { measuredQuantity } from "@lib/usage/auto-checkin";
 import { subUsage } from "@lib/usage/value";
 import { AppSheet } from "../../settings/app/AppSheet";
@@ -31,13 +33,6 @@ interface Row {
   coveredDays: number;
   kind: "measured" | "not-installed";
 }
-
-/** 폰 기록이 0일 때 줄 아래에 적는 말. */
-const ZERO_NOTE: Partial<Record<ValueMetric, string>> = {
-  uses: "폰에서는 안 열었어요 · 다른 기기에서 봤나요?",
-  days: "폰에서는 안 썼어요 · 다른 기기에서 썼나요?",
-  hours: "폰에서는 안 들었어요 · 다른 기기에서 썼나요?",
-};
 
 /**
  * 폰 기록으로 한 번에 체크인. 연결표에 있는 구독을 한 화면에 모아, 최근 30일 동안 이 폰에서 잰 값을
@@ -61,6 +56,8 @@ export function AppBatchCheckIn({
 }) {
   const rate = useExchangeRate();
   const { history, installed } = usePhoneUsage();
+  const t = useT();
+  const b = t.appSmall.batch;
   const checkIn = useStore((state) => state.checkIn);
 
   const { rows, unmapped } = useMemo(() => {
@@ -125,45 +122,42 @@ export function AppBatchCheckIn({
   const covered = Math.min(30, Math.max(0, ...rows.map((row) => row.coveredDays)));
 
   return (
-    <AppSheet open={open} onClose={onClose} label="폰 기록으로 한 번에 체크인">
+    <AppSheet open={open} onClose={onClose} label={b.title}>
       {saved !== null ? (
         <div className="space-y-4 py-6 text-center">
           <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
             <Check className="size-6" aria-hidden />
           </span>
-          <p className="text-lg font-black">{saved}개 체크인했어요</p>
+          <p className="text-lg font-black">{b.saved(saved)}</p>
           <Button className="w-full" onClick={onClose}>
-            닫기
+            {b.close}
           </Button>
         </div>
       ) : (
         <div className="space-y-4 pt-1">
           <div className="space-y-1">
-            <h2 className="text-lg font-black tracking-tight">폰 기록으로 한 번에 체크인</h2>
-            <p className="text-sm text-muted-foreground">
-              {covered < 30 ? `기록이 있는 최근 ${covered}일 동안` : "최근 30일 동안"} 이 폰에서 잰
-              값이에요. OTT는 연 횟수, AI는 5분 넘게 쓴 날, 음악·독서는 들은 시간이에요. 확인하고
-              고쳐 주세요.
-            </p>
+            <h2 className="text-lg font-black tracking-tight">{b.title}</h2>
+            <p className="text-sm text-muted-foreground">{b.intro(covered)}</p>
           </div>
 
           {rows.length === 0 ? (
             <p className="rounded-2xl bg-secondary/50 p-4 text-sm text-muted-foreground">
-              폰 기록으로 잴 수 있는 구독이 없어요. 체크인은 구독마다 직접 해 주세요.
+              {b.none}
             </p>
           ) : (
             <ul className="divide-y rounded-2xl border">
               {rows.map((row) => {
                 const pick = picks[row.sub.id] ?? { checked: false, count: 0 };
                 const disabled = row.kind === "not-installed";
-                const { unit, max } = METRIC_SPECS[row.metric];
+                const { max } = METRIC_SPECS[row.metric];
+                const unit = t.checkin.metric[row.metric].unit;
                 return (
                   <li key={row.sub.id} className="flex items-center gap-3 px-3 py-3">
                     <button
                       type="button"
                       role="checkbox"
                       aria-checked={pick.checked}
-                      aria-label={`${row.sub.name} 체크인에 넣기`}
+                      aria-label={b.pick(row.sub.name)}
                       disabled={disabled}
                       onClick={() => update(row.sub.id, { checked: !pick.checked })}
                       className={cn(
@@ -181,19 +175,19 @@ export function AppBatchCheckIn({
                       <p className="truncate text-sm font-bold">{row.sub.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {disabled
-                          ? "이 폰에 앱이 없어요 · 따로 체크인"
+                          ? b.notInstalled
                           : row.quantity === 0 && row.usedMs > 0 && row.metric === "hours"
-                            ? `${formatDuration(row.usedMs)} 사용 · 1시간이 안 돼요`
+                            ? b.underHour(formatDurationText(t, row.usedMs))
                             : row.quantity === 0
-                              ? ZERO_NOTE[row.metric]
-                              : `${formatDuration(row.usedMs)} 사용`}
+                              ? b.zero[row.metric as "uses" | "days" | "hours"]
+                              : b.used(formatDurationText(t, row.usedMs))}
                       </p>
                     </div>
                     {!disabled && (
                       <div className="flex shrink-0 items-center gap-1">
                         <button
                           type="button"
-                          aria-label={`${row.sub.name} 1${unit} 빼기`}
+                          aria-label={b.minus(row.sub.name, unit)}
                           onClick={() =>
                             update(row.sub.id, {
                               count: Math.max(0, pick.count - 1),
@@ -210,7 +204,7 @@ export function AppBatchCheckIn({
                         </span>
                         <button
                           type="button"
-                          aria-label={`${row.sub.name} 1${unit} 더하기`}
+                          aria-label={b.plus(row.sub.name, unit)}
                           onClick={() =>
                             update(row.sub.id, {
                               count: Math.min(max, pick.count + 1),
@@ -230,16 +224,16 @@ export function AppBatchCheckIn({
           )}
 
           <p className="text-xs text-muted-foreground">
-            TV·PC·태블릿에서 본 건 빠져 있어요. 거기서도 썼다면 + 로 더해 주세요.
-            {unmapped > 0 && ` 폰 기록으로 알 수 없는 구독 ${unmapped}개는 따로 체크인해요.`}
+            {b.footer}
+            {unmapped > 0 && b.footerUnmapped(unmapped)}
           </p>
 
           <div className="space-y-2">
             <Button className="w-full" size="lg" disabled={chosen.length === 0} onClick={submit}>
-              {chosen.length > 0 ? `${chosen.length}개 체크인하기` : "체크인할 구독을 골라 주세요"}
+              {chosen.length > 0 ? b.submit(chosen.length) : b.submitNone}
             </Button>
             <Button variant="ghost" className="w-full" onClick={onClose}>
-              나중에
+              {b.later}
             </Button>
           </div>
         </div>
