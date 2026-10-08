@@ -6,6 +6,9 @@
  * 사람이 손해를 본다. 기능이 바뀌면 여기도 함께 고친다. 닫혀 있는 기능의 질문은 그 기능이 열렸을 때만 넣는다. id는 바꾸지
  * 않는다(평가 세트의 정답이다).
  */
+import type { Locale } from "../i18n/config";
+import { FAQ_EN, FAQ_GROUP_TITLES_EN } from "./faq-en";
+
 export interface Faq {
   /** 바꾸지 않는 이름. 도움말 AI가 이 id로 답을 고르고, 평가 세트가 정답으로 쓴다. */
   id: string;
@@ -18,7 +21,7 @@ export interface FaqGroup {
   items: Faq[];
 }
 
-export function faqGroups({
+function koFaqGroups({
   gmailOpen,
   socialOpen,
   aiOpen,
@@ -145,7 +148,27 @@ export function faqGroups({
   ];
 }
 
+/**
+ * 지금 열린 기능 기준의 FAQ 묶음. 한국어가 원문이고(서버의 도움말 AI도 이 목록을 쓴다), 영어는 같은 id의 영어 글
+ * (`faq-en`)로 바꿔 돌려준다. id와 어떤 항목이 열리는지는 언어와 상관없이 같다.
+ */
+export function faqGroups(
+  options: Parameters<typeof koFaqGroups>[0],
+  locale: Locale = "ko",
+): FaqGroup[] {
+  const groups = koFaqGroups(options);
+  if (locale === "ko") return groups;
+  return groups.map((group) => ({
+    title: FAQ_GROUP_TITLES_EN[group.title] ?? group.title,
+    items: group.items.map((item) => {
+      const en = FAQ_EN[item.id];
+      if (!en) return item;
+      return { id: item.id, q: en.q, a: typeof en.a === "function" ? en.a(options) : en.a };
+    }),
+  }));
+}
+
 /** 지금 열린 기능 기준의 FAQ 전부(그룹 없이). */
-export function allFaqs(options: Parameters<typeof faqGroups>[0]): Faq[] {
-  return faqGroups(options).flatMap((group) => group.items);
+export function allFaqs(options: Parameters<typeof koFaqGroups>[0], locale: Locale = "ko"): Faq[] {
+  return faqGroups(options, locale).flatMap((group) => group.items);
 }

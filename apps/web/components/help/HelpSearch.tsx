@@ -7,6 +7,7 @@ import type { Faq } from "@lib/help/faq";
 import { isConfident, searchFaqs } from "@lib/help/match";
 import { askHelp } from "@lib/help/client";
 import { Spinner } from "@components/ui/spinner";
+import { useLatestT, useT } from "@lib/i18n";
 
 /**
  * 도움말 검색. 적는 대로 기기에서 비슷한 질문을 찾아 보여 주고(AI 없음), 찾지 못했을 때만 AI에게 고르게 한다(lib/help/ai).
@@ -15,6 +16,8 @@ import { Spinner } from "@components/ui/spinner";
  */
 export function HelpSearch({ faqs, aiOpen }: { faqs: Faq[]; aiOpen: boolean }) {
   // 리포트에서 넘어온 질문(`?q=`)으로 시작한다. 부르는 쪽이 Suspense로 감싼다(정적 내보내기).
+  const h = useT().helpPage.search;
+  const tRef = useLatestT();
   const initial = useSearchParams().get("q")?.slice(0, 200) ?? "";
   const [question, setQuestion] = useState(initial);
   const [aiIds, setAiIds] = useState<string[] | null>(null);
@@ -39,22 +42,22 @@ export function HelpSearch({ faqs, aiOpen }: { faqs: Faq[]; aiOpen: boolean }) {
       setAiIds(await askHelp(trimmed));
       setAiFor(trimmed);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "지금은 답할 수 없어요.");
+      setError(e instanceof Error ? e.message : tRef.current.helpPage.search.unavailable);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <section aria-label="도움말 검색" className="space-y-3">
+    <section aria-label={h.label} className="space-y-3">
       <label className="flex items-center gap-2 rounded-2xl border bg-card px-3.5 py-3 focus-within:ring-1 focus-within:ring-ring">
         <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         <input
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           maxLength={200}
-          placeholder="무엇이 궁금하세요?"
-          aria-label="도움말 검색"
+          placeholder={h.placeholder}
+          aria-label={h.label}
           className="min-w-0 flex-1 bg-transparent text-sm outline-none"
         />
       </label>
@@ -63,21 +66,19 @@ export function HelpSearch({ faqs, aiOpen }: { faqs: Faq[]; aiOpen: boolean }) {
         <div className="space-y-2" role="status" aria-live="polite">
           {aiAnswers ? (
             <FaqAnswers
-              label={
-                aiAnswers.length > 0 ? "AI가 도움말에서 찾았어요" : "AI도 도움말에서 찾지 못했어요"
-              }
+              label={aiAnswers.length > 0 ? h.aiFound : h.aiNone}
               icon
               faqs={aiAnswers}
-              empty="도움말에 없는 내용이에요. 아래 '문의하기'로 알려 주세요."
+              empty={h.aiEmpty}
             />
           ) : hits.length > 0 ? (
             <FaqAnswers
-              label={confident ? "가장 비슷한 질문" : "비슷할 수 있는 질문"}
+              label={confident ? h.closest : h.similar}
               // 자신 있으면 그 하나만 보여 준다 — 아래에 붙는 항목은 관계없는 경우가 많았다.
               faqs={(confident ? hits.slice(0, 1) : hits).map((hit) => hit.faq)}
             />
           ) : (
-            <p className="px-1 text-sm text-muted-foreground">비슷한 질문을 찾지 못했어요.</p>
+            <p className="px-1 text-sm text-muted-foreground">{h.noMatch}</p>
           )}
 
           {aiOpen && !aiAnswers && (
@@ -93,18 +94,12 @@ export function HelpSearch({ faqs, aiOpen }: { faqs: Faq[]; aiOpen: boolean }) {
                 ) : (
                   <Sparkles className="size-3.5" aria-hidden />
                 )}
-                {confident
-                  ? "원하는 답이 아니면 AI에게 찾아 달라고 하기"
-                  : "AI에게 찾아 달라고 하기"}
+                {confident ? h.askAiNotThis : h.askAi}
               </button>
             </div>
           )}
           {error && <p className="px-1 text-xs text-destructive">{error}</p>}
-          {aiOpen && (
-            <p className="px-1 text-[11px] text-muted-foreground">
-              AI에는 적은 질문만 보내요. 이름·연락처 같은 개인정보는 적지 마세요.
-            </p>
-          )}
+          {aiOpen && <p className="px-1 text-[11px] text-muted-foreground">{h.aiPrivacy}</p>}
         </div>
       )}
     </section>
