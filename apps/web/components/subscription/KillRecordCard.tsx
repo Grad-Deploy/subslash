@@ -13,6 +13,7 @@ import { CopyFallbackDialog } from "../ui/copy-fallback-dialog";
 import { useStore } from "@lib/store";
 import { copyText } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
+import { useT } from "@lib/i18n";
 
 interface KillRecordCardProps {
   subscription: Subscription;
@@ -32,6 +33,7 @@ function killedDate(sub: Subscription): string | null {
  * 다시 쓸지는 앱이 모른다. 해지 근거도 사용자가 적은 글 그대로다.
  */
 export function KillRecordCard({ subscription: sub, onMessage }: KillRecordCardProps) {
+  const t = useT().detail.record;
   const setResubscribeReminder = useStore((state) => state.setResubscribeReminder);
   const setKillEvidence = useStore((state) => state.setKillEvidence);
 
@@ -53,49 +55,46 @@ export function KillRecordCard({ subscription: sub, onMessage }: KillRecordCardP
 
   const copyRefund = async () => {
     if (!refund) return;
-    if (await copyText(refund)) onMessage("환불 요청 글을 복사했어요");
+    if (await copyText(refund)) onMessage(t.refundCopied);
     else setCopyFallback(refund);
   };
 
   return (
     <section className="p-6 border rounded-2xl bg-card space-y-6">
       <div className="space-y-0.5">
-        <h2 className="text-lg font-bold">해지 기록</h2>
+        <h2 className="text-lg font-bold">{t.title}</h2>
         <p className="text-xs text-muted-foreground">
-          {killedDate(sub) ? `${killedDate(sub)}에 해지로 기록했어요.` : "해지한 날 기록이 없어요."}
+          {killedDate(sub) ? t.killedOn(killedDate(sub)!) : t.noDate}
         </p>
       </div>
 
       {refund && (
         <div className="space-y-2 p-4 rounded-xl border border-destructive bg-destructive/5">
-          <h3 className="text-sm font-bold text-destructive">해지 뒤에 결제됐어요</h3>
-          <p className="text-xs text-muted-foreground">
-            고객센터에 보낼 글이에요. 앱에 있는 기록만 넣었어요 — 보내기 전에 읽어 보고 고치세요.
-          </p>
+          <h3 className="text-sm font-bold text-destructive">{t.chargedAfter}</h3>
+          <p className="text-xs text-muted-foreground">{t.chargedNote}</p>
           <pre className="whitespace-pre-wrap text-xs leading-relaxed bg-background border rounded-lg p-3 font-sans">
             {refund}
           </pre>
           <Button size="sm" variant="destructive" onClick={() => void copyRefund()}>
-            환불 요청 글 복사
+            {t.copyRefund}
           </Button>
         </div>
       )}
 
       <div className="space-y-2">
-        <h3 className="text-sm font-bold">다시 살펴볼 날</h3>
+        <h3 className="text-sm font-bold">{t.lookAgain}</h3>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          새 시즌·경기 시즌처럼 다시 쓸 때가 있다면 날을 정해 두세요. 그날 &lsquo;지금 결정할
-          것&rsquo;에 올리고{IS_APP_BUILD ? ", 앱 알림을 켰다면 알림도 보내요" : ""}.
+          {t.lookAgainNote(IS_APP_BUILD)}
         </p>
         {due && (
           <p className="text-xs font-semibold text-primary">
-            {sub.resubscribeRemindOn}이 됐어요. 다시 쓸 때가 아니면 날을 지우거나 미루세요.
+            {t.due(sub.resubscribeRemindOn ?? "")}
           </p>
         )}
         <div className="flex flex-wrap items-center gap-2">
           <Input
             type="date"
-            aria-label="다시 살펴볼 날"
+            aria-label={t.lookAgain}
             className="w-auto"
             min={tomorrow}
             value={remindOn}
@@ -106,10 +105,10 @@ export function KillRecordCard({ subscription: sub, onMessage }: KillRecordCardP
             disabled={!remindOn || remindOn === sub.resubscribeRemindOn}
             onClick={() => {
               setResubscribeReminder(sub.id, remindOn);
-              onMessage(`${remindOn}에 다시 알려 드릴게요`);
+              onMessage(t.saveReminder(remindOn));
             }}
           >
-            저장
+            {t.save}
           </Button>
           {sub.resubscribeRemindOn && (
             <Button
@@ -118,31 +117,28 @@ export function KillRecordCard({ subscription: sub, onMessage }: KillRecordCardP
               onClick={() => {
                 setResubscribeReminder(sub.id, null);
                 setRemindOn("");
-                onMessage("다시 살펴볼 날을 지웠어요");
+                onMessage(t.cleared);
               }}
             >
-              지우기
+              {t.clear}
             </Button>
           )}
         </div>
       </div>
 
       <div className="space-y-2">
-        <h3 className="text-sm font-bold">해지했다는 근거</h3>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          해지 확인 메일 제목이나 접수 번호를 적어 두면, 나중에 결제가 또 되었을 때 환불을 요청하는
-          근거가 돼요. 이 기기와 백업·계정 동기화에만 저장돼요.
-        </p>
+        <h3 className="text-sm font-bold">{t.evidence}</h3>
+        <p className="text-xs text-muted-foreground leading-relaxed">{t.evidenceNote}</p>
         <Input
-          aria-label="해지 확인 번호나 메일 제목"
-          placeholder="예: 해지 접수번호, 해지 확인 메일 제목"
+          aria-label={t.referenceLabel}
+          placeholder={t.referencePlaceholder}
           maxLength={200}
           value={reference}
           onChange={(event) => setReference(event.target.value)}
         />
         <textarea
-          aria-label="해지 메모"
-          placeholder="예: 앱 설정 > 구독에서 해지, 상담원과 통화"
+          aria-label={t.memoLabel}
+          placeholder={t.memoPlaceholder}
           maxLength={500}
           rows={2}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -151,7 +147,9 @@ export function KillRecordCard({ subscription: sub, onMessage }: KillRecordCardP
         />
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-muted-foreground">
-            {sub.killEvidence ? `${toDateOnly(new Date(sub.killEvidence.recordedAt))}에 적음` : ""}
+            {sub.killEvidence
+              ? t.recordedOn(toDateOnly(new Date(sub.killEvidence.recordedAt)))
+              : ""}
           </span>
           <Button
             size="sm"
@@ -159,19 +157,17 @@ export function KillRecordCard({ subscription: sub, onMessage }: KillRecordCardP
             disabled={!evidenceChanged}
             onClick={() => {
               setKillEvidence(sub.id, { reference, memo });
-              onMessage(
-                reference.trim() || memo.trim() ? "해지 기록을 저장했어요" : "해지 기록을 지웠어요",
-              );
+              onMessage(reference.trim() || memo.trim() ? t.evidenceSaved : t.evidenceCleared);
             }}
           >
-            저장
+            {t.save}
           </Button>
         </div>
       </div>
 
       <CopyFallbackDialog
         text={copyFallback}
-        title="환불 요청 글"
+        title={t.refundTitle}
         onClose={() => setCopyFallback(null)}
       />
     </section>

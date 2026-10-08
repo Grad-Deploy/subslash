@@ -5,6 +5,7 @@ import { useIsClient } from "@hooks/useIsClient";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SubscriptionDetail } from "../../../components/subscription/SubscriptionDetail";
 import { Spinner } from "../../../components/ui/spinner";
+import { useT } from "@lib/i18n";
 
 function LoadingScreen() {
   return (
@@ -22,6 +23,7 @@ function DetailFromQuery() {
   const router = useRouter();
   const id = useSearchParams().get("id");
   const mounted = useIsClient();
+  const t = useT();
 
   useEffect(() => {
     if (!id) router.replace("/subs");
@@ -35,7 +37,7 @@ function DetailFromQuery() {
       id={id}
       className="max-w-2xl mx-auto"
       onClose={() => router.back()}
-      closeLabel="← 뒤로 가기"
+      closeLabel={t.detail.back}
       onLeave={() => router.push("/subs")}
     />
   );
