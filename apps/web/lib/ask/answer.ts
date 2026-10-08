@@ -1,8 +1,6 @@
 import {
-  CATEGORY_LABELS,
   findBundleOverlaps,
   formatKRW,
-  formatQuantity,
   getDaysUntilBillingFor,
   getDaysUntilTrialEnd,
   getMyMonthlyAmountKRW,
@@ -20,11 +18,15 @@ import {
 } from "@subslash/shared";
 import { buildValueRows } from "../../components/report/valueRows";
 import { latestFreshLog } from "@lib/stats";
+import { describeQuantityText } from "@lib/i18n/check-in-text";
+import type { Messages } from "@lib/i18n/messages";
 import type { AskCall } from "./tools";
+
+export { josa } from "./josa";
 
 /**
  * '리포트에 물어보기'의 답을 기기에서 만든다. AI가 고른 호출(`AskCall`)을 받아 이 기기의 기록으로 계산하고, 도구마다
- * 정해 둔 문장 틀에 넣는다. AI는 이 함수에 들어오는 기록도, 나가는 숫자도 보지 않는다.
+ * 정해 둔 문장 틀(`messages/ask`)에 넣는다. AI는 이 함수에 들어오는 기록도, 나가는 숫자도 보지 않는다.
  *
  * 숫자는 화면의 다른 칸과 같은 함수로 계산한다(지출은 `sumMyMonthlyKRW`, 1회 단가 순위는 리포트의 `buildValueRows`) —
  * 같은 질문에 리포트 칸과 다른 숫자가 나오면 어느 쪽도 믿을 수 없다. 모르는 것은 모른다고 쓴다.
@@ -47,16 +49,9 @@ export interface AskContext {
   usageLogs: UsageLog[];
   rate: number;
   now: Date;
+  /** 지금 언어의 문구. 답 문장은 이 틀에 값을 넣어 만든다. */
+  t: Messages;
 }
-
-/** 물어볼 수 있는 질문. 범위 밖 질문의 답과 화면의 질문 칩이 함께 쓴다. */
-export const ASK_SUGGESTIONS = [
-  "한 달에 구독비 얼마 나가?",
-  "제일 아까운 구독 뭐야?",
-  "OTT에 얼마 쓰고 있어?",
-  "이번 주에 빠져나갈 돈 얼마야?",
-  "겹치는 구독 있어?",
-] as const;
 
 function answer(
   headline: string,
@@ -70,19 +65,6 @@ function answer(
 /** 카드에서 지금 돈이 나가는 구독. 무료 체험 중인 구독은 뺀다(CLAUDE.md '데이터 위치'). */
 function paying(ctx: AskContext): Subscription[] {
   return ctx.subscriptions.filter((sub) => sub.status === "active" && !isInTrial(sub, ctx.now));
-}
-
-/**
- * 이름 뒤에 붙일 조사. 마지막 글자의 받침으로 고른다("웨이브예요"·"넷플릭스는"·"광고형 스탠다드로"). 한글이 아니면
- * 받침을 알 수 없어 둘을 함께 적는다("ChatGPT Plus은(는)").
- */
-export function josa(word: string, withFinal: string, withoutFinal: string): string {
-  const code = word.trim().charCodeAt(word.trim().length - 1) - 0xac00;
-  if (Number.isNaN(code) || code < 0 || code > 11171) return `${withFinal}(${withoutFinal})`;
-  const final = code % 28;
-  // '으로/로'는 ㄹ 받침 뒤에서도 '로'다.
-  if (withoutFinal === "로" && final === 8) return "로";
-  return final === 0 ? withoutFinal : withFinal;
 }
 
 const normalize = (text: string) => text.toLowerCase().replace(/[\s·.\-_]/g, "");
@@ -100,42 +82,31 @@ export function matchSubscriptions(query: string, subscriptions: Subscription[])
   });
 }
 
-function wonDate(date: Date): string {
-  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
-}
-
 function startOfMonth(now: Date): Date {
   return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
-function noSubscriptions(): AskAnswer {
-  return answer(
-    "아직 등록한 구독이 없어요.",
-    "등록한 구독",
-    [],
-    ["구독을 등록하면 물어볼 수 있어요."],
-  );
-}
-
 export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
+  const k = ctx.t.ask;
   const args = call.args ?? {};
+  const noSubscriptions = () => answer(k.noSubs.headline, k.noSubs.source, [], [k.noSubs.note]);
+  const dateText = (date: Date) => k.upcoming.date(date.getMonth() + 1, date.getDate());
   if (call.tool === "help") {
-    return { ...answer("앱 사용법은 도움말에서 찾아 드릴게요.", "도움말"), goHelp: true };
+    return { ...answer(k.help.headline, k.help.source), goHelp: true };
   }
   if (call.tool === "unsupported") {
     return answer(
-      "그건 답할 수 없는 질문이에요.",
-      "물어볼 수 있는 것",
+      k.unsupported.headline,
+      k.unsupported.source,
       [],
-      [`이런 걸 물어볼 수 있어요: ${ASK_SUGGESTIONS.join(" / ")}`],
+      [k.unsupported.note(k.suggestions.join(" / "))],
     );
   }
 
   const active = ctx.subscriptions.filter((sub) => sub.status === "active");
   const subs = paying(ctx);
   const trialCount = active.length - subs.length;
-  const trialNote =
-    trialCount > 0 ? [`무료 체험 중인 ${trialCount}개는 아직 돈이 나가지 않아 뺐어요.`] : [];
+  const trialNote = trialCount > 0 ? [k.trialNote(trialCount)] : [];
 
   switch (call.tool) {
     case "spendTotal": {
@@ -143,8 +114,10 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const year = args.period === "year";
       const total = year ? sumMyAnnualKRW(subs, ctx.rate) : sumMyMonthlyKRW(subs, ctx.rate);
       return answer(
-        `구독 ${subs.length}개에 ${year ? "1년" : "한 달"} ${formatKRW(total)}을 내요.`,
-        year ? "내 몫 1년 합계" : "내 몫 한 달 합계",
+        year
+          ? k.spend.year(subs.length, formatKRW(total))
+          : k.spend.month(subs.length, formatKRW(total)),
+        year ? k.spend.sourceYear : k.spend.sourceMonth,
         [],
         trialNote,
       );
@@ -153,20 +126,17 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
     case "spendByCategory": {
       if (active.length === 0) return noSubscriptions();
       const category = args.category as Subscription["category"];
-      const label = CATEGORY_LABELS[category];
+      const label = ctx.t.value.category[category];
       const inCategory = subs.filter((sub) => sub.category === category);
       if (inCategory.length === 0) {
-        return answer(
-          `${label}${josa(label, "으로", "로")} 등록한 구독이 없어요.`,
-          "분류별 내 몫 한 달 합계",
-        );
+        return answer(k.category.none(label), k.category.source);
       }
       const part = sumMyMonthlyKRW(inCategory, ctx.rate);
       const total = sumMyMonthlyKRW(subs, ctx.rate);
       const share = total > 0 ? Math.round((part / total) * 100) : 0;
       return answer(
-        `${label} ${inCategory.length}개에 한 달 ${formatKRW(part)}을 내요. 전체 구독비의 ${share}%예요.`,
-        "분류별 내 몫 한 달 합계",
+        k.category.some(label, inCategory.length, formatKRW(part), share),
+        k.category.source,
         inCategory
           .map((sub) => ({ sub, monthly: getMyMonthlyAmountKRW(sub, ctx.rate) }))
           .sort((a, b) => b.monthly - a.monthly)
@@ -180,28 +150,21 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         (row) => row.usageCount !== null,
       );
       if (rows.length === 0) {
-        return answer(
-          "1회 단가를 계산할 체크인이 없어요.",
-          "리포트 1회 단가 순위",
-          [],
-          ["구독마다 최근 30일 동안 몇 번 썼는지 체크인하면 계산할 수 있어요."],
-        );
+        return answer(k.rank.none, k.rank.sourceNone, [], [k.rank.noneNote]);
       }
       const worst = args.order !== "best";
       const ordered = worst ? rows : [...rows].reverse();
       const limit = typeof args.limit === "number" ? args.limit : 3;
       const top = ordered.slice(0, limit);
       const per = (row: (typeof rows)[number]) =>
-        row.usageCount === 0 ? "0회 (한 번도 안 씀)" : `1회 ${formatKRW(row.costPerUse ?? 0)}`;
+        row.usageCount === 0 ? k.rank.perZero : k.rank.perUse(formatKRW(row.costPerUse ?? 0));
       return answer(
         worst
-          ? `가장 아까운 구독은 ${top[0].sub.name}${josa(top[0].sub.name, "이에요", "예요")}. ${per(top[0])}.`
-          : `가성비가 가장 좋은 구독은 ${top[0].sub.name}${josa(top[0].sub.name, "이에요", "예요")}. ${per(top[0])}.`,
-        "리포트의 1회 단가 순위(최근 30일 체크인)",
+          ? k.rank.worst(top[0].sub.name, per(top[0]))
+          : k.rank.best(top[0].sub.name, per(top[0])),
+        k.rank.source,
         top.map((row) => ({ label: row.sub.name, value: per(row) })),
-        rows.length < subs.length
-          ? ["체크인하지 않았거나 횟수로 재지 않는 구독은 순위에서 빠졌어요."]
-          : [],
+        rows.length < subs.length ? [k.rank.skipped] : [],
       );
     }
 
@@ -211,21 +174,14 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         (sub) => latestFreshLog(ctx.usageLogs, sub.id, ctx.now)?.riskLevel === "red",
       );
       const unknown = subs.filter((sub) => !latestFreshLog(ctx.usageLogs, sub.id, ctx.now)).length;
-      const notes =
-        unknown > 0 ? [`최근 30일 체크인이 없는 ${unknown}개는 쓰는지 몰라서 넣지 않았어요.`] : [];
-      if (red.length === 0)
-        return answer(
-          "최근 체크인 기준으로 거의 안 쓰는 구독은 없어요.",
-          "최근 30일 체크인 평가",
-          [],
-          notes,
-        );
+      const notes = unknown > 0 ? [k.low.unknown(unknown)] : [];
+      if (red.length === 0) return answer(k.low.none, k.low.source, [], notes);
       return answer(
-        `거의 안 쓰는 구독이 ${red.length}개 있어요.`,
-        "최근 30일 체크인 평가",
+        k.low.some(red.length),
+        k.low.source,
         red.map((sub) => ({
           label: sub.name,
-          value: `한 달 ${formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))}`,
+          value: k.low.monthly(formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))),
         })),
         notes,
       );
@@ -243,19 +199,13 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         .filter((item) => item.left !== null && item.next !== null && item.left <= days)
         .sort((a, b) => (a.left ?? 0) - (b.left ?? 0));
       const unknown = subs.filter((sub) => getDaysUntilBillingFor(sub, ctx.now) === null).length;
-      const notes = [
-        ...trialNote,
-        ...(unknown > 0
-          ? [`결제 월을 모르는 연간 구독 ${unknown}개는 날짜를 몰라 넣지 않았어요.`]
-          : []),
-      ];
-      if (due.length === 0)
-        return answer(`${days}일 안에 결제되는 구독은 없어요.`, "다음 결제일", [], notes);
+      const notes = [...trialNote, ...(unknown > 0 ? [k.upcoming.unknown(unknown)] : [])];
+      if (due.length === 0) return answer(k.upcoming.none(days), k.upcoming.sourceNone, [], notes);
       return answer(
-        `${days}일 안에 ${due.length}건이 결제돼요.`,
-        "다음 결제일 · 한 번에 내는 내 몫",
+        k.upcoming.some(days, due.length),
+        k.upcoming.source,
         due.map(({ sub, next }) => ({
-          label: `${wonDate(next as Date)} ${sub.name}`,
+          label: k.upcoming.row(dateText(next as Date), sub.name),
           value: formatKRW(
             getMyMonthlyAmountKRW(sub, ctx.rate) * (sub.billingCycle === "yearly" ? 12 : 1),
           ),
@@ -271,19 +221,14 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         .filter((item) => item.left !== null && item.left <= days)
         .sort((a, b) => (a.left ?? 0) - (b.left ?? 0));
       if (ending.length === 0) {
-        return answer(
-          `${days}일 안에 무료 체험이 끝나는 구독은 없어요.`,
-          "체험 종료일",
-          [],
-          ["체험 종료일을 적은 구독만 알 수 있어요."],
-        );
+        return answer(k.trials.none(days), k.trials.source, [], [k.trials.noneNote]);
       }
       return answer(
-        `${ending.length}개의 무료 체험이 ${days}일 안에 끝나요.`,
-        "체험 종료일",
+        k.trials.some(ending.length, days),
+        k.trials.source,
         ending.map(({ sub, left }) => ({
           label: sub.name,
-          value: left === 0 ? "오늘 끝나요" : `${left}일 남음`,
+          value: left === 0 ? k.trials.today : k.trials.left(left ?? 0),
         })),
       );
     }
@@ -292,7 +237,7 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       if (active.length === 0) return noSubscriptions();
       const bundle = findBundleOverlaps(active).map((item) => ({
         label: `${item.bundle.name} · ${item.other.name}`,
-        value: `${item.serviceIds.map(serviceNameOf).join(", ")} 겹침`,
+        value: k.overlaps.bundleValue(item.serviceIds.map(serviceNameOf).join(", ")),
       }));
       const byCategory = new Map<string, Subscription[]>();
       for (const sub of subs)
@@ -300,118 +245,92 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const crowded = [...byCategory.entries()]
         .filter(([category, list]) => list.length >= 2 && category !== "other")
         .map(([category, list]) => ({
-          label: `${CATEGORY_LABELS[category as Subscription["category"]]} ${list.length}개`,
+          label: k.overlaps.crowdedLabel(
+            ctx.t.value.category[category as Subscription["category"]],
+            list.length,
+          ),
           value: list.map((sub) => sub.name).join(", "),
         }));
       if (bundle.length === 0 && crowded.length === 0)
-        return answer("겹치는 구독은 없어요.", "결합 상품 구성 · 분류");
+        return answer(k.overlaps.none, k.overlaps.source);
       return answer(
-        bundle.length > 0
-          ? "두 번 내고 있을 수 있는 구독이 있어요."
-          : "같은 분류에 여러 개 구독하고 있어요.",
-        "결합 상품 구성 · 분류",
+        bundle.length > 0 ? k.overlaps.bundleHead : k.overlaps.crowdedHead,
+        k.overlaps.source,
         [...bundle, ...crowded],
-        crowded.length > 0
-          ? ["같은 분류라도 쓰임이 다를 수 있어요. 겹치는지는 직접 판단해 주세요."]
-          : [],
+        crowded.length > 0 ? [k.overlaps.note] : [],
       );
     }
 
     case "cheaperPlan":
     case "serviceDetail": {
-      const matches = matchSubscriptions(String(args.service), active);
+      const s = k.service;
+      const query = String(args.service);
+      const matches = matchSubscriptions(query, active);
       if (matches.length === 0) {
-        return answer(
-          `'${args.service}'로 등록한 구독을 찾지 못했어요.`,
-          "등록한 구독 이름",
-          [],
-          ["이름을 바꿔 물어보세요."],
-        );
+        return answer(s.notFound(query), s.source, [], [s.notFoundNote]);
       }
       if (matches.length > 1) {
         return answer(
-          `'${args.service}'에 맞는 구독이 ${matches.length}개예요. 이름을 더 정확히 적어 주세요.`,
-          "등록한 구독 이름",
+          s.many(query, matches.length),
+          s.source,
           matches.map((sub) => ({ label: sub.name, value: "" })),
         );
       }
       const sub = matches[0];
       if (call.tool === "cheaperPlan") {
         const plans = getPlanAlternatives(sub, ctx.usageLogs, ctx.now);
-        if (plans.state === "none")
-          return answer(
-            `${sub.name}${josa(sub.name, "은", "는")} 비교할 요금제 목록이 없어요.`,
-            "서비스 요금제 목록",
-          );
+        if (plans.state === "none") return answer(s.noPlans(sub.name), s.plansSource);
         if (plans.state === "plan-unknown") {
-          return answer(
-            `${sub.name}의 지금 요금제를 몰라 비교할 수 없어요.`,
-            "서비스 요금제 목록",
-            [],
-            ["구독 정보에서 요금제를 고르면 비교할 수 있어요."],
-          );
+          return answer(s.planUnknown(sub.name), s.plansSource, [], [s.planUnknownNote]);
         }
-        if (plans.alternatives.length === 0)
-          return answer(
-            `${sub.name}${josa(sub.name, "은", "는")} 이미 가장 싼 요금제예요.`,
-            "서비스 요금제 목록",
-          );
+        if (plans.alternatives.length === 0) return answer(s.cheapest(sub.name), s.plansSource);
         const best = plans.alternatives[0];
         return answer(
-          `${best.planName}${josa(best.planName, "으로", "로")} 바꾸면 1년에 ${formatKRW(best.yearlySaving)} 덜 내요.`,
-          "서비스 요금제 목록 · 요금표 가격",
+          s.best(best.planName, formatKRW(best.yearlySaving)),
+          s.bestSource,
           plans.alternatives.map((plan) => ({
             label: plan.planName,
-            value: `1년 ${formatKRW(plan.yearlySaving)} 절약`,
+            value: s.saving(formatKRW(plan.yearlySaving)),
           })),
-          [
-            `지금 요금제: ${plans.current.planName}`,
-            ...(plans.shared
-              ? ["나눠 내는 구독이라 금액은 카드에 찍히는 전체 요금 기준이에요."]
-              : []),
-          ],
+          [s.current(plans.current.planName), ...(plans.shared ? [s.shared] : [])],
         );
       }
       const next = getNextBillingDateFor(sub, ctx.now);
       const log = latestFreshLog(ctx.usageLogs, sub.id, ctx.now);
       return answer(
-        `${sub.name}: 한 달 ${formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))}`,
-        "구독 정보 · 체크인 기록",
+        s.detail(sub.name, formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))),
+        s.detailSource,
         [
           {
-            label: "다음 결제일",
-            value: isInTrial(sub, ctx.now)
-              ? "무료 체험 중"
-              : next
-                ? wonDate(next)
-                : "결제 월 미설정",
+            label: s.nextBilling,
+            value: isInTrial(sub, ctx.now) ? s.inTrial : next ? dateText(next) : s.unset,
           },
           {
-            label: "최근 30일 체크인",
-            value: log ? formatQuantity(metricOfLog(log), log.usageCount) : "기록 없음",
+            label: s.checkIn,
+            value: log ? describeQuantityText(ctx.t, metricOfLog(log), log.usageCount) : s.noRecord,
           },
         ],
       );
     }
 
     case "savedSoFar": {
+      const sv = k.saved;
       const killed = ctx.subscriptions.filter((sub) => sub.status === "killed");
-      if (killed.length === 0) return answer("아직 해지한 구독이 없어요.", "해지 기록");
+      if (killed.length === 0) return answer(sv.none, sv.source);
       const month = args.period === "month";
       const summary = month
         ? sumMyMonthDefendedKRW(killed, ctx.now.getFullYear(), ctx.now.getMonth() + 1, ctx.rate)
         : sumMyYearDefendedKRW(killed, ctx.now.getFullYear(), ctx.rate);
       return answer(
-        `해지해서 ${month ? "이번 달" : "올해"} ${formatKRW(summary.amount)}을 지켰어요.`,
-        month ? "이번 달 지킨 돈" : "올해 지킨 돈",
+        month ? sv.month(formatKRW(summary.amount)) : sv.year(formatKRW(summary.amount)),
+        month ? sv.sourceMonth : sv.sourceYear,
         [],
-        summary.unknownCount > 0
-          ? [`결제 월이나 해지 날을 몰라 ${summary.unknownCount}개는 넣지 못했어요.`]
-          : [],
+        summary.unknownCount > 0 ? [sv.unknown(summary.unknownCount)] : [],
       );
     }
 
     case "compareLastMonth": {
+      const c = k.compare;
       const from = startOfMonth(ctx.now).getTime();
       const inMonth = (iso?: string) =>
         !!iso && Date.parse(iso) >= from && Date.parse(iso) <= ctx.now.getTime();
@@ -421,32 +340,27 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const removed = ctx.subscriptions.filter(
         (sub) => sub.status === "killed" && inMonth(sub.killedAt) && !inMonth(sub.createdAt),
       );
-      const notes = [
-        "앱에는 달마다 쓴 돈의 기록이 없어, 이번 달에 등록·해지한 구독으로만 비교해요.",
-      ];
+      const notes = [c.note];
       if (added.length === 0 && removed.length === 0) {
-        return answer(
-          "이번 달에 새로 등록하거나 해지한 구독이 없어요.",
-          "등록일 · 해지일",
-          [],
-          notes,
-        );
+        return answer(c.none, c.noneSource, [], notes);
       }
       const plus = sumMyMonthlyKRW(added, ctx.rate);
       const minus = sumMyMonthlyKRW(removed, ctx.rate);
       const diff = plus - minus;
       return answer(
         diff === 0
-          ? "이번 달에 바뀐 구독의 금액이 같아요."
-          : `이번 달에 한 달 구독비가 ${formatKRW(Math.abs(diff))} ${diff > 0 ? "늘었어요" : "줄었어요"}.`,
-        "이번 달 등록일 · 해지일 · 내 몫 한 달 금액",
+          ? c.same
+          : diff > 0
+            ? c.up(formatKRW(Math.abs(diff)))
+            : c.down(formatKRW(Math.abs(diff))),
+        c.source,
         [
           ...removed.map((sub) => ({
-            label: `해지 ${sub.name}`,
+            label: c.killed(sub.name),
             value: `−${formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))}`,
           })),
           ...added.map((sub) => ({
-            label: `등록 ${sub.name}`,
+            label: c.added(sub.name),
             value: `+${formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))}`,
           })),
         ],

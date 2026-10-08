@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowUp, Sparkles } from "lucide-react";
 import type { Subscription, UsageLog } from "@subslash/shared";
-import { answerAsk, ASK_SUGGESTIONS, type AskAnswer } from "@lib/ask/answer";
+import { answerAsk, type AskAnswer } from "@lib/ask/answer";
 import { askReport } from "@lib/ask/client";
 import { Spinner } from "@components/ui/spinner";
 import { cn } from "@lib/utils";
@@ -25,7 +25,8 @@ export function AskReport({
   rate: number;
   now: Date;
 }) {
-  const a = useT().reportPage.ask;
+  const t = useT();
+  const a = t.reportPage.ask;
   const tRef = useLatestT();
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export function AskReport({
     setResult(null);
     try {
       const call = await askReport(trimmed);
-      setResult(answerAsk(call, { subscriptions, usageLogs, rate, now }));
+      setResult(answerAsk(call, { subscriptions, usageLogs, rate, now, t: tRef.current }));
       setQuestion("");
     } catch (e) {
       setError(e instanceof Error ? e.message : tRef.current.reportPage.ask.unavailable);
@@ -64,7 +65,7 @@ export function AskReport({
       </h2>
 
       <div className="flex flex-wrap gap-1.5">
-        {ASK_SUGGESTIONS.map((text) => (
+        {t.ask.suggestions.map((text) => (
           <button
             key={text}
             type="button"

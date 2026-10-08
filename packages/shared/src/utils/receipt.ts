@@ -1,7 +1,7 @@
 import type { ChargeRecord, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { isSameService } from "./chargeHistory";
-import { formatKRW, getBilledAmount, toKRW } from "./currency";
+import { getBilledAmount, toKRW } from "./currency";
 import { isInTrial } from "./date";
 import type { RateOn } from "./historicalRate";
 import {
@@ -430,26 +430,4 @@ export function formatReceiptPeriod(period: ReceiptPeriod): string {
 export function formatChargeDate(date: string): string {
   const [, month, day] = date.split("-");
   return `${month}.${day}`;
-}
-
-/**
- * 공유·복사용 글 영수증. 화면과 같은 숫자만 적고, 카드 명세서가 아니라는 말을 끝에 붙인다 — 받은
- * 사람이 은행 기록으로 읽지 않게.
- */
-export function formatReceiptText(receipt: Receipt): string {
-  const title = `SubSlash 구독 영수증 · ${formatReceiptPeriod(receipt.period)}${
-    receipt.isComplete ? "" : receipt.upcomingCount > 0 ? " (결제 예정 포함)" : " (오늘까지)"
-  }`;
-  const lines = [title, "-".repeat(28)];
-  if (receipt.lines.length === 0) lines.push("결제된 구독이 없어요");
-  for (const line of receipt.lines) {
-    const count = line.chargeDates.length > 1 ? ` ×${line.chargeDates.length}` : "";
-    const upcoming = line.upcomingDates.length > 0 ? " (결제 예정)" : "";
-    lines.push(`${line.name}${count}${upcoming}  ${formatKRW(line.amountKRW)}`);
-  }
-  lines.push("-".repeat(28));
-  lines.push(`합계(내 몫)  ${formatKRW(receipt.totalKRW)}`);
-  if (receipt.defendedKRW > 0) lines.push(`해지로 지킨 돈  ${formatKRW(receipt.defendedKRW)}`);
-  lines.push("", "등록한 구독 기록으로 계산했어요. 카드 명세서와 다를 수 있어요.");
-  return lines.join("\n");
 }

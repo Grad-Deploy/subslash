@@ -6,6 +6,7 @@ import {
   type UsageLog,
 } from "@subslash/shared";
 import { answerAsk, matchSubscriptions, type AskContext } from "@lib/ask/answer";
+import { messages } from "@lib/i18n/messages";
 import { ASK_TOOLS, type AskToolName } from "@lib/ask/tools";
 import { ASK_EVAL_SET } from "@lib/ask/eval-set";
 
@@ -61,7 +62,13 @@ const SUBS: Subscription[] = [
   }),
 ];
 const LOGS = [uses("netflix", 8, "green"), uses("wavve", 1, "red"), uses("tving", 3, "yellow")];
-const CTX: AskContext = { subscriptions: SUBS, usageLogs: LOGS, rate: 1400, now: NOW };
+const CTX: AskContext = {
+  subscriptions: SUBS,
+  usageLogs: LOGS,
+  rate: 1400,
+  now: NOW,
+  t: messages.ko,
+};
 const PAYING = SUBS.filter((s) => s.status === "active" && s.id !== "trial");
 
 const won = (n: number) => `₩${Math.round(n).toLocaleString("ko-KR")}`;
@@ -212,5 +219,30 @@ describe("리포트에 물어보기 — 문장", () => {
     for (const item of ASK_EVAL_SET) {
       expect(answerAsk(item.expect, CTX).source, item.q).not.toMatch(/[a-z][A-Z]|KRW|\(\w+\)/);
     }
+  });
+});
+
+describe("리포트에 물어보기 — 영어 답", () => {
+  const EN: AskContext = { ...CTX, t: messages.en };
+
+  it("같은 계산에 영어 문장 틀을 쓴다", () => {
+    const month = answerAsk({ tool: "spendTotal", args: { period: "month" } }, EN);
+    expect(month.headline).toMatch(/^You pay ₩[\d,]+ a month for \d+ subscriptions?\.$/);
+    expect(month.source).toBe("Your share, monthly total");
+    const ko = answerAsk({ tool: "spendTotal", args: { period: "month" } }, CTX);
+    // 숫자는 두 언어에서 같다.
+    expect(month.headline.match(/₩[\d,]+/)?.[0]).toBe(ko.headline.match(/₩[\d,]+/)?.[0]);
+  });
+
+  it("도구 호출이 지원되지 않으면 영어 질문 칩을 안내한다", () => {
+    const result = answerAsk({ tool: "unsupported" }, EN);
+    expect(result.headline).toBe("That's not something I can answer.");
+    expect(result.notes[0]).toContain(messages.en.ask.suggestions[0]);
+  });
+
+  it("분류 이름도 영어로 말한다", () => {
+    const result = answerAsk({ tool: "spendByCategory", args: { category: "ott" } }, EN);
+    expect(result.headline).toContain("in OTT");
+    expect(result.headline).not.toMatch(/[가-힣]/);
   });
 });
