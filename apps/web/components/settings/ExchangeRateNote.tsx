@@ -5,8 +5,8 @@ import { DEFAULT_EXCHANGE_RATE } from "@subslash/shared";
 import { useStore, isValidExchangeRate, type ExchangeRateSource } from "@lib/store";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { apiUrl } from "@lib/api";
 import { useLocale, useT } from "@lib/i18n";
+import { refreshExchangeRate } from "@hooks/useAutoExchangeRate";
 
 function formatUpdatedAt(iso: string | null, locale: string): string {
   if (!iso) return "";
@@ -30,7 +30,6 @@ export function ExchangeRateNote() {
   const subscriptions = useStore((state) => state.subscriptions);
   const exchangeRate = useStore((state) => state.exchangeRate);
   const setExchangeRate = useStore((state) => state.setExchangeRate);
-  const resetExchangeRate = useStore((state) => state.resetExchangeRate);
 
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -62,18 +61,12 @@ export function ExchangeRateNote() {
     setIsEditing(false);
   };
 
-  const fetchLatest = async () => {
+  const switchToAuto = async () => {
     setIsFetching(true);
     setError(null);
     try {
-      const response = await fetch(apiUrl("/api/fx"));
-      if (!response.ok) throw new Error(`status ${response.status}`);
-      const body = (await response.json()) as { rate?: number };
-      if (typeof body.rate !== "number" || !isValidExchangeRate(body.rate)) {
-        throw new Error("unusable rate");
-      }
-      setExchangeRate(body.rate, "ecb");
-      setDraft(String(body.rate));
+      // 자동으로 돌린다: 고시 환율을 곧바로 받아 와 바꾸고, 그 뒤로는 저절로 맞춘다. 받지 못하면 쓰던 값을 둔다.
+      if (!(await refreshExchangeRate({ force: true }))) throw new Error("unusable rate");
       setIsEditing(false);
     } catch {
       // The rate already in use stays in use; saying so beats a silent no-op.
@@ -116,23 +109,14 @@ export function ExchangeRateNote() {
             <Button size="sm" onClick={save}>
               {t.save}
             </Button>
-            <Button variant="outline" size="sm" onClick={fetchLatest} disabled={isFetching}>
-              {isFetching ? t.fetching : t.fetchLatest}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                resetExchangeRate();
-                setIsEditing(false);
-              }}
-            >
-              {t.reset(DEFAULT_EXCHANGE_RATE.toLocaleString())}
+            <Button variant="outline" size="sm" onClick={switchToAuto} disabled={isFetching}>
+              {isFetching ? t.fetching : t.auto}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)}>
               {t.cancel}
             </Button>
           </div>
+          <p className="text-muted-foreground opacity-80">{t.autoNote}</p>
           <p className="text-muted-foreground opacity-80">{t.cardNote}</p>
           {error && <p className="text-destructive">{error}</p>}
         </div>

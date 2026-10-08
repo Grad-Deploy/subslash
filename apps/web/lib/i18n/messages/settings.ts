@@ -15,14 +15,15 @@ export const ko = {
   },
   exchangeRate: {
     section: "환율",
-    sources: { default: "기본값", manual: "직접 입력", ecb: "ECB 고시 환율" },
+    sources: { default: "기본값", manual: "직접 입력", ecb: "ECB 고시 환율 · 자동" },
     convertedAt: (rate: string) => `USD 구독은 $1 = ₩${rate} 기준으로 환산했습니다`,
     change: "환율 변경",
     inputLabel: "USD 대비 원화 환율",
     save: "저장",
     fetching: "불러오는 중...",
-    fetchLatest: "최신 환율 불러오기",
-    reset: (rate: string) => `기본값(₩${rate})으로`,
+    auto: "자동으로 맞추기",
+    autoNote:
+      "자동이면 ECB 고시 환율(영업일마다 한 번 바뀜)로 저절로 맞춰요. 직접 저장하면 그 값을 계속 쓰고 자동으로 바꾸지 않아요.",
     cancel: "취소",
     cardNote:
       "고시 환율은 카드사 청구액과 다릅니다. 카드사는 자체 수수료를 더해 청구하므로, 명세서와 맞추려면 그 금액에서 역산한 값을 직접 넣는 편이 정확합니다.",
@@ -106,14 +107,15 @@ export const en: Widen<typeof ko> = {
   },
   exchangeRate: {
     section: "Exchange rate",
-    sources: { default: "default", manual: "entered by you", ecb: "ECB reference rate" },
+    sources: { default: "default", manual: "entered by you", ecb: "ECB reference rate · auto" },
     convertedAt: (rate) => `USD subscriptions are converted at $1 = ₩${rate}`,
     change: "Change rate",
     inputLabel: "KRW per USD",
     save: "Save",
     fetching: "Loading...",
-    fetchLatest: "Get latest rate",
-    reset: (rate) => `Reset to default (₩${rate})`,
+    auto: "Update automatically",
+    autoNote:
+      "When automatic, it follows the ECB reference rate (updated once each business day). If you save a rate yourself, that rate stays and isn't changed automatically.",
     cancel: "Cancel",
     cardNote:
       "Reference rates differ from what your card company charges, since card companies add their own fees. To match your statement, enter the rate worked out from the charged amount.",
