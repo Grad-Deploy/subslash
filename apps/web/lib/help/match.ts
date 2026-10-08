@@ -11,7 +11,33 @@ import type { Faq } from "./faq";
 export const CONFIDENT = 0.5;
 export const MARGIN = 0.15;
 
-const STOP = new Set(["어떻게", "하나요", "되나요", "있나요", "나요", "해요", "어요", "요"]);
+const STOP = new Set([
+  "어떻게",
+  "하나요",
+  "되나요",
+  "있나요",
+  "나요",
+  "해요",
+  "어요",
+  "요",
+  // 영어 화면의 질문에서 뜻 없이 겹치는 낱말.
+  "how",
+  "do",
+  "does",
+  "i",
+  "my",
+  "the",
+  "a",
+  "an",
+  "is",
+  "are",
+  "to",
+  "of",
+  "can",
+  "what",
+  "it",
+  "in",
+]);
 
 function bigrams(text: string): Set<string> {
   const words = text

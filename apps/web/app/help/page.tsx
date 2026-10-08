@@ -14,20 +14,27 @@ import { HelpSearch } from "@components/help/HelpSearch";
 import { copyText, openExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { Button } from "../../components/ui/button";
+import { useLocale, useT } from "@lib/i18n";
 
 /**
  * 도움말(자주 묻는 질문 + 문의하기, 웹·앱). 웹은 설정 화면과 하단 푸터에서, 앱은 설정 탭에서 들어온다.
  * 문의 주소는 개인정보 보호책임자 연락처와 같은 곳(lib/privacy.ts)에서 가져온다 — 주소를 두 군데 적지 않는다.
  */
 export default function HelpPage() {
-  const groups = faqGroups({
-    gmailOpen: isGmailAutoImportOpen(),
-    socialOpen: isSocialLoginOpen(),
-    aiOpen: isAiAskOpen(),
-  });
+  const t = useT();
+  const h = t.helpPage;
+  const locale = useLocale();
+  const groups = faqGroups(
+    {
+      gmailOpen: isGmailAutoImportOpen(),
+      socialOpen: isSocialLoginOpen(),
+      aiOpen: isAiAskOpen(),
+    },
+    locale,
+  );
   const email = PRIVACY_OFFICER?.email ?? null;
-  const subject = "[SubSlash 문의] ";
-  const body = `문의 내용:\n\n\n---\n사용 환경: ${IS_APP_BUILD ? "앱" : "웹"}`;
+  const subject = h.mailSubject;
+  const body = h.mailBody(IS_APP_BUILD);
   const mailto = email
     ? `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
     : null;
@@ -50,8 +57,8 @@ export default function HelpPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-2">
       <header className="space-y-1">
-        <h1 className="text-2xl font-black tracking-tight">도움말</h1>
-        <p className="text-sm text-muted-foreground">자주 묻는 질문과 문의하는 곳이에요.</p>
+        <h1 className="text-2xl font-black tracking-tight">{h.title}</h1>
+        <p className="text-sm text-muted-foreground">{h.subtitle}</p>
       </header>
 
       <Suspense fallback={null}>
@@ -82,15 +89,12 @@ export default function HelpPage() {
 
       <section aria-labelledby="contact-heading" className="space-y-2">
         <h2 id="contact-heading" className="px-1 text-xs font-bold text-muted-foreground">
-          문의하기
+          {h.contact}
         </h2>
         <div className="space-y-3 rounded-2xl border bg-card p-4 text-sm">
           {email && mailto && gmailCompose ? (
             <>
-              <p className="leading-relaxed text-muted-foreground">
-                찾는 답이 없으면 메일로 알려 주세요. 오류라면 어느 화면에서 무엇을 눌렀는지 함께
-                적어 주시면 빨리 확인할 수 있어요.
-              </p>
+              <p className="leading-relaxed text-muted-foreground">{h.contactBody}</p>
               <p className="font-semibold">{email}</p>
               <div className="flex flex-wrap gap-2">
                 {/* 메일 앱을 여는 링크(mailto:). openExternal은 http(s)만 열기 때문에 쓰지 않는다. */}
@@ -99,29 +103,26 @@ export default function HelpPage() {
                   className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <Mail className="size-4" aria-hidden />
-                  메일 앱으로 문의하기
+                  {h.mailApp}
                 </a>
                 <Button type="button" variant="outline" onClick={() => openExternal(gmailCompose)}>
-                  Gmail로 쓰기
+                  {h.gmail}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => void copyEmail()}>
-                  {copied ? "복사했어요" : "주소 복사"}
+                  {copied ? h.copied : h.copyAddress}
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground">{h.mailFallback}</p>
               <p className="text-xs text-muted-foreground">
-                메일 앱이 열리지 않으면 &lsquo;Gmail로 쓰기&rsquo;를 누르거나, 주소를 복사해 쓰는
-                메일에서 보내 주세요.
-              </p>
-              <p className="text-xs text-muted-foreground">
-                개인정보에 관한 요청도 같은 주소로 받아요(
+                {h.privacyBefore}
                 <Link href="/privacy" className="underline underline-offset-4">
-                  개인정보처리방침
+                  {h.privacyLink}
                 </Link>
-                ).
+                {h.privacyAfter}
               </p>
             </>
           ) : (
-            <p className="text-muted-foreground">아직 문의 창구를 정하지 못했어요.</p>
+            <p className="text-muted-foreground">{h.noContact}</p>
           )}
         </div>
       </section>
