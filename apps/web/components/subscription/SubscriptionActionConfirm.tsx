@@ -3,6 +3,7 @@
 import React from "react";
 import type { Subscription } from "@subslash/shared";
 import { IS_APP_BUILD } from "@lib/platform";
+import { useT } from "@lib/i18n";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { SubjectChip } from "./SubjectChip";
 
@@ -25,6 +26,7 @@ export function SubscriptionActionConfirm({
   onConfirm: () => void;
 }) {
   const revive = action.type === "revive";
+  const t = useT().subs.confirm;
   return (
     <ConfirmDialog
       isOpen
@@ -35,23 +37,23 @@ export function SubscriptionActionConfirm({
       title={
         IS_APP_BUILD
           ? revive
-            ? "다시 살릴까요?"
-            : "삭제할까요?"
+            ? t.reviveTitle
+            : t.deleteTitle
           : revive
-            ? "구독 다시 살리기"
-            : "구독 영구 삭제"
+            ? t.reviveHeading
+            : t.deleteHeading
       }
       description={
         IS_APP_BUILD
           ? revive
-            ? "구독 중으로 돌아가고,\n절약 기록에서는 빠져요."
-            : "절약 현황에서도 빠지고\n되돌릴 수 없어요."
+            ? t.reviveNote
+            : t.deleteNote
           : revive
-            ? `'${action.sub.name}'을(를) 다시 구독 중으로 바꿀까요?\n절약 기록에서 빠져요.`
-            : `'${action.sub.name}'을(를) 삭제할까요?\n되돌릴 수 없어요.`
+            ? t.reviveBody(action.sub.name)
+            : t.deleteBody(action.sub.name)
       }
-      confirmText={revive ? "다시 살리기" : "삭제"}
-      cancelText="취소"
+      confirmText={revive ? t.reviveConfirm : t.deleteConfirm}
+      cancelText={t.cancel}
       variant={revive ? "default" : "destructive"}
     />
   );

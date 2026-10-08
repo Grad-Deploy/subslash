@@ -1,5 +1,5 @@
-import { CATEGORY_LABELS } from "@subslash/shared";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 import type { SubsView } from "./useSubsView";
 
 export type SubsTab = "active" | "killed";
@@ -16,6 +16,7 @@ export function SubsTabs({
   activeCount: number;
   killedCount: number;
 }) {
+  const t = useT().subs;
   const tabClass = (on: boolean, color: string) =>
     cn(
       "flex-1 border-b-2 py-3 text-sm font-bold transition-colors",
@@ -27,31 +28,20 @@ export function SubsTabs({
         className={tabClass(tab === "active", "border-primary text-primary")}
         onClick={() => onChange("active")}
       >
-        활성 구독 ({activeCount})
+        {t.tabs.active(activeCount)}
       </button>
       <button
         className={tabClass(tab === "killed", "border-destructive text-destructive")}
         onClick={() => onChange("killed")}
       >
-        해지 완료 ({killedCount})
+        {t.tabs.killed(killedCount)}
       </button>
     </div>
   );
 }
 
 // 분류 칩. '기타'가 없으면 노션·어도비처럼 기타로 등록된 구독을 분류로 걸러 볼 수 없다.
-const CATEGORY_FILTERS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: "all", label: "전체" },
-  ...(["ott", "music", "shopping", "cloud", "ai", "other"] as const).map((value) => ({
-    value,
-    label: CATEGORY_LABELS[value],
-  })),
-];
-
-const VIEW_OPTIONS = [
-  { value: "cards", label: "카드" },
-  { value: "table", label: "표" },
-] as const;
+const CATEGORY_KEYS = ["ott", "music", "shopping", "cloud", "ai", "other"] as const;
 
 /** 분류 칩과 보기 방식(카드/표). 보기 방식은 넓은 화면에만 보인다. */
 export function SubsFilterBar({
@@ -65,10 +55,19 @@ export function SubsFilterBar({
   view: SubsView;
   onViewChange: (view: SubsView) => void;
 }) {
+  const t = useT();
+  const categoryFilters = [
+    { value: "all", label: t.subs.filter.all },
+    ...CATEGORY_KEYS.map((value) => ({ value, label: t.value.category[value] })),
+  ];
+  const viewOptions = [
+    { value: "cards", label: t.subs.filter.cards },
+    { value: "table", label: t.subs.filter.table },
+  ] as const;
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-2 text-xs">
-        {CATEGORY_FILTERS.map((c) => (
+        {categoryFilters.map((c) => (
           <button
             key={c.value}
             onClick={() => onCategoryChange(c.value)}
@@ -85,10 +84,10 @@ export function SubsFilterBar({
       </div>
       <div
         role="group"
-        aria-label="보기 방식"
+        aria-label={t.subs.filter.viewLabel}
         className="hidden shrink-0 items-center rounded-lg border p-0.5 text-xs md:inline-flex"
       >
-        {VIEW_OPTIONS.map((option) => (
+        {viewOptions.map((option) => (
           <button
             key={option.value}
             type="button"
