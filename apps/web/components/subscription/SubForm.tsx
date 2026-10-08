@@ -14,6 +14,7 @@ import {
 } from "@subslash/shared";
 import { Button } from "../ui/button";
 import { IS_APP_BUILD } from "@lib/platform";
+import { useT } from "@lib/i18n";
 import { ServicePicker, type PickTab } from "./form/ServicePicker";
 import { CustomIconPicker } from "./form/CustomIconPicker";
 import { PlanPicker } from "./form/PlanPicker";
@@ -41,7 +42,7 @@ export function SubForm({
   onSubmit,
   initialData,
   popularServices,
-  submitLabel = "구독 등록하기",
+  submitLabel,
   mode = "create",
   openCustom = false,
 }: {
@@ -56,6 +57,7 @@ export function SubForm({
    */
   openCustom?: boolean;
 }) {
+  const t = useT();
   const isEdit = mode === "edit";
   const fieldId = useId();
 
@@ -340,13 +342,14 @@ export function SubForm({
         className="w-full flex items-center justify-between gap-2 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
       >
         <span>
-          자세히 입력 (선택) ·{" "}
-          {[
-            "공유 인원",
-            "결제 수단",
-            "가입한 계정",
-            ...(showServiceFields ? ["웹사이트", "해지 방법"] : []),
-          ].join(", ")}
+          {t.form.more(
+            [
+              t.form.moreItems.sharing,
+              t.form.moreItems.payment,
+              t.form.moreItems.account,
+              ...(showServiceFields ? [t.form.moreItems.website, t.form.moreItems.cancel] : []),
+            ].join(", "),
+          )}
         </span>
         <span aria-hidden>{showMore ? "▲" : "▼"}</span>
       </button>
@@ -382,7 +385,7 @@ export function SubForm({
       )}
 
       <Button type="submit" className="w-full mt-2 h-11 font-bold">
-        {submitLabel}
+        {submitLabel ?? t.form.submit}
       </Button>
     </form>
   );

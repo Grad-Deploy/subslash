@@ -2,6 +2,7 @@ import React from "react";
 import type { SubscriptionFormData } from "@subslash/shared";
 import { Input } from "../../ui/input";
 import { Select } from "../../ui/select";
+import { useT } from "@lib/i18n";
 import { FIELD_LABEL } from "./fieldLabel";
 
 /** 결제 금액과 통화. 이름표는 주기와 세금 여부를 따라 바뀐다. */
@@ -14,6 +15,7 @@ export function AmountFields({
   formData: Partial<SubscriptionFormData>;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 }) {
+  const f = useT().form.amount;
   const yearly = (formData.billingCycle ?? "monthly") === "yearly";
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -22,11 +24,11 @@ export function AmountFields({
         <label htmlFor={`${idPrefix}-amount`} className={FIELD_LABEL}>
           {formData.taxRate
             ? yearly
-              ? "연 요금 (세금 제외)"
-              : "월 요금 (세금 제외)"
+              ? f.yearlyExTax
+              : f.monthlyExTax
             : yearly
-              ? "연 결제 금액"
-              : "월 결제 금액"}
+              ? f.yearly
+              : f.monthly}
         </label>
         {/* step="any": 없으면 브라우저가 $9.99 같은 소수 금액을 입력 오류로 막는다. */}
         <Input
@@ -35,7 +37,7 @@ export function AmountFields({
           name="amount"
           min="0"
           step="any"
-          placeholder="예: 17000"
+          placeholder={f.placeholder}
           value={formData.amount ?? ""}
           onChange={onChange}
           required
@@ -43,7 +45,7 @@ export function AmountFields({
       </div>
       <div className="space-y-1.5">
         <label htmlFor={`${idPrefix}-currency`} className={FIELD_LABEL}>
-          통화
+          {f.currency}
         </label>
         <Select
           id={`${idPrefix}-currency`}
