@@ -1,9 +1,5 @@
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
-const plural = (n: number, word: string) => `${n} ${one(n) ? word : `${word}s`}`;
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+import { MONTHS_SHORT, countOf } from "../english";
 
 /**
  * 내 정보·계정 화면: 이메일 확인 링크, 내 정보(나이·성별), 비밀번호 변경·재설정·찾기, 로그인 방법, 회원 탈퇴,
@@ -208,7 +204,7 @@ export const en: Widen<typeof ko> = {
       goneBody:
         "The account this link points to no longer exists. You can sign up anew with this address.",
       invalidBody: (days) =>
-        `A confirmation link works for only ${plural(days, "day")} after it's sent. Log in and you can get a new confirmation email from “My account”.`,
+        `A confirmation link works for only ${countOf(days, "day")} after it's sent. Log in and you can get a new confirmation email from “My account”.`,
       goMe: "Go to my account",
       unknownResponse: "Unexpected response.",
       failedRetry: "Couldn't complete this. Please try again shortly.",
@@ -261,7 +257,7 @@ export const en: Widen<typeof ko> = {
       doneBody: (username) =>
         `You're logged in${username ? ` to ${username}` : ""} with the new password. Log in again with it on other devices.`,
       invalidBody: (minutes) =>
-        `A reset link works once, for ${plural(minutes, "minute")} after it's sent. If you already changed your password, log in with the new one.`,
+        `A reset link works once, for ${countOf(minutes, "minute")} after it's sent. If you already changed your password, log in with the new one.`,
       resend: "Get a new reset email",
       toLogin: "Go to log in",
     },
@@ -322,9 +318,9 @@ export const en: Widen<typeof ko> = {
     },
     conflict: {
       counts: (subs, killed, logs) =>
-        `${plural(subs, "subscription")} (${killed} cancelled), ${plural(logs, "check-in")}`,
+        `${countOf(subs, "subscription")} (${killed} cancelled), ${countOf(logs, "check-in")}`,
       unknownTime: "unknown time",
-      savedAt: (month, day, time) => `${MONTHS[Number(month) - 1] ?? month} ${day}, ${time}`,
+      savedAt: (month, day, time) => `${MONTHS_SHORT[Number(month) - 1] ?? month} ${day}, ${time}`,
       leadFirst: "This device and your account have different records.",
       leadDiverged: "Records changed separately on this device and another device.",
       title: "Which records should we use?",

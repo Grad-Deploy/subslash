@@ -1,10 +1,6 @@
 import { AGE_BAND_LABELS } from "../../stats";
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
-const plural = (n: number, singular: string, pluralForm: string) =>
-  one(n) ? singular : pluralForm;
+import { monthLong, pluralOf } from "../english";
 
 /**
  * 구독 리포트(/report). 영수증 화면과 '리포트에 물어보기'의 답은 서버·기록에서 문장을 만드는 별도 영역이라
@@ -122,7 +118,7 @@ export const en: Widen<typeof ko> = {
     peerSoon: "Comparison with other users is coming soon.",
     receipts: {
       label: "Subscription receipts",
-      month: (month) => `${monthName(month)} receipt`,
+      month: (month) => `${monthLong(month)} receipt`,
       year: (year) => `${year} year-end receipt`,
     },
     summary: {
@@ -141,7 +137,7 @@ export const en: Widen<typeof ko> = {
     ranking: {
       title: "Cost per use ranking",
       monthly: (amount) => `${amount} a month`,
-      used: (count) => ` · used ${count} ${plural(count, "time", "times")}`,
+      used: (count) => ` · used ${count} ${pluralOf(count, "time", "times")}`,
       beforeCheckIn: "No check-in yet",
       unused: "Not used",
       perUse: "per use",
@@ -166,7 +162,7 @@ export const en: Widen<typeof ko> = {
       notEnough: (participants, min) => `${participants} joined · shown once ${min} have joined`,
       me: "Me",
       tooFew: (band, participants) =>
-        `Only ${participants} ${plural(participants, "person", "people")} in ${band} so far, so it can't be compared.`,
+        `Only ${participants} ${pluralOf(participants, "person", "people")} in ${band} so far, so it can't be compared.`,
       more: (band, diff, year) =>
         `You pay ${diff} more a month than the typical person in ${band}. That's ${year} a year.`,
       less: (band, diff) => `You pay ${diff} less a month than the typical person in ${band}.`,
@@ -189,12 +185,12 @@ export const en: Widen<typeof ko> = {
       barLess: (diff) => `You pay ${diff} less a month than typical.`,
       barSame: "Same as typical.",
       gathering: (min, participants) =>
-        `The comparison appears once ${min} have joined. ${participants} ${plural(participants, "person has", "people have")} joined so far.`,
+        `The comparison appears once ${min} have joined. ${participants} ${pluralOf(participants, "person has", "people have")} joined so far.`,
       typicalAmount: (amount) => `Typical ${amount}`,
-      typicalUses: (count) => `Typical ${count} ${plural(count, "use", "uses")}`,
+      typicalUses: (count) => `Typical ${count} ${pluralOf(count, "use", "uses")}`,
       meAmount: (amount) => `You ${amount}`,
       meBeforeCheckIn: "You: no check-in yet",
-      meUses: (count) => `You ${count} ${plural(count, "use", "uses")}`,
+      meUses: (count) => `You ${count} ${pluralOf(count, "use", "uses")}`,
       contributing: "You're anonymously contributing a summary of your subscriptions.",
       leave: "Stop sharing",
       signedOutBefore: "We don't contribute while you're logged out. ",
@@ -220,21 +216,3 @@ export const en: Widen<typeof ko> = {
     },
   },
 };
-
-const EN_MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-function monthName(month: number): string {
-  return EN_MONTHS[Number(month) - 1] ?? String(month);
-}

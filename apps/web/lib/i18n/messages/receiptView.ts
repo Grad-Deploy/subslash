@@ -1,21 +1,5 @@
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
-const EN_MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+import { MONTHS_LONG, one } from "../english";
 
 /**
  * 구독 영수증: 화면(ReceiptPaper)·이미지(lib/receipt-image)·공유 글이 같은 문구를 쓴다. 두 곳이 따로 적으면 공유한
@@ -107,7 +91,7 @@ export const ko = {
 
 export const en: Widen<typeof ko> = {
   receiptView: {
-    periodMonth: (year, month) => `${EN_MONTHS[Number(month) - 1] ?? month} ${year}`,
+    periodMonth: (year, month) => `${MONTHS_LONG[Number(month) - 1] ?? month} ${year}`,
     periodYear: (year) => String(year),
     title: "Subscription receipt",
     paperLabel: (period) => `${period} subscription receipt`,

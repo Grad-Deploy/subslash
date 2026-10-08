@@ -1,22 +1,5 @@
 import type { Widen } from "../types";
-
-const EN_MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-const monthName = (month: number) => EN_MONTHS[Number(month) - 1] ?? String(month);
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
+import { monthLong, one } from "../english";
 
 /** 대시보드 본문: 머리말·월 고정지출·지킨 돈·결제 캘린더·이번 달 결제일 현황. */
 export const ko = {
@@ -167,10 +150,10 @@ export const en: Widen<typeof ko> = {
     prevMonth: "Previous month",
     nextMonth: "Next month",
     weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-    monthLabel: (year, month) => `${monthName(month)} ${year}`,
+    monthLabel: (year, month) => `${monthLong(month)} ${year}`,
     dayWithCount: (month, day, count) =>
-      `${monthName(month)} ${day}, ${count} ${one(count) ? "payment" : "payments"}`,
-    dayNone: (month, day) => `${monthName(month)} ${day}, no payments`,
+      `${monthLong(month)} ${day}, ${count} ${one(count) ? "payment" : "payments"}`,
+    dayNone: (month, day) => `${monthLong(month)} ${day}, no payments`,
     noSubscriptions: "No subscriptions yet. Add one and its billing date shows up on the calendar.",
     noneThisMonth: "No subscription is billed this month.",
     summary: (days, count) =>
@@ -179,7 +162,7 @@ export const en: Widen<typeof ko> = {
     undated: (count) =>
       `${count} without a billing month couldn't be placed because the date is unknown — `,
     undatedLink: "Set the billing month of yearly subscriptions",
-    dayHeading: (month, day) => `Charged on ${monthName(month)} ${day}`,
+    dayHeading: (month, day) => `Charged on ${monthLong(month)} ${day}`,
     total: "Total",
     converted: " (converted at your rate)",
     sheet: "Billing calendar",
@@ -190,7 +173,7 @@ export const en: Widen<typeof ko> = {
     viewCalendar: "View calendar",
   },
   defense: {
-    title: (month) => `Billing dates in ${monthName(month)}`,
+    title: (month) => `Billing dates in ${monthLong(month)}`,
     passed: "Billing dates passed since cancelling",
     upcoming: "Billing dates left (if you stay cancelled)",
     none: "No billing date falls after a cancellation this month.",
@@ -199,7 +182,7 @@ export const en: Widen<typeof ko> = {
     unknown: (count) =>
       `${count} yearly ${one(count) ? "subscription" : "subscriptions"} with an unknown billing month can't be placed in this month, so ${one(count) ? "it is" : "they are"} left out of the total. Set the billing month in the subscription details to include ${one(count) ? "it" : "them"}.`,
     blocked: (cur, curAmount, prev, prevAmount) =>
-      `Charges blocked by cancelling: ${monthName(cur)} ${curAmount} · ${monthName(prev)} ${prevAmount} — `,
+      `Charges blocked by cancelling: ${monthLong(cur)} ${curAmount} · ${monthLong(prev)} ${prevAmount} — `,
     more: (amount) => `${amount} more than last month`,
     less: (amount) => `${amount} less than last month`,
     same: "Same as last month",

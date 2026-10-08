@@ -1,9 +1,5 @@
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
-const plural = (n: number, word: string) => `${n} ${one(n) ? word : `${word}s`}`;
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+import { MONTHS_SHORT, countOf } from "../english";
 
 /**
  * 앱의 폰 사용 기록 화면(리포트의 구독 사용 현황·구독 상세의 사용 현황). 평가 기준(`lib/usage/value`)과
@@ -114,33 +110,33 @@ export const en: Widen<typeof ko> = {
     level: { red: "Pricey", yellow: "So-so", green: "Good value" },
     per: { uses: "per use", days: "per day", hours: "per hour" },
     goal: {
-      uses: (n) => plural(n, "use"),
-      days: (n) => plural(n, "day"),
-      hours: (n) => plural(n, "hour"),
+      uses: (n) => countOf(n, "use"),
+      days: (n) => countOf(n, "day"),
+      hours: (n) => countOf(n, "hour"),
     },
-    month: (m) => MONTHS[Number(m) - 1] ?? String(m),
-    monthDay: (m, d) => `${MONTHS[Number(m) - 1] ?? m} ${d}`,
+    month: (m) => MONTHS_SHORT[Number(m) - 1] ?? String(m),
+    monthDay: (m, d) => `${MONTHS_SHORT[Number(m) - 1] ?? m} ${d}`,
     weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     seconds: (s) => `${s} sec`,
     noRecord: "no record",
-    times: (n) => plural(n, "time"),
+    times: (n) => countOf(n, "time"),
     timesUnit: "times",
     usedTime: "Time used",
     opens: "Times used",
     unused: "Unused",
-    pending: (days) => `${plural(days, "day")} until rated`,
+    pending: (days) => `${countOf(days, "day")} until rated`,
     connect: "Connect phone usage history",
     title: "Subscription usage",
     thisPhone: "On this phone",
     line: {
-      unopenedFor: (days) => `Not opened in ${plural(days, "day")}`,
-      daysUsed: (days) => `Used ${plural(days, "day")}`,
+      unopenedFor: (days) => `Not opened in ${countOf(days, "day")}`,
+      daysUsed: (days) => `Used ${countOf(days, "day")}`,
       notInstalled: "The app isn't on this phone",
       noData: "No records for this period",
       spentIn: (duration) => `for ${duration}`,
-      unusedDetail: (days) => `Not opened once on this phone in ${plural(days, "day")}`,
+      unusedDetail: (days) => `Not opened once on this phone in ${countOf(days, "day")}`,
       captionPending: (days, have, goal) =>
-        `${have} in ${plural(days, "day")} · “Good value” is ${goal} in 30 days`,
+        `${have} in ${countOf(days, "day")} · “Good value” is ${goal} in 30 days`,
       captionMonth: (have, goal) => `${have} a month · “Good value” is ${goal}`,
       shareTime: (percent) => `${percent}% of all subscription app time`,
       shareOpens: (percent) => `${percent}% of all subscription app uses`,
@@ -155,32 +151,33 @@ export const en: Widen<typeof ko> = {
       dashed: "Dashed lines are times with no record.",
       valueTitle: "This subscription's value",
       shortLabel: "Paid for the time used",
-      measuredUses: (days, count) => `${plural(count, "time")} in the last ${plural(days, "day")}`,
-      measuredDays: (days, count) => `${count} of the last ${plural(days, "day")}`,
-      measuredHours: (days, used) => `${used} in the last ${plural(days, "day")}`,
+      measuredUses: (days, count) =>
+        `${countOf(count, "time")} in the last ${countOf(days, "day")}`,
+      measuredDays: (days, count) => `${count} of the last ${countOf(days, "day")}`,
+      measuredHours: (days, used) => `${used} in the last ${countOf(days, "day")}`,
       shortNote: (used) => `Only ${used} used, so no per-hour cost`,
-      noneUses: (days) => `Not opened for over a minute in the last ${plural(days, "day")}`,
-      noneDays: (days) => `No days used in the last ${plural(days, "day")}`,
-      noneHours: (days) => `Not used in the last ${plural(days, "day")}`,
+      noneUses: (days) => `Not opened for over a minute in the last ${countOf(days, "day")}`,
+      noneDays: (days) => `No days used in the last ${countOf(days, "day")}`,
+      noneHours: (days) => `Not used in the last ${countOf(days, "day")}`,
       activeDays: "Days used",
-      days: (n) => plural(n, "day"),
-      opened: (days, count) => `Last ${plural(days, "day")} · opened ${plural(count, "time")}`,
+      days: (n) => countOf(n, "day"),
+      opened: (days, count) => `Last ${countOf(days, "day")} · opened ${countOf(count, "time")}`,
       tvNote:
         "Use on a TV or PC isn't included. Check-in fills in this number and lets you correct it.",
     },
     card: {
       building: "This phone's usage history starts building from today.",
       barShare: "Each bar is its share of the total time used.",
-      neverOpened: (days, names) => `Not opened once in ${plural(days, "day")}: ${names}`,
+      neverOpened: (days, names) => `Not opened once in ${countOf(days, "day")}: ${names}`,
       priceyBefore: "Poor-value subscriptions: ",
       priceyCount: (count) => `${count}`,
       priceyMonthly: (names, amount) => `${names} — ${amount} a month`,
       allGood: "They're all worth the money",
       allGoodNote: "Based on what this phone measured",
       fullBar: "A full bar means “Good value”.",
-      recorded: (days) => `This phone · ${plural(days, "day")} recorded`,
+      recorded: (days) => `This phone · ${countOf(days, "day")} recorded`,
       recent: "This phone · last 30 days",
-      pendingFooter: (days) => `${plural(days, "day")} until the value rating`,
+      pendingFooter: (days) => `${countOf(days, "day")} until the value rating`,
       totalFooter: (duration, count) => `Used ${duration} · ${count} times`,
       more: "See details",
     },
@@ -189,7 +186,7 @@ export const en: Widen<typeof ko> = {
       sortLabel: "Sort",
       offBody:
         "Connect your phone usage history to see how much you used your subscription apps and what they cost per hour.",
-      recordedSuffix: (days) => ` · ${plural(days, "day")} recorded`,
+      recordedSuffix: (days) => ` · ${countOf(days, "day")} recorded`,
       totalTime: "Subscription app time",
       totalOpens: "Subscription app uses",
       empty: "No records yet. From tomorrow, this phone's usage history builds up here.",
@@ -199,7 +196,7 @@ export const en: Widen<typeof ko> = {
       legendShare: "All bars add up to 100%. The color is the value rating.",
       tvMissing: "Watching on a TV or PC isn't included.",
       unmapped: (count) =>
-        ` ${plural(count, "subscription")} used as a membership or on a PC can't be measured from phone records and are left out.`,
+        ` ${countOf(count, "subscription")} used as a membership or on a PC can't be measured from phone records and are left out.`,
       yearTitle: "1-year trend",
       yearSub: "Time used per month",
       since: (date) =>

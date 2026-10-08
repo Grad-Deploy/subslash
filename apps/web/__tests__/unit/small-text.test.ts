@@ -1,13 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { formatDuration } from "@lib/usage/history";
-import { formatDurationText } from "@lib/i18n/duration";
+import { formatDurationPreciseText, formatDurationText } from "@lib/i18n/duration";
 import { messages } from "@lib/i18n/messages";
 
 describe("앱의 작은 조각 문구", () => {
-  it("사용 시간: 한국어는 formatDuration과 같고 영어는 단위를 영어로 쓴다", () => {
-    for (const ms of [0, 30_000, 60_000, 40 * 60_000, 3_600_000, 12 * 3_600_000 + 10 * 60_000]) {
-      expect(formatDurationText(messages.ko, ms)).toBe(formatDuration(ms));
-    }
+  it("사용 시간: 한국어·영어 모두 시·분으로 쓰고, 1분이 안 되면 '1분 미만'(자세히는 초)이다", () => {
+    const ko = (ms: number) => formatDurationText(messages.ko, ms);
+    expect(ko(0)).toBe("0분");
+    expect(ko(30_000)).toBe("1분 미만");
+    expect(ko(40 * 60_000)).toBe("40분");
+    expect(ko(3_600_000)).toBe("1시간");
+    expect(ko((12 * 60 + 10) * 60_000)).toBe("12시간 10분");
+    expect(formatDurationPreciseText(messages.ko, 500)).toBe("1초");
+    expect(formatDurationPreciseText(messages.ko, 12_400)).toBe("12초");
+    expect(formatDurationPreciseText(messages.en, 12_400)).toBe("12 sec");
     expect(formatDurationText(messages.en, 12 * 3_600_000 + 10 * 60_000)).toBe("12 h 10 min");
     expect(formatDurationText(messages.en, 40 * 60_000)).toBe("40 min");
     expect(formatDurationText(messages.en, 30_000)).toBe("under 1 min");

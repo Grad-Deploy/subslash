@@ -1,7 +1,5 @@
 import type { Widen } from "../types";
-
-/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
-const one = (n: number) => Number(n) === 1;
+import { one } from "../english";
 
 /**
  * 첫 화면(소개)과 앱 소개(온보딩). 서비스 이름·요금은 서비스 목록의 내용이라 그대로 두고, 둘러싼 말만 옮긴다.

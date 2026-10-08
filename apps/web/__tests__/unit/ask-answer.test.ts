@@ -240,6 +240,16 @@ describe("리포트에 물어보기 — 영어 답", () => {
     expect(result.notes[0]).toContain(messages.en.ask.suggestions[0]);
   });
 
+  it("영어로 물으면 한국어 이름으로 등록한 구독도 찾고, 이름은 영어로 말한다", () => {
+    expect(matchSubscriptions("Netflix", SUBS).map((s) => s.id)).toEqual(["netflix"]);
+    const result = answerAsk(
+      { tool: "serviceDetail", args: { service: "Netflix" } },
+      { ...EN, locale: "en" },
+    );
+    expect(result.headline).toContain("Netflix");
+    expect(result.headline).not.toContain("넷플릭스");
+  });
+
   it("분류 이름도 영어로 말한다", () => {
     const result = answerAsk({ tool: "spendByCategory", args: { category: "ott" } }, EN);
     expect(result.headline).toContain("in OTT");
