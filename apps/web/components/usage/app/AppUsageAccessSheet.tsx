@@ -5,29 +5,10 @@ import { Check, Info, RotateCcw, Smartphone } from "lucide-react";
 import { AppSheet } from "../../settings/app/AppSheet";
 import { Button } from "../../ui/button";
 import { openPhoneUsageSettings, usePhoneUsage } from "@hooks/usePhoneUsage";
+import { useT } from "@lib/i18n";
 
-const POINTS = [
-  {
-    icon: Check,
-    title: "구독한 서비스 앱의 사용 시간·쓴 횟수·재생 시간만 읽어요",
-    body: "재생 시간은 음악 앱이 재생 알림을 띄워 둔 시간이에요. 다른 앱의 기록과 화면 내용은 쓰지 않아요",
-  },
-  {
-    icon: Smartphone,
-    title: "이 폰 안에서만 계산해요",
-    body: "서버나 계정으로 보내지 않아요. 여러 기기 합산은 설정에서 따로 켤 때만 올려요",
-  },
-  {
-    icon: Info,
-    title: "TV·PC에서 본 건 빠져요",
-    body: "기록이 30일 쌓이면 체크인을 알아서 적어요. '내 구독'에서 끌 수 있고, 적힌 숫자는 언제든 다시 체크인해 고칠 수 있어요",
-  },
-  {
-    icon: RotateCcw,
-    title: "언제든 끌 수 있어요",
-    body: "설정 › 사용 기록 액세스 › SubSlash",
-  },
-] as const;
+/** 안내 항목의 아이콘. 글은 `usageMore.access.points`에 같은 순서로 있다. */
+const POINT_ICONS = [Check, Smartphone, Info, RotateCcw] as const;
 
 /**
  * '사용 기록 액세스'를 켜기 전의 안내(구글 Play 정책의 '눈에 띄는 안내'). 무엇을, 왜, 어디서 쓰는지
@@ -49,6 +30,7 @@ export function AppUsageAccessSheet({
   title?: React.ReactNode;
   description?: React.ReactNode;
 }) {
+  const a = useT().usageMore.access;
   const { status } = usePhoneUsage();
   const [waiting, setWaiting] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -71,56 +53,52 @@ export function AppUsageAccessSheet({
   };
 
   return (
-    <AppSheet open={open} onClose={close} label="폰 사용 기록 연결">
+    <AppSheet open={open} onClose={close} label={a.label}>
       <div className="space-y-5 pt-1">
         <div className="space-y-2 text-center">
           <h2 className="text-lg font-black leading-snug tracking-tight">
             {title ?? (
               <>
-                폰 사용 기록으로
+                {a.title1}
                 <br />
-                체크인을 채울까요?
+                {a.title2}
               </>
             )}
           </h2>
-          <p className="text-sm text-muted-foreground">
-            {description ?? (
-              <>
-                안드로이드 설정의 &lsquo;사용 기록 액세스&rsquo;를 켜면, 구독한 서비스 앱을 얼마나
-                열고 썼는지 불러와요.
-              </>
-            )}
-          </p>
+          <p className="text-sm text-muted-foreground">{description ?? a.body}</p>
         </div>
 
         <ul className="space-y-3 rounded-2xl bg-secondary/50 p-4">
-          {POINTS.map(({ icon: Icon, title, body }) => (
-            <li key={title} className="flex gap-3">
-              <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-background text-foreground">
-                <Icon className="size-3.5" aria-hidden />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-bold">{title}</span>
-                <span className="block text-xs text-muted-foreground">{body}</span>
-              </span>
-            </li>
-          ))}
+          {a.points.map(({ title, body }, i) => {
+            const Icon = POINT_ICONS[i];
+            return (
+              <li key={i} className="flex gap-3">
+                <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-background text-foreground">
+                  <Icon className="size-3.5" aria-hidden />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold">{title}</span>
+                  <span className="block text-xs text-muted-foreground">{body}</span>
+                </span>
+              </li>
+            );
+          })}
         </ul>
 
         {waiting && (
           <p className="text-center text-xs text-muted-foreground" role="status">
-            설정에서 SubSlash를 켜고 돌아와 주세요.
+            {a.waiting}
           </p>
         )}
         {failed && (
           <p className="text-center text-xs text-destructive" role="alert">
-            설정 화면을 열지 못했어요. 설정 › 사용 기록 액세스에서 직접 켜 주세요.
+            {a.failed}
           </p>
         )}
 
         <div className="space-y-2">
           <Button className="w-full" size="lg" onClick={() => void openSettings()}>
-            설정에서 켜기
+            {a.openSettings}
           </Button>
           <Button
             variant="ghost"
@@ -130,7 +108,7 @@ export function AppUsageAccessSheet({
               (onLater ?? onClose)();
             }}
           >
-            직접 입력할게요
+            {a.later}
           </Button>
         </div>
       </div>

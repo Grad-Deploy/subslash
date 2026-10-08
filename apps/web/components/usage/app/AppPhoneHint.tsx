@@ -5,7 +5,9 @@ import { Smartphone } from "lucide-react";
 import { type Subscription } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
-import { formatDuration, lastDays } from "@lib/usage/history";
+import { lastDays } from "@lib/usage/history";
+import { useT } from "@lib/i18n";
+import { formatDurationText } from "@lib/i18n/duration";
 import { packagesFor } from "@lib/usage/packages";
 import { recentOpens, subUsage } from "@lib/usage/value";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
@@ -24,6 +26,8 @@ export function AppPhoneHint({
   subscription: Subscription;
   onOpens: (opens: number | null) => void;
 }) {
+  const t = useT();
+  const m = t.usageMore;
   const rate = useExchangeRate();
   const { status, history, installed } = usePhoneUsage();
   const [accessOpen, setAccessOpen] = useState(false);
@@ -43,21 +47,17 @@ export function AppPhoneHint({
       <div className="mt-3 rounded-2xl bg-secondary/60 px-3 py-2.5 text-xs leading-relaxed">
         {opens === 0 ? (
           <p>
-            <b>이 폰에서는 안 열었어요.</b> TV·PC·태블릿에서 썼다면 막대로 골라 주세요.
+            <b>{m.hint.notOpened}</b>
+            {m.hint.notOpenedAfter}
           </p>
         ) : (
           <p>
-            이 폰에서{" "}
-            {recent.totals.coveredDays < 30
-              ? `기록이 있는 ${recent.totals.coveredDays}일 동안`
-              : "최근 30일 동안"}{" "}
-            <b>
-              {opens}번 · {formatDuration(recent.totals.ms)}
-            </b>{" "}
-            썼어요. 막대를 여기에 맞춰 뒀어요.
+            {m.hint.usedBefore(m.within(recent.totals.coveredDays))}
+            <b>{m.hint.usedOpens(opens ?? 0, formatDurationText(t, recent.totals.ms))}</b>
+            {m.hint.usedAfter}
           </p>
         )}
-        <p className="text-muted-foreground">TV·PC·태블릿에서 본 건 빠져 있어요.</p>
+        <p className="text-muted-foreground">{m.tvTabletMissing}</p>
       </div>
     );
   }
@@ -67,9 +67,7 @@ export function AppPhoneHint({
     const state = subUsage(subscription, history, installed, lastDays(new Date(), 30), rate).state;
     return (
       <p className="mt-3 rounded-2xl bg-secondary/60 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
-        {state === "not-installed"
-          ? "이 폰에는 이 서비스의 앱이 없어요. 다른 기기에서 썼다면 막대로 골라 주세요."
-          : "이 폰의 사용 기록은 오늘부터 쌓여요. 내일부터 여기서 채울 수 있어요."}
+        {state === "not-installed" ? m.hint.notInstalledBar : m.hint.building}
       </p>
     );
   }
@@ -85,8 +83,8 @@ export function AppPhoneHint({
       >
         <Smartphone className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         <span className="min-w-0 flex-1">
-          <span className="block font-bold">폰 사용 기록으로 채우기</span>
-          <span className="block text-muted-foreground">이 폰에서 몇 번 썼는지 불러와요</span>
+          <span className="block font-bold">{m.hint.fill}</span>
+          <span className="block text-muted-foreground">{m.hint.fillOpens}</span>
         </span>
       </button>
       <AppUsageAccessSheet open={accessOpen} onClose={() => setAccessOpen(false)} />
