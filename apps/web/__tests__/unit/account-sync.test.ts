@@ -111,6 +111,17 @@ describe("recordsHash / isEmptyRecords", () => {
     expect(recordsHash(changed)).not.toBe(recordsHash(data));
   });
 
+  it("자동 고시 환율은 값이 바뀌어도 지문이 같다 — 기기마다 날마다 올리거나 충돌로 묻지 않게", () => {
+    const auto = (rate: number, updatedAt: string) =>
+      ({ ...data, exchangeRate: { rate, source: "ecb", updatedAt } }) as BackupData;
+    expect(recordsHash(auto(1380, "2026-10-07T00:00:00.000Z"))).toBe(
+      recordsHash(auto(1392.5, "2026-10-08T00:00:00.000Z")),
+    );
+    // 직접 적은 환율로 바꾸거나 자동으로 돌리는 것은 기록이 바뀐 것이다.
+    const manual = { ...data, exchangeRate: { rate: 1400, source: "manual", updatedAt: null } };
+    expect(recordsHash(manual as BackupData)).not.toBe(recordsHash(auto(1400, "x")));
+  });
+
   it("구독·체크인·연동 계정이 모두 없을 때만 비었다고 본다", () => {
     expect(isEmptyRecords(data)).toBe(true);
     expect(
