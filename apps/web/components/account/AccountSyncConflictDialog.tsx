@@ -11,21 +11,30 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Button, WRAPPING_BUTTON } from "../ui/button";
+import { useT, type Messages } from "@lib/i18n";
 
 interface AccountSyncConflictDialogProps {
   conflict: SyncConflict | null;
   onChoose: (choice: SyncChoice) => void;
 }
 
-function describe(counts: RecordCounts): string {
-  return `구독 ${counts.subscriptionCount}개 (해지 ${counts.killedCount}개), 체크인 ${counts.usageLogCount}건`;
+function describe(t: Messages, counts: RecordCounts): string {
+  return t.account.conflict.counts(
+    counts.subscriptionCount,
+    counts.killedCount,
+    counts.usageLogCount,
+  );
 }
 
-function formatSavedAt(iso: string): string {
+function formatSavedAt(t: Messages, iso: string): string {
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "알 수 없는 시각";
+  if (Number.isNaN(date.getTime())) return t.account.conflict.unknownTime;
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return t.account.conflict.savedAt(
+    date.getMonth() + 1,
+    date.getDate(),
+    `${pad(date.getHours())}:${pad(date.getMinutes())}`,
+  );
 }
 
 /**
@@ -35,48 +44,47 @@ function formatSavedAt(iso: string): string {
  * 것은 '나중에' 버튼뿐이다.
  */
 export function AccountSyncConflictDialog({ conflict, onChoose }: AccountSyncConflictDialogProps) {
+  const t = useT();
+  const c = t.account.conflict;
   if (!conflict) return null;
-  const lead =
-    conflict.reason === "first"
-      ? "이 기기와 계정에 서로 다른 기록이 있습니다."
-      : "이 기기와 다른 기기에서 기록이 따로 바뀌었습니다.";
+  const lead = conflict.reason === "first" ? c.leadFirst : c.leadDiverged;
 
   return (
     <Dialog open onOpenChange={(open) => !open && onChoose("dismiss")}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>어느 기록을 쓸까요?</DialogTitle>
+          <DialogTitle>{c.title}</DialogTitle>
           <DialogDescription>
-            {lead} 두 기록을 합치지 않고 한쪽으로 맞춥니다. 고르지 않은 쪽의 기록은 사라집니다.
+            {lead} {c.description}
           </DialogDescription>
         </DialogHeader>
 
         <dl className="space-y-2 text-xs">
           <div className="rounded-xl border p-3">
-            <dt className="font-bold text-foreground">이 기기</dt>
-            <dd className="text-muted-foreground">{describe(conflict.local)}</dd>
+            <dt className="font-bold text-foreground">{c.thisDevice}</dt>
+            <dd className="text-muted-foreground">{describe(t, conflict.local)}</dd>
           </div>
           <div className="rounded-xl border p-3">
             <dt className="font-bold text-foreground">
-              계정 (마지막 저장 {formatSavedAt(conflict.server.savedAt)})
+              {c.accountSaved(formatSavedAt(t, conflict.server.savedAt))}
             </dt>
-            <dd className="text-muted-foreground">{describe(conflict.server)}</dd>
+            <dd className="text-muted-foreground">{describe(t, conflict.server)}</dd>
           </div>
         </dl>
 
         <DialogFooter className="flex-col gap-2 sm:flex-col">
           <Button className={WRAPPING_BUTTON} onClick={() => onChoose("use-local")}>
-            이 기기 기록 쓰기 (계정의 기록을 바꿈)
+            {c.useLocal}
           </Button>
           <Button
             variant="outline"
             className={WRAPPING_BUTTON}
             onClick={() => onChoose("use-server")}
           >
-            계정 기록 쓰기 (이 기기의 기록을 바꿈)
+            {c.useServer}
           </Button>
           <Button variant="ghost" className={WRAPPING_BUTTON} onClick={() => onChoose("later")}>
-            나중에 — 이 기기의 자동 동기화 끄기
+            {c.later}
           </Button>
         </DialogFooter>
       </DialogContent>

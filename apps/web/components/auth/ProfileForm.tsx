@@ -17,6 +17,7 @@ import { ResendVerificationButton } from "./ResendVerificationButton";
 import { apiFetch } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
 import { Spinner } from "../ui/spinner";
+import { useKnownText, useLatestT, useT } from "@lib/i18n";
 
 type SaveStatus = { tone: "ok" | "error"; message: string } | null;
 
@@ -27,6 +28,10 @@ type SaveStatus = { tone: "ok" | "error"; message: string } | null;
  * 저장하면 저장돼 있던 값도 지운다.
  */
 export function ProfileForm() {
+  const p = useT().account.profile;
+  const a = useT().account;
+  const tRef = useLatestT();
+  const known = useKnownText();
   const { account, loading } = useAuth();
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
@@ -54,14 +59,12 @@ export function ProfileForm() {
   if (!account) {
     return (
       <div className="text-center space-y-3 py-4">
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          로그인하지 않아도 모든 기록을 쓸 수 있어요. 로그인하면 기기끼리 기록이 맞춰져요.
-        </p>
+        <p className="text-sm text-muted-foreground leading-relaxed">{p.guest}</p>
         <Link
           href="/login"
           className="inline-block text-sm font-semibold text-primary underline underline-offset-4"
         >
-          로그인하기
+          {p.login}
         </Link>
       </div>
     );
@@ -87,15 +90,18 @@ export function ProfileForm() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setErrors(data?.fieldErrors ?? {});
-        setStatus({ tone: "error", message: data?.error ?? "저장하지 못했습니다." });
+        setStatus({
+          tone: "error",
+          message: data?.error ?? tRef.current.account.profile.saveFailed,
+        });
         return;
       }
       await refreshAuth();
-      setStatus({ tone: "ok", message: "저장했습니다." });
+      setStatus({ tone: "ok", message: tRef.current.account.profile.saved });
     } catch {
       setStatus({
         tone: "error",
-        message: "네트워크에 문제가 있어 저장하지 못했습니다. 잠시 후 다시 시도해주세요.",
+        message: tRef.current.account.profile.saveNetwork,
       });
     } finally {
       setSaving(false);
@@ -105,18 +111,18 @@ export function ProfileForm() {
   return (
     <HydratedForm onSubmit={handleSubmit} noValidate className="space-y-5">
       <dl className="grid grid-cols-[4.5rem_1fr] gap-y-1.5 text-sm">
-        <dt className="text-muted-foreground">아이디</dt>
+        <dt className="text-muted-foreground">{a.username}</dt>
         <dd className="font-semibold">{account.username}</dd>
-        <dt className="text-muted-foreground">이메일</dt>
+        <dt className="text-muted-foreground">{a.email}</dt>
         <dd className="font-semibold break-all">
           {account.email}{" "}
           {account.emailVerified ? (
             <span className="ml-1 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-              확인됨
+              {p.verified}
             </span>
           ) : (
             <span className="ml-1 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-              미확인
+              {p.unverified}
             </span>
           )}
         </dd>
@@ -127,27 +133,22 @@ export function ProfileForm() {
       {!account.emailVerified && (
         <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950/40">
           <p className="text-[11px] leading-relaxed text-amber-900 dark:text-amber-200">
-            이 이메일이 본인 것인지 아직 확인하지 않았습니다. 확인 메일의 링크에서
-            &lsquo;맞아요&rsquo;를 누르면 확인됩니다. 확인 전에도 모든 기능을 그대로 쓸 수 있습니다.
+            {p.unverifiedNote}
           </p>
-          <ResendVerificationButton label="확인 메일 보내기" />
+          <ResendVerificationButton label={p.sendVerification} />
         </div>
       )}
 
       <div className="space-y-3 pt-4 border-t">
         <div className="space-y-1">
-          <h2 className="text-sm font-bold">나이·성별 (선택)</h2>
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
-            적지 않아도 모든 기능을 그대로 쓸 수 있습니다. 지금은 어떤 계산에도 쓰이지 않고, 나중에
-            &lsquo;비슷한 사용자와 비교&rsquo; 기능이 생기면 그때 따로 동의를 받은 경우에만
-            쓰입니다. 칸을 비우고 저장하면 지워집니다.
-          </p>
+          <h2 className="text-sm font-bold">{p.optionalTitle}</h2>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">{p.optionalBody}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <label htmlFor="age" className="text-xs font-bold text-foreground">
-              나이
+              {p.age}
             </label>
             <Input
               id="age"
@@ -156,7 +157,7 @@ export function ProfileForm() {
               inputMode="numeric"
               min={MIN_AGE}
               max={MAX_AGE}
-              placeholder="만 나이"
+              placeholder={p.agePlaceholder}
               value={age}
               onChange={(e) => {
                 setAge(e.target.value);
@@ -166,14 +167,14 @@ export function ProfileForm() {
             />
             {errors.age && (
               <p className="text-[11px] font-medium text-destructive" role="alert">
-                {errors.age}
+                {known(errors.age)}
               </p>
             )}
           </div>
 
           <div className="space-y-1.5">
             <label htmlFor="gender" className="text-xs font-bold text-foreground">
-              성별
+              {p.gender}
             </label>
             <Select
               id="gender"
@@ -185,16 +186,16 @@ export function ProfileForm() {
               }}
               aria-invalid={Boolean(errors.gender)}
             >
-              <option value="">적지 않음</option>
+              <option value="">{p.genderNone}</option>
               {GENDER_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {p.genders[option.value]}
                 </option>
               ))}
             </Select>
             {errors.gender && (
               <p className="text-[11px] font-medium text-destructive" role="alert">
-                {errors.gender}
+                {known(errors.gender)}
               </p>
             )}
           </div>
@@ -210,12 +211,12 @@ export function ProfileForm() {
               : "text-sm font-medium text-destructive"
           }
         >
-          {status.message}
+          {known(status.message)}
         </p>
       )}
 
       <Button type="submit" className="w-full h-11 font-bold rounded-xl" disabled={saving}>
-        {saving ? "저장하는 중..." : "저장하기"}
+        {saving ? p.saving : p.save}
       </Button>
     </HydratedForm>
   );
