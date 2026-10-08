@@ -53,6 +53,3 @@ export const SAMPLE_TOTAL: string | null = SAMPLES.every((s) => s.currency === "
       "KRW",
     )
   : null;
-
-/** 합계 아래에 붙이는 말. 실제 결제 내역으로 읽히지 않게 한다. */
-export const SAMPLE_NOTE = "예시예요 · 서비스 목록 기준 요금";
