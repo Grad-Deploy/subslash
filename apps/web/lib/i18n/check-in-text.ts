@@ -4,6 +4,7 @@ import {
   unitCostPart,
   type Currency,
   type UsageLog,
+  type UnitCostPart,
   type ValueMetric,
 } from "@subslash/shared";
 import type { Messages } from "./messages";
@@ -18,23 +19,33 @@ export function describeCheckInText(
   currency: Currency,
 ): string {
   const metric = metricOfLog(log);
-  const c = t.value.checkIn;
   const n = log.usageCount;
   const quantity = describeQuantityText(t, metric, n);
 
-  const part = unitCostPart(metric, log.costPerUse, n);
-  if (!part) return quantity;
-  const unit =
-    part.type === "per-use"
-      ? c.perUse(formatCurrency(part.cost, currency))
-      : part.type === "per-day"
-        ? c.perDay(formatCurrency(part.cost, currency))
-        : part.type === "per-hour"
-          ? c.perHour(formatCurrency(part.cost, currency))
-          : part.type === "not-used"
-            ? c.notUsed
-            : c.benefitReturned(part.percent);
-  return `${quantity} · ${unit}`;
+  const unit = unitCostText(t, unitCostPart(metric, log.costPerUse, n), currency);
+  return unit ? `${quantity} · ${unit}` : quantity;
+}
+
+/** 수량 옆에 붙는 단가 한 마디(`unitCostPart`의 문장). 용량처럼 단가가 없으면 null. */
+export function unitCostText(
+  t: Messages,
+  part: UnitCostPart | null,
+  currency: Currency,
+): string | null {
+  if (!part) return null;
+  const c = t.value.checkIn;
+  switch (part.type) {
+    case "per-use":
+      return c.perUse(formatCurrency(part.cost, currency));
+    case "per-day":
+      return c.perDay(formatCurrency(part.cost, currency));
+    case "per-hour":
+      return c.perHour(formatCurrency(part.cost, currency));
+    case "not-used":
+      return c.notUsed;
+    case "benefit-returned":
+      return c.benefitReturned(part.percent);
+  }
 }
 
 /** 수량만: '12회 이용', '30일 중 8일 사용', '15시간 사용', '혜택 ₩12,000', '용량의 40% 사용'. */

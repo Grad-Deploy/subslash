@@ -4,12 +4,9 @@ import React, { useId } from "react";
 import type { FreeTierAnswer } from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 
-const OPTIONS: ReadonlyArray<{ value: FreeTierAnswer; label: string }> = [
-  { value: "needed", label: "아니요, 유료가 필요했어요" },
-  { value: "enough", label: "네, 무료로도 됐을 거예요" },
-  { value: "unsure", label: "잘 모르겠어요" },
-];
+const OPTIONS: readonly FreeTierAnswer[] = ["needed", "enough", "unsure"];
 
 /**
  * 체크인의 두 번째 질문: "무료 요금제로도 충분했을까요?" 무료 요금제가 있는 AI·업무 도구
@@ -25,25 +22,24 @@ export function FreeTierQuestion({ subscriptionId }: { subscriptionId: string })
   );
   const setFreeTierAnswer = useStore((state) => state.setFreeTierAnswer);
   const labelId = useId();
+  const f = useT().checkin.freeTier;
 
   return (
     <div className="space-y-2 rounded-xl border px-3 py-3">
       <p id={labelId} className="text-center text-sm font-bold">
-        무료 요금제로도 충분했을까요?
+        {f.question}
       </p>
-      <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
-        사용 한도에 걸렸거나 유료 모델·기능을 썼다면 유료가 필요했던 거예요.
-      </p>
+      <p className="text-center text-[11px] leading-relaxed text-muted-foreground">{f.hint}</p>
       <div role="radiogroup" aria-labelledby={labelId} className="grid gap-1.5">
         {OPTIONS.map((option) => {
-          const checked = answer === option.value;
+          const checked = answer === option;
           return (
             <button
-              key={option.value}
+              key={option}
               type="button"
               role="radio"
               aria-checked={checked}
-              onClick={() => setFreeTierAnswer(subscriptionId, option.value)}
+              onClick={() => setFreeTierAnswer(subscriptionId, option)}
               className={cn(
                 "rounded-lg border px-3 py-2 text-xs font-medium transition",
                 checked
@@ -51,7 +47,7 @@ export function FreeTierQuestion({ subscriptionId }: { subscriptionId: string })
                   : "hover:bg-muted text-foreground",
               )}
             >
-              {option.label}
+              {f[option]}
             </button>
           );
         })}

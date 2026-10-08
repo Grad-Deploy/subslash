@@ -6,8 +6,9 @@ import {
   type Subscription,
   formatCurrency,
   getMyMonthlyShareAmount,
-  checkInQuestion,
+  metricForSubscription,
 } from "@subslash/shared";
+import { useT } from "@lib/i18n";
 import { useStore } from "@lib/store";
 import { ServiceLogo } from "../ServiceLogo";
 import { DialogDescription, DialogTitle } from "../../ui/dialog";
@@ -33,6 +34,7 @@ export function AppAddCheckIn({
   /** 창을 닫는다. recorded는 체크인을 저장했을 때의 횟수. */
   onDone: (recorded?: number) => void;
 }) {
+  const c = useT().checkin;
   const checkIn = useStore((s) => s.checkIn);
   const [count, setCount] = useState(0);
 
@@ -56,23 +58,25 @@ export function AppAddCheckIn({
         <div className="min-w-0">
           <p className="flex items-center gap-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-400">
             <Check className="size-3.5" aria-hidden />
-            등록했어요
+            {c.addCheckIn.registered}
           </p>
           <p className="truncate text-base font-black tracking-tight">{subscription.name}</p>
         </div>
         <p className="ml-auto shrink-0 text-[13px] font-extrabold tabular-nums">
           {spaced(formatCurrency(monthly, subscription.currency))}
-          <span className="text-[11px] font-semibold text-muted-foreground">/월</span>
+          <span className="text-[11px] font-semibold text-muted-foreground">
+            {c.addCheckIn.perMonth}
+          </span>
         </p>
       </div>
 
       <hr className="my-4" />
 
       <DialogTitle className="text-[17px] font-black tracking-tight">
-        {checkInQuestion(subscription)}
+        {c.metric[metricForSubscription(subscription)].question}
       </DialogTitle>
       <DialogDescription className="mt-1 text-xs text-muted-foreground">
-        가성비 계산서에 바로 들어가요. 나중에 고칠 수 있어요.
+        {c.addCheckIn.note}
       </DialogDescription>
 
       <div className="mt-3">
@@ -81,7 +85,7 @@ export function AppAddCheckIn({
 
       <div className="mt-3 flex justify-center text-xs text-muted-foreground">
         <button type="button" onClick={() => onDone()} className="underline underline-offset-4">
-          최근에 가입했어요
+          {c.addCheckIn.justJoined}
         </button>
       </div>
 
@@ -90,14 +94,14 @@ export function AppAddCheckIn({
         onClick={save}
         className="mt-4 h-12 w-full rounded-xl bg-primary text-sm font-extrabold text-primary-foreground"
       >
-        완료
+        {c.addCheckIn.done}
       </button>
       <button
         type="button"
         onClick={() => onDone()}
         className="mt-1 h-9 w-full text-[12.5px] font-semibold text-muted-foreground"
       >
-        나중에 할게요
+        {c.addCheckIn.later}
       </button>
     </div>
   );

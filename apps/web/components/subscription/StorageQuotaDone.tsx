@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useT } from "@lib/i18n";
 import { STORAGE_QUOTA_RESULT_KEY, parseStorageQuotaResult } from "@lib/storage-quota";
 
 type Status = "reading" | "sent" | "invalid";
@@ -10,6 +11,7 @@ type Status = "reading" | "sent" | "invalid";
  * 주소에서 지운다 — 탭 기록에 남지 않게.
  */
 export function StorageQuotaDone() {
+  const s = useT().checkin.storage;
   const [status, setStatus] = useState<Status>("reading");
 
   useEffect(() => {
@@ -39,20 +41,16 @@ export function StorageQuotaDone() {
   return (
     <div className="space-y-3 rounded-2xl border bg-card p-6 text-center" role="status">
       {status === "reading" ? (
-        <p className="text-sm text-muted-foreground">측정값을 넘기는 중</p>
+        <p className="text-sm text-muted-foreground">{s.doneReading}</p>
       ) : status === "sent" ? (
         <>
-          <p className="text-lg font-black">체크인에 채웠어요</p>
-          <p className="text-sm text-muted-foreground">
-            이 탭을 닫고 체크인 창에서 확인한 뒤 체크인을 눌러 주세요.
-          </p>
+          <p className="text-lg font-black">{s.doneFilled}</p>
+          <p className="text-sm text-muted-foreground">{s.doneFilledHint}</p>
         </>
       ) : (
         <>
-          <p className="text-lg font-black">측정값을 받지 못했어요</p>
-          <p className="text-sm text-muted-foreground">
-            이 탭을 닫고 체크인 창에서 다시 측정해 주세요.
-          </p>
+          <p className="text-lg font-black">{s.doneFailed}</p>
+          <p className="text-sm text-muted-foreground">{s.doneFailedHint}</p>
         </>
       )}
     </div>

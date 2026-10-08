@@ -3,42 +3,55 @@
 import React from "react";
 import {
   Currency,
-  METRIC_SPECS,
   UsageLog,
   type ValueMetric,
-  formatAmountOf,
   formatCurrency,
-  formatQuantity,
-  formatUnitCost,
   getCheckInEvidence,
   metricOfLog,
+  unitCostPart,
 } from "@subslash/shared";
+import { useT, type Messages } from "@lib/i18n";
+import { describeQuantityText, unitCostText } from "@lib/i18n/check-in-text";
 
 interface CheckInEvidenceProps {
   logs: UsageLog[];
   currency: Currency;
 }
 
-function describeUsageChange(metric: ValueMetric, delta: number): string {
-  if (delta > 0) return `${formatAmountOf(metric, delta)} 늘었음`;
-  if (delta < 0) return `${formatAmountOf(metric, Math.abs(delta))} 줄었음`;
-  return "그대로";
+/** 수량만: '12', '8.5'(평균은 소수가 나올 수 있다)에 단위를 붙인다. */
+function amountOf(t: Messages, metric: ValueMetric, quantity: number): string {
+  if (metric === "benefit") return formatCurrency(quantity, "KRW");
+  const n = Number.isInteger(quantity) ? String(quantity) : quantity.toFixed(1);
+  return t.checkin.evidence.amountOf(t.checkin.metric[metric].unit, n);
 }
 
-function describeCostChange(metric: ValueMetric, delta: number, currency: Currency): string | null {
-  const perUnit = METRIC_SPECS[metric].perUnit;
+function describeUsageChange(t: Messages, metric: ValueMetric, delta: number): string {
+  const e = t.checkin.evidence;
+  if (delta > 0) return e.increased(amountOf(t, metric, delta));
+  if (delta < 0) return e.decreased(amountOf(t, metric, Math.abs(delta)));
+  return e.same;
+}
+
+function describeCostChange(
+  t: Messages,
+  metric: ValueMetric,
+  delta: number,
+  currency: Currency,
+): string | null {
+  const perUnit = t.checkin.metric[metric].perUnit;
   if (!perUnit) return null;
+  const e = t.checkin.evidence;
   // 표시 단위보다 작은 차이(원 단위 아래 등)는 "그대로"로 본다.
   const shown = formatCurrency(Math.abs(delta), currency);
-  if (shown === formatCurrency(0, currency)) return `${perUnit} 비용 그대로`;
-  return delta > 0 ? `${perUnit} ${shown} 비싸짐` : `${perUnit} ${shown} 싸짐`;
+  if (shown === formatCurrency(0, currency)) return e.costSame(perUnit);
+  return delta > 0 ? e.costUp(perUnit, shown) : e.costDown(perUnit, shown);
 }
 
-function formatCheckedAt(iso: string): string {
+function formatCheckedAt(t: Messages, iso: string): string {
   const date = new Date(iso);
   return Number.isNaN(date.getTime())
-    ? "날짜 모름"
-    : date.toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+    ? t.checkin.evidence.unknownDate
+    : date.toLocaleDateString(t.checkin.evidence.dateLocale, { month: "long", day: "numeric" });
 }
 
 /**
@@ -48,69 +61,69 @@ function formatCheckedAt(iso: string): string {
  * 않으므로 그렇다고 밝히고, 한 번뿐인 기록으로는 변화를 말하지 않는다.
  */
 export function CheckInEvidence({ logs, currency }: CheckInEvidenceProps) {
+  const t = useT();
+  const e = t.checkin.evidence;
   const evidence = getCheckInEvidence(logs);
   if (!evidence) return null;
 
   const { recent, averageUsage, latest, change } = evidence;
   // 평균과 비교는 최근 체크인과 같은 지표끼리만 한다(getCheckInEvidence).
   const metric = metricOfLog(latest);
-  const spec = METRIC_SPECS[metric];
-  const unitCost = formatUnitCost(metric, latest.costPerUse, latest.usageCount, currency);
+  const text = t.checkin.metric[metric];
+  const unitCost = unitCostText(
+    t,
+    unitCostPart(metric, latest.costPerUse, latest.usageCount),
+    currency,
+  );
 
   return (
-    <section className="p-4 border rounded-xl bg-card space-y-3" aria-label="체크인 근거">
-      <h4 className="text-sm font-bold">체크인으로 본 근거</h4>
+    <section className="p-4 border rounded-xl bg-card space-y-3" aria-label={e.label}>
+      <h4 className="text-sm font-bold">{e.title}</h4>
       <dl className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="p-3 rounded-lg bg-muted/60 space-y-0.5">
-          <dt className="text-[11px] text-muted-foreground">최근 {recent.length}회 체크인 평균</dt>
+          <dt className="text-[11px] text-muted-foreground">{e.average(recent.length)}</dt>
           <dd className="text-base font-bold text-foreground">
-            {formatAmountOf(metric, averageUsage)}
+            {amountOf(t, metric, averageUsage)}
           </dd>
-          <dd className="text-[11px] text-muted-foreground">{spec.quantityLabel}</dd>
+          <dd className="text-[11px] text-muted-foreground">{text.quantityLabel}</dd>
         </div>
         <div className="p-3 rounded-lg bg-muted/60 space-y-0.5">
-          <dt className="text-[11px] text-muted-foreground">
-            마지막 체크인{spec.perUnit ? ` ${spec.perUnit}` : ""}
-          </dt>
+          <dt className="text-[11px] text-muted-foreground">{e.last(text.perUnit)}</dt>
           <dd className="text-base font-bold text-foreground">
-            {spec.perUnit
+            {text.perUnit
               ? formatCurrency(latest.costPerUse, currency)
-              : (unitCost ?? formatQuantity(metric, latest.usageCount))}
+              : (unitCost ?? describeQuantityText(t, metric, latest.usageCount))}
           </dd>
           <dd className="text-[11px] text-muted-foreground">
-            {formatCheckedAt(latest.checkedAt)} 기록 · {formatQuantity(metric, latest.usageCount)}
+            {e.recorded(
+              formatCheckedAt(t, latest.checkedAt),
+              describeQuantityText(t, metric, latest.usageCount),
+            )}
           </dd>
         </div>
         <div className="p-3 rounded-lg bg-muted/60 space-y-0.5">
-          <dt className="text-[11px] text-muted-foreground">직전 체크인 대비</dt>
+          <dt className="text-[11px] text-muted-foreground">{e.versusPrevious}</dt>
           {change ? (
             <>
               <dd className="text-base font-bold text-foreground">
-                {describeUsageChange(metric, change.usage)}
+                {describeUsageChange(t, metric, change.usage)}
               </dd>
               <dd className="text-[11px] text-muted-foreground">
-                {describeCostChange(metric, change.costPerUse, currency)}
+                {describeCostChange(t, metric, change.costPerUse, currency)}
               </dd>
             </>
           ) : (
             <>
-              <dd className="text-base font-bold text-muted-foreground">비교할 기록 부족</dd>
-              <dd className="text-[11px] text-muted-foreground">
-                체크인이 한 번 더 쌓이면 비교합니다
-              </dd>
+              <dd className="text-base font-bold text-muted-foreground">{e.notEnough}</dd>
+              <dd className="text-[11px] text-muted-foreground">{e.notEnoughHint}</dd>
             </>
           )}
         </div>
       </dl>
       {change?.priceChanged && (
-        <p className="text-[11px] text-muted-foreground">
-          두 체크인 사이에 요금(내 몫)이 바뀌어, 단가 변화에는 요금 변화도 섞여 있습니다.
-        </p>
+        <p className="text-[11px] text-muted-foreground">{e.priceChanged}</p>
       )}
-      <p className="text-[11px] text-muted-foreground">
-        숫자는 체크인 때 적은 값입니다. 폰 기록으로 자동 체크인한 것은 이 폰의 기록이라, 다른
-        기기에서 쓴 것은 빠져 있습니다.
-      </p>
+      <p className="text-[11px] text-muted-foreground">{e.selfReported}</p>
     </section>
   );
 }

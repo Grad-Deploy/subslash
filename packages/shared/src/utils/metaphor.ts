@@ -1,18 +1,36 @@
 import { Currency, Subscription, UsageLog } from "../types";
 import { calculateCostPerUse, getRiskLevel } from "./cost-per-use";
-import { formatAmount, formatKRW, toKRW } from "./currency";
+import { toKRW } from "./currency";
 import { getMyMonthlyShareAmount, getMyMonthlyAmountKRW } from "./sharing";
 
 // ─────────────────────────────────────────────────────────
 // 1. 실체감 환산 메타포
 // ─────────────────────────────────────────────────────────
 
+/**
+ * 1회당 단가를 일상 소비재로 환산한 말에 들어갈 값. 문장은 화면이 언어에 맞게 만든다 — 이 모듈은 서버도 쓰므로
+ * 한 언어의 문장을 만들지 않는다.
+ */
 export interface UsageMetaphor {
-  /** 짧은 비교 문구, 예: "커피 3.4잔" */
-  comparison: string;
-  /** 한 문장 메시지 */
-  message: string;
   tone: "danger" | "warning" | "safe";
+  /**
+   * - `unused`: 이번 달 안 썼다 (`amountKRW` 값어치의 `item`)
+   * - `movie`: 1회 이용이고 영화관 티켓에 가깝다 (`item`은 영화관 티켓)
+   * - `once`: 1회 이용이고 `item`에 가깝다
+   * - `warning`: 본전까지 조금 남았다
+   * - `cheap`: 커피 한 잔보다 알뜰하다
+   * - `worth`: 낸 돈 이상으로 쓰고 있다
+   */
+  kind: "unused" | "movie" | "once" | "warning" | "cheap" | "worth";
+  serviceName: string;
+  item: MetaphorKey;
+  /** `item` 몇 개 값인지. */
+  count: number;
+  /** 1회당 단가(구독 통화). */
+  cost: number;
+  currency: Currency;
+  /** 한 달치 내 몫을 원으로 바꾼 값. */
+  amountKRW: number;
 }
 
 /** 일상 소비재 기준표 — 가장 가까운 것 하나를 고른다. */
@@ -25,6 +43,10 @@ const METAPHOR_ITEMS = [
 
 /** 비유에 쓰는 소비재. 글자는 화면이 언어에 맞게 붙인다. */
 export type MetaphorKey = (typeof METAPHOR_ITEMS)[number]["key"];
+
+function priceOf(key: MetaphorKey): number {
+  return METAPHOR_ITEMS.find((item) => item.key === key)!.price;
+}
 
 /** 금액(원)과 가장 가까운 소비재와, 그 소비재 몇 개 값인지. */
 export function pickMetaphorItem(amountKRW: number): { key: MetaphorKey; count: number } {
@@ -66,65 +88,32 @@ export function getUsageMetaphor(
   const best = sorted[0];
   const count = costPerUse / best.price;
 
+  const cost = calculateCostPerUse(amount, usageCount);
+  const base = { serviceName, currency, cost, amountKRW };
+
   if (usageCount === 0) {
-    const totalItem = [...METAPHOR_ITEMS].sort(
-      (a, b) => Math.abs(a.price - amountKRW) - Math.abs(b.price - amountKRW),
-    )[0];
-    const totalCount = amountKRW / totalItem.price;
-    return {
-      comparison: `${totalItem.label} ${formatCount(totalCount)}${totalItem.unit} 세이브 기회`,
-      message: `이번 달 ${serviceName} 이용이 없었어요. 잠시 구독을 쉬어가면 매달 ${totalItem.label} ${formatCount(totalCount)}${totalItem.unit} 값(${formatKRW(amountKRW)})을 아낄 수 있어요.`,
-      tone: "danger",
-    };
+    const total = pickMetaphorItem(amountKRW);
+    return { ...base, tone: "danger", kind: "unused", item: total.key, count: total.count };
   }
 
   if (tone === "danger") {
     // OTT 계열이면 영화관 메타포가 더 직관적
-    const movieItem = METAPHOR_ITEMS.find((i) => i.label === "영화관 티켓")!;
-    const movieCount = costPerUse / movieItem.price;
+    const movieCount = costPerUse / priceOf("movie");
     if (movieCount >= 0.8) {
-      return {
-        comparison: `영화관 티켓 ${formatCount(movieCount)}${movieItem.unit} 세이브 기회`,
-        message: `이번 달 1회 이용에 그쳤다면, 잠시 일시정지하고 영화관 티켓 1장 값(${formatAmount(calculateCostPerUse(amount, usageCount), currency)})을 세이브해보는 건 어떨까요?`,
-        tone: "danger",
-      };
+      return { ...base, tone: "danger", kind: "movie", item: "movie", count: movieCount };
     }
-    return {
-      comparison: `${best.label} ${formatCount(count)}${best.unit} 세이브 기회`,
-      message: `이번 달 1회 이용했어요. 지금 잠시 쉬어가면 매달 ${best.label} ${formatCount(count)}${best.unit} 값(${formatAmount(calculateCostPerUse(amount, usageCount), currency)})을 아낄 수 있어요.`,
-      tone: "danger",
-    };
+    return { ...base, tone: "danger", kind: "once", item: best.key, count };
   }
 
   if (tone === "warning") {
-    return {
-      comparison: `${best.label} ${formatCount(count)}${best.unit} 수준`,
-      message: `1회당 ${formatAmount(calculateCostPerUse(amount, usageCount), currency)} — 조금만 더 자주 쓰면 본전 달성! 알차게 즐겨보세요.`,
-      tone: "warning",
-    };
+    return { ...base, tone: "warning", kind: "warning", item: best.key, count };
   }
 
   // safe
-  const coffeeItem = METAPHOR_ITEMS.find((i) => i.label === "커피")!;
-  const coffeeRatio = costPerUse / coffeeItem.price;
-  return {
-    comparison:
-      coffeeRatio < 1
-        ? `커피 한 잔보다 알뜰하게`
-        : `${best.label} ${formatCount(count)}${best.unit} 가치`,
-    message:
-      coffeeRatio < 1
-        ? `1회당 ${formatAmount(calculateCostPerUse(amount, usageCount), currency)} — 커피 한 잔보다 알뜰하게 즐겼어요! 본전 달성 완료`
-        : `1회당 ${formatAmount(calculateCostPerUse(amount, usageCount), currency)} — 낸 돈 이상으로 알차게 활용하고 있어요!`,
-    tone: "safe",
-  };
-}
-
-function formatCount(n: number): string {
-  if (n >= 10) return Math.floor(n).toString();
-  if (n >= 1) return n.toFixed(1).replace(/\.0$/, "");
-  if (n >= 0.1) return n.toFixed(1);
-  return "0.1 미만";
+  const coffeeRatio = costPerUse / priceOf("coffee");
+  return coffeeRatio < 1
+    ? { ...base, tone: "safe", kind: "cheap", item: "coffee", count: coffeeRatio }
+    : { ...base, tone: "safe", kind: "worth", item: best.key, count };
 }
 
 // ─────────────────────────────────────────────────────────
@@ -138,8 +127,6 @@ export interface BreakEvenInfo {
   /** 0 ~ 100+. 100 이상이면 본전 이상. */
   progressPercent: number;
   level: "danger" | "warning" | "safe";
-  /** 예: "본전까지 앞으로 3회 더 이용 필요" */
-  remainingMessage: string;
 }
 
 /**
@@ -155,29 +142,17 @@ export function getBreakEvenInfo(
 ): BreakEvenInfo {
   const target = Math.max(1, breakEvenTarget);
   const progress = target > 0 ? (usageCount / target) * 100 : 0;
-  const remaining = Math.max(0, target - usageCount);
 
   let level: BreakEvenInfo["level"];
   if (progress <= 40) level = "danger";
   else if (progress <= 80) level = "warning";
   else level = "safe";
 
-  let remainingMessage: string;
-  if (usageCount === 0) {
-    remainingMessage =
-      "이번 달 이용이 아직 없어요. 더 자주 쓰거나, 잠시 쉬어가며 지출을 아낄 수 있어요.";
-  } else if (remaining > 0) {
-    remainingMessage = `본전까지 앞으로 ${remaining}회 더 이용하면 달성!`;
-  } else {
-    remainingMessage = "본전 달성 완료! 알뜰하게 활용 중이에요.";
-  }
-
   return {
     breakEvenUsage: target,
     currentUsage: usageCount,
     progressPercent: Math.round(progress),
     level,
-    remainingMessage,
   };
 }
 

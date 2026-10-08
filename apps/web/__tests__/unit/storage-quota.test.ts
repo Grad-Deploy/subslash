@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { messages } from "@lib/i18n/messages";
 import {
   canCheckGoogleStorage,
   parseStorageQuotaResult,
@@ -61,6 +62,9 @@ const measured = (usageGiB: number, limitGiB: number | null): StorageQuotaResult
   usage: Math.round(usageGiB * GIB),
   limit: limitGiB === null ? null : Math.round(limitGiB * GIB),
 });
+
+/** 한국어 화면의 문구. */
+const text = messages.ko.checkin.storage;
 
 describe("Google 계정 용량 측정 — 주소", () => {
   it("Apps Script 웹 앱 주소만 받는다", () => {
@@ -146,46 +150,46 @@ describe("Google 계정 용량 측정 — 웹 앱", () => {
 
 describe("Google 계정 용량 측정 — 체크인 값", () => {
   it("시험 배포의 값: AI 프로 5TB(5,120GB 한도)에 3.42GB → 1% 미만이라 1%", () => {
-    const checkIn = storageCheckInFrom(googleOne("ai-pro"), measured(3.42, 5120));
+    const checkIn = storageCheckInFrom(googleOne("ai-pro"), measured(3.42, 5120), text);
     expect(checkIn.quantity).toBe(1);
     expect(checkIn.message).toContain("5TB 중 3.42GB");
     expect(checkIn.message).toContain("1%로 채웠어요");
   });
 
   it("비율을 반올림해 채운다", () => {
-    expect(storageCheckInFrom(googleOne("basic"), measured(42.4, 100)).quantity).toBe(42);
-    expect(storageCheckInFrom(googleOne("ai-plus"), measured(1024, 2048)).quantity).toBe(50);
+    expect(storageCheckInFrom(googleOne("basic"), measured(42.4, 100), text).quantity).toBe(42);
+    expect(storageCheckInFrom(googleOne("ai-plus"), measured(1024, 2048), text).quantity).toBe(50);
   });
 
   it("아무것도 두지 않았을 때만 0%", () => {
-    expect(storageCheckInFrom(googleOne("basic"), measured(0, 100)).quantity).toBe(0);
+    expect(storageCheckInFrom(googleOne("basic"), measured(0, 100), text).quantity).toBe(0);
   });
 
   it("한도가 등록한 요금제와 다르면 채우지 않는다 — 다른 계정이거나 가족·회사 계정의 한도다", () => {
-    const checkIn = storageCheckInFrom(googleOne("basic"), measured(3, 5120));
+    const checkIn = storageCheckInFrom(googleOne("basic"), measured(3, 5120), text);
     expect(checkIn.quantity).toBeNull();
     expect(checkIn.message).toContain("베이직 100GB");
   });
 
   it("가족과 나누는 구독은 채우지 않는다 — 이 계정의 사용량은 내 몫뿐이다", () => {
-    const checkIn = storageCheckInFrom(googleOne("ai-pro", 4), measured(3.42, 5120));
+    const checkIn = storageCheckInFrom(googleOne("ai-pro", 4), measured(3.42, 5120), text);
     expect(checkIn.quantity).toBeNull();
     expect(checkIn.message).toContain("가족과 나누는");
   });
 
   it("한도가 없으면 채우지 않는다", () => {
-    expect(storageCheckInFrom(googleOne("ai-pro"), measured(3, null)).quantity).toBeNull();
+    expect(storageCheckInFrom(googleOne("ai-pro"), measured(3, null), text).quantity).toBeNull();
   });
 
   it("요금제를 모르면 채우되 요금제를 고르라고 말한다", () => {
-    const checkIn = storageCheckInFrom(googleOne(), measured(50, 100));
+    const checkIn = storageCheckInFrom(googleOne(), measured(50, 100), text);
     expect(checkIn.quantity).toBe(50);
     expect(checkIn.message).toContain("요금제를 골라 두면");
   });
 
   it("측정하지 못했으면 채우지 않는다", () => {
     expect(
-      storageCheckInFrom(googleOne("ai-pro"), { state: STATE, ok: false }).quantity,
+      storageCheckInFrom(googleOne("ai-pro"), { state: STATE, ok: false }, text).quantity,
     ).toBeNull();
   });
 
