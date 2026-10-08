@@ -995,10 +995,21 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     nameEn: "Millie",
     category: "other",
     defaultAmount: null,
+    // 종이책 정기구독은 월 21,900원, 연 결제 236,500원(2026-10-08 사용자 확인). 전자책의 연 결제 요금은 확인하지
+    // 못해 적지 않는다.
     plans: [
       { id: "ebook", name: "전자책", amount: 9900 },
-      { id: "with-paper", name: "종이책 정기구독", amount: 19800 },
+      { id: "with-paper", name: "종이책 정기구독", amount: 21900 },
+      {
+        id: "with-paper-yearly",
+        name: "종이책 정기구독 (연 결제)",
+        amount: 236500,
+        billingCycle: "yearly",
+        yearlyOf: "with-paper",
+      },
     ],
+    // 가장 비싼 월 요금(종이책 21,900원)보다 큰 영수증은 '연간'이 적혀 있지 않아도 연 결제로 읽는다.
+    yearlyAbove: 21900,
     currency: "KRW",
     cancelUrl: "https://www.millie.co.kr/v3/customer/my-subscription",
     cancelUrlKind: "direct",
