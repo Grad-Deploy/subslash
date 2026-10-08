@@ -3,7 +3,6 @@ import {
   type SubscriptionCategory,
   type UsageLog,
   type ValueReportItem,
-  describeCheckIn,
   formatCurrency,
   formatKRW,
   getMonthlyValueSummary,
@@ -13,6 +12,9 @@ import {
   sumMonthlyKRW,
   sumMyMonthlyKRW,
 } from "@subslash/shared";
+import type { Messages } from "@lib/i18n";
+import { describeCheckInText } from "@lib/i18n/check-in-text";
+import { describeWasteSuggestion } from "@lib/i18n/value-report";
 
 /**
  * 앱 대시보드의 가성비 계산서(AppValueReceipt)가 쓰는 숫자와 문구. 화면 코드와 나눠 두어 테스트한다.
@@ -45,12 +47,15 @@ export function wasteOrder(items: ValueReportItem[], firstId: string): string[] 
 }
 
 /** 계산서 한 줄 아래의 작은 글씨. 체크인이 없으면 회당 단가를 지어내지 않는다. */
-export function receiptDetail(item: ValueReportItem): string {
-  if (item.status === "unknown" || !item.log) return "얼마나 썼는지 몰라요";
-  if (metricOfLog(item.log) !== "uses") return describeCheckIn(item.log, item.sub.currency);
+export function receiptDetail(t: Messages, item: ValueReportItem): string {
+  if (item.status === "unknown" || !item.log) return t.receipt.detailUnknown;
+  if (metricOfLog(item.log) !== "uses") return describeCheckInText(t, item.log, item.sub.currency);
   const count = item.log.usageCount ?? 0;
-  if (count === 0) return "이번 달 미사용";
-  return `${count}회 · 회당 ${spaced(formatCurrency(item.costPerUse ?? 0, item.sub.currency))}`;
+  if (count === 0) return t.receipt.detailUnused;
+  return t.receipt.detailUses(
+    count,
+    spaced(formatCurrency(item.costPerUse ?? 0, item.sub.currency)),
+  );
 }
 
 export interface ValueReceipt {
@@ -143,11 +148,11 @@ export function receiptDate(now: Date): string {
 }
 
 /** 계산서 맨 아래 한 줄. 체크인이 하나도 없으면 체크인을 권한다. */
-export function receiptFooter(summary: ValueReceipt["summary"]): string {
-  if (summary.wasteSuggestion) return summary.wasteSuggestion;
+export function receiptFooter(t: Messages, summary: ValueReceipt["summary"]): string {
+  if (summary.wasteSuggestion) return describeWasteSuggestion(t, summary.wasteSuggestion);
   return summary.worthItItems.length === 0 && summary.wastedItems.length === 0
-    ? "이번 달에 몇 번 썼는지 알려주면 회당 단가를 계산해 드려요."
-    : "체크인할수록 계산이 정확해져요.";
+    ? t.receipt.footerNoCheckIn
+    : t.receipt.footerMore;
 }
 
 export interface SheetAction {
@@ -164,7 +169,10 @@ export interface SheetCancelAction extends SheetAction {
  * 계산서 아래 고정 버튼. 금액이 큰 구독부터 연다(나머지는 계산서의 각 줄을 눌러 연다). 여럿이면
  * '…부터'라고 적어 이어서 묻는다는 것을 알린다.
  */
-export function sheetActions(summary: ValueReceipt["summary"]): {
+export function sheetActions(
+  t: Messages,
+  summary: ValueReceipt["summary"],
+): {
   cancel: SheetCancelAction | null;
   checkIn: SheetAction | null;
 } {
@@ -176,14 +184,14 @@ export function sheetActions(summary: ValueReceipt["summary"]): {
     cancel: waste
       ? {
           id: waste.sub.id,
-          label: `${waste.sub.name}${summary.wastedItems.length > 1 ? "부터" : ""} 해지 안내`,
+          label: t.receipt.cancelFrom(waste.sub.name, summary.wastedItems.length > 1),
           rest: wasteOrder(summary.wastedItems, waste.sub.id),
         }
       : null,
     checkIn: check
       ? {
           id: check.sub.id,
-          label: `${check.sub.name}${summary.unknownItems.length > 1 ? "부터" : ""} 체크인`,
+          label: t.receipt.checkInFrom(check.sub.name, summary.unknownItems.length > 1),
         }
       : null,
   };

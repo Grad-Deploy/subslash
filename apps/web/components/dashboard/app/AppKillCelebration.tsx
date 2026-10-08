@@ -4,6 +4,7 @@ import { useEffect, useRef, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { formatKRW } from "@subslash/shared";
 import { useIsClient } from "@hooks/useIsClient";
+import { useT } from "@lib/i18n";
 import styles from "./AppKillCelebration.module.css";
 
 const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
@@ -24,6 +25,7 @@ export function AppKillCelebration({
   onDone: () => void;
 }) {
   const isClient = useIsClient();
+  const s = useT().series;
   // 부모가 다시 그려질 때마다 새 함수가 와도 타이머가 처음부터 다시 돌지 않게 최신 것만 기억한다.
   const doneRef = useRef(onDone);
   useEffect(() => {
@@ -72,14 +74,14 @@ export function AppKillCelebration({
           </div>
         </div>
         <div className={styles.text}>
-          <p className="mt-5 text-xl font-black tracking-tight">구독 {count}개를 정리했어요</p>
+          <p className="mt-5 text-xl font-black tracking-tight">{s.doneTitle(count)}</p>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            매달{" "}
+            {s.doneBefore}{" "}
             {/* 본문과 같은 글꼴로 두고(고정폭 글꼴은 이 문장에서 혼자 튄다), 색과 크기로 금액을 띄운다. */}
             <b className="text-lg font-black tracking-tight text-emerald-700 tabular-nums dark:text-emerald-400">
               {formatKRW(monthlyKRW).replace(/^₩\s*/, "₩ ")}
             </b>
-            을 아껴요
+            {s.doneAfter}
           </p>
         </div>
       </div>

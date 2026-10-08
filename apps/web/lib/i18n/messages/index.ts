@@ -3,6 +3,8 @@ import * as backup from "./backup";
 import * as dashboard from "./dashboard";
 import * as deviceUsage from "./deviceUsage";
 import * as oauth from "./oauth";
+import * as overview from "./overview";
+import * as receipt from "./receipt";
 import * as settings from "./settings";
 import * as shell from "./shell";
 import * as value from "./value";
@@ -20,6 +22,8 @@ export const messages = {
     oauth: oauth.ko,
     dashboard: dashboard.ko,
     value: value.ko,
+    overview: overview.ko,
+    ...receipt.ko,
   },
   en: {
     shell: shell.en,
@@ -30,6 +34,8 @@ export const messages = {
     oauth: oauth.en,
     dashboard: dashboard.en,
     value: value.en,
+    overview: overview.en,
+    ...receipt.en,
   },
 } satisfies Record<string, unknown>;
 

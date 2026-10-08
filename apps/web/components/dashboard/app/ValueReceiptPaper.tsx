@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { CATEGORY_LABELS, type ValueReportItem, isInTrial } from "@subslash/shared";
+import { type ValueReportItem, isInTrial } from "@subslash/shared";
+import { useT } from "@lib/i18n";
 import { cn } from "@lib/utils";
 import styles from "./AppValueReceipt.module.css";
 import { AppSavingsLink } from "../../savings/app/AppSavingsLink";
@@ -18,10 +19,10 @@ import {
   won,
 } from "./valueReceipt";
 
-const SECTIONS: Record<SectionKey, { title: string; dot: string }> = {
-  worth: { title: "뽕 뽑은 구독", dot: "bg-emerald-600 dark:bg-emerald-400" },
-  wasted: { title: "쉬어가도 될 구독", dot: "bg-amber-600 dark:bg-amber-400" },
-  unknown: { title: "체크인 필요", dot: "bg-zinc-400 dark:bg-zinc-500" },
+const SECTION_DOT: Record<SectionKey, string> = {
+  worth: "bg-emerald-600 dark:bg-emerald-400",
+  wasted: "bg-amber-600 dark:bg-amber-400",
+  unknown: "bg-zinc-400 dark:bg-zinc-500",
 };
 
 /**
@@ -40,6 +41,13 @@ export function ValueReceiptPaper({
   onCancelGuide: (id: string, rest?: string[]) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const t = useT();
+  const r = t.receipt;
+  const sectionTitle: Record<SectionKey, string> = {
+    worth: r.sectionWorth,
+    wasted: r.sectionWasted,
+    unknown: r.sectionUnknown,
+  };
   const { active, summary, categories } = data;
   const { sections, collapsible, collapsed, hiddenCount } = receiptSections(data, expanded);
   const topCategory = categories[0]?.amount ?? 0;
@@ -48,11 +56,11 @@ export function ValueReceiptPaper({
   const actionFor = (key: SectionKey, item: ValueReportItem) =>
     key === "wasted"
       ? {
-          label: "해지 안내",
+          label: r.actionCancel,
           run: () => onCancelGuide(item.sub.id, wasteOrder(summary.wastedItems, item.sub.id)),
         }
       : key === "unknown"
-        ? { label: "체크인", run: () => onCheckIn(item.sub.id) }
+        ? { label: r.actionCheckIn, run: () => onCheckIn(item.sub.id) }
         : null;
 
   return (
@@ -64,19 +72,19 @@ export function ValueReceiptPaper({
         id="value-receipt-title"
         className="mt-1.5 text-center text-[19px] font-black tracking-tight"
       >
-        {now.getMonth() + 1}월 가성비 계산서
+        {r.title(now.getMonth() + 1)}
       </h2>
       <p className="text-center font-mono text-[11px] text-muted-foreground tabular-nums">
-        {receiptDate(now)} 기준 · 구독 {active.length}개
+        {r.asOf(receiptDate(now), active.length)}
       </p>
 
       {sections.map(({ key, items, shown, subtotal }) => (
         <div key={key}>
           <hr className="my-3.5 border-t-[1.5px] border-dashed" />
           <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-extrabold tracking-wide text-muted-foreground">
-            <span className={cn("size-[7px] rounded-[2px]", SECTIONS[key].dot)} aria-hidden />
-            {SECTIONS[key].title}
-            <span className="ml-auto font-semibold tracking-normal">{items.length}개</span>
+            <span className={cn("size-[7px] rounded-[2px]", SECTION_DOT[key])} aria-hidden />
+            {sectionTitle[key]}
+            <span className="ml-auto font-semibold tracking-normal">{r.count(items.length)}</span>
           </p>
           <ul>
             {shown.map((item) => {
@@ -94,8 +102,8 @@ export function ValueReceiptPaper({
                   </span>
                   <span className="mt-0.5 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
                     <span>
-                      {receiptDetail(item)}
-                      {isInTrial(item.sub, now) && " · 체험 중"}
+                      {receiptDetail(t, item)}
+                      {isInTrial(item.sub, now) && r.inTrial}
                     </span>
                     {action && <span className="shrink-0 font-semibold">{action.label} ›</span>}
                   </span>
@@ -121,12 +129,12 @@ export function ValueReceiptPaper({
           </ul>
           {collapsed && items.length > PREVIEW_PER_SECTION && (
             <p className="text-[11px] text-muted-foreground">
-              외 {items.length - PREVIEW_PER_SECTION}개
+              {r.more(items.length - PREVIEW_PER_SECTION)}
             </p>
           )}
           {key !== "unknown" && (
             <p className="flex justify-between pt-1 text-[11.5px] text-muted-foreground">
-              <span>소계</span>
+              <span>{r.subtotal}</span>
               <b className="font-mono font-bold text-foreground tabular-nums">{won(subtotal)}</b>
             </p>
           )}
@@ -140,7 +148,7 @@ export function ValueReceiptPaper({
           aria-expanded={expanded}
           className="mt-3 flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
         >
-          {expanded ? "접기" : `계산서 펼치기 · ${hiddenCount}줄 더`}
+          {expanded ? r.collapse : r.expand(hiddenCount)}
           <ChevronDown
             className={cn("size-3.5 transition-transform", expanded && "rotate-180")}
             aria-hidden
@@ -152,7 +160,7 @@ export function ValueReceiptPaper({
         <>
           <hr className="my-3.5 border-t-[1.5px] border-dashed" />
           <p className="mb-1.5 text-[11px] font-extrabold tracking-wide text-muted-foreground">
-            분류별
+            {r.byCategory}
           </p>
           <ul className="space-y-1">
             {categories.map(({ category, amount }) => (
@@ -160,7 +168,7 @@ export function ValueReceiptPaper({
                 key={category}
                 className="grid grid-cols-[56px_1fr_auto] items-center gap-2 text-xs"
               >
-                <span className="truncate">{CATEGORY_LABELS[category] ?? category}</span>
+                <span className="truncate">{t.value.category[category] ?? category}</span>
                 <span className="h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden>
                   <span
                     className="block h-full rounded-full bg-foreground/75"
@@ -183,28 +191,28 @@ export function ValueReceiptPaper({
       {data.trialKRW > 0 && (
         <>
           <p className="flex justify-between text-xs text-muted-foreground">
-            <span>구독 합계</span>
+            <span>{r.subTotal}</span>
             <span className="font-mono tabular-nums">{won(summary.totalSpendKRW)}</span>
           </p>
           <p className="mt-0.5 mb-1.5 flex justify-between text-xs text-muted-foreground">
-            <span>체험 중 {data.inTrial.length}개 (끝나면 더해져요)</span>
+            <span>{r.trial(data.inTrial.length)}</span>
             <span className="font-mono tabular-nums">−{won(data.trialKRW)}</span>
           </p>
         </>
       )}
       <p className="flex items-baseline justify-between">
-        <span className="text-[13px] font-extrabold">월 고정지출</span>
+        <span className="text-[13px] font-extrabold">{r.fixed}</span>
         <b className="font-mono text-[22px] font-black tabular-nums">{won(data.fixedKRW)}</b>
       </p>
       {summary.wastedKRW > 0 && (
         <p className="mt-1.5 flex items-baseline justify-between text-amber-700 dark:text-amber-400">
-          <span className="text-[12.5px] font-extrabold">아낄 수 있는 돈</span>
+          <span className="text-[12.5px] font-extrabold">{r.savable}</span>
           <b className="font-mono text-[15px] font-black tabular-nums">−{won(summary.wastedKRW)}</b>
         </p>
       )}
       {data.sharedCount > 0 && (
         <p className="mt-2 text-[11px] text-muted-foreground">
-          공유 구독 {data.sharedCount}개는 내 몫으로 셌어요 · 카드 청구액 월 {won(data.billedKRW)}
+          {r.shared(data.sharedCount, won(data.billedKRW))}
         </p>
       )}
 
@@ -212,7 +220,7 @@ export function ValueReceiptPaper({
       <AppSavingsLink variant="receipt" />
 
       <p className="mt-3 text-center text-[11.5px] leading-relaxed text-muted-foreground">
-        {receiptFooter(summary)}
+        {receiptFooter(t, summary)}
       </p>
     </div>
   );

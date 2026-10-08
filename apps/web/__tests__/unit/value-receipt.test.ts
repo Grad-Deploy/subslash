@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Subscription, UsageLog } from "@subslash/shared";
+import { messages } from "@lib/i18n/messages";
 import {
   buildValueReceipt,
   receiptDate,
@@ -89,7 +90,7 @@ describe("buildValueReceipt", () => {
 describe("receiptDetail", () => {
   it("체크인이 없으면 단가를 지어내지 않는다", () => {
     const [item] = buildValueReceipt([sub("a", 10000)], [], RATE, NOW).summary.unknownItems;
-    expect(receiptDetail(item)).toBe("얼마나 썼는지 몰라요");
+    expect(receiptDetail(messages.ko, item)).toBe("얼마나 썼는지 몰라요");
   });
 
   it("0회면 미사용, 쓴 만큼은 회당 단가를 적는다", () => {
@@ -99,8 +100,8 @@ describe("receiptDetail", () => {
       RATE,
       NOW,
     );
-    expect(receiptDetail(summary.wastedItems[0])).toBe("이번 달 미사용");
-    expect(receiptDetail(summary.worthItItems[0])).toBe("10회 · 회당 ₩ 1,000");
+    expect(receiptDetail(messages.ko, summary.wastedItems[0])).toBe("이번 달 미사용");
+    expect(receiptDetail(messages.ko, summary.worthItItems[0])).toBe("10회 · 회당 ₩ 1,000");
   });
 });
 
@@ -144,21 +145,21 @@ describe("해지 순서와 아래 버튼", () => {
 
   it("버튼은 금액이 가장 큰 구독부터 열고, 여럿이면 '부터'라고 적는다", () => {
     const { summary } = buildValueReceipt(subs, logs, RATE, NOW);
-    const { cancel, checkIn } = sheetActions(summary);
+    const { cancel, checkIn } = sheetActions(messages.ko, summary);
     expect(cancel).toEqual({ id: "b", label: "구독b부터 해지 안내", rest: ["c", "a"] });
     expect(checkIn).toEqual({ id: "d", label: "구독d 체크인" });
   });
 
   it("할 일이 없으면 버튼도 없다", () => {
     const { summary } = buildValueReceipt([sub("a", 1000)], [log("a", 5, "green")], RATE, NOW);
-    expect(sheetActions(summary)).toEqual({ cancel: null, checkIn: null });
+    expect(sheetActions(messages.ko, summary)).toEqual({ cancel: null, checkIn: null });
   });
 });
 
 describe("receiptFooter", () => {
   it("체크인이 하나도 없으면 체크인을 권한다", () => {
     const { summary } = buildValueReceipt([sub("a", 1000)], [], RATE, NOW);
-    expect(receiptFooter(summary)).toBe(
+    expect(receiptFooter(messages.ko, summary)).toBe(
       "이번 달에 몇 번 썼는지 알려주면 회당 단가를 계산해 드려요.",
     );
   });
