@@ -36,11 +36,14 @@ function shape(tree: unknown, prefix = ""): Record<string, string> {
   return out;
 }
 
-/** 함수 문구를 아무 값으로 불러 빈 문구가 아닌지 본다. */
+/**
+ * 함수 문구를 아무 값으로 불러 빈 문구가 아닌지 본다. 인자는 글자 "2"로 넘긴다 — 숫자 인자(`n - 1`)와 글자
+ * 인자(`label.toLowerCase()`)를 함께 받는 값이다.
+ */
 function render(tree: unknown): string[] {
   if (typeof tree === "string") return [tree];
   if (typeof tree === "function") {
-    const args = Array.from({ length: tree.length }, () => 2);
+    const args = Array.from({ length: tree.length }, () => "2");
     return [String((tree as (...a: unknown[]) => unknown)(...args))];
   }
   return Object.values(tree as Record<string, unknown>).flatMap(render);
