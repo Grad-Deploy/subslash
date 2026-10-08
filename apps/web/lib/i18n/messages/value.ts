@@ -59,10 +59,10 @@ export const ko = {
   },
   /** 아낀 돈으로 살 수 있는 것: '맛있는 치킨 3마리'. */
   reward: {
-    latte: (n: number) => `카페 라떼 ${n}잔`,
-    chicken: (n: number) => `맛있는 치킨 ${n}마리`,
-    dinner: (n: number) => `고급 레스토랑 저녁 ${n}회`,
-    trip: (n: number) => `가까운 해외 여행 ${n}회`,
+    latte: (n: number) => `카페 라떼 ${Number(n).toLocaleString("ko-KR")}잔`,
+    chicken: (n: number) => `맛있는 치킨 ${Number(n).toLocaleString("ko-KR")}마리`,
+    dinner: (n: number) => `고급 레스토랑 저녁 ${Number(n).toLocaleString("ko-KR")}회`,
+    trip: (n: number) => `가까운 해외 여행 ${Number(n).toLocaleString("ko-KR")}회`,
   },
   /** 금액과 가장 가까운 소비재 몇 개 값인지. */
   metaphor: {
@@ -91,10 +91,14 @@ export const en: Widen<typeof ko> = {
     5: "Subscription killer · minimalist",
   },
   reward: {
-    latte: (n) => `${n} café ${Number(n) === 1 ? "latte" : "lattes"}`,
-    chicken: (n) => `${n} ${Number(n) === 1 ? "order" : "orders"} of fried chicken`,
-    dinner: (n) => `${n} fine-dining ${Number(n) === 1 ? "dinner" : "dinners"}`,
-    trip: (n) => `${n} nearby overseas ${Number(n) === 1 ? "trip" : "trips"}`,
+    latte: (n) =>
+      `${Number(n).toLocaleString("en-US")} café ${Number(n) === 1 ? "latte" : "lattes"}`,
+    chicken: (n) =>
+      `${Number(n).toLocaleString("en-US")} ${Number(n) === 1 ? "order" : "orders"} of fried chicken`,
+    dinner: (n) =>
+      `${Number(n).toLocaleString("en-US")} fine-dining ${Number(n) === 1 ? "dinner" : "dinners"}`,
+    trip: (n) =>
+      `${Number(n).toLocaleString("en-US")} nearby overseas ${Number(n) === 1 ? "trip" : "trips"}`,
   },
   checkIn: {
     uses: (n) => (n === 1 ? "1 use" : `${n} uses`),

@@ -5,9 +5,7 @@ import { useIsClient } from "@hooks/useIsClient";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  CATEGORY_LABELS,
   buildYearInReview,
-  describeSpendingType,
   formatKRW,
   getSavingsTiers,
   type CheckInStanding,
@@ -22,6 +20,8 @@ import { Button } from "../../../components/ui/button";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { Spinner } from "../../../components/ui/spinner";
 import { copyText } from "@lib/native";
+import { useT } from "@lib/i18n";
+import { describeSpendingTypeText } from "@lib/i18n/savings-text";
 
 /** 이보다 이른 해는 이 앱에 기록이 있을 수 없다. */
 const EARLIEST_YEAR = 2020;
@@ -33,11 +33,6 @@ function readYear(value: string | null, currentYear: number): number {
     : currentYear;
 }
 
-function formatDay(iso: string): string {
-  const date = new Date(iso);
-  return date.toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
-}
-
 function LoadingScreen() {
   return (
     <div className="flex items-center justify-center min-h-[50vh]">
@@ -47,6 +42,7 @@ function LoadingScreen() {
 }
 
 function Standing({ label, item, value }: { label: string; item: CheckInStanding; value: string }) {
+  const mark = useT().savings.review.killedMark;
   return (
     <div className="p-3 rounded-xl bg-muted/60 space-y-0.5">
       <dt className="text-[11px] text-muted-foreground">{label}</dt>
@@ -59,7 +55,7 @@ function Standing({ label, item, value }: { label: string; item: CheckInStanding
         />{" "}
         {item.name}
         {item.killed && (
-          <span className="ml-1 text-[11px] font-medium text-muted-foreground">(해지함)</span>
+          <span className="ml-1 text-[11px] font-medium text-muted-foreground">{mark}</span>
         )}
       </dd>
       <dd className="text-[11px] text-muted-foreground">{value}</dd>
@@ -72,6 +68,10 @@ function YearInReviewContent() {
   const { subscriptions, usageLogs } = useStore();
   const rate = useExchangeRate();
   const mounted = useIsClient();
+  const t = useT();
+  const r = t.savings.review;
+  const formatDay = (iso: string) =>
+    new Date(iso).toLocaleDateString(r.dateLocale, { month: "long", day: "numeric" });
   const [copied, setCopied] = useState(false);
   const [now] = useState(() => new Date());
   const currentYear = now.getFullYear();
@@ -87,7 +87,7 @@ function YearInReviewContent() {
 
   const review = buildYearInReview(subscriptions, usageLogs, year, rate, now, rateOn);
   const { defended, checkIns } = review;
-  const scope = review.isComplete ? `${year}년` : `${year}년 지금까지`;
+  const scope = review.isComplete ? r.scopeFull(year) : r.scopeSoFar(year);
   // 막은 결제 가운데, 그 해 결제일에 결제가 멈춘 것을 확인한 금액.
   const yearTiers = getSavingsTiers(
     subscriptions,
@@ -96,7 +96,9 @@ function YearInReviewContent() {
     { from: new Date(year, 0, 1), to: new Date(year + 1, 0, 1) },
     rateOn,
   );
-  const spendingType = review.spendingType ? describeSpendingType(review.spendingType) : null;
+  const spendingType = review.spendingType
+    ? describeSpendingTypeText(t, review.spendingType)
+    : null;
   // 해지도 막은 결제도 없으면 공유할 결산이 없다. ₩0짜리 카드를 퍼뜨리지 않는다.
   const canShare = review.killedThisYear.length > 0 || defended.pastAmount > 0;
 
@@ -120,11 +122,18 @@ function YearInReviewContent() {
     const url = webUrl(`/savings/review/share?${params.toString()}`);
     // 남에게 보이는 문장이라 지킨 돈이 없으면 막은 결제만 적는다.
     const confirmedLine =
-      yearTiers.confirmed > 0 ? ` · 그중 지킨 돈 ${formatKRW(yearTiers.confirmed)}` : "";
-    const text = `SubSlash ${scope} 구독 결산\n해지한 구독 ${review.killedThisYear.length}개 · 해지로 막은 결제 ${formatKRW(defended.pastAmount)}${confirmedLine}${spendingType ? `\n소비 유형: ${spendingType.title}` : ""}\n결산 보기: ${url}`;
+      yearTiers.confirmed > 0 ? r.shareConfirmed(formatKRW(yearTiers.confirmed)) : "";
+    const text = r.shareText(
+      scope,
+      review.killedThisYear.length,
+      formatKRW(defended.pastAmount),
+      confirmedLine,
+      spendingType?.title ?? null,
+      url,
+    );
 
     // 공유 창을 열었거나 사용자가 닫았으면 끝이다. 공유할 수 없는 환경이면 복사로 넘어간다.
-    if (await shareText({ title: `SubSlash ${year}년 구독 결산`, text, url })) return;
+    if (await shareText({ title: r.shareTitle(year), text, url })) return;
     if (await copyText(text)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
@@ -137,7 +146,7 @@ function YearInReviewContent() {
     <div className="max-w-2xl mx-auto space-y-6">
       <nav className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <Link href="/savings" className="text-muted-foreground hover:text-foreground">
-          ← 절약 현황
+          {r.back}
         </Link>
         <div className="flex gap-3 text-xs">
           {year > EARLIEST_YEAR && (
@@ -145,7 +154,7 @@ function YearInReviewContent() {
               href={`/savings/review?year=${year - 1}`}
               className="text-muted-foreground hover:text-foreground underline underline-offset-4"
             >
-              {year - 1}년 결산
+              {r.prevYear(year - 1)}
             </Link>
           )}
           {year < currentYear && (
@@ -153,7 +162,7 @@ function YearInReviewContent() {
               href="/savings/review"
               className="text-muted-foreground hover:text-foreground underline underline-offset-4"
             >
-              올해 결산
+              {r.thisYear}
             </Link>
           )}
         </div>
@@ -161,22 +170,22 @@ function YearInReviewContent() {
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-black tracking-tight">{year}년 구독 결산</h1>
+          <h1 className="text-2xl font-black tracking-tight">{r.title(year)}</h1>
           <p className="text-sm text-muted-foreground">
             {review.isComplete
-              ? `${year}년 한 해 동안의 기록입니다.`
-              : `${now.getMonth() + 1}월 ${now.getDate()}일까지의 기록입니다. 연말이 지나면 한 해 결산이 됩니다.`}
+              ? r.completeNote(year)
+              : r.partialNote(now.getMonth() + 1, now.getDate())}
           </p>
         </div>
         <Link
           href={`/report/receipt?year=${year}`}
           className="text-sm font-semibold underline underline-offset-4"
         >
-          영수증으로 보기
+          {r.asReceipt}
         </Link>
         {canShare && (
           <Button size="sm" variant="outline" onClick={handleShare}>
-            {copied ? "클립보드에 복사됨!" : "결산 공유하기"}
+            {copied ? r.copied : r.share}
           </Button>
         )}
       </header>
@@ -186,33 +195,29 @@ function YearInReviewContent() {
         className="p-6 border rounded-2xl bg-card shadow-sm space-y-2"
       >
         <h2 id="review-defended" className="text-xs font-semibold text-muted-foreground">
-          {scope} 해지로 막은 결제
+          {r.defendedTitle(scope)}
         </h2>
         <p className="text-4xl font-black text-foreground">{formatKRW(defended.pastAmount)}</p>
         <p className="text-xs text-muted-foreground">
-          이 중 결제가 멈춘 것을 확인한 지킨 돈은{" "}
-          <strong className="text-foreground">{formatKRW(yearTiers.confirmed)}</strong>입니다.
-          {yearTiers.pending > 0 &&
-            ` 확인 대기 ${formatKRW(yearTiers.pending)}은 대시보드에서 결제가 멈췄는지 답하면 지킨 돈이 됩니다.`}
+          {r.confirmedBefore}
+          <strong className="text-foreground">{formatKRW(yearTiers.confirmed)}</strong>
+          {r.confirmedAfter}
+          {yearTiers.pending > 0 && r.pendingNote(formatKRW(yearTiers.pending))}
         </p>
         {!review.isComplete && defended.scheduledAmount > 0 && (
           <p className="text-xs text-muted-foreground">
-            연말까지 {formatKRW(defended.scheduledAmount)}을 더 지킬 예정입니다. 해지하지 않았다면
-            나갔을 금액입니다.
+            {r.scheduledNote(formatKRW(defended.scheduledAmount))}
           </p>
         )}
         {defended.unknownCount > 0 && (
           <p className="text-[11px] text-amber-700 dark:text-amber-300">
-            결제 월을 모르는 연간 구독 {defended.unknownCount}건은 언제 결제되는지 알 수 없어
-            빠졌습니다.
+            {r.unknownNote(defended.unknownCount)}
           </p>
         )}
         {/* 달러 구독이 있을 때만. 고시 환율도 카드사가 청구한 환율은 아니다. */}
         {range && (
           <p className="text-[11px] text-muted-foreground">
-            {rateOn
-              ? "달러 구독의 지난 결제와 체크인 1회당 비용은 그날의 고시 환율(ECB 기준)로 바꿨어요. 카드사 환율과 조금 다를 수 있어요. 앞으로 지킬 금액과 지출 구성은 지금 설정한 환율이에요."
-              : "결제일의 환율을 받지 못해 달러 금액은 지금 설정한 환율로 계산했어요."}
+            {rateOn ? r.fxHistorical : r.fxCurrent}
           </p>
         )}
       </section>
@@ -222,10 +227,10 @@ function YearInReviewContent() {
         className="p-5 border rounded-2xl bg-card shadow-sm space-y-3"
       >
         <h2 id="review-killed" className="font-bold text-base">
-          {scope} 해지한 구독 {review.killedThisYear.length}개
+          {r.killedTitle(scope, review.killedThisYear.length)}
         </h2>
         {review.killedThisYear.length === 0 ? (
-          <p className="text-xs text-muted-foreground">{year}년에 해지한 구독이 없습니다.</p>
+          <p className="text-xs text-muted-foreground">{r.killedNone(year)}</p>
         ) : (
           <ul className="flex flex-wrap gap-2">
             {review.killedThisYear.map((sub) => (
@@ -250,8 +255,7 @@ function YearInReviewContent() {
         )}
         {review.killedAtUnknown > 0 && (
           <p className="text-[11px] text-muted-foreground">
-            해지 날짜 기록이 없는 {review.killedAtUnknown}건은 어느 해에 해지했는지 알 수 없어 넣지
-            않았습니다.
+            {r.killedAtUnknown(review.killedAtUnknown)}
           </p>
         )}
       </section>
@@ -261,19 +265,17 @@ function YearInReviewContent() {
         className="p-5 border rounded-2xl bg-card shadow-sm space-y-3"
       >
         <h2 id="review-spend" className="font-bold text-base">
-          지금 구독 중인 서비스의 지출 구성
+          {r.spendTitle}
         </h2>
         {review.isComplete ? (
-          <p className="text-xs text-muted-foreground">
-            지난 해의 구독 구성은 기록으로 남아 있지 않아 보여줄 수 없습니다.
-          </p>
+          <p className="text-xs text-muted-foreground">{r.spendPast}</p>
         ) : review.categorySpend.length === 0 ? (
-          <p className="text-xs text-muted-foreground">지금 구독 중인 서비스가 없습니다.</p>
+          <p className="text-xs text-muted-foreground">{r.spendNone}</p>
         ) : (
           <>
             {spendingType && (
               <div className="p-3 rounded-xl bg-muted/60 space-y-0.5">
-                <p className="text-[11px] text-muted-foreground">소비 유형</p>
+                <p className="text-[11px] text-muted-foreground">{r.typeLabel}</p>
                 <p className="text-sm font-black text-foreground">{spendingType.title}</p>
                 <p className="text-[11px] text-muted-foreground">{spendingType.detail}</p>
               </div>
@@ -285,13 +287,15 @@ function YearInReviewContent() {
                   <li key={item.category} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-foreground">
-                        {CATEGORY_LABELS[item.category]}
+                        {t.value.category[item.category]}
                         <span className="ml-1 font-normal text-muted-foreground">
-                          {item.count}개
+                          {r.categoryCount(item.count)}
                         </span>
                       </span>
                       <span className="text-muted-foreground">
-                        <strong className="text-foreground">연 {formatKRW(item.annualKRW)}</strong>{" "}
+                        <strong className="text-foreground">
+                          {r.annualOf(formatKRW(item.annualKRW))}
+                        </strong>{" "}
                         · {percent}%
                       </span>
                     </div>
@@ -306,9 +310,7 @@ function YearInReviewContent() {
               })}
             </ul>
             <p className="text-[11px] text-muted-foreground">
-              구독 중인 서비스를 1년 내내 낸다고 셈한 내 몫입니다(연{" "}
-              {formatKRW(review.activeAnnualKRW)}). 앱에는 지난 결제 내역이 없어서, 올해 실제로
-              결제된 금액과는 다를 수 있습니다.
+              {r.spendNote(formatKRW(review.activeAnnualKRW))}
             </p>
           </>
         )}
@@ -319,40 +321,34 @@ function YearInReviewContent() {
         className="p-5 border rounded-2xl bg-card shadow-sm space-y-3"
       >
         <h2 id="review-checkins" className="font-bold text-base">
-          {scope} 체크인으로 본 가성비
+          {r.checkInsTitle(scope)}
         </h2>
         {!cheapest ? (
-          <p className="text-xs text-muted-foreground">
-            {year}년에 한 체크인이 없어 비교할 수 없습니다. 구독 상세에서 이용 횟수를 체크인하면
-            여기에 모입니다.
-          </p>
+          <p className="text-xs text-muted-foreground">{r.checkInsNone(year)}</p>
         ) : (
           <>
             <dl className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Standing
-                label={priciest ? "1회당 가장 싸게 쓴 서비스" : "체크인한 서비스"}
+                label={priciest ? r.cheapestLabel : r.checkedLabel}
                 item={cheapest}
-                value={`1회당 ${formatKRW(cheapest.costPerUseKRW)} · ${cheapest.usageCount}회 이용`}
+                value={r.perUseValue(formatKRW(cheapest.costPerUseKRW), cheapest.usageCount)}
               />
               {priciest && (
                 <Standing
-                  label="1회당 가장 비싸게 쓴 서비스"
+                  label={r.priciestLabel}
                   item={priciest}
-                  value={`1회당 ${formatKRW(priciest.costPerUseKRW)} · ${priciest.usageCount}회 이용`}
+                  value={r.perUseValue(formatKRW(priciest.costPerUseKRW), priciest.usageCount)}
                 />
               )}
               {mostUsed && (
                 <Standing
-                  label="가장 자주 쓴 서비스"
+                  label={r.mostUsedLabel}
                   item={mostUsed}
-                  value={`30일 동안 ${mostUsed.usageCount}회`}
+                  value={r.mostUsedValue(mostUsed.usageCount)}
                 />
               )}
             </dl>
-            <p className="text-[11px] text-muted-foreground">
-              서비스마다 {year}년의 마지막 체크인 기준입니다. 이용 횟수는 체크인 때 직접 적은 값이라
-              실제 사용량과는 다를 수 있습니다.
-            </p>
+            <p className="text-[11px] text-muted-foreground">{r.checkInsNote(year)}</p>
           </>
         )}
       </section>
