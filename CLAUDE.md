@@ -502,7 +502,8 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import`)는 SubSlash가 G
 구독 기록 저장소·백업·계정 동기화에 넣지 않고, 주소에 싣지 않는다(앱은 화면을 정적으로 담아 경로를 늘릴 수 없다).
 서버 렌더링·하이드레이션은 한국어로 그리고 그 뒤 기기 언어로 다시 그린다. `<html lang>`은 `localeInitScript`와
 `LocaleEffects`가 맞춘다. 요금·원화는 한국 기준이라 옮기지 않는다. 서비스 이름은 서비스 목록의 `nameEn`(브랜드의 영문 표기, 없으면
-`nameKo`)으로 보이고, 등록한 구독은 목록의 이름 그대로일 때만 화면에서 바꾼다(`useServiceNames`, `lib/service-name`) —
+`nameKo`)으로 보이고, 등록한 구독은 영어 화면에서 목록의 한국어 이름 그대로일 때만 영문으로 보인다(`useServiceNames`, `lib/service-name`).
+한국어 화면은 적힌 그대로다('Netflix'로 적은 이름을 '넷플릭스'로 바꾸지 않는다) —
 이름은 사용자 기록이라 저장된 값을 고치지 않는다. 영어 화면에서 고르면 영문 이름으로 저장되므로, 이름으로 같은 서비스인지
 견줄 때는 `findPresetForSubscription`·`serviceNameKey`를 쓴다. 아직 옮기지 않은
 화면, 서버가 돌려주는 오류 문구, `@subslash/shared`가 만드는 문구는 한국어로 보인다 — 화면 단위로 옮겨 간다.

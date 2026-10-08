@@ -55,9 +55,13 @@ describe("서비스 이름의 영문 표기", () => {
 });
 
 describe("등록한 구독의 화면 이름", () => {
-  it("서비스 목록의 이름 그대로면 지금 언어로 보인다(어느 언어로 저장했든)", () => {
+  it("영어 화면은 서비스 목록의 한국어 이름 그대로인 구독을 영문으로 보인다", () => {
     expect(subscriptionName({ name: "넷플릭스" }, "en")).toBe("Netflix");
-    expect(subscriptionName({ name: "Netflix" }, "ko")).toBe("넷플릭스");
+    expect(subscriptionName({ name: "Netflix" }, "en")).toBe("Netflix");
+  });
+
+  it("한국어 화면은 적힌 이름 그대로다 — 영문으로 적은 이름을 한국어로 바꾸지 않는다", () => {
+    expect(subscriptionName({ name: "Netflix" }, "ko")).toBe("Netflix");
     expect(subscriptionName({ name: "멜론" }, "ko")).toBe("멜론");
   });
 
