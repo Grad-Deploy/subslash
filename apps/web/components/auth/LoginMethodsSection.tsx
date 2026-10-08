@@ -8,6 +8,7 @@ import { apiFetch, apiUrl } from "@lib/api";
 import { appReturnScheme, leaveForExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { oauthErrorMessageFrom } from "@lib/oauth-messages";
+import { useLatestT } from "@lib/i18n";
 import { providerLabel } from "@lib/oauth-providers";
 import { isKakaoNativeAvailable, kakaoNativeLogin } from "@lib/kakao-native";
 
@@ -52,6 +53,7 @@ export function LoginMethodsSection() {
   const [methods, setMethods] = useState<Methods | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const latest = useLatestT();
 
   const load = async () => setMethods(await fetchMethods());
 
@@ -60,24 +62,22 @@ export function LoginMethodsSection() {
     // 웹에서 제공자에 다녀온 결과. 읽은 뒤 주소에서 지워 새로고침에 다시 뜨지 않게 한다.
     const search = new URLSearchParams(window.location.search);
     const linked = search.get("oauthLinked");
-    const failed = oauthErrorMessageFrom(search);
-    const returned: Notice = linked
-      ? { tone: "ok", message: linkedMessage(linked) }
-      : failed
-        ? { tone: "error", message: failed }
-        : null;
-    if (returned) router.replace("/me");
+    const returnedFailure = search.has("oauthError");
+    if (linked || returnedFailure) router.replace("/me");
     let cancelled = false;
     // 결과는 목록과 함께 그린다.
     void fetchMethods().then((next) => {
       if (cancelled) return;
       setMethods(next);
-      if (returned) setNotice(returned);
+      // 응답을 받은 뒤에 문구를 붙인다 — 그때는 화면 언어가 정해져 있다.
+      const failed = oauthErrorMessageFrom(search, latest.current.oauth);
+      if (linked) setNotice({ tone: "ok", message: linkedMessage(linked) });
+      else if (failed) setNotice({ tone: "error", message: failed });
     });
     return () => {
       cancelled = true;
     };
-  }, [account, router]);
+  }, [account, router, latest]);
 
   if (loading || !account || !methods || methods.providers.length === 0) return null;
 
@@ -96,7 +96,10 @@ export function LoginMethodsSection() {
       setBusy(null);
       if (outcome.status === "ok") setNotice({ tone: "ok", message: linkedMessage("kakao") });
       if (outcome.status === "error") {
-        setNotice({ tone: "error", message: oauthErrorMessageFrom(outcome.result) ?? "" });
+        setNotice({
+          tone: "error",
+          message: oauthErrorMessageFrom(outcome.result, latest.current.oauth) ?? "",
+        });
       }
       await load();
       return;
@@ -125,7 +128,7 @@ export function LoginMethodsSection() {
       leaveForExternal(apiUrl(`${data.path}&client=app${returnParam}`), (result) => {
         setBusy(null);
         const linked = result?.get("oauthLinked");
-        const failed = result ? oauthErrorMessageFrom(result) : null;
+        const failed = result ? oauthErrorMessageFrom(result, latest.current.oauth) : null;
         if (linked) setNotice({ tone: "ok", message: linkedMessage(linked) });
         else if (failed) setNotice({ tone: "error", message: failed });
         void load();

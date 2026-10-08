@@ -1,12 +1,11 @@
 import { Currency, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
-import { formatAmount, formatKRW, getBilledAmount } from "./currency";
-import { formatDday, getDaysUntilBillingFor, getDaysUntilTrialEnd } from "./date";
+import { getBilledAmount } from "./currency";
+import { getDaysUntilBillingFor, getDaysUntilTrialEnd } from "./date";
 import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
-import { formatKillCheckDate, getKillCheckStatus } from "./killCheck";
-import { getLowUsageBillingMessage } from "./metaphor";
-import { describeCheckIn } from "./valueMetric";
+import { getKillCheckStatus } from "./killCheck";
+import { getLowUsageBillingFigures, type MetaphorKey } from "./metaphor";
 import { isResubscribeReminderDue } from "./killRecord";
 
 /**
@@ -73,6 +72,63 @@ export type ActionVerb =
   | "confirm-cancel"
   | "review-resubscribe";
 
+/** 마지막 체크인에서 문장에 쓰는 값. 지표마다 말이 달라 화면이 `describeCheckIn`으로 문장을 만든다. */
+export type CheckInFigures = Pick<UsageLog, "metric" | "usageCount" | "costPerUse">;
+
+/**
+ * 그 줄이 왜 떴는지. 문장이 아니라 문장에 들어갈 값이다 — 이 모듈은 서버도 쓰므로 한 언어의 문장을 만들지 않고,
+ * 화면이 언어에 맞게 문장으로 바꾼다. 금액은 원화로 바꾼 값(`stakeKRW`)과 구독 통화 값을 구분해 둔다.
+ */
+export type ActionReason =
+  | { type: "charged-after-kill"; chargedAt: string; amount: number | null; currency: Currency }
+  | { type: "trial-ending"; daysLeft: number; endsAt: string; stakeKRW: number }
+  | { type: "cancel-notice"; noticeAt: string }
+  | {
+      type: "billing-soon-risky";
+      days: number;
+      checkIn: CheckInFigures;
+      currency: Currency;
+      stakeKRW: number | null;
+    }
+  | {
+      type: "low-usage-billing-soon";
+      days: number;
+      usageCount: number;
+      amount: number;
+      currency: Currency;
+      item: MetaphorKey;
+      /** 소비재 몇 개 값인지. */
+      count: number;
+    }
+  | {
+      type: "billing-soon";
+      days: number;
+      stakeKRW: number | null;
+      /** 마지막 체크인이 며칠 전인지. 체크인한 적이 없으면 null. */
+      sinceCheckIn: number | null;
+      hasCheckIn: boolean;
+    }
+  | {
+      type: "verify-kill";
+      billingDate: Date;
+      sameYear: boolean;
+      amount: number;
+      currency: Currency;
+    }
+  | {
+      type: "amount-changed";
+      observedAt: string;
+      observed: number;
+      billed: number;
+      currency: Currency;
+    }
+  | { type: "risky"; checkIn: CheckInFigures; currency: Currency }
+  | { type: "never-checked-in" }
+  | { type: "stale-check-in"; daysAgo: number }
+  | { type: "price-check"; amount: number; currency: Currency; taxExcluded: boolean }
+  | { type: "missing-billing-month" }
+  | { type: "resubscribe-reminder"; remindOn: string };
+
 export interface ActionItem {
   subscriptionId: string;
   name: string;
@@ -81,8 +137,8 @@ export interface ActionItem {
   /** 직접 등록한 구독의 아이콘 타일 색(`Subscription.iconColor`). */
   iconColor?: string;
   kind: ActionKind;
-  /** 왜 이 줄이 떴는지, 한 문장. */
-  reason: string;
+  /** 왜 이 줄이 떴는지. 문장은 화면이 만든다. */
+  reason: ActionReason;
   /** 이 줄의 주 버튼이 할 일. */
   verb: ActionVerb;
   /** 다음 결제까지 남은 일수. 계산할 수 없으면 null. */
@@ -215,9 +271,7 @@ export function getActionQueue(
         iconColor: sub.iconColor,
         kind: "cancel-notice",
         // 제목의 낱말로 가린 알림이라 해지했다고 말하지 않는다. 사용자가 안다.
-        reason:
-          `${sub.cancelNoticeAt}에 해지·취소 알림 메일이 왔습니다. 해지했다면 기록해 주세요. ` +
-          "요금제 변경이나 환불 안내일 수도 있어요.",
+        reason: { type: "cancel-notice", noticeAt: sub.cancelNoticeAt },
         verb: VERB["cancel-notice"],
         daysUntilBilling: null,
         amountAtStake: null,
@@ -240,9 +294,12 @@ export function getActionQueue(
         iconEmoji: sub.iconUrl,
         iconColor: sub.iconColor,
         kind: "trial-ending",
-        reason:
-          `${formatDday(trialDays)} · 무료 체험이 ${sub.trialEndsAt}에 끝납니다. ` +
-          `그대로 두면 ${formatKRW(stake)}부터 결제가 시작됩니다.`,
+        reason: {
+          type: "trial-ending",
+          daysLeft: trialDays,
+          endsAt: sub.trialEndsAt ?? "",
+          stakeKRW: stake,
+        },
         verb: VERB["trial-ending"],
         daysUntilBilling: trialDays,
         amountAtStake: stake,
@@ -260,13 +317,15 @@ export function getActionQueue(
     const stake = days === null ? null : chargeAtStakeKRW(sub, rate);
     // 체크인의 1회당 단가는 구독 자체의 통화로 기록된다. 달러 구독에 ₩를
     // 붙이면 $10이 "₩10"으로 읽힌다.
-    // 마지막 체크인 한 줄. 지표마다 말이 다르다('3회 이용 · 1회당 ₩5,000', '30일 중 2일 사용 · 하루당 …').
-    const checkInText = log ? describeCheckIn(log, sub.currency) : "";
+    // 마지막 체크인. 지표마다 말이 다르다('3회 이용 · 1회당 ₩5,000', '30일 중 2일 사용 · 하루당 …').
+    const checkIn: CheckInFigures | null = log
+      ? { metric: log.metric, usageCount: log.usageCount, costPerUse: log.costPerUse }
+      : null;
     const sinceCheckIn = log ? daysSince(log.checkedAt, now) : null;
     const checkedInRecently = sinceCheckIn !== null && sinceCheckIn < RECENT_CHECK_IN_DAYS;
 
     let kind: ActionKind;
-    let reason: string;
+    let reason: ActionReason;
 
     // 결제 메일에 찍힌 금액이 등록된 청구액과 달랐다. 결제가 코앞인 것 다음으로 급하다 —
     // 돈의 크기가 달라졌다는 사실이라, "오래됐으니 확인해 달라"보다 앞이다.
@@ -275,9 +334,13 @@ export function getActionQueue(
 
     if (billingSoon && isRisky) {
       kind = "billing-soon-risky";
-      reason =
-        `${formatDday(days!)} · 마지막 체크인: ${checkInText}` +
-        (stake !== null ? `. 결제 전에 끊으면 ${formatKRW(stake)}을 지킵니다.` : ".");
+      reason = {
+        type: "billing-soon-risky",
+        days: days!,
+        checkIn: checkIn!,
+        currency: sub.currency,
+        stakeKRW: stake,
+      };
     } else if (
       billingSoon &&
       days !== null &&
@@ -290,40 +353,55 @@ export function getActionQueue(
     ) {
       // 결제 D-3 이내 + 최근 체크인 사용량 2회 이하: 저사용 경고 (메타포 포함)
       kind = "low-usage-billing-soon";
-      reason = getLowUsageBillingMessage(sub, log.usageCount, days, rate);
+      reason = {
+        type: "low-usage-billing-soon",
+        days,
+        usageCount: log.usageCount,
+        ...getLowUsageBillingFigures(sub, rate),
+      };
     } else if (billingSoon && !checkedInRecently) {
       // '곧 결제'의 할 일은 체크인이다. 최근에 체크인했으면 다시 묻지 않고, 아래의 다른 이유(금액이
       // 달라짐, 요금 확인 등)가 있으면 그쪽을 보인다.
       kind = "billing-soon";
-      reason = log
-        ? `${formatDday(days!)} · ${stake !== null ? `${formatKRW(stake)}이 곧 빠져나갑니다.` : "곧 결제됩니다."}` +
-          (sinceCheckIn !== null
-            ? ` 마지막 체크인이 ${sinceCheckIn}일 전이라 결제 전에 다시 확인해 보세요.`
-            : "")
-        : `${formatDday(days!)} · 아직 체크인한 적이 없어, 끊을지 판단할 근거가 없습니다.`;
+      reason = {
+        type: "billing-soon",
+        days: days!,
+        stakeKRW: stake,
+        sinceCheckIn,
+        hasCheckIn: log !== undefined,
+      };
     } else if (observed !== null) {
       kind = "amount-changed";
       // 요금표를 조회하지 않으므로 "올랐다"고 말하지 않는다. 두 숫자를 나란히 놓을 뿐이다.
-      reason =
-        `${sub.observedAmountAt} 결제 메일에는 ${formatAmount(observed, sub.currency)}이 찍혔는데, ` +
-        `등록된 청구액은 ${formatAmount(getBilledAmount(sub), sub.currency)}입니다. 어느 쪽이 맞는지 확인해 주세요.`;
+      reason = {
+        type: "amount-changed",
+        observedAt: sub.observedAmountAt!,
+        observed,
+        billed: getBilledAmount(sub),
+        currency: sub.currency,
+      };
     } else if (isRisky) {
       kind = "risky";
-      reason = `마지막 체크인: ${checkInText}. 돈값을 못 하고 있습니다.`;
+      reason = { type: "risky", checkIn: checkIn!, currency: sub.currency };
     } else if (sub.billingCycle === "yearly" && typeof sub.billingMonth !== "number") {
       kind = "missing-billing-month";
-      reason = "연간 결제인데 결제 월이 없어 D-day도, 지킨 금액도 계산할 수 없습니다.";
+      reason = { type: "missing-billing-month" };
     } else if (!log) {
       kind = "never-checked-in";
-      reason = "아직 체크인한 적이 없습니다. 얼마나 썼는지 모르면 끊을지 판단할 수 없습니다.";
+      reason = { type: "never-checked-in" };
     } else {
       if (sinceCheckIn !== null && sinceCheckIn >= STALE_CHECK_IN_DAYS) {
         kind = "stale-check-in";
-        reason = `마지막 체크인이 ${sinceCheckIn}일 전입니다. 그 사이 사용 습관이 달라졌을 수 있습니다.`;
+        reason = { type: "stale-check-in", daysAgo: sinceCheckIn };
       } else if (priceChecks.has(sub.id)) {
         kind = "price-check";
         // 가격 확인은 요금표 가격끼리 비교한다. 세금이 따로 붙는 구독이면 그렇다고 적는다.
-        reason = `등록된 금액이 ${formatAmount(sub.amount, sub.currency)}${sub.taxRate ? "(세금 별도)" : ""}입니다. 지금도 맞는지 확인해주세요.`;
+        reason = {
+          type: "price-check",
+          amount: sub.amount,
+          currency: sub.currency,
+          taxExcluded: Boolean(sub.taxRate),
+        };
       } else {
         // 급한 일이 없는 구독은 큐에 올리지 않는다.
         continue;
@@ -350,19 +428,18 @@ export function getActionQueue(
   for (const sub of subscriptions) {
     if (sub.status !== "killed" || !sub.chargedAfterKillAt) continue;
 
-    const charged =
-      typeof sub.chargedAfterKillAmount === "number"
-        ? formatAmount(sub.chargedAfterKillAmount, sub.currency)
-        : null;
     items.push({
       subscriptionId: sub.id,
       name: sub.name,
       iconEmoji: sub.iconUrl,
       iconColor: sub.iconColor,
       kind: "charged-after-kill",
-      reason:
-        `해지로 기록한 뒤인 ${sub.chargedAfterKillAt}에 결제 메일이 왔습니다` +
-        `${charged ? ` (${charged})` : ""}. 해지가 안 됐을 수 있으니 다시 확인해 주세요.`,
+      reason: {
+        type: "charged-after-kill",
+        chargedAt: sub.chargedAfterKillAt,
+        amount: typeof sub.chargedAfterKillAmount === "number" ? sub.chargedAfterKillAmount : null,
+        currency: sub.currency,
+      },
       verb: VERB["charged-after-kill"],
       daysUntilBilling: null,
       amountAtStake: null,
@@ -386,9 +463,13 @@ export function getActionQueue(
       iconEmoji: sub.iconUrl,
       iconColor: sub.iconColor,
       kind: "verify-kill",
-      reason:
-        `해지 후 첫 결제일 ${formatKillCheckDate(check.billingDate, now)}이 지났습니다. ` +
-        `그날 ${formatAmount(getBilledAmount(sub), sub.currency)}이 결제됐나요? 결제 문자나 카드 내역에서 확인해 주세요.`,
+      reason: {
+        type: "verify-kill",
+        billingDate: check.billingDate,
+        sameYear: check.billingDate.getFullYear() === now.getFullYear(),
+        amount: getBilledAmount(sub),
+        currency: sub.currency,
+      },
       verb: "verify-kill",
       daysUntilBilling: null,
       amountAtStake: null,
@@ -409,9 +490,7 @@ export function getActionQueue(
       iconEmoji: sub.iconUrl,
       iconColor: sub.iconColor,
       kind: "resubscribe-reminder",
-      reason:
-        `해지할 때 ${sub.resubscribeRemindOn}에 다시 알려 달라고 하셨어요. ` +
-        "다시 쓸 때가 됐는지 살펴보세요. 필요 없으면 알림만 지우면 돼요.",
+      reason: { type: "resubscribe-reminder", remindOn: sub.resubscribeRemindOn ?? "" },
       verb: VERB["resubscribe-reminder"],
       daysUntilBilling: null,
       amountAtStake: null,

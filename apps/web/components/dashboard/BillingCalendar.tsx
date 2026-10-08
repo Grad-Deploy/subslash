@@ -18,8 +18,7 @@ import {
   type BillingMonth,
 } from "@lib/billing-calendar";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
-
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+import { useT } from "@lib/i18n";
 
 /**
  * 이번 달 어느 날에 무엇이 빠져나가는지 달력으로 보여준다. '다가오는 결제' 목록을 대신한다 —
@@ -40,6 +39,7 @@ export function BillingCalendar({
   now: Date;
 }) {
   const rate = useExchangeRate();
+  const c = useT().overview.calendar;
   const [view, setView] = useState(() => ({ year: now.getFullYear(), month: now.getMonth() }));
   // null이면 아직 아무 날도 고르지 않은 것이다. 달을 넘기면 다시 null로 돌아간다.
   const [pickedDay, setPickedDay] = useState<number | null>(null);
@@ -84,7 +84,7 @@ export function BillingCalendar({
     >
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="billing-calendar" className="text-sm font-bold">
-          결제 캘린더
+          {c.title}
         </h2>
         <div className="flex items-center gap-1">
           {!isThisMonth && (
@@ -93,24 +93,24 @@ export function BillingCalendar({
               onClick={goToday}
               className="rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted"
             >
-              이번 달
+              {c.thisMonth}
             </button>
           )}
           <button
             type="button"
             onClick={() => goMonth(-1)}
-            aria-label="이전 달"
+            aria-label={c.prevMonth}
             className="rounded-lg px-2 py-1 text-muted-foreground hover:bg-muted"
           >
             ‹
           </button>
           <span className="min-w-[6.5rem] text-center text-xs font-semibold tabular-nums">
-            {view.year}년 {view.month + 1}월
+            {c.monthLabel(view.year, view.month + 1)}
           </span>
           <button
             type="button"
             onClick={() => goMonth(1)}
-            aria-label="다음 달"
+            aria-label={c.nextMonth}
             className="rounded-lg px-2 py-1 text-muted-foreground hover:bg-muted"
           >
             ›
@@ -119,7 +119,7 @@ export function BillingCalendar({
       </header>
 
       <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-muted-foreground">
-        {WEEKDAYS.map((label) => (
+        {c.weekdays.map((label) => (
           <div key={label}>{label}</div>
         ))}
       </div>
@@ -142,8 +142,8 @@ export function BillingCalendar({
               aria-pressed={isSelected}
               aria-label={
                 subs
-                  ? `${view.month + 1}월 ${day}일, 결제 ${subs.length}건`
-                  : `${view.month + 1}월 ${day}일, 결제 없음`
+                  ? c.dayWithCount(view.month + 1, day, subs.length)
+                  : c.dayNone(view.month + 1, day)
               }
               onClick={() => setPickedDay(day)}
               className={[
@@ -185,23 +185,21 @@ export function BillingCalendar({
 
       <footer className="space-y-1 border-t pt-3 text-xs">
         {active.length === 0 ? (
-          <p className="text-muted-foreground">
-            등록한 구독이 없어요. 구독을 등록하면 결제일이 달력에 찍혀요.
-          </p>
+          <p className="text-muted-foreground">{c.noSubscriptions}</p>
         ) : month.billingCount === 0 ? (
-          <p className="text-muted-foreground">이 달에 청구되는 구독이 없습니다.</p>
+          <p className="text-muted-foreground">{c.noneThisMonth}</p>
         ) : (
           <p className="text-muted-foreground">
-            이 달 결제 {month.days.size}일 · {month.billingCount}건 ·{" "}
+            {c.summary(month.days.size, month.billingCount)}
             <strong className="text-foreground">{formatKRW(month.totalKRW)}</strong>
-            {selectedSubs.length === 0 && " — 점이 있는 날짜를 누르면 무엇이 나가는지 봅니다"}
+            {selectedSubs.length === 0 && c.pickHint}
           </p>
         )}
         {month.undatedCount > 0 && (
           <p className="text-amber-700 dark:text-amber-400">
-            결제 월 미설정 {month.undatedCount}건은 날짜를 몰라 찍지 못했습니다 —{" "}
+            {c.undated(month.undatedCount)}
             <Link href="/subs" className="font-semibold underline underline-offset-2">
-              연간 구독의 결제 월 적기
+              {c.undatedLink}
             </Link>
           </p>
         )}
@@ -224,6 +222,7 @@ function SelectedDay({
   now: Date;
   rate: number;
 }) {
+  const c = useT().overview.calendar;
   // 날짜끼리만 뺀다. 시각이 섞이면 같은 날인데 D-1로 보이는 일이 생긴다.
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const target = new Date(month.year, month.monthIndex, day).getTime();
@@ -234,9 +233,7 @@ function SelectedDay({
   return (
     <div className="space-y-2 rounded-xl bg-muted/50 p-3">
       <p className="flex items-baseline justify-between gap-2 text-xs">
-        <span className="font-bold">
-          {month.monthIndex + 1}월 {day}일 결제
-        </span>
+        <span className="font-bold">{c.dayHeading(month.monthIndex + 1, day)}</span>
         <span className="font-mono text-muted-foreground">{formatDday(daysAway)}</span>
       </p>
       <ul className="space-y-1.5">
@@ -263,8 +260,9 @@ function SelectedDay({
       </ul>
       {subs.length > 1 && (
         <p className="border-t pt-2 text-right text-xs text-muted-foreground">
-          합계 <strong className="text-foreground">{formatKRW(dayTotalKRW(subs, rate))}</strong>
-          {mixed && " (내 환율로 환산)"}
+          {c.total}{" "}
+          <strong className="text-foreground">{formatKRW(dayTotalKRW(subs, rate))}</strong>
+          {mixed && c.converted}
         </p>
       )}
     </div>

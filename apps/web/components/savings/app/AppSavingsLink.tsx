@@ -7,6 +7,7 @@ import { formatKRW, getSavingsTiers } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useStore } from "@lib/store";
 import { useExchangeRate } from "@hooks/useExchangeRate";
+import { useT } from "@lib/i18n";
 
 /**
  * 절약 현황(`/savings`)으로 가는 한 줄(앱). 앱은 하단 탭에 절약이 없고 리포트 맨 아래 링크로만 들어가서,
@@ -27,6 +28,7 @@ export function AppSavingsLink({
 }) {
   const subscriptions = useStore((state) => state.subscriptions);
   const rate = useExchangeRate();
+  const s = useT().appSmall.savings;
 
   // 숨긴 해지도 절약 현황에는 남으므로 함께 센다.
   const killed = subscriptions.filter((sub) => sub.status === "killed");
@@ -40,11 +42,11 @@ export function AppSavingsLink({
   // 지킨 돈이 아직 없을 때: 결제일이 지나 확인을 기다리는 돈이 있으면 그걸, 아니면 언제 쌓이는지 적는다.
   const detail =
     tiers.confirmed === 0 && tiers.pending > 0
-      ? `확인 대기 ${formatKRW(tiers.pending)}`
+      ? s.pending(formatKRW(tiers.pending))
       : tiers.confirmed === 0
-        ? "결제일이 지나면 쌓여요"
+        ? s.accrues
         : thisMonth > 0
-          ? `이번 달 +${formatKRW(thisMonth)}`
+          ? s.thisMonth(formatKRW(thisMonth))
           : null;
   const amount = (
     <b className="text-emerald-600 tabular-nums dark:text-emerald-400">
@@ -53,7 +55,7 @@ export function AppSavingsLink({
   );
   const go = (
     <span className="flex shrink-0 items-center text-xs font-bold text-muted-foreground">
-      절약 현황
+      {s.link}
       <ChevronRight className="size-3.5" aria-hidden />
     </span>
   );
@@ -66,10 +68,15 @@ export function AppSavingsLink({
       >
         <span className="min-w-0 text-[13px] font-bold break-keep">
           {tiers.confirmed > 0 ? (
-            <>해지해서 {amount} 지켰어요</>
+            <>
+              {s.keptBefore}
+              {amount}
+              {s.keptAfter}
+            </>
           ) : (
             <>
-              해지 {killed.length}개 · <span className="text-muted-foreground">{detail}</span>
+              {s.killedCount(killed.length)} ·{" "}
+              <span className="text-muted-foreground">{detail}</span>
             </>
           )}
         </span>
@@ -87,9 +94,10 @@ export function AppSavingsLink({
           className="-mx-1 flex items-center justify-between gap-3 rounded-xl bg-secondary px-3 py-2.5"
         >
           <span className="min-w-0">
-            <span className="block text-[12.5px] font-extrabold">해지로 지킨 돈</span>
+            <span className="block text-[12.5px] font-extrabold">{s.kept}</span>
             <span className="block text-[11px] text-muted-foreground">
-              해지 {killed.length}개{detail && ` · ${detail}`}
+              {s.killedCount(killed.length)}
+              {detail && ` · ${detail}`}
             </span>
           </span>
           <span className="flex shrink-0 flex-col items-end">
@@ -110,7 +118,7 @@ export function AppSavingsLink({
       )}
     >
       <span className="min-w-0 text-xs font-bold">
-        해지로 지킨 돈 <span className="ml-1 text-sm font-black">{amount}</span>
+        {s.kept} <span className="ml-1 text-sm font-black">{amount}</span>
         {tiers.confirmed === 0 && detail && (
           <span className="mt-0.5 block text-[11px] font-medium text-muted-foreground">
             {detail}

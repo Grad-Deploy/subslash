@@ -19,27 +19,9 @@ export function formatCurrency(amount: number, currency: Currency): string {
   return `$${amount.toFixed(2)}`;
 }
 
-export function formatShockMessage(
-  serviceName: string,
-  amount: number,
-  usageCount: number,
-  currency: Currency,
-): string {
-  const formattedAmount = formatCurrency(amount, currency);
-
-  if (usageCount === 0) {
-    return `이번 달 ${formattedAmount}을 공중에 버리셨습니다. 지금 바로 킬(Kill) 스위치를 켜세요.`;
-  }
-
-  if (usageCount === 1) {
-    return `이번 달 ${serviceName} 1회를 ${formattedAmount}에 이용하셨습니다.`;
-  }
-
-  const costPerUseFormatted = formatCurrency(calculateCostPerUse(amount, usageCount), currency);
-  return `이번 달 ${serviceName} 1회당 ${costPerUseFormatted}을 지출하셨습니다.`;
-}
-
 export interface SavingsEquivalent {
+  /** Language-neutral id, so a screen can name the reward in its own language. */
+  key: "latte" | "chicken" | "dinner" | "trip";
   /** Reward name, e.g. "맛있는 치킨". */
   label: string;
   /** Korean counter word, e.g. "마리". */
@@ -55,10 +37,10 @@ export interface SavingsEquivalent {
  * can never claim more than the savings cover.
  */
 const REWARD_TIERS: ReadonlyArray<Omit<SavingsEquivalent, "count"> & { unitPrice: number }> = [
-  { label: "카페 라떼", unit: "잔", unitPrice: 5000 },
-  { label: "맛있는 치킨", unit: "마리", unitPrice: 20000 },
-  { label: "고급 레스토랑 저녁", unit: "회", unitPrice: 100000 },
-  { label: "가까운 해외 여행", unit: "회", unitPrice: 500000 },
+  { key: "latte", label: "카페 라떼", unit: "잔", unitPrice: 5000 },
+  { key: "chicken", label: "맛있는 치킨", unit: "마리", unitPrice: 20000 },
+  { key: "dinner", label: "고급 레스토랑 저녁", unit: "회", unitPrice: 100000 },
+  { key: "trip", label: "가까운 해외 여행", unit: "회", unitPrice: 500000 },
 ];
 
 /**
@@ -71,7 +53,8 @@ const REWARD_TIERS: ReadonlyArray<Omit<SavingsEquivalent, "count"> & { unitPrice
  */
 export function getSavingsEquivalents(annualSavings: number): SavingsEquivalent[] {
   return REWARD_TIERS.filter((tier) => annualSavings >= tier.unitPrice).map(
-    ({ label, unit, unitPrice }) => ({
+    ({ key, label, unit, unitPrice }) => ({
+      key,
       label,
       unit,
       count: Math.floor(annualSavings / unitPrice),

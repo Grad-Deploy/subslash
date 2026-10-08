@@ -7,6 +7,7 @@ import type { Subscription, UsageLog } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { useIsClient } from "@hooks/useIsClient";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 import { ExchangeRateNote } from "../../settings/ExchangeRateNote";
 import { useOverlayLock } from "@hooks/useOverlayLock";
 import { AppSavingsLink } from "../../savings/app/AppSavingsLink";
@@ -37,6 +38,7 @@ export function AppValueReceipt({
   onCheckIn,
 }: AppValueReceiptProps) {
   const [open, setOpen] = useState(false);
+  const r = useT().receipt;
   const rate = useExchangeRate();
   const data = buildValueReceipt(subscriptions, usageLogs, rate, now);
   const { active, summary } = data;
@@ -53,16 +55,16 @@ export function AppValueReceipt({
         </span>
         <div className="min-w-0">
           <h3 id="value-receipt-card" className="text-[14.5px] font-extrabold tracking-tight">
-            {now.getMonth() + 1}월 가성비 계산서
+            {r.title(now.getMonth() + 1)}
           </h3>
           <p className="text-[11px] text-muted-foreground">
-            구독 {active.length}개 · 체크인 {checkedCount}개
+            {r.summary(active.length, checkedCount)}
           </p>
         </div>
       </div>
       <dl className="mt-3 grid grid-cols-2 gap-2">
         <div className="rounded-xl bg-secondary px-2.5 py-2">
-          <dt className="text-[10.5px] text-muted-foreground">월 고정지출</dt>
+          <dt className="text-[10.5px] text-muted-foreground">{r.fixed}</dt>
           <dd className="font-mono text-[17px] font-black tracking-tight tabular-nums">
             {won(data.fixedKRW)}
           </dd>
@@ -70,23 +72,23 @@ export function AppValueReceipt({
         <div className="rounded-xl bg-secondary px-2.5 py-2">
           {summary.wastedKRW > 0 ? (
             <>
-              <dt className="text-[10.5px] text-muted-foreground">아낄 수 있는 돈</dt>
+              <dt className="text-[10.5px] text-muted-foreground">{r.savable}</dt>
               <dd className="font-mono text-[17px] font-black tracking-tight text-amber-700 tabular-nums dark:text-amber-400">
                 {won(summary.wastedKRW)}
               </dd>
             </>
           ) : summary.unknownItems.length > 0 ? (
             <>
-              <dt className="text-[10.5px] text-muted-foreground">체크인 필요</dt>
+              <dt className="text-[10.5px] text-muted-foreground">{r.needsCheckIn}</dt>
               <dd className="font-mono text-[17px] font-black tracking-tight tabular-nums">
-                {summary.unknownItems.length}개
+                {r.count(summary.unknownItems.length)}
               </dd>
             </>
           ) : (
             <>
-              <dt className="text-[10.5px] text-muted-foreground">뽕 뽑은 구독</dt>
+              <dt className="text-[10.5px] text-muted-foreground">{r.worth}</dt>
               <dd className="font-mono text-[17px] font-black tracking-tight text-emerald-700 tabular-nums dark:text-emerald-400">
-                {summary.worthItItems.length}개
+                {r.count(summary.worthItItems.length)}
               </dd>
             </>
           )}
@@ -99,7 +101,7 @@ export function AppValueReceipt({
         onClick={() => setOpen(true)}
         className="mt-2.5 h-11 w-full rounded-xl bg-primary text-[13px] font-extrabold text-primary-foreground"
       >
-        계산서 보기
+        {r.open}
       </button>
 
       <ReceiptSheet
@@ -132,12 +134,13 @@ function ReceiptSheet({
   onCancelGuide: (id: string, rest?: string[]) => void;
 }) {
   const isClient = useIsClient();
+  const t = useT();
 
   useOverlayLock(open, onClose);
 
   if (!open || !isClient) return null;
   const { summary } = data;
-  const { cancel, checkIn } = sheetActions(summary);
+  const { cancel, checkIn } = sheetActions(t, summary);
   return createPortal(
     <div className="fixed inset-0 z-50 flex h-[100dvh] items-end">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
@@ -155,7 +158,7 @@ function ReceiptSheet({
             className="absolute top-1.5 right-3 rounded-full p-1.5 text-muted-foreground hover:bg-secondary"
           >
             <X className="size-5" />
-            <span className="sr-only">닫기</span>
+            <span className="sr-only">{t.receipt.close}</span>
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">

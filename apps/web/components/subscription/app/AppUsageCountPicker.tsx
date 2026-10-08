@@ -11,6 +11,7 @@ import {
 } from "@subslash/shared";
 import { MetricQuantityInput } from "../MetricQuantityInput";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 import { IS_APP_BUILD } from "@lib/platform";
 
 // 폰 기록 한 줄(안드로이드 앱 전용). 이 막대는 웹의 첫 체크인 카드도 쓰므로 앱 빌드에서만 불러온다.
@@ -47,6 +48,7 @@ export function AppUsageCountPicker({
   value: number | null;
   onChange: (count: number) => void;
 }) {
+  const p = useT().checkin.picker;
   const [exact, setExact] = useState((value ?? 0) > MAX_STEP);
   // 10보다 큰 값(폰 기록으로 채운 값 등)은 막대로 나타낼 수 없어 입력 칸으로 바꾼다. 한 번 바꾸면
   // 고치는 동안 숫자가 10 아래로 내려가도 입력 칸을 유지한다(렌더 중 상태 맞추기).
@@ -126,14 +128,18 @@ export function AppUsageCountPicker({
           )}
         >
           {!exact && count >= MAX_STEP ? "10+" : count}
-          <span className="ml-0.5 text-[15px] font-extrabold">회</span>
+          <span className="ml-0.5 text-[15px] font-extrabold">{p.unit}</span>
         </p>
         <p className="min-h-4 text-xs text-muted-foreground">
           {value === null
-            ? "막대를 눌러 골라 주세요"
+            ? p.chooseBar
             : count === 0
-              ? "안 썼어요"
-              : `회당 ${spaced(formatCurrency(calculateCostPerUse(monthly, count), subscription.currency))}`}
+              ? p.notUsed
+              : p.perUse(
+                  spaced(
+                    formatCurrency(calculateCostPerUse(monthly, count), subscription.currency),
+                  ),
+                )}
         </p>
       </div>
 
@@ -147,10 +153,10 @@ export function AppUsageCountPicker({
               choose(Math.min(999, Number(e.target.value.replace(/[^0-9]/g, "")) || 0))
             }
             placeholder="0"
-            aria-label="사용 횟수"
+            aria-label={p.ariaLabel}
             className="min-w-0 flex-1 bg-transparent text-xl font-black tabular-nums outline-none placeholder:text-muted-foreground"
           />
-          <span className="text-sm font-bold text-muted-foreground">회</span>
+          <span className="text-sm font-bold text-muted-foreground">{p.unit}</span>
         </label>
       ) : (
         <>
@@ -158,11 +164,11 @@ export function AppUsageCountPicker({
             ref={trackRef}
             role="slider"
             tabIndex={0}
-            aria-label="사용 횟수"
+            aria-label={p.ariaLabel}
             aria-valuemin={0}
             aria-valuemax={MAX_STEP}
             aria-valuenow={shown}
-            aria-valuetext={shown === MAX_STEP ? "10회 이상" : `${shown}회`}
+            aria-valuetext={p.valueText(shown, shown === MAX_STEP)}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onKeyDown={onKeyDown}
@@ -179,7 +185,7 @@ export function AppUsageCountPicker({
                 className="absolute -top-1 -translate-x-1/2 rounded bg-foreground px-1 text-[9px] font-bold leading-4 text-background"
                 style={{ left: `${(Math.min(phoneOpens, MAX_STEP) / MAX_STEP) * 100}%` }}
               >
-                폰
+                {p.phone}
               </span>
             )}
             {Array.from({ length: MAX_STEP + 1 }, (_, i) => (
@@ -215,7 +221,7 @@ export function AppUsageCountPicker({
           onClick={() => setExact(true)}
           className="mx-auto mt-2 block text-xs text-muted-foreground underline underline-offset-4"
         >
-          10번 넘게 썼다면 직접 입력
+          {p.typeExact}
         </button>
       )}
 

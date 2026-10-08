@@ -1412,17 +1412,40 @@ export function yearlyDiscountOf(preset: ServicePreset, plan: ServicePlan): Year
  * 모르면 '요금 직접 입력'이다. 반올림하지 않는다 — ₩7,890을 '₩8k'로 적지 않는다. 요금제 목록이
  * 요금을 다 담지 못했으면(plansIncomplete) 가장 싼 값이라고 말할 수 없어 '부터' 대신 '등'이다.
  */
-export function describePresetPrice(preset: ServicePreset): string {
+export type PresetPriceParts =
+  /** 요금제가 여럿: 가장 싼 요금제부터. `incomplete`면 확인한 요금제만 적은 것이다. */
+  | { type: "plans"; cycle: BillingCycle; price: string; incomplete: boolean }
+  /** 요금을 확인하지 못해 사용자가 적는다. */
+  | { type: "ask" }
+  | { type: "monthly"; price: string };
+
+/** 서비스 목록의 가격 한 마디에 들어갈 값. 문장은 화면이 언어에 맞게 만든다. */
+export function presetPriceParts(preset: ServicePreset): PresetPriceParts {
   if (preset.plans && preset.plans.length > 0) {
     const monthly = preset.plans.filter((plan) => (plan.billingCycle ?? "monthly") === "monthly");
     const pool = monthly.length > 0 ? monthly : preset.plans;
     const cheapest = pool.reduce((min, plan) => (plan.amount < min.amount ? plan : min));
-    const cycle = (cheapest.billingCycle ?? "monthly") === "yearly" ? "연" : "월";
-    const price = formatCurrency(cheapest.amount, planCurrency(preset, cheapest));
-    return `${cycle} ${price}${preset.plansIncomplete ? " 등" : "부터"}`;
+    return {
+      type: "plans",
+      cycle: cheapest.billingCycle ?? "monthly",
+      price: formatCurrency(cheapest.amount, planCurrency(preset, cheapest)),
+      incomplete: Boolean(preset.plansIncomplete),
+    };
   }
-  if (preset.defaultAmount === null) return "요금 직접 입력";
-  return `월 ${formatCurrency(preset.defaultAmount, preset.currency)}`;
+  if (preset.defaultAmount === null) return { type: "ask" };
+  return { type: "monthly", price: formatCurrency(preset.defaultAmount, preset.currency) };
+}
+
+export function describePresetPrice(preset: ServicePreset): string {
+  const parts = presetPriceParts(preset);
+  switch (parts.type) {
+    case "plans":
+      return `${parts.cycle === "yearly" ? "연" : "월"} ${parts.price}${parts.incomplete ? " 등" : "부터"}`;
+    case "ask":
+      return "요금 직접 입력";
+    case "monthly":
+      return `월 ${parts.price}`;
+  }
 }
 
 export interface ReferencePrice {

@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import {
-  CATEGORY_LABELS,
   Subscription,
   type SubscriptionCategory,
   formatKRW,
@@ -13,12 +12,15 @@ import {
 } from "@subslash/shared";
 import { Card, CardContent } from "../ui/card";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
+import { useT } from "@lib/i18n";
 
 /** 이름을 적어 보여줄 분류 수. 나머지는 '외 N개 분류'로 묶는다. */
 const BREAKDOWN_LIMIT = 3;
 
 export function TotalSpend({ subscriptions }: { subscriptions: Subscription[] }) {
   const rate = useExchangeRate();
+  const t = useT();
+  const o = t.overview.totalSpend;
   const active = subscriptions.filter((sub) => sub.status === "active");
   // The headline is what leaves this user's pocket; the card charge is shown
   // underneath only when a shared plan makes the two differ.
@@ -62,31 +64,32 @@ export function TotalSpend({ subscriptions }: { subscriptions: Subscription[] })
     // 금액을 강조하는 옅은 그라데이션은 라이트·다크 모두 테마 색 안에서 둔다.
     <Card className="bg-gradient-to-br from-secondary to-card">
       <CardContent className="pt-6">
-        <div className="text-sm font-medium text-muted-foreground mb-2">월 고정지출</div>
+        <div className="text-sm font-medium text-muted-foreground mb-2">{o.title}</div>
         <div className="text-4xl font-bold text-foreground">{formatKRW(displayTotal)}</div>
         {inTrial.length > 0 && (
           <div className="mt-1.5 text-xs text-muted-foreground">
-            체험 중 {inTrial.length}건은 빼고 셉니다 · 끝나면 월 {formatKRW(trialTotal)}이
-            더해집니다
+            {o.inTrial(inTrial.length, formatKRW(trialTotal))}
           </div>
         )}
         {sharedCount > 0 && (
           <div className="mt-1.5 text-xs text-muted-foreground">
-            공유 구독 {sharedCount}건 반영 · 카드 청구액은 월 {formatKRW(billed)}
+            {o.shared(sharedCount, formatKRW(billed))}
           </div>
         )}
         {breakdown.length > 0 && (
           <ul
             className="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground"
-            aria-label="분류별 월 지출"
+            aria-label={o.byCategory}
           >
             {breakdown.slice(0, BREAKDOWN_LIMIT).map(({ category, amount }) => (
               <li key={category} className="whitespace-nowrap">
-                {CATEGORY_LABELS[category] ?? category} {formatKRW(amount)}
+                {t.value.category[category] ?? category} {formatKRW(amount)}
               </li>
             ))}
             {breakdown.length > BREAKDOWN_LIMIT && (
-              <li className="whitespace-nowrap">외 {breakdown.length - BREAKDOWN_LIMIT}개 분류</li>
+              <li className="whitespace-nowrap">
+                {o.moreCategories(breakdown.length - BREAKDOWN_LIMIT)}
+              </li>
             )}
           </ul>
         )}

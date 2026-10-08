@@ -6,6 +6,7 @@ import { useStore } from "@lib/store";
 import { CancelGuideModal } from "../components/subscription/CancelGuideModal";
 import { ConfirmDialog } from "../components/ui/confirm-dialog";
 import { useKillSeries } from "./useKillSeries";
+import { useLatestT, useT } from "@lib/i18n";
 
 /**
  * 대시보드의 '지금 결정할 것'(ActionQueue)과 계산서가 부르는 처리. 해지 안내·해지 확인·가격 확인·해지 알림
@@ -22,6 +23,9 @@ export function useDashboardActions(showToast: (message: string) => void) {
     dismissCancelNotice,
     confirmSubscriptionPrice,
   } = useStore();
+  // 토스트는 사용자가 누른 뒤에 뜨므로 지금 언어의 문구를 ref로 읽는다.
+  const tRef = useLatestT();
+  const t = useT();
   const [guideTarget, setGuideTarget] = useState<Subscription | null>(null);
   const [chargedTarget, setChargedTarget] = useState<Subscription | null>(null);
   // 앱 계산서에서 이어서 해지하기(hooks/useKillSeries).
@@ -36,7 +40,7 @@ export function useDashboardActions(showToast: (message: string) => void) {
 
   const confirmKill = (target: Subscription) => {
     killSubscription(target.id);
-    showToast(`${target.name} 해지 완료로 기록`);
+    showToast(tRef.current.actions.killRecorded(target.name));
     killSeries.advance(target);
   };
 
@@ -53,10 +57,11 @@ export function useDashboardActions(showToast: (message: string) => void) {
       const sub = findSub(id);
       if (!sub) return;
       confirmSubscriptionPrice(id, newAmount);
+      const a = tRef.current.actions;
       showToast(
         newAmount !== undefined
-          ? `${sub.name} 요금을 ${formatCurrency(newAmount, sub.currency)}으로 바꿨어요.`
-          : `${sub.name} 요금 확인 완료`,
+          ? a.priceUpdated(sub.name, formatCurrency(newAmount, sub.currency))
+          : a.priceConfirmed(sub.name),
       );
     },
     // 해지 뒤 첫 결제일에 결제가 없었다는 답만이 해지를 확인해 준다.
@@ -64,7 +69,7 @@ export function useDashboardActions(showToast: (message: string) => void) {
       const sub = findSub(id);
       if (!sub) return;
       confirmKillVerified(id);
-      showToast(`${sub.name} 결제 멈춤 확인`);
+      showToast(tRef.current.actions.killVerified(sub.name));
     },
     onKillCharged: (id: string) => {
       const sub = findSub(id);
@@ -75,7 +80,7 @@ export function useDashboardActions(showToast: (message: string) => void) {
       const sub = findSub(id);
       if (!sub) return;
       dismissCancelNotice(id);
-      showToast(`${sub.name}은(는) 구독 중으로 둘게요`);
+      showToast(tRef.current.actions.stillSubscribed(sub.name));
     },
   };
 
@@ -112,13 +117,13 @@ export function useDashboardActions(showToast: (message: string) => void) {
               reviveSubscription(chargedTarget.id);
               const revived = findSub(chargedTarget.id);
               if (revived) setGuideTarget(revived);
-              showToast(`${chargedTarget.name} 구독 중으로 되돌림`);
+              showToast(tRef.current.actions.revived(chargedTarget.name));
               setChargedTarget(null);
             }}
-            title="해지가 안 됐을 수 있어요"
-            description={`해지 후에도 결제됐다면 해지가 끝나지 않았을 수 있어요.\n구독 중으로 되돌리고 해지 가이드를 열어요.`}
-            confirmText="되돌리고 가이드 열기"
-            cancelText="취소"
+            title={t.actions.chargedTitle}
+            description={t.actions.chargedBody}
+            confirmText={t.actions.chargedConfirm}
+            cancelText={t.actions.cancel}
           />
         )}
       </>

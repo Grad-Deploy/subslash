@@ -2,7 +2,6 @@
 
 import React from "react";
 import {
-  CATEGORY_LABELS,
   formatCurrency,
   formatDday,
   getBilledAmount,
@@ -12,6 +11,7 @@ import {
 } from "@subslash/shared";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
+import { useT } from "@lib/i18n";
 import { ServiceLogo } from "../ServiceLogo";
 
 /**
@@ -34,6 +34,8 @@ export function SubscriptionSummaryCard({
   onRevive: () => void;
 }) {
   const Title = headingLevel;
+  const t = useT();
+  const s = t.detail.summary;
   const isKilled = sub.status === "killed";
   const daysLeft = getDaysUntilBillingFor(sub);
   // 연간 구독에 "매월 결제일"이라고 적으면 1년에 한 번인 결제가 매달 있는 것처럼 읽힌다.
@@ -41,10 +43,10 @@ export function SubscriptionSummaryCard({
   const trialDaysLeft = getDaysUntilTrialEnd(sub);
   const billingScheduleLabel =
     sub.billingCycle !== "yearly"
-      ? `매월 ${sub.billingDay}일 결제`
+      ? s.monthlyOn(sub.billingDay)
       : typeof sub.billingMonth === "number"
-        ? `매년 ${sub.billingMonth}월 ${sub.billingDay}일 결제`
-        : "연간 결제 · 결제 월 미설정";
+        ? s.yearlyOn(sub.billingMonth, sub.billingDay)
+        : s.yearlyUnset;
 
   return (
     <div className="@container p-6 border rounded-2xl bg-card shadow-sm space-y-4">
@@ -65,13 +67,15 @@ export function SubscriptionSummaryCard({
                 {sub.name}
               </Title>
               <Badge variant={isKilled ? "secondary" : "default"} className="whitespace-nowrap">
-                {isKilled ? "해지 완료" : "구독 중"}
+                {isKilled ? s.killed : s.active}
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              카테고리: {CATEGORY_LABELS[sub.category] ?? sub.category}
-              {sub.planName ? ` · 요금제: ${sub.planName}` : ""} · 결제 주기:{" "}
-              {sub.billingCycle === "yearly" ? "매년" : "매월"}
+              {s.meta(
+                t.value.category[sub.category] ?? sub.category,
+                sub.planName ?? null,
+                sub.billingCycle === "yearly" ? s.cycleYearly : s.cycleMonthly,
+              )}
             </p>
           </div>
         </div>
@@ -79,26 +83,25 @@ export function SubscriptionSummaryCard({
         <div className="@md:text-right">
           <div className="text-2xl font-extrabold text-foreground">
             <span className="text-sm font-semibold text-muted-foreground">
-              {sub.billingCycle === "yearly" ? "연 " : "월 "}
+              {sub.billingCycle === "yearly" ? s.perYear : s.perMonth}
             </span>
             {formatCurrency(getBilledAmount(sub), sub.currency)}
           </div>
           {/* 카드에 찍히는 금액이 등록한 요금과 다른 이유를 적는다. */}
           {sub.taxRate ? (
             <div className="text-xs text-muted-foreground">
-              요금 {formatCurrency(sub.amount, sub.currency)} + 부가세 {sub.taxRate}%
+              {s.withTax(formatCurrency(sub.amount, sub.currency), sub.taxRate)}
             </div>
           ) : null}
           {sub.billingCycle === "yearly" && (
             <div className="text-xs text-muted-foreground">
-              월 {formatCurrency(getBilledAmount(sub) / 12, sub.currency)}꼴
+              {s.monthlyEquiv(formatCurrency(getBilledAmount(sub) / 12, sub.currency))}
             </div>
           )}
           <div className="text-xs text-muted-foreground">{billingScheduleLabel}</div>
           {trialDaysLeft !== null && (
             <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-              무료 체험 중 · {sub.trialEndsAt} 종료({formatDday(trialDaysLeft)}) · 그때까지 지출에서
-              빼요
+              {s.trial(sub.trialEndsAt ?? "", formatDday(trialDaysLeft))}
             </div>
           )}
         </div>
@@ -107,27 +110,27 @@ export function SubscriptionSummaryCard({
       {!isKilled ? (
         <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t">
           <div className="text-sm font-medium">
-            다음 결제까지:{" "}
+            {s.nextBilling}
             {daysLeft === null ? (
-              <span className="font-bold text-muted-foreground">결제 월 미설정</span>
+              <span className="font-bold text-muted-foreground">{s.monthUnset}</span>
             ) : (
               <span className="font-bold text-destructive">{formatDday(daysLeft)}</span>
             )}
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={onCheckIn}>
-              이용 횟수 체크인
+              {s.checkIn}
             </Button>
             <Button size="sm" variant="destructive" onClick={onKill}>
-              지금 해지하기
+              {s.kill}
             </Button>
           </div>
         </div>
       ) : (
         <div className="pt-2 flex items-center justify-between border-t text-sm">
-          <span className="text-muted-foreground">해지한 구독입니다.</span>
+          <span className="text-muted-foreground">{s.killedNote}</span>
           <Button size="sm" variant="outline" onClick={onRevive}>
-            다시 구독 중으로 변경
+            {s.revive}
           </Button>
         </div>
       )}

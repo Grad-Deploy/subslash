@@ -1,11 +1,8 @@
 "use client";
 
-import {
-  CATEGORY_LABELS,
-  ServicePreset,
-  type SubscriptionCategory,
-  describePresetPrice,
-} from "@subslash/shared";
+import { ServicePreset, type SubscriptionCategory } from "@subslash/shared";
+import { useT } from "@lib/i18n";
+import { describePresetPriceText } from "@lib/i18n/preset-price";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
 import { ServiceLogo } from "../ServiceLogo";
@@ -58,6 +55,8 @@ export function ServicePicker({
   onPick: (service: ServicePreset) => void;
   onCustom: () => void;
 }) {
+  const t = useT();
+  const f = t.form.picker;
   const keyword = query.trim().toLowerCase();
   // 검색어가 있으면 고른 분류와 상관없이 전체에서 찾는다. 분류를 잘못 고른 채
   // 검색하면 목록에 있는 서비스도 '없다'고 보이기 때문이다.
@@ -78,14 +77,14 @@ export function ServicePicker({
   return (
     <div className="space-y-3 text-left">
       <Input
-        placeholder="서비스 이름 검색 (예: 넷플릭스)"
-        aria-label="서비스 이름 검색"
+        placeholder={f.searchPlaceholder}
+        aria-label={f.searchLabel}
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
       />
 
       {/* 분류로 좁혀 스크롤 없이 찾게 한다. 검색 중에는 어느 탭도 켜져 있지 않다. */}
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label="서비스 분류">
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label={f.categoryLabel}>
         {tabs.map((tab) => {
           const active = !keyword && category === tab;
           return (
@@ -103,7 +102,7 @@ export function ServicePicker({
                   : "rounded-full border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
               }
             >
-              {tab === "all" ? "전체" : tab === "bundle" ? "결합 상품" : CATEGORY_LABELS[tab]}
+              {tab === "all" ? f.all : tab === "bundle" ? f.bundle : t.value.category[tab]}
               <span className="ml-1 text-[10px] opacity-70">{countOf(tab)}</span>
             </button>
           );
@@ -123,7 +122,7 @@ export function ServicePicker({
               <span className="min-w-0">
                 <span className="block text-xs font-bold truncate">{service.nameKo}</span>
                 <span className="block text-[11px] text-muted-foreground">
-                  {describePresetPrice(service)}
+                  {describePresetPriceText(t, service)}
                 </span>
               </span>
             </button>
@@ -131,7 +130,7 @@ export function ServicePicker({
         </div>
       ) : (
         <p className="text-xs text-muted-foreground p-3 border border-dashed rounded-xl text-center">
-          &lsquo;{query.trim()}&rsquo;은(는) 목록에 없어요. 직접 입력하세요.
+          {f.notFound(query.trim())}
         </p>
       )}
 
@@ -141,7 +140,7 @@ export function ServicePicker({
         className="w-full h-11 font-semibold"
         onClick={onCustom}
       >
-        {keyword ? `'${query.trim()}' 직접 입력하기` : "목록에 없는 서비스 직접 입력"}
+        {keyword ? f.customWith(query.trim()) : f.custom}
       </Button>
     </div>
   );

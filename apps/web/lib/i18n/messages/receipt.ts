@@ -1,0 +1,178 @@
+import type { Widen } from "../types";
+
+const EN_MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+const monthName = (month: number) => EN_MONTHS[Number(month) - 1] ?? String(month);
+/** 문구 검사가 글자를 넘기기도 해서 숫자로 바꿔 비교한다. */
+const one = (n: number) => Number(n) === 1;
+
+/** 월간 가성비 리포트(웹)와 가성비 계산서(앱), 대시보드에서 쓰는 해지·가격 확인 처리의 알림. */
+export const ko = {
+  report: {
+    title: (month: number) => `${month}월 구독 가성비 리포트`,
+    totalSpend: "총 구독 지출",
+    worth: "뽕 뽑은 구독",
+    wasted: "줄일 수 있는 지출 (쉬어가기 추천)",
+    unknown: "판단 불가",
+    noRecord: "기록 없음",
+    needsCheckIn: "체크인 필요",
+    cancelGuide: "지출 줄이기 (해지 안내) →",
+    checkIn: "체크인하기",
+    unusedThisMonth: "이번 달 미사용 · 쉬어가기 추천",
+    diet: (checkIn: string) => `${checkIn} · 지출 다이어트 추천`,
+    suggestOne: (name: string, item: string, amount: string) =>
+      `이번 달 ${name}을(를) 잠시 쉬어가면 ${item} 값(${amount})을 아낄 수 있어요.`,
+    suggestMany: (item: string, amount: string) =>
+      `자주 쓰지 않는 구독을 정리하면 매달 ${item} 값(${amount})을 내 지갑에 세이브할 수 있어요.`,
+  },
+  receipt: {
+    title: (month: number) => `${month}월 가성비 계산서`,
+    summary: (subs: number, checked: number) => `구독 ${subs}개 · 체크인 ${checked}개`,
+    fixed: "월 고정지출",
+    savable: "아낄 수 있는 돈",
+    needsCheckIn: "체크인 필요",
+    worth: "뽕 뽑은 구독",
+    count: (n: number) => `${n}개`,
+    open: "계산서 보기",
+    close: "닫기",
+    asOf: (date: string, subs: number) => `${date} 기준 · 구독 ${subs}개`,
+    sectionWorth: "뽕 뽑은 구독",
+    sectionWasted: "쉬어가도 될 구독",
+    sectionUnknown: "체크인 필요",
+    actionCancel: "해지 안내",
+    actionCheckIn: "체크인",
+    inTrial: " · 체험 중",
+    more: (n: number) => `외 ${n}개`,
+    subtotal: "소계",
+    collapse: "접기",
+    expand: (hidden: number) => `계산서 펼치기 · ${hidden}줄 더`,
+    byCategory: "분류별",
+    subTotal: "구독 합계",
+    trial: (n: number) => `체험 중 ${n}개 (끝나면 더해져요)`,
+    shared: (n: number, billed: string) =>
+      `공유 구독 ${n}개는 내 몫으로 셌어요 · 카드 청구액 월 ${billed}`,
+    detailUnknown: "얼마나 썼는지 몰라요",
+    detailUnused: "이번 달 미사용",
+    detailUses: (count: number, unit: string) => `${count}회 · 회당 ${unit}`,
+    footerNoCheckIn: "이번 달에 몇 번 썼는지 알려주면 회당 단가를 계산해 드려요.",
+    footerMore: "체크인할수록 계산이 정확해져요.",
+    cancelFrom: (name: string, many: boolean) => `${name}${many ? "부터" : ""} 해지 안내`,
+    checkInFrom: (name: string, many: boolean) => `${name}${many ? "부터" : ""} 체크인`,
+  },
+  series: {
+    doneTitle: (count: number) => `구독 ${count}개를 정리했어요`,
+    doneBefore: "매달",
+    doneAfter: "을 아껴요",
+    nextTitle: "다음 구독도 정리할까요?",
+    nextHint: (remaining: number) =>
+      `쉬어가도 될 구독${remaining > 0 ? ` · 이 다음에 ${remaining}개 더` : " · 마지막"}`,
+    next: "이어서 해지 안내 열기",
+    stop: "그만하기",
+    perMonth: "/월",
+  },
+  actions: {
+    killRecorded: (name: string) => `${name} 해지 완료로 기록`,
+    priceUpdated: (name: string, amount: string) => `${name} 요금을 ${amount}으로 바꿨어요.`,
+    priceConfirmed: (name: string) => `${name} 요금 확인 완료`,
+    killVerified: (name: string) => `${name} 결제 멈춤 확인`,
+    stillSubscribed: (name: string) => `${name}은(는) 구독 중으로 둘게요`,
+    revived: (name: string) => `${name} 구독 중으로 되돌림`,
+    chargedTitle: "해지가 안 됐을 수 있어요",
+    chargedBody:
+      "해지 후에도 결제됐다면 해지가 끝나지 않았을 수 있어요.\n구독 중으로 되돌리고 해지 가이드를 열어요.",
+    chargedConfirm: "되돌리고 가이드 열기",
+    cancel: "취소",
+  },
+};
+
+export const en: Widen<typeof ko> = {
+  report: {
+    title: (month) => `${monthName(month)} subscription value report`,
+    totalSpend: "Total subscription spending",
+    worth: "Worth it",
+    wasted: "Spending you could cut (pause suggested)",
+    unknown: "Can't tell",
+    noRecord: "No record",
+    needsCheckIn: "Needs check-in",
+    cancelGuide: "Cut spending (cancel guide) →",
+    checkIn: "Check in",
+    unusedThisMonth: "Unused this month · pause suggested",
+    diet: (checkIn) => `${checkIn} · trim suggested`,
+    suggestOne: (name, item, amount) =>
+      `Pause ${name} this month and you could save ${item} (${amount}).`,
+    suggestMany: (item, amount) =>
+      `Tidy up the subscriptions you rarely use and you could keep ${item} (${amount}) in your wallet every month.`,
+  },
+  receipt: {
+    title: (month) => `${monthName(month)} value receipt`,
+    summary: (subs, checked) =>
+      `${subs} ${one(subs) ? "subscription" : "subscriptions"} · ${checked} checked in`,
+    fixed: "Monthly fixed spending",
+    savable: "Could save",
+    needsCheckIn: "Needs check-in",
+    worth: "Worth it",
+    count: (n) => String(n),
+    open: "View receipt",
+    close: "Close",
+    asOf: (date, subs) => `As of ${date} · ${subs} ${one(subs) ? "subscription" : "subscriptions"}`,
+    sectionWorth: "Worth it",
+    sectionWasted: "Fine to pause",
+    sectionUnknown: "Needs check-in",
+    actionCancel: "Cancel guide",
+    actionCheckIn: "Check in",
+    inTrial: " · on trial",
+    more: (n) => `and ${n} more`,
+    subtotal: "Subtotal",
+    collapse: "Collapse",
+    expand: (hidden) => `Show full receipt · ${hidden} more ${one(hidden) ? "line" : "lines"}`,
+    byCategory: "By category",
+    subTotal: "Subscriptions total",
+    trial: (n) => `${n} on trial (added when they end)`,
+    shared: (n, billed) =>
+      `${n} shared ${one(n) ? "subscription is" : "subscriptions are"} counted as your share · charged to your card: ${billed}/month`,
+    detailUnknown: "Don't know how much you used it",
+    detailUnused: "Unused this month",
+    detailUses: (count, unit) => `${count} ${one(count) ? "use" : "uses"} · ${unit} per use`,
+    footerNoCheckIn:
+      "Tell us how many times you used each one and we'll work out the cost per use.",
+    footerMore: "The more you check in, the more accurate this gets.",
+    cancelFrom: (name, many) => `Cancel guide${many ? ", starting with" : " for"} ${name}`,
+    checkInFrom: (name, many) => `Check in${many ? ", starting with" : " for"} ${name}`,
+  },
+  series: {
+    doneTitle: (count) => `Tidied up ${count} ${one(count) ? "subscription" : "subscriptions"}`,
+    doneBefore: "You save",
+    doneAfter: "a month",
+    nextTitle: "Tidy up the next one too?",
+    nextHint: (remaining) =>
+      `Fine to pause${remaining > 0 ? ` · ${remaining} more after this` : " · the last one"}`,
+    next: "Open the next cancel guide",
+    stop: "Stop here",
+    perMonth: "/mo",
+  },
+  actions: {
+    killRecorded: (name) => `${name} recorded as cancelled`,
+    priceUpdated: (name, amount) => `Changed ${name}'s price to ${amount}.`,
+    priceConfirmed: (name) => `${name} price confirmed`,
+    killVerified: (name) => `${name} confirmed: charges stopped`,
+    stillSubscribed: (name) => `Keeping ${name} as subscribed`,
+    revived: (name) => `${name} set back to subscribed`,
+    chargedTitle: "The cancellation may not have gone through",
+    chargedBody:
+      "If you were charged after cancelling, the cancellation may not have finished.\nWe'll set it back to subscribed and open the cancel guide.",
+    chargedConfirm: "Set back and open guide",
+    cancel: "Cancel",
+  },
+};
