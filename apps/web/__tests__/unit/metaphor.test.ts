@@ -3,7 +3,7 @@ import {
   getUsageMetaphor,
   getBreakEvenInfo,
   getMonthlyValueSummary,
-  getLowUsageBillingMessage,
+  getLowUsageBillingFigures,
   Subscription,
   UsageLog,
 } from "@subslash/shared";
@@ -120,8 +120,8 @@ describe("Metaphor and Value Calculation Utils", () => {
     });
   });
 
-  describe("getLowUsageBillingMessage", () => {
-    it("결제 D-3 저사용 시 메타포 메시지 생성", () => {
+  describe("getLowUsageBillingFigures", () => {
+    it("한 달치 내 몫과 가장 가까운 소비재를 값으로 돌려준다", () => {
       const sub: Subscription = {
         id: "sub-netflix",
         name: "넷플릭스",
@@ -133,9 +133,9 @@ describe("Metaphor and Value Calculation Utils", () => {
         status: "active",
         createdAt: "2026-01-01T00:00:00.000Z",
       };
-      const msg = getLowUsageBillingMessage(sub, 1, 3, RATE);
-      expect(msg).toContain("이번 달은 1회만 이용했어요");
-      expect(msg).toContain("3일 뒤 갱신 전에 잠시 쉬어가면");
+      const figures = getLowUsageBillingFigures(sub, RATE);
+      expect(figures).toMatchObject({ amount: 17000, currency: "KRW", item: "movie" });
+      expect(figures.count).toBeCloseTo(17000 / 15000);
     });
   });
 });

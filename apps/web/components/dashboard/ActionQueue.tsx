@@ -2,17 +2,13 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import {
-  formatCurrency,
-  formatDday,
-  type ActionItem,
-  type ActionKind,
-  type ActionVerb,
-} from "@subslash/shared";
+import { formatCurrency, formatDday, type ActionItem, type ActionKind } from "@subslash/shared";
 import { Button } from "../ui/button";
 import { subscriptionDetailHref } from "@lib/routes";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { ListChecks } from "lucide-react";
+import { useT } from "@lib/i18n";
+import { describeActionReason } from "@lib/i18n/action-reason";
 
 interface ActionQueueProps {
   items: ActionItem[];
@@ -37,16 +33,6 @@ interface ActionQueueProps {
   /** 제목과 목록 사이에 둘 것(앱의 폰 사용 기록 알림). 웹은 넘기지 않는다. */
   lead?: React.ReactNode;
 }
-
-const VERB_LABEL: Record<ActionVerb, string> = {
-  "cancel-guide": "해지 가이드",
-  "check-in": "체크인하기",
-  "confirm-price": "요금 유지",
-  "set-billing-month": "결제 월 입력",
-  "verify-kill": "결제 안 됐어요",
-  "confirm-cancel": "해지했어요",
-  "review-resubscribe": "살펴보기",
-};
 
 /** 급한 정도를 색으로만 구분한다. 문구는 이유가 이미 말해준다. */
 const TONE: Partial<Record<ActionKind, string>> = {
@@ -82,6 +68,8 @@ export function ActionQueue({
   lead,
 }: ActionQueueProps) {
   const router = useRouter();
+  const t = useT();
+  const q = t.dashboard.queue;
 
   const run = (item: ActionItem) => {
     switch (item.verb) {
@@ -108,10 +96,10 @@ export function ActionQueue({
       <section className="text-center py-14 border border-dashed rounded-2xl space-y-4">
         <ListChecks className="mx-auto size-10 text-muted-foreground" aria-hidden />
         <div className="space-y-1">
-          <h2 className="text-lg font-bold">아직 등록된 구독이 없어요</h2>
-          <p className="text-sm text-muted-foreground">구독을 등록하면 결정할 일이 여기 떠요.</p>
+          <h2 className="text-lg font-bold">{q.emptyTitle}</h2>
+          <p className="text-sm text-muted-foreground">{q.emptyHint}</p>
         </div>
-        <Button onClick={onAddFirst}>+ 첫 구독 등록</Button>
+        <Button onClick={onAddFirst}>{q.addFirst}</Button>
       </section>
     );
   }
@@ -120,11 +108,11 @@ export function ActionQueue({
     return (
       <section className="p-6 border rounded-2xl bg-card text-center space-y-2">
         <ListChecks className="mx-auto size-9 text-muted-foreground" aria-hidden />
-        <h2 className="font-bold">지금 결정할 것이 없어요</h2>
+        <h2 className="font-bold">{q.nothingToDecide}</h2>
         <p className="text-sm text-muted-foreground">
           {nextBilling
-            ? `다음 결제: ${nextBilling.name} ${formatDday(nextBilling.daysUntilBilling)}`
-            : "결제일을 아는 구독이 없어요. 구독 상세에서 채워 주세요."}
+            ? q.nextBilling(nextBilling.name, formatDday(nextBilling.daysUntilBilling))
+            : q.noBillingKnown}
         </p>
       </section>
     );
@@ -133,8 +121,8 @@ export function ActionQueue({
   return (
     <section className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-xl font-bold tracking-tight">지금 결정할 것 ({items.length})</h2>
-        {headerAction ?? <span className="text-xs text-muted-foreground">급한 순</span>}
+        <h2 className="text-xl font-bold tracking-tight">{q.title(items.length)}</h2>
+        {headerAction ?? <span className="text-xs text-muted-foreground">{q.urgentFirst}</span>}
       </div>
       {lead}
 
@@ -158,18 +146,22 @@ export function ActionQueue({
                 <span className="font-bold text-sm">{item.name}</span>
                 {/* 해지한 구독이 활성 구독 사이에 섞여 보이므로 무엇을 묻는지 붙인다. */}
                 {item.kind === "verify-kill" && (
-                  <span className="text-[11px] font-semibold text-primary">해지 확인</span>
+                  <span className="text-[11px] font-semibold text-primary">{q.tagVerifyKill}</span>
                 )}
                 {item.kind === "resubscribe-reminder" && (
                   <span className="text-[11px] font-semibold text-muted-foreground">
-                    다시 살펴볼 날
+                    {q.tagResubscribe}
                   </span>
                 )}
                 {item.kind === "cancel-notice" && (
-                  <span className="text-[11px] font-semibold text-primary">해지 메일</span>
+                  <span className="text-[11px] font-semibold text-primary">
+                    {q.tagCancelNotice}
+                  </span>
                 )}
                 {item.kind === "charged-after-kill" && (
-                  <span className="text-[11px] font-black text-destructive">해지 후 결제됨</span>
+                  <span className="text-[11px] font-black text-destructive">
+                    {q.tagChargedAfterKill}
+                  </span>
                 )}
                 {item.daysUntilBilling !== null && item.daysUntilBilling <= 7 && (
                   <span className="text-[11px] font-black text-destructive">
@@ -177,7 +169,9 @@ export function ActionQueue({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">{item.reason}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {describeActionReason(t, item.reason)}
+              </p>
             </div>
 
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
@@ -189,7 +183,7 @@ export function ActionQueue({
                   className="text-xs"
                   onClick={() => onCheckIn(item.subscriptionId)}
                 >
-                  체크인
+                  {q.checkIn}
                 </Button>
               )}
 
@@ -206,7 +200,7 @@ export function ActionQueue({
                     onConfirmPrice(item.subscriptionId, item.presetAmount ?? undefined)
                   }
                 >
-                  {formatCurrency(item.presetAmount, item.currency)}으로 갱신
+                  {q.updateTo(formatCurrency(item.presetAmount, item.currency))}
                 </Button>
               )}
               {item.verb === "confirm-price" && (
@@ -216,7 +210,7 @@ export function ActionQueue({
                   className="text-xs"
                   onClick={() => router.push(subscriptionDetailHref(item.subscriptionId))}
                 >
-                  수정
+                  {q.edit}
                 </Button>
               )}
 
@@ -227,7 +221,7 @@ export function ActionQueue({
                   className="text-xs"
                   onClick={() => onKillCharged(item.subscriptionId)}
                 >
-                  결제됐어요
+                  {q.charged}
                 </Button>
               )}
 
@@ -238,7 +232,7 @@ export function ActionQueue({
                   className="text-xs"
                   onClick={() => onCancelNoticeDismissed(item.subscriptionId)}
                 >
-                  아직 구독 중
+                  {q.stillSubscribed}
                 </Button>
               )}
 
@@ -248,7 +242,7 @@ export function ActionQueue({
                 className="text-xs font-bold"
                 onClick={() => run(item)}
               >
-                {VERB_LABEL[item.verb]}
+                {q.verbs[item.verb]}
               </Button>
             </div>
           </li>
