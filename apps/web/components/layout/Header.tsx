@@ -9,6 +9,7 @@ import { AccountMenu } from "./AccountMenu";
 import { ThemeMenu } from "./ThemeMenu";
 import { useStatsContribution } from "@hooks/useStatsContribution";
 import { useAccountSync } from "@hooks/useAccountSync";
+import { useAutoExchangeRate } from "@hooks/useAutoExchangeRate";
 import { useDeviceUsageUpload } from "@hooks/useDeviceUsageUpload";
 import { AccountSyncConflictDialog } from "../account/AccountSyncConflictDialog";
 import { cn } from "@lib/utils";
@@ -50,6 +51,8 @@ export function Header() {
   useStatsContribution();
   // 이 기기에서 여러 기기 사용 측정을 켰으면 앱을 열 때·돌아올 때 잰 것을 계정에 올린다.
   useDeviceUsageUpload();
+  // USD 구독이 있으면 환산 환율을 고시 환율로 저절로 맞춘다(직접 적은 환율은 그대로).
+  useAutoExchangeRate();
   // 로그인한 기기끼리 구독 기록을 자동으로 맞춘다. 양쪽이 따로 바뀌었으면 어느 쪽을 쓸지 묻는다.
   const accountSync = useAccountSync();
 

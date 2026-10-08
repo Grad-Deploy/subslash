@@ -44,7 +44,9 @@ Next.js 15 App Router + Zustand(localStorage) + Drizzle/Turso.
 공유 구독은 `sharingCount`·`myShareAmount`로 나뉜다. 4명이 나누는 구독을
 해지해도 실제로 아끼는 돈은 4분의 1이므로, 지출·절약 수치는 전자를 쓴다.
 
-USD 환산 환율은 상수가 아니라 사용자 설정값이다. 컴포넌트에서는
+USD 환산 환율은 상수가 아니라 사용자 설정값이다. USD 구독이 있으면 앱이 고시 환율(`/api/fx`, ECB, 영업일마다 한 번)로
+저절로 맞추고(`useAutoExchangeRate`: 열 때·돌아올 때·켜 둔 동안 한 시간마다), 사용자가 직접 적은 환율(`manual`)은 바꾸지
+않는다. 자동 환율의 값은 계정 동기화 지문(`recordsHash`)에 넣지 않는다 — 기기마다 날마다 바뀌어 다시 올리거나 충돌로 묻게 된다. 컴포넌트에서는
 `useExchangeRate()`로 받아 넘긴다. 헬퍼의 기본 인자(`DEFAULT_EXCHANGE_RATE`)에
 기대면 "내 환율을 쓴다"고 적힌 화면 옆에 1,350으로 계산한 값이 나온다.
 구독 영수증·연말 결산처럼 **지난** 결제를 원화로 보여 줄 때는 지금 환율이 아니라 결제일의 고시 환율(ECB, `/api/fx/history` →
