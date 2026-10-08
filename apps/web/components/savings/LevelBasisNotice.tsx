@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useStoredFlag } from "@hooks/useStoredFlag";
 import { getDetoxLevel } from "@subslash/shared";
+import { useT } from "@lib/i18n";
 
 const STORAGE_KEY = "subslash_level_basis_notice_dismissed";
 
@@ -25,6 +26,8 @@ interface LevelBasisNoticeProps {
  */
 export function LevelBasisNotice({ annualRunRate, confirmed, killCount }: LevelBasisNoticeProps) {
   // 서버와 하이드레이션 동안은 숨겨 둔다. 닫은 사람에게 한 번 번쩍이지 않게.
+  const t = useT();
+  const b = t.savings.basis;
   const [dismissed, dismiss] = useStoredFlag(STORAGE_KEY, true);
 
   const before = getDetoxLevel(annualRunRate, killCount);
@@ -41,27 +44,27 @@ export function LevelBasisNotice({ annualRunRate, confirmed, killCount }: LevelB
           id="level-basis-heading"
           className="font-bold text-sm text-amber-900 dark:text-amber-200"
         >
-          레벨 기준이 바뀌었습니다
+          {b.title}
         </h3>
         <button
           type="button"
           onClick={dismiss}
           className="whitespace-nowrap text-xs text-muted-foreground hover:text-foreground font-medium p-1 rounded-lg hover:bg-muted transition-colors shrink-0"
         >
-          닫기
+          {b.close}
         </button>
       </div>
-      <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
-        해지만 해도 오르던 1년치 요금 대신, 결제가 멈춘 것을 확인한 &lsquo;지킨 돈&rsquo;으로 레벨을
-        정합니다.
-      </p>
+      <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed">{b.body}</p>
       <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">
-        예전 기준: {before.levelLabel} {before.title} → 지금: {now.levelLabel} {now.title}
+        {b.change(
+          `${before.levelLabel} ${t.value.detoxTitle[before.level as 0 | 1 | 2 | 3 | 4 | 5]}`,
+          `${now.levelLabel} ${t.value.detoxTitle[now.level as 0 | 1 | 2 | 3 | 4 | 5]}`,
+        )}
       </p>
       <p className="text-xs text-amber-900/90 dark:text-amber-200/90 leading-relaxed">
-        해지 뒤 결제일이 지날 때마다 결제가 멈췄는지 답하면 레벨이 다시 오릅니다.{" "}
+        {b.answer}
         <Link href="/dashboard" className="underline underline-offset-2 font-semibold">
-          대시보드에서 답하기 →
+          {b.answerLink}
         </Link>
       </p>
     </section>

@@ -7,13 +7,11 @@ import { Bell, ChevronDown, PiggyBank } from "lucide-react";
 import {
   type Subscription,
   formatKRW,
-  formatKillCheckDate,
   getDetoxLevel,
   getKillCheckStatus,
   getMyAnnualAmountKRW,
   getMyMonthlyAmountKRW,
   getNextBillingDateFor,
-  getSavingsEquivalent,
   getSavingsEquivalents,
   getSavingsTiers,
   sumMyMonthlyKRW,
@@ -30,6 +28,8 @@ import { SubjectChip } from "../../subscription/SubjectChip";
 import { Spinner } from "../../ui/spinner";
 import { AppDefenseChart } from "./AppDefenseChart";
 import { AppIncomeRate } from "./AppIncomeRate";
+import { useT } from "@lib/i18n";
+import { rewardHeadline } from "@lib/i18n/savings-text";
 
 const DAY = 24 * 60 * 60 * 1000;
 /** 목록이 이보다 길면 앞의 몇 개만 보이고 '더 보기'로 펼친다. */
@@ -49,6 +49,8 @@ function perChargeKRW(sub: Subscription, rate: number): number {
  */
 export function AppSavings() {
   const router = useRouter();
+  const t = useT();
+  const a = t.savings.app;
   const mounted = useIsClient();
   const rate = useExchangeRate();
   const {
@@ -78,6 +80,14 @@ export function AppSavings() {
   const killedMonthly = sumMyMonthlyKRW(killed, rate);
   const tiers = getSavingsTiers(killed, now, rate);
   const level = getDetoxLevel(tiers.confirmed, killed.length);
+  const levelTitle = t.value.detoxTitle[level.level as 0 | 1 | 2 | 3 | 4 | 5];
+  const killDate = (date: Date) =>
+    t.dashboard.reason.killCheckDate(
+      date.getFullYear(),
+      date.getMonth() + 1,
+      date.getDate(),
+      date.getFullYear() === now.getFullYear(),
+    );
   const equivalents = getSavingsEquivalents(tiers.annualRunRate);
   const due = killed.filter((sub) => getKillCheckStatus(sub, now)?.state === "due");
 
@@ -103,14 +113,19 @@ export function AppSavings() {
       names: killed.map((sub) => sub.name),
     });
     const shareUrl = webUrl(`/savings/share?${params.toString()}`);
-    const headline = getSavingsEquivalent(tiers.annualRunRate)[0] ?? "";
+    const headline = rewardHeadline(t, tiers.annualRunRate);
     // 웹과 같은 문장. 지킨 돈이 없으면 1년치 요금을 '아낄 예정'으로만 적는다.
     const savingsLine =
       tiers.confirmed > 0
-        ? `구독을 해지해 ${formatKRW(tiers.confirmed)}을 지켰고, 해지를 유지하면 1년에 ${formatKRW(tiers.annualRunRate)}을 아낍니다!`
-        : `구독을 해지해 1년에 ${formatKRW(tiers.annualRunRate)}을 아낄 예정입니다!`;
-    const text = `SubSlash 구독 디톡스 ${level.levelLabel} ${level.title}\n${savingsLine} ${headline}\n결과 보기: ${shareUrl}`;
-    if (await shareText({ title: "SubSlash 구독 디톡스 결과", text, url: shareUrl })) return;
+        ? t.savings.share.confirmedLine(formatKRW(tiers.confirmed), formatKRW(tiers.annualRunRate))
+        : t.savings.share.plannedLine(formatKRW(tiers.annualRunRate));
+    const text = t.savings.share.text(
+      `${level.levelLabel} ${levelTitle}`,
+      savingsLine,
+      headline,
+      shareUrl,
+    );
+    if (await shareText({ title: t.savings.share.title, text, url: shareUrl })) return;
     // 앱 웹뷰에서는 navigator.clipboard가 막혀 있어 네이티브 복사(copyText)를 쓴다. 실패하면
     // '복사했어요'를 띄우지 않는다(#114와 같은 기준).
     if (await copyText(text)) {
@@ -122,12 +137,12 @@ export function AppSavings() {
   return (
     <div className="mx-auto w-full max-w-md min-w-0 space-y-3 pb-4 text-sm">
       <header className="flex items-baseline justify-between pt-1 pb-1">
-        <h1 className="text-[22px] font-black tracking-tight">절약 현황</h1>
+        <h1 className="text-[22px] font-black tracking-tight">{a.title}</h1>
         <Link
           href="/savings/review"
           className="text-xs font-bold text-muted-foreground underline underline-offset-4"
         >
-          올해 결산 →
+          {a.reviewLink}
         </Link>
       </header>
 
@@ -135,37 +150,33 @@ export function AppSavings() {
         <section className="space-y-3 rounded-2xl border border-dashed px-4 py-8 text-center">
           <PiggyBank className="mx-auto size-10 text-muted-foreground" aria-hidden />
           <div>
-            <p className="text-base font-bold">아직 해지한 구독이 없어요</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              잘 안 쓰는 구독을 해지하면 여기에 지킨 돈이 쌓여요.
-            </p>
+            <p className="text-base font-bold">{a.emptyTitle}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{a.emptyHint}</p>
           </div>
           <button
             type="button"
             onClick={() => router.push("/dashboard")}
             className="h-10 rounded-xl bg-primary px-4 text-[13px] font-extrabold text-primary-foreground"
           >
-            대시보드로 가기
+            {a.goDashboard}
           </button>
         </section>
       ) : (
         <section className="rounded-[20px] border-[1.5px] border-emerald-300 bg-card p-4 text-muted-foreground shadow-[0_4px_14px_rgba(5,150,105,0.12)] dark:border dark:border-emerald-800 dark:bg-transparent dark:bg-gradient-to-br dark:from-emerald-950 dark:to-emerald-900/70 dark:text-emerald-200 dark:shadow-none">
           {/* 라이트는 흰 카드에 초록 숫자·테두리(연한 초록 바탕은 흰 화면에 묻혔다). 다크는 예전 초록 바탕 그대로. */}
-          <p className="text-xs font-bold text-emerald-700 dark:text-emerald-200">
-            지금까지 지킨 돈
-          </p>
+          <p className="text-xs font-bold text-emerald-700 dark:text-emerald-200">{a.kept}</p>
           <p className="mt-0.5 text-[34px] leading-tight font-black tracking-tight text-emerald-700 tabular-nums dark:text-foreground">
             {formatKRW(tiers.confirmed)}
           </p>
           <dl className="mt-2.5 grid grid-cols-2 gap-2">
             <div className="rounded-xl bg-secondary px-2.5 py-2 dark:bg-background/55">
-              <dt className="text-[10.5px]">확인 대기</dt>
+              <dt className="text-[10.5px]">{a.pending}</dt>
               <dd className="text-sm font-extrabold text-foreground tabular-nums">
                 {formatKRW(tiers.pending)}
               </dd>
             </div>
             <div className="rounded-xl bg-secondary px-2.5 py-2 dark:bg-background/55">
-              <dt className="text-[10.5px]">해지 유지하면 1년</dt>
+              <dt className="text-[10.5px]">{a.annual}</dt>
               <dd className="text-sm font-extrabold text-foreground tabular-nums">
                 {formatKRW(tiers.annualRunRate)}
               </dd>
@@ -173,7 +184,7 @@ export function AppSavings() {
           </dl>
           <div className="mt-3 flex items-center gap-2.5">
             <span className="text-xs font-extrabold whitespace-nowrap text-foreground">
-              {level.levelLabel} {level.title}
+              {level.levelLabel} {levelTitle}
             </span>
             <div className="min-w-0 flex-1">
               <div className="h-1.5 overflow-hidden rounded-full bg-secondary dark:bg-background/60">
@@ -184,8 +195,8 @@ export function AppSavings() {
               </div>
               <p className="mt-1 text-[10.5px]">
                 {level.remainingToNext === null
-                  ? "최고 레벨이에요"
-                  : `Lv.${level.level + 1}까지 ${formatKRW(level.remainingToNext)}`}
+                  ? a.maxLevel
+                  : a.toNext(level.level + 1, formatKRW(level.remainingToNext))}
               </p>
             </div>
           </div>
@@ -203,7 +214,7 @@ export function AppSavings() {
           >
             <p className="flex items-center gap-1.5 text-[12.5px] font-bold text-amber-800 dark:text-amber-300">
               <Bell className="size-3.5 shrink-0" aria-hidden />
-              {sub.name} · {formatKillCheckDate(check.billingDate, now)} 결제가 멈췄나요?
+              {a.stopped(sub.name, killDate(check.billingDate))}
             </p>
             <div className="mt-2 flex gap-1.5">
               <button
@@ -211,14 +222,14 @@ export function AppSavings() {
                 onClick={() => confirmKillVerified(sub.id)}
                 className="h-9 flex-1 rounded-[10px] bg-primary text-xs font-extrabold text-primary-foreground"
               >
-                멈췄어요
+                {a.yes}
               </button>
               <button
                 type="button"
                 onClick={() => setChargedTarget(sub)}
                 className="h-9 flex-1 rounded-[10px] border bg-card text-xs font-extrabold"
               >
-                결제됐어요
+                {a.charged}
               </button>
             </div>
           </section>
@@ -234,8 +245,8 @@ export function AppSavings() {
           {breakdown.length > 0 && (
             <section className="rounded-2xl border bg-card p-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-[14.5px] font-extrabold tracking-tight">어디서 아끼고 있나</h2>
-                <span className="text-[11px] font-semibold text-muted-foreground">1년 기준</span>
+                <h2 className="text-[14.5px] font-extrabold tracking-tight">{a.whereTitle}</h2>
+                <span className="text-[11px] font-semibold text-muted-foreground">{a.perYear}</span>
               </div>
               <ul className="mt-2.5 space-y-2.5">
                 {(showAllBreakdown ? breakdown : breakdown.slice(0, LIST_LIMIT)).map(
@@ -282,8 +293,8 @@ export function AppSavings() {
           {(upcoming.length > 0 || undated > 0) && (
             <section className="rounded-2xl border bg-card p-4">
               <div className="flex items-baseline justify-between gap-2">
-                <h2 className="text-[14.5px] font-extrabold tracking-tight">다가오는 방어</h2>
-                <span className="text-[11px] text-muted-foreground">해지 안 했으면 나갔을 날</span>
+                <h2 className="text-[14.5px] font-extrabold tracking-tight">{a.upcomingTitle}</h2>
+                <span className="text-[11px] text-muted-foreground">{a.upcomingNote}</span>
               </div>
               <ul className="mt-1.5">
                 {upcoming.slice(0, 4).map(({ sub, date }) => {
@@ -298,13 +309,13 @@ export function AppSavings() {
                           {date.getDate()}
                         </b>
                         <span className="text-[9.5px] text-muted-foreground">
-                          {date.getMonth() + 1}월
+                          {a.dayMonth(date.getMonth() + 1)}
                         </span>
                       </span>
                       <span className="min-w-0">
                         <span className="block truncate text-[12.5px] font-bold">{sub.name}</span>
                         <span className="block text-[10.5px] text-muted-foreground">
-                          {days <= 0 ? "오늘" : `${days}일 뒤`}
+                          {days <= 0 ? a.today : a.inDays(days)}
                         </span>
                       </span>
                       <span className="text-[12.5px] font-extrabold text-emerald-700 tabular-nums dark:text-emerald-300">
@@ -315,31 +326,28 @@ export function AppSavings() {
                 })}
               </ul>
               {undated > 0 && (
-                <p className="mt-1.5 text-[11px] text-muted-foreground">
-                  결제월 미설정 {undated}개는 날짜를 몰라 빠져 있어요.
-                </p>
+                <p className="mt-1.5 text-[11px] text-muted-foreground">{a.undated(undated)}</p>
               )}
             </section>
           )}
 
           <section className="rounded-2xl border bg-card p-4">
-            <h2 className="text-[14.5px] font-extrabold tracking-tight">1년 아끼면 이만큼</h2>
+            <h2 className="text-[14.5px] font-extrabold tracking-tight">{a.rewardsTitle}</h2>
             {equivalents.length === 0 ? (
-              <p className="mt-2 text-xs text-muted-foreground">
-                연간 ₩5,000부터 여기에 보여드려요.
-              </p>
+              <p className="mt-2 text-xs text-muted-foreground">{a.rewardsEmpty}</p>
             ) : (
               <div className="-mx-4 mt-2.5 flex gap-2 overflow-x-auto px-4 pb-0.5 [scrollbar-width:none]">
                 {equivalents.map((item) => (
                   <div
-                    key={item.label}
+                    key={item.key}
                     className="min-w-[108px] shrink-0 rounded-2xl border px-3 py-2.5"
                   >
                     <p className="text-sm font-black tabular-nums">
-                      {item.count.toLocaleString()}
-                      {item.unit}
+                      {t.value.reward[item.key](item.count)}
                     </p>
-                    <p className="text-[10.5px] text-muted-foreground">{item.label}</p>
+                    <p className="text-[10.5px] text-muted-foreground">
+                      {t.savings.rewardNames[item.key]}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -348,7 +356,7 @@ export function AppSavings() {
 
           <section className="rounded-2xl border bg-card p-4">
             <h2 className="text-[14.5px] font-extrabold tracking-tight">
-              해지한 구독 {killed.length}
+              {a.killedTitle(killed.length)}
             </h2>
             <ul className="mt-1">
               {(showAllKilled ? killed : killed.slice(0, LIST_LIMIT)).map((sub) => {
@@ -370,9 +378,9 @@ export function AppSavings() {
                         {sub.name}
                       </s>
                       <span className="block text-[10.5px] font-semibold text-emerald-700 dark:text-emerald-300">
-                        연 {formatKRW(getMyAnnualAmountKRW(sub, rate))} 아끼는 중
-                        {state === "verified" && " · 확인됨"}
-                        {state === "due" && " · 확인 대기"}
+                        {t.savings.page.annualSaving(formatKRW(getMyAnnualAmountKRW(sub, rate)))}
+                        {state === "verified" && a.verifiedMark}
+                        {state === "due" && a.pendingMark}
                       </span>
                     </span>
                     <button
@@ -380,7 +388,7 @@ export function AppSavings() {
                       onClick={() => setReviveTarget(sub)}
                       className="rounded-lg px-2 py-1 text-[11px] font-bold text-muted-foreground hover:bg-secondary"
                     >
-                      되살리기
+                      {a.reviveShort}
                     </button>
                   </li>
                 );
@@ -398,7 +406,7 @@ export function AppSavings() {
               onClick={() => void handleShare()}
               className="mt-3 h-11 w-full rounded-xl border text-[13px] font-extrabold"
             >
-              {copied ? "클립보드에 복사했어요" : "결과 공유하기"}
+              {copied ? a.copied : a.shareButton}
             </button>
           </section>
         </>
@@ -414,10 +422,10 @@ export function AppSavings() {
           }}
           centered
           subject={<SubjectChip sub={reviveTarget} />}
-          title="다시 살릴까요?"
-          description={"구독 중으로 돌아가고,\n절약 기록에서는 빠져요."}
-          confirmText="다시 살리기"
-          cancelText="취소"
+          title={t.subs.confirm.reviveTitle}
+          description={t.subs.confirm.reviveNote}
+          confirmText={t.subs.confirm.reviveConfirm}
+          cancelText={t.subs.confirm.cancel}
         />
       )}
 
@@ -433,12 +441,10 @@ export function AppSavings() {
           }}
           centered
           subject={<SubjectChip sub={chargedTarget} />}
-          title="해지가 안 됐을 수 있어요"
-          description={
-            "첫 결제일에 결제가 됐다면\n구독 중으로 되돌릴게요.\n해지를 마친 뒤 다시 '해지 완료'를\n누르면 그날부터 절약으로 세요."
-          }
-          confirmText="되돌리기"
-          cancelText="취소"
+          title={a.chargedTitle}
+          description={a.chargedBody}
+          confirmText={a.chargedConfirm}
+          cancelText={t.subs.confirm.cancel}
         />
       )}
     </div>
@@ -455,6 +461,7 @@ function MoreToggle({
   hidden: number;
   onToggle: () => void;
 }) {
+  const a = useT().savings.app;
   return (
     <button
       type="button"
@@ -462,7 +469,7 @@ function MoreToggle({
       aria-expanded={open}
       className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-bold text-muted-foreground hover:bg-secondary"
     >
-      {open ? "접기" : `${hidden}개 더 보기`}
+      {open ? a.moreClose : a.moreOpen(hidden)}
       <ChevronDown
         className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`}
         aria-hidden
