@@ -9,6 +9,7 @@ import {
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { niceCeil } from "@lib/chart-scale";
+import { useT } from "@lib/i18n";
 
 /**
  * 막대·선 색. 웹 그래프(MonthlyDefenseChart)와 같은 에메랄드 두 단계다(밝은 모드 700/500,
@@ -57,6 +58,7 @@ export function AppDefenseChart({
   const year = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
   const [mode, setMode] = useState<"month" | "total">("month");
+  const c = useT().savings.appChart;
   const [active, setActive] = useState(currentMonth);
 
   const series = getYearDefendedSeries(killedSubscriptions, year, exchangeRate, now);
@@ -91,13 +93,13 @@ export function AppDefenseChart({
     <section className="rounded-2xl border bg-card p-4" aria-labelledby="app-defense-title">
       <div className="flex items-center justify-between gap-2">
         <h2 id="app-defense-title" className="text-[14.5px] font-extrabold tracking-tight">
-          {year}년 월별 방어액
+          {c.title(year)}
         </h2>
         <div className="inline-flex rounded-[10px] bg-secondary p-0.5" role="tablist">
           {(
             [
-              ["month", "월별"],
-              ["total", "누적"],
+              ["month", c.byMonth],
+              ["total", c.cumulative],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -119,7 +121,7 @@ export function AppDefenseChart({
 
       {monthMax === 0 ? (
         <p className="mt-3 rounded-xl border border-dashed p-3 text-xs text-muted-foreground">
-          올해는 해지한 구독의 결제일이 아직 돌아오지 않았어요. 결제일이 지나면 그 달에 쌓여요.
+          {c.empty}
         </p>
       ) : (
         <>
@@ -129,12 +131,12 @@ export function AppDefenseChart({
             </p>
             <p className="text-right text-[11px] text-muted-foreground">
               {mode === "total"
-                ? `1~${currentMonth}월 누적`
+                ? c.cumulativeUntil(currentMonth)
                 : activeMonth.isFuture
-                  ? `${active}월 · 예정`
+                  ? c.scheduledMonth(active)
                   : activePart.later > 0
-                    ? `${active}월 · 막은 결제 ${formatKRW(activePart.past)} · 남은 결제일 ${formatKRW(activePart.later)}`
-                    : `${active}월 · 막은 결제`}
+                    ? c.split(active, formatKRW(activePart.past), formatKRW(activePart.later))
+                    : c.blockedMonth(active)}
             </p>
           </div>
 
@@ -148,7 +150,7 @@ export function AppDefenseChart({
                     key={m.month}
                     type="button"
                     onClick={() => setActive(m.month)}
-                    aria-label={`${m.month}월 ${formatKRW(m.amount)} ${m.isFuture ? "예정" : "막음"}`}
+                    aria-label={c.barLabel(m.month, formatKRW(m.amount), m.isFuture)}
                     aria-pressed={m.month === active}
                     className={cn(
                       "flex h-full flex-1 items-end justify-center rounded-t-md",
@@ -180,7 +182,12 @@ export function AppDefenseChart({
               </div>
             </div>
           ) : (
-            <CumulativeLine values={cumulative} max={totalMax} currentMonth={currentMonth} />
+            <CumulativeLine
+              values={cumulative}
+              max={totalMax}
+              currentMonth={currentMonth}
+              label={c.cumulativeLabel}
+            />
           )}
 
           <div className="mt-1 flex gap-1" aria-hidden>
@@ -201,28 +208,27 @@ export function AppDefenseChart({
           <div className="mt-2.5 flex gap-3 text-[10.5px] text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <span className={cn("size-2.5 rounded-[2px]", DEFENDED)} aria-hidden />
-              막은 결제
+              {c.blocked}
             </span>
             {mode === "month" && upcoming > 0 && (
               <span className="inline-flex items-center gap-1.5">
                 <span className={cn("size-2.5 rounded-[2px]", UPCOMING)} aria-hidden />
-                이번 달 남은 결제일
+                {c.upcomingThisMonth}
               </span>
             )}
             <span className="inline-flex items-center gap-1.5">
               <span className={cn("size-2.5 rounded-[2px]", SCHEDULED)} aria-hidden />
-              예정
+              {c.scheduled}
             </span>
           </div>
           {mode === "total" && yearEnd > pastTotal && (
             <p className="mt-2.5 rounded-lg bg-secondary px-2.5 py-2 text-xs">
-              연말까지 <b className="tabular-nums">+{formatKRW(yearEnd - pastTotal)}</b> 더 막을
-              예정이에요
+              {c.untilYearEnd(formatKRW(yearEnd - pastTotal))}
             </p>
           )}
           {series.unknownCount > 0 && (
             <p className="mt-2 text-[11px] text-muted-foreground">
-              결제월을 몰라 그래프에 넣지 못한 구독 {series.unknownCount}개가 있어요.
+              {c.unknown(series.unknownCount)}
             </p>
           )}
         </>
@@ -236,10 +242,12 @@ function CumulativeLine({
   values,
   max,
   currentMonth,
+  label,
 }: {
   values: number[];
   max: number;
   currentMonth: number;
+  label: string;
 }) {
   const W = 120;
   const H = 100;
@@ -260,7 +268,7 @@ function CumulativeLine({
         preserveAspectRatio="none"
         className="absolute inset-0 size-full overflow-visible"
         role="img"
-        aria-label="올해 누적 방어액"
+        aria-label={label}
       >
         <polyline
           points={past}

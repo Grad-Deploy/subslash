@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import {
-  CATEGORY_LABELS,
   Subscription,
   formatKRW,
   getMyAnnualAmountKRW,
@@ -13,6 +12,7 @@ import {
 } from "@subslash/shared";
 import { DetoxLevelBadge } from "./DetoxLevelBadge";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
+import { useT } from "@lib/i18n";
 
 interface SavingsBreakdownChartProps {
   killedSubscriptions: Subscription[];
@@ -23,6 +23,8 @@ export function SavingsBreakdownChart({
   killedSubscriptions,
   exchangeRate,
 }: SavingsBreakdownChartProps) {
+  const t = useT();
+  const b = t.savings.breakdown;
   const currentYear = new Date().getFullYear();
   const [viewMode, setViewMode] = useState<"annual" | "yearDefended">("annual");
 
@@ -65,7 +67,7 @@ export function SavingsBreakdownChart({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-bold text-base flex items-center gap-1.5">서비스별 절약 기여도</h3>
+            <h3 className="font-bold text-base flex items-center gap-1.5">{b.title}</h3>
             {/* 레벨은 지킨 돈 기준이라 보기 모드와 무관하게 같다. */}
             <DetoxLevelBadge
               savings={confirmed}
@@ -73,9 +75,7 @@ export function SavingsBreakdownChart({
               variant="inline"
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            어떤 구독을 끊었을 때 가장 많은 돈이 지켜졌는지 확인해보세요.
-          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">{b.subtitle}</p>
         </div>
 
         {/* View mode toggle */}
@@ -89,7 +89,7 @@ export function SavingsBreakdownChart({
             }`}
             onClick={() => setViewMode("annual")}
           >
-            연간 환산 기준
+            {b.annual}
           </button>
           <button
             type="button"
@@ -100,7 +100,7 @@ export function SavingsBreakdownChart({
             }`}
             onClick={() => setViewMode("yearDefended")}
           >
-            {currentYear}년 연말까지
+            {b.yearEnd(currentYear)}
           </button>
         </div>
       </div>
@@ -119,12 +119,12 @@ export function SavingsBreakdownChart({
                 />
                 <span className="font-semibold text-foreground">{item.name}</span>
                 <span className="text-[10px] text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">
-                  {CATEGORY_LABELS[item.category] ?? item.category}
+                  {t.value.category[item.category] ?? item.category}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 {item.amount === null ? (
-                  <span className="font-semibold text-muted-foreground">결제 월 미설정</span>
+                  <span className="font-semibold text-muted-foreground">{b.unset}</span>
                 ) : (
                   <>
                     <span className="font-bold text-emerald-600 dark:text-emerald-400">
@@ -152,30 +152,20 @@ export function SavingsBreakdownChart({
       </div>
 
       {viewMode === "yearDefended" && (
-        <p className="text-[11px] text-muted-foreground">
-          남은 달의 결제일까지 더한 금액입니다. 지금까지 지킨 금액과 남은 예정은 월별 방어액
-          그래프에서 나눠 볼 수 있습니다.
-        </p>
+        <p className="text-[11px] text-muted-foreground">{b.yearEndNote}</p>
       )}
 
       {viewMode === "yearDefended" && totalYearDefended.unknownCount > 0 && (
         <p className="text-[11px] text-amber-700 dark:text-amber-300">
-          결제 월을 모르는 연간 구독 {totalYearDefended.unknownCount}건은 올해 결제가 해지
-          전이었는지 알 수 없어 합계에서 빠졌습니다. 구독 상세에서 결제 월을 지정하면 반영됩니다.
+          {b.yearEndUnknown(totalYearDefended.unknownCount)}
         </p>
       )}
 
       {/* Highlight note */}
       {topContributor && topContributor.percentage > 0 && (
         <div className="pt-2 border-t flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-            <strong>{topContributor.name}</strong> 해지가 전체 절약의{" "}
-            <strong className="text-emerald-600 dark:text-emerald-400">
-              {topContributor.percentage}%
-            </strong>
-            를 차지합니다.
-          </span>
-          <span className="font-semibold text-foreground">합계 {formatKRW(activeTotal)}</span>
+          <span>{b.top(topContributor.name, topContributor.percentage)}</span>
+          <span className="font-semibold text-foreground">{b.total(formatKRW(activeTotal))}</span>
         </div>
       )}
     </div>
