@@ -9,6 +9,7 @@ import * as deviceUsage from "./deviceUsage";
 import * as form from "./form";
 import * as helpPage from "./helpPage";
 import * as importing from "./importing";
+import * as landing from "./landing";
 import * as oauth from "./oauth";
 import * as overview from "./overview";
 import * as receipt from "./receipt";
@@ -39,6 +40,7 @@ export const messages = {
     form: form.ko,
     ...appSmall.ko,
     ...helpPage.ko,
+    ...landing.ko,
     ...importing.ko,
     ...savings.ko,
     ...receiptView.ko,
@@ -62,6 +64,7 @@ export const messages = {
     form: form.en,
     ...appSmall.en,
     ...helpPage.en,
+    ...landing.en,
     ...importing.en,
     ...savings.en,
     ...receiptView.en,

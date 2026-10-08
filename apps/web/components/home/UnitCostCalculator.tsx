@@ -8,6 +8,7 @@ import {
   type RiskLevel,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
+import { useT, type Messages } from "@lib/i18n";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { shortServiceName } from "@lib/service-name";
 import { SAMPLES, sampleName, type Sample } from "./samples";
@@ -23,11 +24,16 @@ const riskColor: Record<RiskLevel, string> = {
  * 판정 문구는 앱의 신호등(getRiskLevel)과 같은 기준을 쓴다. 커피·영화표처럼
  * 바깥 물건 값에 빗대지 않는다 — 그 값이 틀리면 이 숫자 전체가 의심받는다.
  */
-function verdict(uses: number, risk: RiskLevel, amountText: string) {
-  if (uses === 0) return `한 번도 안 썼다면 ${amountText}을 그냥 낸 셈이에요`;
-  if (uses === 1) return "한 번 쓰려고 한 달 요금을 다 냈어요";
-  if (risk === "green") return "요금만큼 잘 쓰고 있어요";
-  return "애매해요. 다음 달에도 이 정도라면 다시 생각해 보세요";
+function verdict(
+  c: Messages["landing"]["calc"],
+  uses: number,
+  risk: RiskLevel,
+  amountText: string,
+) {
+  if (uses === 0) return c.verdictZero(amountText);
+  if (uses === 1) return c.verdictOne;
+  if (risk === "green") return c.verdictGreen;
+  return c.verdictMaybe;
 }
 
 /**
@@ -35,6 +41,7 @@ function verdict(uses: number, risk: RiskLevel, amountText: string) {
  * 직접 느끼게 한다. 등록은 이 칸이 아니라 대시보드에서 한다.
  */
 export function UnitCostCalculator() {
+  const c = useT().landing.calc;
   const [selectedId, setSelectedId] = useState<string>(SAMPLES[0]?.preset.id ?? "");
   const [uses, setUses] = useState(4);
 
@@ -44,7 +51,7 @@ export function UnitCostCalculator() {
   return (
     // 테마 색 변수로 칠한다. 예전에는 라이트 모드에서도 이 상자만 검게 칠해져 화면에서 따로 놀았다.
     <div className="w-full rounded-[1.75rem] border bg-card p-5 text-left text-card-foreground shadow-[0_40px_80px_-32px_rgba(9,9,11,0.22),0_2px_6px_rgba(9,9,11,0.04)] sm:p-9">
-      <div className="flex flex-wrap gap-2" role="group" aria-label="체험할 서비스">
+      <div className="flex flex-wrap gap-2" role="group" aria-label={c.servicesLabel}>
         {SAMPLES.map((sample) => {
           const active = sample.preset.id === selected.preset.id;
           return (
@@ -110,6 +117,7 @@ function HeroResult({
   uses: number;
   onUsesChange: (n: number) => void;
 }) {
+  const c = useT().landing.calc;
   const { amount, currency } = sample;
   const costPerUse = calculateCostPerUse(amount, uses);
   const risk = getRiskLevel(costPerUse, amount, uses);
@@ -120,15 +128,13 @@ function HeroResult({
   return (
     <>
       <p className="mt-7 text-base font-medium text-foreground sm:text-[17px]">
-        {sampleName(sample)} · 월 {amountText}
+        {c.line(sampleName(sample), amountText)}
       </p>
-      <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
-        목록 기준 요금 · 등록할 때 바꿀 수 있어요
-      </p>
+      <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{c.basis}</p>
 
       <div className="mt-7 flex items-center gap-4">
         <label htmlFor="hero-uses" className="w-[5.5rem] shrink-0 text-sm text-muted-foreground">
-          월 이용 횟수
+          {c.usesLabel}
         </label>
         <input
           id="hero-uses"
@@ -138,18 +144,16 @@ function HeroResult({
           step={1}
           value={uses}
           onChange={(e) => onUsesChange(Number(e.target.value))}
-          aria-valuetext={`${uses}회`}
+          aria-valuetext={c.uses(uses)}
           className="h-7 flex-1 cursor-pointer accent-red-500"
         />
         <span className="w-[3.25rem] shrink-0 text-right text-xl font-bold tabular-nums text-foreground">
-          {uses}회
+          {c.uses(uses)}
         </span>
       </div>
 
       <div className="mt-7 border-t pt-7 text-center">
-        <p className="text-sm text-muted-foreground">
-          {uses === 0 ? "쓰지 않고 낸 돈" : "1회당 실제 단가"}
-        </p>
+        <p className="text-sm text-muted-foreground">{uses === 0 ? c.zeroLabel : c.perUse}</p>
         {/* 굴러가는 숫자는 읽는 기계에 프레임마다 읽히지 않게 숨기고, 최종 값만 따로 알린다. */}
         <p
           aria-hidden
@@ -164,7 +168,7 @@ function HeroResult({
           {costText}
         </p>
         <p className="mt-3.5 text-[15px] text-muted-foreground">
-          {verdict(uses, risk, amountText)}
+          {verdict(c, uses, risk, amountText)}
         </p>
       </div>
     </>
