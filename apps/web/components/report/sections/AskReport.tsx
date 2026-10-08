@@ -8,6 +8,7 @@ import { answerAsk, ASK_SUGGESTIONS, type AskAnswer } from "@lib/ask/answer";
 import { askReport } from "@lib/ask/client";
 import { Spinner } from "@components/ui/spinner";
 import { cn } from "@lib/utils";
+import { useLatestT, useT } from "@lib/i18n";
 
 /**
  * '리포트에 물어보기'. 질문 문장만 서버(AI)로 가고, AI가 고른 도구를 이 기기의 기록으로 계산해 답한다(lib/ask).
@@ -24,6 +25,8 @@ export function AskReport({
   rate: number;
   now: Date;
 }) {
+  const a = useT().reportPage.ask;
+  const tRef = useLatestT();
   const [question, setQuestion] = useState("");
   const [asked, setAsked] = useState<string | null>(null);
   const [result, setResult] = useState<AskAnswer | null>(null);
@@ -42,7 +45,7 @@ export function AskReport({
       setResult(answerAsk(call, { subscriptions, usageLogs, rate, now }));
       setQuestion("");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "지금은 답할 수 없어요.");
+      setError(e instanceof Error ? e.message : tRef.current.reportPage.ask.unavailable);
     } finally {
       setBusy(false);
     }
@@ -54,10 +57,10 @@ export function AskReport({
   };
 
   return (
-    <section aria-label="리포트에 물어보기" className="space-y-3 rounded-2xl border p-4">
+    <section aria-label={a.label} className="space-y-3 rounded-2xl border p-4">
       <h2 className="flex items-center gap-1.5 text-sm font-bold">
         <Sparkles className="size-4" aria-hidden />
-        리포트에 물어보기
+        {a.title}
       </h2>
 
       <div className="flex flex-wrap gap-1.5">
@@ -111,12 +114,10 @@ export function AskReport({
                   href={`/help?q=${encodeURIComponent(asked ?? "")}`}
                   className="inline-block text-xs font-bold underline underline-offset-2"
                 >
-                  도움말에서 찾아보기
+                  {a.goHelp}
                 </Link>
               )}
-              <p className="text-[11px] text-muted-foreground">
-                계산: {result.source} · 숫자는 이 기기에서 계산했어요
-              </p>
+              <p className="text-[11px] text-muted-foreground">{a.source(result.source)}</p>
             </>
           )}
         </div>
@@ -127,23 +128,20 @@ export function AskReport({
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           maxLength={200}
-          placeholder="직접 물어보기"
-          aria-label="리포트에 물어볼 질문"
+          placeholder={a.placeholder}
+          aria-label={a.inputLabel}
           className="min-w-0 flex-1 rounded-xl border bg-card px-3 py-2.5 text-sm"
         />
         <button
           type="submit"
           disabled={busy || !question.trim()}
-          aria-label="묻기"
+          aria-label={a.send}
           className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-50"
         >
           <ArrowUp className="size-4" aria-hidden />
         </button>
       </form>
-      <p className="text-[11px] text-muted-foreground">
-        질문 문장만 AI로 보내요. 내 구독 목록과 금액은 보내지 않아요. 이름·연락처 같은 개인정보는
-        적지 마세요.
-      </p>
+      <p className="text-[11px] text-muted-foreground">{a.privacy}</p>
     </section>
   );
 }
