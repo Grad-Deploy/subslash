@@ -10,6 +10,10 @@ import * as form from "./form";
 import * as helpPage from "./helpPage";
 import * as importing from "./importing";
 import * as landing from "./landing";
+import * as usageApp from "./usageApp";
+import * as usageMore from "./usageMore";
+import * as measured from "./measured";
+import * as reminders from "./reminders";
 import * as oauth from "./oauth";
 import * as overview from "./overview";
 import * as receipt from "./receipt";
@@ -41,6 +45,10 @@ export const messages = {
     ...appSmall.ko,
     ...helpPage.ko,
     ...landing.ko,
+    ...usageApp.ko,
+    ...usageMore.ko,
+    ...measured.ko,
+    ...reminders.ko,
     ...importing.ko,
     ...savings.ko,
     ...receiptView.ko,
@@ -65,6 +73,10 @@ export const messages = {
     ...appSmall.en,
     ...helpPage.en,
     ...landing.en,
+    ...usageApp.en,
+    ...usageMore.en,
+    ...measured.en,
+    ...reminders.en,
     ...importing.en,
     ...savings.en,
     ...receiptView.en,
