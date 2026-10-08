@@ -2,14 +2,9 @@
 
 import React from "react";
 import { formatKRW } from "@subslash/shared";
-import {
-  AGE_BANDS,
-  AGE_BAND_LABELS,
-  STATS_MIN_PER_AGE_BAND,
-  type AgeBand,
-  type AgeBandStats,
-} from "@lib/stats";
+import { AGE_BANDS, STATS_MIN_PER_AGE_BAND, type AgeBand, type AgeBandStats } from "@lib/stats";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 
 /**
  * 연령대별 한 달 구독 지출(가운데 값)을 가로 막대로 보여 주고, 내 연령대를 강조한 뒤 내 지출을 한 줄 더
@@ -32,6 +27,7 @@ export function AgeComparison({
   monthly: number;
   hasSubscriptions: boolean;
 }) {
+  const a = useT().reportPage.age;
   const mine = myBand ? byAge.find((row) => row.ageBand === myBand) : undefined;
   const max = Math.max(
     1,
@@ -44,8 +40,8 @@ export function AgeComparison({
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
-        <p className="text-xs text-muted-foreground">내 연령대를 고르면 같은 연령대와 비교해요.</p>
-        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="내 연령대">
+        <p className="text-xs text-muted-foreground">{a.pickNote}</p>
+        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={a.myBand}>
           {AGE_BANDS.map((band) => (
             <button
               key={band}
@@ -60,14 +56,14 @@ export function AgeComparison({
                   : "hover:bg-muted",
               )}
             >
-              {AGE_BAND_LABELS[band]}
+              {a.labels[band]}
             </button>
           ))}
         </div>
       </div>
 
       <figure className="space-y-2">
-        <figcaption className="text-sm font-semibold">연령대별 한 달 구독 지출(보통)</figcaption>
+        <figcaption className="text-sm font-semibold">{a.caption}</figcaption>
         <ul className="space-y-1.5">
           {byAge.map((row) => {
             const isMine = row.ageBand === myBand;
@@ -77,11 +73,11 @@ export function AgeComparison({
                 className="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-2 text-xs"
               >
                 <span className={cn(isMine ? "font-bold" : "text-muted-foreground")}>
-                  {AGE_BAND_LABELS[row.ageBand]}
+                  {a.labels[row.ageBand]}
                 </span>
                 {row.medianMonthlyKRW === null ? (
                   <span className="col-span-2 text-muted-foreground">
-                    {row.participants}명 참여 · {STATS_MIN_PER_AGE_BAND}명이 모이면 보여 드려요
+                    {a.notEnough(row.participants, STATS_MIN_PER_AGE_BAND)}
                   </span>
                 ) : (
                   <>
@@ -104,7 +100,7 @@ export function AgeComparison({
           })}
           {hasSubscriptions && (
             <li className="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-2 border-t pt-2 text-xs">
-              <span className="font-bold">나</span>
+              <span className="font-bold">{a.me}</span>
               <span className="h-3 rounded-r bg-muted" aria-hidden>
                 <span
                   className="block h-full rounded-r bg-foreground"
@@ -120,12 +116,12 @@ export function AgeComparison({
       {hasSubscriptions && myBand && (
         <p className="rounded-xl bg-muted/50 p-3 text-sm">
           {diff === null
-            ? `${AGE_BAND_LABELS[myBand]}는 아직 ${mine?.participants ?? 0}명이라 비교할 수 없어요.`
+            ? a.tooFew(a.labels[myBand], mine?.participants ?? 0)
             : diff > 0
-              ? `${AGE_BAND_LABELS[myBand]} 보통보다 한 달 ${formatKRW(diff)} 더 내요. 1년이면 ${formatKRW(diff * 12)}.`
+              ? a.more(a.labels[myBand], formatKRW(diff), formatKRW(diff * 12))
               : diff < 0
-                ? `${AGE_BAND_LABELS[myBand]} 보통보다 한 달 ${formatKRW(-diff)} 덜 내요.`
-                : `${AGE_BAND_LABELS[myBand]} 보통과 같아요.`}
+                ? a.less(a.labels[myBand], formatKRW(-diff))
+                : a.same(a.labels[myBand])}
         </p>
       )}
     </div>

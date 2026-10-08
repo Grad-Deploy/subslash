@@ -4,6 +4,7 @@ import { ReceiptText } from "lucide-react";
 import { formatKRW, previousMonth, serviceNameOf, type findBundleOverlaps } from "@subslash/shared";
 import { IS_APP_BUILD } from "@lib/platform";
 import { receiptHref } from "@lib/receipt-view";
+import { useT } from "@lib/i18n";
 
 // 요약 칸의 금액을 칸에 맞춰 줄인다(앱 전용). 웹은 지금처럼 자른다.
 const AppFitText = IS_APP_BUILD
@@ -12,16 +13,17 @@ const AppFitText = IS_APP_BUILD
 
 /** 지난달 영수증과 올해 결산 영수증으로 가는 칸. */
 export function ReceiptLinks({ now }: { now: Date }) {
+  const r = useT().reportPage.receipts;
   const last = previousMonth(now);
   const links = [
-    { href: receiptHref({ kind: "month", ...last }), label: `${last.month}월 영수증` },
+    { href: receiptHref({ kind: "month", ...last }), label: r.month(last.month) },
     {
       href: receiptHref({ kind: "year", year: now.getFullYear() }),
-      label: `${now.getFullYear()}년 결산 영수증`,
+      label: r.year(now.getFullYear()),
     },
   ];
   return (
-    <section aria-label="구독 영수증" className="grid grid-cols-2 gap-2">
+    <section aria-label={r.label} className="grid grid-cols-2 gap-2">
       {links.map((link) => (
         <Link
           key={link.href}
@@ -59,19 +61,20 @@ export function SpendSummary({
   annual: number;
   count: number;
 }) {
+  const s = useT().reportPage.summary;
   return (
     // 앱은 '구독 N개' 칸을 내용만큼만 두고 금액 두 칸을 넓힌다.
     <section
-      aria-label="지출 요약"
+      aria-label={s.label}
       className={
         IS_APP_BUILD
           ? "grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2"
           : "grid grid-cols-3 gap-2"
       }
     >
-      <SummaryTile label="한 달" value={formatKRW(monthly)} />
-      <SummaryTile label="1년이면" value={formatKRW(annual)} />
-      <SummaryTile label="구독" value={`${count}개`} />
+      <SummaryTile label={s.month} value={formatKRW(monthly)} />
+      <SummaryTile label={s.year} value={formatKRW(annual)} />
+      <SummaryTile label={s.subs} value={s.count(count)} />
     </section>
   );
 }
@@ -82,18 +85,20 @@ export function BundleOverlapNotice({
 }: {
   overlaps: ReturnType<typeof findBundleOverlaps>;
 }) {
+  const o = useT().reportPage.overlap;
   if (overlaps.length === 0) return null;
   return (
     <section
-      aria-label="결합 상품과 겹치는 구독"
+      aria-label={o.label}
       className="space-y-1.5 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm"
     >
-      <p className="font-bold">두 번 내고 있을 수 있어요</p>
+      <p className="font-bold">{o.title}</p>
       {overlaps.map(({ bundle, other, serviceIds }) => (
         <p key={`${bundle.id}-${other.id}`} className="text-xs leading-relaxed">
-          <b>{bundle.name}</b>에 {serviceIds.map(serviceNameOf).join(", ")}이(가) 들어 있는데{" "}
-          <b>{other.name}</b>도 따로 구독 중이에요. 다른 계정으로 쓰는 게 아니라면 한 쪽을 해지해도
-          돼요.
+          <b>{bundle.name}</b>
+          {o.middle(serviceIds.map(serviceNameOf).join(", "))}
+          <b>{other.name}</b>
+          {o.after}
         </p>
       ))}
     </section>
