@@ -8,6 +8,7 @@ import { refreshAuth } from "@hooks/useAuth";
 import { VERIFY_ACCOUNT_TTL_DAYS } from "@lib/verification-config";
 import { apiFetch, apiUrl } from "@lib/api";
 import { Spinner } from "../ui/spinner";
+import { useKnownText, useLatestT, useT, type Messages } from "@lib/i18n";
 
 type View =
   | { kind: "loading" }
@@ -17,7 +18,9 @@ type View =
   | { kind: "declined" }
   | { kind: "invalid" }
   | { kind: "gone" }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string }
+  /** 네트워크 오류. 문구는 그릴 때 지금 언어로 붙인다. */
+  | { kind: "network" };
 
 /**
  * 가입 확인 메일의 링크가 여는 화면.
@@ -27,6 +30,11 @@ type View =
  * 지운다. 지우기는 되돌릴 수 없으므로 한 번 더 묻는다.
  */
 export function EmailVerification() {
+  const t = useT();
+  const a = t.account;
+  const v = a.verify;
+  const known = useKnownText();
+  const tRef = useLatestT();
   const token = useSearchParams().get("token");
   // 토큰이 없는 링크는 물어볼 것도 없이 올바르지 않은 링크다.
   const [view, setView] = useState<View>(() => (token ? { kind: "loading" } : { kind: "invalid" }));
@@ -41,15 +49,15 @@ export function EmailVerification() {
           apiUrl(`/api/auth/verify-email?token=${encodeURIComponent(token)}`),
         );
         const data = await res.json().catch(() => ({}));
-        if (!cancelled) setView(viewFrom(res.ok, data));
+        if (!cancelled) setView(viewFrom(res.ok, data, tRef.current));
       } catch {
-        if (!cancelled) setView(NETWORK_ERROR);
+        if (!cancelled) setView({ kind: "network" });
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, tRef]);
 
   const decide = async (decision: "confirm" | "decline") => {
     setBusy(true);
@@ -64,12 +72,12 @@ export function EmailVerification() {
         // 지우려 했는데 그사이 확인된 계정이다.
         setView({ kind: "error", message: data.error });
       } else {
-        setView(viewFrom(res.ok, data));
+        setView(viewFrom(res.ok, data, tRef.current));
       }
       // 이 브라우저가 그 계정으로 로그인해 있었다면 헤더와 '내 정보'가 바로 바뀌어야 한다.
       await refreshAuth();
     } catch {
-      setView(NETWORK_ERROR);
+      setView({ kind: "network" });
     } finally {
       setBusy(false);
     }
@@ -87,7 +95,7 @@ export function EmailVerification() {
       return (
         <div className="space-y-5">
           <AccountSummary username={view.username} email={view.email} />
-          <p className="text-sm leading-relaxed text-center">이 계정을 직접 가입하셨나요?</p>
+          <p className="text-sm leading-relaxed text-center">{v.question}</p>
           <div className="flex flex-col gap-2">
             <Button
               type="button"
@@ -95,7 +103,7 @@ export function EmailVerification() {
               disabled={busy}
               onClick={() => decide("confirm")}
             >
-              맞아요, 제가 가입했어요
+              {v.yes}
             </Button>
             <Button
               type="button"
@@ -104,7 +112,7 @@ export function EmailVerification() {
               disabled={busy}
               onClick={() => setView({ ...view, kind: "confirm-decline" })}
             >
-              제가 가입하지 않았어요
+              {v.no}
             </Button>
           </div>
         </div>
@@ -115,8 +123,9 @@ export function EmailVerification() {
         <div className="space-y-5">
           <AccountSummary username={view.username} email={view.email} />
           <p className="text-sm leading-relaxed">
-            아이디 <strong>{view.username}</strong> 계정을 지웁니다. 되돌릴 수 없고, 이 주소로 다시
-            가입할 수 있게 됩니다. 이 계정으로 로그인해 있던 기기는 모두 로그아웃됩니다.
+            {v.declineBefore}
+            <strong>{view.username}</strong>
+            {v.declineAfter}
           </p>
           <div className="flex flex-col gap-2">
             <Button
@@ -126,7 +135,7 @@ export function EmailVerification() {
               disabled={busy}
               onClick={() => decide("decline")}
             >
-              계정 지우기
+              {v.deleteAccount}
             </Button>
             <Button
               type="button"
@@ -135,7 +144,7 @@ export function EmailVerification() {
               disabled={busy}
               onClick={() => setView({ ...view, kind: "pending" })}
             >
-              취소
+              {a.cancel}
             </Button>
           </div>
         </div>
@@ -144,60 +153,52 @@ export function EmailVerification() {
     case "verified":
       return (
         <AuthOutcome
-          title="이메일을 확인했습니다"
-          body={
-            view.username
-              ? `아이디 ${view.username} 계정의 이메일이 확인되었습니다.`
-              : "이 계정의 이메일은 확인된 상태입니다."
-          }
-          link={{ href: "/me", label: "내 정보 보기" }}
+          title={v.verifiedTitle}
+          body={v.verifiedBody(view.username ?? null)}
+          link={{ href: "/me", label: a.seeMe }}
         />
       );
 
     case "declined":
       return (
         <AuthOutcome
-          title="계정을 지웠습니다"
-          body="알려주셔서 고맙습니다. 이 주소로 가입된 계정이 없어졌고, 이 주소로 다시 가입할 수 있습니다."
-          link={{ href: "/signup", label: "회원가입" }}
+          title={v.declinedTitle}
+          body={v.declinedBody}
+          link={{ href: "/signup", label: v.signup }}
         />
       );
 
     case "gone":
       return (
         <AuthOutcome
-          title="이미 지워진 계정입니다"
-          body="이 링크가 가리키는 계정은 더 이상 없습니다. 이 주소로 새로 가입할 수 있습니다."
-          link={{ href: "/signup", label: "회원가입" }}
+          title={v.goneTitle}
+          body={v.goneBody}
+          link={{ href: "/signup", label: v.signup }}
         />
       );
 
     case "invalid":
       return (
         <AuthOutcome
-          title="링크가 만료됐거나 올바르지 않습니다"
-          body={`확인 링크는 보낸 뒤 ${VERIFY_ACCOUNT_TTL_DAYS}일 동안만 쓸 수 있습니다. 로그인한 뒤 '내 정보'에서 확인 메일을 다시 받을 수 있습니다.`}
-          link={{ href: "/me", label: "내 정보로 가기" }}
+          title={a.linkInvalidTitle}
+          body={v.invalidBody(VERIFY_ACCOUNT_TTL_DAYS)}
+          link={{ href: "/me", label: v.goMe }}
         />
       );
 
     case "error":
+    case "network":
       return (
         <AuthOutcome
-          title="처리하지 못했습니다"
-          body={view.message}
-          link={{ href: "/", label: "홈으로" }}
+          title={a.failedTitle}
+          body={view.kind === "network" ? a.networkFailed : known(view.message)}
+          link={{ href: "/", label: a.home }}
         />
       );
   }
 }
 
-const NETWORK_ERROR: View = {
-  kind: "error",
-  message: "네트워크에 문제가 있어 처리하지 못했습니다. 잠시 후 다시 시도해주세요.",
-};
-
-function viewFrom(ok: boolean, data: Record<string, unknown> | null): View {
+function viewFrom(ok: boolean, data: Record<string, unknown> | null, t: Messages): View {
   const status = data?.status;
   const username = typeof data?.username === "string" ? data.username : undefined;
   const email = typeof data?.email === "string" ? data.email : undefined;
@@ -213,17 +214,18 @@ function viewFrom(ok: boolean, data: Record<string, unknown> | null): View {
       typeof data?.error === "string"
         ? data.error
         : ok
-          ? "알 수 없는 응답입니다."
-          : "처리하지 못했습니다. 잠시 후 다시 시도해주세요.",
+          ? t.account.verify.unknownResponse
+          : t.account.verify.failedRetry,
   };
 }
 
 function AccountSummary({ username, email }: { username: string; email: string }) {
+  const a = useT().account;
   return (
     <dl className="grid grid-cols-[4.5rem_1fr] gap-y-1.5 rounded-xl bg-muted/50 p-3 text-sm">
-      <dt className="text-muted-foreground">아이디</dt>
+      <dt className="text-muted-foreground">{a.username}</dt>
       <dd className="font-semibold">{username}</dd>
-      <dt className="text-muted-foreground">이메일</dt>
+      <dt className="text-muted-foreground">{a.email}</dt>
       <dd className="font-semibold break-all">{email}</dd>
     </dl>
   );

@@ -14,6 +14,8 @@ import * as usageApp from "./usageApp";
 import * as usageMore from "./usageMore";
 import * as measured from "./measured";
 import * as reminders from "./reminders";
+import * as account from "./account";
+import * as accountPages from "./accountPages";
 import * as oauth from "./oauth";
 import * as overview from "./overview";
 import * as receipt from "./receipt";
@@ -49,6 +51,8 @@ export const messages = {
     ...usageMore.ko,
     ...measured.ko,
     ...reminders.ko,
+    ...account.ko,
+    ...accountPages.ko,
     ...importing.ko,
     ...savings.ko,
     ...receiptView.ko,
@@ -77,6 +81,8 @@ export const messages = {
     ...usageMore.en,
     ...measured.en,
     ...reminders.en,
+    ...account.en,
+    ...accountPages.en,
     ...importing.en,
     ...savings.en,
     ...receiptView.en,

@@ -12,13 +12,16 @@ import { apiFetch, apiUrl } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
 import { StatusMessage, statusBorder } from "./LiveStatusMessage";
 import { Spinner } from "../ui/spinner";
+import { useKnownText, useLatestT, useT } from "@lib/i18n";
 
 type View =
   | { kind: "loading" }
   | { kind: "form"; username: string; email: string }
   | { kind: "done"; username: string }
   | { kind: "invalid" }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string }
+  /** 네트워크 오류. 문구는 그릴 때 지금 언어로 붙인다. */
+  | { kind: "network" };
 
 type FieldErrors = { password?: string; passwordConfirm?: string };
 
@@ -30,6 +33,10 @@ type FieldErrors = { password?: string; passwordConfirm?: string };
  * 비밀번호 칸의 안내는 가입 폼과 같은 검증 함수에서 온다 — 여기서 초록이면 서버도 받는다.
  */
 export function ResetPassword() {
+  const a = useT().account;
+  const r = a.reset;
+  const tRef = useLatestT();
+  const known = useKnownText();
   const token = useSearchParams().get("token");
   // 토큰이 없는 링크는 물어볼 것도 없이 올바르지 않은 링크다.
   const [view, setView] = useState<View>(() => (token ? { kind: "loading" } : { kind: "invalid" }));
@@ -61,19 +68,17 @@ export function ResetPassword() {
           setView({
             kind: "error",
             message:
-              typeof data?.error === "string"
-                ? data.error
-                : "링크를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.",
+              typeof data?.error === "string" ? data.error : tRef.current.account.reset.checkFailed,
           });
         }
       } catch {
-        if (!cancelled) setView(NETWORK_ERROR);
+        if (!cancelled) setView({ kind: "network" });
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, tRef]);
 
   const passwordStatus: LiveStatus = submitErrors.password
     ? { tone: "error", message: submitErrors.password }
@@ -118,13 +123,11 @@ export function ResetPassword() {
         setView({
           kind: "error",
           message:
-            typeof data?.error === "string"
-              ? data.error
-              : "비밀번호를 바꾸지 못했습니다. 잠시 후 다시 시도해주세요.",
+            typeof data?.error === "string" ? data.error : tRef.current.account.change.failed,
         });
       }
     } catch {
-      setView(NETWORK_ERROR);
+      setView({ kind: "network" });
     } finally {
       setBusy(false);
     }
@@ -142,15 +145,15 @@ export function ResetPassword() {
       return (
         <HydratedForm onSubmit={submit} noValidate className="space-y-4">
           <dl className="grid grid-cols-[4.5rem_1fr] gap-y-1.5 rounded-xl bg-muted/50 p-3 text-sm">
-            <dt className="text-muted-foreground">아이디</dt>
+            <dt className="text-muted-foreground">{a.username}</dt>
             <dd className="font-semibold">{view.username}</dd>
-            <dt className="text-muted-foreground">이메일</dt>
+            <dt className="text-muted-foreground">{a.email}</dt>
             <dd className="font-semibold break-all">{view.email}</dd>
           </dl>
 
           <div className="space-y-1.5">
             <label htmlFor="new-password" className="text-xs font-bold text-foreground">
-              새 비밀번호
+              {a.newPassword}
             </label>
             <Input
               id="new-password"
@@ -173,7 +176,7 @@ export function ResetPassword() {
 
           <div className="space-y-1.5">
             <label htmlFor="new-password-confirm" className="text-xs font-bold text-foreground">
-              새 비밀번호 확인
+              {a.newPasswordConfirm}
             </label>
             <Input
               id="new-password-confirm"
@@ -194,12 +197,10 @@ export function ResetPassword() {
             <StatusMessage id="new-password-confirm-status" status={confirmStatus} />
           </div>
 
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            바꾸면 이 계정으로 로그인해 있던 다른 기기는 모두 로그아웃됩니다.
-          </p>
+          <p className="text-xs leading-relaxed text-muted-foreground">{r.logoutNote}</p>
 
           <Button type="submit" className="w-full h-11 font-bold rounded-xl" disabled={busy}>
-            {busy ? "바꾸는 중..." : "비밀번호 바꾸기"}
+            {busy ? a.changing : a.changePassword}
           </Button>
         </HydratedForm>
       );
@@ -207,33 +208,29 @@ export function ResetPassword() {
     case "done":
       return (
         <AuthOutcome
-          title="비밀번호를 바꿨습니다"
-          body={`${view.username ? `아이디 ${view.username} 계정에 ` : ""}새 비밀번호로 로그인했습니다. 다른 기기에서는 새 비밀번호로 다시 로그인해주세요.`}
-          link={{ href: "/me", label: "내 정보 보기" }}
+          title={r.doneTitle}
+          body={r.doneBody(view.username)}
+          link={{ href: "/me", label: a.seeMe }}
         />
       );
 
     case "invalid":
       return (
         <AuthOutcome
-          title="링크가 만료됐거나 올바르지 않습니다"
-          body={`재설정 링크는 보낸 뒤 ${RESET_PASSWORD_TTL_MINUTES}분 동안, 한 번만 쓸 수 있습니다. 비밀번호를 이미 바꿨다면 새 비밀번호로 로그인하세요.`}
-          link={{ href: "/forgot-password", label: "재설정 메일 다시 받기" }}
+          title={a.linkInvalidTitle}
+          body={r.invalidBody(RESET_PASSWORD_TTL_MINUTES)}
+          link={{ href: "/forgot-password", label: r.resend }}
         />
       );
 
     case "error":
+    case "network":
       return (
         <AuthOutcome
-          title="처리하지 못했습니다"
-          body={view.message}
-          link={{ href: "/login", label: "로그인으로" }}
+          title={a.failedTitle}
+          body={view.kind === "network" ? a.networkFailed : known(view.message)}
+          link={{ href: "/login", label: r.toLogin }}
         />
       );
   }
 }
-
-const NETWORK_ERROR: View = {
-  kind: "error",
-  message: "네트워크에 문제가 있어 처리하지 못했습니다. 잠시 후 다시 시도해주세요.",
-};

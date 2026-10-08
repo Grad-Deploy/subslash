@@ -1,5 +1,6 @@
 import React, { Suspense } from "react";
 import type { Metadata } from "next";
+import { AccountPageHeading } from "@components/auth/AccountPageHeading";
 import { ResetPassword } from "@components/auth/ResetPassword";
 
 export const metadata: Metadata = {
@@ -12,12 +13,7 @@ export const metadata: Metadata = {
 export default function ResetPasswordPage() {
   return (
     <div className="max-w-md mx-auto py-6 space-y-6">
-      <div className="space-y-1.5 text-center">
-        <h1 className="text-2xl font-black tracking-tight">새 비밀번호 정하기</h1>
-        <p className="text-sm text-muted-foreground">
-          메일로 받은 링크의 계정에 쓸 새 비밀번호를 정하세요.
-        </p>
-      </div>
+      <AccountPageHeading page="reset" />
 
       <div className="p-5 sm:p-6 border rounded-2xl bg-card shadow-sm">
         {/* useSearchParams를 쓰는 컴포넌트는 Suspense로 감싸야 빌드가 페이지 전체를
