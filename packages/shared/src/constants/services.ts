@@ -1179,8 +1179,19 @@ export function getCancelRoutes(sub: {
  * 부르면, 눌러서 첫 화면만 보고 해지된 줄 아는 사람이 생긴다. 캘린더 메모는 앱 밖에서 읽히므로
  * 화면에서 설명해 줄 기회가 없다 — 문구 한 줄에 다 담아야 한다.
  */
-export function cancelNoteFor(cancelUrl?: string | null): string | null {
+export function cancelNoteFor(cancelUrl?: string | null, lang: "ko" | "en" = "ko"): string | null {
   if (!cancelUrl) return null;
+  // 영어로 등록한 캘린더의 일정 메모. 주소의 성격에 따라 문구를 나누는 것은 한국어와 같다.
+  if (lang === "en") {
+    switch (getCancelUrlKind(cancelUrl)) {
+      case "direct":
+        return `Cancel (verified cancel page): ${cancelUrl}`;
+      case "entry":
+        return `Go cancel: ${cancelUrl}\n(This is the service's home or account page, not the cancel page. Find the cancel menu from there.)`;
+      default:
+        return `Go cancel: ${cancelUrl}\n(An address you entered yourself. Where it leads hasn't been checked.)`;
+    }
+  }
   switch (getCancelUrlKind(cancelUrl)) {
     case "direct":
       return `해지하기(확인된 해지 화면): ${cancelUrl}`;

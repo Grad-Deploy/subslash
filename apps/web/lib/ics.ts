@@ -62,20 +62,29 @@ export function calendarEligible(entries: CalendarEntry[]): CalendarEntry[] {
  * 일정 본문. 캘린더 앱은 본문의 주소를 눌러 열 수 있게 보여주므로, 결제일 알림에서 바로 구독을
  * 고치거나 해지하러 갈 수 있다.
  */
-export function eventDescription(entry: CalendarEntry, detailUrl: string | null): string {
+export function eventDescription(
+  entry: CalendarEntry,
+  detailUrl: string | null,
+  lang: "ko" | "en" = "ko",
+): string {
+  const en = lang === "en";
   const parts = [
-    `${entry.name} 결제일입니다. 지난 30일 동안 몇 번 썼는지 돌아보고, 아깝다면 지금 해지하세요.`,
+    en
+      ? `${entry.name} billing day. Look back at how many times you used it in the last 30 days, and cancel now if it isn't worth it.`
+      : `${entry.name} 결제일입니다. 지난 30일 동안 몇 번 썼는지 돌아보고, 아깝다면 지금 해지하세요.`,
   ];
 
   // 해지하려고 캘린더를 연 사람이 앱을 다시 열지 않아도 되게, 갈 곳을 메모에 적는다.
-  const cancelNote = cancelNoteFor(entry.cancelUrl);
+  const cancelNote = cancelNoteFor(entry.cancelUrl, lang);
   if (cancelNote) parts.push(cancelNote);
 
   if (detailUrl) {
     // 구독 기록은 서버가 아니라 기기에 있다. 등록한 기기가 아니면 열어도 보이지 않으므로 미리
     // 적어 둔다. 로그인한 기기끼리는 계정 동기화로 맞춰지므로 그 길도 함께 알린다.
     parts.push(
-      `구독 보기·수정: ${detailUrl}\n(이 구독을 등록한 기기에서 열거나, 로그인해 두면 다른 기기에서도 보입니다)`,
+      en
+        ? `View or edit the subscription: ${detailUrl}\n(Open it on the device where you registered it, or log in to see it on other devices too)`
+        : `구독 보기·수정: ${detailUrl}\n(이 구독을 등록한 기기에서 열거나, 로그인해 두면 다른 기기에서도 보입니다)`,
     );
   }
 

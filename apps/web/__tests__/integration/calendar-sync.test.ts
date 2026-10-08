@@ -193,6 +193,24 @@ describe("구글 캘린더에 결제일 등록", () => {
     expect((await claim(code)).status).toBe(400);
   });
 
+  it("영어 화면에서 등록하면 영어 캘린더 이름과 메모로 쓰고, 두 이름을 모두 알려 준다", async () => {
+    const { cookie } = await loggedIn("english");
+    const response = await start(cookie, { entries: [NETFLIX], reminderDays: 1, lang: "en" });
+    const code = new URL(((await response.json()) as { url: string }).url).searchParams.get(
+      "code",
+    )!;
+    const body = (await (await claim(code)).json()) as {
+      calendarName: string;
+      calendarNames: string[];
+      events: Array<{ description: string }>;
+    };
+    expect(body.calendarName).toBe("SubSlash Billing Days");
+    // 다른 언어로 만든 캘린더도 같은 캘린더로 찾아 이름만 바꾸게 한다.
+    expect(body.calendarNames).toEqual(["SubSlash 결제일", "SubSlash Billing Days"]);
+    expect(body.events[0].description).toContain("billing day");
+    expect(body.events[0].description).not.toMatch(/결제일입니다/);
+  });
+
   it("다시 누르면 앞서 맡긴 계획은 쓸 수 없다", async () => {
     const { cookie } = await loggedIn("twice");
     const first = await start(cookie, { entries: [NETFLIX] });

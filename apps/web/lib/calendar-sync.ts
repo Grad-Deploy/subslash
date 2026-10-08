@@ -28,8 +28,9 @@ export const MAX_PLAN_ENTRIES = 200;
 /** 캘린더가 알림을 낼 수 있는 가장 이른 시점(4주). Google이 그보다 앞선 알림을 거절한다. */
 const MAX_REMINDER_DAYS = 28;
 
-/** 결제일을 쓰는 캘린더 이름. 전용 캘린더라 통째로 지우면 결제일만 사라진다. */
-export const CALENDAR_NAME = "SubSlash 결제일";
+import { CALENDAR_NAMES, calendarNameFor, type CalendarLang } from "./calendar-names";
+
+export { CALENDAR_NAMES, calendarNameFor, type CalendarLang };
 
 export interface CalendarPlanEntry extends CalendarEntry {
   billingMonth: number | null;
@@ -40,6 +41,8 @@ export interface CalendarPlan {
   entries: CalendarPlanEntry[];
   /** 며칠 전에 알릴지. 등록 화면에서 고른다. 0이면 결제일 아침에 알린다. */
   reminderDays: number;
+  /** 등록한 화면의 언어. 캘린더 이름과 일정 메모를 이 언어로 쓴다. 예전 계획에는 없어 한국어로 읽는다. */
+  lang?: CalendarLang;
 }
 
 /** 웹 앱이 받아 캘린더에 쓰는 일정 하나. RRULE은 `lib/ics`의 규칙을 쓴다. */
@@ -79,7 +82,7 @@ function isHttpUrl(value: unknown): boolean {
  */
 export function parseCalendarPlan(input: unknown): CalendarPlan | null {
   if (!input || typeof input !== "object") return null;
-  const body = input as { entries?: unknown; reminderDays?: unknown };
+  const body = input as { entries?: unknown; reminderDays?: unknown; lang?: unknown };
   if (!Array.isArray(body.entries)) return null;
   if (body.entries.length > MAX_PLAN_ENTRIES) return null;
 
@@ -116,6 +119,7 @@ export function parseCalendarPlan(input: unknown): CalendarPlan | null {
   return {
     entries,
     reminderDays: Math.min(Math.max(reminderDays, 0), MAX_REMINDER_DAYS),
+    lang: body.lang === "en" ? "en" : "ko",
   };
 }
 
@@ -161,6 +165,7 @@ export function buildCalendarEvents(
       description: eventDescription(
         entry,
         options.appUrl ? `${options.appUrl}${subscriptionDetailHref(entry.clientId)}` : null,
+        plan.lang ?? "ko",
       ),
       start: toDateValue(start),
       end: toDateValue(end),

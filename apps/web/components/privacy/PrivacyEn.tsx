@@ -233,8 +233,9 @@ export function PrivacyEn() {
               Adding billing days to Google Calendar: the subscription list we hold is deleted as
               soon as the web app picks it up; if it isn&rsquo;t picked up, it becomes unusable
               after 10 minutes and is deleted at the next registration. Events already in the
-              calendar are removed only by deleting the &lsquo;SubSlash 결제일&rsquo; (SubSlash
-              billing days) calendar in Google Calendar.
+              calendar are removed only by deleting the &lsquo;SubSlash Billing Days&rsquo; calendar
+              (named &lsquo;SubSlash 결제일&rsquo; if you registered from a Korean screen) in Google
+              Calendar.
             </li>
           )}
           {DEVICE_USAGE_STARTS_ON && (
@@ -419,7 +420,7 @@ export function PrivacyEn() {
             Deletion: you can delete it yourself with &lsquo;Delete account&rsquo; and &lsquo;Delete
             from account&rsquo; under My account.
             {SOCIAL_LOGIN_STARTS_ON &&
-              " Accounts signed up with Google, Kakao, or Naver that have no password are deleted by typing '탈퇴' (the confirmation word) instead of a password. Disconnecting SubSlash in that company's account settings alone does not delete your SubSlash account and records; to delete them, please delete your account."}
+              " Accounts signed up with Google, Kakao, or Naver that have no password are deleted by typing 'DELETE' instead of a password. Disconnecting SubSlash in that company's account settings alone does not delete your SubSlash account and records; to delete them, please delete your account."}
           </li>
           <li>
             Suspension of processing: processing on the server stops as soon as you turn off that
