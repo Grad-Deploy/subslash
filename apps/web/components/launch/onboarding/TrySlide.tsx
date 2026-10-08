@@ -7,6 +7,7 @@ import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { shortServiceName } from "@lib/service-name";
 import { isSocialLoginOpen } from "@lib/privacy";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 import { RISE_TEXT, kicker, slideBody, slideTitle, slideTop } from "./styles";
 
 /**
@@ -23,11 +24,7 @@ export const PICKS: ServicePreset[] = ["netflix", "coupang-wow", "youtube-premiu
   },
 );
 
-const LOGIN_PROVIDERS = [
-  { id: "kakao", label: "카카오로 로그인하러 가기" },
-  { id: "naver", label: "네이버로 로그인하러 가기" },
-  { id: "google", label: "Google로 로그인하러 가기" },
-] as const;
+const LOGIN_PROVIDERS = ["kakao", "naver", "google"] as const;
 
 export function TrySlide({
   picked,
@@ -42,6 +39,7 @@ export function TrySlide({
   onSample: () => void;
   onLogin: () => void;
 }) {
+  const tr = useT().landing.onboarding.try;
   const chosen = PICKS.filter((p) => picked.includes(p.id));
   // 고른 것이 모두 요금 하나뿐인 서비스일 때만 합계를 쓴다. 요금제가 여럿이면 등록할 때 골라야 안다.
   const allKnown = chosen.every((p) => p.defaultAmount !== null && p.currency === "KRW");
@@ -55,15 +53,13 @@ export function TrySlide({
       )}
       style={RISE_TEXT}
     >
-      <p className={kicker}>직접 해 보기</p>
+      <p className={kicker}>{tr.kicker}</p>
       <h2 className={slideTitle}>
-        지금 쓰고 있는 구독,
+        {tr.title1}
         <br />
-        골라 볼까요?
+        {tr.title2}
       </h2>
-      <p className={slideBody}>
-        고르면 대시보드에서 하나씩 등록해요. 요금제와 결제일은 그때 정해요.
-      </p>
+      <p className={slideBody}>{tr.body}</p>
 
       <div className="mt-6 flex flex-col gap-2">
         {PICKS.map((preset) => {
@@ -84,8 +80,8 @@ export function TrySlide({
                 <span className="block text-base font-bold">{shortServiceName(preset)}</span>
                 <span className="mt-0.5 block text-sm text-muted-foreground">
                   {preset.defaultAmount !== null
-                    ? `월 ${formatCurrency(preset.defaultAmount, preset.currency)}`
-                    : "요금제는 등록할 때 골라요"}
+                    ? tr.monthly(formatCurrency(preset.defaultAmount, preset.currency))
+                    : tr.planLater}
                 </span>
               </span>
               <span
@@ -107,15 +103,13 @@ export function TrySlide({
 
       <div className="flex-1" />
       <div className="flex items-baseline justify-between gap-3 px-1 pb-3">
-        <span className="text-sm text-muted-foreground">
-          {chosen.length > 0 ? `고른 구독 ${chosen.length}개` : "고른 구독"}
-        </span>
+        <span className="text-sm text-muted-foreground">{tr.chosen(chosen.length)}</span>
         <span className="text-right text-[15px] font-bold tabular-nums">
           {chosen.length === 0
             ? "—"
             : allKnown
-              ? `매달 ${formatCurrency(total, "KRW")}`
-              : "요금은 등록하며 확인해요"}
+              ? tr.monthlyTotal(formatCurrency(total, "KRW"))
+              : tr.priceLater}
         </span>
       </div>
       <button
@@ -123,7 +117,7 @@ export function TrySlide({
         onClick={onStart}
         className="flex h-14 items-center justify-center gap-1.5 rounded-[14px] bg-primary text-[17px] font-bold text-primary-foreground active:bg-primary/90"
       >
-        {chosen.length > 0 ? `${chosen.length}개 등록하러 가기` : "직접 추가하며 시작하기"}
+        {chosen.length > 0 ? tr.register(chosen.length) : tr.startPlain}
         <ArrowRight className="size-[18px]" strokeWidth={2.25} aria-hidden />
       </button>
       <button
@@ -131,17 +125,17 @@ export function TrySlide({
         onClick={onSample}
         className="mt-1 h-11 text-[15px] font-semibold text-muted-foreground underline underline-offset-4"
       >
-        샘플로 둘러보기
+        {tr.sample}
       </button>
       {isSocialLoginOpen() ? (
         <div className="mt-1 flex items-center justify-center gap-2.5">
-          <span className="text-[13px] text-muted-foreground">계정으로 이어서 하기</span>
-          {LOGIN_PROVIDERS.map(({ id, label }) => (
+          <span className="text-[13px] text-muted-foreground">{tr.continueWith}</span>
+          {LOGIN_PROVIDERS.map((id) => (
             <button
               key={id}
               type="button"
               onClick={onLogin}
-              aria-label={label}
+              aria-label={tr[id]}
               className={cn(
                 "grid size-11 place-items-center rounded-full border",
                 PROVIDER_LOOK[id].className,
@@ -153,13 +147,13 @@ export function TrySlide({
         </div>
       ) : (
         <p className="mt-1 flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
-          이미 계정이 있나요?
+          {tr.haveAccount}
           <button
             type="button"
             onClick={onLogin}
             className="px-0.5 py-1.5 font-bold text-foreground underline underline-offset-[3px]"
           >
-            로그인
+            {tr.login}
           </button>
         </p>
       )}
