@@ -10,7 +10,10 @@
  * 기다리므로 그대로 두면 iOS에서는 알림이 하나도 걸리지 않는다.
  */
 import { IS_APP_BUILD } from "./platform";
-import type { PlannedReminder } from "./local-reminders";
+import type { PlannedReminder, ReminderText } from "./local-reminders";
+import { ko as reminderMessages } from "./i18n/messages/reminders";
+
+const DEFAULT_TEXT: ReminderText = reminderMessages.reminders.notify;
 import { subscriptionDetailHref } from "./routes";
 
 export type ReminderPermission = "granted" | "denied" | "prompt" | "unsupported";
@@ -67,14 +70,14 @@ let channelReady: Promise<void> | null = null;
  *
  * iOS에는 채널이 없다. `createChannel`은 안드로이드 전용이라 iOS에서는 거절당하므로 건너뛴다.
  */
-async function ensureChannel(plugin: Plugin): Promise<void> {
+async function ensureChannel(plugin: Plugin, text: ReminderText): Promise<void> {
   const { Capacitor } = await import("@capacitor/core");
   if (Capacitor.getPlatform() !== "android") return;
   channelReady ??= plugin
     .createChannel({
       id: CHANNEL_ID,
-      name: "결제 알림",
-      description: "구독 결제일 전에 알려 드립니다.",
+      name: text.channelName,
+      description: text.channelDescription,
       importance: 3,
     })
     .catch((error) => {
@@ -85,10 +88,13 @@ async function ensureChannel(plugin: Plugin): Promise<void> {
 }
 
 /** 이 앱이 걸어 둔 결제 알림을 모두 지우고 `plan`으로 다시 건다. 빈 목록이면 지우기만 한다. */
-export async function replaceScheduledReminders(plan: readonly PlannedReminder[]): Promise<void> {
+export async function replaceScheduledReminders(
+  plan: readonly PlannedReminder[],
+  text: ReminderText = DEFAULT_TEXT,
+): Promise<void> {
   if (!IS_APP_BUILD) return;
   const { LocalNotifications } = await pluginModule();
-  await ensureChannel(LocalNotifications);
+  await ensureChannel(LocalNotifications, text);
 
   const { notifications: pending } = await LocalNotifications.getPending();
   const ours = pending.filter((n) => n.extra?.kind === "billing");
@@ -113,16 +119,16 @@ export async function replaceScheduledReminders(plan: readonly PlannedReminder[]
 }
 
 /** 권한과 채널이 제대로 되었는지 사용자가 바로 확인하도록, 몇 초 뒤에 시험 알림을 띄운다. */
-export async function sendTestReminder(): Promise<void> {
+export async function sendTestReminder(text: ReminderText = DEFAULT_TEXT): Promise<void> {
   if (!IS_APP_BUILD) return;
   const { LocalNotifications } = await pluginModule();
-  await ensureChannel(LocalNotifications);
+  await ensureChannel(LocalNotifications, text);
   await LocalNotifications.schedule({
     notifications: [
       {
         id: TEST_NOTIFICATION_ID,
-        title: "SubSlash 결제 알림 시험",
-        body: "알림이 이렇게 뜹니다. 결제일 전 오전 9시에 알려 드릴게요.",
+        title: text.testTitle,
+        body: text.testBody,
         channelId: CHANNEL_ID,
         schedule: { at: new Date(Date.now() + 5_000), allowWhileIdle: true },
         isExactNotification: false,
