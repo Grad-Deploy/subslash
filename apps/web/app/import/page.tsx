@@ -8,6 +8,7 @@ import {
   type DiscoveredSubscription,
 } from "@subslash/shared";
 import { useStore } from "@lib/store";
+import { useAuth } from "@hooks/useAuth";
 import { useIsClient } from "@hooks/useIsClient";
 import { webUrl } from "@lib/api";
 import {
@@ -52,6 +53,13 @@ function LoadingScreen() {
 
 function Guide() {
   const p = useT().importing.page;
+  // 로그인했고 원클릭 연결(Gmail 자동 가져오기)을 쓸 수 있으면 스크립트를 붙여 넣는 방법은 접어 둔다. 붙여
+  // 넣고 실행하는 사람은 드물지만, 로그인 없이 쓰거나 원클릭이 막혔을 때(Google 심사 전 100명 제한) 유일한
+  // 길이라 남긴다. 로그인하지 않았으면 원클릭을 쓸 수 없으므로 펼쳐 둔다.
+  const autoOpen = isGmailAutoImportOpen();
+  const { account, loading } = useAuth();
+  const [directOpen, setDirectOpen] = useState<boolean | null>(null);
+  const showDirect = directOpen ?? (!autoOpen || (!loading && !account));
   // 앱에서는 짧은 안내(고를 방법 → 한 단계씩)를 쓴다. 웹의 직접 실행 방법은 가져온 구독이 웹
   // 브라우저에 저장돼 앱에 담기지 않으므로, 앱은 계정으로 받는 자동 가져오기만 안내한다.
   if (AppImportGuide) return <AppImportGuide />;
@@ -64,41 +72,59 @@ function Guide() {
         <p className="text-muted-foreground">{p.intro}</p>
       </header>
 
-      {isGmailAutoImportOpen() && <GmailAutoImportSetup />}
+      {autoOpen && <GmailAutoImportSetup />}
 
-      {isGmailAutoImportOpen() && <h2 className="text-base font-bold">{p.direct}</h2>}
-
-      <ol className="list-decimal space-y-2 pl-5">
-        <li>
-          <a
-            href="https://script.new"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-primary underline underline-offset-2"
+      {autoOpen && account && (
+        <div className="space-y-1">
+          <Button
+            variant="link"
+            className="h-auto px-0 text-sm"
+            aria-expanded={showDirect}
+            onClick={() => setDirectOpen(!showDirect)}
           >
-            {p.step1Link}
-          </a>
-          {p.step1After}
-        </li>
-        <li>{p.step2}</li>
-        <li>{p.step3}</li>
-        <li>{p.step4}</li>
-        <li>{p.step5}</li>
-        <li>{p.step6}</li>
-      </ol>
+            {showDirect ? p.directHide : p.directShow}
+          </Button>
+          {!showDirect && <p className="text-xs text-muted-foreground">{p.directNote}</p>}
+        </div>
+      )}
 
-      <CopyBlock label={p.manifest} code={GMAIL_APPS_SCRIPT_MANIFEST} />
-      <CopyBlock label={p.script} code={script} />
+      {showDirect && (
+        <>
+          {autoOpen && <h2 className="text-base font-bold">{p.direct}</h2>}
 
-      <ul className="list-disc space-y-1.5 pl-5 text-xs text-muted-foreground">
-        <li>{p.note1}</li>
-        <li>{p.note2}</li>
-        <li>
-          {p.note3Before}
-          <code>SEARCH_QUERY</code>
-          {p.note3After}
-        </li>
-      </ul>
+          <ol className="list-decimal space-y-2 pl-5">
+            <li>
+              <a
+                href="https://script.new"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-primary underline underline-offset-2"
+              >
+                {p.step1Link}
+              </a>
+              {p.step1After}
+            </li>
+            <li>{p.step2}</li>
+            <li>{p.step3}</li>
+            <li>{p.step4}</li>
+            <li>{p.step5}</li>
+            <li>{p.step6}</li>
+          </ol>
+
+          <CopyBlock label={p.manifest} code={GMAIL_APPS_SCRIPT_MANIFEST} />
+          <CopyBlock label={p.script} code={script} />
+
+          <ul className="list-disc space-y-1.5 pl-5 text-xs text-muted-foreground">
+            <li>{p.note1}</li>
+            <li>{p.note2}</li>
+            <li>
+              {p.note3Before}
+              <code>SEARCH_QUERY</code>
+              {p.note3After}
+            </li>
+          </ul>
+        </>
+      )}
     </article>
   );
 }
