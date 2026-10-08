@@ -14,6 +14,11 @@ import {
 } from "@subslash/shared";
 import { subscriptionDetailHref } from "./routes";
 import { receiptHref } from "./receipt-view";
+import { ko as reminderMessages } from "./i18n/messages/reminders";
+
+/** 알림 문구. 거는 때의 화면 언어로 받는다(`useLocalReminderSync`). 주지 않으면 원문(한국어)이다. */
+export type ReminderText = (typeof reminderMessages)["reminders"]["notify"];
+const DEFAULT_TEXT: ReminderText = reminderMessages.reminders.notify;
 
 /** 구독마다 미리 걸어 둘 결제 횟수. 앱을 한동안 열지 않아도 다음 몇 번은 알린다. */
 export const OCCURRENCES_PER_SUBSCRIPTION = 3;
@@ -47,6 +52,7 @@ export function planReminders(
   subscriptions: readonly Subscription[],
   daysBefore: number,
   now: Date = new Date(),
+  text: ReminderText = DEFAULT_TEXT,
 ): PlannedReminder[] {
   const planned: PlannedReminder[] = [];
 
@@ -72,11 +78,12 @@ export function planReminders(
         id: reminderId(sub.id, billing),
         subscriptionId: sub.id,
         href: subscriptionDetailHref(sub.id),
-        title: `${sub.name} 결제 ${daysBefore === 0 ? "오늘" : `${daysBefore}일 전`}`,
-        body: `${billing.getMonth() + 1}월 ${billing.getDate()}일에 ${formatCurrency(
-          getBilledAmount(sub),
-          sub.currency,
-        )}이 결제될 예정이에요. 계속 쓸지 확인해 보세요.`,
+        title: text.billingTitle(sub.name, daysBefore),
+        body: text.billingBody(
+          billing.getMonth() + 1,
+          billing.getDate(),
+          formatCurrency(getBilledAmount(sub), sub.currency),
+        ),
         at,
       });
     }
@@ -96,6 +103,7 @@ export const RECEIPT_MONTHS_AHEAD = 2;
 export function planReceiptReminders(
   subscriptions: readonly Subscription[],
   now: Date = new Date(),
+  text: ReminderText = DEFAULT_TEXT,
 ): PlannedReminder[] {
   if (subscriptions.length === 0) return [];
   const planned: PlannedReminder[] = [];
@@ -106,8 +114,8 @@ export function planReceiptReminders(
     planned.push({
       id: reminderId("receipt", last),
       href: receiptHref(period),
-      title: `${period.month}월 구독 영수증이 나왔어요`,
-      body: "지난달 어떤 구독에 얼마를 냈는지, 제값을 했는지 확인해 보세요.",
+      title: text.receiptTitle(period.month),
+      body: text.receiptBody,
       at,
     });
   }
@@ -121,6 +129,7 @@ export function planReceiptReminders(
 export function planResubscribeReminders(
   subscriptions: readonly Subscription[],
   now: Date = new Date(),
+  text: ReminderText = DEFAULT_TEXT,
 ): PlannedReminder[] {
   const planned: PlannedReminder[] = [];
   for (const sub of subscriptions) {
@@ -133,8 +142,8 @@ export function planResubscribeReminders(
       id: reminderId(`resubscribe:${sub.id}`, day),
       subscriptionId: sub.id,
       href: subscriptionDetailHref(sub.id),
-      title: `${sub.name} 다시 살펴볼 날이에요`,
-      body: "해지할 때 오늘 알려 달라고 하셨어요. 다시 쓸 때가 됐는지 확인해 보세요.",
+      title: text.resubscribeTitle(sub.name),
+      body: text.resubscribeBody,
       at,
     });
   }
@@ -146,11 +155,12 @@ export function planAllReminders(
   subscriptions: readonly Subscription[],
   daysBefore: number,
   now: Date = new Date(),
+  text: ReminderText = DEFAULT_TEXT,
 ): PlannedReminder[] {
   return [
-    ...planReminders(subscriptions, daysBefore, now),
-    ...planReceiptReminders(subscriptions, now),
-    ...planResubscribeReminders(subscriptions, now),
+    ...planReminders(subscriptions, daysBefore, now, text),
+    ...planReceiptReminders(subscriptions, now, text),
+    ...planResubscribeReminders(subscriptions, now, text),
   ]
     .sort((a, b) => a.at.getTime() - b.at.getTime())
     .slice(0, MAX_SCHEDULED);

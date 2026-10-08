@@ -13,6 +13,7 @@ import {
 } from "@lib/native-reminders";
 import { subscriptionDetailHref } from "@lib/routes";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 
 interface ReminderPromptSheetProps {
   open: boolean;
@@ -35,6 +36,8 @@ export function ReminderPromptSheet({
   subscription,
   onEnabled,
 }: ReminderPromptSheetProps) {
+  const t = useT();
+  const p = t.reminders.prompt;
   const router = useRouter();
   const [settings, update] = useLocalReminderSettings();
   const [permission, setPermission] = useState<ReminderPermission | null>(null);
@@ -59,7 +62,6 @@ export function ReminderPromptSheet({
   // 결제일을 모르는 구독에는 알림을 걸 수 없다(lib/local-reminders). 켜 두는 것은 막지 않되 알린다.
   const billingUnknown = subscription ? getNextBillingDateFor(subscription) === null : false;
   const days = settings.daysBefore;
-  const when = days === 0 ? "결제 당일" : `결제 ${days}일 전`;
 
   const turnOn = async () => {
     setBusy(true);
@@ -70,7 +72,7 @@ export function ReminderPromptSheet({
       update({ enabled: true });
       // 실제 알림은 결제일 전 오전 9시에야 뜬다. 켜자마자 아무 일도 없으면 안 된 것처럼 보이므로,
       // 몇 초 뒤 시험 알림을 한 번 띄워 이렇게 온다는 것을 보여준다.
-      void sendTestReminder().catch(() => {});
+      void sendTestReminder(t.reminders.notify).catch(() => {});
       onEnabled();
     } finally {
       setBusy(false);
@@ -81,7 +83,7 @@ export function ReminderPromptSheet({
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center">
       <button
         type="button"
-        aria-label="닫기"
+        aria-label={p.close}
         onClick={onClose}
         className="absolute inset-0 bg-black/50 animate-in fade-in"
       />
@@ -95,7 +97,7 @@ export function ReminderPromptSheet({
         <button
           type="button"
           onClick={onClose}
-          aria-label="닫기"
+          aria-label={p.close}
           className="absolute top-3 right-3 rounded-md p-1 text-muted-foreground hover:bg-muted"
         >
           <X className="size-4" aria-hidden />
@@ -105,15 +107,13 @@ export function ReminderPromptSheet({
           <Bell className="size-5" aria-hidden />
         </div>
         <h2 id="reminder-prompt-title" className="text-lg font-extrabold tracking-tight">
-          결제일 전에 알려드릴까요?
+          {p.title}
         </h2>
         <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-          {subscription && !billingUnknown ? `${subscription.name} ` : ""}
-          {when} 오전 9시에 이 휴대폰으로 알려드려요. 서버나 이메일을 거치지 않아 로그인하지 않아도
-          돼요.
+          {p.body(subscription && !billingUnknown ? subscription.name : null, days)}
         </p>
 
-        <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="언제 알릴지">
+        <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label={p.whenLabel}>
           {REMINDER_DAY_CHOICES.map((d) => (
             <button
               key={d}
@@ -127,14 +127,14 @@ export function ReminderPromptSheet({
                   : "bg-background hover:bg-muted",
               )}
             >
-              {d === 0 ? "당일" : `${d}일 전`}
+              {p.choice(d)}
             </button>
           ))}
         </div>
 
         {billingUnknown && subscription && (
           <p className="mt-3 rounded-xl bg-secondary px-3 py-2 text-xs leading-relaxed">
-            {subscription.name}은(는) 결제일을 몰라서 알림을 걸 수 없어요.{" "}
+            {p.unknownBilling(subscription.name)}{" "}
             <button
               type="button"
               className="font-bold underline underline-offset-2"
@@ -143,15 +143,14 @@ export function ReminderPromptSheet({
                 router.push(subscriptionDetailHref(subscription.id));
               }}
             >
-              결제일 넣기
+              {p.addBilling}
             </button>
           </p>
         )}
 
         {permission === "denied" && (
           <p className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-xs leading-relaxed text-destructive">
-            알림 권한이 꺼져 있어요. 휴대폰 설정 › 애플리케이션 › SubSlash › 알림에서 허용한 뒤 다시
-            눌러 주세요.
+            {p.denied}
           </p>
         )}
 
@@ -161,14 +160,14 @@ export function ReminderPromptSheet({
           disabled={busy || permission === "unsupported"}
           className="mt-5 h-12 w-full rounded-xl bg-primary text-sm font-bold text-primary-foreground disabled:opacity-50"
         >
-          {busy ? "확인하는 중…" : "알림 받기"}
+          {busy ? p.checking : p.turnOn}
         </button>
         <button
           type="button"
           onClick={onClose}
           className="mt-2 h-10 w-full text-[13px] font-semibold text-muted-foreground"
         >
-          나중에
+          {p.later}
         </button>
       </section>
     </div>

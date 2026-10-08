@@ -5,6 +5,7 @@ import { useStoredFlag } from "@hooks/useStoredFlag";
 import { ownerScopedKey, readOwnerScoped } from "@lib/owner-scoped";
 import { useStore } from "@lib/store";
 import { cn } from "@lib/utils";
+import { useT } from "@lib/i18n";
 
 const DISMISSED_KEY = "subslash_app_start_dismissed";
 
@@ -32,6 +33,7 @@ export function AppStartChecklist({
   onCheckIn,
   onReminders,
 }: AppStartChecklistProps) {
+  const s = useT().reminders.start;
   const owner = useStore((state) => state.recordsOwner);
   const dismissedKey = ownerScopedKey(DISMISSED_KEY, owner);
   // 주인별로 나누기 전에 닫은 것은 지금 주인의 칸으로 옮긴다.
@@ -45,19 +47,19 @@ export function AppStartChecklist({
   if (dismissed) return null;
 
   const steps = [
-    { label: "쓰고 있는 구독 등록하기", done: hasSubscription, onGo: onAdd },
-    { label: "이번 달 사용 횟수 입력하기", done: hasCheckIn, onGo: onCheckIn },
-    { label: "결제일 알림 켜기", done: remindersOn, onGo: onReminders },
+    { key: "add", label: s.stepAdd, done: hasSubscription, onGo: onAdd },
+    { key: "check-in", label: s.stepCheckIn, done: hasCheckIn, onGo: onCheckIn },
+    { key: "reminders", label: s.stepReminders, done: remindersOn, onGo: onReminders },
   ];
   const doneCount = steps.filter((s) => s.done).length;
   const current = steps.findIndex((s) => !s.done);
   const allDone = current === -1;
 
   return (
-    <section className="rounded-2xl border bg-card px-4 py-3" aria-label="시작하기">
+    <section className="rounded-2xl border bg-card px-4 py-3" aria-label={s.label}>
       <div className="flex items-center justify-between">
         <p className="text-sm font-extrabold">
-          {allDone ? "시작 준비 끝" : "시작하기"}
+          {allDone ? s.done : s.label}
           <span className="ml-1 font-semibold text-muted-foreground">
             {doneCount}/{steps.length}
           </span>
@@ -65,7 +67,7 @@ export function AppStartChecklist({
         <button
           type="button"
           onClick={dismiss}
-          aria-label="시작하기 닫기"
+          aria-label={s.close}
           className="-mr-1 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <X className="size-4" aria-hidden />
@@ -80,15 +82,13 @@ export function AppStartChecklist({
       </div>
 
       {allDone ? (
-        <p className="py-1 text-xs text-muted-foreground">
-          이제 매달 한 번 사용 횟수만 입력하면 돼요. 이 카드는 닫아도 돼요.
-        </p>
+        <p className="py-1 text-xs text-muted-foreground">{s.allDone}</p>
       ) : (
         <ol>
           {steps.map((step, i) => {
             const isNow = i === current;
             return (
-              <li key={step.label}>
+              <li key={step.key}>
                 <button
                   type="button"
                   onClick={step.done ? undefined : step.onGo}
@@ -114,7 +114,7 @@ export function AppStartChecklist({
                   {step.label}
                   {isNow && (
                     <span className="ml-auto text-[11px] font-medium text-muted-foreground">
-                      지금
+                      {s.now}
                     </span>
                   )}
                 </button>
