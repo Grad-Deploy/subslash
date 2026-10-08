@@ -7,6 +7,7 @@ import * as dashboard from "./dashboard";
 import * as detail from "./detail";
 import * as deviceUsage from "./deviceUsage";
 import * as form from "./form";
+import * as importing from "./importing";
 import * as oauth from "./oauth";
 import * as overview from "./overview";
 import * as receipt from "./receipt";
@@ -36,6 +37,7 @@ export const messages = {
     checkin: checkin.ko,
     form: form.ko,
     ...appSmall.ko,
+    ...importing.ko,
     ...savings.ko,
     ...receiptView.ko,
     ...ask.ko,
@@ -57,6 +59,7 @@ export const messages = {
     checkin: checkin.en,
     form: form.en,
     ...appSmall.en,
+    ...importing.en,
     ...savings.en,
     ...receiptView.en,
     ...ask.en,
