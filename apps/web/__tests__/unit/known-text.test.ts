@@ -15,6 +15,7 @@ import {
   usernameStatusOf,
 } from "@lib/signup-status";
 import { describeSendOutcome } from "@lib/account-verification";
+import { describeResetOutcome } from "@lib/password-reset";
 import { tooManyRequestsMessage } from "@lib/rate-limit";
 
 const HANGUL = /[가-힣]/;
@@ -88,6 +89,25 @@ const SERVER_MESSAGES = [
   describeSendOutcome({ status: "rate_limited", retryAfterSeconds: 7200 }, "a@b.co"),
   describeSendOutcome({ status: "not_sent", reason: "not_configured" }, "a@b.co"),
   describeSendOutcome({ status: "not_sent", reason: "failed" }, "a@b.co"),
+  // 비밀번호 재설정 메일(app/api/auth/password-reset)
+  describeResetOutcome({ status: "sent" }, "sean@example.com"),
+  describeResetOutcome({ status: "rate_limited", retryAfterSeconds: 600 }, "a@b.co"),
+  describeResetOutcome({ status: "not_sent", reason: "not_configured" }, "a@b.co"),
+  describeResetOutcome({ status: "not_sent", reason: "failed" }, "a@b.co"),
+  "이 이메일로 가입한 계정이 없습니다.",
+  // 내 정보·비밀번호 변경·탈퇴·로그인 방법(app/api/auth/profile·password·account·oauth/link)
+  "로그인이 필요합니다.",
+  "내 정보를 저장하지 못했습니다.",
+  "지금 비밀번호를 입력해주세요.",
+  "지금 비밀번호가 맞지 않습니다.",
+  "지금 비밀번호와 다른 비밀번호를 정해주세요.",
+  "다른 곳에서 비밀번호가 먼저 바뀌었습니다. 새 비밀번호로 다시 로그인해주세요.",
+  "비밀번호를 바꾸지 못했습니다. 잠시 후 다시 시도해주세요.",
+  "비밀번호가 맞지 않습니다.",
+  "탈퇴를 처리하지 못했습니다. 잠시 후 다시 시도해주세요.",
+  "연결을 시작하지 못했습니다.",
+  "연결을 끊지 못했습니다.",
+  "로그인할 방법이 하나뿐이라 끊을 수 없어요. 비밀번호를 만들거나 다른 계정을 먼저 연결해 주세요.",
 ];
 
 describe("translateKnownText", () => {
@@ -120,6 +140,8 @@ describe("translateKnownText", () => {
     expect(en(describeSendOutcome({ status: "sent" }, "sean@example.com"))).toContain(
       "sean@example.com",
     );
+    // 탈퇴 확인 글자는 서버가 받는 글자 그대로라 옮기지 않는다.
+    expect(en("확인을 위해 '탈퇴'를 입력해주세요.")).toBe("Type '탈퇴' to confirm.");
     expect(en(tooManyRequestsMessage(600))).toBe("Too many requests. Try again in 10 minutes.");
     expect(en("잘못된 이메일 주소입니다. 혹시 you@gmail.com 아닌가요?")).toBe(
       "That email address looks wrong. Did you mean you@gmail.com?",

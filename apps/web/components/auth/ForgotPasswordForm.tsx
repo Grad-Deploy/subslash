@@ -7,6 +7,7 @@ import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { apiFetch } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
+import { useKnownText, useLatestT, useT } from "@lib/i18n";
 
 type Result = { tone: "ok" | "error"; message: string } | null;
 
@@ -17,6 +18,9 @@ type Result = { tone: "ok" | "error"; message: string } | null;
  * 보냈다고 하지 않는다 — 오지 않을 메일을 기다리게 된다.
  */
 export function ForgotPasswordForm() {
+  const f = useT().account.forgot;
+  const tRef = useLatestT();
+  const known = useKnownText();
   const [email, setEmail] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [result, setResult] = useState<Result>(null);
@@ -47,12 +51,12 @@ export function ForgotPasswordForm() {
           ? data.message
           : typeof data?.error === "string"
             ? data.error
-            : "재설정 메일을 보내지 못했습니다. 잠시 후 다시 시도해주세요.";
+            : tRef.current.account.forgot.failed;
       setResult({ tone: data?.status === "sent" ? "ok" : "error", message });
     } catch {
       setResult({
         tone: "error",
-        message: "네트워크에 문제가 있어 요청하지 못했습니다. 잠시 후 다시 시도해주세요.",
+        message: tRef.current.account.forgot.network,
       });
     } finally {
       setSubmitting(false);
@@ -63,7 +67,7 @@ export function ForgotPasswordForm() {
     <HydratedForm onSubmit={handleSubmit} noValidate className="space-y-4">
       <div className="space-y-1.5">
         <label htmlFor="email" className="text-xs font-bold text-foreground">
-          가입한 이메일
+          {f.email}
         </label>
         <Input
           id="email"
@@ -80,7 +84,7 @@ export function ForgotPasswordForm() {
         />
         {fieldError && (
           <p className="text-[11px] font-medium text-destructive" role="alert">
-            {fieldError}
+            {known(fieldError)}
           </p>
         )}
       </div>
@@ -94,17 +98,17 @@ export function ForgotPasswordForm() {
               : "text-sm font-medium text-destructive"
           }
         >
-          {result.message}
+          {known(result.message)}
         </p>
       )}
 
       <Button type="submit" className="w-full h-11 font-bold rounded-xl" disabled={submitting}>
-        {submitting ? "보내는 중..." : "재설정 메일 받기"}
+        {submitting ? f.sending : f.submit}
       </Button>
 
       <p className="text-xs text-center text-muted-foreground">
         <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
-          로그인으로 돌아가기
+          {f.back}
         </Link>
       </p>
     </HydratedForm>

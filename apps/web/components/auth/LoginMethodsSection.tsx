@@ -8,7 +8,7 @@ import { apiFetch, apiUrl } from "@lib/api";
 import { appReturnScheme, leaveForExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { oauthErrorMessageFrom } from "@lib/oauth-messages";
-import { useLatestT } from "@lib/i18n";
+import { useKnownText, useLatestT, useT, type Messages } from "@lib/i18n";
 import { providerLabel } from "@lib/oauth-providers";
 import { isKakaoNativeAvailable, kakaoNativeLogin } from "@lib/kakao-native";
 
@@ -24,8 +24,8 @@ interface Methods {
 
 type Notice = { tone: "ok" | "error"; message: string } | null;
 
-function linkedMessage(provider: string): string {
-  return `${providerLabel(provider)} 계정을 연결했어요. 다음부터 이것으로도 로그인할 수 있어요.`;
+function linkedMessage(t: Messages, provider: string): string {
+  return t.account.methods.linked(providerLabel(provider));
 }
 
 /** 못 받으면 null — 칸을 그리지 않는다. 다른 설정은 그대로 쓴다. */
@@ -54,6 +54,8 @@ export function LoginMethodsSection() {
   const [notice, setNotice] = useState<Notice>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const latest = useLatestT();
+  const m = useT().account.methods;
+  const known = useKnownText();
 
   const load = async () => setMethods(await fetchMethods());
 
@@ -71,7 +73,7 @@ export function LoginMethodsSection() {
       setMethods(next);
       // 응답을 받은 뒤에 문구를 붙인다 — 그때는 화면 언어가 정해져 있다.
       const failed = oauthErrorMessageFrom(search, latest.current.oauth);
-      if (linked) setNotice({ tone: "ok", message: linkedMessage(linked) });
+      if (linked) setNotice({ tone: "ok", message: linkedMessage(latest.current, linked) });
       else if (failed) setNotice({ tone: "error", message: failed });
     });
     return () => {
@@ -94,7 +96,8 @@ export function LoginMethodsSection() {
     ) {
       const outcome = await kakaoNativeLogin({ link: true });
       setBusy(null);
-      if (outcome.status === "ok") setNotice({ tone: "ok", message: linkedMessage("kakao") });
+      if (outcome.status === "ok")
+        setNotice({ tone: "ok", message: linkedMessage(latest.current, "kakao") });
       if (outcome.status === "error") {
         setNotice({
           tone: "error",
@@ -115,7 +118,10 @@ export function LoginMethodsSection() {
         error?: string;
       };
       if (!res.ok || !data.path) {
-        setNotice({ tone: "error", message: data.error ?? "연결을 시작하지 못했어요." });
+        setNotice({
+          tone: "error",
+          message: data.error ?? latest.current.account.methods.startFailed,
+        });
         setBusy(null);
         return;
       }
@@ -129,12 +135,12 @@ export function LoginMethodsSection() {
         setBusy(null);
         const linked = result?.get("oauthLinked");
         const failed = result ? oauthErrorMessageFrom(result, latest.current.oauth) : null;
-        if (linked) setNotice({ tone: "ok", message: linkedMessage(linked) });
+        if (linked) setNotice({ tone: "ok", message: linkedMessage(latest.current, linked) });
         else if (failed) setNotice({ tone: "error", message: failed });
         void load();
       });
     } catch {
-      setNotice({ tone: "error", message: "네트워크에 문제가 있어 연결하지 못했어요." });
+      setNotice({ tone: "error", message: latest.current.account.methods.connectNetwork });
       setBusy(null);
     }
   };
@@ -150,13 +156,19 @@ export function LoginMethodsSection() {
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setNotice({ tone: "error", message: data.error ?? "연결을 끊지 못했어요." });
+        setNotice({
+          tone: "error",
+          message: data.error ?? latest.current.account.methods.disconnectFailed,
+        });
       } else {
-        setNotice({ tone: "ok", message: `${providerLabel(provider)} 연결을 끊었어요.` });
+        setNotice({
+          tone: "ok",
+          message: latest.current.account.methods.disconnected(providerLabel(provider)),
+        });
         await load();
       }
     } catch {
-      setNotice({ tone: "error", message: "네트워크에 문제가 있어 끊지 못했어요." });
+      setNotice({ tone: "error", message: latest.current.account.methods.disconnectNetwork });
     } finally {
       setBusy(null);
     }
@@ -169,19 +181,16 @@ export function LoginMethodsSection() {
     >
       <div className="space-y-1">
         <h2 id="login-methods" className="text-sm font-bold">
-          로그인 방법
+          {m.title}
         </h2>
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          연결해 두면 그 계정으로도 이 계정에 로그인해요. 연결한 계정의 이메일이 달라도 이 계정의
-          이메일({account.email})은 바뀌지 않아요.
-        </p>
+        <p className="text-xs leading-relaxed text-muted-foreground">{m.body(account.email)}</p>
       </div>
 
       <ul className="divide-y rounded-xl border">
         <li className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
-          <span className="font-medium">이메일·비밀번호</span>
+          <span className="font-medium">{m.password}</span>
           <span className="text-xs text-muted-foreground">
-            {methods.hasPassword ? "사용 중" : "비밀번호 없음"}
+            {methods.hasPassword ? m.inUse : m.noPassword}
           </span>
         </li>
         {methods.providers.map((provider) => {
@@ -196,7 +205,9 @@ export function LoginMethodsSection() {
               <span className="font-medium">
                 {provider.label}
                 {isLinked && (
-                  <span className="ml-2 text-xs font-normal text-muted-foreground">연결됨</span>
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    {m.linkedBadge}
+                  </span>
                 )}
               </span>
               {isLinked ? (
@@ -205,10 +216,10 @@ export function LoginMethodsSection() {
                   variant="outline"
                   size="sm"
                   disabled={busy !== null || isLast}
-                  title={isLast ? "로그인할 방법이 하나뿐이라 끊을 수 없어요." : undefined}
+                  title={isLast ? m.lastOne : undefined}
                   onClick={() => void disconnect(provider.id)}
                 >
-                  연결 끊기
+                  {m.disconnect}
                 </Button>
               ) : (
                 <Button
@@ -217,7 +228,7 @@ export function LoginMethodsSection() {
                   disabled={busy !== null}
                   onClick={() => void connect(provider.id)}
                 >
-                  연결하기
+                  {m.connect}
                 </Button>
               )}
             </li>
@@ -226,10 +237,7 @@ export function LoginMethodsSection() {
       </ul>
 
       {linkedCount < 2 && methods.linked.length > 0 && (
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          지금은 로그인할 방법이 하나뿐이라 끊을 수 없어요. 비밀번호를 만들거나 다른 계정을 먼저
-          연결하면 끊을 수 있어요.
-        </p>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">{m.lastOneNote}</p>
       )}
 
       {notice && (
@@ -241,7 +249,7 @@ export function LoginMethodsSection() {
               : "text-sm font-medium text-primary"
           }
         >
-          {notice.message}
+          {known(notice.message)}
         </p>
       )}
     </section>

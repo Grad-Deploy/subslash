@@ -34,14 +34,15 @@ export function OAuthDone() {
     if (returnUrl) window.location.href = returnUrl;
   }, [returnUrl]);
 
+  const d = t.account.oauthDone;
   // 로그인 방법을 잇다가 실패했으면 서버가 oauthLink=1을 붙인다.
   const title = error
     ? params.has("oauthLink")
-      ? "연결하지 못했어요"
-      : "로그인하지 못했어요"
+      ? d.linkFailed
+      : d.loginFailed
     : linked
-      ? `${providerLabel(linked)} 계정을 연결했어요`
-      : "로그인했어요";
+      ? d.linked(providerLabel(linked))
+      : d.loggedIn;
   return (
     <div className="space-y-3 rounded-2xl border bg-card p-6 text-center" role="status">
       <p className="text-lg font-black">{title}</p>
@@ -51,10 +52,10 @@ export function OAuthDone() {
           href={returnUrl}
           className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
         >
-          SubSlash 앱으로 돌아가기
+          {d.backToApp}
         </a>
       ) : (
-        <p className="text-sm text-muted-foreground">이 창을 닫으면 SubSlash 앱으로 돌아갑니다.</p>
+        <p className="text-sm text-muted-foreground">{d.closeNote}</p>
       )}
     </div>
   );

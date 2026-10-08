@@ -9,6 +9,10 @@ import { ConfirmDialog } from "@components/ui/confirm-dialog";
 import { apiFetch } from "@lib/api";
 import { releaseRecordsToGuest } from "@lib/records-owner";
 import { HydratedForm } from "@components/ui/hydrated-form";
+import { useKnownText, useLatestT, useT } from "@lib/i18n";
+
+/** 비밀번호 없는 계정이 탈퇴할 때 서버가 받는 확인 글자. 화면 언어와 상관없이 이 글자다. */
+const CONFIRM_WORD = "탈퇴";
 
 /**
  * 회원 탈퇴. 비밀번호를 한 번 더 받고, 확인 창을 거쳐 지운다.
@@ -17,6 +21,10 @@ import { HydratedForm } from "@components/ui/hydrated-form";
  * 있어서 탈퇴해도 남는다 — 모두 지워진다고 적으면 사실이 아니다.
  */
 export function DeleteAccountSection() {
+  const a = useT().account;
+  const r = a.remove;
+  const tRef = useLatestT();
+  const known = useKnownText();
   const { account, loading } = useAuth();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -30,16 +38,13 @@ export function DeleteAccountSection() {
         className="p-5 sm:p-6 border rounded-2xl bg-card space-y-2 text-center"
         role="status"
       >
-        <p className="font-semibold">탈퇴했습니다.</p>
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          계정과 계정에 저장한 기록을 서버에서 지웠습니다. 이 브라우저의 구독 기록은 그대로 있어
-          로그인 없이 계속 쓸 수 있습니다.
-        </p>
+        <p className="font-semibold">{r.doneTitle}</p>
+        <p className="text-xs leading-relaxed text-muted-foreground">{r.doneBody}</p>
         <Link
           href="/"
           className="inline-block text-sm font-semibold text-primary underline underline-offset-4"
         >
-          홈으로
+          {a.home}
         </Link>
       </section>
     );
@@ -64,7 +69,7 @@ export function DeleteAccountSection() {
           data?.fieldErrors?.password ??
             data?.fieldErrors?.confirmText ??
             data?.error ??
-            "탈퇴를 처리하지 못했습니다.",
+            tRef.current.account.remove.failed,
         );
         return;
       }
@@ -76,7 +81,7 @@ export function DeleteAccountSection() {
       releaseRecordsToGuest();
       await refreshAuth();
     } catch {
-      setError("네트워크에 문제가 있어 탈퇴하지 못했습니다. 잠시 후 다시 시도해주세요.");
+      setError(tRef.current.account.remove.network);
     } finally {
       setDeleting(false);
       setConfirmOpen(false);
@@ -89,17 +94,11 @@ export function DeleteAccountSection() {
       className="p-5 sm:p-6 border border-destructive/30 rounded-2xl bg-card space-y-3"
     >
       <h2 id="delete-account" className="text-sm font-bold text-destructive">
-        회원 탈퇴
+        {r.title}
       </h2>
       <ul className="list-disc space-y-1 pl-4 text-[11px] leading-relaxed text-muted-foreground">
-        <li>
-          계정(아이디·이메일·비밀번호 해시·나이·성별), 로그인 세션, 계정에 저장한 기록을 서버에서
-          바로 지웁니다. 되돌릴 수 없습니다.
-        </li>
-        <li>
-          이 브라우저에 있는 구독·체크인 기록은 지워지지 않습니다. 지우려면 내 구독의 &lsquo;전체
-          초기화&rsquo;나 브라우저 데이터 삭제를 쓰세요.
-        </li>
+        <li>{r.what}</li>
+        <li>{r.kept}</li>
       </ul>
 
       <HydratedForm
@@ -108,14 +107,14 @@ export function DeleteAccountSection() {
         onSubmit={(event) => {
           event.preventDefault();
           if (!password) {
-            setError(noPassword ? "'탈퇴'를 입력해주세요." : "비밀번호를 입력해주세요.");
+            setError(noPassword ? r.typeRequired(CONFIRM_WORD) : r.passwordRequired);
             return;
           }
           setConfirmOpen(true);
         }}
       >
         <label htmlFor="delete-password" className="text-xs font-bold text-foreground">
-          {noPassword ? "확인을 위해 '탈퇴'를 입력하세요" : "비밀번호 확인"}
+          {noPassword ? r.typeLabel(CONFIRM_WORD) : r.passwordLabel}
         </label>
         <Input
           id="delete-password"
@@ -130,11 +129,11 @@ export function DeleteAccountSection() {
         />
         {error && (
           <p className="text-[11px] font-medium text-destructive" role="alert">
-            {error}
+            {known(error)}
           </p>
         )}
         <Button type="submit" variant="destructive" className="w-full" disabled={deleting}>
-          {deleting ? "지우는 중..." : "회원 탈퇴"}
+          {deleting ? r.deleting : r.title}
         </Button>
       </HydratedForm>
 
@@ -142,10 +141,10 @@ export function DeleteAccountSection() {
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={submit}
-        title="회원 탈퇴"
-        description={`'${account.username}' 계정을 지우시겠습니까?\n계정과 계정에 저장한 기록은 되돌릴 수 없습니다.`}
-        confirmText="탈퇴"
-        cancelText="취소"
+        title={r.title}
+        description={r.confirmDescription(account.username)}
+        confirmText={r.confirm}
+        cancelText={a.cancel}
         variant="destructive"
       />
     </section>
