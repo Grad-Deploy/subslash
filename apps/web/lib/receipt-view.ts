@@ -5,102 +5,97 @@ import {
   type ReceiptLine,
   type ReceiptPeriod,
 } from "@subslash/shared";
+import type { Messages } from "@lib/i18n/messages";
 
 /**
  * 영수증 화면과 영수증 이미지(lib/receipt-image)가 함께 쓰는 문구. 두 곳이 따로 적으면 공유한
  * 그림과 화면이 다른 말을 하게 된다.
  */
 
+/** "2026년 9월" / "September 2026". */
+export function formatReceiptPeriodText(t: Messages, period: ReceiptPeriod): string {
+  return period.kind === "month"
+    ? t.receiptView.periodMonth(period.year, period.month)
+    : t.receiptView.periodYear(period.year);
+}
+
 /** 줄 아래의 작은 글 — 결제일, 나눠 냄, 해지, 그 기간의 체크인. */
-export function describeReceiptLine(line: ReceiptLine, period: ReceiptPeriod): string {
+export function describeReceiptLine(t: Messages, line: ReceiptLine, period: ReceiptPeriod): string {
+  const l = t.receiptView.line;
   const parts: string[] = [];
   const upcoming = new Set(line.upcomingDates);
   const paid = line.chargeDates.filter((date) => !upcoming.has(date));
   if (paid.length > 0) {
     parts.push(
       period.kind === "month" || paid.length === 1
-        ? `${paid.map(formatChargeDate).join(", ")} 결제`
-        : `${paid.length}회 결제`,
+        ? l.paidDates(paid.map(formatChargeDate).join(", "))
+        : l.paidCount(paid.length),
     );
   }
   // 이번 달에 아직 오지 않은 결제일. 나간 돈과 섞어 적지 않는다.
   if (line.upcomingDates.length > 0) {
-    parts.push(`${line.upcomingDates.map(formatChargeDate).join(", ")} 결제 예정`);
+    parts.push(l.upcoming(line.upcomingDates.map(formatChargeDate).join(", ")));
   }
   // 등록 전 달을 기록이 아니라 결제 메일로 넣었다는 것. 금액의 근거가 다르다.
   if (line.evidencedDates.length > 0) {
     parts.push(
       line.evidencedDates.length === paid.length
-        ? "결제 메일로 확인"
-        : `${line.evidencedDates.length}회는 결제 메일로 확인`,
+        ? l.evidenceAll
+        : l.evidenceSome(line.evidencedDates.length),
     );
   }
-  if (line.billingCycle === "yearly") parts.push("연간");
-  if (line.shared) parts.push(`나눠 냄 · 카드 ${formatKRW(line.billedKRW)}`);
-  if (line.killedOn) parts.push(`${formatChargeDate(line.killedOn)} 해지`);
+  if (line.billingCycle === "yearly") parts.push(l.yearly);
+  if (line.shared) parts.push(l.shared(formatKRW(line.billedKRW)));
+  if (line.killedOn) parts.push(l.killedOn(formatChargeDate(line.killedOn)));
   if (line.usage) {
     parts.push(
       line.usage.count === 0
-        ? "체크인 0회"
-        : `${line.usage.count}회 이용 · 1회 ${formatKRW(line.usage.costPerUseKRW)}`,
+        ? l.zeroUses
+        : l.uses(line.usage.count, formatKRW(line.usage.costPerUseKRW)),
     );
   } else if (period.kind === "month") {
     // 체크인이 없으면 0회가 아니라 모른다.
-    parts.push("체크인 없음");
+    parts.push(l.noCheckIn);
   }
   return parts.join(" · ");
 }
 
 /** 기간 옆의 표시 — 끝난 기간은 없고, 이번 달 결제 예정이 있으면 '결제 예정 포함', 아니면 '오늘까지'. */
-export function receiptPeriodSuffix(receipt: Receipt): string {
+export function receiptPeriodSuffix(t: Messages, receipt: Receipt): string {
   if (receipt.isComplete) return "";
-  return receipt.upcomingCount > 0 ? " · 결제 예정 포함" : " · 오늘까지";
+  const s = t.receiptView.suffix;
+  return receipt.upcomingCount > 0 ? s.withUpcoming : s.untilToday;
 }
 
 /** 영수증 밑의 알림. 빠진 것이 있으면 몇 개가 왜 빠졌는지 말한다. */
-export function receiptFootnotes(receipt: Receipt): string[] {
-  const notes = ["등록한 구독 기록으로 계산했어요. 카드 명세서와 다를 수 있어요."];
+export function receiptFootnotes(t: Messages, receipt: Receipt): string[] {
+  const n = t.receiptView.notes;
+  const notes = [n.base];
   if (receipt.evidencedCount > 0) {
     const sharedEvidence = receipt.lines.some(
       (line) => line.shared && line.evidencedDates.length > 0,
     );
-    notes.push(
-      `등록하기 전 결제 ${receipt.evidencedCount}건은 Gmail에서 찾은 결제 메일의 날짜와 금액으로 넣었어요.${
-        sharedEvidence ? " 나눠 내는 구독의 내 몫은 지금 나누는 비율로 계산했어요." : ""
-      }`,
-    );
+    notes.push(n.evidenced(receipt.evidencedCount, sharedEvidence));
   }
   // 달러 결제를 어느 환율로 바꿨는지. 고시 환율도 카드사가 청구한 환율은 아니다.
   const { historical, current } = receipt.fx;
   if (historical > 0) {
-    notes.push(
-      "지난 달러 결제는 결제일의 고시 환율(ECB 기준)로 바꿨어요. 카드사 환율과 조금 다를 수 있어요.",
-    );
+    notes.push(n.historical);
   }
   if (current > 0) {
-    notes.push(
-      `지난 달러 결제 ${current}건은 그날 환율을 받지 못해 지금 설정한 환율로 계산했어요.`,
-    );
+    notes.push(n.current(current));
   }
   if (!receipt.isComplete) {
-    notes.push(
-      receipt.upcomingCount > 0
-        ? "아직 끝나지 않은 기간이에요. 지금 구독 중인데 이번 달 결제일이 오지 않은 것은 '결제 예정'으로 넣었어요."
-        : "아직 끝나지 않은 기간이라 오늘까지 결제된 것만 적었어요.",
-    );
+    notes.push(receipt.upcomingCount > 0 ? n.incompleteUpcoming : n.incompleteToday);
   }
   const { undated, beforeRegistration, trial } = receipt.excluded;
-  if (undated > 0) notes.push(`결제 월을 모르는 연간 구독 ${undated}개는 넣지 못했어요.`);
+  if (undated > 0) notes.push(n.undated(undated));
   if (beforeRegistration > 0) {
-    notes.push(
-      `등록한 달보다 앞선 달 중 결제 메일을 찾지 못한 달은 구독 중이었는지 몰라 넣지 않았어요(${beforeRegistration}개).`,
-    );
+    notes.push(n.beforeRegistration(beforeRegistration));
   }
-  if (trial > 0) notes.push(`무료 체험 중이던 결제일은 뺐어요(${trial}개).`);
+  if (trial > 0) notes.push(n.trial(trial));
   if (receipt.defendedUnknownCount > 0) {
-    notes.push(
-      `결제 월이나 해지일을 몰라 지킨 돈에 넣지 못한 구독이 ${receipt.defendedUnknownCount}개 있어요.`,
-    );
+    notes.push(n.defendedUnknown(receipt.defendedUnknownCount));
   }
   return notes;
 }
@@ -133,4 +128,29 @@ export function receiptHref(period: ReceiptPeriod): string {
   return period.kind === "month"
     ? `/report/receipt?month=${receiptNumber(period)}`
     : `/report/receipt?year=${period.year}`;
+}
+
+/**
+ * 공유·복사용 글 영수증. 화면과 같은 숫자만 적고, 카드 명세서가 아니라는 말을 끝에 붙인다 — 받은
+ * 사람이 은행 기록으로 읽지 않게.
+ */
+export function formatReceiptShareText(t: Messages, receipt: Receipt): string {
+  const s = t.receiptView.share;
+  const suffix = receipt.isComplete
+    ? ""
+    : receipt.upcomingCount > 0
+      ? s.upcomingInTitle
+      : s.todayInTitle;
+  const lines = [s.title(formatReceiptPeriodText(t, receipt.period), suffix), "-".repeat(28)];
+  if (receipt.lines.length === 0) lines.push(t.receiptView.empty);
+  for (const line of receipt.lines) {
+    const count = line.chargeDates.length > 1 ? ` ×${line.chargeDates.length}` : "";
+    const upcoming = line.upcomingDates.length > 0 ? s.upcomingMark : "";
+    lines.push(`${line.name}${count}${upcoming}  ${formatKRW(line.amountKRW)}`);
+  }
+  lines.push("-".repeat(28));
+  lines.push(`${s.total}  ${formatKRW(receipt.totalKRW)}`);
+  if (receipt.defendedKRW > 0) lines.push(`${s.defended}  ${formatKRW(receipt.defendedKRW)}`);
+  lines.push("", t.receiptView.notes.base);
+  return lines.join("\n");
 }
