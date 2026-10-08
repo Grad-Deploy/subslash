@@ -9,6 +9,7 @@ import {
   type UsageLog,
 } from "@subslash/shared";
 import { receiptFootnotes } from "@lib/receipt-view";
+import { messages } from "@lib/i18n/messages";
 import { GET } from "@/api/fx/history/route";
 
 /**
@@ -83,7 +84,7 @@ describe("buildReceipt — 지난 달러 결제의 환율", () => {
     );
     expect(receipt.lines[0].amountKRW).toBe(20 * CURRENT);
     expect(receipt.fx).toEqual({ historical: 0, current: 1 });
-    expect(receiptFootnotes(receipt).join("\n")).toContain(
+    expect(receiptFootnotes(messages.ko, receipt).join("\n")).toContain(
       "지난 달러 결제 1건은 그날 환율을 받지 못해 지금 설정한 환율로 계산했어요.",
     );
   });
@@ -117,7 +118,9 @@ describe("buildReceipt — 지난 달러 결제의 환율", () => {
       rateOn,
     );
     expect(receipt.lines[0].billedKRW).toBe(22 * 1300);
-    expect(receiptFootnotes(receipt).join("\n")).toContain("결제일의 고시 환율(ECB 기준)");
+    expect(receiptFootnotes(messages.ko, receipt).join("\n")).toContain(
+      "결제일의 고시 환율(ECB 기준)",
+    );
   });
 
   it("고시 환율을 넘기지 않으면 예전처럼 지금 환율로 계산한다", () => {

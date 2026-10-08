@@ -1,7 +1,9 @@
 import React from "react";
-import { formatKRW, formatReceiptPeriod, type Receipt } from "@subslash/shared";
+import { formatKRW, type Receipt } from "@subslash/shared";
+import { useT } from "@lib/i18n";
 import {
   describeReceiptLine,
+  formatReceiptPeriodText,
   receiptFootnotes,
   receiptNumber,
   receiptPeriodSuffix,
@@ -15,29 +17,32 @@ import {
  * 같은 문구를 쓴다.
  */
 export function ReceiptPaper({ receipt, issuedAt }: { receipt: Receipt; issuedAt: Date }) {
+  const t = useT();
+  const v = t.receiptView;
+  const period = formatReceiptPeriodText(t, receipt.period);
   const issued = `${issuedAt.getFullYear()}.${String(issuedAt.getMonth() + 1).padStart(2, "0")}.${String(issuedAt.getDate()).padStart(2, "0")}`;
 
   return (
     <article
-      aria-label={`${formatReceiptPeriod(receipt.period)} 구독 영수증`}
+      aria-label={v.paperLabel(period)}
       className="receipt-paper relative mx-auto w-full max-w-sm bg-[#fbfaf7] px-6 pt-7 pb-10 text-zinc-900"
     >
       <header className="space-y-1 text-center">
         <p className="text-xl font-extrabold tracking-tight">SubSlash</p>
-        <p className="text-xs text-zinc-500">구독 영수증</p>
+        <p className="text-xs text-zinc-500">{v.title}</p>
         <p className="pt-1 text-base font-bold">
-          {formatReceiptPeriod(receipt.period)}
-          {receiptPeriodSuffix(receipt)}
+          {period}
+          {receiptPeriodSuffix(t, receipt)}
         </p>
         <p className="text-[11px] text-zinc-500 tabular-nums">
-          No. {receiptNumber(receipt.period)} · 발행 {issued}
+          {v.issued(receiptNumber(receipt.period), issued)}
         </p>
       </header>
 
       <hr className="my-4 border-t border-dashed border-zinc-400" />
 
       {receipt.lines.length === 0 ? (
-        <p className="py-4 text-center text-sm text-zinc-500">결제된 구독이 없어요</p>
+        <p className="py-4 text-center text-sm text-zinc-500">{v.empty}</p>
       ) : (
         <ul className="space-y-3">
           {receipt.lines.map((line) => (
@@ -49,7 +54,7 @@ export function ReceiptPaper({ receipt, issuedAt }: { receipt: Receipt; issuedAt
                 </span>
               </div>
               <p className="text-[11px] leading-snug text-zinc-500">
-                {describeReceiptLine(line, receipt.period)}
+                {describeReceiptLine(t, line, receipt.period)}
               </p>
             </li>
           ))}
@@ -60,38 +65,39 @@ export function ReceiptPaper({ receipt, issuedAt }: { receipt: Receipt; issuedAt
 
       <dl className="space-y-1.5">
         <div className="flex items-baseline justify-between">
-          <dt className="text-sm font-bold">합계(내 몫) · {receipt.chargeCount}건</dt>
+          <dt className="text-sm font-bold">{v.total(receipt.chargeCount)}</dt>
           <dd className="text-lg font-extrabold tabular-nums">{formatKRW(receipt.totalKRW)}</dd>
         </div>
         {receipt.billedTotalKRW !== receipt.totalKRW && (
           <div className="flex items-baseline justify-between text-xs text-zinc-500">
-            <dt>카드에 찍힌 금액</dt>
+            <dt>{v.billed}</dt>
             <dd className="tabular-nums">{formatKRW(receipt.billedTotalKRW)}</dd>
           </div>
         )}
         {receipt.defendedKRW > 0 && (
           <div className="flex items-baseline justify-between text-sm font-bold text-emerald-700">
-            <dt>해지로 지킨 돈</dt>
+            <dt>{v.defended}</dt>
             <dd className="tabular-nums">{formatKRW(receipt.defendedKRW)}</dd>
           </div>
         )}
       </dl>
       {receipt.killed.length > 0 && (
         <p className="mt-1.5 text-[11px] text-zinc-500">
-          이 기간에 해지: {receipt.killed.map((k) => k.name).join(", ")}
+          {v.killedIn(receipt.killed.map((k) => k.name).join(", "))}
         </p>
       )}
       {receipt.priciestPerUse?.usage && (
         <p className="mt-2 text-xs">
-          1회가 가장 비쌌던 구독: <b>{receipt.priciestPerUse.name}</b> (1회{" "}
-          {formatKRW(receipt.priciestPerUse.usage.costPerUseKRW)})
+          {v.priciestBefore}
+          <b>{receipt.priciestPerUse.name}</b>
+          {v.priciestAfter(formatKRW(receipt.priciestPerUse.usage.costPerUseKRW))}
         </p>
       )}
 
       <hr className="my-4 border-t border-dashed border-zinc-400" />
 
       <ul className="space-y-0.5 text-[10px] leading-snug text-zinc-500">
-        {receiptFootnotes(receipt).map((note) => (
+        {receiptFootnotes(t, receipt).map((note) => (
           <li key={note}>· {note}</li>
         ))}
       </ul>
