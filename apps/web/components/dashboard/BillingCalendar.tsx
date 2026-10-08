@@ -18,7 +18,7 @@ import {
   type BillingMonth,
 } from "@lib/billing-calendar";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 
 /**
  * 이번 달 어느 날에 무엇이 빠져나가는지 달력으로 보여준다. '다가오는 결제' 목록을 대신한다 —
@@ -222,6 +222,7 @@ function SelectedDay({
   now: Date;
   rate: number;
 }) {
+  const names = useServiceNames();
   const c = useT().overview.calendar;
   // 날짜끼리만 뺀다. 시각이 섞이면 같은 날인데 D-1로 보이는 일이 생긴다.
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -250,7 +251,7 @@ function SelectedDay({
                 fallbackColor={sub.iconColor}
                 size={18}
               />
-              <span className="truncate">{sub.name}</span>
+              <span className="truncate">{names.sub(sub)}</span>
             </Link>
             <span className="shrink-0 font-mono text-xs font-semibold">
               {formatCurrency(getBilledAmount(sub), sub.currency)}

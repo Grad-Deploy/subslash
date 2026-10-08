@@ -12,6 +12,7 @@ import {
   type SubscriptionCategory,
   type SubscriptionFormData,
   coveredServices,
+  serviceNameKey,
 } from "@subslash/shared";
 import { apiFetch, readApiError } from "./api";
 import { withAppReturn } from "./native";
@@ -193,7 +194,7 @@ function sameService(
   a: { name: string; currency: Currency },
   b: { name: string; currency: Currency },
 ) {
-  return a.name.trim().toLowerCase() === b.name.trim().toLowerCase() && a.currency === b.currency;
+  return serviceNameKey(a.name) === serviceNameKey(b.name) && a.currency === b.currency;
 }
 
 export interface DiscoveryPlan {

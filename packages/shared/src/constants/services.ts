@@ -39,6 +39,11 @@ export interface ServicePreset {
   id: string;
   name: string;
   nameKo: string;
+  /**
+   * 영어 화면에 보일 이름. `nameKo`처럼 화면에 보이는 이름이고(`name`은 메일·문자 파싱이 쓰는 이름이라 따로 둔다),
+   * 브랜드가 쓰는 영문 표기를 적는다. 없으면 영어 화면도 `nameKo`를 쓴다(Claude·GitHub Copilot처럼 원래 영문인 것).
+   */
+  nameEn?: string;
   category: SubscriptionCategory;
   /**
    * 요금이 하나뿐인 서비스의 월 요금. 요금제가 여럿이면(plans) null이고, 요금을 확인하지
@@ -188,6 +193,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "netflix",
     name: "Netflix Korea",
     nameKo: "넷플릭스",
+    nameEn: "Netflix",
     category: "ott",
     defaultAmount: null,
     plans: [
@@ -205,6 +211,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "tving",
     name: "TVING",
     nameKo: "티빙",
+    nameEn: "TVING",
     category: "ott",
     defaultAmount: null,
     plans: [
@@ -224,6 +231,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "coupang-wow",
     name: "Coupang WOW (Coupang Play)",
     nameKo: "쿠팡 와우 (쿠팡플레이)",
+    nameEn: "Coupang WOW (Coupang Play)",
     category: "ott",
     defaultAmount: 7890,
     currency: "KRW",
@@ -242,6 +250,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "wavve",
     name: "Wavve",
     nameKo: "웨이브",
+    nameEn: "Wavve",
     category: "ott",
     defaultAmount: null,
     plans: [
@@ -263,6 +272,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "watcha",
     name: "WATCHA",
     nameKo: "왓챠",
+    nameEn: "WATCHA",
     category: "ott",
     defaultAmount: null,
     plans: [
@@ -279,6 +289,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "youtube-premium",
     name: "YouTube Premium",
     nameKo: "유튜브 프리미엄",
+    nameEn: "YouTube Premium",
     category: "ott",
     defaultAmount: null,
     plans: [
@@ -296,6 +307,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "disney-plus",
     name: "Disney+",
     nameKo: "디즈니플러스",
+    nameEn: "Disney+",
     category: "ott",
     defaultAmount: null,
     plans: [
@@ -315,6 +327,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "apple-tv",
     name: "Apple TV+",
     nameKo: "애플 TV+ (Apple TV+)",
+    nameEn: "Apple TV+",
     category: "ott",
     // 미국 요금은 올랐지만 한국은 월 9,900원 그대로라는 보도(2025) 기준.
     defaultAmount: 9900,
@@ -328,6 +341,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "prime-video",
     name: "Amazon Prime Video",
     nameKo: "아마존 프라임 비디오",
+    nameEn: "Amazon Prime Video",
     category: "ott",
     // 아마존 프라임 멤버십(Prime Video 포함)의 요금(2026-10-03 사용자 확인). Prime Video만 따로 내는
     // 요금은 확인하지 못해 적지 않았다 — 그렇게 냈다면 요금제를 고르지 않고 금액을 적는다.
@@ -355,6 +369,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "laftel",
     name: "Laftel",
     nameKo: "라프텔 (Laftel)",
+    nameEn: "Laftel",
     category: "ott",
     defaultAmount: null,
     plans: [
@@ -377,6 +392,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "spotify",
     name: "Spotify",
     nameKo: "스포티파이",
+    nameEn: "Spotify",
     category: "music",
     defaultAmount: null,
     plans: [
@@ -395,6 +411,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "melon",
     name: "Melon",
     nameKo: "멜론",
+    nameEn: "Melon",
     category: "music",
     // melon.com 이용권 안내의 정기결제 요금.
     defaultAmount: null,
@@ -417,6 +434,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "apple-music",
     name: "Apple Music",
     nameKo: "애플 뮤직",
+    nameEn: "Apple Music",
     category: "music",
     // apple.com/kr 요금제
     defaultAmount: null,
@@ -436,6 +454,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "naver-plus",
     name: "Naver Plus",
     nameKo: "네이버플러스",
+    nameEn: "Naver Plus",
     category: "shopping",
     defaultAmount: 4900,
     currency: "KRW",
@@ -448,6 +467,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "baemin-club",
     name: "Baemin Club",
     nameKo: "배민클럽",
+    nameEn: "Baemin Club",
     category: "shopping",
     // 2024년 9월 유료 전환 때 발표한 정가. 할인가로 가입했다면 등록할 때 고친다.
     defaultAmount: 3990,
@@ -465,6 +485,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "baemin-youtube-premium",
     name: "Baemin Club + YouTube Premium",
     nameKo: "배민클럽 + 유튜브 프리미엄",
+    nameEn: "Baemin Club + YouTube Premium",
     category: "ott",
     // 2025년 9월 출시 때 발표한 가격(첫 달 할인 제외). 상시 할인가로 파는 중이라 두 값을 다 두고
     // 등록할 때 고르게 한다 — 할인이 끝났는지는 알 수 없다.
@@ -489,6 +510,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "uplus-double-streaming",
     name: "LG U+ Udok Double Streaming",
     nameKo: "유독 더블스트리밍 (넷플릭스 + 유튜브 프리미엄)",
+    nameEn: "U+ Udok Double Streaming (Netflix + YouTube Premium)",
     category: "ott",
     // 2026년 5월 발표. 연간권이지만 월 요금으로 발표돼, 한 번에 1년치를 내는지는 확인하지 못했다.
     // 넷플릭스가 어느 요금제인지도 발표에 없다.
@@ -511,6 +533,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "tving-3pack",
     name: "TVING 3 PACK",
     nameKo: "티빙 3 PACK (티빙 + 디즈니+ + 웨이브)",
+    nameEn: "TVING 3 PACK (TVING + Disney+ + Wavve)",
     category: "ott",
     // 2025년 11월 출시 때 발표한 월 요금(세 서비스 모두 스탠다드 기준). 가격이 바뀌면 여기부터 고친다.
     defaultAmount: 21500,
@@ -531,6 +554,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "tving-double-disney",
     name: "TVING Double (Disney+)",
     nameKo: "티빙 더블 (티빙 + 디즈니+)",
+    nameEn: "TVING Double (TVING + Disney+)",
     category: "ott",
     // 3 PACK과 함께 발표한 월 요금(스탠다드 기준).
     defaultAmount: 18000,
@@ -549,6 +573,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "tving-wavve-double",
     name: "TVING x Wavve Double",
     nameKo: "티빙 x 웨이브 더블 이용권",
+    nameEn: "TVING x Wavve Double Pass",
     category: "ott",
     // 요금제가 여럿인데 공식 발표로 확인한 것은 광고형 스탠다드(월 7,000원)뿐이다. 나머지 요금제의
     // 값은 판매 페이지를 확인하지 못해 적지 않는다 — 등록할 때 결제 화면의 금액을 적는다.
@@ -587,6 +612,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "uplus-google-ai-youtube",
     name: "LG U+ Udok Google AI Pro + YouTube Premium",
     nameKo: "유독 구글 AI 프로 + 유튜브 프리미엄",
+    nameEn: "U+ Udok Google AI Pro + YouTube Premium",
     category: "ai",
     // 2026년 6월 출시 때 발표한 월 요금. U+ 멤버십 VIP 이상은 4,000원 할인 쿠폰을 쓸 수 있다고 발표했다.
     defaultAmount: null,
@@ -607,6 +633,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "naver-mybox",
     name: "Naver MYBOX",
     nameKo: "네이버 MYBOX",
+    nameEn: "Naver MYBOX",
     category: "cloud",
     // 웹 결제 월 요금(2026-10-03 사용자 확인)과 한국 App Store의 앱 내 구입 가격(같은 날 확인). 웹의 연
     // 결제와 5TB 이상은 확인하지 못했다. 용량은 무료 30GB를 더한 전체 용량이다.
@@ -653,6 +680,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "naver-vibe",
     name: "Naver VIBE",
     nameKo: "네이버 바이브 (VIBE)",
+    nameEn: "Naver VIBE",
     category: "music",
     defaultAmount: null,
     priceNote: "지금 요금을 확인하지 못했어요. 결제 내역의 금액을 적어주세요.",
@@ -670,6 +698,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "kakao-emoticon",
     name: "Kakao Emoticon Plus",
     nameKo: "카카오 이모티콘 플러스",
+    nameEn: "Kakao Emoticon Plus",
     category: "other",
     defaultAmount: null,
     plans: [
@@ -690,6 +719,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "apple-icloud",
     name: "Apple iCloud+",
     nameKo: "아이클라우드",
+    nameEn: "iCloud+",
     category: "cloud",
     // Apple 지원 문서의 대한민국 요금. 한국에서는 달러가 아니라 원화로 청구된다.
     defaultAmount: null,
@@ -711,6 +741,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "google-one",
     name: "Google One",
     nameKo: "구글 원",
+    nameEn: "Google One",
     category: "cloud",
     // one.google.com 요금제(한국).
     defaultAmount: null,
@@ -757,6 +788,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "notion",
     name: "Notion",
     nameKo: "노션",
+    nameEn: "Notion",
     category: "other",
     // 멤버 1명 기준. 요금 페이지가 한국에서는 원화로 보인다.
     defaultAmount: null,
@@ -784,6 +816,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "ChatGPT",
     // '챗GPT 플러스'로 등록된 구독도 같은 서비스로 알아보도록(추천 목록의 이름 비교) 짧게 둔다.
     nameKo: "챗GPT",
+    nameEn: "ChatGPT",
     category: "ai",
     // 공식 요금 페이지는 막혀 있어, 여러 안내가 같은 값을 말하는 요금만 적었다.
     defaultAmount: null,
@@ -899,6 +932,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "adobe-cc",
     name: "Adobe Creative Cloud",
     nameKo: "어도비",
+    nameEn: "Adobe",
     category: "other",
     // adobe.com/kr 개인 요금표(2026-10-03 확인)의 '연간 구독, 월별 청구' 정가, 부가세 포함. 월간(약정 없음)과
     // 연간 선결제는 요금이 달라 적지 않았고, 모든 앱의 첫해 할인가(₩58,200)도 기준으로 두지 않는다.
@@ -926,6 +960,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "microsoft-365",
     name: "Microsoft 365",
     nameKo: "마이크로소프트 365",
+    nameEn: "Microsoft 365",
     category: "other",
     // Microsoft Store 한국 요금.
     defaultAmount: null,
@@ -957,6 +992,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "millie",
     name: "Millie",
     nameKo: "밀리의 서재",
+    nameEn: "Millie",
     category: "other",
     defaultAmount: null,
     plans: [
@@ -973,6 +1009,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "ridi-select",
     name: "RIDI Select",
     nameKo: "리디셀렉트",
+    nameEn: "RIDI Select",
     category: "other",
     defaultAmount: 4900,
     currency: "KRW",
@@ -987,6 +1024,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     id: "goodnotes",
     name: "Goodnotes",
     nameKo: "굿노트",
+    nameEn: "Goodnotes",
     category: "other",
     // 한국 요금(2026-10-03 사용자 확인). 베이직 연간은 예전에 가입한 사람이 이전 가격으로 갱신되기도 해서
     // 둘을 다 둔다. 이 밖의 값(다른 스토어·더 예전 가격)도 있을 수 있어 요금제를 고르지 않아도 되게 한다.
@@ -1272,6 +1310,22 @@ export function getCancelAndroidApp(sub: { name: string; cancelUrl?: string }): 
  * 이름으로 맞춘다. 어느 쪽으로도 확정되지 않으면 `undefined` — 이름이 비슷하다는
  * 이유만으로 남의 요금표를 그 구독의 "기준 요금"이라고 부르지 않는다.
  */
+/**
+ * 같은 서비스인지 이름으로 견줄 때 쓰는 이름. 서비스 목록의 이름(한국어·영문·파싱용 영문)이면 한국어 이름으로
+ * 모으고, 아니면 적힌 그대로(앞뒤 공백 빼고 소문자). 영어 화면에서 등록한 구독은 영문 이름으로 저장되므로,
+ * 결제 메일 후보(한국어 이름)와 이름을 그대로 견주면 같은 서비스를 다른 것으로 읽는다.
+ */
+export function serviceNameKey(name: string): string {
+  const normalized = name.trim().toLowerCase();
+  const preset = POPULAR_SERVICES.find(
+    (service) =>
+      service.nameKo.trim().toLowerCase() === normalized ||
+      service.name.trim().toLowerCase() === normalized ||
+      service.nameEn?.trim().toLowerCase() === normalized,
+  );
+  return preset ? preset.nameKo.trim().toLowerCase() : normalized;
+}
+
 export function findPresetForSubscription(sub: {
   name: string;
   cancelUrl?: string;
@@ -1280,7 +1334,8 @@ export function findPresetForSubscription(sub: {
   const sameName = (service: ServicePreset) =>
     normalized !== "" &&
     (service.nameKo.trim().toLowerCase() === normalized ||
-      service.name.trim().toLowerCase() === normalized);
+      service.name.trim().toLowerCase() === normalized ||
+      service.nameEn?.trim().toLowerCase() === normalized);
 
   if (sub.cancelUrl) {
     const byUrl = POPULAR_SERVICES.filter((service) => service.cancelUrl === sub.cancelUrl);

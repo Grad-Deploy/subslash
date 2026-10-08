@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { openExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { ServiceLogo } from "./ServiceLogo";
 import { PlanAlternatives } from "./PlanAlternatives";
 
@@ -41,6 +41,7 @@ export function CancelGuideModal({
   onClose,
   onConfirmKilled,
 }: CancelGuideModalProps) {
+  const names = useServiceNames();
   const t = useT().detail;
   // 해지 화면(다른 앱·인앱 브라우저)에 다녀온 구독. 돌아오면 창 맨 위에서 마쳤는지 묻는다 — '해지
   // 완료했어요'는 긴 창의 맨 아래라, 돌아와서 그냥 닫으면 해지가 기록되지 않았다.
@@ -96,7 +97,9 @@ export function CancelGuideModal({
               fallbackColor={sub.iconColor}
               size={20}
             />
-            <span className="min-w-0 [overflow-wrap:anywhere]">{t.guide.title(sub.name)}</span>
+            <span className="min-w-0 [overflow-wrap:anywhere]">
+              {t.guide.title(names.sub(sub))}
+            </span>
           </DialogTitle>
           <DialogDescription>{t.guide.description}</DialogDescription>
         </DialogHeader>
@@ -173,8 +176,8 @@ export function CancelGuideModal({
                           ),
                         )
                       : cancelUrlKind === "direct"
-                        ? t.link.cancelPageOpen(sub.name)
-                        : t.link.open(sub.name)}
+                        ? t.link.cancelPageOpen(names.sub(sub))
+                        : t.link.open(names.sub(sub))}
                   </Button>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     {route.source === "payment"

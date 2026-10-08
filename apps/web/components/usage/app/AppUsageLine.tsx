@@ -2,7 +2,7 @@
 
 import React from "react";
 import { cn } from "@lib/utils";
-import { useT, type Messages } from "@lib/i18n";
+import { useLocale, useServiceNames, useT, type Messages } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
 import { packageBreakdown, packagesFor } from "@lib/usage/packages";
 import { LEVEL_STYLE, type MetricView, type SubUsage } from "@lib/usage/value";
@@ -68,15 +68,17 @@ export function UsageLine({
 }) {
   const t = useT();
   const u = t.usageApp;
+  const locale = useLocale();
+  const names = useServiceNames();
   const { period, month, view } = line;
   const packages = packagesFor(period.sub) ?? [];
   const breakdown =
-    period.state === "measured" ? packageBreakdown(packages, period.totals.byPackage) : [];
+    period.state === "measured" ? packageBreakdown(packages, period.totals.byPackage, locale) : [];
 
   if (period.state !== "measured" || !view) {
     return (
       <div className="min-w-0 flex-1 space-y-1">
-        <p className="truncate text-sm font-bold">{period.sub.name}</p>
+        <p className="truncate text-sm font-bold">{names.sub(period.sub)}</p>
         <p className="text-xs text-muted-foreground">
           {period.state === "not-installed" ? u.line.notInstalled : u.line.noData}
         </p>
@@ -168,7 +170,7 @@ export function UsageLine({
   return (
     <div className="min-w-0 flex-1 space-y-1">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="truncate text-sm font-bold">{period.sub.name}</p>
+        <p className="truncate text-sm font-bold">{names.sub(period.sub)}</p>
         <span className="shrink-0 text-right">{value}</span>
       </div>
       <p className="text-xs text-muted-foreground">{detail}</p>

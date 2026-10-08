@@ -7,7 +7,7 @@ import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { shortServiceName } from "@lib/service-name";
 import { isSocialLoginOpen } from "@lib/privacy";
 import { cn } from "@lib/utils";
-import { useT } from "@lib/i18n";
+import { useLocale, useT } from "@lib/i18n";
 import { RISE_TEXT, kicker, slideBody, slideTitle, slideTop } from "./styles";
 
 /**
@@ -40,6 +40,7 @@ export function TrySlide({
   onLogin: () => void;
 }) {
   const tr = useT().landing.onboarding.try;
+  const locale = useLocale();
   const chosen = PICKS.filter((p) => picked.includes(p.id));
   // 고른 것이 모두 요금 하나뿐인 서비스일 때만 합계를 쓴다. 요금제가 여럿이면 등록할 때 골라야 안다.
   const allKnown = chosen.every((p) => p.defaultAmount !== null && p.currency === "KRW");
@@ -77,7 +78,9 @@ export function TrySlide({
             >
               <ServiceLogo presetId={preset.id} name={preset.nameKo} size={40} />
               <span className="min-w-0 flex-1">
-                <span className="block text-base font-bold">{shortServiceName(preset)}</span>
+                <span className="block text-base font-bold">
+                  {shortServiceName(preset, locale)}
+                </span>
                 <span className="mt-0.5 block text-sm text-muted-foreground">
                   {preset.defaultAmount !== null
                     ? tr.monthly(formatCurrency(preset.defaultAmount, preset.currency))

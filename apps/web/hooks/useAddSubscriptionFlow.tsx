@@ -9,7 +9,7 @@ import {
   type SubscriptionFormData,
 } from "@subslash/shared";
 import { useStore } from "@lib/store";
-import { useLatestT, useT } from "@lib/i18n";
+import { useLatestT, useServiceNames, useT } from "@lib/i18n";
 import { findDuplicateSubscription } from "@lib/duplicate-subscription";
 import { AppAddCheckIn, AppDuplicateDialog } from "../components/subscription/app/appParts";
 import { SubForm } from "../components/subscription/SubForm";
@@ -47,6 +47,7 @@ export function useAddSubscriptionFlow({
 }) {
   const { subscriptions, usageLogs, addSubscription } = useStore();
   const t = useT();
+  const names = useServiceNames();
   const tRef = useLatestT();
   const [isOpen, setIsOpen] = useState(false);
   const [options, setOptions] = useState<AddOptions>({});
@@ -134,7 +135,7 @@ export function useAddSubscriptionFlow({
             <DialogHeader>
               <DialogTitle>
                 {options.preset
-                  ? t.form.dialog.titlePreset(options.preset.nameKo)
+                  ? t.form.dialog.titlePreset(names.preset(options.preset))
                   : t.form.dialog.titleNew}
                 {queue && queue.presets.length > 1 && (
                   <span className="ml-1.5 text-sm font-medium text-muted-foreground tabular-nums">
@@ -148,7 +149,11 @@ export function useAddSubscriptionFlow({
               <SubForm
                 key={formKey}
                 popularServices={POPULAR_SERVICES}
-                initialData={options.preset ? presetFormData(options.preset) : undefined}
+                initialData={
+                  options.preset
+                    ? { ...presetFormData(options.preset), name: names.preset(options.preset) }
+                    : undefined
+                }
                 openCustom={options.custom ?? false}
                 onSubmit={(data) => submit(data)}
               />

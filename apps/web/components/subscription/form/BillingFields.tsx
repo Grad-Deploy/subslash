@@ -2,7 +2,7 @@ import React from "react";
 import type { ServicePreset, SubscriptionFormData } from "@subslash/shared";
 import { Input } from "../../ui/input";
 import { Select } from "../../ui/select";
-import { useT } from "@lib/i18n";
+import { useServiceNames, useT } from "@lib/i18n";
 import { FIELD_LABEL } from "./fieldLabel";
 
 /** 결제일 칸 아래의 빠른 선택. 결제 문자를 보고 바로 등록하는 사람이 많다. */
@@ -29,6 +29,7 @@ export function BillingFields({
   onPaidOn: (date: Date) => void;
 }) {
   const f = useT().form.billing;
+  const names = useServiceNames();
   const cycle = formData.billingCycle ?? "monthly";
   const plans = preset?.plans ?? [];
   return (
@@ -122,7 +123,7 @@ export function BillingFields({
 
       {cycle === "yearly" && preset && !formData.planId && (
         <p className="text-[11px] text-muted-foreground break-keep">
-          {f.yearlyNoPlan(plans.length > 0 ? preset.nameKo : null)}
+          {f.yearlyNoPlan(plans.length > 0 ? names.preset(preset) : null)}
         </p>
       )}
     </>

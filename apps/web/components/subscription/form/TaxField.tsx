@@ -2,7 +2,7 @@
 
 import { ServicePreset, type Currency, formatAmount, getBilledAmount } from "@subslash/shared";
 import { Select } from "../../ui/select";
-import { useT } from "@lib/i18n";
+import { useServiceNames, useT } from "@lib/i18n";
 import { FIELD_LABEL } from "./fieldLabel";
 
 /**
@@ -25,6 +25,7 @@ export function TaxField({
   onChange: (taxRate: number | undefined) => void;
 }) {
   const f = useT().form.tax;
+  const names = useServiceNames();
   return (
     <div className="space-y-1.5">
       <label htmlFor={id} className={FIELD_LABEL}>
@@ -47,7 +48,7 @@ export function TaxField({
         ) : null}
       </Select>
       <p className="text-[11px] text-muted-foreground break-keep">
-        {preset?.taxRate ? f.hintPreset(preset.nameKo, preset.taxRate) : f.hintOverseas}
+        {preset?.taxRate ? f.hintPreset(names.preset(preset), preset.taxRate) : f.hintOverseas}
       </p>
       {taxRate && typeof amount === "number" ? (
         <p className="text-[11px] font-semibold text-foreground">

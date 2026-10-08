@@ -28,7 +28,7 @@ import { SubjectChip } from "../../subscription/SubjectChip";
 import { Spinner } from "../../ui/spinner";
 import { AppDefenseChart } from "./AppDefenseChart";
 import { AppIncomeRate } from "./AppIncomeRate";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { rewardHeadline } from "@lib/i18n/savings-text";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -48,6 +48,7 @@ function perChargeKRW(sub: Subscription, rate: number): number {
  * 서비스별 → 다가오는 방어 → 보상 → 해지한 구독.
  */
 export function AppSavings() {
+  const names = useServiceNames();
   const router = useRouter();
   const t = useT();
   const a = t.savings.app;
@@ -110,7 +111,7 @@ export function AppSavings() {
       annual: tiers.annualRunRate,
       count: killed.length,
       verifiedCount: tiers.verifiedCount,
-      names: killed.map((sub) => sub.name),
+      names: killed.map((sub) => names.sub(sub)),
     });
     const shareUrl = webUrl(`/savings/share?${params.toString()}`);
     const headline = rewardHeadline(t, tiers.annualRunRate);
@@ -214,7 +215,7 @@ export function AppSavings() {
           >
             <p className="flex items-center gap-1.5 text-[12.5px] font-bold text-amber-800 dark:text-amber-300">
               <Bell className="size-3.5 shrink-0" aria-hidden />
-              {a.stopped(sub.name, killDate(check.billingDate))}
+              {a.stopped(names.sub(sub), killDate(check.billingDate))}
             </p>
             <div className="mt-2 flex gap-1.5">
               <button
@@ -261,7 +262,7 @@ export function AppSavings() {
                       />
                       <div className="min-w-0">
                         <p className="flex justify-between gap-2 text-[12.5px] font-bold">
-                          <span className="truncate">{sub.name}</span>
+                          <span className="truncate">{names.sub(sub)}</span>
                           <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
                             {Math.round((annual / tiers.annualRunRate) * 100)}%
                           </span>
@@ -313,7 +314,9 @@ export function AppSavings() {
                         </span>
                       </span>
                       <span className="min-w-0">
-                        <span className="block truncate text-[12.5px] font-bold">{sub.name}</span>
+                        <span className="block truncate text-[12.5px] font-bold">
+                          {names.sub(sub)}
+                        </span>
                         <span className="block text-[10.5px] text-muted-foreground">
                           {days <= 0 ? a.today : a.inDays(days)}
                         </span>
@@ -375,7 +378,7 @@ export function AppSavings() {
                     />
                     <span className="min-w-0">
                       <s className="block truncate text-[12.5px] font-bold text-muted-foreground">
-                        {sub.name}
+                        {names.sub(sub)}
                       </s>
                       <span className="block text-[10.5px] font-semibold text-emerald-700 dark:text-emerald-300">
                         {t.savings.page.annualSaving(formatKRW(getMyAnnualAmountKRW(sub, rate)))}

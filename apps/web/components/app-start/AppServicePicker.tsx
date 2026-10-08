@@ -4,7 +4,8 @@ import { MoreHorizontal, Mail, Smartphone } from "lucide-react";
 import { POPULAR_SERVICES, type ServicePreset } from "@subslash/shared";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { shortServiceName } from "@lib/service-name";
-import { useT } from "@lib/i18n";
+import { useLocale, useT } from "@lib/i18n";
+import type { Locale } from "@lib/i18n/config";
 
 /** 빈 대시보드에 바로 누를 수 있게 올려 둘 서비스. 나머지는 '더 보기'(서비스 고르기)에서 찾는다. */
 const QUICK_IDS = ["netflix", "youtube-premium", "coupang-wow", "tving", "spotify"];
@@ -40,6 +41,7 @@ export function AppServicePicker({
   onUsage,
 }: AppServicePickerProps) {
   const p = useT().reminders.picker;
+  const locale = useLocale();
   const tile =
     "flex flex-col items-center gap-1.5 rounded-2xl border bg-card px-1 pt-3 pb-2.5 text-[11px] font-semibold transition active:scale-[.97] hover:bg-muted";
 
@@ -52,7 +54,7 @@ export function AppServicePicker({
         {QUICK.map((preset) => (
           <button key={preset.id} type="button" className={tile} onClick={() => onPick(preset)}>
             <ServiceLogo presetId={preset.id} name={preset.nameKo} size={30} />
-            <span className="w-full truncate text-center">{shortName(preset)}</span>
+            <span className="w-full truncate text-center">{shortName(preset, locale)}</span>
           </button>
         ))}
         <button type="button" className={tile} onClick={onMore}>
@@ -108,6 +110,7 @@ export function AppServicePicker({
 }
 
 /** 타일에는 괄호 속 설명(쿠팡플레이 등)을 빼고, 긴 이름은 앞말만 쓴다. */
-function shortName(preset: ServicePreset): string {
-  return preset.id === "youtube-premium" ? "유튜브" : shortServiceName(preset);
+function shortName(preset: ServicePreset, locale: Locale): string {
+  if (preset.id === "youtube-premium") return locale === "en" ? "YouTube" : "유튜브";
+  return shortServiceName(preset, locale);
 }
