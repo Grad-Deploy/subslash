@@ -15,6 +15,7 @@ import { STATS_SAMPLE_ENABLED, sampleStatsSummary } from "@lib/stats-sample";
 import { STATS_MIN_PARTICIPANTS, type ServiceStats, type StatsSummary } from "@lib/stats";
 import { Button } from "@components/ui/button";
 import { Spinner } from "@components/ui/spinner";
+import { useLatestT, useT } from "@lib/i18n";
 import { AgeComparison } from "../AgeComparison";
 import type { ValueRow } from "../valueRows";
 
@@ -36,6 +37,8 @@ export function PeerComparison({
   rows: ValueRow[];
   monthly: number;
 }) {
+  const p = useT().reportPage.peer;
+  const tRef = useLatestT();
   const enabled = useStatsSharing((state) => state.enabled);
   const token = useStatsSharing((state) => state.token);
   const ageBand = useStatsSharing((state) => state.ageBand);
@@ -54,8 +57,8 @@ export function PeerComparison({
     if (STATS_SAMPLE_ENABLED) return;
     fetchStatsSummary()
       .then(setSummary)
-      .catch(() => setError("비교 통계를 불러오지 못했어요."));
-  }, []);
+      .catch(() => setError(tRef.current.reportPage.peer.loadFailed));
+  }, [tRef]);
 
   const join = () => useStatsSharing.getState().setEnabled(true);
   const leave = async () => {
@@ -69,7 +72,7 @@ export function PeerComparison({
     } catch {
       // 서버에 기록이 남았다. 참여 중으로 되돌려 다시 누를 수 있게 한다.
       useStatsSharing.getState().setEnabled(true);
-      setError("참여를 그만두지 못했어요. 잠시 뒤에 다시 시도해 주세요.");
+      setError(tRef.current.reportPage.peer.leaveFailed);
     } finally {
       setBusy(false);
     }
@@ -87,29 +90,26 @@ export function PeerComparison({
     <section className="space-y-3 rounded-2xl border p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-bold">다른 사용자와 비교</h2>
+          <h2 className="text-base font-bold">{p.title}</h2>
           <p className="text-xs text-muted-foreground">
-            {STATS_SAMPLE_ENABLED
-              ? "가상 사용자와 비교한 미리보기예요."
-              : "참여한 사용자의 익명 통계예요."}{" "}
+            {STATS_SAMPLE_ENABLED ? p.sample : p.real}{" "}
             <Link href="/privacy#anonymous-stats" className="underline underline-offset-2">
-              무엇을 모으나요?
+              {p.whatDoWeCollect}
             </Link>
           </p>
         </div>
         {summary && (
           <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs">
             {STATS_SAMPLE_ENABLED
-              ? `가상 ${summary.participants}명`
-              : `${summary.participants}명 참여`}
+              ? p.sampleCount(summary.participants)
+              : p.realCount(summary.participants)}
           </span>
         )}
       </div>
 
       {STATS_SAMPLE_ENABLED && (
         <p className="rounded-xl border border-dashed px-3 py-2 text-xs text-muted-foreground">
-          테스트 빌드용 가상 데이터예요. 실제 사용자가 아니라, 자주 쓰는 구독을 조합해 만든 가상
-          사용자 {summary?.participants ?? 0}명으로 비교 화면을 보여 드려요.
+          {p.sampleNote(summary?.participants ?? 0)}
         </p>
       )}
 
@@ -135,17 +135,17 @@ export function PeerComparison({
             active.length > 0 && (
               <div className="rounded-xl bg-muted/50 p-3">
                 <p className="text-sm">
-                  참여자의 한 달 구독 지출은 보통{" "}
+                  {p.typicalBefore}
                   <b className="tabular-nums">{formatKRW(summary.overall.medianMonthlyKRW)}</b>
-                  {" · "}나는 <b className="tabular-nums">{formatKRW(monthly)}</b>
+                  {p.typicalMid}
+                  <b className="tabular-nums">{formatKRW(monthly)}</b>
                 </p>
                 <ComparisonBar mine={monthly} typical={summary.overall.medianMonthlyKRW} />
               </div>
             )
           ) : (
             <p className="text-sm text-muted-foreground">
-              {STATS_MIN_PARTICIPANTS}명이 모이면 비교를 보여 드려요. 지금 {summary.participants}
-              명이 참여했어요.
+              {p.gathering(STATS_MIN_PARTICIPANTS, summary.participants)}
             </p>
           )}
 
@@ -156,15 +156,15 @@ export function PeerComparison({
                   <span className="truncate">{presetName(stats.presetId)}</span>
                   <span className="shrink-0 text-muted-foreground tabular-nums">
                     {stats.medianUsage === null
-                      ? `보통 ${formatKRW(stats.medianMonthlyKRW)}`
-                      : `보통 ${stats.medianUsage}번`}
+                      ? p.typicalAmount(formatKRW(stats.medianMonthlyKRW))
+                      : p.typicalUses(stats.medianUsage)}
                     {" · "}
                     <b className="text-foreground">
                       {stats.medianUsage === null
-                        ? `나 ${formatKRW(row.monthlyKRW)}`
+                        ? p.meAmount(formatKRW(row.monthlyKRW))
                         : row.usageCount === null
-                          ? "나 체크인 전"
-                          : `나 ${row.usageCount}번`}
+                          ? p.meBeforeCheckIn
+                          : p.meUses(row.usageCount)}
                     </b>
                   </span>
                 </li>
@@ -176,9 +176,9 @@ export function PeerComparison({
 
       {enabled && signedIn ? (
         <div className="flex items-center justify-between gap-3 border-t pt-3 text-xs text-muted-foreground">
-          <span>내 구독 요약을 익명으로 보태는 중이에요.</span>
+          <span>{p.contributing}</span>
           <Button variant="ghost" size="sm" disabled={busy} onClick={() => void leave()}>
-            그만두기
+            {p.leave}
           </Button>
         </div>
       ) : enabled && !signedIn ? (
@@ -186,27 +186,25 @@ export function PeerComparison({
         // 남은 것은 '다시 로그인하면 이어 보탠다'는 이 기기의 선택뿐이라, 참여·그만두기 버튼을 두지 않는다.
         // 그만두기는 로그인한 뒤에 한다.
         <p className="border-t pt-3 text-xs text-muted-foreground">
-          로그인하지 않은 동안은 보태지 않아요.{" "}
+          {p.signedOutBefore}
           <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
-            로그인
+            {p.login}
           </Link>
-          하면 다시 보태요.
+          {p.signedOutAfter}
         </p>
       ) : signedIn ? (
         <div className="space-y-2 border-t pt-3">
-          <p className="text-xs text-muted-foreground">
-            서비스·금액·사용 횟수만 이름 없이 보태요. 언제든 그만두면 바로 지워져요.
-          </p>
+          <p className="text-xs text-muted-foreground">{p.joinNote}</p>
           <Button size="sm" onClick={join}>
-            익명으로 참여하기
+            {p.join}
           </Button>
         </div>
       ) : (
         <p className="border-t pt-3 text-xs text-muted-foreground">
           <Link href="/login" className="font-semibold text-primary underline underline-offset-4">
-            로그인
+            {p.login}
           </Link>
-          하면 서비스·금액·사용 횟수만 이름 없이 보탤 수 있어요. 계정과 묶어 저장하지는 않아요.
+          {p.loginInviteAfter}
         </p>
       )}
     </section>
@@ -215,6 +213,7 @@ export function PeerComparison({
 
 /** 나와 보통 사람을 한 막대 위에 놓는다. 둘 중 큰 쪽을 끝으로 잡는다. */
 function ComparisonBar({ mine, typical }: { mine: number; typical: number }) {
+  const p = useT().reportPage.peer;
   const max = Math.max(mine, typical, 1);
   const diff = mine - typical;
   return (
@@ -232,10 +231,10 @@ function ComparisonBar({ mine, typical }: { mine: number; typical: number }) {
       </div>
       <p className="text-xs text-muted-foreground">
         {diff > 0
-          ? `보통보다 한 달 ${formatKRW(diff)} 더 내요. 1년이면 ${formatKRW(diff * 12)}.`
+          ? p.barMore(formatKRW(diff), formatKRW(diff * 12))
           : diff < 0
-            ? `보통보다 한 달 ${formatKRW(-diff)} 덜 내요.`
-            : "보통과 같아요."}
+            ? p.barLess(formatKRW(-diff))
+            : p.barSame}
       </p>
     </div>
   );
