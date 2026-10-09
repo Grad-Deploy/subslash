@@ -7,6 +7,8 @@ import { useT } from "@lib/i18n";
 import { copyText } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import {
+  folderPath,
+  isWindowsUserName,
   pickSessionFolder,
   readSessionFiles,
   type CliTool,
@@ -15,6 +17,7 @@ import {
 import type { PcUsageServiceId } from "@lib/pc-usage";
 import { PcUsageRow } from "./PcUsageRow";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { Spinner } from "../ui/spinner";
 
 const WINDOW_DAYS = 30;
@@ -22,11 +25,25 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 const SERVICE: Record<CliTool, PcUsageServiceId> = { claude: "claude-pro", codex: "chatgpt-plus" };
 
-/** 기록 폴더 경로. 윈도우와 맥·리눅스가 다르다. */
-function folderPath(tool: CliTool): string {
-  const windows = typeof navigator !== "undefined" && /Windows/i.test(navigator.userAgent);
-  const sub = tool === "claude" ? ".claude/projects" : ".codex/sessions";
-  return windows ? `%USERPROFILE%\\${sub.replace("/", "\\")}` : `~/${sub}`;
+const isWindows = () => typeof navigator !== "undefined" && /Windows/i.test(navigator.userAgent);
+
+const WINDOWS_USER_KEY = "subslash-pc-usage-windows-user";
+
+function loadWindowsUser(): string {
+  try {
+    return localStorage.getItem(WINDOWS_USER_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function saveWindowsUser(name: string) {
+  try {
+    if (name) localStorage.setItem(WINDOWS_USER_KEY, name);
+    else localStorage.removeItem(WINDOWS_USER_KEY);
+  } catch {
+    // 저장소를 못 쓰면 이번만 쓴다.
+  }
 }
 
 type ToolState =
@@ -47,6 +64,11 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
     codex: { status: "idle" },
   });
   const [claudeLogin, setClaudeLogin] = useState<"subscription" | "apiKey" | null>(null);
+  // 이 화면은 기기에서 그린 뒤에만 보이므로(페이지가 마운트를 기다린다) 처음 값에서 저장소를 읽어도 된다.
+  const [windows] = useState(isWindows);
+  const [windowsUser, setWindowsUser] = useState(loadWindowsUser);
+  const pathReady = !windows || isWindowsUserName(windowsUser);
+  const pathOf = (tool: CliTool) => folderPath(tool, windows, windowsUser || t.windowsUserInPath);
 
   if (IS_APP_BUILD) {
     return <p className="rounded-xl border p-3 text-sm text-muted-foreground">{t.appOnly}</p>;
@@ -89,8 +111,30 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">{t.description}</p>
+      {windows && (
+        <label className="block space-y-1 rounded-2xl border p-3">
+          <span className="text-xs font-bold">{t.windowsUser}</span>
+          <Input
+            value={windowsUser}
+            placeholder={t.windowsUserPlaceholder}
+            autoComplete="off"
+            spellCheck={false}
+            onChange={(event) => {
+              const next = event.target.value.trim();
+              if (next && !isWindowsUserName(next)) return;
+              setWindowsUser(next);
+              saveWindowsUser(next);
+            }}
+          />
+          <span className="block text-[11px] leading-relaxed text-muted-foreground">
+            {t.windowsUserHint}
+          </span>
+        </label>
+      )}
       <ToolCard
         tool="claude"
+        path={pathOf("claude")}
+        pathReady={pathReady}
         state={state.claude}
         summary={summaryOf("claude")}
         onPick={() => void pick("claude")}
@@ -119,6 +163,8 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
       </ToolCard>
       <ToolCard
         tool="codex"
+        path={pathOf("codex")}
+        pathReady={pathReady}
         state={state.codex}
         summary={summaryOf("codex")}
         onPick={() => void pick("codex")}
@@ -145,12 +191,18 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
 
 function ToolCard({
   tool,
+  path,
+  pathReady,
   state,
   summary,
   onPick,
   children,
 }: {
   tool: CliTool;
+  /** 보여 줄 기록 폴더 경로. */
+  path: string;
+  /** 경로가 다 채워졌는지(윈도우는 사용자 이름을 적어야 한다). 아니면 복사하지 않는다. */
+  pathReady: boolean;
   state: ToolState;
   summary: CliUsageSummary | null;
   onPick: () => void;
@@ -158,7 +210,6 @@ function ToolCard({
 }) {
   const t = useT().pcUsage.reader;
   const [copied, setCopied] = useState(false);
-  const path = folderPath(tool);
   // Claude Code는 로그인 방식을 답하기 전에는 세지 않으므로 숫자를 보이지 않는다.
   const waitingLogin =
     tool === "claude" && summary !== null && summary.days === 0 && summary.unknownSessions > 0;
@@ -183,7 +234,9 @@ function ToolCard({
         <code className="min-w-0 flex-1 truncate rounded bg-secondary px-1.5 py-0.5">{path}</code>
         <button
           type="button"
-          className="shrink-0 font-semibold underline"
+          className="shrink-0 font-semibold underline disabled:no-underline disabled:opacity-50"
+          disabled={!pathReady}
+          title={pathReady ? undefined : t.copyNeedsUser}
           onClick={async () => setCopied(await copyText(path))}
         >
           {copied ? t.copied : t.copy}

@@ -116,6 +116,18 @@ export async function readSessionFiles(
   return { sessions, files: count, unrecognized };
 }
 
+/**
+ * 기록 폴더 경로. 윈도우는 `C:\Users\<사용자 이름>\…`로 적는다 — 폴더 선택 창 주소 칸에 `%USERPROFILE%`를 붙여
+ * 넣으면 열리지 않았다. 브라우저는 사용자 이름을 알 수 없어 사용자가 적는다. 맥·리눅스는 `~`가 된다.
+ */
+export function folderPath(tool: CliTool, windows: boolean, windowsUser: string): string {
+  const sub = tool === "claude" ? ".claude/projects" : ".codex/sessions";
+  return windows ? `C:\\Users\\${windowsUser}\\${sub.replace("/", "\\")}` : `~/${sub}`;
+}
+
+/** Windows 사용자 이름으로 쓸 수 있는 값인지(폴더 이름에 못 쓰는 글자를 막는다). */
+export const isWindowsUserName = (name: string) => name.length > 0 && !/[\\/:*?"<>|]/.test(name);
+
 /* ---- 폴더 고르기 (브라우저) ---- */
 
 interface DirHandle {
