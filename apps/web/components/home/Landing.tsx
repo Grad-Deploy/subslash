@@ -9,7 +9,8 @@ import { UnitCostCalculator } from "./UnitCostCalculator";
 import { PhoneFrame } from "./PhoneFrame";
 import { SampleChargeCard } from "./SampleChargeCard";
 import { SAMPLES, SAMPLE_TOTAL } from "./samples";
-import { useT } from "@lib/i18n";
+import { useLocale, useT } from "@lib/i18n";
+import { landingScreen } from "./screens";
 
 /**
  * 첫 화면(소개)의 칸들. 내려 읽으며 무엇을 하는 서비스인지만 알리고, 쓰는 것은 대시보드로 넘긴다. 모양은
@@ -175,6 +176,7 @@ export function LandingCalculator() {
 /** 한눈에 보기. 가운데 대시보드를 두고, 넓은 화면에서는 양옆 화면이 스크롤을 따라 다른 속도로 움직인다. */
 export function LandingShowcase() {
   const s = useT().landing.showcase;
+  const locale = useLocale();
   return (
     <section
       id="features"
@@ -193,7 +195,7 @@ export function LandingShowcase() {
       <div className="mt-[clamp(3.5rem,8vh,6rem)] flex items-start justify-center gap-[clamp(0.75rem,3vw,2.5rem)]">
         <div className="landing-parallax-side mt-20 hidden w-[clamp(12.5rem,22vw,17rem)] opacity-90 lg:block">
           <PhoneFrame
-            src="/landing/gmail-import.png"
+            src={landingScreen("gmail-import", locale)}
             alt={s.altImport}
             loading="lazy"
             className="rounded-[2.75rem] p-[9px]"
@@ -202,7 +204,7 @@ export function LandingShowcase() {
         </div>
         <div className="landing-parallax-center relative z-[1] w-[clamp(16.25rem,27vw,20.625rem)]">
           <PhoneFrame
-            src="/landing/dashboard.png"
+            src={landingScreen("dashboard", locale)}
             alt={s.altDashboard}
             className="rounded-[3.25rem]"
             screenClassName="aspect-[1080/1920] rounded-[2.625rem]"
@@ -210,7 +212,7 @@ export function LandingShowcase() {
         </div>
         <div className="landing-parallax-side mt-20 hidden w-[clamp(12.5rem,22vw,17rem)] opacity-90 lg:block">
           <PhoneFrame
-            src="/landing/savings.png"
+            src={landingScreen("savings", locale)}
             alt={s.altSavings}
             loading="lazy"
             className="rounded-[2.75rem] p-[9px]"
@@ -223,24 +225,25 @@ export function LandingShowcase() {
   );
 }
 
-/** 글은 `landing.duo`에 같은 순서로 있다. */
+/** 글은 `landing.duo`에 같은 순서로 있다. 사진은 화면 언어로 고른다(./screens). */
 const DUO_IMAGES = [
   {
-    image: "/landing/cancel-guide.png",
+    screen: "cancel-guide",
   },
   {
-    image: "/landing/gmail-import.png",
+    screen: "gmail-import",
   },
 ] as const;
 
 /** 해지 안내·메일로 찾기. 카드 아래로 폰 윗부분만 보이게 자른다. */
 export function LandingDuo() {
   const duo = useT().landing.duo;
+  const locale = useLocale();
   return (
     <section className="grid w-full grid-cols-1 gap-5 pb-[clamp(6rem,14vh,10rem)] md:grid-cols-2">
       {duo.map((item, i) => (
         <div
-          key={DUO_IMAGES[i].image}
+          key={DUO_IMAGES[i].screen}
           className="scroll-reveal flex flex-col overflow-hidden rounded-[2.25rem] border bg-card px-[clamp(1.75rem,4vw,3rem)] pt-[clamp(2rem,4vw,3rem)]"
         >
           <p className="text-[15px] font-semibold text-red-500">{item.kicker}</p>
@@ -251,7 +254,7 @@ export function LandingDuo() {
             {item.body}
           </p>
           <PhoneFrame
-            src={DUO_IMAGES[i].image}
+            src={landingScreen(DUO_IMAGES[i].screen, locale)}
             alt={item.alt}
             loading="lazy"
             className="mx-auto mt-11 w-[min(300px,86%)] rounded-t-[2.875rem] pb-0 shadow-none"
@@ -266,6 +269,7 @@ export function LandingDuo() {
 /** 해지로 지킨 돈. 테마와 관계없이 어두운 칸이다. 다크 모드에서는 배경과 구분되게 카드 색과 테두리를 쓴다. */
 export function LandingSavings() {
   const s = useT().landing.savings;
+  const locale = useLocale();
   return (
     <section className="w-full pb-[clamp(6rem,14vh,10rem)]" aria-labelledby="savings-title">
       <div className="grid grid-cols-1 items-end gap-[clamp(2.5rem,6vw,5rem)] overflow-hidden rounded-[2.5rem] bg-zinc-950 px-[clamp(1.75rem,6vw,5.5rem)] pt-[clamp(3rem,7vw,6rem)] text-zinc-50 md:grid-cols-2 dark:bg-card dark:ring-1 dark:ring-border">
@@ -284,7 +288,7 @@ export function LandingSavings() {
           </p>
         </div>
         <PhoneFrame
-          src="/landing/savings.png"
+          src={landingScreen("savings", locale)}
           alt={s.alt}
           loading="lazy"
           className="scroll-reveal w-[min(320px,100%)] justify-self-center rounded-t-[3.125rem] bg-zinc-800 pb-0 shadow-none dark:ring-0"
