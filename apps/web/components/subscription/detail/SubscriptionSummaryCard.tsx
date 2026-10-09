@@ -74,7 +74,7 @@ export function SubscriptionSummaryCard({
             <p className="text-xs text-muted-foreground mt-1">
               {s.meta(
                 t.value.category[sub.category] ?? sub.category,
-                sub.planName ?? null,
+                sub.planName ? names.plan(sub.planName) : null,
                 sub.billingCycle === "yearly" ? s.cycleYearly : s.cycleMonthly,
               )}
             </p>
