@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useT } from "@lib/i18n";
 import { Button } from "./button";
 
 /**
@@ -23,6 +24,7 @@ export function InlineConfirm({
   onConfirm: () => void;
   disabled?: boolean;
 }) {
+  const c = useT().shell.common;
   return (
     <div
       role="alertdialog"
@@ -32,7 +34,7 @@ export function InlineConfirm({
       <p className="whitespace-pre-line leading-relaxed text-foreground">{message}</p>
       <div className="flex justify-end gap-2">
         <Button type="button" size="sm" variant="outline" onClick={onCancel}>
-          취소
+          {c.cancel}
         </Button>
         <Button
           type="button"

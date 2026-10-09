@@ -19,7 +19,7 @@ import {
 import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { Spinner } from "../ui/spinner";
-import { useLocale, useServiceNames, useT } from "@lib/i18n";
+import { useKnownText, useLocale, useServiceNames, useT } from "@lib/i18n";
 
 const MEASURED_SERVICE_IDS = Object.keys(ANDROID_PACKAGES);
 
@@ -44,6 +44,7 @@ const errorText = (error: unknown, fallback: string) =>
 export function DeviceUsageCard({ onMessage }: { onMessage: (message: string) => void }) {
   const { account } = useAuth();
   const t = useT().deviceUsage;
+  const known = useKnownText();
   const names = useServiceNames();
   const locale = useLocale();
   const accountId = account?.id ?? null;
@@ -213,7 +214,7 @@ export function DeviceUsageCard({ onMessage }: { onMessage: (message: string) =>
         {loading && !view ? (
           <Spinner className="size-4" />
         ) : error ? (
-          <p className="text-xs text-destructive">{error}</p>
+          <p className="text-xs text-destructive">{known(error)}</p>
         ) : devices.length === 0 ? (
           <p className="text-xs text-muted-foreground">{t.noDevices}</p>
         ) : (
@@ -258,7 +259,7 @@ export function DeviceUsageCard({ onMessage }: { onMessage: (message: string) =>
           ))}
       </section>
 
-      {problem && <p className="text-xs text-destructive">{problem}</p>}
+      {problem && <p className="text-xs text-destructive">{known(problem)}</p>}
     </div>
   );
 }

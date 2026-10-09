@@ -9,6 +9,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "./dialog";
+import { useT } from "@lib/i18n";
 import { Button } from "./button";
 
 export interface ConfirmDialogProps {
@@ -38,12 +39,15 @@ export function ConfirmDialog({
   onConfirm,
   title,
   description,
-  confirmText = "확인",
-  cancelText = "취소",
+  confirmText: confirmProp,
+  cancelText: cancelProp,
   variant = "default",
   centered = false,
   subject,
 }: ConfirmDialogProps) {
+  const common = useT().shell.common;
+  const confirmText = confirmProp ?? common.confirm;
+  const cancelText = cancelProp ?? common.cancel;
   const confirm = () => {
     onConfirm();
     onClose();

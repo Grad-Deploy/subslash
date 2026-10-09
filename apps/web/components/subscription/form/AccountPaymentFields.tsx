@@ -1,8 +1,9 @@
 import React from "react";
-import { PAYMENT_METHOD_OPTIONS, type SubscriptionFormData } from "@subslash/shared";
+import type { SubscriptionFormData } from "@subslash/shared";
 import { Input } from "../../ui/input";
 import { Select } from "../../ui/select";
-import { useT } from "@lib/i18n";
+import { useLocale, useT } from "@lib/i18n";
+import { paymentMethodOptions } from "@lib/payment-method";
 import { FIELD_LABEL } from "./fieldLabel";
 
 /**
@@ -23,6 +24,7 @@ export function AccountPaymentFields({
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
 }) {
   const f = useT().form.account;
+  const locale = useLocale();
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div className="space-y-1.5">
@@ -50,7 +52,7 @@ export function AccountPaymentFields({
           value={paymentMethod || "credit_card"}
           onChange={onChange}
         >
-          {PAYMENT_METHOD_OPTIONS.map((pm) => (
+          {paymentMethodOptions(locale).map((pm) => (
             <option key={pm.value} value={pm.value}>
               {pm.label}
             </option>

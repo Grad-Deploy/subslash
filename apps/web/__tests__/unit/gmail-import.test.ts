@@ -100,7 +100,11 @@ function gmailRest(options: { rateLimited?: number } = {}) {
   return { fetchAll, batches, getOAuthToken: () => "oauth-token" };
 }
 
-function runScript(messages: typeof MESSAGES, importUrl = "https://subslash.me/import") {
+function runScript(
+  messages: typeof MESSAGES,
+  importUrl = "https://subslash.me/import",
+  lang: "ko" | "en" = "ko",
+) {
   const html: string[] = [];
   const blob = (bytes: Buffer) => ({
     getBytes: () => [...bytes],
@@ -143,7 +147,7 @@ function runScript(messages: typeof MESSAGES, importUrl = "https://subslash.me/i
     "Gmail",
     "Utilities",
     "HtmlService",
-    `${gmailAppsScript(importUrl)}\nreturn doGet;`,
+    `${gmailAppsScript(importUrl, lang)}\nreturn doGet;`,
   )(Gmail, Utilities, HtmlService) as () => unknown;
   doGet();
   return html.join("");
@@ -172,6 +176,15 @@ describe("Gmail Apps Script → /import", () => {
       ["넷플릭스", 17000, 10, true],
       ["티빙", 13900, 3, true],
     ]);
+  });
+
+  it("영어 화면에서 받은 스크립트는 화면 문구가 영어다", () => {
+    const found = runScript(MESSAGES, undefined, "en");
+    expect(found).toContain("Found 2 recent emails");
+    expect(found).toContain("Import into SubSlash");
+    const none = runScript([], undefined, "en");
+    expect(none).toContain("No payment emails found");
+    expect(none).not.toMatch(/[가-힣]/);
   });
 
   it("찾은 메일이 없으면 링크 대신 검색어를 고치라고 안내한다", () => {

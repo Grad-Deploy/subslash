@@ -7,7 +7,10 @@ import {
   validateSignupEmail,
   validateUsername,
 } from "@subslash/shared";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { translateKnownText } from "@lib/i18n/known-text";
+import { parseBackup } from "@lib/backup";
 import {
   confirmStatusOf,
   emailStatusFor,
@@ -146,6 +149,70 @@ describe("translateKnownText", () => {
     expect(en("잘못된 이메일 주소입니다. 혹시 you@gmail.com 아닌가요?")).toBe(
       "That email address looks wrong. Did you mean you@gmail.com?",
     );
+  });
+
+  it("Gmail·캘린더·사용 측정·통계·물어보기·계정 저장의 오류 문장도 바뀐다", () => {
+    // 이 화면들은 응답의 오류 문장(e.message)을 그대로 보여, 영어 화면에도 한국어가 나왔다.
+    const messages = [
+      "아직 시작하지 않은 기능입니다.",
+      "연결 상태를 읽지 못했습니다.",
+      "연결 토큰을 만들지 못했습니다.",
+      "Gmail 연결을 시작하지 못했습니다.",
+      "원클릭 연결이 설정되지 않았습니다. 스크립트를 직접 설치해 주세요.",
+      "찾아 둔 구독을 읽지 못했습니다.",
+      "찾아 둔 구독을 지우지 못했습니다.",
+      "이 서버에는 구글 캘린더 등록이 설정되어 있지 않습니다. 알림 설정의 캘린더 구독을 쓰세요.",
+      "보낸 구독 목록을 읽지 못했습니다.",
+      "캘린더에 올릴 구독이 없습니다.",
+      "캘린더 등록을 시작하지 못했습니다.",
+      "사용 정보 접근 설정을 열지 못했습니다.",
+      "사용 기록을 올리지 못했습니다.",
+      "사용 기록을 읽지 못했습니다.",
+      "사용 기록을 저장하지 못했습니다.",
+      "사용 기록을 지우지 못했습니다.",
+      "로그인해야 통계에 참여할 수 있습니다.",
+      "통계에 보내지 못했습니다.",
+      "통계를 읽지 못했습니다.",
+      "지금은 답할 수 없어요.",
+      "지금은 답할 수 없어요. 잠시 뒤에 다시 물어봐 주세요.",
+      "질문은 200자까지 적을 수 있어요.",
+      "질문이 많아 잠시 쉬어 갈게요. 조금 뒤에 다시 물어봐 주세요.",
+      "계정에 저장된 기록이 없습니다.",
+      "기록이 너무 커서 계정에 저장할 수 없습니다. 백업 파일로 저장해 주세요.",
+      "계정에 저장하지 못했습니다.",
+      "이 서버에는 데이터베이스가 설정되어 있지 않아 알림·계정 기능을 사용할 수 없습니다. 구독 목록은 브라우저에 그대로 남아 있습니다.",
+    ];
+    for (const message of messages) expect(en(message), message).not.toMatch(HANGUL);
+  });
+
+  it("백업 파일을 읽지 못한 이유도 바뀐다", () => {
+    const backup = (data: unknown, version = 1) =>
+      JSON.stringify({ app: "subslash", version, data });
+    const sub = { id: "a", name: "넷플릭스", amount: 1, currency: "KRW", status: "active" };
+    const inputs = [
+      "not json",
+      JSON.stringify({ app: "other" }),
+      backup({}),
+      backup({ subscriptions: [], usageLogs: [], accounts: [] }, 999),
+      backup({ subscriptions: [{ id: "a" }], usageLogs: [], accounts: [] }),
+      backup({ subscriptions: [], usageLogs: [{ id: "x" }], accounts: [] }),
+      backup({ subscriptions: [sub, sub], usageLogs: [], accounts: [] }),
+      backup({ subscriptions: [], usageLogs: [], accounts: [], exchangeRate: "x" }),
+    ];
+    for (const input of inputs) {
+      const result = parseBackup(input);
+      expect(result.ok, input).toBe(false);
+      if (!result.ok) expect(en(result.error), result.error).not.toMatch(HANGUL);
+    }
+  });
+
+  it("백업 검사가 알리는 칸 이름은 모두 영어가 있다", () => {
+    const source = readFileSync(resolve(__dirname, "../../lib/backup.ts"), "utf8");
+    const fields = [...source.matchAll(/return "([^"]+)";/g)].map((m) => m[1]);
+    expect(fields.length).toBeGreaterThan(20);
+    for (const field of fields) {
+      expect(en(`구독 1번째 항목의 '${field}' 칸이 올바르지 않습니다.`), field).not.toMatch(HANGUL);
+    }
   });
 
   it("한국어 화면은 그대로이고, 표에 없는 문장은 지어내지 않고 원문을 보인다", () => {

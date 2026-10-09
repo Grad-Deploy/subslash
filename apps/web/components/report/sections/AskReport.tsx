@@ -8,7 +8,7 @@ import { answerAsk, type AskAnswer } from "@lib/ask/answer";
 import { askReport } from "@lib/ask/client";
 import { Spinner } from "@components/ui/spinner";
 import { cn } from "@lib/utils";
-import { useLatestT, useLocale, useT } from "@lib/i18n";
+import { useKnownText, useLatestT, useLocale, useT } from "@lib/i18n";
 
 /**
  * '리포트에 물어보기'. 질문 문장만 서버(AI)로 가고, AI가 고른 도구를 이 기기의 기록으로 계산해 답한다(lib/ask).
@@ -26,6 +26,7 @@ export function AskReport({
   now: Date;
 }) {
   const t = useT();
+  const known = useKnownText();
   const a = t.reportPage.ask;
   const tRef = useLatestT();
   const locale = useLocale();
@@ -92,7 +93,7 @@ export function AskReport({
         >
           {asked && <p className="text-xs text-muted-foreground">{asked}</p>}
           {busy && <Spinner className="size-5" />}
-          {error && <p className="text-destructive">{error}</p>}
+          {error && <p className="text-destructive">{known(error)}</p>}
           {result && (
             <>
               <p className="font-bold leading-relaxed">{result.headline}</p>

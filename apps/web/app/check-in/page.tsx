@@ -5,6 +5,7 @@ import { useIsClient } from "@hooks/useIsClient";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CheckInResponse, Subscription } from "@subslash/shared";
 import { useStore } from "../../lib/store";
+import { useServiceNames, useT } from "../../lib/i18n";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
 import { Button } from "../../components/ui/button";
@@ -24,6 +25,8 @@ function CheckInReceiver() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { subscriptions, checkIn, killSubscription } = useStore();
+  const t = useT();
+  const names = useServiceNames();
 
   const subId = searchParams.get("sub");
   const rawCount = Number(searchParams.get("count"));
@@ -61,6 +64,8 @@ function CheckInReceiver() {
     }
   }, [mounted, subId, count, subscriptions, checkIn]);
 
+  const l = t.checkin.link;
+
   if (!mounted) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -70,30 +75,15 @@ function CheckInReceiver() {
   }
 
   if (!subId || count === null) {
-    return (
-      <Fallback
-        title="잘못된 체크인 링크예요"
-        body="메일의 버튼을 다시 누르거나 대시보드에서 체크인하세요."
-      />
-    );
+    return <Fallback title={l.invalidTitle} body={l.invalidBody} />;
   }
 
   if (!subscription) {
-    return (
-      <Fallback
-        title="이 기기에는 이 구독이 없어요"
-        body="등록한 기기에서 링크를 열거나, 로그인해 기기끼리 기록을 맞추세요."
-      />
-    );
+    return <Fallback title={l.missingTitle} body={l.missingBody} />;
   }
 
   if (subscription.status === "killed") {
-    return (
-      <Fallback
-        title="이미 해지한 구독입니다"
-        body={`'${subscription.name}'은(는) 해지한 구독이라 체크인을 남기지 않았어요.`}
-      />
-    );
+    return <Fallback title={l.killedTitle} body={l.killedBody(names.sub(subscription))} />;
   }
 
   const goTo = (next: Stage) => {
@@ -142,12 +132,13 @@ function CheckInReceiver() {
 
 function Fallback({ title, body }: { title: string; body: string }) {
   const router = useRouter();
+  const t = useT();
   return (
     <div className="text-center py-20 space-y-4">
       <CalendarCheck className="mx-auto size-10 text-muted-foreground" aria-hidden />
       <h1 className="text-xl font-black tracking-tight">{title}</h1>
       <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">{body}</p>
-      <Button onClick={() => router.push("/dashboard")}>대시보드 →</Button>
+      <Button onClick={() => router.push("/dashboard")}>{t.checkin.link.dashboard}</Button>
     </div>
   );
 }
