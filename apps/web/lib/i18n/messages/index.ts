@@ -18,6 +18,7 @@ import * as account from "./account";
 import * as accountPages from "./accountPages";
 import * as oauth from "./oauth";
 import * as overview from "./overview";
+import * as pcUsage from "./pcUsage";
 import * as receipt from "./receipt";
 import * as receiptView from "./receiptView";
 import * as reportPage from "./reportPage";
@@ -60,6 +61,7 @@ export const messages = {
     ...reportPage.ko,
     ...detail.ko,
     ...receipt.ko,
+    ...pcUsage.ko,
   },
   en: {
     shell: shell.en,
@@ -90,6 +92,7 @@ export const messages = {
     ...reportPage.en,
     ...detail.en,
     ...receipt.en,
+    ...pcUsage.en,
   },
 } satisfies Record<string, unknown>;
 

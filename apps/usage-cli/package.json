@@ -1,0 +1,31 @@
+{
+  "name": "subslash-usage",
+  "version": "0.1.0",
+  "description": "Count the days you used Claude Code and Codex on this PC and check in on SubSlash. Reads only prompt times; nothing is uploaded.",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "subslash-usage": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "tsc -p tsconfig.build.json && node dist/cli.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/ __tests__/",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.69.0",
+    "vitest": "^4.1.11"
+  }
+}
