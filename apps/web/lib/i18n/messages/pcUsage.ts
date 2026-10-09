@@ -50,6 +50,11 @@ export const ko = {
       antigravity: "Antigravity",
       cursorNote:
         "이 파일에는 Cursor 로그인 정보도 들어 있지만, 요금제와 질문 시각 칸만 읽어요. 파일은 서버로 보내지 않아요.",
+      pickFile: "파일 고르기",
+      cursorFileTip:
+        "브라우저가 이 폴더는 통째로 열지 못해 파일을 골라요. 경로를 복사해 파일 선택 창 위쪽 주소 칸에 붙여 넣고 Enter를 누른 뒤 state.vscdb를 고르세요(state.vscdb-wal이 있으면 Ctrl을 누른 채 함께 고르세요).",
+      cursorNoFile:
+        "state.vscdb 파일을 찾지 못했어요. 위 경로의 state.vscdb를 골랐는지 확인해 주세요(state.vscdb.backup이 아니라).",
       usedConversations: (days: number, conversations: number) =>
         `최근 30일 중 ${days}일 이상 사용 · 대화 ${conversations}개 (대화마다 마지막으로 입력한 날만 남아요)`,
       antigravityQuestion: "Antigravity를 Google AI 구독(Pro·Ultra) 계정으로 쓰나요?",
@@ -141,6 +146,11 @@ export const en: Widen<typeof ko> = {
       antigravity: "Antigravity",
       cursorNote:
         "This file also holds your Cursor sign-in, but only the plan and prompt-time fields are read. The file isn't sent to the server.",
+      pickFile: "Choose file",
+      cursorFileTip:
+        "Browsers can't open this folder as a whole, so you choose the file instead. Copy the path, paste it into the address bar at the top of the file picker, press Enter, and choose state.vscdb (if state.vscdb-wal is there, hold Ctrl and choose it too).",
+      cursorNoFile:
+        "Couldn't find state.vscdb. Make sure you chose state.vscdb at the path above (not state.vscdb.backup).",
       usedConversations: (days, conversations) =>
         `Used on at least ${days} ${one(days) ? "day" : "days"} in the last 30 days · ${conversations} ${one(conversations) ? "conversation" : "conversations"} (only the last input day of each is recorded)`,
       antigravityQuestion:
