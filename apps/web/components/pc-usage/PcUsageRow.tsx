@@ -2,10 +2,16 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { metricForSubscription, type CheckInResponse, type Subscription } from "@subslash/shared";
+import {
+  formatUSD,
+  metricForSubscription,
+  type CheckInResponse,
+  type Subscription,
+} from "@subslash/shared";
+import { useExchangeRate } from "@hooks/useExchangeRate";
 import { useStore } from "@lib/store";
 import { useServiceNames, useT } from "@lib/i18n";
-import { matchPcUsageSubscription, type PcUsageServiceId } from "@lib/pc-usage";
+import { apiValueRatio, matchPcUsageSubscription, type PcUsageServiceId } from "@lib/pc-usage";
 import { CheckInModal } from "../subscription/CheckInModal";
 import { ServiceLogo } from "../subscription/ServiceLogo";
 import { Button } from "../ui/button";
@@ -17,10 +23,13 @@ import { Button } from "../ui/button";
 export function PcUsageRow({
   serviceId,
   days,
+  apiUsd = null,
   subscriptions,
 }: {
   serviceId: PcUsageServiceId;
   days: number;
+  /** 그 PC에서 구독으로 쓴 토큰을 API 요금표로 환산한 금액(USD). 모르면 null. */
+  apiUsd?: number | null;
   subscriptions: readonly Subscription[];
 }) {
   const t = useT().pcUsage;
@@ -29,11 +38,17 @@ export function PcUsageRow({
   const [open, setOpen] = useState(false);
   const [result, setResult] = useState<CheckInResponse | undefined>();
   const [done, setDone] = useState(false);
+  const exchangeRate = useExchangeRate();
 
   const match = matchPcUsageSubscription(serviceId, subscriptions);
   const subscription = match.kind === "match" ? match.subscription : null;
   // 이 화면이 채우는 숫자는 '쓴 날'이다. 다른 기준으로 재는 구독에 넣으면 사용자가 답하지 않은 숫자가 된다.
   const sameMetric = subscription ? metricForSubscription(subscription) === "days" : false;
+
+  // 구독으로 얼마나 뽑아 썼는지: API로 냈다면 든 금액을 내 몫 한 달 구독료와 견준다. 쓴 날 체크인은 그대로 두고
+  // 근거로만 보인다 — PC 기록이라 웹·앱 사용은 빠진 값이다.
+  const ratio =
+    subscription && apiUsd !== null ? apiValueRatio(subscription, apiUsd, exchangeRate) : null;
 
   const problem =
     match.kind === "none"
@@ -62,6 +77,19 @@ export function PcUsageRow({
           </Button>
         )}
       </div>
+      {apiUsd !== null && (
+        <div className="space-y-0.5 rounded-xl bg-secondary/60 px-2.5 py-2 text-xs">
+          <p className="font-semibold">{t.apiValue(formatUSD(apiUsd))}</p>
+          {ratio !== null && (
+            <p className="text-muted-foreground">
+              {ratio >= 1
+                ? t.ratioOver(ratio >= 10 ? String(Math.round(ratio)) : ratio.toFixed(1))
+                : t.ratioUnder(Math.round(ratio * 100))}
+            </p>
+          )}
+          <p className="text-[11px] leading-relaxed text-muted-foreground">{t.apiNote}</p>
+        </div>
+      )}
       {problem && (
         <p className="text-xs leading-relaxed text-muted-foreground">
           {problem}{" "}

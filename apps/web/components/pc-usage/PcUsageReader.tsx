@@ -178,6 +178,7 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
                 key={tool}
                 serviceId={SERVICE[tool]}
                 days={summary!.days}
+                apiUsd={summary!.api.pricedRequests > 0 ? summary!.api.usd : null}
                 subscriptions={subscriptions}
               />
             ))}
@@ -262,6 +263,11 @@ function ToolCard({
             </p>
           )}
           {summary.planType && <p className="text-muted-foreground">{t.plan(summary.planType)}</p>}
+          {!waitingLogin && summary.api.unpricedRequests > 0 && (
+            <p className="text-muted-foreground">
+              {t.unpriced(summary.api.unpricedRequests, summary.api.unpricedModels.join(", "))}
+            </p>
+          )}
           {summary.excludedSessions > 0 && (
             <p className="text-muted-foreground">{t.excluded(summary.excludedSessions)}</p>
           )}
