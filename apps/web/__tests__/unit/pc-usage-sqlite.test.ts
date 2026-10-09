@@ -1,9 +1,8 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { createRequire } from "node:module";
-import { DatabaseSync } from "node:sqlite";
-import { afterAll, describe, expect, it } from "vitest";
+import initSqlJs from "sql.js";
+import { describe, expect, it } from "vitest";
 import {
   antigravitySessions,
   applySqliteWal,
@@ -14,8 +13,10 @@ import {
 } from "@subslash/shared";
 import { readSqliteFiles, selectSqliteFiles } from "@lib/pc-usage-reader";
 
-const dir = mkdtempSync(join(tmpdir(), "subslash-pc-usage-"));
-afterAll(() => rmSync(dir, { recursive: true, force: true }));
+// 테스트용 DB는 sql.js로 만든다 — node:sqlite는 Node 22.5부터라 CI(Node 20)에 없다. sql.js는 WAL 파일을 만들 수
+// 없어, WAL 모드 Antigravity DB는 실제와 같은 모양으로 한 번 만들어 둔 고정 파일을 쓴다(본 파일은 비어 있고 표는
+// WAL에만 있다 — node:sqlite로 journal_mode=WAL, wal_autocheckpoint=0에서 쓰고 닫기 전에 복사했다).
+const FIXTURES = resolve(__dirname, "../fixtures/antigravity");
 
 const NOW = Date.parse("2026-10-09T12:00:00Z");
 const day = (iso: string) => Date.parse(iso);
@@ -72,51 +73,42 @@ describe("Antigravity 기록", () => {
   });
 });
 
-/** 실제 Antigravity처럼 WAL 모드로 쓰고, 체크포인트하지 않은 채 두 파일을 읽는다. */
+/** WAL 모드 Antigravity DB의 고정 파일(본 파일 + WAL). */
 function antigravityFiles() {
-  const path = join(dir, "conversation_summaries.db");
-  const db = new DatabaseSync(path);
-  db.exec("PRAGMA journal_mode=WAL; PRAGMA wal_autocheckpoint=0;");
-  db.exec(
-    "CREATE TABLE conversation_summaries (conversation_id text primary key, title text, preview text, last_user_input_time datetime not null, nesting_depth integer not null default 0)",
-  );
-  const insert = db.prepare(
-    "insert into conversation_summaries values (?, '비밀 제목', '비밀 미리보기', ?, ?)",
-  );
-  insert.run("a", "2026-10-08 05:47:46.7950697+00:00", 0);
-  insert.run("b", "2026-10-05 01:00:00.1234567+00:00", 0);
-  insert.run("c", "2026-10-08 06:00:00+00:00", 1);
-  const files = [
-    { path: "antigravity/conversation_summaries.db", file: new Blob([readFileSync(path)]) },
+  return [
+    {
+      path: "antigravity/conversation_summaries.db",
+      file: new Blob([readFileSync(resolve(FIXTURES, "conversation_summaries.db"))]),
+    },
     {
       path: "antigravity/conversation_summaries.db-wal",
-      file: new Blob([readFileSync(`${path}-wal`)]),
+      file: new Blob([readFileSync(resolve(FIXTURES, "conversation_summaries.db-wal"))]),
     },
   ];
-  db.close();
-  return files;
 }
 
-function cursorFiles() {
-  const path = join(dir, "state.vscdb");
-  const db = new DatabaseSync(path);
-  db.exec("CREATE TABLE ItemTable (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)");
-  db.exec("CREATE TABLE cursorDiskKV (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)");
-  const item = db.prepare("insert into ItemTable values (?, ?)");
-  item.run("cursorAuth/stripeMembershipType", "pro");
-  item.run("cursorAuth/accessToken", "secret-token");
-  const kv = db.prepare("insert into cursorDiskKV values (?, ?)");
-  kv.run("bubbleId:c1:u1", JSON.stringify({ type: 1, text: "비밀 질문" }));
-  kv.run(
+async function cursorFiles() {
+  const SQL = await initSqlJs();
+  const db = new SQL.Database();
+  db.run("CREATE TABLE ItemTable (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)");
+  db.run("CREATE TABLE cursorDiskKV (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)");
+  db.run("insert into ItemTable values (?, ?)", ["cursorAuth/stripeMembershipType", "pro"]);
+  db.run("insert into ItemTable values (?, ?)", ["cursorAuth/accessToken", "secret-token"]);
+  db.run("insert into cursorDiskKV values (?, ?)", [
+    "bubbleId:c1:u1",
+    JSON.stringify({ type: 1, text: "비밀 질문" }),
+  ]);
+  db.run("insert into cursorDiskKV values (?, ?)", [
     "bubbleId:c1:a1",
     JSON.stringify({
       type: 2,
       text: "비밀 답",
       timingInfo: { clientRpcSendTime: day("2026-10-07T03:00:00Z") },
     }),
-  );
+  ]);
+  const bytes = db.export();
   db.close();
-  return [{ path: "globalStorage/state.vscdb", file: new Blob([readFileSync(path)]) }];
+  return [{ path: "globalStorage/state.vscdb", file: new Blob([Uint8Array.from(bytes)]) }];
 }
 
 describe("웹에서 SQLite 기록 읽기", () => {
@@ -133,7 +125,7 @@ describe("웹에서 SQLite 기록 읽기", () => {
   });
 
   it("Cursor 파일에서 요금제와 응답 시각만 꺼낸다 — 토큰·메시지 내용은 결과에 없다", async () => {
-    const read = await readSqliteFiles(cursorFiles(), "cursor");
+    const read = await readSqliteFiles(await cursorFiles(), "cursor");
     expect(read.sessions).toHaveLength(1);
     expect(read.sessions[0]).toMatchObject({
       subscription: true,
@@ -170,10 +162,12 @@ describe("웹에서 SQLite 기록 읽기", () => {
   });
 
   it("표가 없으면 '안 썼다'가 아니라 '알아보지 못함'이다", async () => {
-    const path = join(dir, "empty.db");
-    new DatabaseSync(path).close();
+    const SQL = await initSqlJs();
+    const empty = new SQL.Database();
+    const bytes = empty.export();
+    empty.close();
     const read = await readSqliteFiles(
-      [{ path: "state.vscdb", file: new Blob([readFileSync(path)]) }],
+      [{ path: "state.vscdb", file: new Blob([Uint8Array.from(bytes)]) }],
       "cursor",
     );
     expect(read).toEqual({ sessions: [], files: 1, unrecognized: 1 });
