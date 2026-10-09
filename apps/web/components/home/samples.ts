@@ -5,7 +5,7 @@ import {
   type Currency,
   type ServicePreset,
 } from "@subslash/shared";
-import { shortServiceName } from "@lib/service-name";
+import { planName as planDisplayName, shortServiceName } from "@lib/service-name";
 import type { Locale } from "@lib/i18n/config";
 
 /**
@@ -43,7 +43,7 @@ export const SAMPLES: Sample[] = SAMPLE_PICKS.flatMap(({ id, planId }): Sample[]
 
 /** 요금제까지 붙인 이름("넷플릭스 프리미엄"). */
 export const sampleName = ({ preset, planName }: Sample, locale: Locale = "ko") =>
-  `${shortServiceName(preset, locale)}${planName ? ` ${planName}` : ""}`;
+  `${shortServiceName(preset, locale)}${planName ? ` ${planDisplayName(planName, locale)}` : ""}`;
 
 /**
  * 결제 알림 견본의 한 달 합계("모르는 사이 매달 …"). 모두 원화일 때만 쓴다 — 통화가 섞이면 더한 숫자가 뜻이 없다.

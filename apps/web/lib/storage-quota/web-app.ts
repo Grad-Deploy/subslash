@@ -41,8 +41,56 @@ var ALLOWED_ORIGINS = __ORIGINS__;
 // 앱이 돌아올 주소의 스킴(앱 ID). 아무 스킴이나 받으면 이 화면이 남의 앱을 여는 데 쓰입니다.
 var APP_RETURN_SCHEMES = __RETURN_SCHEMES__;
 
+// 화면 언어. SubSlash가 화면 언어를 주소에 싣는다(lang=en). 모르는 값은 한국어다.
+var LANG = "ko";
+
+// 화면 문구. SubSlash 화면 언어(한국어·영어)를 따른다.
+var TEXT = {
+  ko: {
+    readFailedTitle: "용량을 읽지 못했습니다",
+    readFailed: "Google에서 저장 용량을 받지 못했습니다. 잠시 뒤 다시 측정해 주세요.",
+    back: "SubSlash로 돌아가기",
+    pageTitle: "Google 계정 용량 측정 — SubSlash",
+    unknown: "모름",
+    underOne: "1% 미만",
+    limit: "이 계정의 저장 한도",
+    usage: "쓰는 양 (Gmail·포토·드라이브 합계)",
+    drive: "그중 드라이브",
+    percent: "한도 중 쓰는 비율",
+    resultTitle: "Google 계정 용량",
+    fill: "SubSlash 체크인에 채우기",
+    privacy: "이 화면은 저장 용량 숫자만 읽고, SubSlash 서버를 포함해 어디로도 보내지 않습니다.",
+    buttonBlocked: "버튼이 열리지 않으면 이 창을 닫고 위의 비율을 직접 적어 주세요.",
+    closeToApp: "창을 닫으면 앱으로 돌아갑니다. 위의 비율을 체크인에 적어 주세요.",
+    closeTab: "이 탭을 닫고 SubSlash로 돌아가 위의 비율을 체크인에 적어 주세요.",
+  },
+  en: {
+    readFailedTitle: "Couldn't read your storage",
+    readFailed: "Google didn't return your storage quota. Please measure again in a moment.",
+    back: "Back to SubSlash",
+    pageTitle: "Google account storage — SubSlash",
+    unknown: "Unknown",
+    underOne: "Under 1%",
+    limit: "Storage limit of this account",
+    usage: "Used (Gmail, Photos and Drive combined)",
+    drive: "Of which Drive",
+    percent: "Share of the limit used",
+    resultTitle: "Google account storage",
+    fill: "Fill in my SubSlash check-in",
+    privacy: "This page only reads your storage numbers and doesn't send them anywhere, including SubSlash's servers.",
+    buttonBlocked: "If the button doesn't open, close this window and enter the share above yourself.",
+    closeToApp: "Close this window to go back to the app, then enter the share above in your check-in.",
+    closeTab: "Close this tab, go back to SubSlash and enter the share above in your check-in.",
+  },
+};
+
+function t() {
+  return TEXT[LANG];
+}
+
 function doGet(e) {
   var params = (e && e.parameter) || {};
+  LANG = String(params.lang || "") === "en" ? "en" : "ko";
   var fromApp = String(params.client || "") === "app";
   var scheme = APP_RETURN_SCHEMES.indexOf(String(params["return"] || "")) !== -1 ? String(params["return"]) : "";
   var origin = ALLOWED_ORIGINS.indexOf(String(params.origin || "")) !== -1 ? String(params.origin) : "";
@@ -69,10 +117,10 @@ function doGet(e) {
   var html = quota
     ? resultHtml(quota, returnUrl, fromApp)
     : page(
-        "용량을 읽지 못했습니다",
-        "<p>Google에서 저장 용량을 받지 못했습니다. 잠시 뒤 다시 측정해 주세요.</p>" +
+        t().readFailedTitle,
+        "<p>" + escapeHtml(t().readFailed) + "</p>" +
           "<p class='note'>" + escapeHtml(error) + "</p>" +
-          backButton(returnUrl, fromApp, "SubSlash로 돌아가기"),
+          backButton(returnUrl, fromApp, t().back),
         fromApp,
       );
   // 결과를 들고 곧바로 SubSlash로 돌아가 본다. 사용자 동작 없는 이동을 막는 브라우저에서는 화면의 버튼이 남는다.
@@ -80,7 +128,7 @@ function doGet(e) {
     html += "<script>try { window.top.location.href = " + scriptJson(returnUrl) + "; } catch (e) {}</script>";
   }
   return HtmlService.createHtmlOutput(html)
-    .setTitle("Google 계정 용량 측정 — SubSlash")
+    .setTitle(t().pageTitle)
     .addMetaTag("viewport", "width=device-width, initial-scale=1");
 }
 
@@ -121,7 +169,7 @@ function summarize(quota) {
 
 // Google One은 1024 단위로 셉니다(5TB 요금제의 한도는 5,120GB로 나옵니다).
 function formatBytes(bytes) {
-  if (bytes === null) return "모름";
+  if (bytes === null) return t().unknown;
   var gb = bytes / Math.pow(1024, 3);
   if (gb >= 1024) return Math.round((gb / 1024) * 10) / 10 + "TB";
   if (gb >= 10) return Math.round(gb) + "GB";
@@ -129,17 +177,17 @@ function formatBytes(bytes) {
 }
 
 function formatPercent(percent) {
-  if (percent === null) return "모름";
-  if (percent > 0 && percent < 1) return "1% 미만";
+  if (percent === null) return t().unknown;
+  if (percent > 0 && percent < 1) return t().underOne;
   return Math.round(percent * 10) / 10 + "%";
 }
 
 function resultHtml(s, returnUrl, fromApp) {
   var rows = [
-    ["이 계정의 저장 한도", formatBytes(s.limit)],
-    ["쓰는 양 (Gmail·포토·드라이브 합계)", formatBytes(s.usage)],
-    ["그중 드라이브", formatBytes(s.usageInDrive)],
-    ["한도 중 쓰는 비율", formatPercent(s.percent)],
+    [t().limit, formatBytes(s.limit)],
+    [t().usage, formatBytes(s.usage)],
+    [t().drive, formatBytes(s.usageInDrive)],
+    [t().percent, formatPercent(s.percent)],
   ];
   var table =
     "<table>" +
@@ -150,10 +198,10 @@ function resultHtml(s, returnUrl, fromApp) {
       .join("") +
     "</table>";
   return page(
-    "Google 계정 용량",
+    t().resultTitle,
     table +
-      backButton(returnUrl, fromApp, "SubSlash 체크인에 채우기") +
-      "<p class='note'>이 화면은 저장 용량 숫자만 읽고, SubSlash 서버를 포함해 어디로도 보내지 않습니다.</p>",
+      backButton(returnUrl, fromApp, t().fill) +
+      "<p class='note'>" + escapeHtml(t().privacy) + "</p>",
     fromApp,
   );
 }
@@ -163,19 +211,17 @@ function backButton(returnUrl, fromApp, label) {
   if (returnUrl) {
     return (
       "<p><a class='button' href='" + escapeHtml(returnUrl) + "' target='_top'>" + escapeHtml(label) + "</a></p>" +
-      (fromApp ? "<p class='note'>버튼이 열리지 않으면 이 창을 닫고 위의 비율을 직접 적어 주세요.</p>" : "")
+      (fromApp ? "<p class='note'>" + escapeHtml(t().buttonBlocked) + "</p>" : "")
     );
   }
   return (
-    "<p class='note'>" +
-    (fromApp ? "창을 닫으면 앱으로 돌아갑니다. " : "이 탭을 닫고 SubSlash로 돌아가 ") +
-    "위의 비율을 체크인에 적어 주세요.</p>"
+    "<p class='note'>" + escapeHtml(fromApp ? t().closeToApp : t().closeTab) + "</p>"
   );
 }
 
 function page(title, body, fromApp) {
   return (
-    "<!doctype html><html><head><meta charset='utf-8'>" +
+    "<!doctype html><html lang='" + LANG + "'><head><meta charset='utf-8'>" +
     "<meta name='viewport' content='width=device-width, initial-scale=1'>" +
     "<style>body{font-family:system-ui,-apple-system,sans-serif;margin:16px;line-height:1.6;color:#111}" +
     "h1{font-size:20px}table{border-collapse:collapse;width:100%}" +

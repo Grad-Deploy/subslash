@@ -136,6 +136,24 @@ describe("Google 계정 용량 측정 — 웹 앱", () => {
     expect(otherApp).toContain("창을 닫으면 앱으로 돌아갑니다");
   });
 
+  it("영어 화면에서 열면 결과 화면이 영어다", () => {
+    const html = runWebApp(quota, { origin: ORIGIN, state: STATE, lang: "en" });
+    expect(html).toContain("Google account storage");
+    expect(html).toContain("<html lang='en'>");
+    expect(html).not.toMatch(/[가-힣]/);
+    expect(runWebApp(quota, { origin: ORIGIN, state: STATE })).toContain("Google 계정 용량");
+  });
+
+  it("측정 주소에 영어 화면만 싣는다", () => {
+    const base = "https://script.google.com/macros/s/x/exec";
+    expect(storageQuotaCheckUrl(base, { state: STATE, origin: ORIGIN, lang: "en" })).toContain(
+      "lang=en",
+    );
+    expect(storageQuotaCheckUrl(base, { state: STATE, origin: ORIGIN, lang: "ko" })).not.toContain(
+      "lang=",
+    );
+  });
+
   it("읽지 못하면 실패를 돌려주고 오류를 이스케이프해 보여 준다", () => {
     const html = runWebApp(new Error("<script>x</script>"), { origin: ORIGIN, state: STATE });
     expect(html).toContain("용량을 읽지 못했습니다");

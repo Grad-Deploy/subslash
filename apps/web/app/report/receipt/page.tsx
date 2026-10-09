@@ -18,7 +18,7 @@ import {
   receiptHref,
   receiptNumber,
 } from "@lib/receipt-view";
-import { useLatestT, useT } from "@lib/i18n";
+import { useLatestT, useServiceNames, useT } from "@lib/i18n";
 import { renderReceiptImage } from "@lib/receipt-image";
 import { ReceiptPaper } from "@components/report/ReceiptPaper";
 import { Button } from "@components/ui/button";
@@ -70,6 +70,7 @@ function ReceiptFromQuery() {
   const params = useSearchParams();
   const mounted = useIsClient();
   const t = useT();
+  const names = useServiceNames();
   const tRef = useLatestT();
   const v = t.receiptView;
   const rate = useExchangeRate();
@@ -93,10 +94,22 @@ function ReceiptFromQuery() {
   }, [subscriptions, period, now]);
   const { rateOn, loading: ratesLoading } = useHistoricalRates(range);
 
-  const receipt = useMemo(
-    () => buildReceipt(subscriptions, usageLogs, period, rate, now, rateOn),
-    [subscriptions, usageLogs, period, rate, now, rateOn],
-  );
+  // 영수증 계산은 저장된 이름으로 하고(같은 서비스의 예전 구독을 이름으로 가린다), 보이는 이름만 화면 언어로
+  // 바꾼다 — 서비스 목록의 한국어 이름 그대로인 구독만 영문이 된다(useServiceNames).
+  const receipt = useMemo(() => {
+    const built = buildReceipt(subscriptions, usageLogs, period, rate, now, rateOn);
+    const byId = new Map(subscriptions.map((sub) => [sub.id, names.sub(sub)]));
+    const rename = <T extends { subscriptionId: string; name: string }>(item: T): T => ({
+      ...item,
+      name: byId.get(item.subscriptionId) ?? item.name,
+    });
+    return {
+      ...built,
+      lines: built.lines.map(rename),
+      priciestPerUse: built.priciestPerUse && rename(built.priciestPerUse),
+      killed: built.killed.map(rename),
+    };
+  }, [subscriptions, usageLogs, period, rate, now, rateOn, names]);
 
   if (!mounted || ratesLoading) return <LoadingScreen />;
 

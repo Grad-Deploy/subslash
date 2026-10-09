@@ -5,7 +5,14 @@ import {
   isSameService,
   serviceNameKey,
 } from "@subslash/shared";
-import { presetName, serviceIdName, shortServiceName, subscriptionName } from "@lib/service-name";
+import {
+  PLAN_NAMES_EN,
+  planName,
+  presetName,
+  serviceIdName,
+  shortServiceName,
+  subscriptionName,
+} from "@lib/service-name";
 
 const HANGUL = /[가-힣]/;
 const preset = (id: string) => POPULAR_SERVICES.find((service) => service.id === id)!;
@@ -79,5 +86,27 @@ describe("등록한 구독의 화면 이름", () => {
     expect(
       isSameService({ name: "내 헬스장", currency: "KRW" }, { name: "넷플릭스", currency: "KRW" }),
     ).toBe(false);
+  });
+});
+
+describe("요금제 이름의 영문 표기", () => {
+  it("서비스 목록의 한글 요금제 이름은 모두 영문 표기가 있다", () => {
+    for (const service of POPULAR_SERVICES) {
+      for (const plan of service.plans ?? []) {
+        if (!HANGUL.test(plan.name)) continue;
+        expect(PLAN_NAMES_EN[plan.name], `${service.id} ${plan.name}`).toBeDefined();
+      }
+    }
+  });
+
+  it("영문 표기에 한글이 남지 않는다", () => {
+    for (const [ko, en] of Object.entries(PLAN_NAMES_EN)) expect(en, ko).not.toMatch(HANGUL);
+  });
+
+  it("영어 화면에서만 바꾸고, 표에 없는 이름은 그대로 둔다", () => {
+    expect(planName("광고형 스탠다드", "en")).toBe("Standard with ads");
+    expect(planName("광고형 스탠다드", "ko")).toBe("광고형 스탠다드");
+    expect(planName("내가 적은 요금제", "en")).toBe("내가 적은 요금제");
+    expect(planName("Pro", "en")).toBe("Pro");
   });
 });

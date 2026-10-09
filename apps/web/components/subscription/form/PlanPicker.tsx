@@ -7,7 +7,7 @@ import {
   planCurrency,
   yearlyDiscountOf,
 } from "@subslash/shared";
-import { useT } from "@lib/i18n";
+import { useServiceNames, useT } from "@lib/i18n";
 import { FIELD_LABEL } from "./fieldLabel";
 
 /**
@@ -28,6 +28,7 @@ export function PlanPicker({
   onPick: (plan: ServicePlan) => void;
 }) {
   const f = useT().form.plan;
+  const names = useServiceNames();
   return (
     <fieldset className="space-y-1.5">
       <legend className={`${FIELD_LABEL} mb-1.5`}>{f.legend}</legend>
@@ -54,7 +55,7 @@ export function PlanPicker({
                 required={required}
                 className="sr-only"
               />
-              <span className="block text-xs font-bold">{plan.name}</span>
+              <span className="block text-xs font-bold">{names.plan(plan.name)}</span>
               <span className="block text-[11px] text-muted-foreground">
                 {(plan.billingCycle ?? "monthly") === "yearly" ? f.yearly : f.monthly}{" "}
                 {formatAmount(plan.amount, currency)}

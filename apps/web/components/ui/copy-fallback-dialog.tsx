@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./dialog";
+import { useT } from "@lib/i18n";
 import { Button } from "./button";
 
 /**
@@ -27,14 +28,13 @@ export function CopyFallbackDialog({
   title: string;
   onClose: () => void;
 }) {
+  const c = useT().shell.common;
   return (
     <Dialog open={text !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            자동으로 복사하지 못했습니다. 아래 글을 길게 눌러 복사해주세요.
-          </DialogDescription>
+          <DialogDescription>{c.copyFallback}</DialogDescription>
         </DialogHeader>
         <textarea
           readOnly
@@ -47,7 +47,7 @@ export function CopyFallbackDialog({
         />
         <DialogFooter>
           <Button type="button" onClick={onClose}>
-            닫기
+            {c.close}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -18,7 +18,7 @@ import {
 } from "@lib/storage-quota";
 import { Button } from "../ui/button";
 import { Spinner } from "../ui/spinner";
-import { useLatestT, useT } from "@lib/i18n";
+import { useLatestT, useLocale, useT } from "@lib/i18n";
 
 type Sub = Pick<Subscription, "name" | "cancelUrl" | "planId" | "sharingCount">;
 
@@ -36,6 +36,7 @@ export function GoogleStorageCheck({
 }) {
   const base = storageQuotaWebAppUrl();
   const s = useT().checkin.storage;
+  const locale = useLocale();
   const tRef = useLatestT();
   const [waiting, setWaiting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -100,7 +101,7 @@ export function GoogleStorageCheck({
     setWaiting(true);
     if (IS_APP_BUILD) {
       const scheme = await appReturnScheme();
-      leaveForExternal(storageQuotaCheckUrl(base, { state, scheme }), (result) => {
+      leaveForExternal(storageQuotaCheckUrl(base, { state, scheme, lang: locale }), (result) => {
         if (stateRef.current !== state) return;
         const parsed = parseStorageQuotaResult(result);
         if (parsed) return apply(parsed);
@@ -111,7 +112,9 @@ export function GoogleStorageCheck({
       });
       return;
     }
-    openExternal(storageQuotaCheckUrl(base, { state, origin: webUrl("/").replace(/\/$/, "") }));
+    openExternal(
+      storageQuotaCheckUrl(base, { state, origin: webUrl("/").replace(/\/$/, ""), lang: locale }),
+    );
   };
 
   return (
