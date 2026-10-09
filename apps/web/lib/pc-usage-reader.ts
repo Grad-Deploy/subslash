@@ -2,6 +2,7 @@ import {
   claudeCodeSession,
   codexSession,
   parseCliLine,
+  slimCliLine,
   type CliLogLine,
   type CliSessionUsage,
 } from "@subslash/shared";
@@ -47,7 +48,7 @@ export function selectSessionFiles<T extends { path: string }>(files: T[], tool:
 /** 파일을 한 줄씩 읽어 필요한 칸만 남긴다. 질문·답 내용은 줄을 읽자마자 버린다. */
 export async function readSessionFile(file: Blob, tool: CliTool): Promise<CliSessionUsage> {
   const lines: CliLogLine[] = [];
-  const keep = (line: CliLogLine) => lines.push(slim(line));
+  const keep = (line: CliLogLine) => lines.push(slimCliLine(line));
   const reader = file.stream().pipeThrough(new TextDecoderStream()).getReader();
   let rest = "";
   for (;;) {
@@ -65,28 +66,6 @@ export async function readSessionFile(file: Blob, tool: CliTool): Promise<CliSes
   const last = parseCliLine(rest);
   if (last) keep(last);
   return tool === "claude" ? claudeCodeSession(lines) : codexSession(lines);
-}
-
-/** 세는 데 쓰는 칸만 남긴 줄. 내용(message·content 등)은 들고 있지 않는다. */
-function slim(line: CliLogLine): CliLogLine {
-  const out: CliLogLine = {};
-  for (const key of ["type", "timestamp", "sessionId", "isSidechain", "isMeta"]) {
-    if (key in line) out[key] = line[key];
-  }
-  if ("toolUseResult" in line) out.toolUseResult = true;
-  const origin = line.origin;
-  if (origin && typeof origin === "object" && "kind" in origin) {
-    out.origin = { kind: (origin as { kind: unknown }).kind };
-  }
-  const payload = line.payload;
-  if (payload && typeof payload === "object") {
-    const p = payload as Record<string, unknown>;
-    const limits = p.rate_limits;
-    const planType =
-      limits && typeof limits === "object" ? (limits as Record<string, unknown>).plan_type : null;
-    out.payload = { type: p.type, rate_limits: planType ? { plan_type: planType } : null };
-  }
-  return out;
 }
 
 export interface FolderRead {
