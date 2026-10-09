@@ -8,6 +8,7 @@ import {
   type UsageMetaphor,
 } from "@subslash/shared";
 import type { Messages } from "./messages";
+import { formatRatio } from "../pc-usage";
 
 /**
  * 체크인 결과의 큰 한 문장. `@subslash/shared`의 `evaluateMetric`이 문장 대신 값(`CheckInOutcome`)을 돌려주므로
@@ -53,7 +54,13 @@ export function describeCheckInOutcome(t: Messages, outcome: CheckInOutcome): st
       }
     }
   })();
-  return outcome.freeTierEnough ? `${message} ${o.freeTierEnough}` : message;
+  const withFreeTier = outcome.freeTierEnough ? `${message} ${o.freeTierEnough}` : message;
+  // PC 기록의 토큰 근거가 있으면(쓴 날로 재는 AI 구독) 구독료의 몇 배를 뽑아 썼는지 덧붙인다.
+  const ratio = outcome.apiValueRatio;
+  if (ratio === null || ratio === undefined) return withFreeTier;
+  return `${withFreeTier} ${
+    ratio >= 1 ? o.tokensOver(formatRatio(ratio)) : o.tokensUnder(Math.round(ratio * 100))
+  }`;
 }
 
 /** 일상 소비재로 환산한 비교 한 줄과 설명 한 문장. */

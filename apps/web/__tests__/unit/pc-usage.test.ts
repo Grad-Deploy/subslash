@@ -14,8 +14,8 @@ describe("PC 사용 링크 읽기", () => {
       ok: true,
       link: {
         entries: [
-          { serviceId: "claude-pro", days: 12, apiUsd: null },
-          { serviceId: "chatgpt-plus", days: 5, apiUsd: null },
+          { serviceId: "claude-pro", days: 12, apiUsd: null, tokens: null },
+          { serviceId: "chatgpt-plus", days: 5, apiUsd: null, tokens: null },
         ],
         windowDays: 30,
         until: "2026-10-09",
@@ -79,8 +79,9 @@ describe("API 환산 금액", () => {
       serviceId: "claude-pro",
       days: 30,
       apiUsd: 1591.15,
+      tokens: null,
     });
-    for (const bad of ["claude-pro:3:-1", "claude-pro:3:abc", "claude-pro:3:1:2"]) {
+    for (const bad of ["claude-pro:3:-1", "claude-pro:3:abc", "claude-pro:3:1:2:3"]) {
       expect(parsePcUsageHash(`#pc=${bad}&window=30&until=2026-10-09`, NOW).ok, bad).toBe(false);
     }
   });

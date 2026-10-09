@@ -48,6 +48,7 @@ const BACKUP_FIELDS_EN: Record<string, string> = {
   "연동 계정 이름": "linked account name",
   메모: "memo",
   "무료 요금제로 충분했는지": "free plan answer",
+  "토큰 사용량": "token usage",
   "다시 살펴볼 날": "review date",
   "해지 기록": "cancellation record",
   "주문 메일 근거": "order email evidence",

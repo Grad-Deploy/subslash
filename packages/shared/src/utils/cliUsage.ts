@@ -303,6 +303,8 @@ export interface CliApiValue {
   /** 요금을 아는 요청의 합계(USD, 세금 제외). */
   usd: number;
   pricedRequests: number;
+  /** 구독으로 쓴 토큰 수(입력·캐시 쓰기·캐시 읽기·출력 모두, 요금을 모르는 모델도 포함). */
+  tokens: number;
   /** 요금을 모르는 모델·빠른 모드 요청 수. 0원으로 치지 않고 따로 알린다. */
   unpricedRequests: number;
   unpricedModels: string[];
@@ -339,7 +341,13 @@ export function summarizeCliUsage(
   let planAt = -Infinity;
   let unknownSessions = 0;
   let excludedSessions = 0;
-  const api: CliApiValue = { usd: 0, pricedRequests: 0, unpricedRequests: 0, unpricedModels: [] };
+  const api: CliApiValue = {
+    usd: 0,
+    pricedRequests: 0,
+    tokens: 0,
+    unpricedRequests: 0,
+    unpricedModels: [],
+  };
   const seenResponses = new Set<string>();
 
   for (const session of sessions) {
@@ -366,6 +374,8 @@ export function summarizeCliUsage(
         if (seenResponses.has(record.id)) continue;
         seenResponses.add(record.id);
       }
+      api.tokens +=
+        record.input + record.cacheWrite5m + record.cacheWrite1h + record.cacheRead + record.output;
       const usd = record.fast ? null : apiCostUsd(record);
       if (usd === null) {
         api.unpricedRequests += 1;
@@ -390,23 +400,31 @@ export function summarizeCliUsage(
  * SubSlash로 넘길 링크. 값은 `#` 뒤에만 싣는다 — `?`에 실으면 SubSlash 서버 접속 기록에 남는다.
  * 쓴 날이 0인 서비스는 싣지 않는다: PC에서 안 쓴 것이지 구독을 안 쓴 것은 아니다(웹·앱에서 썼을 수 있다).
  */
+/** 링크에 서비스마다 싣는 값. */
+export interface PcUsageLinkValue {
+  days: number;
+  /** API 환산 금액(USD). 모르면 null. */
+  usd?: number | null;
+  /** 구독으로 쓴 토큰 수. */
+  tokens?: number;
+}
+
 export function pcUsageLink(
   origin: string,
-  counts: Partial<Record<CliServiceId, number | { days: number; usd: number | null }>>,
+  counts: Partial<Record<CliServiceId, number | PcUsageLinkValue>>,
   options: { windowDays: number; until: string },
 ): string | null {
-  // `서비스:쓴 날` 또는 `서비스:쓴 날:API 환산 USD`. 금액은 요금을 아는 요청이 있을 때만 싣는다.
-  const parts = (
-    Object.entries(counts) as [CliServiceId, number | { days: number; usd: number | null }][]
-  )
-    .map(
-      ([id, value]) =>
-        [id, typeof value === "number" ? { days: value, usd: null } : value] as const,
-    )
+  // `서비스:쓴 날[:API 환산 USD[:토큰 수]]`. 금액은 요금을 아는 요청이 있을 때만, 토큰은 0보다 클 때만 싣는다
+  // (금액을 모르면 빈 칸: `서비스:쓴 날::토큰 수`).
+  const parts = (Object.entries(counts) as [CliServiceId, number | PcUsageLinkValue][])
+    .map(([id, value]) => [id, typeof value === "number" ? { days: value } : value] as const)
     .filter(([, value]) => value.days > 0)
-    .map(([id, { days, usd }]) =>
-      usd !== null && usd > 0 ? `${id}:${days}:${usd.toFixed(2)}` : `${id}:${days}`,
-    );
+    .map(([id, { days, usd, tokens }]) => {
+      const amount = usd !== null && usd !== undefined && usd > 0 ? usd.toFixed(2) : "";
+      const count = tokens && tokens > 0 ? String(Math.round(tokens)) : "";
+      if (count) return `${id}:${days}:${amount}:${count}`;
+      return amount ? `${id}:${days}:${amount}` : `${id}:${days}`;
+    });
   if (parts.length === 0) return null;
   const hash = new URLSearchParams({
     pc: parts.join(","),

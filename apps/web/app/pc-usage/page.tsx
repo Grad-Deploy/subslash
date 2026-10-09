@@ -65,6 +65,7 @@ export default function PcUsagePage() {
                 serviceId={entry.serviceId}
                 days={entry.days}
                 apiUsd={entry.apiUsd}
+                tokens={entry.tokens}
                 subscriptions={subscriptions}
               />
             ))}
