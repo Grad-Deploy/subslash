@@ -3,15 +3,23 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
+  formatCurrency,
   formatUSD,
+  getMyMonthlyShareAmount,
   metricForSubscription,
   type CheckInResponse,
   type Subscription,
 } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { useStore } from "@lib/store";
-import { useServiceNames, useT } from "@lib/i18n";
-import { apiValueRatio, matchPcUsageSubscription, type PcUsageServiceId } from "@lib/pc-usage";
+import { useLocale, useServiceNames, useT } from "@lib/i18n";
+import {
+  apiValueRatio,
+  formatRatio,
+  formatTokenCount,
+  matchPcUsageSubscription,
+  type PcUsageServiceId,
+} from "@lib/pc-usage";
 import { CheckInModal } from "../subscription/CheckInModal";
 import { ServiceLogo } from "../subscription/ServiceLogo";
 import { Button } from "../ui/button";
@@ -24,12 +32,15 @@ export function PcUsageRow({
   serviceId,
   days,
   apiUsd = null,
+  tokens = null,
   subscriptions,
 }: {
   serviceId: PcUsageServiceId;
   days: number;
   /** 그 PC에서 구독으로 쓴 토큰을 API 요금표로 환산한 금액(USD). 모르면 null. */
   apiUsd?: number | null;
+  /** 그 PC에서 구독으로 쓴 토큰 수. 모르면 null. */
+  tokens?: number | null;
   subscriptions: readonly Subscription[];
 }) {
   const t = useT().pcUsage;
@@ -39,6 +50,7 @@ export function PcUsageRow({
   const [result, setResult] = useState<CheckInResponse | undefined>();
   const [done, setDone] = useState(false);
   const exchangeRate = useExchangeRate();
+  const locale = useLocale();
 
   const match = matchPcUsageSubscription(serviceId, subscriptions);
   const subscription = match.kind === "match" ? match.subscription : null;
@@ -49,6 +61,9 @@ export function PcUsageRow({
   // 근거로만 보인다 — PC 기록이라 웹·앱 사용은 빠진 값이다.
   const ratio =
     subscription && apiUsd !== null ? apiValueRatio(subscription, apiUsd, exchangeRate) : null;
+
+  // 하루당 가격: 내 몫 한 달 구독료 ÷ PC 기록으로 센 쓴 날(체크인 결과의 하루 단가와 같은 셈).
+  const perDay = subscription && days > 0 ? getMyMonthlyShareAmount(subscription) / days : null;
 
   const problem =
     match.kind === "none"
@@ -69,6 +84,10 @@ export function PcUsageRow({
           </p>
           <p className="text-xs text-muted-foreground">
             {t.tool[serviceId]} · {t.days(days)}
+            {perDay !== null &&
+              subscription &&
+              ` · ${t.perDay(formatCurrency(perDay, subscription.currency))}`}
+            {tokens !== null && ` · ${t.tokens(formatTokenCount(tokens, locale))}`}
           </p>
         </div>
         {subscription && sameMetric && (
@@ -82,9 +101,7 @@ export function PcUsageRow({
           <p className="font-semibold">{t.apiValue(formatUSD(apiUsd))}</p>
           {ratio !== null && (
             <p className="text-muted-foreground">
-              {ratio >= 1
-                ? t.ratioOver(ratio >= 10 ? String(Math.round(ratio)) : ratio.toFixed(1))
-                : t.ratioUnder(Math.round(ratio * 100))}
+              {ratio >= 1 ? t.ratioOver(formatRatio(ratio)) : t.ratioUnder(Math.round(ratio * 100))}
             </p>
           )}
           <p className="text-[11px] leading-relaxed text-muted-foreground">{t.apiNote}</p>
@@ -105,7 +122,14 @@ export function PcUsageRow({
           initialCount={days}
           result={result}
           onSubmit={(count) => {
-            setResult(checkIn(subscription.id, count));
+            // 토큰 근거를 체크인에 남긴다 — 구독 상세에서 다시 보고, 구독료 이상이면 위험도를 올린다.
+            setResult(
+              checkIn(
+                subscription.id,
+                count,
+                tokens !== null ? { tokens: { count: tokens, apiUsd } } : undefined,
+              ),
+            );
             setDone(true);
           }}
           onClose={() => {

@@ -26,6 +26,7 @@ const ko = {
   noUse: "이 기간에 구독으로 쓴 기록이 없어요",
   last: (date: string) => `마지막 사용 ${date}`,
   plan: (plan: string) => `기록된 요금제: ${plan}`,
+  tokens: (count: string) => `구독으로 쓴 토큰 ${count}개`,
   apiValue: (usd: string) => `API 요금으로 환산하면 약 ${usd} (요금표 기준, 세금 제외)`,
   unpriced: (n: number, models: string) =>
     `요금을 확인하지 못한 모델의 응답 ${n}개는 환산에서 뺐어요: ${models}`,
@@ -52,6 +53,7 @@ const en: Text = {
   noUse: "No subscription use in this period",
   last: (date) => `Last used ${date}`,
   plan: (plan) => `Recorded plan: ${plan}`,
+  tokens: (count) => `${count} tokens on the subscription`,
   apiValue: (usd) => `About ${usd} at API prices (list prices, before tax)`,
   unpriced: (n, models) =>
     `Left out ${n} ${n === 1 ? "response" : "responses"} from models without a confirmed price: ${models}`,
@@ -111,7 +113,11 @@ function summaryOf(scan: ToolScan, now: number): CliUsageSummary {
 
 /** 링크에 실을 값. 요금을 아는 응답이 없으면 금액은 싣지 않는다. */
 function linkValue(summary: CliUsageSummary) {
-  return { days: summary.days, usd: summary.api.pricedRequests > 0 ? summary.api.usd : null };
+  return {
+    days: summary.days,
+    usd: summary.api.pricedRequests > 0 ? summary.api.usd : null,
+    tokens: summary.api.tokens,
+  };
 }
 
 function printTool(t: Text, label: string, scan: ToolScan, summary: CliUsageSummary) {
@@ -123,6 +129,13 @@ function printTool(t: Text, label: string, scan: ToolScan, summary: CliUsageSumm
   console.log(`  ${summary.days > 0 ? t.usedDays(summary.days, summary.prompts) : t.noUse}`);
   if (summary.lastAt !== null) console.log(`  ${t.last(cliDayKey(summary.lastAt))}`);
   if (summary.planType) console.log(`  ${t.plan(summary.planType)}`);
+  if (summary.api.tokens > 0) {
+    const compact = new Intl.NumberFormat(t === ko ? "ko-KR" : "en-US", {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    });
+    console.log(`  ${t.tokens(compact.format(summary.api.tokens))}`);
+  }
   if (summary.api.pricedRequests > 0)
     console.log(`  ${t.apiValue(`$${summary.api.usd.toFixed(2)}`)}`);
   if (summary.api.unpricedRequests > 0) {

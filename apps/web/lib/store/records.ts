@@ -11,6 +11,7 @@ import {
   type UsageLog,
   type ValueMetric,
 } from "@subslash/shared";
+import { apiValueRatio } from "../pc-usage";
 
 /**
  * 구독 기록 한 줄을 바꾸는 규칙. 저장소 액션(index.ts)은 어느 구독에 적용할지만 고르고, 무엇을 지우고
@@ -79,7 +80,16 @@ export function revivedRecord(sub: Subscription): Subscription {
 export function buildCheckInLog(
   sub: Subscription,
   usageCount: number,
-  options: { source?: "phone"; metric?: ValueMetric } | undefined,
+  options:
+    | {
+        source?: "phone";
+        metric?: ValueMetric;
+        /** PC의 Claude Code·Codex 기록에서 본 토큰 근거(/pc-usage). */
+        tokens?: UsageLog["tokens"];
+        /** 근거의 USD를 원화 구독과 견줄 때 쓰는 사용자 환율. */
+        exchangeRate?: number;
+      }
+    | undefined,
   now: Date,
   id: string,
 ): { log: UsageLog; response: CheckInResponse } {
@@ -90,6 +100,12 @@ export function buildCheckInLog(
   const quantity = clampQuantity(metric, usageCount);
   // 무료 요금제로 충분했는지의 답은 묻는 구독(쓴 날로 재는, 무료 요금제가 있는 서비스)에만 쓴다.
   const freeTier = metric === "days" && asksFreeTier(sub) ? (sub.freeTierAnswer ?? null) : null;
+  // PC 기록의 토큰을 API로 냈다면 든 금액 ÷ 내 몫 한 달 구독료. 쓴 날로 재는 구독에서만 위험도를 올리는 데 쓴다.
+  const tokens = metric === "days" ? options?.tokens : undefined;
+  const ratio =
+    tokens?.apiUsd != null && options?.exchangeRate
+      ? apiValueRatio(sub, tokens.apiUsd, options.exchangeRate, now)
+      : null;
   const { costPerUse, riskLevel, outcome } = evaluateMetric(
     metric,
     sub.name,
@@ -98,6 +114,7 @@ export function buildCheckInLog(
     sub.currency,
     metric === "storage" ? storagePlanFit(sub, quantity) : null,
     freeTier,
+    ratio,
   );
   const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -113,6 +130,7 @@ export function buildCheckInLog(
     ...(metric !== "uses" ? { metric } : {}),
     ...(options?.source ? { source: options.source } : {}),
     ...(freeTier ? { freeTier } : {}),
+    ...(tokens ? { tokens } : {}),
   };
   return { log, response: { outcome, riskLevel, costPerUse } };
 }

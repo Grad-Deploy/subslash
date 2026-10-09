@@ -169,6 +169,10 @@ function checkSubscription(v: unknown): string | null {
   return null;
 }
 
+/** PC 기록의 토큰 근거(UsageLog.tokens): 토큰 수와 API 환산 금액(모르면 null). */
+const isTokenEvidence = (v: unknown) =>
+  isObject(v) && isAmount(v.count) && (v.apiUsd === null || isAmount(v.apiUsd));
+
 function checkUsageLog(v: unknown): string | null {
   if (!isObject(v)) return "형식";
   if (!isText(v.id)) return "ID";
@@ -181,6 +185,7 @@ function checkUsageLog(v: unknown): string | null {
   if (!optional(v.source, (value) => value === "phone")) return "체크인 출처";
   if (!optional(v.metric, isValueMetric)) return "체크인 지표";
   if (!optional(v.freeTier, isFreeTierAnswer)) return "무료 요금제로 충분했는지";
+  if (!optional(v.tokens, isTokenEvidence)) return "토큰 사용량";
   return null;
 }
 

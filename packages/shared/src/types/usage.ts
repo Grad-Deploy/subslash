@@ -24,6 +24,12 @@ export interface UsageLog {
    * 묻지 않는 구독이거나 답하지 않았으면 없다. `riskLevel`이 왜 노랑인지 나중에 읽을 수 있게 남긴다.
    */
   freeTier?: "needed" | "enough" | "unsure";
+  /**
+   * PC의 Claude Code·Codex 기록에서 본 근거(웹 /pc-usage에서 체크인했을 때만). 구독으로 쓴 토큰 수와, 같은 모델을
+   * API로 썼다면 냈을 요금표 가격(USD, 모르면 null). PC 기록뿐이라 웹·앱 사용은 빠진 하한값이다 — 위험도를
+   * 올리는 데만 쓴다(utils/valueMetric).
+   */
+  tokens?: { count: number; apiUsd: number | null };
 }
 
 export interface CheckInResponse {
