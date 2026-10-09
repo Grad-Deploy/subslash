@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { readSessionFile, readSessionFiles, selectSessionFiles } from "@lib/pc-usage-reader";
+import {
+  folderPath,
+  isWindowsUserName,
+  readSessionFile,
+  readSessionFiles,
+  selectSessionFiles,
+} from "@lib/pc-usage-reader";
 
 const jsonl = (lines: object[]) => lines.map((line) => JSON.stringify(line)).join("\n");
 const file = (name: string, text: string, lastModified = Date.parse("2026-10-08T00:00:00Z")) =>
@@ -95,5 +101,21 @@ describe("기록 파일 읽기", () => {
     );
     expect(result.files).toBe(1);
     expect(result.sessions).toHaveLength(1);
+  });
+});
+
+describe("기록 폴더 경로", () => {
+  it("윈도우는 C 드라이브 사용자 폴더 아래 경로를, 맥은 ~ 경로를 보인다", () => {
+    expect(folderPath("claude", true, "user")).toBe(String.raw`C:\Users\user\.claude\projects`);
+    expect(folderPath("codex", true, "user")).toBe(String.raw`C:\Users\user\.codex\sessions`);
+    expect(folderPath("claude", false, "")).toBe("~/.claude/projects");
+  });
+
+  it("폴더 이름에 못 쓰는 글자는 사용자 이름으로 받지 않는다", () => {
+    expect(isWindowsUserName("user")).toBe(true);
+    expect(isWindowsUserName("홍길동")).toBe(true);
+    expect(isWindowsUserName("")).toBe(false);
+    expect(isWindowsUserName(String.raw`a\b`)).toBe(false);
+    expect(isWindowsUserName("a:b")).toBe(false);
   });
 });

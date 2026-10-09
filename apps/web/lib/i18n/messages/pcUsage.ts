@@ -38,7 +38,13 @@ export const ko = {
       pick: "폴더 고르기",
       pickAgain: "다시 고르기",
       reading: "읽는 중…",
-      hiddenTip: "숨김 폴더라 목록에 안 보이면, 폴더 선택 창의 주소 칸에 위 경로를 붙여 넣으세요.",
+      hiddenTip:
+        "숨김 폴더라 목록에 안 보이면, 경로를 복사해 폴더 선택 창 위쪽 주소 칸에 붙여 넣고 Enter를 누르세요.",
+      windowsUser: "Windows 사용자 이름",
+      windowsUserPlaceholder: "예: user",
+      windowsUserHint: "C:\\Users 폴더 안에 있는 내 이름 폴더예요. 이 브라우저에만 기억해요.",
+      windowsUserInPath: "사용자이름",
+      copyNeedsUser: "사용자 이름을 먼저 적어 주세요",
       noFiles: "최근 30일의 기록 파일을 찾지 못했어요. 위 경로의 폴더를 골랐는지 확인해 주세요.",
       readFailed: "폴더를 읽지 못했어요. 다시 골라 주세요.",
       used: (days: number, prompts: number) => `최근 30일 중 ${days}일 사용 · 질문 ${prompts}개`,
@@ -96,7 +102,13 @@ export const en: Widen<typeof ko> = {
       pickAgain: "Choose again",
       reading: "Reading…",
       hiddenTip:
-        "If it's hidden and not listed, paste the path above into the folder picker's address bar.",
+        "If it's hidden and not listed, copy the path, paste it into the address bar at the top of the folder picker, and press Enter.",
+      windowsUser: "Windows user name",
+      windowsUserPlaceholder: "e.g. user",
+      windowsUserHint:
+        "The folder with your name inside C:\\Users. It's remembered in this browser only.",
+      windowsUserInPath: "username",
+      copyNeedsUser: "Enter your user name first",
       noFiles:
         "No records from the last 30 days were found. Check that you picked the folder above.",
       readFailed: "Couldn't read the folder. Please choose it again.",
