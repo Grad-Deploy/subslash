@@ -55,6 +55,14 @@ export const ko = {
     phone: "폰 사용 기록에서 찾기",
     phoneDetail: "넷플릭스·티빙 같은 OTT를 이 폰에서 쓴 기록으로 찾아요",
   },
+  /** 여러 화면이 함께 쓰는 공통 부품(확인 창·복사 안내·기다림 표시). */
+  common: {
+    confirm: "확인",
+    cancel: "취소",
+    close: "닫기",
+    loading: "불러오는 중",
+    copyFallback: "자동으로 복사하지 못했습니다. 아래 글을 길게 눌러 복사해주세요.",
+  },
   app: {
     sheetClose: "닫기",
     exitHint: "한 번 더 누르면 앱이 종료돼요",
@@ -112,6 +120,13 @@ export const en: Widen<typeof ko> = {
     pasteDetail: "Paste a card payment text message",
     phone: "Find from phone usage",
     phoneDetail: "Find streaming apps like Netflix or TVING you've used on this phone",
+  },
+  common: {
+    confirm: "OK",
+    cancel: "Cancel",
+    close: "Close",
+    loading: "Loading",
+    copyFallback: "Couldn't copy automatically. Press and hold the text below to copy it.",
   },
   app: {
     sheetClose: "Close",

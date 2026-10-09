@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
 import { Button } from "../../components/ui/button";
 import { Spinner } from "../../components/ui/spinner";
+import { useT } from "../../lib/i18n";
 import { Inbox } from "lucide-react";
 
 /**
@@ -16,6 +17,7 @@ function ShareReceiver() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(true);
+  const s = useT().sharedImport;
 
   const sharedText = [searchParams.get("title"), searchParams.get("text"), searchParams.get("url")]
     .filter(Boolean)
@@ -38,12 +40,10 @@ function ShareReceiver() {
   return (
     <div className="space-y-4 text-center py-10">
       <Inbox className="mx-auto size-10 text-muted-foreground" aria-hidden />
-      <h1 className="text-xl font-black tracking-tight">공유된 결제 내역을 분석하는 중입니다</h1>
-      <p className="text-sm text-muted-foreground">
-        다른 앱에서 공유한 결제 문자 / 영수증을 구독 목록으로 가져옵니다.
-      </p>
+      <h1 className="text-xl font-black tracking-tight">{s.title}</h1>
+      <p className="text-sm text-muted-foreground">{s.body}</p>
       <Button variant="outline" onClick={handleClose}>
-        구독 목록으로 이동
+        {s.toList}
       </Button>
 
       <AutoImportModal isOpen={isOpen} onClose={handleClose} initialSmsText={sharedText} />

@@ -245,6 +245,16 @@ export const ko = {
     question: "무료 요금제로도 충분했을까요?",
     hint: "사용 한도에 걸렸거나 유료 모델·기능을 썼다면 유료가 필요했던 거예요.",
   },
+  /** 체크인 링크(/check-in)로 열었는데 체크인할 수 없을 때. */
+  link: {
+    invalidTitle: "잘못된 체크인 링크예요",
+    invalidBody: "메일의 버튼을 다시 누르거나 대시보드에서 체크인하세요.",
+    missingTitle: "이 기기에는 이 구독이 없어요",
+    missingBody: "등록한 기기에서 링크를 열거나, 로그인해 기기끼리 기록을 맞추세요.",
+    killedTitle: "이미 해지한 구독입니다",
+    killedBody: (name: string) => `'${name}'은(는) 해지한 구독이라 체크인을 남기지 않았어요.`,
+    dashboard: "대시보드 →",
+  },
 };
 
 export const en: Widen<typeof ko> = {
@@ -487,5 +497,15 @@ export const en: Widen<typeof ko> = {
     unsure: "Not sure",
     question: "Would the free plan have been enough?",
     hint: "If you hit usage limits or used paid models or features, you needed the paid plan.",
+  },
+  link: {
+    invalidTitle: "This check-in link isn't valid",
+    invalidBody: "Tap the button in the email again, or check in from the dashboard.",
+    missingTitle: "This subscription isn't on this device",
+    missingBody:
+      "Open the link on the device where you added it, or log in to keep your devices in sync.",
+    killedTitle: "This subscription is already cancelled",
+    killedBody: (name) => `'${name}' is cancelled, so no check-in was recorded.`,
+    dashboard: "Dashboard →",
   },
 };

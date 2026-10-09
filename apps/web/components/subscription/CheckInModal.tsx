@@ -4,14 +4,14 @@ import React, { useState } from "react";
 import {
   Subscription,
   CheckInResponse,
-  PAYMENT_METHOD_OPTIONS,
   getCancelAndroidApp,
   getCancelRoutes,
   getCancelUrlKind,
   getMyMonthlyShareAmount,
   metricForSubscription,
 } from "@subslash/shared";
-import { useT, useServiceNames } from "@lib/i18n";
+import { useLocale, useT, useServiceNames } from "@lib/i18n";
+import { findPaymentMethod } from "@lib/payment-method";
 import { describeCheckInText } from "@lib/i18n/check-in-text";
 import { describeCheckInOutcome } from "@lib/i18n/check-in-outcome";
 import { MetricQuantityInput } from "./MetricQuantityInput";
@@ -65,6 +65,7 @@ export function CheckInModal({
 }: CheckInModalProps) {
   const names = useServiceNames();
   const t = useT();
+  const locale = useLocale();
   const c = t.checkin;
   const [count, setCount] = useState<number>(initialCount);
   const [copied, setCopied] = useState(false);
@@ -90,9 +91,7 @@ export function CheckInModal({
   const isRed = result?.riskLevel === "red";
 
   // Match direct cancel URL based on payment method or service cancelUrl
-  const paymentMethodInfo = PAYMENT_METHOD_OPTIONS.find(
-    (pm) => pm.value === subscription.paymentMethod,
-  );
+  const paymentMethodInfo = findPaymentMethod(subscription.paymentMethod, locale);
 
   // The payment-method link manages the recurring charge at the payment
   // provider, not at the service, so it cannot be labelled as the service's

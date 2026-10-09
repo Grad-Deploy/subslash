@@ -37,6 +37,8 @@ const AUTO_SCRIPT = String.raw`/**
 
 var SUBSLASH_INGEST_URL = __INGEST_URL__;
 var SUBSLASH_TOKEN = __TOKEN__;
+// 실행 기록에 남기는 문구. 스크립트를 받은 SubSlash 화면의 언어로 만들어집니다.
+var TEXT = __TEXT__;
 
 // 찾을 메일. Gmail 검색창과 같은 문법입니다.
 //
@@ -101,16 +103,14 @@ function scan() {
   });
   var status = response.getResponseCode();
   if (status === 401) {
-    throw new Error(
-      "SubSlash 연결이 끊겼습니다. SubSlash에서 스크립트를 다시 받아 붙여 넣은 뒤 setup을 실행하세요.",
-    );
+    throw new Error(TEXT.disconnected);
   }
   if (status !== 200) {
     // 검사 시각을 남기지 않아, 다음 실행 때 같은 기간을 다시 봅니다.
-    throw new Error("SubSlash에 보내지 못했습니다(" + status + "). 다음 실행 때 다시 보냅니다.");
+    throw new Error(TEXT.sendFailed.replace("{status}", String(status)));
   }
   properties.setProperty("lastScanAt", String(startedAt));
-  Logger.log("결제 메일 " + emails.length + "통을 SubSlash로 보냈습니다.");
+  Logger.log(TEXT.sent.replace("{count}", String(emails.length)));
 }
 
 `;
@@ -119,11 +119,30 @@ function scan() {
  * 자동 가져오기 스크립트. 연결 토큰이 들어가므로 발급 직후 화면에서만 만든다 — 서버는 토큰을 다시
  * 보여줄 수 없다(해시만 남는다).
  */
-export function gmailAutoScript(ingestUrl: string, token: string): string {
+export function gmailAutoScript(
+  ingestUrl: string,
+  token: string,
+  lang: "ko" | "en" = "ko",
+): string {
   return (
-    AUTO_SCRIPT.replace("__INGEST_URL__", () => JSON.stringify(ingestUrl)).replace(
-      "__TOKEN__",
-      () => JSON.stringify(token),
-    ) + MAIL_HELPERS
+    AUTO_SCRIPT.replace("__INGEST_URL__", () => JSON.stringify(ingestUrl))
+      .replace("__TOKEN__", () => JSON.stringify(token))
+      .replace("__TEXT__", () => JSON.stringify(AUTO_TEXT[lang])) + MAIL_HELPERS
   );
 }
+
+/** 실행 기록에 남기는 문구. 스크립트를 받은 SubSlash 화면 언어로 넣는다. */
+const AUTO_TEXT = {
+  ko: {
+    disconnected:
+      "SubSlash 연결이 끊겼습니다. SubSlash에서 스크립트를 다시 받아 붙여 넣은 뒤 setup을 실행하세요.",
+    sendFailed: "SubSlash에 보내지 못했습니다({status}). 다음 실행 때 다시 보냅니다.",
+    sent: "결제 메일 {count}통을 SubSlash로 보냈습니다.",
+  },
+  en: {
+    disconnected:
+      "SubSlash was disconnected. Get the script again from SubSlash, paste it, then run setup.",
+    sendFailed: "Couldn't send to SubSlash ({status}). It will be sent again on the next run.",
+    sent: "Sent {count} payment emails to SubSlash.",
+  },
+};

@@ -36,6 +36,12 @@ export const ko = {
     helpDetail: "자주 묻는 질문과 문의 메일",
     privacy: "개인정보처리방침",
   },
+  /** 앱 설정의 체크인 칸(폰 사용 기록). */
+  appCheckIn: {
+    title: "체크인",
+    connect: "폰 사용 기록 연결하기",
+    connectDetail: "구독 앱을 얼마나 썼는지 재서 알아서 체크인해요",
+  },
   list: {
     reminders: "알림",
     reminderTitle: "이 기기 결제 알림",
@@ -127,6 +133,11 @@ export const en: Widen<typeof ko> = {
     help: "Help & contact",
     helpDetail: "FAQ and contact email",
     privacy: "Privacy policy",
+  },
+  appCheckIn: {
+    title: "Check-ins",
+    connect: "Connect phone usage",
+    connectDetail: "Measure how much you use subscription apps and check in automatically",
   },
   list: {
     reminders: "Reminders",

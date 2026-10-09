@@ -19,7 +19,7 @@ import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { CopyBlock } from "./CopyBlock";
 import { GmailOlderScanNotice } from "./GmailOlderScanNotice";
-import { useLatestT, useT, useLocale } from "@lib/i18n";
+import { useKnownText, useLatestT, useLocale, useT } from "@lib/i18n";
 
 type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 
@@ -29,6 +29,7 @@ type PendingConfirm = "reconnect" | "rotate" | "disconnect";
  */
 export function GmailAutoImportSetup() {
   const t = useT();
+  const known = useKnownText();
   const locale = useLocale();
   const s = t.importing.setup;
   const tRef = useLatestT();
@@ -195,7 +196,7 @@ export function GmailAutoImportSetup() {
                   <CopyBlock label={t.importing.page.manifest} code={GMAIL_AUTO_SCRIPT_MANIFEST} />
                   <CopyBlock
                     label={t.importing.page.script}
-                    code={gmailAutoScript(webUrl("/api/gmail/ingest"), token)}
+                    code={gmailAutoScript(webUrl("/api/gmail/ingest"), token, locale)}
                   />
                 </div>
               ) : (
@@ -234,7 +235,7 @@ export function GmailAutoImportSetup() {
 
       {error && (
         <p className="text-xs text-destructive" role="alert">
-          {error}
+          {known(error)}
         </p>
       )}
     </section>

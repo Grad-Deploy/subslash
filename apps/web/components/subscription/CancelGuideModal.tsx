@@ -3,7 +3,6 @@
 import React from "react";
 import {
   Subscription,
-  PAYMENT_METHOD_OPTIONS,
   bundleCheckLinks,
   getAccountFallbackUrl,
   getCancelAndroidApp,
@@ -16,7 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button, WRAPPING_BUTTON } from "../ui/button";
 import { openExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
-import { useT, useServiceNames } from "@lib/i18n";
+import { useLocale, useT, useServiceNames } from "@lib/i18n";
+import { findPaymentMethod } from "@lib/payment-method";
 import { ServiceLogo } from "./ServiceLogo";
 import { PlanAlternatives } from "./PlanAlternatives";
 
@@ -43,6 +43,7 @@ export function CancelGuideModal({
 }: CancelGuideModalProps) {
   const names = useServiceNames();
   const t = useT().detail;
+  const locale = useLocale();
   // 해지 화면(다른 앱·인앱 브라우저)에 다녀온 구독. 돌아오면 창 맨 위에서 마쳤는지 묻는다 — '해지
   // 완료했어요'는 긴 창의 맨 아래라, 돌아와서 그냥 닫으면 해지가 기록되지 않았다.
   const leftFor = React.useRef<string | null>(null);
@@ -81,7 +82,7 @@ export function CancelGuideModal({
   const homeUrl = getServiceHomeUrl(sub.cancelUrl);
   const accountUrl = getAccountFallbackUrl(sub.cancelUrl);
   const steps = parseCancelGuideSteps(sub.cancelGuide);
-  const paymentMethod = PAYMENT_METHOD_OPTIONS.find((p) => p.value === sub.paymentMethod);
+  const paymentMethod = findPaymentMethod(sub.paymentMethod, locale);
   const routes = getCancelRoutes(sub);
   const checkLinks = bundleCheckLinks(sub);
 
