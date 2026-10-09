@@ -106,9 +106,11 @@ describe("기록 파일 읽기", () => {
 
 describe("기록 폴더 경로", () => {
   it("윈도우는 C 드라이브 사용자 폴더 아래 경로를, 맥은 ~ 경로를 보인다", () => {
-    expect(folderPath("claude", true, "user")).toBe(String.raw`C:\Users\user\.claude\projects`);
-    expect(folderPath("codex", true, "user")).toBe(String.raw`C:\Users\user\.codex\sessions`);
-    expect(folderPath("claude", false, "")).toBe("~/.claude/projects");
+    expect(folderPath("claude", "windows", "user")).toBe(
+      String.raw`C:\Users\user\.claude\projects`,
+    );
+    expect(folderPath("codex", "windows", "user")).toBe(String.raw`C:\Users\user\.codex\sessions`);
+    expect(folderPath("claude", "mac", "")).toBe("~/.claude/projects");
   });
 
   it("폴더 이름에 못 쓰는 글자는 사용자 이름으로 받지 않는다", () => {

@@ -3,8 +3,13 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
 import {
+  ANTIGRAVITY_CONVERSATIONS_SQL,
+  CURSOR_BUBBLES_SQL,
+  CURSOR_MEMBERSHIP_SQL,
+  antigravitySessions,
   claudeCodeSession,
   codexSession,
+  cursorSession,
   parseCliLine,
   type CliSessionUsage,
 } from "@subslash/shared";
@@ -101,4 +106,83 @@ export async function scanCodex(since: number, home = homedir()): Promise<ToolSc
     sessions.push(session);
   }
   return { installed, sessions, subscriptionDefault, unrecognizedFiles };
+}
+
+/* ---- SQLite로 남기는 도구 ---- */
+
+type Row = Record<string, unknown>;
+
+/**
+ * SQLite 파일을 읽기 전용으로 열어 조회한다. node:sqlite는 Node 22.5부터 있고(아직 실험 기능이라 경고가 뜬다),
+ * 없거나 파일이 잠겨 있으면 null — 그 도구는 '기록을 읽지 못함'으로 둔다.
+ */
+async function querySqlite(path: string, queries: string[]): Promise<Row[][] | null> {
+  if (!existsSync(path)) return null;
+  try {
+    const { DatabaseSync } = await import("node:sqlite");
+    const db = new DatabaseSync(path, { readOnly: true });
+    try {
+      return queries.map((sql) => db.prepare(sql).all() as Row[]);
+    } finally {
+      db.close();
+    }
+  } catch {
+    return null;
+  }
+}
+
+/** 운영체제별 앱 데이터 폴더(VS Code 계열 편집기의 사용자 설정이 있는 곳). */
+function appDataDir(home: string): string {
+  if (process.platform === "win32") return process.env.APPDATA || join(home, "AppData", "Roaming");
+  if (process.platform === "darwin") return join(home, "Library", "Application Support");
+  return process.env.XDG_CONFIG_HOME || join(home, ".config");
+}
+
+/**
+ * Cursor. 기록은 `<앱 데이터>/Cursor/User/globalStorage/state.vscdb`(SQLite)다. 같은 파일에 로그인 토큰도 있지만
+ * 요금제 칸과 응답의 종류·시각만 조회한다(@subslash/shared의 CURSOR_*_SQL). 구독인지는 요금제 칸으로 본다.
+ */
+export async function scanCursor(home = homedir()): Promise<ToolScan> {
+  const path = join(appDataDir(home), "Cursor", "User", "globalStorage", "state.vscdb");
+  const rows = await querySqlite(path, [CURSOR_MEMBERSHIP_SQL, CURSOR_BUBBLES_SQL]);
+  if (!rows)
+    return {
+      installed: existsSync(path),
+      sessions: [],
+      subscriptionDefault: null,
+      unrecognizedFiles: existsSync(path) ? 1 : 0,
+    };
+  const [membership, bubbles] = rows;
+  const session = cursorSession({
+    membership: membership[0]?.value ?? null,
+    bubbles: bubbles.map((row) => ({ type: row.type, sentAt: row.sentAt })),
+  });
+  return { installed: true, sessions: [session], subscriptionDefault: null, unrecognizedFiles: 0 };
+}
+
+/**
+ * Antigravity. 대화 요약은 `~/.gemini/antigravity/conversation_summaries.db`(SQLite)다. 대화마다 마지막 입력
+ * 시각과 깊이만 조회한다. 어떤 계정으로 썼는지는 기록에 없어 `--antigravity-subscription`으로 알려 줘야 센다.
+ */
+export async function scanAntigravity(
+  subscription: boolean | null,
+  home = homedir(),
+): Promise<ToolScan> {
+  const path = join(home, ".gemini", "antigravity", "conversation_summaries.db");
+  const rows = await querySqlite(path, [ANTIGRAVITY_CONVERSATIONS_SQL]);
+  if (!rows)
+    return {
+      installed: existsSync(path),
+      sessions: [],
+      subscriptionDefault: subscription,
+      unrecognizedFiles: existsSync(path) ? 1 : 0,
+    };
+  return {
+    installed: true,
+    sessions: antigravitySessions(
+      rows[0].map((row) => ({ lastInput: row.lastInput, depth: row.depth })),
+    ),
+    subscriptionDefault: subscription,
+    unrecognizedFiles: 0,
+  };
 }
