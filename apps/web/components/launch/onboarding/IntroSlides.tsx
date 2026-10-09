@@ -5,7 +5,8 @@ import { UnitCostCalculator } from "@components/home/UnitCostCalculator";
 import { PhoneFrame } from "@components/home/PhoneFrame";
 import { SampleChargeCard } from "@components/home/SampleChargeCard";
 import { SAMPLES, SAMPLE_TOTAL } from "@components/home/samples";
-import { useT } from "@lib/i18n";
+import { useLocale, useT } from "@lib/i18n";
+import { landingScreen, type LandingScreen } from "../../home/screens";
 import { cn } from "@lib/utils";
 import { RISE_PHONE, RISE_TEXT, kicker, slideBody, slideTitle, slideTop } from "./styles";
 
@@ -17,16 +18,10 @@ import { RISE_PHONE, RISE_TEXT, kicker, slideBody, slideTitle, slideTop } from "
 
 /** 기능 장의 화면 캡처. 윗부분만 보인다. 글은 `landing.onboarding.features`에 같은 순서로 있다. */
 export const FEATURE_IMAGES = [
-  {
-    image: "/landing/dashboard.png",
-  },
-  {
-    image: "/landing/cancel-guide.png",
-  },
-  {
-    image: "/landing/savings.png",
-  },
-] as const;
+  { screen: "dashboard" },
+  { screen: "cancel-guide" },
+  { screen: "savings" },
+] as const satisfies readonly { screen: LandingScreen }[];
 
 export function ProblemSlide() {
   const t = useT();
@@ -113,6 +108,7 @@ export function CalculatorSlide() {
 
 export function FeatureSlide({ index }: { index: number }) {
   const o = useT().landing.onboarding;
+  const locale = useLocale();
   const feature = o.features[index];
   return (
     <div className={cn("flex h-full flex-col", slideTop)}>
@@ -128,7 +124,7 @@ export function FeatureSlide({ index }: { index: number }) {
       </div>
       {/* 폰 윗부분만 보인다. 아래쪽은 넘기기 막대 뒤로 잘려도 된다. */}
       <PhoneFrame
-        src={FEATURE_IMAGES[index].image}
+        src={landingScreen(FEATURE_IMAGES[index].screen, locale)}
         alt={feature.alt}
         draggable={false}
         className="mx-auto mt-7 w-[290px] rounded-t-[46px] pb-0 shadow-none"
