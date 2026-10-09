@@ -6,10 +6,14 @@
  * 보내는 것: 없다. 결과는 화면에 보이고, 링크의 `#` 뒤에 서비스별 '쓴 날 수'만 싣는다(서버로 가지 않는다).
  */
 import {
+  CLI_SERVICES,
+  CLI_TOOLS,
+  CLI_TOOL_SERVICE,
   pcUsageLink,
   cliDayKey,
   summarizeCliUsage,
   type CliServiceId,
+  type CliTool,
   type CliUsageSummary,
 } from "@subslash/shared";
 import { scanAntigravity, scanClaudeCode, scanCodex, scanCursor, type ToolScan } from "./scan.js";
@@ -194,21 +198,14 @@ async function main() {
     scanCursor(),
     scanAntigravity(options.antigravitySubscription),
   ]);
-  const summaries: Record<CliServiceId, CliUsageSummary> = {
-    "claude-pro": summaryOf(claude, now),
-    "chatgpt-plus": summaryOf(codex, now),
-    "cursor-pro": summaryOf(cursor, now),
-    "google-ai-pro": summaryOf(antigravity, now),
-  };
+  const scans: Record<CliTool, ToolScan> = { claude, codex, cursor, antigravity };
+  const summaries = Object.fromEntries(
+    CLI_TOOLS.map((tool) => [CLI_TOOL_SERVICE[tool], summaryOf(scans[tool], now)]),
+  ) as Record<CliServiceId, CliUsageSummary>;
   const until = cliDayKey(now);
   const link = pcUsageLink(
     options.origin,
-    {
-      "claude-pro": linkValue(summaries["claude-pro"]),
-      "chatgpt-plus": linkValue(summaries["chatgpt-plus"]),
-      "cursor-pro": linkValue(summaries["cursor-pro"]),
-      "google-ai-pro": linkValue(summaries["google-ai-pro"]),
-    },
+    Object.fromEntries(CLI_SERVICES.map((id) => [id, linkValue(summaries[id])])),
     { windowDays: WINDOW_DAYS, until },
   );
 
@@ -224,11 +221,12 @@ async function main() {
   }
 
   console.log(t.title(WINDOW_DAYS));
-  printTool(t, t.claude, claude, summaries["claude-pro"]);
-  printTool(t, t.codex, codex, summaries["chatgpt-plus"]);
-  printTool(t, t.cursor, cursor, summaries["cursor-pro"]);
-  printTool(t, t.antigravity, antigravity, summaries["google-ai-pro"], "conversations");
-  if (antigravity.installed && options.antigravitySubscription === null) {
+  for (const tool of CLI_TOOLS) {
+    // Antigravity는 질문이 아니라 대화마다 시각 하나만 남는다.
+    const unit = tool === "antigravity" ? "conversations" : "prompts";
+    printTool(t, t[tool], scans[tool], summaries[CLI_TOOL_SERVICE[tool]], unit);
+  }
+  if (scans.antigravity.installed && options.antigravitySubscription === null) {
     console.log(`  ${t.antigravityAsk}`);
   }
   console.log("");
