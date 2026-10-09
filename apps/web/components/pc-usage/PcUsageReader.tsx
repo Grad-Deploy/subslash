@@ -2,7 +2,13 @@
 
 import React, { useState } from "react";
 import { FolderOpen } from "lucide-react";
-import { summarizeCliUsage, type CliUsageSummary, type Subscription } from "@subslash/shared";
+import {
+  CLI_TOOLS,
+  CLI_TOOL_SERVICE,
+  summarizeCliUsage,
+  type CliUsageSummary,
+  type Subscription,
+} from "@subslash/shared";
 import { useT } from "@lib/i18n";
 import { copyText } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
@@ -10,12 +16,12 @@ import {
   folderPath,
   isWindowsUserName,
   pickSessionFolder,
+  picksFile,
   readSessionFiles,
   type CliTool,
   type FolderRead,
   type PcPlatform,
 } from "@lib/pc-usage-reader";
-import type { PcUsageServiceId } from "@lib/pc-usage";
 import { PcUsageRow } from "./PcUsageRow";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -23,15 +29,6 @@ import { Spinner } from "../ui/spinner";
 
 const WINDOW_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-const TOOLS = ["claude", "codex", "cursor", "antigravity"] as const satisfies readonly CliTool[];
-
-const SERVICE: Record<CliTool, PcUsageServiceId> = {
-  claude: "claude-pro",
-  codex: "chatgpt-plus",
-  cursor: "cursor-pro",
-  antigravity: "google-ai-pro",
-};
 
 /**
  * 기록에 어떤 계정으로 썼는지가 없어 사용자에게 묻는 도구. 답하기 전에는 세지 않는다 — 모르는 것을 구독 사용으로
@@ -130,7 +127,7 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
     });
   };
 
-  const rows = TOOLS.map((tool) => ({ tool, summary: summaryOf(tool) })).filter(
+  const rows = CLI_TOOLS.map((tool) => ({ tool, summary: summaryOf(tool) })).filter(
     ({ tool, summary }) =>
       summary && summary.days > 0 && (!isAsked(tool) || answers[tool] !== null),
   );
@@ -196,7 +193,7 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
           </span>
         </label>
       )}
-      {TOOLS.map((tool) => {
+      {CLI_TOOLS.map((tool) => {
         const current = state[tool];
         return (
           <ToolCard
@@ -220,7 +217,7 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
             {rows.map(({ tool, summary }) => (
               <PcUsageRow
                 key={tool}
-                serviceId={SERVICE[tool]}
+                serviceId={CLI_TOOL_SERVICE[tool]}
                 days={summary!.days}
                 apiUsd={summary!.api.pricedRequests > 0 ? summary!.api.usd : null}
                 tokens={summary!.api.tokens > 0 ? summary!.api.tokens : null}
@@ -276,7 +273,7 @@ function ToolCard({
           onClick={onPick}
         >
           <FolderOpen className="size-4" aria-hidden />
-          {state.status === "done" ? t.pickAgain : t.pick}
+          {state.status === "done" ? t.pickAgain : picksFile(tool) ? t.pickFile : t.pick}
         </Button>
       </div>
       <div className="flex items-center gap-2 text-xs">
@@ -296,7 +293,9 @@ function ToolCard({
         <p className="text-[11px] leading-relaxed text-muted-foreground">{t.cursorNote}</p>
       )}
       {state.status === "idle" && (
-        <p className="text-[11px] leading-relaxed text-muted-foreground">{t.hiddenTip}</p>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          {picksFile(tool) ? t.cursorFileTip : t.hiddenTip}
+        </p>
       )}
       {state.status === "reading" && (
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -305,7 +304,9 @@ function ToolCard({
       )}
       {state.status === "failed" && <p className="text-xs text-destructive">{t.readFailed}</p>}
       {state.status === "done" && state.read.files === 0 && (
-        <p className="text-xs text-muted-foreground">{t.noFiles}</p>
+        <p className="text-xs text-muted-foreground">
+          {picksFile(tool) ? t.cursorNoFile : t.noFiles}
+        </p>
       )}
       {state.status === "done" && state.read.files > 0 && summary && (
         <div className="space-y-0.5 text-xs">

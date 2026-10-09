@@ -1,8 +1,10 @@
 import {
+  CLI_SERVICES,
   findPresetForSubscription,
   getMyMonthlyShareAmount,
   isInTrial,
   toKRW,
+  type CliServiceId,
   type Subscription,
 } from "@subslash/shared";
 
@@ -14,14 +16,9 @@ import {
  * 셌으므로 웹·폰에서 쓴 날이 더 있을 수 있다(그래서 덮어쓰지 않고 채워 보여 준다).
  */
 
-/** CLI가 재는 구독. 둘 다 쓴 날(`days`)로 재는 서비스다. */
-export const PC_USAGE_SERVICES = [
-  "claude-pro",
-  "chatgpt-plus",
-  "cursor-pro",
-  "google-ai-pro",
-] as const;
-export type PcUsageServiceId = (typeof PC_USAGE_SERVICES)[number];
+/** PC 기록으로 재는 구독(`@subslash/shared`의 도구↔구독 표). 모두 쓴 날(`days`)로 재는 서비스다. */
+export const PC_USAGE_SERVICES: readonly CliServiceId[] = CLI_SERVICES;
+export type PcUsageServiceId = CliServiceId;
 
 /** 링크를 만든 뒤 이만큼 지나면 숫자가 지난 것이라 다시 실행하게 한다. */
 export const PC_USAGE_STALE_DAYS = 3;

@@ -413,6 +413,9 @@ Cursor·Antigravity는 JSONL이 아니라 SQLite에 적는다 — 공유 SQL(`CU
 칸만 조회하고(명령줄은 `node:sqlite`, 웹은 sql.js — wasm은 `public/vendor/`, 설치된 버전과 같은지 테스트가 본다), Cursor는
 응답의 요청 시각과 요금제 칸(`free`면 구독 아님), Antigravity는 사람이 연 대화의 마지막 입력 시각(하한값)으로 센다.
 Cursor의 `state.vscdb`에는 로그인 토큰도 있어 파일은 메모리에 올라오지만 그 칸은 조회하지 않는다(사용자가 정함).
+웹에서 Cursor는 폴더가 아니라 파일(`state.vscdb`, 있으면 `-wal`)을 고른다(`picksFile`) — 크롬·엣지의 폴더 선택 창은 `AppData`(맥
+`~/Library`)와 그 안을 시스템 폴더라며 열지 않고, 파일 선택 창은 막지 않는다.
+도구↔구독 대응(`CLI_TOOL_SERVICE`)은 공유 코드 한 곳에만 둔다 — 명령줄·읽기 화면·링크가 모두 이 표를 쓴다.
 Antigravity는 Google AI Pro 사용으로 세고, 기록에 계정이 없어 웹에서 묻는다(명령줄은 `--antigravity-subscription`).
 Antigravity DB는 WAL 모드라 최근 기록이 `-wal`에만 있다 — 웹은 `applySqliteWal`로 합쳐 연다. 두 도구 모두 토큰은 믿을
 값이 없어 API 환산을 하지 않는다.

@@ -11,7 +11,10 @@ import {
   slimCliLine,
   type CliLogLine,
   type CliSessionUsage,
+  type CliTool,
 } from "@subslash/shared";
+
+export type { CliTool };
 
 /**
  * 웹의 'PC 기록 읽기'(/pc-usage). 사용자가 고른 AI 코딩 도구의 기록 폴더를 **브라우저가 기기 안에서** 읽어 질문
@@ -23,12 +26,18 @@ import {
  *   Cursor의 `state.vscdb`에는 로그인 토큰도 들어 있어 파일이 메모리에 올라오지만 그 칸은 조회하지 않는다.
  */
 
-export type CliTool = "claude" | "codex" | "cursor" | "antigravity";
 type JsonlTool = "claude" | "codex";
 type SqliteTool = "cursor" | "antigravity";
 
 export const isSqliteTool = (tool: CliTool): tool is SqliteTool =>
   tool === "cursor" || tool === "antigravity";
+
+/**
+ * 폴더가 아니라 파일을 고르는 도구. Cursor의 기록은 `AppData`(맥은 `~/Library`) 아래에 있는데, 크롬·엣지의 폴더
+ * 선택 창은 이 폴더와 그 안을 '시스템 파일이 있는 폴더'라며 열지 않는다. 파일 선택 창(`<input type="file">`)은
+ * 막지 않아 DB 파일(과 WAL)을 직접 고르게 한다.
+ */
+export const picksFile = (tool: CliTool): tool is "cursor" => tool === "cursor";
 
 /** JSONL 기록이 있는 하위 폴더 이름. 이 폴더 아래만 본다. */
 const SESSION_DIR: Record<JsonlTool, string> = { claude: "projects", codex: "sessions" };
@@ -254,12 +263,14 @@ type PickerWindow = Window & {
 
 /**
  * 폴더 선택 창을 연다. 크롬·엣지는 폴더 읽기 권한을 묻는 창(`showDirectoryPicker`)을, 그 밖의 브라우저는 폴더
- * 올리기 입력을 쓴다 — 둘 다 파일을 서버로 보내지 않고 이 페이지가 읽기만 한다. 취소하면 null.
+ * 올리기 입력을 쓴다 — 둘 다 파일을 서버로 보내지 않고 이 페이지가 읽기만 한다. Cursor는 폴더 대신 파일을
+ * 고른다(`picksFile`). 취소하면 null.
  */
 export async function pickSessionFolder(
   tool: CliTool,
   since: number,
 ): Promise<{ path: string; file: File }[] | null> {
+  if (picksFile(tool)) return pickWithInput({ directory: false });
   const picker = (window as PickerWindow).showDirectoryPicker;
   if (picker) {
     let root: DirHandle;
@@ -270,7 +281,7 @@ export async function pickSessionFolder(
     }
     return isSqliteTool(tool) ? findSqliteHandles(root, tool) : walkHandle(root, tool, since);
   }
-  return pickWithInput();
+  return pickWithInput({ directory: true });
 }
 
 async function walkHandle(root: DirHandle, tool: JsonlTool, since: number) {
@@ -321,11 +332,17 @@ async function findSqliteHandles(root: DirHandle, tool: SqliteTool) {
   return [];
 }
 
-function pickWithInput(): Promise<{ path: string; file: File }[] | null> {
+/** 파일 입력으로 고른다. 파일을 고르면 경로는 파일 이름이다(`state.vscdb`·`state.vscdb-wal`). */
+function pickWithInput({
+  directory,
+}: {
+  directory: boolean;
+}): Promise<{ path: string; file: File }[] | null> {
   return new Promise((resolve) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.setAttribute("webkitdirectory", "");
+    if (directory) input.setAttribute("webkitdirectory", "");
+    else input.multiple = true;
     input.addEventListener("change", () => {
       const files = Array.from(input.files ?? []).map((file) => ({
         path: file.webkitRelativePath || file.name,
