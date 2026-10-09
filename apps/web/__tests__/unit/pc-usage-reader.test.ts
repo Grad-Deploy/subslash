@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   folderPath,
   isWindowsUserName,
+  picksFile,
   readSessionFile,
   readSessionFiles,
   selectSessionFiles,
@@ -119,5 +120,14 @@ describe("기록 폴더 경로", () => {
     expect(isWindowsUserName("")).toBe(false);
     expect(isWindowsUserName(String.raw`a\b`)).toBe(false);
     expect(isWindowsUserName("a:b")).toBe(false);
+  });
+});
+
+describe("picksFile", () => {
+  it("Cursor만 폴더 대신 파일을 고른다(브라우저가 AppData 폴더를 열지 않는다)", () => {
+    expect(picksFile("cursor")).toBe(true);
+    expect(picksFile("claude")).toBe(false);
+    expect(picksFile("codex")).toBe(false);
+    expect(picksFile("antigravity")).toBe(false);
   });
 });

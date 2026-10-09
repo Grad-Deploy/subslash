@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  CLI_SERVICES,
+  CLI_TOOL_SERVICE,
+  POPULAR_SERVICES,
   apiCostUsd,
   claudeCodeSession,
   codexSession,
@@ -327,5 +330,13 @@ describe("API 요금 환산", () => {
     const slim = lines.map(slimCliLine);
     expect(JSON.stringify(slim)).not.toContain("비밀");
     expect(claudeCodeSession(slim).tokens).toEqual(claudeCodeSession(lines).tokens);
+  });
+});
+
+describe("도구↔구독 표", () => {
+  it("모든 구독 id가 서비스 목록에 있고 도구마다 하나씩이다", () => {
+    const ids = new Set(POPULAR_SERVICES.map((preset) => preset.id));
+    for (const id of CLI_SERVICES) expect(ids.has(id)).toBe(true);
+    expect(new Set(Object.values(CLI_TOOL_SERVICE)).size).toBe(CLI_SERVICES.length);
   });
 });
