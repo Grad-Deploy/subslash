@@ -2,14 +2,19 @@ import { createReadStream, existsSync, readFileSync, readdirSync, statSync } fro
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
-import { claudeSession, codexSession, parseLine, type SessionUsage } from "./parse.js";
+import {
+  claudeCodeSession,
+  codexSession,
+  parseCliLine,
+  type CliSessionUsage,
+} from "@subslash/shared";
 
 /** 기록 파일 한 줄씩 읽는다. 파일 전체를 메모리에 올리지 않는다(세션 기록은 수십 MB가 되기도 한다). */
 async function readLines(path: string) {
   const lines = [];
   const reader = createInterface({ input: createReadStream(path, "utf8"), crlfDelay: Infinity });
   for await (const text of reader) {
-    const line = parseLine(text);
+    const line = parseCliLine(text);
     if (line) lines.push(line);
   }
   return lines;
@@ -37,7 +42,7 @@ function recentJsonl(dir: string, since: number, depth: number): string[] {
 export interface ToolScan {
   /** 기록 폴더가 있는지(설치해 쓴 적이 있는지). */
   installed: boolean;
-  sessions: SessionUsage[];
+  sessions: CliSessionUsage[];
   /** 지금 로그인 상태로 본 구독 여부. 기록에 구독 여부가 없는 세션에 쓴다. 모르면 null. */
   subscriptionDefault: boolean | null;
   /** 알아보지 못한 파일 수(형식이 바뀌었을 수 있다). */
@@ -67,10 +72,10 @@ export async function scanClaudeCode(since: number, home = homedir()): Promise<T
     : config
       ? Boolean(config.oauthAccount)
       : null;
-  const sessions: SessionUsage[] = [];
+  const sessions: CliSessionUsage[] = [];
   let unrecognizedFiles = 0;
   for (const path of recentJsonl(dir, since, 1)) {
-    const session = claudeSession(await readLines(path));
+    const session = claudeCodeSession(await readLines(path));
     if (!session.recognized) unrecognizedFiles += 1;
     sessions.push(session);
   }
@@ -88,7 +93,7 @@ export async function scanCodex(since: number, home = homedir()): Promise<ToolSc
   const auth = readJson(join(codexHome, "auth.json"));
   const mode = auth?.auth_mode;
   const subscriptionDefault = mode === "chatgpt" ? true : typeof mode === "string" ? false : null;
-  const sessions: SessionUsage[] = [];
+  const sessions: CliSessionUsage[] = [];
   let unrecognizedFiles = 0;
   for (const path of recentJsonl(dir, since, 3)) {
     const session = codexSession(await readLines(path));

@@ -6,12 +6,12 @@
  * 보내는 것: 없다. 결과는 화면에 보이고, 링크의 `#` 뒤에 서비스별 '쓴 날 수'만 싣는다(서버로 가지 않는다).
  */
 import {
-  checkInLink,
-  localDayKey,
-  summarize,
+  pcUsageLink,
+  cliDayKey,
+  summarizeCliUsage,
   type CliServiceId,
-  type UsageSummary,
-} from "./parse.js";
+  type CliUsageSummary,
+} from "@subslash/shared";
 import { scanClaudeCode, scanCodex, type ToolScan } from "./scan.js";
 
 const DEFAULT_ORIGIN = "https://www.subslash.me";
@@ -95,22 +95,22 @@ function parseArgs(argv: string[]): Options {
   return options;
 }
 
-function summaryOf(scan: ToolScan, now: number): UsageSummary {
-  return summarize(scan.sessions, {
+function summaryOf(scan: ToolScan, now: number): CliUsageSummary {
+  return summarizeCliUsage(scan.sessions, {
     now,
     windowDays: WINDOW_DAYS,
     subscriptionDefault: scan.subscriptionDefault,
   });
 }
 
-function printTool(t: Text, label: string, scan: ToolScan, summary: UsageSummary) {
+function printTool(t: Text, label: string, scan: ToolScan, summary: CliUsageSummary) {
   console.log(`\n${label}`);
   if (!scan.installed) {
     console.log(`  ${t.notInstalled}`);
     return;
   }
   console.log(`  ${summary.days > 0 ? t.usedDays(summary.days, summary.prompts) : t.noUse}`);
-  if (summary.lastAt !== null) console.log(`  ${t.last(localDayKey(summary.lastAt))}`);
+  if (summary.lastAt !== null) console.log(`  ${t.last(cliDayKey(summary.lastAt))}`);
   if (summary.planType) console.log(`  ${t.plan(summary.planType)}`);
   if (summary.excludedSessions > 0) console.log(`  ${t.excluded(summary.excludedSessions)}`);
   if (summary.unknownSessions > 0) console.log(`  ${t.unknown(summary.unknownSessions)}`);
@@ -124,12 +124,12 @@ async function main() {
   // 파일을 고친 시각이 기간보다 앞이면 그 안의 질문도 기간 밖이다. 하루 여유를 둔다.
   const since = now - (WINDOW_DAYS + 1) * 24 * 60 * 60 * 1000;
   const [claude, codex] = await Promise.all([scanClaudeCode(since), scanCodex(since)]);
-  const summaries: Record<CliServiceId, UsageSummary> = {
+  const summaries: Record<CliServiceId, CliUsageSummary> = {
     "claude-pro": summaryOf(claude, now),
     "chatgpt-plus": summaryOf(codex, now),
   };
-  const until = localDayKey(now);
-  const link = checkInLink(
+  const until = cliDayKey(now);
+  const link = pcUsageLink(
     options.origin,
     { "claude-pro": summaries["claude-pro"].days, "chatgpt-plus": summaries["chatgpt-plus"].days },
     { windowDays: WINDOW_DAYS, until },

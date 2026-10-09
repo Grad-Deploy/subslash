@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
-  checkInLink,
-  claudeSession,
+  claudeCodeSession,
   codexSession,
   isClaudePrompt,
-  parseLine,
-  summarize,
-  type DayKey,
-} from "../src/parse.js";
+  parseCliLine,
+  pcUsageLink,
+  summarizeCliUsage,
+  type CliDayKey,
+} from "@subslash/shared";
 
 const NOW = Date.parse("2026-10-09T12:00:00+09:00");
 const at = (iso: string) => Date.parse(iso);
 /** 한국 시간 날짜. 테스트가 돌아가는 PC의 시간대와 상관없게 한다. */
-const kstDay: DayKey = (ms) => new Date(ms + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+const kstDay: CliDayKey = (ms) => new Date(ms + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 describe("Claude Code 기록", () => {
   const human = (timestamp: string) => ({
@@ -38,7 +38,7 @@ describe("Claude Code 기록", () => {
       { type: "assistant", sessionId: "s", timestamp: "2026-10-08T10:05:00+09:00" },
       human("2026-10-08T11:00:00+09:00"),
     ];
-    const session = claudeSession(lines);
+    const session = claudeCodeSession(lines);
     expect(session.prompts).toEqual([
       at("2026-10-08T10:00:00+09:00"),
       at("2026-10-08T11:00:00+09:00"),
@@ -54,12 +54,12 @@ describe("Claude Code 기록", () => {
   });
 
   it("질문 내용은 결과에 담지 않는다", () => {
-    const session = claudeSession([human("2026-10-08T10:00:00+09:00")]);
+    const session = claudeCodeSession([human("2026-10-08T10:00:00+09:00")]);
     expect(JSON.stringify(session)).not.toContain("비밀 질문");
   });
 
   it("알아볼 수 없는 형식이면 '모른다'로 표시한다", () => {
-    expect(claudeSession([{ foo: 1 }]).recognized).toBe(false);
+    expect(claudeCodeSession([{ foo: 1 }]).recognized).toBe(false);
   });
 });
 
@@ -117,7 +117,7 @@ describe("요약", () => {
   });
 
   it("최근 30일 안에서 질문한 날(이 PC의 날짜)을 센다", () => {
-    const summary = summarize(
+    const summary = summarizeCliUsage(
       [
         session(["2026-10-08T09:00:00+09:00", "2026-10-08T23:30:00+09:00"], true),
         session(["2026-10-09T00:10:00+09:00"], true),
@@ -132,7 +132,7 @@ describe("요약", () => {
   });
 
   it("구독이 아닌 세션과 구독인지 모르는 세션은 세지 않고 수만 알린다", () => {
-    const summary = summarize(
+    const summary = summarizeCliUsage(
       [
         session(["2026-10-08T09:00:00+09:00"], false),
         session(["2026-10-07T09:00:00+09:00"], null),
@@ -148,12 +148,12 @@ describe("요약", () => {
   it("기록에 구독 여부가 없으면 지금 로그인 상태로 본다", () => {
     const sessions = [session(["2026-10-08T09:00:00+09:00"], null)];
     const base = { now: NOW, windowDays: 30, dayKey: kstDay };
-    expect(summarize(sessions, { ...base, subscriptionDefault: true }).days).toBe(1);
-    expect(summarize(sessions, { ...base, subscriptionDefault: false }).days).toBe(0);
+    expect(summarizeCliUsage(sessions, { ...base, subscriptionDefault: true }).days).toBe(1);
+    expect(summarizeCliUsage(sessions, { ...base, subscriptionDefault: false }).days).toBe(0);
   });
 
   it("요금제는 가장 최근 세션의 것을 보인다", () => {
-    const summary = summarize(
+    const summary = summarizeCliUsage(
       [
         session(["2026-10-01T09:00:00+09:00"], true, "plus"),
         session(["2026-10-08T09:00:00+09:00"], true, "go"),
@@ -166,7 +166,7 @@ describe("요약", () => {
 
 describe("체크인 링크", () => {
   it("쓴 날 수는 # 뒤에만 싣고, 0일인 서비스는 싣지 않는다", () => {
-    const link = checkInLink(
+    const link = pcUsageLink(
       "https://www.subslash.me/",
       { "claude-pro": 12, "chatgpt-plus": 0 },
       { windowDays: 30, until: "2026-10-09" },
@@ -181,15 +181,15 @@ describe("체크인 링크", () => {
 
   it("넘길 것이 없으면 링크를 만들지 않는다", () => {
     expect(
-      checkInLink("https://www.subslash.me", { "claude-pro": 0 }, { windowDays: 30, until: "x" }),
+      pcUsageLink("https://www.subslash.me", { "claude-pro": 0 }, { windowDays: 30, until: "x" }),
     ).toBeNull();
   });
 });
 
 describe("줄 읽기", () => {
   it("깨진 줄은 건너뛴다", () => {
-    expect(parseLine("{not json")).toBeNull();
-    expect(parseLine("")).toBeNull();
-    expect(parseLine('{"type":"user"}')).toEqual({ type: "user" });
+    expect(parseCliLine("{not json")).toBeNull();
+    expect(parseCliLine("")).toBeNull();
+    expect(parseCliLine('{"type":"user"}')).toEqual({ type: "user" });
   });
 });
