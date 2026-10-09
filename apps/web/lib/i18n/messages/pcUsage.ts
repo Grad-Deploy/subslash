@@ -24,6 +24,13 @@ export const ko = {
     toSubs: "내 구독으로 →",
     /** 체크인 창(PC 웹)의 링크. */
     modalLink: (tool: string) => `PC의 ${tool} 기록으로 세기 →`,
+    apiValue: (usd: string) => `API 요금으로 환산하면 약 ${usd}`,
+    ratioOver: (times: string) =>
+      `내 몫 한 달 구독료의 ${times}배어치를 썼어요 — PC 사용만으로도 본전 이상이에요.`,
+    ratioUnder: (percent: number) =>
+      `내 몫 한 달 구독료의 ${percent}%어치예요. 웹·앱에서 쓴 것은 빠져 있어서 실제로는 더 썼을 수 있어요.`,
+    apiNote:
+      "같은 모델을 API로 썼다면 냈을 요금표 가격이에요(세금 제외). 실제로 청구된 돈이 아니라, 구독으로 얼마나 뽑아 썼는지 가늠하는 값이에요.",
     privacy: "숫자는 링크의 # 뒤에만 있어 서버로 보내지 않았어요.",
     reader: {
       description:
@@ -50,6 +57,8 @@ export const ko = {
       used: (days: number, prompts: number) => `최근 30일 중 ${days}일 사용 · 질문 ${prompts}개`,
       noUse: "최근 30일에 구독으로 쓴 기록이 없어요.",
       plan: (plan: string) => `기록된 ChatGPT 요금제: ${plan}`,
+      unpriced: (n: number, models: string) =>
+        `요금을 확인하지 못한 모델의 응답 ${n}개는 환산에서 뺐어요: ${models}`,
       excluded: (n: number) => `구독이 아닌 방식(API 키 등)으로 쓴 세션 ${n}개는 세지 않았어요.`,
       unknown: (n: number) => `구독으로 썼는지 알 수 없는 세션 ${n}개는 세지 않았어요.`,
       unrecognized: (n: number) =>
@@ -87,6 +96,13 @@ export const en: Widen<typeof ko> = {
     staleBody: "We stopped it so old numbers aren't checked in. Read your PC records again below.",
     toSubs: "Go to subscriptions →",
     modalLink: (tool) => `Count from ${tool} records on this PC →`,
+    apiValue: (usd) => `About ${usd} at API prices`,
+    ratioOver: (times) =>
+      `That's ${times}× your monthly share of the subscription — PC use alone already covers it.`,
+    ratioUnder: (percent) =>
+      `That's ${percent}% of your monthly share. Use on the web or in the app isn't included, so you may have used more.`,
+    apiNote:
+      "What the same model would have cost at API list prices (before tax). It isn't what you were charged — it's a gauge of how much you got out of the subscription.",
     privacy: "The numbers are only after # in the link and weren't sent to the server.",
     reader: {
       description:
@@ -116,6 +132,8 @@ export const en: Widen<typeof ko> = {
         `Used on ${days} ${one(days) ? "day" : "days"} in the last 30 days · ${prompts} ${one(prompts) ? "prompt" : "prompts"}`,
       noUse: "No subscription use in the last 30 days.",
       plan: (plan) => `Recorded ChatGPT plan: ${plan}`,
+      unpriced: (n, models) =>
+        `Left out ${n} ${one(n) ? "response" : "responses"} from models without a confirmed price: ${models}`,
       excluded: (n) =>
         `Skipped ${n} ${one(n) ? "session" : "sessions"} not on a subscription (API key, etc.).`,
       unknown: (n) =>

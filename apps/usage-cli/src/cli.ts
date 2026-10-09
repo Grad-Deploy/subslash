@@ -26,13 +26,16 @@ const ko = {
   noUse: "이 기간에 구독으로 쓴 기록이 없어요",
   last: (date: string) => `마지막 사용 ${date}`,
   plan: (plan: string) => `기록된 요금제: ${plan}`,
+  apiValue: (usd: string) => `API 요금으로 환산하면 약 ${usd} (요금표 기준, 세금 제외)`,
+  unpriced: (n: number, models: string) =>
+    `요금을 확인하지 못한 모델의 응답 ${n}개는 환산에서 뺐어요: ${models}`,
   excluded: (n: number) => `구독이 아닌 방식(API 키 등)으로 쓴 세션 ${n}개는 세지 않았어요`,
   unknown: (n: number) => `구독으로 썼는지 알 수 없는 세션 ${n}개는 세지 않았어요`,
   unrecognized: (n: number) =>
     `알아보지 못한 기록 파일 ${n}개 — 도구가 업데이트돼 형식이 바뀌었을 수 있어요`,
   linkTitle: "SubSlash에 체크인하기 — 이 링크를 브라우저로 여세요:",
   linkNote:
-    "쓴 날 수만 링크의 # 뒤에 담겨요(서버로 보내지 않아요). 열면 숫자가 채워진 체크인 창이 뜨고, 확인을 눌러야 저장돼요.",
+    "쓴 날 수와 API 환산 금액만 링크의 # 뒤에 담겨요(서버로 보내지 않아요). 열면 숫자가 채워진 체크인 창이 뜨고, 확인을 눌러야 저장돼요.",
   noLink: "체크인으로 넘길 사용 기록이 없어요.",
   pcOnly: "PC에서 쓴 날만 셌어요. 웹·폰에서 쓴 날이 더 있으면 체크인 창에서 늘려 주세요.",
   privacy: "기록의 질문·답 내용은 읽지 않고 시각만 셌어요.",
@@ -49,6 +52,9 @@ const en: Text = {
   noUse: "No subscription use in this period",
   last: (date) => `Last used ${date}`,
   plan: (plan) => `Recorded plan: ${plan}`,
+  apiValue: (usd) => `About ${usd} at API prices (list prices, before tax)`,
+  unpriced: (n, models) =>
+    `Left out ${n} ${n === 1 ? "response" : "responses"} from models without a confirmed price: ${models}`,
   excluded: (n) =>
     `Skipped ${n} ${n === 1 ? "session" : "sessions"} not on a subscription (API key, etc.)`,
   unknown: (n) =>
@@ -57,7 +63,7 @@ const en: Text = {
     `${n} record ${n === 1 ? "file" : "files"} not recognized — the tool may have changed its format`,
   linkTitle: "Check in on SubSlash — open this link in your browser:",
   linkNote:
-    "Only the day counts go after # in the link (not sent to the server). It opens a check-in with the number filled in; nothing is saved until you confirm.",
+    "Only the day counts and API-price amounts go after # in the link (not sent to the server). It opens a check-in with the number filled in; nothing is saved until you confirm.",
   noLink: "No usage to check in.",
   pcOnly:
     "Only days used on this PC are counted. Raise the number in the check-in if you also used it on the web or your phone.",
@@ -103,6 +109,11 @@ function summaryOf(scan: ToolScan, now: number): CliUsageSummary {
   });
 }
 
+/** 링크에 실을 값. 요금을 아는 응답이 없으면 금액은 싣지 않는다. */
+function linkValue(summary: CliUsageSummary) {
+  return { days: summary.days, usd: summary.api.pricedRequests > 0 ? summary.api.usd : null };
+}
+
 function printTool(t: Text, label: string, scan: ToolScan, summary: CliUsageSummary) {
   console.log(`\n${label}`);
   if (!scan.installed) {
@@ -112,6 +123,13 @@ function printTool(t: Text, label: string, scan: ToolScan, summary: CliUsageSumm
   console.log(`  ${summary.days > 0 ? t.usedDays(summary.days, summary.prompts) : t.noUse}`);
   if (summary.lastAt !== null) console.log(`  ${t.last(cliDayKey(summary.lastAt))}`);
   if (summary.planType) console.log(`  ${t.plan(summary.planType)}`);
+  if (summary.api.pricedRequests > 0)
+    console.log(`  ${t.apiValue(`$${summary.api.usd.toFixed(2)}`)}`);
+  if (summary.api.unpricedRequests > 0) {
+    console.log(
+      `  ${t.unpriced(summary.api.unpricedRequests, summary.api.unpricedModels.join(", "))}`,
+    );
+  }
   if (summary.excludedSessions > 0) console.log(`  ${t.excluded(summary.excludedSessions)}`);
   if (summary.unknownSessions > 0) console.log(`  ${t.unknown(summary.unknownSessions)}`);
   if (scan.unrecognizedFiles > 0) console.log(`  ${t.unrecognized(scan.unrecognizedFiles)}`);
@@ -131,7 +149,10 @@ async function main() {
   const until = cliDayKey(now);
   const link = pcUsageLink(
     options.origin,
-    { "claude-pro": summaries["claude-pro"].days, "chatgpt-plus": summaries["chatgpt-plus"].days },
+    {
+      "claude-pro": linkValue(summaries["claude-pro"]),
+      "chatgpt-plus": linkValue(summaries["chatgpt-plus"]),
+    },
     { windowDays: WINDOW_DAYS, until },
   );
 

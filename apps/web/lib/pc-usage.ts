@@ -1,4 +1,10 @@
-import { findPresetForSubscription, type Subscription } from "@subslash/shared";
+import {
+  findPresetForSubscription,
+  getMyMonthlyShareAmount,
+  isInTrial,
+  toKRW,
+  type Subscription,
+} from "@subslash/shared";
 
 /**
  * PC의 AI 코딩 도구 사용(`apps/usage-cli`, `npx subslash-usage`)이 만든 링크(`/pc-usage#pc=…`)를 읽는다.
@@ -16,7 +22,8 @@ export type PcUsageServiceId = (typeof PC_USAGE_SERVICES)[number];
 export const PC_USAGE_STALE_DAYS = 3;
 
 export interface PcUsageLink {
-  entries: { serviceId: PcUsageServiceId; days: number }[];
+  /** `apiUsd`: 그 PC에서 구독으로 쓴 토큰을 API 요금표로 환산한 금액(모르면 null). */
+  entries: { serviceId: PcUsageServiceId; days: number; apiUsd: number | null }[];
   windowDays: number;
   /** 센 날(그 PC의 날짜, YYYY-MM-DD). */
   until: string;
@@ -28,7 +35,10 @@ export type PcUsageParse =
 const isService = (value: string): value is PcUsageServiceId =>
   (PC_USAGE_SERVICES as readonly string[]).includes(value);
 
-/** `#pc=claude-pro:12,chatgpt-plus:5&window=30&until=2026-10-09`을 읽는다. 하나라도 틀리면 통째로 거절한다. */
+/**
+ * `#pc=claude-pro:12:41.50,chatgpt-plus:5&window=30&until=2026-10-09`을 읽는다(세 번째 칸은 API 환산 USD, 없을 수
+ * 있다). 하나라도 틀리면 통째로 거절한다.
+ */
 export function parsePcUsageHash(hash: string, now: Date = new Date()): PcUsageParse {
   const params = new URLSearchParams(hash.replace(/^#/, ""));
   const windowDays = Number(params.get("window"));
@@ -45,8 +55,13 @@ export function parsePcUsageHash(hash: string, now: Date = new Date()): PcUsageP
 
   const entries: PcUsageLink["entries"] = [];
   for (const part of (params.get("pc") ?? "").split(",")) {
-    const [serviceId, raw] = part.split(":");
+    const [serviceId, raw, rawUsd, ...rest] = part.split(":");
     const days = Number(raw);
+    const apiUsd = rawUsd === undefined ? null : Number(rawUsd);
+    if (rest.length > 0) return { ok: false, reason: "invalid" };
+    if (apiUsd !== null && !(Number.isFinite(apiUsd) && apiUsd > 0 && apiUsd < 1_000_000)) {
+      return { ok: false, reason: "invalid" };
+    }
     if (!serviceId || !isService(serviceId)) return { ok: false, reason: "invalid" };
     if (!Number.isInteger(days) || days < 1 || days > windowDays) {
       return { ok: false, reason: "invalid" };
@@ -54,7 +69,7 @@ export function parsePcUsageHash(hash: string, now: Date = new Date()): PcUsageP
     if (entries.some((entry) => entry.serviceId === serviceId)) {
       return { ok: false, reason: "invalid" };
     }
-    entries.push({ serviceId, days });
+    entries.push({ serviceId, days, apiUsd });
   }
   if (entries.length === 0) return { ok: false, reason: "invalid" };
 
@@ -79,4 +94,21 @@ export function matchPcUsageSubscription(
   if (matches.length === 0) return { kind: "none" };
   if (matches.length > 1) return { kind: "ambiguous", count: matches.length };
   return { kind: "match", subscription: matches[0] };
+}
+
+/**
+ * API 환산 금액이 내 몫 한 달 구독료의 몇 배인지. 구독의 통화로 견준다(달러 구독이면 환율 없이). 무료 체험
+ * 중이거나 내 몫을 모르면 null — 내지 않은 돈과 견주지 않는다. API 요금은 세금 제외, 구독료는 세금 포함이다.
+ */
+export function apiValueRatio(
+  sub: Subscription,
+  apiUsd: number,
+  exchangeRate: number,
+  now: Date = new Date(),
+): number | null {
+  if (isInTrial(sub, now)) return null;
+  const mine = getMyMonthlyShareAmount(sub);
+  if (!(mine > 0)) return null;
+  const value = sub.currency === "USD" ? apiUsd : toKRW(apiUsd, "USD", exchangeRate);
+  return value / mine;
 }
