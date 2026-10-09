@@ -934,6 +934,38 @@ describe("원클릭 연결 웹 앱", () => {
     expect(run.insertedEvents).toEqual([]);
   });
 
+  it("영어 화면에서 열면 연결·캘린더 결과 화면이 영어다", () => {
+    // 언어를 영어로 골라도 Apps Script 화면만 한국어로 나왔다.
+    const HANGUL = /[가-힣]/;
+    const gmail = runWebApp();
+    gmail.connect({ code: "c", origin: ORIGIN, lang: "en" });
+    expect(gmail.html[0]).toContain("Connecting to SubSlash");
+    expect(gmail.html[gmail.html.length - 1]).toContain("Gmail connected");
+    expect(gmail.html.join("")).not.toMatch(HANGUL);
+    expect(gmail.titles).toEqual(["Connect Gmail to SubSlash"]);
+
+    const calendar = runWebApp();
+    calendar.api.doGet({
+      parameter: { action: "calendar", code: "plan-code", origin: ORIGIN, lang: "en" },
+    });
+    const page = calendar.html.join("");
+    expect(page).toContain("Added to Google Calendar");
+    // 캘린더 이름은 서버가 정한 그대로다(이 계획은 한국어로 등록한 것).
+    expect(page.replace("SubSlash 결제일", "")).not.toMatch(HANGUL);
+
+    // 서버의 한국어 오류 문장 대신 영어 문구를 보인다.
+    const failed = runWebApp({ claimStatus: 400 });
+    failed.api.doGet({
+      parameter: { action: "calendar", code: "used", origin: ORIGIN, lang: "en" },
+    });
+    expect(failed.html.join("")).toContain("The request has expired or was already used.");
+
+    // 모르는 언어는 한국어다.
+    const unknown = runWebApp();
+    unknown.api.doGet({ parameter: { code: "c", origin: ORIGIN, lang: "fr" } });
+    expect(unknown.html[0]).toContain("SubSlash와 연결하는 중");
+  });
+
   it("허용 목록에 없는 주소에서 오면 캘린더에도 손대지 않는다", () => {
     const run = runWebApp();
     run.api.doGet({

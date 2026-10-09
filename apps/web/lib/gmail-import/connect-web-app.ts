@@ -103,10 +103,106 @@ var APP_RETURN_SCHEMES = __RETURN_SCHEMES__;
 var RETURN_SCHEME = "";
 var FLOW = "gmail";
 
-function setClient(client, scheme, flow) {
+// 화면 언어. SubSlash가 화면 언어를 주소에 싣는다(lang=en). 모르는 값은 한국어다.
+var LANG = "ko";
+
+// 화면 문구. SubSlash 화면 언어(한국어·영어)를 따른다.
+var TEXT = {
+  ko: {
+    cannotConnect: "연결할 수 없습니다",
+    notAllowed: "허용되지 않은 주소에서 왔습니다. SubSlash에서 다시 연결해 주세요.",
+    noCode: "연결 코드가 없습니다. SubSlash에서 다시 연결해 주세요.",
+    inProgress: "진행 중",
+    connecting: "SubSlash와 연결하는 중",
+    wait: "창을 닫지 말고 기다려 주세요. 보통 20초 안에 끝납니다.",
+    failed: "연결하지 못했습니다",
+    tryLater: "잠시 뒤 SubSlash에서 다시 연결해 주세요.",
+    checkingRecent: function (days) {
+      return "최근 " + days + "일 결제 메일을 확인하는 중";
+    },
+    gmailPageTitle: "SubSlash Gmail 연결",
+    codeExpired: "연결 코드가 만료됐거나 이미 쓰였습니다. SubSlash에서 다시 연결해 주세요.",
+    reconnect: "SubSlash에서 다시 연결해 주세요.",
+    disconnectedTitle: "연결이 끊겼습니다",
+    disconnected: "SubSlash에서 연결을 끊었습니다. 다시 연결해 주세요.",
+    connectedTitle: "Gmail을 연결했습니다",
+    connected: function (days, sent) {
+      return "최근 " + days + "일 메일 " + sent + "통을 확인했습니다. SubSlash로 돌아가면 찾은 구독이 " +
+        "등록됩니다. 1년 치 나머지(연간 결제)는 몇 분 안에 이어서 확인하고, 앞으로 2주마다 새 결제 " +
+        "메일을 확인합니다.";
+    },
+    firstScanFailed: function (reason) {
+      return "첫 검사는 하지 못해 2주 뒤 검사 때 다시 합니다(" + reason + ").";
+    },
+    sendFailed: function (status) {
+      return "SubSlash에 보내지 못했습니다(" + status + ")";
+    },
+    calendarFailed: "캘린더에 등록하지 못했습니다",
+    calendarExpired: "요청이 만료됐거나 이미 쓰였습니다. SubSlash에서 다시 눌러 주세요.",
+    calendarDoneTitle: "구글 캘린더에 등록했습니다",
+    calendarDone: function (name, count) {
+      return "'" + name + "' 캘린더에 결제일 " + count + "건을 넣었습니다. " +
+        "구독을 고친 뒤 SubSlash에서 다시 누르면 이 캘린더를 통째로 새로 씁니다.";
+    },
+    calendarPageTitle: "SubSlash 캘린더 등록",
+    backToApp: "SubSlash 앱으로 돌아가기",
+    backToAppNote: "버튼이 열리지 않으면 이 창을 닫아도 앱으로 돌아갑니다.",
+    closeToApp: "이 창을 닫으면 SubSlash 앱으로 돌아갑니다.",
+    backToWeb: "SubSlash로 돌아가기",
+  },
+  en: {
+    cannotConnect: "Can't connect",
+    notAllowed: "This request came from an address that isn't allowed. Connect again from SubSlash.",
+    noCode: "The connection code is missing. Connect again from SubSlash.",
+    inProgress: "In progress",
+    connecting: "Connecting to SubSlash",
+    wait: "Please keep this window open. It usually takes less than 20 seconds.",
+    failed: "Couldn't connect",
+    tryLater: "Try connecting again from SubSlash in a moment.",
+    checkingRecent: function (days) {
+      return "Checking payment emails from the last " + days + " days";
+    },
+    gmailPageTitle: "Connect Gmail to SubSlash",
+    codeExpired: "The connection code has expired or was already used. Connect again from SubSlash.",
+    reconnect: "Connect again from SubSlash.",
+    disconnectedTitle: "Disconnected",
+    disconnected: "SubSlash disconnected this account. Please connect again.",
+    connectedTitle: "Gmail connected",
+    connected: function (days, sent) {
+      return "Checked " + sent + (sent === 1 ? " email" : " emails") + " from the last " + days + " days. " +
+        "Go back to SubSlash and the subscriptions we found will be added. The rest of the past year " +
+        "(annual payments) is checked over the next few minutes, and new payment emails every 2 weeks.";
+    },
+    firstScanFailed: function (reason) {
+      return "The first check didn't run, so it will run with the next check in 2 weeks (" + reason + ").";
+    },
+    sendFailed: function (status) {
+      return "Couldn't send to SubSlash (" + status + ")";
+    },
+    calendarFailed: "Couldn't add to Google Calendar",
+    calendarExpired: "The request has expired or was already used. Tap the button in SubSlash again.",
+    calendarDoneTitle: "Added to Google Calendar",
+    calendarDone: function (name, count) {
+      return "Added " + count + (count === 1 ? " billing day" : " billing days") + " to the '" + name + "' calendar. " +
+        "If you edit your subscriptions, tap the button in SubSlash again and this calendar is rewritten.";
+    },
+    calendarPageTitle: "SubSlash calendar sync",
+    backToApp: "Back to the SubSlash app",
+    backToAppNote: "If the button doesn't open, closing this window also takes you back to the app.",
+    closeToApp: "Close this window to go back to the SubSlash app.",
+    backToWeb: "Back to SubSlash",
+  },
+};
+
+function t() {
+  return TEXT[LANG];
+}
+
+function setClient(client, scheme, flow, lang) {
   FROM_APP = String(client || "") === "app";
   RETURN_SCHEME = FROM_APP && APP_RETURN_SCHEMES.indexOf(String(scheme || "")) !== -1 ? String(scheme) : "";
   FLOW = flow;
+  LANG = String(lang || "") === "en" ? "en" : "ko";
 }
 
 function appReturnUrl() {
@@ -117,16 +213,12 @@ function doGet(e) {
   var params = (e && e.parameter) || {};
   var origin = String(params.origin || "");
   var flow = String(params.action || "") === "calendar" ? "calendar" : "gmail";
-  setClient(params.client, params["return"], flow);
+  setClient(params.client, params["return"], flow, params.lang);
   if (ALLOWED_ORIGINS.indexOf(origin) === -1) {
-    return connectPage(
-      "연결할 수 없습니다",
-      "허용되지 않은 주소에서 왔습니다. SubSlash에서 다시 연결해 주세요.",
-      null,
-    );
+    return connectPage(t().cannotConnect, t().notAllowed, null);
   }
   if (!params.code) {
-    return connectPage("연결할 수 없습니다", "연결 코드가 없습니다. SubSlash에서 다시 연결해 주세요.", origin);
+    return connectPage(t().cannotConnect, t().noCode, origin);
   }
   if (String(params.action || "") === "calendar") return calendarPage(origin, String(params.code));
   return loadingPage(origin, String(params.code));
@@ -136,7 +228,7 @@ function doGet(e) {
 // 로딩 화면을 돌려주고 화면이 google.script.run으로 두 단계(connectAccount → scanRecent)를 부른다.
 // 단계가 끝날 때마다 문구를 바꾼다 — 진행률은 알 수 없으므로 지어내지 않는다.
 function loadingPage(origin, code) {
-  var args = scriptJson([code, origin, FROM_APP ? "app" : "", RETURN_SCHEME]);
+  var args = scriptJson([code, origin, FROM_APP ? "app" : "", RETURN_SCHEME, LANG]);
   return HtmlService.createHtmlOutput(
     "<style>" +
       "@keyframes subslash-spin{to{transform:rotate(360deg)}}" +
@@ -144,32 +236,32 @@ function loadingPage(origin, code) {
       "border-radius:50%;animation:subslash-spin .8s linear infinite}" +
       "</style>" +
       '<div id="root" style="font-family:sans-serif;line-height:1.6;padding:8px">' +
-      '<div class="subslash-spinner" role="status" aria-label="진행 중"></div>' +
-      '<h2 id="step">SubSlash와 연결하는 중</h2>' +
-      "<p>창을 닫지 말고 기다려 주세요. 보통 20초 안에 끝납니다.</p>" +
+      '<div class="subslash-spinner" role="status" aria-label="' + escapeHtml(t().inProgress) + '"></div>' +
+      '<h2 id="step">' + escapeHtml(t().connecting) + "</h2>" +
+      "<p>" + escapeHtml(t().wait) + "</p>" +
       "</div>" +
       "<script>" +
       "var ARGS = " + args + ";" +
       "var RETURN_URL = " + scriptJson(appReturnUrl()) + ";" +
       // 끝 화면을 보이고 앱으로 돌아가 본다. 인앱 브라우저가 사용자 동작 없는 이동을 막으면 화면의 버튼이 남는다.
       "function show(html) { document.getElementById('root').innerHTML = html; if (RETURN_URL) { try { window.top.location.href = RETURN_URL; } catch (e) {} } }" +
-      "function fail(error) { show(" + scriptJson(pageHtml("연결하지 못했습니다", "잠시 뒤 SubSlash에서 다시 연결해 주세요.", origin)) + "); }" +
+      "function fail(error) { show(" + scriptJson(pageHtml(t().failed, t().tryLater, origin)) + "); }" +
       "google.script.run.withFailureHandler(fail).withSuccessHandler(function (result) {" +
       "  if (!result.ok) return show(result.html);" +
-      "  document.getElementById('step').textContent = " + scriptJson("최근 " + RECENT_DAYS + "일 결제 메일을 확인하는 중") + ";" +
-      "  google.script.run.withFailureHandler(fail).withSuccessHandler(show).scanRecent(ARGS[1], ARGS[2], ARGS[3]);" +
-      "}).connectAccount(ARGS[0], ARGS[1], ARGS[2], ARGS[3]);" +
+      "  document.getElementById('step').textContent = " + scriptJson(t().checkingRecent(RECENT_DAYS)) + ";" +
+      "  google.script.run.withFailureHandler(fail).withSuccessHandler(show).scanRecent(ARGS[1], ARGS[2], ARGS[3], ARGS[4]);" +
+      "}).connectAccount(ARGS[0], ARGS[1], ARGS[2], ARGS[3], ARGS[4]);" +
       "</script>",
   )
-    .setTitle("SubSlash Gmail 연결")
+    .setTitle(t().gmailPageTitle)
     .addMetaTag("viewport", "width=device-width, initial-scale=1");
 }
 
 // 로딩 화면이 부르는 첫 단계. 코드를 토큰으로 바꾸고 2주 검사를 건다. { ok, html }을 돌려준다.
-function connectAccount(code, origin, client, scheme) {
-  setClient(client, scheme, "gmail");
+function connectAccount(code, origin, client, scheme, lang) {
+  setClient(client, scheme, "gmail", lang);
   if (ALLOWED_ORIGINS.indexOf(origin) === -1) {
-    return { ok: false, html: pageHtml("연결할 수 없습니다", "허용되지 않은 주소에서 왔습니다. SubSlash에서 다시 연결해 주세요.", null) };
+    return { ok: false, html: pageHtml(t().cannotConnect, t().notAllowed, null) };
   }
   var properties = PropertiesService.getUserProperties();
   // 로딩 중에 새로고침하면 이미 쓴 코드로 다시 온다. 그 코드로 이미 연결했으면 다시 바꾸지 않는다.
@@ -186,11 +278,7 @@ function connectAccount(code, origin, client, scheme) {
   if (response.getResponseCode() !== 200) {
     return {
       ok: false,
-      html: pageHtml(
-        "연결하지 못했습니다",
-        responseError(response, "연결 코드가 만료됐거나 이미 쓰였습니다. SubSlash에서 다시 연결해 주세요."),
-        origin,
-      ),
+      html: pageHtml(t().failed, responseError(response, t().codeExpired), origin),
     };
   }
 
@@ -211,11 +299,11 @@ function connectAccount(code, origin, client, scheme) {
 }
 
 // 로딩 화면이 부르는 둘째 단계. 최근 메일을 보내고 나머지 1년 치를 트리거에 맡긴다. 완료 화면을 돌려준다.
-function scanRecent(origin, client, scheme) {
-  setClient(client, scheme, "gmail");
+function scanRecent(origin, client, scheme, lang) {
+  setClient(client, scheme, "gmail", lang);
   var properties = PropertiesService.getUserProperties();
   if (!properties.getProperty("token") || properties.getProperty("origin") !== origin) {
-    return pageHtml("연결하지 못했습니다", "SubSlash에서 다시 연결해 주세요.", ALLOWED_ORIGINS.indexOf(origin) === -1 ? null : origin);
+    return pageHtml(t().failed, t().reconnect, ALLOWED_ORIGINS.indexOf(origin) === -1 ? null : origin);
   }
   try {
     // 검사 시각은 나머지까지 다 보낸 뒤(scanOlder)에 남긴다. 그 전에 끊기면 2주 검사가 처음부터 본다.
@@ -223,25 +311,15 @@ function scanRecent(origin, client, scheme) {
     properties.deleteProperty("olderWindow");
     var sent = sendRange(" newer_than:" + RECENT_DAYS + "d", RECENT_MAX_MESSAGES);
     if (sent < 0) {
-      return pageHtml("연결이 끊겼습니다", "SubSlash에서 연결을 끊었습니다. 다시 연결해 주세요.", origin);
+      return pageHtml(t().disconnectedTitle, t().disconnected, origin);
     }
     ScriptApp.getProjectTriggers().forEach(function (trigger) {
       if (trigger.getHandlerFunction() === "scanOlder") ScriptApp.deleteTrigger(trigger);
     });
     ScriptApp.newTrigger("scanOlder").timeBased().after(60 * 1000).create();
-    return pageHtml(
-      "Gmail을 연결했습니다",
-      "최근 " + RECENT_DAYS + "일 메일 " + sent + "통을 확인했습니다. SubSlash로 돌아가면 찾은 구독이 " +
-        "등록됩니다. 1년 치 나머지(연간 결제)는 몇 분 안에 이어서 확인하고, 앞으로 2주마다 새 결제 " +
-        "메일을 확인합니다.",
-      origin,
-    );
+    return pageHtml(t().connectedTitle, t().connected(RECENT_DAYS, sent), origin);
   } catch (error) {
-    return pageHtml(
-      "Gmail을 연결했습니다",
-      "첫 검사는 하지 못해 2주 뒤 검사 때 다시 합니다(" + error.message + ").",
-      origin,
-    );
+    return pageHtml(t().connectedTitle, t().firstScanFailed(error.message), origin);
   }
 }
 
@@ -307,7 +385,7 @@ function sendRange(range, maxMessages) {
     properties.deleteAllProperties();
     return -1;
   }
-  if (status !== 200) throw new Error("SubSlash에 보내지 못했습니다(" + status + ")");
+  if (status !== 200) throw new Error(t().sendFailed(status));
   return emails.length;
 }
 
@@ -336,7 +414,9 @@ function removeScanTriggers() {
   });
 }
 
+// SubSlash가 돌려준 오류 문장. 서버 문장은 한국어라 영어 화면에서는 이 화면의 문구(fallback)를 쓴다.
 function responseError(response, fallback) {
+  if (LANG !== "ko") return fallback;
   try {
     var body = JSON.parse(response.getContentText());
     return typeof body.error === "string" ? body.error : fallback;
@@ -354,12 +434,7 @@ function calendarPage(origin, code) {
     muteHttpExceptions: true,
   });
   if (response.getResponseCode() !== 200) {
-    return connectPage(
-      "캘린더에 등록하지 못했습니다",
-      responseError(response, "요청이 만료됐거나 이미 쓰였습니다. SubSlash에서 다시 눌러 주세요."),
-      origin,
-      "/subs",
-    );
+    return connectPage(t().calendarFailed, responseError(response, t().calendarExpired), origin, "/subs");
   }
 
   var plan = JSON.parse(response.getContentText());
@@ -369,20 +444,9 @@ function calendarPage(origin, code) {
       plan.calendarNames || [plan.calendarName],
       plan.events || [],
     );
-    return connectPage(
-      "구글 캘린더에 등록했습니다",
-      "'" + plan.calendarName + "' 캘린더에 결제일 " + written + "건을 넣었습니다. " +
-        "구독을 고친 뒤 SubSlash에서 다시 누르면 이 캘린더를 통째로 새로 씁니다.",
-      origin,
-      "/subs",
-    );
+    return connectPage(t().calendarDoneTitle, t().calendarDone(plan.calendarName, written), origin, "/subs");
   } catch (error) {
-    return connectPage(
-      "캘린더에 등록하지 못했습니다",
-      String(error.message || error),
-      origin,
-      "/subs",
-    );
+    return connectPage(t().calendarFailed, String(error.message || error), origin, "/subs");
   }
 }
 
@@ -479,7 +543,7 @@ function connectPage(title, message, origin, backPath) {
         : ""),
   )
     // 캘린더 등록도 이 화면을 쓴다. 제목줄(인앱 브라우저·탭)이 'Gmail 연결'이면 무엇을 한 화면인지 헷갈린다.
-    .setTitle(FLOW === "calendar" ? "SubSlash 캘린더 등록" : "SubSlash Gmail 연결")
+    .setTitle(FLOW === "calendar" ? t().calendarPageTitle : t().gmailPageTitle)
     .addMetaTag("viewport", "width=device-width, initial-scale=1");
 }
 
@@ -489,14 +553,14 @@ function pageHtml(title, message, origin, backPath) {
   var back = returnUrl
     ? '<p><a href="' + escapeHtml(returnUrl) + '" target="_top" ' +
       'style="display:inline-block;padding:12px 20px;border-radius:10px;background:#18181b;color:#fff;text-decoration:none;font-weight:700">' +
-      "SubSlash 앱으로 돌아가기</a></p>" +
-      '<p style="color:#71717a;font-size:14px">버튼이 열리지 않으면 이 창을 닫아도 앱으로 돌아갑니다.</p>'
+      escapeHtml(t().backToApp) + "</a></p>" +
+      '<p style="color:#71717a;font-size:14px">' + escapeHtml(t().backToAppNote) + "</p>"
     : FROM_APP
-    ? '<p style="font-weight:700">이 창을 닫으면 SubSlash 앱으로 돌아갑니다.</p>'
+    ? '<p style="font-weight:700">' + escapeHtml(t().closeToApp) + "</p>"
     : origin
       ? '<p><a href="' + escapeHtml(origin + (backPath || "/import")) + '" target="_top" ' +
         'style="display:inline-block;padding:12px 20px;border-radius:10px;background:#18181b;color:#fff;text-decoration:none;font-weight:700">' +
-        "SubSlash로 돌아가기</a></p>"
+        escapeHtml(t().backToWeb) + "</a></p>"
       : "";
   return "<h2>" + escapeHtml(title) + "</h2><p>" + escapeHtml(message) + "</p>" + back;
 }

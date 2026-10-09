@@ -514,6 +514,9 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import`)는 SubSlash가 G
 자리에서 `useKnownText()`(`lib/i18n/known-text`의 표)로 바꾼다. 표에 없는 문장은 원문을 보인다. 검사 함수나 서버 문구를 고치면
 표도 고친다(`known-text.test.ts`가 갈래마다 확인한다). 화면을 연 뒤 비동기로 붙이는 문구는 `useLatestT()`로 읽는다 — 첫 화면은
 한국어로 그린 뒤 다시 그리므로 effect가 잡아 둔 문구는 한국어일 수 있다.
+Apps Script 웹 앱 화면(Gmail 연결·캘린더 등록·용량 측정)은 주소의 `lang=en`으로 영어를 고르고(문구는 웹 앱 코드의 `TEXT`),
+서버의 한국어 오류 문장 대신 웹 앱의 문구를 보인다 — 문구를 고치면 운영자가 웹 앱을 다시 배포해야 반영된다.
+요금제 이름은 서비스 이름처럼 목록의 한국어 이름 그대로일 때만 영어 화면에서 바꾼다(`PLAN_NAMES_EN`, `useServiceNames().plan`).
 E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-KR"`로 열고, 영어 화면은 `i18n.spec.ts`가 본다.
 
 ## 첫 화면(소개)
