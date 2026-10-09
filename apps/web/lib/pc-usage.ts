@@ -15,7 +15,12 @@ import {
  */
 
 /** CLI가 재는 구독. 둘 다 쓴 날(`days`)로 재는 서비스다. */
-export const PC_USAGE_SERVICES = ["claude-pro", "chatgpt-plus"] as const;
+export const PC_USAGE_SERVICES = [
+  "claude-pro",
+  "chatgpt-plus",
+  "cursor-pro",
+  "google-ai-pro",
+] as const;
 export type PcUsageServiceId = (typeof PC_USAGE_SERVICES)[number];
 
 /** 링크를 만든 뒤 이만큼 지나면 숫자가 지난 것이라 다시 실행하게 한다. */
