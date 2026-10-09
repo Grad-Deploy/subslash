@@ -409,9 +409,15 @@ AI가 열렸으면 그 아래 'AI에게 찾아 달라고 하기'가 `/api/help-a
 
 ### PC의 AI 코딩 도구 사용
 
-`apps/usage-cli`(`subslash-usage`)는 PC에서 Claude Code·Codex를 쓴 날을 세는 명령줄 도구다. 두 도구가 남긴 세션
-기록(JSONL)에는 대화 전체가 있으므로 줄마다 시각·종류·요금제 칸만 보고(`src/parse.ts`), 내용은 읽지도 결과에
-담지도 않는다. 사람이 보낸 질문은 Claude Code의 `origin.kind === "human"`(예전 기록은 도구 결과·메타가 아닌 사용자
+PC에서 Claude Code·Codex를 쓴 날을 세는 길은 둘이고 같은 함수(`@subslash/shared`의 `utils/cliUsage`)로 센다.
+주된 길은 웹의 'PC 기록 읽기'(`/pc-usage`를 링크 없이 열기, `components/pc-usage`, `lib/pc-usage-reader`)다 — 사용자가
+고른 기록 폴더를 브라우저가 기기 안에서 읽는다(크롬·엣지는 `showDirectoryPicker`, 그 밖은 폴더 올리기 입력). 명령줄은
+일반 사용자가 실행하기 어려웠다(PowerShell 실행 정책 등). 고른 폴더에서는 `projects`·`sessions` 아래 세션 기록만 열고,
+`.codex/auth.json`(로그인 토큰)은 열지 않는다. 브라우저는 `~/.claude.json`을 못 읽으므로 Claude Code의 로그인 방식(구독·
+API 키)을 묻고, 답하기 전에는 세지 않는다. 체크인 창(PC 웹, Claude·ChatGPT 구독)에서 이 화면으로 가는 링크를 둔다.
+`apps/usage-cli`(`subslash-usage`)는 같은 셈을 하는 명령줄 도구다. 두 도구가 남긴 세션
+기록(JSONL)에는 대화 전체가 있으므로 줄마다 시각·종류·요금제 칸만 보고, 내용은 읽지도 결과에
+담지도 않는다(웹은 줄을 읽자마자 필요한 칸만 남긴다). 사람이 보낸 질문은 Claude Code의 `origin.kind === "human"`(예전 기록은 도구 결과·메타가 아닌 사용자
 줄), Codex의 `user_message`다. 구독으로 쓴 것만 센다 — Codex는 세션의 `rate_limits.plan_type`, Claude Code는 기록에
 계정이 없어 지금 로그인 상태로 본다. 둘 다 공개 문서가 없는 내부 형식이라, 알아보지 못한 파일은 '안 썼다'가 아니라
 따로 센다. **서버로 보내지 않는다**: 결과는 화면과 `/pc-usage#…` 링크(`#` 뒤라 서버 접속 기록에 남지 않음)로만

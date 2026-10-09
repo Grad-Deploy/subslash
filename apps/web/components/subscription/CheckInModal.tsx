@@ -8,8 +8,11 @@ import {
   getCancelRoutes,
   getCancelUrlKind,
   getMyMonthlyShareAmount,
+  findPresetForSubscription,
   metricForSubscription,
 } from "@subslash/shared";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useLocale, useT, useServiceNames } from "@lib/i18n";
 import { findPaymentMethod } from "@lib/payment-method";
 import { describeCheckInText } from "@lib/i18n/check-in-text";
@@ -26,6 +29,7 @@ import { cn } from "@lib/utils";
 import { openExternal } from "@lib/native";
 import { copyText } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
+import { PC_USAGE_SERVICES, type PcUsageServiceId } from "@lib/pc-usage";
 import dynamic from "next/dynamic";
 
 // 앱에서는 체크인 입력을 다른 앱 체크인(등록 직후·첫 체크인 카드)과 같은 단계 막대로 받는다.
@@ -87,6 +91,17 @@ export function CheckInModal({
   // 무엇을 세는지는 구독마다 다르다(음악은 시간, 멤버십은 혜택 금액 — utils/valueMetric). 횟수가
   // 아니면 횟수 전용 화면(단계 막대·비유 카드·본전 게이지)을 쓰지 않는다.
   const metric = metricForSubscription(subscription);
+  // PC 웹에서 Claude·ChatGPT 구독이면 PC의 Claude Code·Codex 기록으로 셀 수 있다(/pc-usage). 그 화면에서 연
+  // 창에는 두지 않는다.
+  const pathname = usePathname();
+  const presetId = findPresetForSubscription(subscription)?.id;
+  const pcService =
+    !IS_APP_BUILD &&
+    metric === "days" &&
+    pathname !== "/pc-usage" &&
+    (PC_USAGE_SERVICES as readonly string[]).includes(presetId ?? "")
+      ? (presetId as PcUsageServiceId)
+      : null;
   const byUses = metric === "uses";
   const isRed = result?.riskLevel === "red";
 
@@ -153,6 +168,13 @@ export function CheckInModal({
                   value={count}
                   onChange={setCount}
                 />
+                {pcService && (
+                  <p className="text-center text-xs">
+                    <Link href="/pc-usage" className="font-semibold underline">
+                      {t.pcUsage.modalLink(t.pcUsage.tool[pcService])}
+                    </Link>
+                  </p>
+                )}
               </>
             ) : AppUsageCountPicker ? (
               <>
