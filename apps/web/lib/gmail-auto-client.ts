@@ -80,10 +80,15 @@ export async function createGmailLink(): Promise<string> {
  * 원클릭 연결을 시작한다. 돌려받은 주소(SubSlash의 Apps Script 웹 앱)로 가면 Google이 권한을 묻고,
  * 허용하면 웹 앱이 이 계정의 연결을 새로 발급한다 — 예전 스크립트는 그때부터 거절된다.
  */
-export async function startGmailConnect(): Promise<string> {
-  const response = await apiFetch(await withAppReturn("/api/gmail/connect"), {
-    method: "POST",
-  });
+export async function startGmailConnect(lang: "ko" | "en" = "ko"): Promise<string> {
+  // 웹 앱의 연결·결과 화면을 이 언어로 보인다.
+  const path = await withAppReturn("/api/gmail/connect");
+  const response = await apiFetch(
+    lang === "en" ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path,
+    {
+      method: "POST",
+    },
+  );
   if (!response.ok)
     throw new Error(await readApiError(response, "Gmail 연결을 시작하지 못했습니다."));
   return ((await response.json()) as { url: string }).url;

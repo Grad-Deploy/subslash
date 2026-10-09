@@ -40,9 +40,11 @@ export function canCheckGoogleStorage(sub: Pick<Subscription, "name" | "cancelUr
 /** 웹 앱을 열 주소. `origin`은 웹이 돌아올 SubSlash 주소, `scheme`은 앱이 돌아올 앱 ID다. */
 export function storageQuotaCheckUrl(
   base: string,
-  options: { state: string; origin?: string; scheme?: string | null },
+  options: { state: string; origin?: string; scheme?: string | null; lang?: "ko" | "en" },
 ): string {
   const params = new URLSearchParams({ state: options.state });
+  // 웹 앱 화면 언어. 영어만 싣고, 나머지는 웹 앱이 한국어로 보인다.
+  if (options.lang === "en") params.set("lang", "en");
   if (options.scheme) {
     params.set("client", "app");
     params.set("return", options.scheme);

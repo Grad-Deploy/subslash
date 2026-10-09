@@ -26,7 +26,7 @@ import { AppCopyCode } from "./AppCopyCode";
 import { AppImportFlow } from "./AppImportFlow";
 import { AppStepper, StepTip, type AppStep } from "./AppStepper";
 import { useOverlayLock } from "@hooks/useOverlayLock";
-import { useLatestT, useT } from "@lib/i18n";
+import { useLatestT, useT, useLocale } from "@lib/i18n";
 
 type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 
@@ -41,6 +41,7 @@ type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 export function AppImportGuide() {
   const router = useRouter();
   const t = useT();
+  const locale = useLocale();
   const g = t.importing.guide;
   const tRef = useLatestT();
   const formatDate = (iso: string) =>
@@ -79,7 +80,7 @@ export function AppImportGuide() {
     setError(null);
     try {
       // 앱 웹뷰가 통째로 나가면 담아 둔 화면을 잃으므로 인앱 브라우저로 열고, 닫히면 다시 읽는다.
-      const url = await startGmailConnect();
+      const url = await startGmailConnect(locale);
       markGmailConnectStarted();
       leaveForExternal(url, () => {
         setBusy(false);
