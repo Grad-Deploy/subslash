@@ -409,7 +409,14 @@ AI가 열렸으면 그 아래 'AI에게 찾아 달라고 하기'가 `/api/help-a
 
 ### PC의 AI 코딩 도구 사용
 
-PC에서 Claude Code·Codex를 쓴 날을 세는 길은 둘이고 같은 함수(`@subslash/shared`의 `utils/cliUsage`)로 센다.
+Cursor·Antigravity는 JSONL이 아니라 SQLite에 적는다 — 공유 SQL(`CURSOR_*_SQL`·`ANTIGRAVITY_CONVERSATIONS_SQL`)로 필요한
+칸만 조회하고(명령줄은 `node:sqlite`, 웹은 sql.js — wasm은 `public/vendor/`, 설치된 버전과 같은지 테스트가 본다), Cursor는
+응답의 요청 시각과 요금제 칸(`free`면 구독 아님), Antigravity는 사람이 연 대화의 마지막 입력 시각(하한값)으로 센다.
+Cursor의 `state.vscdb`에는 로그인 토큰도 있어 파일은 메모리에 올라오지만 그 칸은 조회하지 않는다(사용자가 정함).
+Antigravity는 Google AI Pro 사용으로 세고, 기록에 계정이 없어 웹에서 묻는다(명령줄은 `--antigravity-subscription`).
+Antigravity DB는 WAL 모드라 최근 기록이 `-wal`에만 있다 — 웹은 `applySqliteWal`로 합쳐 연다. 두 도구 모두 토큰은 믿을
+값이 없어 API 환산을 하지 않는다.
+PC에서 AI 코딩 도구를 쓴 날을 세는 길은 둘이고 같은 함수(`@subslash/shared`의 `utils/cliUsage`)로 센다.
 주된 길은 웹의 'PC 기록 읽기'(`/pc-usage`를 링크 없이 열기, `components/pc-usage`, `lib/pc-usage-reader`)다 — 사용자가
 고른 기록 폴더를 브라우저가 기기 안에서 읽는다(크롬·엣지는 `showDirectoryPicker`, 그 밖은 폴더 올리기 입력). 명령줄은
 일반 사용자가 실행하기 어려웠다(PowerShell 실행 정책 등). 고른 폴더에서는 `projects`·`sessions` 아래 세션 기록만 열고,
