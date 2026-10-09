@@ -295,6 +295,12 @@ export const ko = {
       back: "이전",
     },
   },
+  /** 다른 앱에서 공유한 결제 문자를 받는 화면(/share). */
+  sharedImport: {
+    title: "공유된 결제 내역을 분석하는 중입니다",
+    body: "다른 앱에서 공유한 결제 문자 / 영수증을 구독 목록으로 가져옵니다.",
+    toList: "구독 목록으로 이동",
+  },
 };
 
 export const en: Widen<typeof ko> = {
@@ -601,5 +607,10 @@ export const en: Widen<typeof ko> = {
       register: ["Pick and", "register in app"],
       back: "Back",
     },
+  },
+  sharedImport: {
+    title: "Reading the shared payment details",
+    body: "We bring payment texts or receipts shared from other apps into your subscription list.",
+    toList: "Go to subscriptions",
   },
 };

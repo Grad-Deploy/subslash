@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, Mail, MessageSquareText, PenLine, Plus, Smartphone } from "lucide-react";
 import type { ServicePreset } from "@subslash/shared";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
+import { useT } from "@lib/i18n";
 import { AppUsageFindSheet } from "../../usage/app/AppUsageFindSheet";
 import { AppSheet } from "../../settings/app/AppSheet";
 
@@ -34,6 +35,7 @@ export function AppAddButton({
   onMenuOpenChange?: (open: boolean) => void;
 }) {
   const router = useRouter();
+  const t = useT().shell.addMenu;
   const [ownOpen, setOwnOpen] = useState(false);
   const open = menuOpen ?? ownOpen;
   const setOpen = onMenuOpenChange ?? setOwnOpen;
@@ -48,20 +50,20 @@ export function AppAddButton({
   const options = [
     {
       icon: <PenLine className="size-5" aria-hidden />,
-      title: "직접 등록",
-      detail: "서비스를 골라 금액·결제일을 넣어요",
+      title: t.manual,
+      detail: t.manualDetail,
       onClick: pick(onManual),
     },
     {
       icon: <Mail className="size-5" aria-hidden />,
-      title: "결제 메일에서 찾기",
-      detail: "Gmail의 결제 메일로 구독을 찾아요",
+      title: t.mail,
+      detail: t.mailDetail,
       onClick: pick(() => router.push("/import")),
     },
     {
       icon: <MessageSquareText className="size-5" aria-hidden />,
-      title: "결제 문자 붙여넣기",
-      detail: "카드 결제 문자를 붙여 넣어요",
+      title: t.paste,
+      detail: t.pasteDetail,
       onClick: pick(onPaste),
     },
     ...(status === "unsupported"
@@ -69,8 +71,8 @@ export function AppAddButton({
       : [
           {
             icon: <Smartphone className="size-5" aria-hidden />,
-            title: "폰 사용 기록에서 찾기",
-            detail: "넷플릭스·티빙 같은 OTT를 이 폰에서 쓴 기록으로 찾아요",
+            title: t.phone,
+            detail: t.phoneDetail,
             onClick: pick(() => setFindOpen(true)),
           },
         ]),
@@ -81,14 +83,14 @@ export function AppAddButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="구독 추가"
+        aria-label={t.title}
         className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-5 z-30 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-2xl transition-transform active:scale-95"
       >
         <Plus className="size-7" aria-hidden />
       </button>
-      <AppSheet open={open} onClose={() => setOpen(false)} label="구독 추가">
+      <AppSheet open={open} onClose={() => setOpen(false)} label={t.title}>
         <div className="space-y-2 pt-1">
-          <h2 className="text-lg font-black tracking-tight">구독 추가</h2>
+          <h2 className="text-lg font-black tracking-tight">{t.title}</h2>
           {options.map((option) => (
             <button
               key={option.title}

@@ -7,7 +7,7 @@ import type { Faq } from "@lib/help/faq";
 import { isConfident, searchFaqs } from "@lib/help/match";
 import { askHelp } from "@lib/help/client";
 import { Spinner } from "@components/ui/spinner";
-import { useLatestT, useT } from "@lib/i18n";
+import { useKnownText, useLatestT, useT } from "@lib/i18n";
 
 /**
  * 도움말 검색. 적는 대로 기기에서 비슷한 질문을 찾아 보여 주고(AI 없음), 찾지 못했을 때만 AI에게 고르게 한다(lib/help/ai).
@@ -17,6 +17,7 @@ import { useLatestT, useT } from "@lib/i18n";
 export function HelpSearch({ faqs, aiOpen }: { faqs: Faq[]; aiOpen: boolean }) {
   // 리포트에서 넘어온 질문(`?q=`)으로 시작한다. 부르는 쪽이 Suspense로 감싼다(정적 내보내기).
   const h = useT().helpPage.search;
+  const known = useKnownText();
   const tRef = useLatestT();
   const initial = useSearchParams().get("q")?.slice(0, 200) ?? "";
   const [question, setQuestion] = useState(initial);
@@ -98,7 +99,7 @@ export function HelpSearch({ faqs, aiOpen }: { faqs: Faq[]; aiOpen: boolean }) {
               </button>
             </div>
           )}
-          {error && <p className="px-1 text-xs text-destructive">{error}</p>}
+          {error && <p className="px-1 text-xs text-destructive">{known(error)}</p>}
           {aiOpen && <p className="px-1 text-[11px] text-muted-foreground">{h.aiPrivacy}</p>}
         </div>
       )}

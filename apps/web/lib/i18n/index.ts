@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import type { ServicePreset } from "@subslash/shared";
-import { presetName, serviceIdName, shortServiceName, subscriptionName } from "../service-name";
+import {
+  planName,
+  presetName,
+  serviceIdName,
+  shortServiceName,
+  subscriptionName,
+} from "../service-name";
 import { messages, type Messages } from "./messages";
 import { useLocale } from "./locale";
 
@@ -43,6 +49,8 @@ export function useServiceNames() {
       preset: (preset: ServicePreset) => presetName(preset, locale),
       short: (preset: ServicePreset) => shortServiceName(preset, locale),
       id: (serviceId: string) => serviceIdName(serviceId, locale),
+      /** 요금제 이름. 서비스 목록의 한국어 요금제 이름 그대로일 때만 바꾼다. */
+      plan: (name: string) => planName(name, locale),
     }),
     [locale],
   );

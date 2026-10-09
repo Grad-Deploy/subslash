@@ -26,7 +26,7 @@ import { AppCopyCode } from "./AppCopyCode";
 import { AppImportFlow } from "./AppImportFlow";
 import { AppStepper, StepTip, type AppStep } from "./AppStepper";
 import { useOverlayLock } from "@hooks/useOverlayLock";
-import { useLatestT, useT } from "@lib/i18n";
+import { useKnownText, useLatestT, useLocale, useT } from "@lib/i18n";
 
 type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 
@@ -41,6 +41,8 @@ type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 export function AppImportGuide() {
   const router = useRouter();
   const t = useT();
+  const known = useKnownText();
+  const locale = useLocale();
   const g = t.importing.guide;
   const tRef = useLatestT();
   const formatDate = (iso: string) =>
@@ -79,7 +81,7 @@ export function AppImportGuide() {
     setError(null);
     try {
       // 앱 웹뷰가 통째로 나가면 담아 둔 화면을 잃으므로 인앱 브라우저로 열고, 닫히면 다시 읽는다.
-      const url = await startGmailConnect();
+      const url = await startGmailConnect(locale);
       markGmailConnectStarted();
       leaveForExternal(url, () => {
         setBusy(false);
@@ -145,7 +147,7 @@ export function AppImportGuide() {
 
   const errorBox = error && (
     <p className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive" role="alert">
-      {error}
+      {known(error)}
     </p>
   );
 
@@ -190,7 +192,7 @@ export function AppImportGuide() {
             <AppCopyCode label="appsscript.json" code={GMAIL_AUTO_SCRIPT_MANIFEST} />
             <AppCopyCode
               label="Code.gs"
-              code={gmailAutoScript(webUrl("/api/gmail/ingest"), token)}
+              code={gmailAutoScript(webUrl("/api/gmail/ingest"), token, locale)}
             />
             <StepTip title={g.step3Tip}>{g.step3TipBody}</StepTip>
           </>

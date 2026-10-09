@@ -17,7 +17,7 @@ import {
 } from "@subslash/shared";
 import { buildValueRows } from "../../components/report/valueRows";
 import { latestFreshLog } from "@lib/stats";
-import { serviceIdName, subscriptionName } from "@lib/service-name";
+import { planName, serviceIdName, subscriptionName } from "@lib/service-name";
 import type { Locale } from "@lib/i18n/config";
 import { describeQuantityText } from "@lib/i18n/check-in-text";
 import type { Messages } from "@lib/i18n/messages";
@@ -296,13 +296,16 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         if (plans.alternatives.length === 0) return answer(s.cheapest(nameOf(sub)), s.plansSource);
         const best = plans.alternatives[0];
         return answer(
-          s.best(best.planName, formatKRW(best.yearlySaving)),
+          s.best(planName(best.planName, locale), formatKRW(best.yearlySaving)),
           s.bestSource,
           plans.alternatives.map((plan) => ({
-            label: plan.planName,
+            label: planName(plan.planName, locale),
             value: s.saving(formatKRW(plan.yearlySaving)),
           })),
-          [s.current(plans.current.planName), ...(plans.shared ? [s.shared] : [])],
+          [
+            s.current(planName(plans.current.planName, locale)),
+            ...(plans.shared ? [s.shared] : []),
+          ],
         );
       }
       const next = getNextBillingDateFor(sub, ctx.now);

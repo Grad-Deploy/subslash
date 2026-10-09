@@ -27,7 +27,7 @@ import { Spinner } from "../../components/ui/spinner";
 import { Inbox, SearchX } from "lucide-react";
 import { IS_APP_BUILD } from "@lib/platform";
 import dynamic from "next/dynamic";
-import { useKnownText, useT } from "@lib/i18n";
+import { useKnownText, useT, useLocale } from "@lib/i18n";
 
 // 앱에서만 쓰는 안내. 웹 사용자가 이 코드를 받지 않도록 앱 빌드에서만 불러온다.
 const AppImportGuide = IS_APP_BUILD
@@ -53,6 +53,7 @@ function LoadingScreen() {
 
 function Guide() {
   const p = useT().importing.page;
+  const locale = useLocale();
   // 로그인했고 원클릭 연결(Gmail 자동 가져오기)을 쓸 수 있으면 스크립트를 붙여 넣는 방법은 접어 둔다. 붙여
   // 넣고 실행하는 사람은 드물지만, 로그인 없이 쓰거나 원클릭이 막혔을 때(Google 심사 전 100명 제한) 유일한
   // 길이라 남긴다. 로그인하지 않았으면 원클릭을 쓸 수 없으므로 펼쳐 둔다.
@@ -63,7 +64,7 @@ function Guide() {
   // 앱에서는 짧은 안내(고를 방법 → 한 단계씩)를 쓴다. 웹의 직접 실행 방법은 가져온 구독이 웹
   // 브라우저에 저장돼 앱에 담기지 않으므로, 앱은 계정으로 받는 자동 가져오기만 안내한다.
   if (AppImportGuide) return <AppImportGuide />;
-  const script = gmailAppsScript(webUrl("/import"));
+  const script = gmailAppsScript(webUrl("/import"), locale);
 
   return (
     <article className="mx-auto max-w-2xl space-y-6 py-6 text-sm leading-relaxed">

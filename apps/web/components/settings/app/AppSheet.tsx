@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useIsClient } from "@hooks/useIsClient";
 import { useOverlayLock } from "@hooks/useOverlayLock";
+import { useT } from "@lib/i18n";
 
 interface AppSheetProps {
   open: boolean;
@@ -23,6 +24,7 @@ interface AppSheetProps {
  */
 export function AppSheet({ open, onClose, label, children }: AppSheetProps) {
   const isClient = useIsClient();
+  const t = useT();
 
   useOverlayLock(open, onClose);
 
@@ -45,7 +47,7 @@ export function AppSheet({ open, onClose, label, children }: AppSheetProps) {
             className="absolute right-3 top-2 rounded-full p-1.5 text-muted-foreground hover:bg-secondary"
           >
             <X className="size-4" />
-            <span className="sr-only">닫기</span>
+            <span className="sr-only">{t.shell.app.sheetClose}</span>
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">

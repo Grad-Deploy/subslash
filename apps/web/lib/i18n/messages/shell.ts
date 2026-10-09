@@ -43,6 +43,30 @@ export const ko = {
     trademarks:
       "서비스 이름과 로고는 각 소유자의 상표이며, 구독을 알아볼 수 있게 쓸 뿐입니다. SubSlash는 해당 서비스와 제휴하거나 보증받지 않았습니다.",
   },
+  /** 앱의 떠 있는 + 버튼과 그 메뉴. */
+  addMenu: {
+    title: "구독 추가",
+    manual: "직접 등록",
+    manualDetail: "서비스를 골라 금액·결제일을 넣어요",
+    mail: "결제 메일에서 찾기",
+    mailDetail: "Gmail의 결제 메일로 구독을 찾아요",
+    paste: "결제 문자 붙여넣기",
+    pasteDetail: "카드 결제 문자를 붙여 넣어요",
+    phone: "폰 사용 기록에서 찾기",
+    phoneDetail: "넷플릭스·티빙 같은 OTT를 이 폰에서 쓴 기록으로 찾아요",
+  },
+  /** 여러 화면이 함께 쓰는 공통 부품(확인 창·복사 안내·기다림 표시). */
+  common: {
+    confirm: "확인",
+    cancel: "취소",
+    close: "닫기",
+    loading: "불러오는 중",
+    copyFallback: "자동으로 복사하지 못했습니다. 아래 글을 길게 눌러 복사해주세요.",
+  },
+  app: {
+    sheetClose: "닫기",
+    exitHint: "한 번 더 누르면 앱이 종료돼요",
+  },
 };
 
 export const en: Widen<typeof ko> = {
@@ -85,5 +109,27 @@ export const en: Widen<typeof ko> = {
     privacy: "Privacy policy",
     trademarks:
       "Service names and logos are trademarks of their owners and are used only to identify subscriptions. SubSlash is not affiliated with or endorsed by these services.",
+  },
+  addMenu: {
+    title: "Add subscription",
+    manual: "Add manually",
+    manualDetail: "Pick a service and enter the amount and billing day",
+    mail: "Find in payment emails",
+    mailDetail: "Find subscriptions from payment emails in Gmail",
+    paste: "Paste a payment text",
+    pasteDetail: "Paste a card payment text message",
+    phone: "Find from phone usage",
+    phoneDetail: "Find streaming apps like Netflix or TVING you've used on this phone",
+  },
+  common: {
+    confirm: "OK",
+    cancel: "Cancel",
+    close: "Close",
+    loading: "Loading",
+    copyFallback: "Couldn't copy automatically. Press and hold the text below to copy it.",
+  },
+  app: {
+    sheetClose: "Close",
+    exitHint: "Press back again to exit the app",
   },
 };

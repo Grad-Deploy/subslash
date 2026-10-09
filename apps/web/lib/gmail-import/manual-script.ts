@@ -58,27 +58,29 @@ var MAX_BODY_CHARS = 1500;
 // 필요해서, 한 통씩 받습니다(150통이면 1분쯤 걸립니다).
 var PARALLEL_FETCH = false;
 
+// 화면 문구. 스크립트를 받은 SubSlash 화면의 언어로 만들어집니다.
+var TEXT = __TEXT__;
+
 function doGet() {
   var emails = collectReceiptEmails(SEARCH_QUERIES, MAX_MESSAGES);
   var body;
   if (emails.length === 0) {
     body =
-      "<h2>결제 메일을 찾지 못했습니다</h2>" +
-      "<p>스크립트의 SEARCH_QUERIES에 결제 메일 제목에 들어가는 단어를 더한 뒤 다시 배포해 보세요.</p>";
+      "<h2>" + escapeHtml(TEXT.noneTitle) + "</h2>" +
+      "<p>" + escapeHtml(TEXT.noneBody) + "</p>";
   } else {
     var link = SUBSLASH_IMPORT_URL + "#gmail=" + encodeEmails(emails);
     body =
-      "<h2>최근 메일 " + emails.length + "통을 찾았습니다</h2>" +
-      "<p>버튼을 누르면 SubSlash가 열리고, 등록할 구독을 직접 고릅니다. " +
-      "메일 내용은 SubSlash 서버로 전송되지 않습니다.</p>" +
+      "<h2>" + escapeHtml(TEXT.found.replace("{count}", String(emails.length))) + "</h2>" +
+      "<p>" + escapeHtml(TEXT.foundBody) + "</p>" +
       '<p><a href="' + escapeHtml(link) + '" target="_blank" rel="noopener" ' +
       'style="display:inline-block;padding:12px 20px;border-radius:10px;background:#18181b;color:#fff;text-decoration:none;font-weight:700">' +
-      "SubSlash로 가져오기</a></p>";
+      escapeHtml(TEXT.button) + "</a></p>";
   }
   return HtmlService.createHtmlOutput(
     '<div style="font-family:sans-serif;line-height:1.6;padding:8px">' + body + "</div>",
   )
-    .setTitle("SubSlash 가져오기")
+    .setTitle(TEXT.title)
     .addMetaTag("viewport", "width=device-width, initial-scale=1");
 }
 
@@ -89,7 +91,36 @@ function encodeEmails(emails) {
 }
 `;
 
+/** 스크립트 화면 문구. 스크립트를 받은 SubSlash 화면 언어로 넣는다. `{count}`는 찾은 메일 수다. */
+const MANUAL_TEXT = {
+  ko: {
+    noneTitle: "결제 메일을 찾지 못했습니다",
+    noneBody:
+      "스크립트의 SEARCH_QUERIES에 결제 메일 제목에 들어가는 단어를 더한 뒤 다시 배포해 보세요.",
+    found: "최근 메일 {count}통을 찾았습니다",
+    foundBody:
+      "버튼을 누르면 SubSlash가 열리고, 등록할 구독을 직접 고릅니다. 메일 내용은 SubSlash 서버로 전송되지 않습니다.",
+    button: "SubSlash로 가져오기",
+    title: "SubSlash 가져오기",
+  },
+  en: {
+    noneTitle: "No payment emails found",
+    noneBody:
+      "Add words that appear in your payment email subjects to SEARCH_QUERIES in the script, then deploy again.",
+    found: "Found {count} recent emails",
+    foundBody:
+      "Tap the button to open SubSlash and pick the subscriptions to add. Email contents aren't sent to SubSlash's servers.",
+    button: "Import into SubSlash",
+    title: "SubSlash import",
+  },
+};
+
 /** 사용자가 Apps Script 편집기에 붙여 넣을 코드. 가져오기 주소는 지금 보고 있는 SubSlash다. */
-export function gmailAppsScript(importUrl: string): string {
-  return MANUAL_SCRIPT.replace("__IMPORT_URL__", () => JSON.stringify(importUrl)) + MAIL_HELPERS;
+export function gmailAppsScript(importUrl: string, lang: "ko" | "en" = "ko"): string {
+  return (
+    MANUAL_SCRIPT.replace("__IMPORT_URL__", () => JSON.stringify(importUrl)).replace(
+      "__TEXT__",
+      () => JSON.stringify(MANUAL_TEXT[lang]),
+    ) + MAIL_HELPERS
+  );
 }

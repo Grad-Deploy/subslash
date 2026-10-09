@@ -23,7 +23,7 @@ import {
 } from "@lib/account-snapshot-client";
 import { saveFile } from "@lib/native";
 import { describeOverwrite, describeRestore, formatSavedAt, savedSummaryLine } from "./backupText";
-import { useT, type Messages } from "@lib/i18n";
+import { useKnownText, useT, type Messages } from "@lib/i18n";
 
 type ParsedBackup = Extract<BackupParseResult, { ok: true }>;
 /** 어디서 가져온 기록인지에 따라 확인 창의 말이 달라진다. */
@@ -75,6 +75,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
   const { account, loading: authLoading } = useAuth();
   const fileInput = useRef<HTMLInputElement>(null);
   const t = useT().backup;
+  const known = useKnownText();
   const [pending, setPending] = useState<PendingRestore | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -254,7 +255,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
       case "none":
         return t.sync.none;
       case "error":
-        return snapshot.message;
+        return known(snapshot.message);
       case "saved":
         return savedSummaryLine(snapshot.summary, t);
     }
@@ -297,7 +298,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
 
       {error && (
         <p role="alert" className="text-xs text-destructive leading-relaxed">
-          {error} {t.unchanged}
+          {known(error)} {t.unchanged}
         </p>
       )}
 
@@ -363,7 +364,7 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
             </>
           )}
           {accountError && (
-            <p className="text-xs text-destructive leading-relaxed">{accountError}</p>
+            <p className="text-xs text-destructive leading-relaxed">{known(accountError)}</p>
           )}
         </div>
       )}

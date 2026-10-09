@@ -1,6 +1,10 @@
 import { METRIC_SPECS, type ValueMetric } from "@subslash/shared";
 import type { Widen } from "../types";
 import { one } from "../english";
+import { planName } from "../../service-name";
+
+/** 요금제 이름은 서비스 목록의 한국어 이름으로 넘어오므로 영어 문구가 바꿔 적는다(lib/service-name). */
+const plan = (name: string) => planName(name, "en");
 
 /** 한국어 원문은 `METRIC_SPECS`가 가진다. 없는 칸(힌트·단가 앞말)은 빈 글자로 둔다. */
 function koMetric(metric: ValueMetric) {
@@ -241,6 +245,16 @@ export const ko = {
     question: "무료 요금제로도 충분했을까요?",
     hint: "사용 한도에 걸렸거나 유료 모델·기능을 썼다면 유료가 필요했던 거예요.",
   },
+  /** 체크인 링크(/check-in)로 열었는데 체크인할 수 없을 때. */
+  link: {
+    invalidTitle: "잘못된 체크인 링크예요",
+    invalidBody: "메일의 버튼을 다시 누르거나 대시보드에서 체크인하세요.",
+    missingTitle: "이 기기에는 이 구독이 없어요",
+    missingBody: "등록한 기기에서 링크를 열거나, 로그인해 기기끼리 기록을 맞추세요.",
+    killedTitle: "이미 해지한 구독입니다",
+    killedBody: (name: string) => `'${name}'은(는) 해지한 구독이라 체크인을 남기지 않았어요.`,
+    dashboard: "대시보드 →",
+  },
 };
 
 export const en: Widen<typeof ko> = {
@@ -335,9 +349,9 @@ export const en: Widen<typeof ko> = {
     benefitUnder: (monthly, benefit) =>
       `You got back only ${benefit} in benefits out of the ${monthly} fee.`,
     storageEmpty: (name) => `If you store nothing in ${name}, you may not need the plan.`,
-    storageUsed: (plan, percent, gb) => `You're using ${percent}% (${gb}) of ${plan}.`,
-    storageSmaller: (name, used, plan, amount) =>
-      `${name}: ${used} It would fit comfortably in the ${plan} plan (${amount}).`,
+    storageUsed: (name, percent, gb) => `You're using ${percent}% (${gb}) of ${plan(name)}.`,
+    storageSmaller: (name, used, smaller, amount) =>
+      `${name}: ${used} It would fit comfortably in the ${plan(smaller)} plan (${amount}).`,
     storageBundled: (name, used, extras) =>
       `${name}: ${used} By storage alone it fits a smaller plan, but that plan doesn't include ${extras}, so we don't judge by storage alone.`,
     storageNoSmaller: (name, used) =>
@@ -467,8 +481,8 @@ export const en: Widen<typeof ko> = {
     measured: (limit, usage) => `You're using ${usage} of this Google account's ${limit} limit.`,
     family: (measured) =>
       `${measured} This is a plan shared with family, and this account's usage alone doesn't give the share of the whole plan, so we didn't fill it in.`,
-    planMismatch: (measured, plan) =>
-      `${measured} The limit doesn't match the plan you registered (${plan}), so we didn't fill it in. It may be another account, or a family or work account's limit.`,
+    planMismatch: (measured, registered) =>
+      `${measured} The limit doesn't match the plan you registered (${plan(registered)}), so we didn't fill it in. It may be another account, or a family or work account's limit.`,
     underOne: " It was under 1%, so we filled in 1%.",
     choosePlan: " Pick your plan and we'll check the limit against it.",
     doneReading: "Passing the measurement along",
@@ -483,5 +497,15 @@ export const en: Widen<typeof ko> = {
     unsure: "Not sure",
     question: "Would the free plan have been enough?",
     hint: "If you hit usage limits or used paid models or features, you needed the paid plan.",
+  },
+  link: {
+    invalidTitle: "This check-in link isn't valid",
+    invalidBody: "Tap the button in the email again, or check in from the dashboard.",
+    missingTitle: "This subscription isn't on this device",
+    missingBody:
+      "Open the link on the device where you added it, or log in to keep your devices in sync.",
+    killedTitle: "This subscription is already cancelled",
+    killedBody: (name) => `'${name}' is cancelled, so no check-in was recorded.`,
+    dashboard: "Dashboard →",
   },
 };

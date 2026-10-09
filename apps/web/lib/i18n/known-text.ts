@@ -13,6 +13,59 @@ import type { Locale } from "./config";
  * 표에 없는 문장은 원문(한국어)을 그대로 보인다 — 뜻을 짐작해 지어내지 않는다. 검사 함수나 서버 문구를 고치면
  * 이 표도 고친다. `__tests__/unit/known-text.test.ts`가 검사 함수의 갈래마다 영어가 나오는지 본다.
  */
+/** 백업 파일 검사(lib/backup)가 틀렸다고 알리는 목록·칸 이름. */
+const BACKUP_LISTS_EN: Record<string, string> = {
+  구독: "subscription",
+  "체크인 기록": "check-in",
+  "연동 계정": "linked account",
+};
+const BACKUP_FIELDS_EN: Record<string, string> = {
+  형식: "format",
+  ID: "ID",
+  이름: "name",
+  금액: "amount",
+  통화: "currency",
+  결제일: "billing day",
+  "결제 주기": "billing cycle",
+  "결제 월": "billing month",
+  카테고리: "category",
+  상태: "status",
+  등록일: "added date",
+  해지일: "cancelled date",
+  "숨긴 날": "hidden date",
+  "요금 확인일": "price checked date",
+  "함께 쓰는 사람 수": "people sharing",
+  "내 몫": "my share",
+  "결제 수단": "payment method",
+  "해지 링크": "cancel link",
+  "해지 안내": "cancel guide",
+  아이콘: "icon",
+  "아이콘 색": "icon color",
+  요금제: "plan",
+  "요금제 이름": "plan name",
+  세금: "tax",
+  "연동 계정": "linked account",
+  "연동 계정 이름": "linked account name",
+  메모: "memo",
+  "무료 요금제로 충분했는지": "free plan answer",
+  "다시 살펴볼 날": "review date",
+  "해지 기록": "cancellation record",
+  "주문 메일 근거": "order email evidence",
+  "결제 메일 기록": "payment email history",
+  "구독 ID": "subscription ID",
+  월: "month",
+  "사용 횟수": "usage count",
+  "1회당 비용": "cost per use",
+  위험도: "risk level",
+  "체크인 시각": "check-in time",
+  "체크인 출처": "check-in source",
+  "체크인 지표": "check-in metric",
+  "로그인 제공자": "login provider",
+  칭호: "title",
+  "이메일/ID": "email/ID",
+  색: "color",
+};
+
 const EN: [RegExp, (...groups: string[]) => string][] = [
   // 아이디
   [/^아이디를 입력해주세요\.$/, () => "Enter a username."],
@@ -208,6 +261,115 @@ const EN: [RegExp, (...groups: string[]) => string][] = [
     () =>
       "It's your only way to log in, so it can't be disconnected. Create a password or connect another account first.",
   ],
+
+  // Gmail 자동 가져오기(api/gmail, lib/gmail-auto-client)
+  [/^아직 시작하지 않은 기능입니다\.$/, () => "This feature hasn't started yet."],
+  [/^연결 상태를 읽지 못했습니다\.$/, () => "Couldn't read the connection status."],
+  [/^연결 토큰을 만들지 못했습니다\.$/, () => "Couldn't create a connection token."],
+  [/^Gmail 연결을 시작하지 못했습니다\.$/, () => "Couldn't start connecting Gmail."],
+  [
+    /^원클릭 연결이 설정되지 않았습니다\. 스크립트를 직접 설치해 주세요\.$/,
+    () => "One-click connection isn't set up. Please install the script yourself.",
+  ],
+  [/^찾아 둔 구독을 읽지 못했습니다\.$/, () => "Couldn't read the subscriptions we found."],
+  [/^찾아 둔 구독을 지우지 못했습니다\.$/, () => "Couldn't clear the subscriptions we found."],
+
+  // 구글 캘린더 등록(api/calendar-sync)
+  [
+    /^이 서버에는 구글 캘린더 등록이 설정되어 있지 않습니다\. 알림 설정의 캘린더 구독을 쓰세요\.$/,
+    () => "Google Calendar sync isn't set up on this server.",
+  ],
+  [/^보낸 구독 목록을 읽지 못했습니다\.$/, () => "Couldn't read the subscriptions you sent."],
+  [/^캘린더에 올릴 구독이 없습니다\.$/, () => "There are no subscriptions to add to the calendar."],
+  [/^캘린더 등록을 시작하지 못했습니다\.$/, () => "Couldn't start the calendar sync."],
+
+  // 여러 기기 사용 측정(api/usage, lib/device-usage-client)
+  [/^사용 정보 접근 설정을 열지 못했습니다\.$/, () => "Couldn't open the usage access settings."],
+  [/^사용 기록을 올리지 못했습니다\.$/, () => "Couldn't upload your usage."],
+  [/^사용 기록을 읽지 못했습니다\.$/, () => "Couldn't read your usage."],
+  [/^보낸 사용 기록을 읽지 못했습니다\.$/, () => "Couldn't read the usage you sent."],
+  [/^사용 기록을 저장하지 못했습니다\.$/, () => "Couldn't save your usage."],
+  [/^사용 기록을 지우지 못했습니다\.$/, () => "Couldn't delete your usage."],
+
+  // 익명 통계(api/stats, lib/stats-client)
+  [
+    /^로그인해야 통계에 참여할 수 있습니다\.$/,
+    () => "You need to be logged in to take part in the statistics.",
+  ],
+  [/^보낸 요약을 읽지 못했습니다\.$/, () => "Couldn't read the summary you sent."],
+  [/^참여 기록이 없습니다\.$/, () => "There's no participation record."],
+  [/^통계에 보내지 못했습니다\.$/, () => "Couldn't send to the statistics."],
+  [/^토큰이 없습니다\.$/, () => "The token is missing."],
+  [/^기록을 지우지 못했습니다\.$/, () => "Couldn't delete the record."],
+  [/^통계를 읽지 못했습니다\.$/, () => "Couldn't read the statistics."],
+
+  // 리포트에 물어보기·도움말 AI(api/ask, api/help-ask, lib/ask/guard)
+  [/^아직 준비 중인 기능이에요\.$/, () => "This feature isn't ready yet."],
+  [/^지금은 답할 수 없어요\.$/, () => "Can't answer right now."],
+  [
+    /^지금은 답할 수 없어요\. 잠시 뒤에 다시 물어봐 주세요\.$/,
+    () => "Can't answer right now. Please ask again in a moment.",
+  ],
+  [/^질문을 적어 주세요\.$/, () => "Type a question."],
+  [/^질문은 (\d+)자까지 적을 수 있어요\.$/, (max) => `Questions can be up to ${max} characters.`],
+  [
+    /^질문이 많아 잠시 쉬어 갈게요\. 조금 뒤에 다시 물어봐 주세요\.$/,
+    () => "Lots of questions right now. Please ask again in a little while.",
+  ],
+
+  // 계정 저장(api/account/snapshot)
+  [/^계정에 저장된 기록이 없습니다\.$/, () => "There are no records saved to your account."],
+  [
+    /^계정에 저장된 기록을 읽지 못했습니다\.$/,
+    () => "Couldn't read the records saved to your account.",
+  ],
+  [
+    /^기록이 너무 커서 계정에 저장할 수 없습니다\. 백업 파일로 저장해 주세요\.$/,
+    () => "Your records are too large to save to your account. Save a backup file instead.",
+  ],
+  [/^계정에 저장하지 못했습니다\.$/, () => "Couldn't save to your account."],
+  [
+    /^계정에 저장된 기록을 지우지 못했습니다\.$/,
+    () => "Couldn't delete the records saved to your account.",
+  ],
+  [
+    /^다른 기기에서 먼저 계정의 기록을 바꿨습니다\.$/,
+    () => "Another device changed your account's records first.",
+  ],
+  [
+    /^이 서버에는 데이터베이스가 설정되어 있지 않아 알림·계정 기능을 사용할 수 없습니다\. 구독 목록은 브라우저에 그대로 남아 있습니다\.$/,
+    () =>
+      "This server has no database set up, so account features aren't available. Your subscriptions stay in this browser.",
+  ],
+
+  // 백업 파일 복원(lib/backup의 parseBackup)
+  [
+    /^JSON 파일이 아닙니다\. SubSlash에서 저장한 백업 파일을 골라주세요\.$/,
+    () => "This isn't a JSON file. Choose a backup file saved from SubSlash.",
+  ],
+  [/^SubSlash 백업 파일이 아닙니다\.$/, () => "This isn't a SubSlash backup file."],
+  [
+    /^백업 파일의 형식 버전을 알 수 없습니다\.$/,
+    () => "The backup file's format version is unknown.",
+  ],
+  [
+    /^이 앱보다 새로운 형식의 백업입니다\. 페이지를 새로 고친 뒤 다시 시도해주세요\.$/,
+    () => "This backup is in a newer format than this app. Refresh the page and try again.",
+  ],
+  [
+    /^백업 파일에 구독·체크인·연동 계정 목록이 모두 있어야 합니다\.$/,
+    () => "The backup file must contain the subscription, check-in and linked account lists.",
+  ],
+  [
+    /^(구독|체크인 기록|연동 계정) (\d+)번째 항목의 '(.+)' 칸이 올바르지 않습니다\.$/,
+    (list, index, field) =>
+      `The '${BACKUP_FIELDS_EN[field] ?? field}' field of ${BACKUP_LISTS_EN[list]} #${index} isn't valid.`,
+  ],
+  [
+    /^구독 (\d+)번째 항목의 ID가 다른 구독과 겹칩니다\.$/,
+    (index) => `Subscription #${index} has the same ID as another subscription.`,
+  ],
+  [/^환율 설정이 올바르지 않습니다\.$/, () => "The exchange rate setting isn't valid."],
 ];
 
 /** 표에 있는 한국어 문장이면 그 언어로, 아니면 그대로. */

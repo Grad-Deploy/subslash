@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
     url.searchParams.set("code", await createCalendarSyncPlan(account.id, plan));
     // 웹 앱은 이 주소로 계획을 받아 간다. 스크립트가 허용 목록으로 다시 확인한다.
     url.searchParams.set("origin", appUrl());
+    // 웹 앱의 결과 화면도 캘린더 이름처럼 등록한 언어로 보인다.
+    if (plan.lang === "en") url.searchParams.set("lang", "en");
     // 앱은 이 주소를 인앱 브라우저로 연다. 웹 앱이 끝 화면에 웹사이트로 가는 '돌아가기' 대신 앱으로
     // 돌아가는 길을 두게 알린다. 앱이 보낸 돌아올 스킴(`return`, 앱 ID)은 목록에 있는 것만 옮긴다 — 웹 앱이
     // 그 앱을 연다(lib/app-return).

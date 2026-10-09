@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useT } from "@lib/i18n";
 
 /** 하단 탭의 첫 화면. 여기서 뒤로가기를 누르면 앞 화면으로 돌아가지 않고 종료를 묻는다. */
 const TAB_ROOTS = ["/dashboard", "/subs", "/report", "/settings"];
@@ -23,6 +24,7 @@ const EXIT_WINDOW_MS = 2000;
  */
 export function AppBackButton() {
   const router = useRouter();
+  const t = useT();
   const pathname = usePathname();
   const [hintVisible, setHintVisible] = useState(false);
   const pathRef = useRef(pathname);
@@ -78,7 +80,7 @@ export function AppBackButton() {
       className="pointer-events-none fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-[70] flex justify-center px-4"
     >
       <span className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background shadow-lg animate-in fade-in">
-        한 번 더 누르면 앱이 종료돼요
+        {t.shell.app.exitHint}
       </span>
     </div>
   );

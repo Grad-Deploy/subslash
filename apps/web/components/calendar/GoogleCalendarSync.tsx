@@ -10,7 +10,7 @@ import { fetchGmailLink, type GmailLinkState } from "@lib/gmail-auto-client";
 import { leaveForExternal } from "@lib/native";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
-import { useLatestT, useLocale, useT } from "@lib/i18n";
+import { useKnownText, useLatestT, useLocale, useT } from "@lib/i18n";
 import { subscriptionName } from "@lib/service-name";
 import { calendarNameFor } from "@lib/calendar-names";
 
@@ -26,6 +26,7 @@ import { calendarNameFor } from "@lib/calendar-names";
  */
 export function GoogleCalendarSync() {
   const c = useT().reminders.calendar;
+  const known = useKnownText();
   const tRef = useLatestT();
   // 캘린더 이름·일정 메모·구독 이름을 지금 화면의 언어로 쓴다(웹 앱이 이 언어의 이름으로 만들거나 바꾼다).
   const locale = useLocale();
@@ -135,7 +136,7 @@ export function GoogleCalendarSync() {
 
       {error && (
         <p className="text-xs text-destructive" role="alert">
-          {error}
+          {known(error)}
         </p>
       )}
     </section>

@@ -2,7 +2,6 @@
 
 import React from "react";
 import {
-  PAYMENT_METHOD_OPTIONS,
   getCancelAndroidApp,
   getCancelRoutes,
   getCancelUrlKind,
@@ -10,7 +9,8 @@ import {
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { copyText, openExternal } from "@lib/native";
-import { useT, useServiceNames } from "@lib/i18n";
+import { useLocale, useT, useServiceNames } from "@lib/i18n";
+import { findPaymentMethod } from "@lib/payment-method";
 import { Button, WRAPPING_BUTTON } from "../../ui/button";
 
 /** 해지 경로 안내 — 가입한 계정, 결제 수단, 해지하러 갈 곳, 저장해 둔 단계를 한곳에 모은다. */
@@ -25,7 +25,8 @@ export function CancelRoutesCard({
 }) {
   const names = useServiceNames();
   const t = useT().detail;
-  const paymentMethod = PAYMENT_METHOD_OPTIONS.find((p) => p.value === sub.paymentMethod);
+  const locale = useLocale();
+  const paymentMethod = findPaymentMethod(sub.paymentMethod, locale);
   const cancelUrlKind = getCancelUrlKind(sub.cancelUrl);
 
   const copyAccountId = (accountName: string) => {
