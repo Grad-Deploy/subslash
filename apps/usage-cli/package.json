@@ -14,11 +14,10 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "start": "tsc -p tsconfig.build.json && node dist/cli.js",
+    "build": "esbuild src/cli.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/cli.js",
+    "start": "pnpm run build && node dist/cli.js",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src/ __tests__/",
-    "test": "vitest run"
+    "lint": "eslint src/"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.0",
@@ -26,6 +25,7 @@
     "eslint": "^9.0.0",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.69.0",
-    "vitest": "^4.1.11"
+    "@subslash/shared": "workspace:*",
+    "esbuild": "^0.28.2"
   }
 }

@@ -1,5 +1,6 @@
 /**
- * Claude Code·Codex가 PC에 남긴 기록(JSONL)에서 **질문을 보낸 시각**만 꺼낸다.
+ * Claude Code·Codex가 PC에 남긴 기록(JSONL)에서 **질문을 보낸 시각**만 꺼낸다. 명령줄 도구(apps/usage-cli)와
+ * 웹의 'PC 기록 읽기'(/pc-usage, 브라우저가 고른 폴더를 기기 안에서 읽음)가 같은 함수로 센다.
  *
  * 이 기록에는 대화 전체가 들어 있다. 여기서는 줄마다 시각·종류·요금제 칸만 보고, 질문·답·파일 내용은
  * 읽지도 돌려주지도 않는다 — 돌려주는 것은 숫자(시각)와 요금제 이름뿐이다.
@@ -12,7 +13,7 @@
 export type CliServiceId = "claude-pro" | "chatgpt-plus";
 
 /** 기록 하나(세션 파일 하나)에서 꺼낸 것. */
-export interface SessionUsage {
+export interface CliSessionUsage {
   /** 사람이 질문을 보낸 시각(epoch ms). */
   prompts: number[];
   /**
@@ -26,19 +27,20 @@ export interface SessionUsage {
   recognized: boolean;
 }
 
-type Line = Record<string, unknown>;
+/** 기록 한 줄(JSON 객체). */
+export type CliLogLine = Record<string, unknown>;
 
-const isObject = (value: unknown): value is Line =>
+const isObject = (value: unknown): value is CliLogLine =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-function timeOf(line: Line): number | null {
+function timeOf(line: CliLogLine): number | null {
   if (typeof line.timestamp !== "string") return null;
   const ms = Date.parse(line.timestamp);
   return Number.isFinite(ms) ? ms : null;
 }
 
 /** JSONL 한 줄을 읽는다. 깨진 줄은 null. */
-export function parseLine(text: string): Line | null {
+export function parseCliLine(text: string): CliLogLine | null {
   const trimmed = text.trim();
   if (!trimmed.startsWith("{")) return null;
   try {
@@ -56,7 +58,7 @@ export function parseLine(text: string): Line | null {
  * 사람이 보낸 것이 아니다. 예전 버전은 `origin`이 없어서, 도구 결과(`toolUseResult`)·메타(`isMeta`)·
  * 하위 에이전트(`isSidechain`)가 아닌 사용자 줄을 질문으로 본다.
  */
-export function isClaudePrompt(line: Line): boolean {
+export function isClaudePrompt(line: CliLogLine): boolean {
   if (line.type !== "user") return false;
   if (line.isSidechain === true || line.isMeta === true) return false;
   if ("toolUseResult" in line) return false;
@@ -65,7 +67,7 @@ export function isClaudePrompt(line: Line): boolean {
 }
 
 /** Claude Code 세션 파일 하나. 구독인지는 기록에 없어 null이다 — 지금 로그인 상태로 따로 본다. */
-export function claudeSession(lines: Iterable<Line>): SessionUsage {
+export function claudeCodeSession(lines: Iterable<CliLogLine>): CliSessionUsage {
   const prompts: number[] = [];
   let recognized = false;
   for (const line of lines) {
@@ -84,7 +86,7 @@ export function claudeSession(lines: Iterable<Line>): SessionUsage {
  * ChatGPT로 로그인하면 요금제 이름이 적힌다. 한도 정보 없이 토큰 수만 있으면 구독이 아닌 것(API 키)으로,
  * `token_count`가 아예 없으면(바로 끊긴 세션) 모른다로 둔다.
  */
-export function codexSession(lines: Iterable<Line>): SessionUsage {
+export function codexSession(lines: Iterable<CliLogLine>): CliSessionUsage {
   const prompts: number[] = [];
   let recognized = false;
   let planType: string | null = null;
@@ -111,7 +113,7 @@ export function codexSession(lines: Iterable<Line>): SessionUsage {
 }
 
 /** 한 서비스의 최근 기간 요약. */
-export interface UsageSummary {
+export interface CliUsageSummary {
   /** 질문을 보낸 날(이 PC의 날짜 기준) 수. */
   days: number;
   /** 질문 수. */
@@ -127,9 +129,9 @@ export interface UsageSummary {
 }
 
 /** 이 PC의 날짜(YYYY-MM-DD). 테스트는 시간대를 주입한다. */
-export type DayKey = (ms: number) => string;
+export type CliDayKey = (ms: number) => string;
 
-export const localDayKey: DayKey = (ms) => {
+export const cliDayKey: CliDayKey = (ms) => {
   const date = new Date(ms);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -139,16 +141,16 @@ export const localDayKey: DayKey = (ms) => {
  * 세션들을 최근 `windowDays`일로 요약한다. `subscriptionDefault`는 기록에 구독 여부가 없는 세션에 쓸 값이다
  * (Claude Code는 지금 로그인 상태, Codex는 지금 인증 방식). 그것도 모르면(null) 그 세션은 세지 않는다.
  */
-export function summarize(
-  sessions: SessionUsage[],
+export function summarizeCliUsage(
+  sessions: CliSessionUsage[],
   options: {
     now: number;
     windowDays: number;
     subscriptionDefault: boolean | null;
-    dayKey?: DayKey;
+    dayKey?: CliDayKey;
   },
-): UsageSummary {
-  const dayKey = options.dayKey ?? localDayKey;
+): CliUsageSummary {
+  const dayKey = options.dayKey ?? cliDayKey;
   const since = options.now - options.windowDays * 24 * 60 * 60 * 1000;
   const days = new Set<string>();
   let prompts = 0;
@@ -189,7 +191,7 @@ export function summarize(
  * SubSlash로 넘길 링크. 값은 `#` 뒤에만 싣는다 — `?`에 실으면 SubSlash 서버 접속 기록에 남는다.
  * 쓴 날이 0인 서비스는 싣지 않는다: PC에서 안 쓴 것이지 구독을 안 쓴 것은 아니다(웹·앱에서 썼을 수 있다).
  */
-export function checkInLink(
+export function pcUsageLink(
   origin: string,
   counts: Partial<Record<CliServiceId, number>>,
   options: { windowDays: number; until: string },
