@@ -19,7 +19,8 @@
     "check:cancel-links": "tsx scripts/cancel-links/run.ts",
     "gmail:web-app": "tsx scripts/gmail-web-app/write.ts",
     "storage:web-app": "tsx scripts/storage-quota-web-app/write.ts",
-    "ask:eval": "tsx scripts/ask-eval/run.ts"
+    "ask:eval": "tsx scripts/ask-eval/run.ts",
+    "landing:screens": "tsx scripts/landing-screens/capture.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.0.0",

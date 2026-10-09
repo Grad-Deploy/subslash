@@ -560,8 +560,10 @@ E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-K
 첫 칸의 장면은 스크롤 애니메이션(view-timeline)을 아는 브라우저에서만 칸이 길어지고 화면에 머문 채 바뀐다. 모르는 브라우저와
 움직임 줄이기에서는 앞 장면 없이 시작하기 칸만 처음부터 보이고, JS로 숨기지 않는다. 첫 칸의 결제 알림은 서비스 목록 기준 요금으로
 만든 예시라 그렇게 적고(`components/home/samples`, 계산기와 같은 목록), 요금제가 여럿인 서비스는 요금제까지 적는다. 기능 소개의
-화면은 Play 스토어용으로 샘플 데이터로 찍은 앱 캡처(`public/landing/`)이고 화면에 그렇게 밝힌다 — 화면이 크게 바뀌면 새로
-찍는다. 앱은 비공개 테스트라 '앱 받기'는 링크 없는 '준비 중' 표시(`AppDownloadPending`)다. 공개 출시하면 그때 실제 스토어
+화면은 Play 스토어용으로 샘플 데이터로 찍은 앱 캡처(`public/landing/`, 영어 화면은 `public/landing/en/`)이고 화면에 그렇게
+밝힌다 — 경로는 `components/home/screens`의 `landingScreen`이 화면 언어로 고른다. 화면이 크게 바뀌면
+`pnpm --filter @subslash/web landing:screens [-- --lang ko]`로 새로 찍는다(앱 빌드를 휴대폰 크기로 열어 예시 기록을 설정 →
+복원으로 넣고 찍는다, `scripts/landing-screens/capture.ts`). 앱은 비공개 테스트라 '앱 받기'는 링크 없는 '준비 중' 표시(`AppDownloadPending`)다. 공개 출시하면 그때 실제 스토어
 주소로 바꾼다 — 받을 수 없는 주소를 걸지 않는다.
 
 앱은 `/`를 열자마자 대시보드로 옮기고, 처음 실행할 때만 인트로 뒤에 옆으로 넘기는 소개(`components/launch/AppOnboarding`)를
