@@ -31,4 +31,5 @@ export * from "./utils/planAlternatives";
 export * from "./utils/killRecord";
 export * from "./utils/receipt";
 export * from "./utils/historicalRate";
+export * from "./constants/aiApiPrices";
 export * from "./utils/cliUsage";

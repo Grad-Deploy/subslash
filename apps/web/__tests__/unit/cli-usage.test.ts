@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  apiCostUsd,
   claudeCodeSession,
   codexSession,
   isClaudePrompt,
   parseCliLine,
   pcUsageLink,
+  slimCliLine,
   summarizeCliUsage,
   type CliDayKey,
+  type CliTokenRecord,
 } from "@subslash/shared";
 
 const NOW = Date.parse("2026-10-09T12:00:00+09:00");
@@ -114,6 +117,7 @@ describe("요약", () => {
     subscription,
     planType,
     recognized: true,
+    tokens: [] as CliTokenRecord[],
   });
 
   it("최근 30일 안에서 질문한 날(이 PC의 날짜)을 센다", () => {
@@ -191,5 +195,135 @@ describe("줄 읽기", () => {
     expect(parseCliLine("{not json")).toBeNull();
     expect(parseCliLine("")).toBeNull();
     expect(parseCliLine('{"type":"user"}')).toEqual({ type: "user" });
+  });
+});
+
+describe("API 요금 환산", () => {
+  const assistant = (id: string, usage: object, model = "claude-opus-5-5") => ({
+    type: "assistant",
+    sessionId: "s",
+    timestamp: "2026-10-08T10:00:00+09:00",
+    message: { id, model, usage, content: [{ type: "text", text: "비밀 답" }] },
+  });
+  const usage = {
+    input_tokens: 1_000_000,
+    output_tokens: 1_000_000,
+    cache_read_input_tokens: 1_000_000,
+    cache_creation_input_tokens: 2_000_000,
+    cache_creation: { ephemeral_5m_input_tokens: 1_000_000, ephemeral_1h_input_tokens: 1_000_000 },
+  };
+
+  it("모델 요금표로 입력·출력·캐시 읽기·캐시 쓰기(5분·1시간)를 따로 셈한다", () => {
+    // Opus 5.5: 입력 $4, 출력 $20, 캐시 읽기 $0.20, 캐시 쓰기 5분 $5(1.25배)·1시간 $8(2배)
+    const session = claudeCodeSession([assistant("m1", usage)]);
+    expect(apiCostUsd(session.tokens[0])).toBeCloseTo(4 + 20 + 0.2 + 5 + 8);
+  });
+
+  it("한 응답이 여러 줄에 같은 사용량으로 적혀도 한 번만 센다", () => {
+    const session = claudeCodeSession([assistant("m1", usage), assistant("m1", usage)]);
+    expect(session.tokens).toHaveLength(1);
+  });
+
+  it("세션을 이어 해 다른 파일에 같은 응답이 다시 적혀도 한 번만 센다", () => {
+    const a = { ...claudeCodeSession([assistant("m1", usage)]), subscription: true };
+    const b = { ...claudeCodeSession([assistant("m1", usage)]), subscription: true };
+    const prompts = [Date.parse("2026-10-08T09:59:00+09:00")];
+    const summary = summarizeCliUsage(
+      [
+        { ...a, prompts },
+        { ...b, prompts },
+      ],
+      {
+        now: NOW,
+        windowDays: 30,
+        subscriptionDefault: null,
+        dayKey: kstDay,
+      },
+    );
+    expect(summary.api.pricedRequests).toBe(1);
+    expect(summary.api.usd).toBeCloseTo(37.2);
+  });
+
+  it("요금을 모르는 모델과 빠른 모드는 0원으로 치지 않고 따로 센다", () => {
+    const tokens = [
+      ...claudeCodeSession([assistant("m1", usage, "claude-future-9")]).tokens,
+      ...claudeCodeSession([assistant("m2", { ...usage, speed: "fast" })]).tokens,
+    ];
+    const summary = summarizeCliUsage(
+      [
+        {
+          prompts: [Date.parse("2026-10-08T09:59:00+09:00")],
+          subscription: true,
+          planType: null,
+          recognized: true,
+          tokens,
+        },
+      ],
+      { now: NOW, windowDays: 30, subscriptionDefault: null, dayKey: kstDay },
+    );
+    expect(summary.api).toEqual({
+      usd: 0,
+      pricedRequests: 0,
+      unpricedRequests: 2,
+      unpricedModels: ["claude-future-9", "claude-opus-5-5 (fast)"],
+    });
+  });
+
+  it("구독이 아닌 세션(API 키)의 토큰은 환산하지 않는다 — 실제로 API 요금을 낸 것이다", () => {
+    const session = { ...claudeCodeSession([assistant("m1", usage)]), subscription: false };
+    const summary = summarizeCliUsage(
+      [{ ...session, prompts: [Date.parse("2026-10-08T09:59:00+09:00")] }],
+      { now: NOW, windowDays: 30, subscriptionDefault: null, dayKey: kstDay },
+    );
+    expect(summary.api.pricedRequests).toBe(0);
+  });
+
+  it("Codex는 누적 토큰의 늘어난 만큼을 요청으로 보고, 캐시 입력을 나눠 셈한다", () => {
+    const tokenCount = (input: number, cached: number, output: number) => ({
+      timestamp: "2026-10-08T10:00:00+09:00",
+      type: "event_msg",
+      payload: {
+        type: "token_count",
+        info: {
+          total_token_usage: {
+            input_tokens: input,
+            cached_input_tokens: cached,
+            output_tokens: output,
+          },
+        },
+        rate_limits: { plan_type: "plus" },
+      },
+    });
+    const session = codexSession([
+      {
+        timestamp: "2026-10-08T09:59:00+09:00",
+        type: "turn_context",
+        payload: { model: "gpt-5.5" },
+      },
+      tokenCount(100_000, 60_000, 10_000),
+      tokenCount(100_000, 60_000, 10_000), // 같은 값이 되풀이되면 세지 않는다
+      tokenCount(200_000, 150_000, 20_000),
+    ]);
+    expect(session.tokens.map((t) => [t.input, t.cacheRead, t.output])).toEqual([
+      [40_000, 60_000, 10_000],
+      [10_000, 90_000, 10_000],
+    ]);
+    // gpt-5.5: 입력 $5, 캐시 입력 $0.50, 출력 $30
+    expect(apiCostUsd(session.tokens[0])).toBeCloseTo(
+      (40_000 * 5 + 60_000 * 0.5 + 10_000 * 30) / 1e6,
+    );
+  });
+
+  it("gpt-5.5는 요청 입력이 272K를 넘으면 장문 요금을 쓴다", () => {
+    const base = { model: "gpt-5.5", cacheWrite5m: 0, cacheWrite1h: 0, output: 1_000_000 };
+    expect(apiCostUsd({ ...base, input: 100_000, cacheRead: 0 })).toBeCloseTo(0.5 + 30);
+    expect(apiCostUsd({ ...base, input: 300_000, cacheRead: 0 })).toBeCloseTo(3 + 45);
+  });
+
+  it("남긴 줄에는 질문·답 내용이 없고, 남긴 줄로 셈해도 결과가 같다", () => {
+    const lines = [assistant("m1", usage)];
+    const slim = lines.map(slimCliLine);
+    expect(JSON.stringify(slim)).not.toContain("비밀");
+    expect(claudeCodeSession(slim).tokens).toEqual(claudeCodeSession(lines).tokens);
   });
 });
