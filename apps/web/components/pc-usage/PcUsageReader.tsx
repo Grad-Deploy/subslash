@@ -13,6 +13,7 @@ import {
   readSessionFiles,
   type CliTool,
   type FolderRead,
+  type PcPlatform,
 } from "@lib/pc-usage-reader";
 import type { PcUsageServiceId } from "@lib/pc-usage";
 import { PcUsageRow } from "./PcUsageRow";
@@ -23,9 +24,31 @@ import { Spinner } from "../ui/spinner";
 const WINDOW_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const SERVICE: Record<CliTool, PcUsageServiceId> = { claude: "claude-pro", codex: "chatgpt-plus" };
+const TOOLS = ["claude", "codex", "cursor", "antigravity"] as const satisfies readonly CliTool[];
 
-const isWindows = () => typeof navigator !== "undefined" && /Windows/i.test(navigator.userAgent);
+const SERVICE: Record<CliTool, PcUsageServiceId> = {
+  claude: "claude-pro",
+  codex: "chatgpt-plus",
+  cursor: "cursor-pro",
+  antigravity: "google-ai-pro",
+};
+
+/**
+ * 기록에 어떤 계정으로 썼는지가 없어 사용자에게 묻는 도구. 답하기 전에는 세지 않는다 — 모르는 것을 구독 사용으로
+ * 치지 않는다. Codex·Cursor는 기록에 요금제가 있어 묻지 않는다.
+ */
+type AskedTool = "claude" | "antigravity";
+const isAsked = (tool: CliTool): tool is AskedTool => tool === "claude" || tool === "antigravity";
+
+function detectPlatform(): PcPlatform {
+  if (typeof navigator === "undefined") return "windows";
+  if (/Windows/i.test(navigator.userAgent)) return "windows";
+  if (/Mac/i.test(navigator.userAgent)) return "mac";
+  return "linux";
+}
+
+/** 지금 시각. 화면을 그리는 중이 아니라 폴더를 고를 때 부른다. */
+const currentTime = () => Date.now();
 
 const WINDOWS_USER_KEY = "subslash-pc-usage-windows-user";
 
@@ -53,29 +76,35 @@ type ToolState =
   | { status: "done"; read: FolderRead; at: number };
 
 /**
- * 'PC 기록 읽기'. 사용자가 고른 Claude Code·Codex 기록 폴더를 브라우저가 기기 안에서 읽어 최근 30일 중 쓴 날을
- * 센다(lib/pc-usage-reader). Claude Code는 기록에 어떤 계정으로 썼는지가 없어 로그인 방식을 묻고, 답하기 전에는
- * 세지 않는다 — 모르는 것을 구독 사용으로 치지 않는다.
+ * 'PC 기록 읽기'. 사용자가 고른 AI 코딩 도구(Claude Code·Codex·Cursor·Antigravity)의 기록 폴더를 브라우저가 기기
+ * 안에서 읽어 최근 30일 중 쓴 날을 센다(lib/pc-usage-reader).
  */
 export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subscription[] }) {
   const t = useT().pcUsage.reader;
   const [state, setState] = useState<Record<CliTool, ToolState>>({
     claude: { status: "idle" },
     codex: { status: "idle" },
+    cursor: { status: "idle" },
+    antigravity: { status: "idle" },
   });
-  const [claudeLogin, setClaudeLogin] = useState<"subscription" | "apiKey" | null>(null);
+  // 기록에 계정이 없는 도구의 답: true면 구독 계정으로 쓴다.
+  const [answers, setAnswers] = useState<Record<AskedTool, boolean | null>>({
+    claude: null,
+    antigravity: null,
+  });
   // 이 화면은 기기에서 그린 뒤에만 보이므로(페이지가 마운트를 기다린다) 처음 값에서 저장소를 읽어도 된다.
-  const [windows] = useState(isWindows);
+  const [platform] = useState(detectPlatform);
+  const windows = platform === "windows";
   const [windowsUser, setWindowsUser] = useState(loadWindowsUser);
   const pathReady = !windows || isWindowsUserName(windowsUser);
-  const pathOf = (tool: CliTool) => folderPath(tool, windows, windowsUser || t.windowsUserInPath);
+  const pathOf = (tool: CliTool) => folderPath(tool, platform, windowsUser || t.windowsUserInPath);
 
   if (IS_APP_BUILD) {
     return <p className="rounded-xl border p-3 text-sm text-muted-foreground">{t.appOnly}</p>;
   }
 
   const pick = async (tool: CliTool) => {
-    const now = Date.now();
+    const now = currentTime();
     const since = now - (WINDOW_DAYS + 1) * DAY_MS;
     try {
       const files = await pickSessionFolder(tool, since);
@@ -92,9 +121,8 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
   const summaryOf = (tool: CliTool): CliUsageSummary | null => {
     const current = state[tool];
     if (current.status !== "done") return null;
-    // Codex는 세션마다 요금제가 적혀 있다. Claude Code는 기록에 계정이 없어 답한 로그인 방식으로 본다.
-    const subscriptionDefault =
-      tool === "codex" ? null : claudeLogin === null ? null : claudeLogin === "subscription";
+    // Codex·Cursor는 기록에 요금제가 있다. Claude Code·Antigravity는 답한 대로 본다.
+    const subscriptionDefault = isAsked(tool) ? answers[tool] : null;
     return summarizeCliUsage(current.read.sessions, {
       now: current.at,
       windowDays: WINDOW_DAYS,
@@ -102,11 +130,48 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
     });
   };
 
-  const rows = (["claude", "codex"] as const)
-    .map((tool) => ({ tool, summary: summaryOf(tool) }))
-    .filter(
-      ({ tool, summary }) => summary && summary.days > 0 && (tool !== "claude" || claudeLogin),
+  const rows = TOOLS.map((tool) => ({ tool, summary: summaryOf(tool) })).filter(
+    ({ tool, summary }) =>
+      summary && summary.days > 0 && (!isAsked(tool) || answers[tool] !== null),
+  );
+
+  const question = (tool: AskedTool) => {
+    const copy =
+      tool === "claude"
+        ? {
+            title: t.loginQuestion,
+            hint: t.loginHint,
+            yes: t.loginSubscription,
+            no: t.loginApiKey,
+          }
+        : {
+            title: t.antigravityQuestion,
+            hint: t.antigravityHint,
+            yes: t.antigravityYes,
+            no: t.antigravityNo,
+          };
+    return (
+      <fieldset className="space-y-1.5 rounded-xl bg-secondary/60 p-2.5">
+        <legend className="sr-only">{copy.title}</legend>
+        <p className="text-xs font-bold">{copy.title}</p>
+        <div className="flex flex-wrap gap-2">
+          {([true, false] as const).map((value) => (
+            <Button
+              key={String(value)}
+              type="button"
+              size="sm"
+              variant={answers[tool] === value ? "default" : "outline"}
+              aria-pressed={answers[tool] === value}
+              onClick={() => setAnswers((prev) => ({ ...prev, [tool]: value }))}
+            >
+              {value ? copy.yes : copy.no}
+            </Button>
+          ))}
+        </div>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">{copy.hint}</p>
+      </fieldset>
     );
+  };
 
   return (
     <div className="space-y-4">
@@ -131,44 +196,23 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
           </span>
         </label>
       )}
-      <ToolCard
-        tool="claude"
-        path={pathOf("claude")}
-        pathReady={pathReady}
-        state={state.claude}
-        summary={summaryOf("claude")}
-        onPick={() => void pick("claude")}
-      >
-        {state.claude.status === "done" && state.claude.read.files > 0 && (
-          <fieldset className="space-y-1.5 rounded-xl bg-secondary/60 p-2.5">
-            <legend className="sr-only">{t.loginQuestion}</legend>
-            <p className="text-xs font-bold">{t.loginQuestion}</p>
-            <div className="flex flex-wrap gap-2">
-              {(["subscription", "apiKey"] as const).map((value) => (
-                <Button
-                  key={value}
-                  type="button"
-                  size="sm"
-                  variant={claudeLogin === value ? "default" : "outline"}
-                  aria-pressed={claudeLogin === value}
-                  onClick={() => setClaudeLogin(value)}
-                >
-                  {value === "subscription" ? t.loginSubscription : t.loginApiKey}
-                </Button>
-              ))}
-            </div>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">{t.loginHint}</p>
-          </fieldset>
-        )}
-      </ToolCard>
-      <ToolCard
-        tool="codex"
-        path={pathOf("codex")}
-        pathReady={pathReady}
-        state={state.codex}
-        summary={summaryOf("codex")}
-        onPick={() => void pick("codex")}
-      />
+      {TOOLS.map((tool) => {
+        const current = state[tool];
+        return (
+          <ToolCard
+            key={tool}
+            tool={tool}
+            path={pathOf(tool)}
+            pathReady={pathReady}
+            state={current}
+            summary={summaryOf(tool)}
+            waitingAnswer={isAsked(tool) && answers[tool] === null}
+            onPick={() => void pick(tool)}
+          >
+            {isAsked(tool) && current.status === "done" && current.read.files > 0 && question(tool)}
+          </ToolCard>
+        );
+      })}
       {rows.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-bold">{t.results}</h2>
@@ -197,6 +241,7 @@ function ToolCard({
   pathReady,
   state,
   summary,
+  waitingAnswer,
   onPick,
   children,
 }: {
@@ -207,19 +252,22 @@ function ToolCard({
   pathReady: boolean;
   state: ToolState;
   summary: CliUsageSummary | null;
+  /** 계정을 묻는 도구가 아직 답을 받지 못했는지. 그동안은 세지 않으므로 숫자를 보이지 않는다. */
+  waitingAnswer: boolean;
   onPick: () => void;
   children?: React.ReactNode;
 }) {
   const t = useT().pcUsage.reader;
   const [copied, setCopied] = useState(false);
-  // Claude Code는 로그인 방식을 답하기 전에는 세지 않으므로 숫자를 보이지 않는다.
-  const waitingLogin =
-    tool === "claude" && summary !== null && summary.days === 0 && summary.unknownSessions > 0;
+  const waiting = waitingAnswer && summary !== null && summary.days === 0;
+  const used = (days: number, count: number) =>
+    // Antigravity는 질문이 아니라 대화마다 마지막 입력 시각 하나만 남는다.
+    tool === "antigravity" ? t.usedConversations(days, count) : t.used(days, count);
 
   return (
     <section className="space-y-2 rounded-2xl border p-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-bold">{tool === "claude" ? t.claude : t.codex}</h2>
+        <h2 className="text-sm font-bold">{t[tool]}</h2>
         <Button
           type="button"
           size="sm"
@@ -244,6 +292,9 @@ function ToolCard({
           {copied ? t.copied : t.copy}
         </button>
       </div>
+      {tool === "cursor" && (
+        <p className="text-[11px] leading-relaxed text-muted-foreground">{t.cursorNote}</p>
+      )}
       {state.status === "idle" && (
         <p className="text-[11px] leading-relaxed text-muted-foreground">{t.hiddenTip}</p>
       )}
@@ -258,13 +309,13 @@ function ToolCard({
       )}
       {state.status === "done" && state.read.files > 0 && summary && (
         <div className="space-y-0.5 text-xs">
-          {!waitingLogin && (
+          {!waiting && (
             <p className="font-semibold">
-              {summary.days > 0 ? t.used(summary.days, summary.prompts) : t.noUse}
+              {summary.days > 0 ? used(summary.days, summary.prompts) : t.noUse}
             </p>
           )}
           {summary.planType && <p className="text-muted-foreground">{t.plan(summary.planType)}</p>}
-          {!waitingLogin && summary.api.unpricedRequests > 0 && (
+          {!waiting && summary.api.unpricedRequests > 0 && (
             <p className="text-muted-foreground">
               {t.unpriced(summary.api.unpricedRequests, summary.api.unpricedModels.join(", "))}
             </p>
@@ -272,7 +323,7 @@ function ToolCard({
           {summary.excludedSessions > 0 && (
             <p className="text-muted-foreground">{t.excluded(summary.excludedSessions)}</p>
           )}
-          {!waitingLogin && summary.unknownSessions > 0 && (
+          {!waiting && summary.unknownSessions > 0 && (
             <p className="text-muted-foreground">{t.unknown(summary.unknownSessions)}</p>
           )}
           {state.read.unrecognized > 0 && (

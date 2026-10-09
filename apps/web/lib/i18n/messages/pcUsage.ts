@@ -9,7 +9,12 @@ export const ko = {
       `이 PC에서 Claude Code·Codex를 구독으로 쓴 날을 셌어요 (${until}까지 최근 ${windowDays}일).`,
     pcOnly:
       "PC에서 쓴 날만 들어 있어요. 웹·폰에서 쓴 날이 더 있으면 체크인 창에서 숫자를 늘려 주세요. 확인을 눌러야 저장돼요.",
-    tool: { "claude-pro": "Claude Code", "chatgpt-plus": "Codex" },
+    tool: {
+      "claude-pro": "Claude Code",
+      "chatgpt-plus": "Codex",
+      "cursor-pro": "Cursor",
+      "google-ai-pro": "Antigravity",
+    },
     days: (days: number) => `PC 기록으로 ${days}일`,
     perDay: (cost: string) => `하루당 ${cost}`,
     tokens: (tokens: string) => `토큰 ${tokens}개`,
@@ -36,11 +41,22 @@ export const ko = {
     privacy: "숫자는 링크의 # 뒤에만 있어 서버로 보내지 않았어요.",
     reader: {
       description:
-        "이 PC의 Claude Code·Codex 기록 폴더를 고르면, 브라우저가 기기 안에서 질문을 보낸 시각만 세어 최근 30일 중 쓴 날을 체크인에 채워 줘요.",
+        "이 PC의 Claude Code·Codex·Cursor·Antigravity 기록 폴더를 고르면, 브라우저가 기기 안에서 질문을 보낸 시각만 세어 최근 30일 중 쓴 날을 체크인에 채워 줘요.",
       privacy:
         "파일은 서버로 보내지 않아요. 질문·답 내용은 읽자마자 버리고 시각만 남겨요. 브라우저가 폴더를 읽어도 되는지 물으면 허용해 주세요.",
       claude: "Claude Code",
       codex: "Codex",
+      cursor: "Cursor",
+      antigravity: "Antigravity",
+      cursorNote:
+        "이 파일에는 Cursor 로그인 정보도 들어 있지만, 요금제와 질문 시각 칸만 읽어요. 파일은 서버로 보내지 않아요.",
+      usedConversations: (days: number, conversations: number) =>
+        `최근 30일 중 ${days}일 이상 사용 · 대화 ${conversations}개 (대화마다 마지막으로 입력한 날만 남아요)`,
+      antigravityQuestion: "Antigravity를 Google AI 구독(Pro·Ultra) 계정으로 쓰나요?",
+      antigravityHint:
+        "기록에는 어떤 계정으로 썼는지가 없어서 물어요. 무료로 쓴 것은 구독 사용이 아니라 세지 않아요.",
+      antigravityYes: "네, 구독 계정이에요",
+      antigravityNo: "아니요, 무료로 써요",
       folder: "기록 폴더",
       copy: "경로 복사",
       copied: "복사했어요",
@@ -58,10 +74,11 @@ export const ko = {
       readFailed: "폴더를 읽지 못했어요. 다시 골라 주세요.",
       used: (days: number, prompts: number) => `최근 30일 중 ${days}일 사용 · 질문 ${prompts}개`,
       noUse: "최근 30일에 구독으로 쓴 기록이 없어요.",
-      plan: (plan: string) => `기록된 ChatGPT 요금제: ${plan}`,
+      plan: (plan: string) => `기록된 요금제: ${plan}`,
       unpriced: (n: number, models: string) =>
         `요금을 확인하지 못한 모델의 응답 ${n}개는 환산에서 뺐어요: ${models}`,
-      excluded: (n: number) => `구독이 아닌 방식(API 키 등)으로 쓴 세션 ${n}개는 세지 않았어요.`,
+      excluded: (n: number) =>
+        `구독이 아닌 방식(API 키·무료 요금제 등)으로 쓴 세션 ${n}개는 세지 않았어요.`,
       unknown: (n: number) => `구독으로 썼는지 알 수 없는 세션 ${n}개는 세지 않았어요.`,
       unrecognized: (n: number) =>
         `알아보지 못한 기록 파일 ${n}개 — 도구가 업데이트돼 형식이 바뀌었을 수 있어요.`,
@@ -83,7 +100,12 @@ export const en: Widen<typeof ko> = {
       `Days you used Claude Code or Codex on a subscription on this PC (last ${windowDays} days up to ${until}).`,
     pcOnly:
       "Only days on this PC are included. If you also used it on the web or your phone, raise the number in the check-in. Nothing is saved until you confirm.",
-    tool: { "claude-pro": "Claude Code", "chatgpt-plus": "Codex" },
+    tool: {
+      "claude-pro": "Claude Code",
+      "chatgpt-plus": "Codex",
+      "cursor-pro": "Cursor",
+      "google-ai-pro": "Antigravity",
+    },
     days: (days) => `${days} ${one(days) ? "day" : "days"} from PC records`,
     perDay: (cost) => `${cost} per day used`,
     tokens: (tokens) => `${tokens} tokens`,
@@ -110,11 +132,23 @@ export const en: Widen<typeof ko> = {
     privacy: "The numbers are only after # in the link and weren't sent to the server.",
     reader: {
       description:
-        "Pick the Claude Code and Codex record folders on this PC. Your browser counts only the times you sent prompts, on this device, and fills in the days used in the last 30 days.",
+        "Pick the Claude Code, Codex, Cursor or Antigravity record folders on this PC. Your browser counts only the times you sent prompts, on this device, and fills in the days used in the last 30 days.",
       privacy:
         "Files aren't sent to the server. Prompt and reply contents are dropped as soon as they're read; only the times are kept. Allow the browser to read the folder when it asks.",
       claude: "Claude Code",
       codex: "Codex",
+      cursor: "Cursor",
+      antigravity: "Antigravity",
+      cursorNote:
+        "This file also holds your Cursor sign-in, but only the plan and prompt-time fields are read. The file isn't sent to the server.",
+      usedConversations: (days, conversations) =>
+        `Used on at least ${days} ${one(days) ? "day" : "days"} in the last 30 days · ${conversations} ${one(conversations) ? "conversation" : "conversations"} (only the last input day of each is recorded)`,
+      antigravityQuestion:
+        "Do you use Antigravity with a Google AI subscription account (Pro/Ultra)?",
+      antigravityHint:
+        "The records don't say which account was used, so we ask. Free use isn't subscription use and isn't counted.",
+      antigravityYes: "Yes, a subscription account",
+      antigravityNo: "No, I use it for free",
       folder: "Record folder",
       copy: "Copy path",
       copied: "Copied",
@@ -135,11 +169,11 @@ export const en: Widen<typeof ko> = {
       used: (days, prompts) =>
         `Used on ${days} ${one(days) ? "day" : "days"} in the last 30 days · ${prompts} ${one(prompts) ? "prompt" : "prompts"}`,
       noUse: "No subscription use in the last 30 days.",
-      plan: (plan) => `Recorded ChatGPT plan: ${plan}`,
+      plan: (plan) => `Recorded plan: ${plan}`,
       unpriced: (n, models) =>
         `Left out ${n} ${one(n) ? "response" : "responses"} from models without a confirmed price: ${models}`,
       excluded: (n) =>
-        `Skipped ${n} ${one(n) ? "session" : "sessions"} not on a subscription (API key, etc.).`,
+        `Skipped ${n} ${one(n) ? "session" : "sessions"} not on a subscription (API key, free plan, etc.).`,
       unknown: (n) =>
         `Skipped ${n} ${one(n) ? "session" : "sessions"} where the subscription couldn't be confirmed.`,
       unrecognized: (n) =>

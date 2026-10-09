@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * subslash-usage — 이 PC에서 Claude Code·Codex를 쓴 날을 세어 SubSlash 체크인 링크로 넘긴다.
+ * subslash-usage — 이 PC에서 Claude Code·Codex·Cursor·Antigravity를 쓴 날을 세어 SubSlash 체크인 링크로 넘긴다.
  *
  * 읽는 것: 두 도구가 남긴 세션 기록의 질문 시각과 Codex의 요금제 이름, 지금 로그인 방식.
  * 보내는 것: 없다. 결과는 화면에 보이고, 링크의 `#` 뒤에 서비스별 '쓴 날 수'만 싣는다(서버로 가지 않는다).
@@ -12,7 +12,7 @@ import {
   type CliServiceId,
   type CliUsageSummary,
 } from "@subslash/shared";
-import { scanClaudeCode, scanCodex, type ToolScan } from "./scan.js";
+import { scanAntigravity, scanClaudeCode, scanCodex, scanCursor, type ToolScan } from "./scan.js";
 
 const DEFAULT_ORIGIN = "https://www.subslash.me";
 const WINDOW_DAYS = 30;
@@ -21,8 +21,14 @@ const ko = {
   title: (days: number) => `이 PC의 AI 코딩 도구 사용 (최근 ${days}일)`,
   claude: "Claude Code (Claude 구독)",
   codex: "Codex (ChatGPT 구독)",
+  cursor: "Cursor (Cursor 구독)",
+  antigravity: "Antigravity (Google AI Pro 구독)",
+  antigravityAsk:
+    "Google AI 구독 계정으로 쓰는지 기록에 없어 세지 않았어요. 구독 계정으로 쓴다면 --antigravity-subscription을 붙여 다시 실행하세요.",
   notInstalled: "기록 없음 (설치해 쓴 적이 없거나 기록 폴더가 다른 곳에 있어요)",
   usedDays: (days: number, prompts: number) => `${days}일 사용 · 질문 ${prompts}개`,
+  usedDaysConversations: (days: number, conversations: number) =>
+    `${days}일 이상 사용 · 대화 ${conversations}개 (대화마다 마지막으로 입력한 날만 남아요)`,
   noUse: "이 기간에 구독으로 쓴 기록이 없어요",
   last: (date: string) => `마지막 사용 ${date}`,
   plan: (plan: string) => `기록된 요금제: ${plan}`,
@@ -30,7 +36,8 @@ const ko = {
   apiValue: (usd: string) => `API 요금으로 환산하면 약 ${usd} (요금표 기준, 세금 제외)`,
   unpriced: (n: number, models: string) =>
     `요금을 확인하지 못한 모델의 응답 ${n}개는 환산에서 뺐어요: ${models}`,
-  excluded: (n: number) => `구독이 아닌 방식(API 키 등)으로 쓴 세션 ${n}개는 세지 않았어요`,
+  excluded: (n: number) =>
+    `구독이 아닌 방식(API 키·무료 요금제 등)으로 쓴 세션 ${n}개는 세지 않았어요`,
   unknown: (n: number) => `구독으로 썼는지 알 수 없는 세션 ${n}개는 세지 않았어요`,
   unrecognized: (n: number) =>
     `알아보지 못한 기록 파일 ${n}개 — 도구가 업데이트돼 형식이 바뀌었을 수 있어요`,
@@ -47,9 +54,15 @@ const en: Text = {
   title: (days) => `AI coding tool use on this PC (last ${days} days)`,
   claude: "Claude Code (Claude subscription)",
   codex: "Codex (ChatGPT subscription)",
+  cursor: "Cursor (Cursor subscription)",
+  antigravity: "Antigravity (Google AI Pro subscription)",
+  antigravityAsk:
+    "The records don't say whether you use a Google AI subscription account, so nothing was counted. If you do, run again with --antigravity-subscription.",
   notInstalled: "No records (never used here, or the records are in another folder)",
   usedDays: (days, prompts) =>
     `Used on ${days} ${days === 1 ? "day" : "days"} · ${prompts} ${prompts === 1 ? "prompt" : "prompts"}`,
+  usedDaysConversations: (days, conversations) =>
+    `Used on at least ${days} ${days === 1 ? "day" : "days"} · ${conversations} ${conversations === 1 ? "conversation" : "conversations"} (only the last input day of each is recorded)`,
   noUse: "No subscription use in this period",
   last: (date) => `Last used ${date}`,
   plan: (plan) => `Recorded plan: ${plan}`,
@@ -58,7 +71,7 @@ const en: Text = {
   unpriced: (n, models) =>
     `Left out ${n} ${n === 1 ? "response" : "responses"} from models without a confirmed price: ${models}`,
   excluded: (n) =>
-    `Skipped ${n} ${n === 1 ? "session" : "sessions"} not on a subscription (API key, etc.)`,
+    `Skipped ${n} ${n === 1 ? "session" : "sessions"} not on a subscription (API key, free plan, etc.)`,
   unknown: (n) =>
     `Skipped ${n} ${n === 1 ? "session" : "sessions"} where the subscription couldn't be confirmed`,
   unrecognized: (n) =>
@@ -82,17 +95,27 @@ interface Options {
   origin: string;
   json: boolean;
   link: boolean;
+  /** Antigravity를 Google AI 구독 계정으로 쓰는지(기록에 없어 사용자가 알려 준다). */
+  antigravitySubscription: boolean | null;
 }
 
 function parseArgs(argv: string[]): Options {
-  const options: Options = { origin: DEFAULT_ORIGIN, json: false, link: true };
+  const options: Options = {
+    origin: DEFAULT_ORIGIN,
+    json: false,
+    link: true,
+    antigravitySubscription: null,
+  };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === "--json") options.json = true;
     else if (arg === "--no-link") options.link = false;
+    else if (arg === "--antigravity-subscription") options.antigravitySubscription = true;
     else if (arg === "--origin" && argv[i + 1]) options.origin = argv[++i];
     else if (arg === "--help" || arg === "-h") {
-      console.log("Usage: subslash-usage [--json] [--no-link] [--origin https://www.subslash.me]");
+      console.log(
+        "Usage: subslash-usage [--json] [--no-link] [--antigravity-subscription] [--origin https://www.subslash.me]",
+      );
       process.exit(0);
     }
   }
@@ -120,13 +143,24 @@ function linkValue(summary: CliUsageSummary) {
   };
 }
 
-function printTool(t: Text, label: string, scan: ToolScan, summary: CliUsageSummary) {
+function printTool(
+  t: Text,
+  label: string,
+  scan: ToolScan,
+  summary: CliUsageSummary,
+  /** Antigravity는 질문이 아니라 대화마다 시각 하나만 남는다. */
+  unit: "prompts" | "conversations" = "prompts",
+) {
   console.log(`\n${label}`);
   if (!scan.installed) {
     console.log(`  ${t.notInstalled}`);
     return;
   }
-  console.log(`  ${summary.days > 0 ? t.usedDays(summary.days, summary.prompts) : t.noUse}`);
+  const used =
+    unit === "conversations"
+      ? t.usedDaysConversations(summary.days, summary.prompts)
+      : t.usedDays(summary.days, summary.prompts);
+  console.log(`  ${summary.days > 0 ? used : t.noUse}`);
   if (summary.lastAt !== null) console.log(`  ${t.last(cliDayKey(summary.lastAt))}`);
   if (summary.planType) console.log(`  ${t.plan(summary.planType)}`);
   if (summary.api.tokens > 0) {
@@ -154,10 +188,17 @@ async function main() {
   const now = Date.now();
   // 파일을 고친 시각이 기간보다 앞이면 그 안의 질문도 기간 밖이다. 하루 여유를 둔다.
   const since = now - (WINDOW_DAYS + 1) * 24 * 60 * 60 * 1000;
-  const [claude, codex] = await Promise.all([scanClaudeCode(since), scanCodex(since)]);
+  const [claude, codex, cursor, antigravity] = await Promise.all([
+    scanClaudeCode(since),
+    scanCodex(since),
+    scanCursor(),
+    scanAntigravity(options.antigravitySubscription),
+  ]);
   const summaries: Record<CliServiceId, CliUsageSummary> = {
     "claude-pro": summaryOf(claude, now),
     "chatgpt-plus": summaryOf(codex, now),
+    "cursor-pro": summaryOf(cursor, now),
+    "google-ai-pro": summaryOf(antigravity, now),
   };
   const until = cliDayKey(now);
   const link = pcUsageLink(
@@ -165,6 +206,8 @@ async function main() {
     {
       "claude-pro": linkValue(summaries["claude-pro"]),
       "chatgpt-plus": linkValue(summaries["chatgpt-plus"]),
+      "cursor-pro": linkValue(summaries["cursor-pro"]),
+      "google-ai-pro": linkValue(summaries["google-ai-pro"]),
     },
     { windowDays: WINDOW_DAYS, until },
   );
@@ -183,6 +226,11 @@ async function main() {
   console.log(t.title(WINDOW_DAYS));
   printTool(t, t.claude, claude, summaries["claude-pro"]);
   printTool(t, t.codex, codex, summaries["chatgpt-plus"]);
+  printTool(t, t.cursor, cursor, summaries["cursor-pro"]);
+  printTool(t, t.antigravity, antigravity, summaries["google-ai-pro"], "conversations");
+  if (antigravity.installed && options.antigravitySubscription === null) {
+    console.log(`  ${t.antigravityAsk}`);
+  }
   console.log("");
   if (!options.link) return;
   if (!link) {

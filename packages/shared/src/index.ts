@@ -33,3 +33,4 @@ export * from "./utils/receipt";
 export * from "./utils/historicalRate";
 export * from "./constants/aiApiPrices";
 export * from "./utils/cliUsage";
+export * from "./utils/sqliteWal";
