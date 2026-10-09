@@ -220,8 +220,10 @@ eas build --platform ios --profile preview           # 시뮬레이터용 (Apple
 
 ## PC의 AI 코딩 도구 사용 (subslash-usage)
 
-`apps/usage-cli`는 이 PC에서 Claude Code·Codex를 **구독으로** 쓴 날을 세어 SubSlash 체크인으로 넘기는 명령줄
-도구입니다. 의존성이 없고, 서버로 아무것도 보내지 않습니다.
+이 PC에서 Claude Code·Codex를 **구독으로** 쓴 날을 세어 SubSlash 체크인에 채웁니다. 사용자는 웹의
+`/pc-usage`(체크인 창의 'PC 기록으로 세기')에서 기록 폴더(`%USERPROFILE%\.claude\projects`, `%USERPROFILE%\.codex\sessions`)를
+고르면 됩니다 — 브라우저가 기기 안에서 읽고, 파일은 서버로 가지 않습니다. 같은 셈을 하는 명령줄 도구도 있습니다
+(`apps/usage-cli`, 의존성은 esbuild로 묶음).
 
 ```bash
 pnpm --filter subslash-usage start             # 빌드하고 실행 (npm에 올린 뒤에는 npx subslash-usage)
