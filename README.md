@@ -67,6 +67,7 @@ subslash/
 │   ├── hooks/         # React 커스텀 훅
 │   └── drizzle/       # DB 마이그레이션 SQL
 ├── apps/mobile/       # Capacitor 앱 (안드로이드·iOS)
+├── apps/usage-cli/    # PC의 Claude Code·Codex 사용을 체크인으로 넘기는 명령줄 도구
 ├── packages/shared/   # 공유 타입, 서비스 목록, 금액·결제일 계산
 └── tools/ipad-preview # Expo Go로 화면을 보는 도구 (워크스페이스 밖)
 ```
@@ -216,6 +217,22 @@ eas build --platform ios --profile preview           # 시뮬레이터용 (Apple
 - EAS는 작업 폴더를 `.gitignore` 기준으로 올립니다. `.easignore`를 만들면 `.gitignore`를 통째로 대신해 `.env`까지
   올라갈 수 있으니 만들지 않습니다.
 - `closed-test` 빌드는 프로덕션 트랙으로 올리지 않습니다.
+
+## PC의 AI 코딩 도구 사용 (subslash-usage)
+
+`apps/usage-cli`는 이 PC에서 Claude Code·Codex를 **구독으로** 쓴 날을 세어 SubSlash 체크인으로 넘기는 명령줄
+도구입니다. 의존성이 없고, 서버로 아무것도 보내지 않습니다.
+
+```bash
+pnpm --filter subslash-usage start             # 빌드하고 실행 (npm에 올린 뒤에는 npx subslash-usage)
+pnpm --filter subslash-usage start -- --json   # 결과를 JSON으로
+```
+
+- 읽는 것: `~/.claude/projects/**/*.jsonl`·`~/.codex/sessions/**/rollout-*.jsonl`의 질문 시각, Codex의 요금제
+  이름(`plan_type`), 지금 로그인 방식(`~/.claude.json`의 구독 계정, `~/.codex/auth.json`의 `auth_mode`). 질문·답
+  내용은 읽지 않습니다. API 키로 쓴 세션은 구독 사용이 아니라 세지 않습니다.
+- 결과로 `https://www.subslash.me/pc-usage#pc=claude-pro:12&window=30&until=…` 링크를 보여 줍니다. 숫자는 `#` 뒤에만
+  있어 서버로 가지 않고, 링크를 열면 숫자가 채워진 체크인 창이 뜹니다. 저장은 사용자가 확인을 눌러야 됩니다.
 
 ## 실사용자를 받기 전에
 
