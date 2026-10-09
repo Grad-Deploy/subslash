@@ -16,7 +16,7 @@ import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { useT } from "@lib/i18n";
+import { useServiceNames, useT } from "@lib/i18n";
 import { unitCostText } from "@lib/i18n/check-in-text";
 import { unitCostPart } from "@subslash/shared";
 import { FreeTierQuestion } from "./FreeTierQuestion";
@@ -49,6 +49,7 @@ export function MetricQuantityInput({
 }) {
   const spec = METRIC_SPECS[metric];
   const t = useT();
+  const names = useServiceNames();
   const c = t.checkin;
   const text = c.metric[metric];
   /** 빠른 선택 버튼의 글자. 혜택은 '1만'처럼 줄인다. */
@@ -68,7 +69,7 @@ export function MetricQuantityInput({
   // 저장 공간: 요금제를 알면 비율을 용량으로 바꿔 옆에 보여 준다. 설정 화면에는 GB로 나오기 때문이다.
   const storageFit = metric === "storage" ? storagePlanFit(subscription, quantity) : null;
   const storageLine = storageFit
-    ? c.input.storageOf(storageFit.planName, c.input.storageGB(storageFit.usedGB))
+    ? c.input.storageOf(names.plan(storageFit.planName), c.input.storageGB(storageFit.usedGB))
     : null;
   // 사용자가 손댄 뒤에는 폰 기록으로 덮지 않는다.
   const touched = useRef(false);

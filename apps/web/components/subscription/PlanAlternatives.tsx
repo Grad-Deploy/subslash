@@ -14,7 +14,7 @@ import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { useStore } from "@lib/store";
 import { cn } from "@lib/utils";
-import { useT } from "@lib/i18n";
+import { useServiceNames, useT } from "@lib/i18n";
 
 interface PlanAlternativesProps {
   subscription: Subscription;
@@ -39,6 +39,7 @@ export function PlanAlternatives({
   className,
 }: PlanAlternativesProps) {
   const t = useT().detail.alt;
+  const names = useServiceNames();
   const cycleLabel = (alternative: Pick<PlanAlternative, "billingCycle">) =>
     alternative.billingCycle === "yearly" ? t.cycleYearly : t.cycleMonthly;
   const updateSubscription = useStore((state) => state.updateSubscription);
@@ -73,7 +74,9 @@ export function PlanAlternatives({
     });
     setPending(null);
     onChanged?.(
-      toYearly ? t.recordedYearly(alternative.planName) : t.recorded(alternative.planName),
+      toYearly
+        ? t.recordedYearly(names.plan(alternative.planName))
+        : t.recorded(names.plan(alternative.planName)),
     );
   };
 
@@ -83,7 +86,7 @@ export function PlanAlternatives({
         <h3 className="text-sm font-bold">{compact ? t.titleCompact : t.title}</h3>
         <p className="text-xs text-muted-foreground">
           {t.nowOn(
-            current.planName,
+            names.plan(current.planName),
             cycleLabel(current),
             formatCurrency(current.amount, current.currency),
             current.costPerUse !== null
@@ -102,10 +105,10 @@ export function PlanAlternatives({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-sm font-semibold">
-                    {alternative.kind === "yearly" ? t.toYearly : alternative.planName}
+                    {alternative.kind === "yearly" ? t.toYearly : names.plan(alternative.planName)}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {alternative.kind === "yearly" && `${alternative.planName} · `}
+                    {alternative.kind === "yearly" && `${names.plan(alternative.planName)} · `}
                     {t.line(
                       cycleLabel(alternative),
                       formatCurrency(alternative.amount, alternative.currency),
@@ -129,7 +132,7 @@ export function PlanAlternatives({
 
               {pending?.planId === alternative.planId ? (
                 <InlineConfirm
-                  message={t.confirm(alternative.planName)}
+                  message={t.confirm(names.plan(alternative.planName))}
                   confirmText={t.confirmYes}
                   onConfirm={() => apply(alternative)}
                   onCancel={() => setPending(null)}

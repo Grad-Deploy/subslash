@@ -40,7 +40,7 @@ export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardPro
   const showHint = risk !== null && !hintSeen;
 
   const planLine = [
-    subscription.planName,
+    subscription.planName && names.plan(subscription.planName),
     f.perMonth(formatCurrency(monthly, subscription.currency)),
   ]
     .filter(Boolean)
