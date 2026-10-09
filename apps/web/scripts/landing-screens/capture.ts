@@ -33,7 +33,9 @@ const arg = (name: string) => {
 };
 const LANG = arg("lang") === "ko" ? "ko" : "en";
 const ROOT = resolve(import.meta.dirname, "../../out");
-const OUT = resolve(import.meta.dirname, `../../public/landing/${LANG}`);
+// 한국어 캡처는 `public/landing/`, 영어는 `public/landing/en/`(components/home/screens의 landingScreen과 같은 자리).
+const OUT_DIR = LANG === "en" ? "public/landing/en" : "public/landing";
+const OUT = resolve(import.meta.dirname, "../..", OUT_DIR);
 const PORT = 4789;
 
 /* ---- 예시 기록 ---- */
@@ -189,9 +191,15 @@ async function main() {
   for (const [name, path] of shots) {
     await page.goto(`${origin}${path}`);
     await page.waitForLoadState("networkidle").catch(() => undefined);
-    await page.waitForTimeout(800);
+    // 페이지를 새로 열 때마다 앱 시작 인트로(AppIntro)가 잠깐 덮는다. 사라진 뒤에 찍는다.
+    await page
+      .waitForFunction(() => !document.querySelector('[class*="AppIntro"]'), undefined, {
+        timeout: 10_000,
+      })
+      .catch(() => undefined);
+    await page.waitForTimeout(600);
     await page.screenshot({ path: join(OUT, `${name}.png`) });
-    console.error(`찍음: public/landing/${LANG}/${name}.png`);
+    console.error(`찍음: ${OUT_DIR}/${name}.png`);
   }
 
   await browser.close();
