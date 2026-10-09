@@ -23,7 +23,13 @@ export const PC_USAGE_STALE_DAYS = 3;
 
 export interface PcUsageLink {
   /** `apiUsd`: 그 PC에서 구독으로 쓴 토큰을 API 요금표로 환산한 금액(모르면 null). */
-  entries: { serviceId: PcUsageServiceId; days: number; apiUsd: number | null }[];
+  entries: {
+    serviceId: PcUsageServiceId;
+    days: number;
+    apiUsd: number | null;
+    /** 그 PC에서 구독으로 쓴 토큰 수. 모르면 null. */
+    tokens: number | null;
+  }[];
   windowDays: number;
   /** 센 날(그 PC의 날짜, YYYY-MM-DD). */
   until: string;
@@ -36,8 +42,8 @@ const isService = (value: string): value is PcUsageServiceId =>
   (PC_USAGE_SERVICES as readonly string[]).includes(value);
 
 /**
- * `#pc=claude-pro:12:41.50,chatgpt-plus:5&window=30&until=2026-10-09`을 읽는다(세 번째 칸은 API 환산 USD, 없을 수
- * 있다). 하나라도 틀리면 통째로 거절한다.
+ * `#pc=claude-pro:12:41.50:2100000,chatgpt-plus:5&window=30&until=2026-10-09`을 읽는다(세 번째 칸은 API 환산 USD,
+ * 네 번째는 토큰 수 — 둘 다 없을 수 있다). 하나라도 틀리면 통째로 거절한다.
  */
 export function parsePcUsageHash(hash: string, now: Date = new Date()): PcUsageParse {
   const params = new URLSearchParams(hash.replace(/^#/, ""));
@@ -55,10 +61,15 @@ export function parsePcUsageHash(hash: string, now: Date = new Date()): PcUsageP
 
   const entries: PcUsageLink["entries"] = [];
   for (const part of (params.get("pc") ?? "").split(",")) {
-    const [serviceId, raw, rawUsd, ...rest] = part.split(":");
+    const [serviceId, raw, rawUsd, rawTokens, ...rest] = part.split(":");
     const days = Number(raw);
-    const apiUsd = rawUsd === undefined ? null : Number(rawUsd);
+    // 금액 칸은 비어 있을 수 있다(금액은 모르고 토큰만 아는 경우: `서비스:쓴 날::토큰 수`).
+    const apiUsd = rawUsd === undefined || rawUsd === "" ? null : Number(rawUsd);
+    const tokens = rawTokens === undefined ? null : Number(rawTokens);
     if (rest.length > 0) return { ok: false, reason: "invalid" };
+    if (tokens !== null && !(Number.isSafeInteger(tokens) && tokens > 0)) {
+      return { ok: false, reason: "invalid" };
+    }
     if (apiUsd !== null && !(Number.isFinite(apiUsd) && apiUsd > 0 && apiUsd < 1_000_000)) {
       return { ok: false, reason: "invalid" };
     }
@@ -69,7 +80,7 @@ export function parsePcUsageHash(hash: string, now: Date = new Date()): PcUsageP
     if (entries.some((entry) => entry.serviceId === serviceId)) {
       return { ok: false, reason: "invalid" };
     }
-    entries.push({ serviceId, days, apiUsd });
+    entries.push({ serviceId, days, apiUsd, tokens });
   }
   if (entries.length === 0) return { ok: false, reason: "invalid" };
 
@@ -111,4 +122,17 @@ export function apiValueRatio(
   if (!(mine > 0)) return null;
   const value = sub.currency === "USD" ? apiUsd : toKRW(apiUsd, "USD", exchangeRate);
   return value / mine;
+}
+
+/** 배수 표기: 10배 이상은 정수, 그 아래는 소수 한 자리. */
+export function formatRatio(ratio: number): string {
+  return ratio >= 10 ? String(Math.round(ratio)) : ratio.toFixed(1);
+}
+
+/** 토큰 수를 줄여 보인다('2.1억', '210M'). */
+export function formatTokenCount(tokens: number, locale: "ko" | "en"): string {
+  return new Intl.NumberFormat(locale === "en" ? "en-US" : "ko-KR", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(tokens);
 }

@@ -243,12 +243,19 @@ export function metricRiskLevel(
   quantity: number,
   storageFit?: StoragePlanFit | null,
   freeTier?: FreeTierAnswer | null,
+  apiValueRatio?: number | null,
 ): RiskLevel {
   switch (metric) {
     case "uses":
       return getRiskLevel(calculateCostPerUse(monthlyShare, quantity), monthlyShare, quantity);
     case "days": {
-      const level = quantity <= 2 ? "red" : quantity >= 10 ? "green" : "yellow";
+      const byDays = quantity <= 2 ? "red" : quantity >= 10 ? "green" : "yellow";
+      // PC 기록의 토큰을 API로 냈다면 구독료 이상이었으면, 쓴 날이 적어도 본전은 뽑았다. 구독료보다 적으면 쓴
+      // 날대로 둔다 — PC 기록은 웹·앱 사용이 빠진 하한값이라 판단을 낮추는 근거가 되지 못한다.
+      const level =
+        apiValueRatio !== null && apiValueRatio !== undefined && apiValueRatio >= 1
+          ? "green"
+          : byDays;
       return level === "green" && freeTier === "enough" ? "yellow" : level;
     }
     case "hours":
@@ -281,6 +288,8 @@ export interface CheckInOutcome {
   storageFit: StoragePlanFit | null;
   /** 쓴 날로 재는 구독이 "무료 요금제로 충분했다"고 답했고 한 번이라도 썼다. */
   freeTierEnough: boolean;
+  /** PC 기록의 API 환산 금액이 내 몫 한 달 구독료의 몇 배인지(쓴 날로 재는 구독, 근거가 있을 때만). */
+  apiValueRatio: number | null;
 }
 
 export interface MetricEvaluation {
@@ -300,10 +309,13 @@ export function evaluateMetric(
   storageFit?: StoragePlanFit | null,
   /** 무료 요금제로 충분했는지의 답(쓴 날로 재는 구독만). 묻지 않았으면 null. */
   freeTier?: FreeTierAnswer | null,
+  /** PC 기록의 API 환산 금액 ÷ 내 몫 한 달 구독료(쓴 날로 재는 구독만). 근거가 없으면 null. */
+  apiValueRatio?: number | null,
 ): MetricEvaluation {
+  const ratio = metric === "days" ? (apiValueRatio ?? null) : null;
   return {
     costPerUse: calculateCostPerUse(monthlyShare, quantity),
-    riskLevel: metricRiskLevel(metric, monthlyShare, quantity, storageFit, freeTier),
+    riskLevel: metricRiskLevel(metric, monthlyShare, quantity, storageFit, freeTier, ratio),
     outcome: {
       metric,
       serviceName,
@@ -312,6 +324,7 @@ export function evaluateMetric(
       currency,
       storageFit: storageFit ?? null,
       freeTierEnough: metric === "days" && quantity > 0 && freeTier === "enough",
+      apiValueRatio: ratio,
     },
   };
 }

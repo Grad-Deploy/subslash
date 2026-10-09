@@ -179,6 +179,7 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
                 serviceId={SERVICE[tool]}
                 days={summary!.days}
                 apiUsd={summary!.api.pricedRequests > 0 ? summary!.api.usd : null}
+                tokens={summary!.api.tokens > 0 ? summary!.api.tokens : null}
                 subscriptions={subscriptions}
               />
             ))}

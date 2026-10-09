@@ -340,7 +340,7 @@ export const useStore = create<SubSlashStore>()(
           const { log, response } = buildCheckInLog(
             sub,
             usageCount,
-            options,
+            { ...options, exchangeRate: get().getExchangeRate() },
             new Date(),
             crypto.randomUUID(),
           );

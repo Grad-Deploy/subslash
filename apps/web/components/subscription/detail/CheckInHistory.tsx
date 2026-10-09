@@ -2,7 +2,9 @@
 
 import React from "react";
 import type { Subscription, UsageLog } from "@subslash/shared";
-import { useT, type Messages } from "@lib/i18n";
+import { formatUSD } from "@subslash/shared";
+import { useLocale, useT, type Messages } from "@lib/i18n";
+import { formatTokenCount } from "@lib/pc-usage";
 import { describeCheckInText } from "@lib/i18n/check-in-text";
 import { Button } from "../../ui/button";
 import { RiskBadge } from "../../dashboard/RiskBadge";
@@ -29,6 +31,7 @@ export function CheckInHistory({
 }) {
   const isKilled = sub.status === "killed";
   const t = useT();
+  const locale = useLocale();
   const h = t.checkin.history;
   return (
     <div className="space-y-4">
@@ -62,6 +65,14 @@ export function CheckInHistory({
                 <div className="text-xs text-muted-foreground">
                   {describeCheckInText(t, log, sub.currency)}
                 </div>
+                {log.tokens && (
+                  <div className="text-[11px] text-muted-foreground">
+                    {h.pcTokens(
+                      formatTokenCount(log.tokens.count, locale),
+                      log.tokens.apiUsd !== null ? formatUSD(log.tokens.apiUsd) : null,
+                    )}
+                  </div>
+                )}
                 {log.source === "phone" && (
                   <div className="text-[11px] text-muted-foreground">
                     {phoneCheckInNote(t, log.metric)}

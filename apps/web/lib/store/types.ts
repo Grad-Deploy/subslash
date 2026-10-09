@@ -137,7 +137,13 @@ export interface SubSlashStore {
   checkIn: (
     subscriptionId: string,
     usageCount: number,
-    options?: { source?: "phone"; replaceLogId?: string; metric?: ValueMetric },
+    options?: {
+      source?: "phone";
+      replaceLogId?: string;
+      metric?: ValueMetric;
+      /** PC의 Claude Code·Codex 기록에서 본 토큰 근거(/pc-usage에서 체크인할 때). */
+      tokens?: { count: number; apiUsd: number | null };
+    },
   ) => CheckInResponse;
   getActiveSubscriptions: () => Subscription[];
   getKilledSubscriptions: () => Subscription[];

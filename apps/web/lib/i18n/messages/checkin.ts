@@ -112,6 +112,10 @@ export const ko = {
     storageUnknownPlan: (name: string, percent: number) =>
       `${name} 요금제 용량의 ${percent}%를 쓰고 있어요.`,
     freeTierEnough: "무료 요금제로도 충분했다면, 해지하지 않고 무료로 내려도 돼요.",
+    tokensOver: (times: string) =>
+      `PC의 토큰 사용량을 API 요금으로 환산하면 구독료의 ${times}배예요 — 쓴 날이 적어도 본전은 뽑았어요.`,
+    tokensUnder: (percent: number) =>
+      `PC의 토큰 사용량은 API 요금으로 구독료의 ${percent}%예요. 웹·앱에서 쓴 것은 빠져 있어 쓴 날로 판단했어요.`,
   },
   metaphor: {
     unusedComparison: (item: string) => `${item} 세이브 기회`,
@@ -189,6 +193,8 @@ export const ko = {
     add: "+ 체크인 하기",
     empty: "아직 체크인 기록이 없어요. 이번 달 이용 횟수를 넣어 보세요.",
     monthRecord: (month: string) => `${month} 사용 기록`,
+    pcTokens: (tokens: string, apiValue: string | null) =>
+      `PC 기록: 토큰 ${tokens}개${apiValue ? ` · API 요금으로 ${apiValue}` : ""}`,
   },
   evidence: {
     label: "체크인 근거",
@@ -361,6 +367,10 @@ export const en: Widen<typeof ko> = {
     storageUnknownPlan: (name, percent) =>
       `You're using ${percent}% of your ${name} plan's storage.`,
     freeTierEnough: "If the free plan was enough, you can drop to it instead of cancelling.",
+    tokensOver: (times) =>
+      `Your PC token use comes to ${times}× the fee at API prices — even on few days, you got your money's worth.`,
+    tokensUnder: (percent) =>
+      `Your PC token use comes to ${percent}% of the fee at API prices. Web and app use isn't included, so this is judged by days used.`,
   },
   metaphor: {
     unusedComparison: (item) => `A chance to save ${item}`,
@@ -440,6 +450,8 @@ export const en: Widen<typeof ko> = {
     add: "+ Check in",
     empty: "No check-ins yet. Enter how much you used it this month.",
     monthRecord: (month) => `${month} usage`,
+    pcTokens: (tokens, apiValue) =>
+      `PC records: ${tokens} tokens${apiValue ? ` · ${apiValue} at API prices` : ""}`,
   },
   evidence: {
     label: "Check-in evidence",
