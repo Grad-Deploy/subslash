@@ -66,6 +66,7 @@ describe("Cost Per Use Utils", () => {
         currency,
         storageFit: null,
         freeTierEnough: false,
+        apiValueRatio: null,
       });
 
     it('0회 이용: "공중에 버리셨습니다" 포함', () => {
@@ -97,6 +98,7 @@ describe("Cost Per Use Utils", () => {
         currency: "KRW",
         storageFit: null,
         freeTierEnough: false,
+        apiValueRatio: null,
       });
       expect(text).toBe("This month Netflix cost you ₩3,400 per use.");
     });

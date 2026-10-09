@@ -264,6 +264,8 @@ describe("API 요금 환산", () => {
     expect(summary.api).toEqual({
       usd: 0,
       pricedRequests: 0,
+      // 요금을 몰라도 토큰은 센다: 응답마다 입력 1M·출력 1M·캐시 읽기 1M·캐시 쓰기 2M, 두 응답.
+      tokens: 10_000_000,
       unpricedRequests: 2,
       unpricedModels: ["claude-future-9", "claude-opus-5-5 (fast)"],
     });
