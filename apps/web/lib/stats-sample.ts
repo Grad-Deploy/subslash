@@ -313,7 +313,6 @@ export const SAMPLE_CONTRIBUTORS: ContributorRow[] = [
     ["baemin-club", 4000, 1],
   ]),
   persona("50s", [
-    ["naver-vibe", 8500, 16],
     ["naver-plus", 4900, 9],
     ["naver-mybox", 3000, null],
   ]),
