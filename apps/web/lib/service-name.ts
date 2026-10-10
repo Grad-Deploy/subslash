@@ -52,6 +52,7 @@ export const PLAN_NAMES_EN: Record<string, string> = {
   학생: "Student",
   듀오: "Duo",
   가족: "Family",
+  "가족 (최대 6명)": "Family (up to 6)",
   스트리밍클럽: "Streaming Club",
   "스트리밍 플러스": "Streaming Plus",
   "Hi-Fi 스트리밍클럽": "Hi-Fi Streaming Club",

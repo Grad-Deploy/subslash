@@ -23,7 +23,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label={t.shell.nav.label}
-      className="md:hidden fixed bottom-0 w-full border-t bg-background z-40 pb-safe"
+      className="md:hidden fixed bottom-0 w-full border-t bg-background z-40 pb-safe px-safe"
     >
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {

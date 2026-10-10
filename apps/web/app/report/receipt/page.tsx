@@ -157,7 +157,7 @@ function ReceiptFromQuery() {
       {message && (
         <div
           role="status"
-          className="fixed top-16 right-4 z-50 rounded-xl bg-foreground px-4 py-2.5 text-sm font-medium text-background shadow-2xl"
+          className="fixed top-16 right-[calc(1rem+env(safe-area-inset-right))] z-50 rounded-xl bg-foreground px-4 py-2.5 text-sm font-medium text-background shadow-2xl"
         >
           {message}
         </div>

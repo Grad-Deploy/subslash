@@ -8,6 +8,7 @@ import {
   referencePriceFor,
   subscriptionFormData,
   yearlyDiscountOf,
+  type ServicePreset,
 } from "@subslash/shared";
 
 function byId(id: string) {
@@ -16,7 +17,15 @@ function byId(id: string) {
   return preset;
 }
 
+// 요금을 확인하지 못한 서비스. 모두 확인해 비어 있을 수 있어서, 이 목록에 기대는 테스트는 목록이 빌 때 건너뛰거나
+// 지어낸 서비스로 확인한다(마지막으로 남았던 네이버 바이브를 서비스 종료로 뺐다).
 const unknownPrice = POPULAR_SERVICES.filter((s) => s.defaultAmount === null && !s.plans?.length);
+const unknownPricePreset: ServicePreset = {
+  ...byId("netflix"),
+  id: "unknown-price",
+  defaultAmount: null,
+  plans: undefined,
+};
 
 describe("서비스 목록의 요금", () => {
   it("요금제가 여럿인 서비스는 요금 하나를 기본값으로 두지 않는다", () => {
@@ -36,7 +45,6 @@ describe("서비스 목록의 요금", () => {
   });
 
   it("요금을 모르는 서비스는 등록할 때 무엇을 적을지 안내한다", () => {
-    expect(unknownPrice.length).toBeGreaterThan(0);
     for (const preset of unknownPrice) expect(preset.priceNote, preset.id).toBeTruthy();
   });
 });
@@ -58,7 +66,7 @@ describe("describePresetPrice", () => {
   });
 
   it("요금을 모르면 지어내지 않는다", () => {
-    expect(describePresetPrice(unknownPrice[0])).toBe("요금 직접 입력");
+    expect(describePresetPrice(unknownPricePreset)).toBe("요금 직접 입력");
   });
 });
 
@@ -131,7 +139,7 @@ describe("referencePriceFor", () => {
     expect(referencePriceFor({ name: "넷플릭스", planId: "gold" })).toBeNull();
   });
 
-  it("요금을 모르는 서비스는 기준 요금이 없다", () => {
+  it.runIf(unknownPrice.length > 0)("요금을 모르는 서비스는 기준 요금이 없다", () => {
     expect(referencePriceFor({ name: unknownPrice[0].nameKo })).toBeNull();
   });
 

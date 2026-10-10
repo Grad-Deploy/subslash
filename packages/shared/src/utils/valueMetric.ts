@@ -55,7 +55,6 @@ export const SERVICE_METRICS: Readonly<Record<string, ValueMetric>> = {
   spotify: "hours",
   melon: "hours",
   "apple-music": "hours",
-  "naver-vibe": "hours",
   millie: "hours",
   "ridi-select": "hours",
   "chatgpt-plus": "days",
@@ -191,7 +190,8 @@ export const METRIC_SPECS: Readonly<Record<ValueMetric, MetricSpec>> = {
   },
   hours: {
     question: "최근 30일 동안 몇 시간쯤 썼어요?",
-    hint: "화면을 끄고 들은 시간도 넣어 주세요. 하루 30분씩이면 15시간이에요.",
+    // 시간으로 재는 구독에는 음악뿐 아니라 영상(티빙 x 웨이브 더블)도 있다 — '들은 시간'만 말하면 영상 구독에 맞지 않았다.
+    hint: "TV·PC에서 쓴 시간과 화면을 끄고 들은 시간도 넣어 주세요. 하루 30분씩이면 15시간이에요.",
     unit: "시간",
     max: 720,
     presets: [0, 1, 5, 10, 20, 40],
