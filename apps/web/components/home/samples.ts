@@ -41,9 +41,24 @@ export const SAMPLES: Sample[] = SAMPLE_PICKS.flatMap(({ id, planId }): Sample[]
   return [{ preset, planName: null, amount: preset.defaultAmount, currency: preset.currency }];
 });
 
-/** 요금제까지 붙인 이름("넷플릭스 프리미엄"). */
-export const sampleName = ({ preset, planName }: Sample, locale: Locale = "ko") =>
-  `${shortServiceName(preset, locale)}${planName ? ` ${planDisplayName(planName, locale)}` : ""}`;
+/**
+ * 요금제까지 붙인 이름("넷플릭스 프리미엄"). 서비스 이름 끝과 요금제 이름 앞이 겹치면 한 번만 쓴다 — 그대로 붙이면
+ * 유튜브 프리미엄의 '프리미엄' 요금제가 '유튜브 프리미엄 프리미엄'이 됐다.
+ */
+export const sampleName = ({ preset, planName }: Sample, locale: Locale = "ko") => {
+  const service = shortServiceName(preset, locale);
+  if (!planName) return service;
+  const serviceWords = service.split(/\s+/);
+  const planWords = planDisplayName(planName, locale).split(/\s+/);
+  const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+  for (let n = Math.min(serviceWords.length - 1, planWords.length); n > 0; n--) {
+    const tail = serviceWords.slice(-n);
+    if (tail.every((word, i) => same(word, planWords[i]!))) {
+      return [...serviceWords, ...planWords.slice(n)].join(" ");
+    }
+  }
+  return [...serviceWords, ...planWords].join(" ");
+};
 
 /**
  * 결제 알림 견본의 한 달 합계("모르는 사이 매달 …"). 모두 원화일 때만 쓴다 — 통화가 섞이면 더한 숫자가 뜻이 없다.
