@@ -6,12 +6,13 @@ import { useT } from "@lib/i18n";
 
 /**
  * 모든 화면 아래의 푸터. 모바일 하단 탭에 가려지지 않게, 본문 대신 푸터가 아래 여백을 갖는다. 하단 탭이
- * 홈 표시줄만큼 높아지므로 그 높이도 더한다.
+ * 홈 표시줄만큼 높아지므로 그 높이도 더한다. 여백은 하단 탭 위에 떠 있는 + 버튼(`AppAddButton`, 아래에서 5rem +
+ * 높이 3.5rem)보다 높아야 한다 — 6rem일 때는 대시보드·내 구독 끝까지 내려도 푸터의 상표 안내가 버튼 밑에 깔렸다.
  */
 export function SiteFooter() {
   const t = useT().shell.footer;
   return (
-    <footer className="container max-w-6xl mx-auto px-4 pt-2 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-8 text-xs text-muted-foreground">
+    <footer className="container max-w-6xl mx-auto px-4 pt-2 pb-[calc(9.5rem+env(safe-area-inset-bottom))] md:pb-8 text-xs text-muted-foreground">
       <div className="space-y-2 border-t pt-4">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <BrandWordmark className="text-xs" />

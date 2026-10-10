@@ -334,7 +334,7 @@ export default function SubscriptionsPage() {
       ) : (
         <button
           onClick={() => addFlow.open()}
-          className="md:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-6 w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-2xl text-2xl font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-30"
+          className="md:hidden fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-[calc(1.5rem+env(safe-area-inset-right))] w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-2xl text-2xl font-bold flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-30"
           aria-label={t.page.addAria}
         >
           +

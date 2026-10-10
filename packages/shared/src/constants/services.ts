@@ -643,11 +643,15 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     nameKo: "티빙 x 웨이브 더블 이용권",
     nameEn: "TVING x Wavve Double Pass",
     category: "ott",
-    // 요금제가 여럿인데 공식 발표로 확인한 것은 광고형 스탠다드(월 7,000원)뿐이다. 나머지 요금제의
-    // 값은 판매 페이지를 확인하지 못해 적지 않는다 — 등록할 때 결제 화면의 금액을 적는다.
+    // 광고형 스탠다드(월 7,000원)는 2025년 10월 공식 발표(sourceUrl), 나머지 요금제는 판매 화면의 요금(2026-10-10
+    // 사용자 확인). 판매 화면의 이름은 '더블 광고형 스탠다드'처럼 '더블'이 붙지만 서비스 이름에 이미 있어 뺀다.
     defaultAmount: null,
-    priceNote:
-      "광고형 스탠다드는 월 7,000원이에요(2025년 10월 발표). 다른 요금제는 결제 화면의 금액을 적어 주세요.",
+    plans: [
+      { id: "ad-standard", name: "광고형 스탠다드", amount: 7000 },
+      { id: "basic", name: "베이직", amount: 13500 },
+      { id: "standard", name: "스탠다드", amount: 15000 },
+      { id: "premium", name: "프리미엄", amount: 19500 },
+    ],
     currency: "KRW",
     cancelUrl: "https://www.tving.com/",
     cancelUrlKind: "entry",
@@ -661,12 +665,13 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     name: "Apple One",
     nameKo: "Apple One",
     category: "ott",
-    // apple.com/kr/apple-one의 요금. 개인은 iCloud+ 50GB, 가족은 200GB이고 Apple Arcade도 들어 있다
-    // (Arcade는 서비스 목록에 없어 includes에 적지 않는다).
+    // apple.com/kr/apple-one의 요금(2026-10-10 사용자 다시 확인). 개인은 iCloud+ 50GB, 가족은 200GB이고 Apple
+    // Arcade도 들어 있다(Arcade는 서비스 목록에 없어 includes에 적지 않는다).
     defaultAmount: null,
     plans: [
       { id: "individual", name: "개인", amount: 14900 },
-      { id: "family", name: "가족", amount: 20900 },
+      // 최대 인원은 안내 문구(priceNote)가 아니라 이름에 적는다 — 안내 문구는 영어 화면에서도 한국어로 보인다.
+      { id: "family", name: "가족 (최대 6명)", amount: 20900 },
     ],
     currency: "KRW",
     cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",
@@ -743,24 +748,6 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelAndroidApp: "com.nhn.android.ndrive",
     cancelGuide:
       "1. 네이버 MYBOX 웹/앱 접속 > 환경설정\n2. [용량 관리/이용권] 선택\n3. [정기결제 해지] 클릭하여 완료",
-  },
-  {
-    id: "naver-vibe",
-    name: "Naver VIBE",
-    nameKo: "네이버 바이브 (VIBE)",
-    nameEn: "Naver VIBE",
-    category: "music",
-    defaultAmount: null,
-    priceNote: "지금 요금을 확인하지 못했어요. 결제 내역의 금액을 적어주세요.",
-    currency: "KRW",
-    // 'My 멤버십' 화면(2026-10-01, 로그인한 브라우저에서 사용자가 확인). 해지는 여기서 [결제 관리]를 한 번 더
-    // 눌러야 나오므로 해지 화면이라고 부르지 않는다. 바이브는 없는 주소에도 같은 화면 틀을 줘서 주소만으로는
-    // 살아 있는지 가릴 수 없다. 예전 링크 /membership은 My 멤버십이 아니었다.
-    cancelUrl: "https://vibe.naver.com/membership/my",
-    cancelUrlKind: "entry",
-    legacyCancelUrls: ["https://vibe.naver.com/membership"],
-    cancelGuide:
-      "1. VIBE 웹 로그인 후 왼쪽 위 프로필 > [My 멤버십]\n2. [결제 관리] 클릭\n3. [구독 해지] 클릭 후 혜택을 확인하고 [혜택 포기] 선택 — 남은 기간까지는 이용할 수 있어요\n4. 앱(App Store·Google Play)에서 결제했다면 그곳에서 해지해요",
   },
   {
     id: "kakao-emoticon",
@@ -1187,7 +1174,9 @@ export const DEMO_SUBSCRIPTIONS: Array<{
     cancelGuide: "프로필 > 구매 항목 및 멤버십 > 비활성화",
   },
   {
-    name: "쿠팡 와우 멤버십",
+    // 서비스 목록의 이름(nameKo) 그대로 둔다 — 목록에서 골라 등록한 구독과 같아야 영어 화면에서 영문 이름으로 보인다.
+    // '쿠팡 와우 멤버십'으로 적었을 때는 영어 화면에서 이 샘플만 한국어로 남았다.
+    name: "쿠팡 와우 (쿠팡플레이)",
     amount: 7890,
     currency: "KRW",
     billingDay: 28,
