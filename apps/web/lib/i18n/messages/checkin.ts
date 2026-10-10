@@ -27,6 +27,11 @@ function koGB(raw: number): string {
   return `약 ${Number.isInteger(Math.round(tb * 10) / 10) ? Math.round(tb) : tb.toFixed(1)}TB`;
 }
 
+/** 'times'·'days'·'hours'는 1일 때 단수로 쓴다('1 hours'로 보였다). 그 밖의 단위(KRW·%)는 그대로다. */
+function enUnit(value: number, unit: string): string {
+  return value === 1 && /^(times|days|hours)$/.test(unit) ? unit.slice(0, -1) : unit;
+}
+
 function enGB(raw: number): string {
   const gb = Number(raw);
   if (gb < 1) return "under 1GB";
@@ -46,6 +51,8 @@ export const ko = {
   },
   input: {
     presetLabel: (value: number, unit: string) => `${value}${unit}`,
+    /** 숫자 옆에 붙는 단위. 영어는 1이면 단수('1 hour')로 쓴다. */
+    unitFor: (_value: number, unit: string) => unit,
     presetBenefit: (value: number) =>
       value === 0 ? "0원" : value % 10000 === 0 ? `${value / 10000}만` : `${value / 1000}천`,
     choose: "골라 주세요",
@@ -281,7 +288,7 @@ export const en: Widen<typeof ko> = {
     },
     hours: {
       question: "About how many hours did you use it in the last 30 days?",
-      hint: "Include time you listened with the screen off. 30 minutes a day is 15 hours.",
+      hint: "Include time on a TV or PC and listening with the screen off. 30 minutes a day is 15 hours.",
       unit: "hours",
       quantityLabel: "Hours used in 30 days",
       perUnit: "Per hour",
@@ -302,11 +309,12 @@ export const en: Widen<typeof ko> = {
     },
   },
   input: {
-    presetLabel: (value, unit) => (unit === "%" ? `${value}%` : `${value} ${unit}`),
+    presetLabel: (value, unit) => (unit === "%" ? `${value}%` : `${value} ${enUnit(value, unit)}`),
+    unitFor: enUnit,
     presetBenefit: (value) => (value === 0 ? "₩0" : `₩${value / 1000}k`),
     choose: "Pick one",
-    decrease: (step, unit) => `Subtract ${step} ${unit}`,
-    increase: (step, unit) => `Add ${step} ${unit}`,
+    decrease: (step, unit) => `Subtract ${step} ${enUnit(step, unit)}`,
+    increase: (step, unit) => `Add ${step} ${enUnit(step, unit)}`,
     storageOf: (plan, used) => `${used} of ${plan}`,
     storageGB: enGB,
     orderEvidence: (since, count) =>
