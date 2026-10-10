@@ -91,11 +91,11 @@ test.describe("Dashboard (E2E)", () => {
     // 저장소에는 체험 중에도 실제 기록만 있다.
     const stored = await page.evaluate(() => localStorage.getItem("subslash-storage") ?? "");
     expect(stored).toContain("내 노션");
-    expect(stored).not.toContain("쿠팡 와우 멤버십");
+    expect(stored).not.toContain("쿠팡 와우 (쿠팡플레이)");
 
     // 새로고침하면 체험이 끝나므로 화면 안의 링크로 옮긴다.
     await page.locator('a[href="/subs"]:visible').first().click();
-    await expect(page.getByRole("link", { name: /쿠팡 와우 멤버십/ })).toBeVisible({
+    await expect(page.getByRole("link", { name: /쿠팡 와우 \(쿠팡플레이\)/ })).toBeVisible({
       timeout: 30_000,
     });
     await expect(page.getByRole("link", { name: /내 노션/ })).toHaveCount(0);
@@ -103,7 +103,7 @@ test.describe("Dashboard (E2E)", () => {
     await banner.getByRole("button", { name: "체험 끝내기" }).click();
     await expect(banner).toHaveCount(0);
     await expect(page.getByRole("link", { name: /내 노션/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /쿠팡 와우 멤버십/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /쿠팡 와우 \(쿠팡플레이\)/ })).toHaveCount(0);
   });
 
   test("체험 중에 새로고침하면 샘플이 사라진다", async ({ page }) => {
