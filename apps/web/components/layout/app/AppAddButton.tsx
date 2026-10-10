@@ -84,7 +84,7 @@ export function AppAddButton({
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t.title}
-        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-5 z-30 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-2xl transition-transform active:scale-95"
+        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-[calc(1.25rem+env(safe-area-inset-right))] z-30 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-2xl transition-transform active:scale-95"
       >
         <Plus className="size-7" aria-hidden />
       </button>

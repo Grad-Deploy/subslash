@@ -199,7 +199,7 @@ export function AppOnboarding({ onDone }: { onDone: () => void }) {
 
   return (
     // 인트로의 검은 판에서 이어지므로 바깥은 검게 두고 소개만 서서히 드러낸다(그 사이 홈이 비치지 않게).
-    <div className="fixed inset-0 z-[100] bg-[#09090b]">
+    <div className="fixed inset-0 z-[100] bg-[#09090b] px-safe">
       <div
         ref={rootRef}
         className="hero-in relative h-full overflow-hidden bg-background text-foreground break-keep"
