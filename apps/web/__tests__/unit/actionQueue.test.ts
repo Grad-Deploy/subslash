@@ -474,3 +474,13 @@ describe("무료 체험 중인 구독", () => {
     expect(queue.map((item) => item.kind)).not.toContain("trial-ending");
   });
 });
+
+describe("로고를 찾을 단서", () => {
+  // 대시보드 카드는 이 주소로 서비스 목록의 로고를 찾는다. 빠졌을 때 이름을 목록과 다르게 적은
+  // '쿠팡 와우 멤버십'이 로고 대신 이니셜로 그려졌다.
+  it("항목에 구독의 해지 주소를 싣는다", () => {
+    const cancelUrl = "https://loyalty.coupang.com/loyalty/management/home";
+    const [item] = getActionQueue([subDueIn(3, { name: "쿠팡 와우 멤버십", cancelUrl })], [], NOW);
+    expect(item?.cancelUrl).toBe(cancelUrl);
+  });
+});

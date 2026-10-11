@@ -159,7 +159,7 @@ export const en: Widen<typeof ko> = {
     sampleNote: "Example · prices from the service list",
     opening: {
       q1: "Netflix — how many times did you watch this month?",
-      q2: "Coupang Wow? YouTube Premium?",
+      q2: "Coupang WOW? YouTube Premium?",
       totalBefore: "Without noticing, every month ",
       scroll: "Scroll down",
       kicker: "Subscription detox",

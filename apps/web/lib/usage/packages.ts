@@ -31,7 +31,6 @@ export const USAGE_PACKAGES: Readonly<Record<string, readonly string[]>> = {
   spotify: ["com.spotify.music"],
   melon: ["com.iloen.melon"],
   "apple-music": ["com.apple.android.music"],
-  "naver-vibe": ["com.naver.vibe"],
   "google-ai-pro": ["com.google.android.apps.bard"],
   notion: ["notion.id"],
   "chatgpt-plus": ["com.openai.chatgpt"],

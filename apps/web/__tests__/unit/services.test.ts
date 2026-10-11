@@ -199,10 +199,6 @@ describe("바뀐 해지 주소", () => {
     expect(currentCancelUrl("https://m.coupang.com/")).toBe(
       "https://loyalty.coupang.com/loyalty/management/home",
     );
-    // 바이브의 해지는 'My 멤버십'에서 시작한다.
-    expect(currentCancelUrl("https://vibe.naver.com/membership")).toBe(
-      "https://vibe.naver.com/membership/my",
-    );
   });
 
   it("지금 주소와 사용자가 적은 주소는 그대로 둔다", () => {
@@ -245,8 +241,6 @@ describe("바뀐 해지 주소", () => {
       "wavve",
       "laftel",
       "coupang-wow",
-      // 바이브는 My 멤버십에서 [결제 관리]를 한 번 더 눌러야 해지가 나온다.
-      "naver-vibe",
     ]) {
       expect(POPULAR_SERVICES.find((service) => service.id === id)?.cancelUrlKind).toBe("entry");
     }

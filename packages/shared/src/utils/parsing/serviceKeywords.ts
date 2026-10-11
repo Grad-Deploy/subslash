@@ -77,11 +77,6 @@ export const SERVICE_KEYWORDS: {
     defaultPaymentMethod: "naverpay",
   },
   {
-    keywords: ["vibe", "바이브", "네이버 바이브", "naver vibe"],
-    presetId: "naver-vibe",
-    defaultPaymentMethod: "naverpay",
-  },
-  {
     keywords: ["카카오 이모티콘", "이모티콘 플러스", "톡서랍"],
     presetId: "kakao-emoticon",
     defaultPaymentMethod: "kakaopay",

@@ -108,7 +108,6 @@
         <package android:name="com.spotify.music" />
         <package android:name="com.iloen.melon" />
         <package android:name="com.apple.android.music" />
-        <package android:name="com.naver.vibe" />
         <package android:name="com.google.android.apps.bard" />
         <package android:name="notion.id" />
         <package android:name="com.openai.chatgpt" />

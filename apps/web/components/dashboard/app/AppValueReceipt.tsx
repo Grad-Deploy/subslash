@@ -142,7 +142,7 @@ function ReceiptSheet({
   const { summary } = data;
   const { cancel, checkIn } = sheetActions(t, summary);
   return createPortal(
-    <div className="fixed inset-0 z-50 flex h-[100dvh] items-end">
+    <div className="fixed inset-0 z-50 flex h-[100dvh] items-end px-safe">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div
         role="dialog"

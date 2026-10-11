@@ -136,8 +136,9 @@ export function SubCard({
               </div>
             </div>
 
+            {/* 이름이 길면('Coupang WOW (Coupang Play)') 이 칸이 눌려 'D-18'이 하이픈에서 두 줄로 갈라졌다. */}
             {!isKilled && (
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex shrink-0 flex-col items-end gap-2">
                 <DdayCountdown subscription={subscription} />
               </div>
             )}

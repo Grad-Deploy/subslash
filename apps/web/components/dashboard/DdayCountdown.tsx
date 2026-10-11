@@ -74,7 +74,7 @@ export function DdayCountdown({
     <div className={cn("flex flex-col items-center", className)}>
       <div
         className={cn(
-          "text-2xl font-bold transition-all",
+          "text-2xl font-bold whitespace-nowrap transition-all",
           isDanger
             ? "text-red-500 animate-pulse"
             : isWarning

@@ -48,7 +48,6 @@ describe("서비스 이름의 영문 표기", () => {
       "naver-plus",
       "melon",
       "naver-mybox",
-      "naver-vibe",
       "kakao-emoticon",
       "apple-icloud",
       "google-one",

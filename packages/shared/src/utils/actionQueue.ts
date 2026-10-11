@@ -136,6 +136,10 @@ export interface ActionItem {
   iconEmoji?: string;
   /** 직접 등록한 구독의 아이콘 타일 색(`Subscription.iconColor`). */
   iconColor?: string;
+  /**
+   * 구독의 해지 주소. 이름을 고쳐 적은 구독('쿠팡 와우 멤버십')도 이 주소로 서비스 목록의 로고를 찾는다.
+   */
+  cancelUrl?: string;
   kind: ActionKind;
   /** 왜 이 줄이 떴는지. 문장은 화면이 만든다. */
   reason: ActionReason;
@@ -269,6 +273,7 @@ export function getActionQueue(
         name: sub.name,
         iconEmoji: sub.iconUrl,
         iconColor: sub.iconColor,
+        cancelUrl: sub.cancelUrl,
         kind: "cancel-notice",
         // 제목의 낱말로 가린 알림이라 해지했다고 말하지 않는다. 사용자가 안다.
         reason: { type: "cancel-notice", noticeAt: sub.cancelNoticeAt },
@@ -293,6 +298,7 @@ export function getActionQueue(
         name: sub.name,
         iconEmoji: sub.iconUrl,
         iconColor: sub.iconColor,
+        cancelUrl: sub.cancelUrl,
         kind: "trial-ending",
         reason: {
           type: "trial-ending",
@@ -413,6 +419,7 @@ export function getActionQueue(
       name: sub.name,
       iconEmoji: sub.iconUrl,
       iconColor: sub.iconColor,
+      cancelUrl: sub.cancelUrl,
       kind,
       reason,
       verb: VERB[kind],
@@ -433,6 +440,7 @@ export function getActionQueue(
       name: sub.name,
       iconEmoji: sub.iconUrl,
       iconColor: sub.iconColor,
+      cancelUrl: sub.cancelUrl,
       kind: "charged-after-kill",
       reason: {
         type: "charged-after-kill",
@@ -462,6 +470,7 @@ export function getActionQueue(
       name: sub.name,
       iconEmoji: sub.iconUrl,
       iconColor: sub.iconColor,
+      cancelUrl: sub.cancelUrl,
       kind: "verify-kill",
       reason: {
         type: "verify-kill",
@@ -489,6 +498,7 @@ export function getActionQueue(
       name: sub.name,
       iconEmoji: sub.iconUrl,
       iconColor: sub.iconColor,
+      cancelUrl: sub.cancelUrl,
       kind: "resubscribe-reminder",
       reason: { type: "resubscribe-reminder", remindOn: sub.resubscribeRemindOn ?? "" },
       verb: VERB["resubscribe-reminder"],

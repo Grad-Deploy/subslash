@@ -222,9 +222,10 @@ export function CancelGuideModal({
                     className={`${WRAPPING_BUTTON} min-h-10 text-sm rounded-xl`}
                     onClick={() => leaveTo(link.url)}
                   >
+                    {/* link.name은 서비스 목록의 한국어 이름이라 영어 화면에서 'Open 웨이브'로 보였다. */}
                     {link.kind === "direct"
-                      ? t.guide.checkStatus(link.name)
-                      : t.guide.openService(link.name)}
+                      ? t.guide.checkStatus(names.id(link.serviceId))
+                      : t.guide.openService(names.id(link.serviceId))}
                   </Button>
                 ))}
               </div>

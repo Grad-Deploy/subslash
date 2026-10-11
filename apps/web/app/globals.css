@@ -97,6 +97,21 @@ body {
   padding-top: env(safe-area-inset-top);
 }
 
+/* 좌우도 같다. 앱을 가로로 돌리면 내비게이션 바가 오른쪽(또는 왼쪽)에, 카메라 구멍이 반대쪽에 온다 —
+   위아래만 비켰을 때는 카드의 버튼과 + 버튼이 내비게이션 바 밑에 깔렸다. 본문은 body가 비키고, body 밖에
+   그려지는 fixed 요소(하단 탭·시트·떠 있는 버튼)는 각자 비킨다. */
+@utility px-safe {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+@layer base {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
 /* Fix native form controls (select dropdown, options, input) across all browsers in dark mode */
 select,
 input,

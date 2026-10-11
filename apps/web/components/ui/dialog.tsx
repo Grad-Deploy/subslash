@@ -31,7 +31,7 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
 
   return createPortal(
     <DialogContext.Provider value={{ onOpenChange }}>
-      <div className="fixed inset-0 z-50 flex h-[100dvh] items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 flex h-[100dvh] items-center justify-center p-4 pt-[calc(1rem+env(safe-area-inset-top))] pr-[calc(1rem+env(safe-area-inset-right))] pb-[calc(1rem+env(safe-area-inset-bottom))] pl-[calc(1rem+env(safe-area-inset-left))]">
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
           onClick={() => onOpenChange?.(false)}
@@ -50,6 +50,9 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
  * 높이는 `dvh`로 잰다. iOS Safari에서 `vh`는 주소창을 감춘 **가장 큰** 화면 높이라, `90vh`짜리
  * 창은 실제로 보이는 높이보다 커진다 — 창의 위아래가 화면 밖으로 잘리고 오른쪽 위 닫기 버튼이
  * 아예 보이지 않았다.
+ *
+ * 높이는 바깥 칸의 안쪽(`100%`)도 넘지 않는다. 바깥 칸은 상태 표시줄·내비게이션 바만큼 비우므로, `90dvh`만 두었을 때
+ * 앱(화면 끝까지 그림)에서 긴 창의 아래 끝이 내비게이션 바 밑에 깔렸다.
  *
  * 스크롤은 안쪽 칸이 맡는다. 창 자체가 스크롤하면 그 안에 절대 배치한 닫기 버튼이 내용과 함께
  * 밀려 올라가, 긴 폼(구독 정보 수정)에서는 조금만 내려도 닫을 방법이 사라졌다.
@@ -70,7 +73,7 @@ const DialogContent = ({
       role="dialog"
       aria-modal="true"
       className={cn(
-        "relative z-50 flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-xl border bg-background shadow-lg animate-in fade-in zoom-in-95",
+        "relative z-50 flex max-h-[min(90dvh,100%)] w-full max-w-lg flex-col overflow-hidden rounded-xl border bg-background shadow-lg animate-in fade-in zoom-in-95",
         className,
       )}
       {...props}

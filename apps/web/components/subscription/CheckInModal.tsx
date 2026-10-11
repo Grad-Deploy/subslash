@@ -144,7 +144,7 @@ export function CheckInModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
         className={cn(
-          "sm:max-w-md max-h-[90vh] overflow-y-auto",
+          "sm:max-w-md overflow-y-auto",
           // 앱 결과는 상태를 글자와 점으로 말하므로 창 전체를 붉게 칠하지 않는다.
           isRed &&
             !AppCheckInResult &&

@@ -106,7 +106,9 @@ export function MetricQuantityInput({
           )}
         >
           {metric === "benefit" ? quantity.toLocaleString(c.input.benefitNumberLocale) : quantity}
-          <span className="ml-0.5 text-[15px] font-extrabold">{text.unit}</span>
+          <span className="ml-0.5 text-[15px] font-extrabold">
+            {c.input.unitFor(quantity, text.unit)}
+          </span>
         </p>
         <p className="min-h-4 text-xs text-muted-foreground">
           {value === null ? c.input.choose : (unitCost ?? storageLine)}
