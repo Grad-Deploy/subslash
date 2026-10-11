@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ko as PAGE_TITLES } from "./i18n/messages/pageTitles";
 
 /**
  * 검색·공유 미리보기에 쓰는 사이트 공통 값. 검색에 노출하는 화면은 첫 화면과 개인정보처리방침뿐이다
@@ -16,7 +17,7 @@ import type { Metadata } from "next";
  * 되풀이되는 그림은 검색엔진이 쓰지 않는다.
  */
 export const SITE_NAME = "SubSlash";
-export const SITE_TITLE = "SubSlash - 구독, 끊을 용기";
+export const SITE_TITLE = PAGE_TITLES.site;
 export const SITE_DESCRIPTION = "구독 1회 사용 단가 분석과 해지 도우미";
 
 const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL;

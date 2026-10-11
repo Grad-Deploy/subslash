@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { WifiOff } from "lucide-react";
+import { ko as PAGE_TITLES } from "@lib/i18n/messages/pageTitles";
 
 export const metadata: Metadata = {
-  title: "오프라인 - SubSlash",
+  title: PAGE_TITLES.paths["/offline"],
 };
 
 /**

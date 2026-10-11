@@ -1,8 +1,9 @@
 import React from "react";
 import { StorageQuotaDone } from "@components/subscription/StorageQuotaDone";
+import { ko as PAGE_TITLES } from "@lib/i18n/messages/pageTitles";
 
 export const metadata = {
-  title: "용량 측정 · SubSlash",
+  title: PAGE_TITLES.paths["/storage-quota/done"],
 };
 
 /**
