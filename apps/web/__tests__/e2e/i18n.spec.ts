@@ -27,6 +27,18 @@ test.describe("화면 언어 (E2E)", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
   });
 
+  // 페이지의 제목은 서버가 한국어로 정한다. 예전에는 영어 화면에서도 탭이 '로그인 · SubSlash'였다.
+  test("탭 제목도 화면 언어를 따르고, 화면을 옮겨도 남는다", async ({ page }) => {
+    await page.goto("/login");
+    await expect(page).toHaveTitle("Log in · SubSlash");
+    await page.goto("/settings");
+    await expect(page).toHaveTitle("SubSlash - The nerve to cut subscriptions");
+    await page.getByRole("radio", { name: "한국어" }).click();
+    await expect(page).toHaveTitle("SubSlash - 구독, 끊을 용기");
+    await page.getByRole("radio", { name: "기기 설정 따라" }).click();
+    await expect(page).toHaveTitle("SubSlash - The nerve to cut subscriptions");
+  });
+
   test("하단 탭·푸터도 영어다", async ({ page, isMobile }) => {
     await page.goto("/settings");
     await expect(page.getByRole("link", { name: "Privacy policy" }).first()).toBeVisible();

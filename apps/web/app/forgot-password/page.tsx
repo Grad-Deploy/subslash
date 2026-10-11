@@ -2,9 +2,10 @@ import React from "react";
 import type { Metadata } from "next";
 import { AccountPageHeading } from "@components/auth/AccountPageHeading";
 import { ForgotPasswordForm } from "@components/auth/ForgotPasswordForm";
+import { ko as PAGE_TITLES } from "@lib/i18n/messages/pageTitles";
 
 export const metadata: Metadata = {
-  title: "비밀번호 재설정 · SubSlash",
+  title: PAGE_TITLES.paths["/forgot-password"],
 };
 
 export default function ForgotPasswordPage() {
