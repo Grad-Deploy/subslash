@@ -5,6 +5,7 @@ import type { ServicePreset, Subscription } from "@subslash/shared";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import { useLocale, useServiceNames, useT } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
+import { packageLabel } from "@lib/usage/packages";
 import { readDeviceValue, SUGGEST_DISMISSED_KEY, writeDeviceValue } from "@lib/usage/storage";
 import {
   dismissUntil,
@@ -112,8 +113,8 @@ export function SuggestionCard({
   const s = t.usageMore.suggest;
   const locale = useLocale();
   const names = useServiceNames();
-  const { preset, totals, killed, bundles, appName, appNameEn, note } = suggestion;
-  const app = (locale === "en" ? appNameEn : undefined) ?? appName;
+  const { preset, totals, killed, bundles, appPackage, note } = suggestion;
+  const app = appPackage ? packageLabel(appPackage, locale) : undefined;
   // 안내 글은 서비스 id로 지금 언어의 것을 찾는다. 표에 없으면 원문을 쓴다.
   const noteText = note ? (s.notes[preset.id] ?? note) : null;
   const name = names.preset(preset);

@@ -5,6 +5,7 @@ import {
   storagePlanFit,
   type Subscription,
 } from "@subslash/shared";
+import { SOURCE_LOCALE, appsScriptLocale, type Locale } from "../i18n/config";
 
 /**
  * 구글 원 저장 공간 체크인의 '사용량 측정'.
@@ -40,11 +41,12 @@ export function canCheckGoogleStorage(sub: Pick<Subscription, "name" | "cancelUr
 /** 웹 앱을 열 주소. `origin`은 웹이 돌아올 SubSlash 주소, `scheme`은 앱이 돌아올 앱 ID다. */
 export function storageQuotaCheckUrl(
   base: string,
-  options: { state: string; origin?: string; scheme?: string | null; lang?: "ko" | "en" },
+  options: { state: string; origin?: string; scheme?: string | null; lang?: Locale },
 ): string {
   const params = new URLSearchParams({ state: options.state });
-  // 웹 앱 화면 언어. 영어만 싣고, 나머지는 웹 앱이 한국어로 보인다.
-  if (options.lang === "en") params.set("lang", "en");
+  // 웹 앱 화면 언어. 원문(한국어)이면 싣지 않는다 — 웹 앱의 기본이다. 웹 앱이 모르는 언어는 영어.
+  const lang = options.lang ? appsScriptLocale(options.lang) : SOURCE_LOCALE;
+  if (lang !== SOURCE_LOCALE) params.set("lang", lang);
   if (options.scheme) {
     params.set("client", "app");
     params.set("return", options.scheme);

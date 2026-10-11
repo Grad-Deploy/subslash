@@ -9,10 +9,13 @@ import { ConfirmDialog } from "@components/ui/confirm-dialog";
 import { apiFetch } from "@lib/api";
 import { releaseRecordsToGuest } from "@lib/records-owner";
 import { HydratedForm } from "@components/ui/hydrated-form";
-import { useKnownText, useLatestT, useLocale, useT } from "@lib/i18n";
+import { useKnownText, useLatestT, useLocale, useT, type Locale } from "@lib/i18n";
 
-/** 비밀번호 없는 계정이 탈퇴할 때 입력하는 확인 글자. 서버는 두 글자를 모두 받는다(app/api/auth/account). */
-const CONFIRM_WORDS = { ko: "탈퇴", en: "DELETE" } as const;
+/**
+ * 비밀번호 없는 계정이 탈퇴할 때 입력하는 확인 글자. 서버는 이 두 글자만 받는다(app/api/auth/account) — 다른 언어는
+ * 'DELETE'를 쓴다. 낱말을 더하려면 서버도 함께 고친다.
+ */
+const CONFIRM_WORDS: Partial<Record<Locale, string>> = { ko: "탈퇴", en: "DELETE" };
 
 /**
  * 회원 탈퇴. 비밀번호를 한 번 더 받고, 확인 창을 거쳐 지운다.
@@ -25,7 +28,7 @@ export function DeleteAccountSection() {
   const r = a.remove;
   const tRef = useLatestT();
   const known = useKnownText();
-  const CONFIRM_WORD = CONFIRM_WORDS[useLocale()];
+  const CONFIRM_WORD = CONFIRM_WORDS[useLocale()] ?? "DELETE";
   const { account, loading } = useAuth();
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);

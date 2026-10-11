@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import { cn } from "@lib/utils";
 import { useLocalePreference, useT, type LocalePreference } from "@lib/i18n";
+import { LOCALE_INFO, LOCALES } from "@lib/i18n/config";
 
 /**
  * 설정의 언어 고르기. 처음에는 기기 언어를 따르고, 고르면 이 기기에 남긴다. 언어 이름은 화면 언어와
@@ -13,8 +14,7 @@ export function LanguagePicker() {
   const [preference, setPreference] = useLocalePreference();
   const options: { value: LocalePreference; label: string }[] = [
     { value: null, label: t.system },
-    { value: "ko", label: "한국어" },
-    { value: "en", label: "English" },
+    ...LOCALES.map((locale) => ({ value: locale, label: LOCALE_INFO[locale].nativeName })),
   ];
 
   return (

@@ -16,6 +16,7 @@ import {
 } from "@subslash/shared";
 import { apiFetch, readApiError } from "./api";
 import { withAppReturn } from "./native";
+import { SOURCE_LOCALE, appsScriptLocale, type Locale } from "./i18n/config";
 
 /**
  * Gmail 자동 가져오기의 브라우저 쪽.
@@ -80,11 +81,12 @@ export async function createGmailLink(): Promise<string> {
  * 원클릭 연결을 시작한다. 돌려받은 주소(SubSlash의 Apps Script 웹 앱)로 가면 Google이 권한을 묻고,
  * 허용하면 웹 앱이 이 계정의 연결을 새로 발급한다 — 예전 스크립트는 그때부터 거절된다.
  */
-export async function startGmailConnect(lang: "ko" | "en" = "ko"): Promise<string> {
-  // 웹 앱의 연결·결과 화면을 이 언어로 보인다.
+export async function startGmailConnect(locale: Locale = SOURCE_LOCALE): Promise<string> {
+  // 웹 앱의 연결·결과 화면을 이 언어로 보인다(웹 앱이 모르는 언어는 영어).
+  const lang = appsScriptLocale(locale);
   const path = await withAppReturn("/api/gmail/connect");
   const response = await apiFetch(
-    lang === "en" ? `${path}${path.includes("?") ? "&" : "?"}lang=en` : path,
+    lang === SOURCE_LOCALE ? path : `${path}${path.includes("?") ? "&" : "?"}lang=${lang}`,
     {
       method: "POST",
     },

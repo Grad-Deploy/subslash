@@ -28,6 +28,7 @@ import { Inbox, SearchX } from "lucide-react";
 import { IS_APP_BUILD } from "@lib/platform";
 import dynamic from "next/dynamic";
 import { useKnownText, useT, useLocale } from "@lib/i18n";
+import { appsScriptLocale } from "@lib/i18n/config";
 
 // 앱에서만 쓰는 안내. 웹 사용자가 이 코드를 받지 않도록 앱 빌드에서만 불러온다.
 const AppImportGuide = IS_APP_BUILD
@@ -64,7 +65,7 @@ function Guide() {
   // 앱에서는 짧은 안내(고를 방법 → 한 단계씩)를 쓴다. 웹의 직접 실행 방법은 가져온 구독이 웹
   // 브라우저에 저장돼 앱에 담기지 않으므로, 앱은 계정으로 받는 자동 가져오기만 안내한다.
   if (AppImportGuide) return <AppImportGuide />;
-  const script = gmailAppsScript(webUrl("/import"), locale);
+  const script = gmailAppsScript(webUrl("/import"), appsScriptLocale(locale));
 
   return (
     <article className="mx-auto max-w-2xl space-y-6 py-6 text-sm leading-relaxed">

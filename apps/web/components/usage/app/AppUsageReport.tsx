@@ -9,7 +9,7 @@ import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import { firstRecordedDay } from "@lib/usage/history";
-import { useT } from "@lib/i18n";
+import { useLocale, useT } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
 import { MEASURED_USAGE_PACKAGES, packagesFor } from "@lib/usage/packages";
 import {
@@ -27,6 +27,7 @@ import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 import { UsageLine, isUnused, type SortKey, type UsageReportLine } from "./AppUsageLine";
 import { UsageCard } from "./AppUsageCard";
 import { RangeTabs, StatTile, SubLogo, UsageBarChart, monthBars, monthDay } from "./parts";
+import { intlLocale } from "@lib/i18n/config";
 
 const SORT_KEYS: SortKey[] = ["value", "time", "opens"];
 
@@ -58,6 +59,7 @@ function compare(sort: SortKey) {
  */
 export function AppUsageReport({ active }: { active: Subscription[] }) {
   const t = useT();
+  const locale = useLocale();
   const u = t.usageApp;
   const r = u.report;
   const rate = useExchangeRate();
@@ -149,7 +151,7 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
         <StatTile label={r.totalTime} value={formatDurationText(t, totalMs)} />
         <StatTile
           label={r.totalOpens}
-          value={totalOpens.toLocaleString("ko-KR")}
+          value={totalOpens.toLocaleString(intlLocale(locale))}
           unit={u.timesUnit}
         />
       </div>
