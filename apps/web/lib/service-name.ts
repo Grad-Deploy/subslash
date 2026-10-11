@@ -15,18 +15,20 @@ export function shortServiceName(preset: ServicePreset, locale: Locale = "ko"): 
 }
 
 /**
- * 등록한 구독의 화면 이름. 이름은 사용자 기록이라 바꾸지 않고, 영어 화면에서 서비스 목록의 한국어 이름
- * (`nameKo`) 그대로인 구독만 영문 이름으로 보인다. 한국어 화면은 적힌 그대로다 — 'Netflix'처럼 영문으로 적은
- * 이름을 '넷플릭스'로 바꾸면, 사용자가 적은 이름이 화면에서 사라진다. 사용자가 고쳐 적은 이름도 그대로다.
+ * 등록한 구독의 화면 이름. 서비스 목록에서 골라 등록한 이름은 그때 화면의 언어로 저장된다(영어 화면이면
+ * `nameEn`). 그 이름이 목록의 이름(`nameKo`·`nameEn`·`name`) 중 하나 그대로면 지금 화면 언어의 이름으로 보인다 —
+ * 예전에는 영어 화면에서만 한국어 이름을 바꿔, 영어로 등록한 구독은 한국어 화면에서도 'Netflix'로 남았다.
+ * 목록 이름과 다르게 고쳐 적은 이름('내 넷플릭스')은 그대로다. 저장값은 바꾸지 않고 보여 줄 때만 바꾼다.
  */
 export function subscriptionName(
   sub: { name: string; cancelUrl?: string },
   locale: Locale = "ko",
 ): string {
-  if (locale !== "en") return sub.name;
   const preset = findPresetForSubscription(sub);
-  if (!preset || sub.name.trim() !== preset.nameKo) return sub.name;
-  return presetName(preset, locale);
+  if (!preset) return sub.name;
+  const name = sub.name.trim();
+  const listNames = [preset.nameKo, preset.nameEn, preset.name];
+  return listNames.includes(name) ? presetName(preset, locale) : sub.name;
 }
 
 /** 서비스 id의 화면 이름(결합 상품의 구성, 통계처럼 id만 아는 자리). 목록에 없는 id는 id 그대로다. */

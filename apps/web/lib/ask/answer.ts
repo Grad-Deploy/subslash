@@ -79,9 +79,10 @@ const normalize = (text: string) => text.toLowerCase().replace(/[\s·.\-_]/g, ""
 export function matchSubscriptions(query: string, subscriptions: Subscription[]): Subscription[] {
   const wanted = normalize(query);
   if (wanted.length < 2) return [];
-  // 영어로 물으면("Netflix") 한국어 이름으로 등록한 구독(넷플릭스)도 맞춘다 — 서비스 목록의 영문 이름으로도 견준다.
+  // 영어로 물으면("Netflix") 한국어 이름으로 등록한 구독(넷플릭스)도, 한국어로 물으면("넷플") 영어 화면에서 등록한
+  // 구독(Netflix)도 맞춘다 — 서비스 목록의 두 언어 이름으로 견준다.
   return subscriptions.filter((sub) =>
-    [sub.name, subscriptionName(sub, "en")].some((raw) => {
+    [sub.name, subscriptionName(sub, "ko"), subscriptionName(sub, "en")].some((raw) => {
       const name = normalize(raw);
       return name.includes(wanted) || wanted.includes(name);
     }),

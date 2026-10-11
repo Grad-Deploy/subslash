@@ -5,6 +5,7 @@ const STORAGE_KEY = "subslash-storage";
 
 const netflix = {
   id: "sub1",
+  // 영어 화면에서 등록한 이름. 한국어 화면에는 목록의 한국어 이름(넷플릭스)으로 보인다.
   name: "Netflix",
   amount: 17000,
   currency: "KRW",
@@ -67,7 +68,7 @@ test.describe("Subscription Flow (E2E)", () => {
 
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: /목록에 없는 서비스 직접 입력/ }).click();
-    await dialog.locator('input[name="name"]').fill("Netflix");
+    await dialog.locator('input[name="name"]').fill("우리 동네 헬스장");
     await dialog.locator('input[name="amount"]').fill("17000");
     await dialog.locator('input[name="billingDay"]').fill("15");
     await dialog.locator('button[type="submit"]').click();
@@ -79,7 +80,7 @@ test.describe("Subscription Flow (E2E)", () => {
     await expect(page.getByRole("heading", { name: /지금 결정할 것/ })).toBeVisible({
       timeout: 30_000,
     });
-    await expect(page.getByText("Netflix").first()).toBeVisible();
+    await expect(page.getByText("우리 동네 헬스장").first()).toBeVisible();
   });
 
   test("체크인 플로우", async ({ page }) => {
@@ -109,11 +110,11 @@ test.describe("Subscription Flow (E2E)", () => {
     // '해지 완료했어요'가 곧 확인이다. 확인 창을 한 번 더 띄우지 않는다.
     await guideDialog.getByRole("button", { name: "해지 완료했어요" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page.getByText("Netflix 해지 완료로 기록")).toBeVisible();
+    await expect(page.getByText("넷플릭스 해지 완료로 기록")).toBeVisible();
 
     await page.getByRole("button", { name: /해지 완료 \(1\)/ }).click();
 
-    await expect(page.getByRole("link", { name: /Netflix/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /넷플릭스/ })).toBeVisible();
   });
 
   test("해지 화면에 다녀오면 가이드 맨 위에서 마쳤는지 묻는다", async ({ page, context }) => {
@@ -139,7 +140,7 @@ test.describe("Subscription Flow (E2E)", () => {
     await prompt.getByRole("button", { name: "해지 완료했어요" }).click();
 
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page.getByText("Netflix 해지 완료로 기록")).toBeVisible();
+    await expect(page.getByText("넷플릭스 해지 완료로 기록")).toBeVisible();
   });
 
   test("메일 체크인: '해지 가이드 열기'는 가이드를 열 뿐, 확인 전에는 해지로 기록하지 않는다", async ({
