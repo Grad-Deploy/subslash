@@ -62,6 +62,8 @@ export const ko = {
     close: "닫기",
     loading: "불러오는 중",
     copyFallback: "자동으로 복사하지 못했습니다. 아래 글을 길게 눌러 복사해주세요.",
+    /** 번역하지 않은 원문 옆의 표시. 원문 언어 화면에서는 보이지 않는다(SourceTextNote). */
+    sourceText: "원문",
   },
   app: {
     sheetClose: "닫기",
@@ -127,6 +129,8 @@ export const en: Widen<typeof ko> = {
     close: "Close",
     loading: "Loading",
     copyFallback: "Couldn't copy automatically. Press and hold the text below to copy it.",
+    sourceText:
+      "Original (Korean), not translated: we keep it exactly as we checked it on the service.",
   },
   app: {
     sheetClose: "Close",

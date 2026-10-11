@@ -12,6 +12,7 @@ import { copyText, openExternal } from "@lib/native";
 import { useLocale, useT, useServiceNames } from "@lib/i18n";
 import { findPaymentMethod } from "@lib/payment-method";
 import { Button, WRAPPING_BUTTON } from "../../ui/button";
+import { SourceTextNote, sourceLang } from "@components/ui/source-text";
 
 /** 해지 경로 안내 — 가입한 계정, 결제 수단, 해지하러 갈 곳, 저장해 둔 단계를 한곳에 모은다. */
 export function CancelRoutesCard({
@@ -133,9 +134,13 @@ export function CancelRoutesCard({
       {sub.cancelGuide && (
         <div className="p-4 bg-background border rounded-xl space-y-2 text-xs">
           <div className="font-bold text-foreground">{t.routes.savedSteps}</div>
-          <p className="whitespace-pre-line text-muted-foreground leading-relaxed">
+          <p
+            className="whitespace-pre-line text-muted-foreground leading-relaxed"
+            lang={sourceLang(sub.cancelGuide)}
+          >
             {sub.cancelGuide}
           </p>
+          <SourceTextNote text={sub.cancelGuide} />
         </div>
       )}
     </div>
