@@ -6,6 +6,7 @@ import { cn } from "@lib/utils";
 import { useIsClient } from "@hooks/useIsClient";
 import { X } from "lucide-react";
 import { useOverlayLock } from "@hooks/useOverlayLock";
+import { useT } from "@lib/i18n";
 
 interface DialogProps {
   open?: boolean;
@@ -67,6 +68,7 @@ const DialogContent = ({
   hideClose?: boolean;
 }) => {
   const { onOpenChange } = React.useContext(DialogContext);
+  const t = useT();
 
   return (
     <div
@@ -85,7 +87,7 @@ const DialogContent = ({
           className="absolute right-4 top-4 z-20 rounded-sm bg-background/80 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">{t.shell.common.close}</span>
         </button>
       )}
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-6">
