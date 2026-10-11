@@ -100,10 +100,11 @@ describe("등록한 구독의 화면 이름", () => {
   });
 
   // 샘플 이름이 목록 이름과 다르면 고쳐 적은 이름으로 읽혀, 영어 화면에서도 한국어로 남았다('쿠팡 와우 멤버십').
-  it("샘플 체험의 구독은 목록의 이름이라 두 언어 이름으로 보인다", () => {
+  it("샘플 체험의 구독은 목록의 이름·분류라 두 언어 이름으로 보인다", () => {
     for (const sample of DEMO_SUBSCRIPTIONS) {
       const service = findPresetForSubscription(sample);
       expect(service?.nameKo, sample.name).toBe(sample.name);
+      expect(sample.category, sample.name).toBe(service?.category);
       expect(subscriptionName(sample, "en"), sample.name).not.toMatch(HANGUL);
     }
   });
