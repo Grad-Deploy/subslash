@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEMO_SUBSCRIPTIONS,
   POPULAR_SERVICES,
   findPresetForSubscription,
   isSameService,
@@ -95,6 +96,16 @@ describe("등록한 구독의 화면 이름", () => {
     expect(subscriptionName({ name: "넷플릭스 (가족)" }, "en")).toBe("넷플릭스 (가족)");
     expect(subscriptionName({ name: "내 헬스장" }, "en")).toBe("내 헬스장");
     expect(subscriptionName({ name: "My Netflix" }, "ko")).toBe("My Netflix");
+  });
+
+  // 샘플 이름이 목록 이름과 다르면 고쳐 적은 이름으로 읽혀, 영어 화면에서도 한국어로 남았다('쿠팡 와우 멤버십').
+  it("샘플 체험의 구독은 목록의 이름·분류라 두 언어 이름으로 보인다", () => {
+    for (const sample of DEMO_SUBSCRIPTIONS) {
+      const service = findPresetForSubscription(sample);
+      expect(service?.nameKo, sample.name).toBe(sample.name);
+      expect(sample.category, sample.name).toBe(service?.category);
+      expect(subscriptionName(sample, "en"), sample.name).not.toMatch(HANGUL);
+    }
   });
 
   it("영문 이름으로 저장한 구독도 같은 서비스로 알아본다", () => {
