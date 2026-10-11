@@ -553,7 +553,7 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import`)는 SubSlash가 G
 견줄 때는 `findPresetForSubscription`·`serviceNameKey`를 쓴다. `@subslash/shared`는 화면에 보일 문장을 만들지 않고
 값을 돌려준다(예: 정산 문구는 `settlementParts` → `t.subs.card.settlementMessage`) — 한국어 문장을 돌려주는 shared 함수는
 서버·테스트·한국 서비스에 보내는 글(환불 요청 `formatRefundRequest`)만 쓴다. 일부러 한국어로 두는 것: 서비스 목록의
-해지 안내·요금 설명(확인한 원문), 환불 요청 글, 메일(`lib/email`), AI 프롬프트·도구 설명. 탭 제목은 `messages/pageTitles`
+해지 안내·요금 설명(확인한 원문 — 다른 언어 화면에서는 `SourceTextNote`로 '원문(한국어)'이라고 적고 `lang="ko"`를 단다), 환불 요청 글, 메일(`lib/email`), AI 프롬프트·도구 설명. 탭 제목은 `messages/pageTitles`
 한 곳에 두고 페이지 metadata(한국어)와 `LocaleEffects`(화면 언어)가 함께 쓴다. 간편 로그인 회사 이름은
 `t.auth.social.providers`로 보인다(서버의 `OAUTH_PROVIDER_LABEL`은 한국어).
 입력 검사(`@subslash/shared`)와 서버 응답은 한국어 문장을 돌려준다 — 서버와 같은 함수라 언어마다 나누지 않고, 보여 주는
