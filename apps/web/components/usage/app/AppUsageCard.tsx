@@ -93,7 +93,7 @@ export function UsageCard({
             {top.map((row) => (
               <CardBarRow
                 key={row.usage.sub.id}
-                name={row.usage.sub.name}
+                name={names.sub(row.usage.sub)}
                 width={Math.max(3, (row.usage.totals.usedMs / totalMs) * 100)}
                 barClassName="bg-foreground/70"
                 value={formatDurationText(t, row.usage.totals.usedMs)}
@@ -149,7 +149,7 @@ export function UsageCard({
             return (
               <CardBarRow
                 key={row.usage.sub.id}
-                name={row.usage.sub.name}
+                name={names.sub(row.usage.sub)}
                 width={
                   unused ? 0 : Math.max(3, Math.min(100, (row.view.have30 / row.view.goal) * 100))
                 }
