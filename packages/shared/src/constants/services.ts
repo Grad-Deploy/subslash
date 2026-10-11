@@ -1187,7 +1187,7 @@ export const DEMO_SUBSCRIPTIONS: Array<{
     cancelGuide: "프로필 > 구매 항목 및 멤버십 > 비활성화",
   },
   {
-    name: "쿠팡 와우 멤버십",
+    name: "쿠팡 와우 (쿠팡플레이)",
     amount: 7890,
     currency: "KRW",
     billingDay: 28,
