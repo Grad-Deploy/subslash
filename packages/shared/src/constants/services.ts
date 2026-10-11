@@ -1181,7 +1181,7 @@ export const DEMO_SUBSCRIPTIONS: Array<{
     currency: "KRW",
     billingDay: 28,
     billingCycle: "monthly",
-    category: "shopping",
+    category: "ott",
     cancelUrl: "https://loyalty.coupang.com/loyalty/management/home",
     cancelGuide: "마이쿠팡 > 와우 멤버십 > 해지하기",
   },
