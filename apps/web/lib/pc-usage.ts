@@ -7,6 +7,7 @@ import {
   type CliServiceId,
   type Subscription,
 } from "@subslash/shared";
+import { intlLocale, type Locale } from "./i18n/config";
 
 /**
  * PC의 AI 코딩 도구 사용(`apps/usage-cli`, `npx subslash-usage`)이 만든 링크(`/pc-usage#pc=…`)를 읽는다.
@@ -132,8 +133,8 @@ export function formatRatio(ratio: number): string {
 }
 
 /** 토큰 수를 줄여 보인다('2.1억', '210M'). */
-export function formatTokenCount(tokens: number, locale: "ko" | "en"): string {
-  return new Intl.NumberFormat(locale === "en" ? "en-US" : "ko-KR", {
+export function formatTokenCount(tokens: number, locale: Locale): string {
+  return new Intl.NumberFormat(intlLocale(locale), {
     notation: "compact",
     maximumFractionDigits: 1,
   }).format(tokens);

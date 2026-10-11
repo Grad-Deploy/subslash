@@ -7,12 +7,13 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { useLocale, useT } from "@lib/i18n";
 import { refreshExchangeRate } from "@hooks/useAutoExchangeRate";
+import { intlLocale, type Locale } from "@lib/i18n/config";
 
-function formatUpdatedAt(iso: string | null, locale: string): string {
+function formatUpdatedAt(iso: string | null, locale: Locale): string {
   if (!iso) return "";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US", {
+  return date.toLocaleDateString(intlLocale(locale), {
     year: "numeric",
     month: "long",
     day: "numeric",

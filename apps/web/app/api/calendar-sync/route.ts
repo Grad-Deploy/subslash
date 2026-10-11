@@ -8,6 +8,7 @@ import { isAppReturnScheme } from "@lib/app-return";
 import { gmailConnectWebAppUrl } from "@lib/gmail-auto-import";
 import { createCalendarSyncPlan, parseCalendarPlan } from "@lib/calendar-sync";
 import { logError } from "@lib/log";
+import { SOURCE_LOCALE } from "@lib/i18n/config";
 
 /**
  * '구글 캘린더에 등록'을 시작한다. 브라우저가 지금 구독의 결제일을 맡기면, SubSlash Apps Script
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     // 웹 앱은 이 주소로 계획을 받아 간다. 스크립트가 허용 목록으로 다시 확인한다.
     url.searchParams.set("origin", appUrl());
     // 웹 앱의 결과 화면도 캘린더 이름처럼 등록한 언어로 보인다.
-    if (plan.lang === "en") url.searchParams.set("lang", "en");
+    if (plan.lang && plan.lang !== SOURCE_LOCALE) url.searchParams.set("lang", plan.lang);
     // 앱은 이 주소를 인앱 브라우저로 연다. 웹 앱이 끝 화면에 웹사이트로 가는 '돌아가기' 대신 앱으로
     // 돌아가는 길을 두게 알린다. 앱이 보낸 돌아올 스킴(`return`, 앱 ID)은 목록에 있는 것만 옮긴다 — 웹 앱이
     // 그 앱을 연다(lib/app-return).
