@@ -103,10 +103,10 @@ var APP_RETURN_SCHEMES = __RETURN_SCHEMES__;
 var RETURN_SCHEME = "";
 var FLOW = "gmail";
 
-// 화면 언어. SubSlash가 화면 언어를 주소에 싣는다(lang=en). 모르는 값은 한국어다.
+// 화면 언어. SubSlash가 화면 언어를 주소에 싣는다(lang=en 등, TEXT에 있는 언어). 모르는 값은 한국어다.
 var LANG = "ko";
 
-// 화면 문구. SubSlash 화면 언어(한국어·영어)를 따른다.
+// 화면 문구. SubSlash 화면 언어(한국어·영어·중국어·일본어·베트남어·프랑스어·스페인어·독일어·포르투갈어)를 따른다.
 var TEXT = {
   ko: {
     cannotConnect: "연결할 수 없습니다",
@@ -192,6 +192,301 @@ var TEXT = {
     closeToApp: "Close this window to go back to the SubSlash app.",
     backToWeb: "Back to SubSlash",
   },
+  zh: {
+    cannotConnect: "无法连接",
+    notAllowed: "请求来自不允许的地址。请从 SubSlash 重新连接。",
+    noCode: "缺少连接代码。请从 SubSlash 重新连接。",
+    inProgress: "进行中",
+    connecting: "正在连接 SubSlash",
+    wait: "请不要关闭窗口，稍等片刻。通常 20 秒内完成。",
+    failed: "无法连接",
+    tryLater: "请稍后从 SubSlash 重新连接。",
+    checkingRecent: function (days) {
+      return "正在检查最近 " + days + " 天的付款邮件";
+    },
+    gmailPageTitle: "SubSlash Gmail 连接",
+    codeExpired: "连接代码已过期或已被使用。请从 SubSlash 重新连接。",
+    reconnect: "请从 SubSlash 重新连接。",
+    disconnectedTitle: "连接已断开",
+    disconnected: "SubSlash 已断开此账户的连接。请重新连接。",
+    connectedTitle: "已连接 Gmail",
+    connected: function (days, sent) {
+      return "已检查最近 " + days + " 天的 " + sent + " 封邮件。回到 SubSlash 后，找到的订阅会被登记。" +
+        "一年中剩下的部分（年付）会在几分钟内继续检查，之后每 2 周检查新的付款邮件。";
+    },
+    firstScanFailed: function (reason) {
+      return "第一次检查没有完成，会在 2 周后的检查时重试（" + reason + "）。";
+    },
+    sendFailed: function (status) {
+      return "无法发送到 SubSlash（" + status + "）";
+    },
+    calendarFailed: "无法添加到 Google 日历",
+    calendarExpired: "请求已过期或已被使用。请在 SubSlash 中再点一次。",
+    calendarDoneTitle: "已添加到 Google 日历",
+    calendarDone: function (name, count) {
+      return "已在「" + name + "」日历中添加 " + count + " 个扣款日。修改订阅后在 SubSlash 中再点一次，" +
+        "会整个重写这个日历。";
+    },
+    calendarPageTitle: "SubSlash 日历登记",
+    backToApp: "返回 SubSlash 应用",
+    backToAppNote: "如果按钮打不开，关闭这个窗口也会回到应用。",
+    closeToApp: "关闭这个窗口即可回到 SubSlash 应用。",
+    backToWeb: "返回 SubSlash",
+  },
+  ja: {
+    cannotConnect: "接続できません",
+    notAllowed: "許可されていないアドレスからのリクエストです。SubSlash からもう一度接続してください。",
+    noCode: "接続コードがありません。SubSlash からもう一度接続してください。",
+    inProgress: "処理中",
+    connecting: "SubSlash に接続しています",
+    wait: "ウィンドウを閉じずにお待ちください。通常 20 秒以内に終わります。",
+    failed: "接続できませんでした",
+    tryLater: "少ししてから SubSlash でもう一度接続してください。",
+    checkingRecent: function (days) {
+      return "直近 " + days + " 日の支払いメールを確認しています";
+    },
+    gmailPageTitle: "SubSlash Gmail 接続",
+    codeExpired: "接続コードの期限が切れたか、すでに使われています。SubSlash からもう一度接続してください。",
+    reconnect: "SubSlash からもう一度接続してください。",
+    disconnectedTitle: "接続が解除されました",
+    disconnected: "SubSlash がこのアカウントの接続を解除しました。もう一度接続してください。",
+    connectedTitle: "Gmail を接続しました",
+    connected: function (days, sent) {
+      return "直近 " + days + " 日のメール " + sent + " 通を確認しました。SubSlash に戻ると見つかったサブスクが" +
+        "登録されます。残りの 1 年分（年払い）は数分のうちに続けて確認し、今後は 2 週間ごとに新しい支払いメールを確認します。";
+    },
+    firstScanFailed: function (reason) {
+      return "最初の確認はできなかったので、2 週間後の確認でやり直します（" + reason + "）。";
+    },
+    sendFailed: function (status) {
+      return "SubSlash に送信できませんでした（" + status + "）";
+    },
+    calendarFailed: "Google カレンダーに登録できませんでした",
+    calendarExpired: "リクエストの期限が切れたか、すでに使われています。SubSlash でもう一度押してください。",
+    calendarDoneTitle: "Google カレンダーに登録しました",
+    calendarDone: function (name, count) {
+      return "「" + name + "」カレンダーに支払日を " + count + " 件入れました。サブスクを直したあと SubSlash で" +
+        "もう一度押すと、このカレンダーをまるごと書き直します。";
+    },
+    calendarPageTitle: "SubSlash カレンダー登録",
+    backToApp: "SubSlash アプリに戻る",
+    backToAppNote: "ボタンが開かないときは、このウィンドウを閉じてもアプリに戻ります。",
+    closeToApp: "このウィンドウを閉じると SubSlash アプリに戻ります。",
+    backToWeb: "SubSlash に戻る",
+  },
+  vi: {
+    cannotConnect: "Không thể kết nối",
+    notAllowed: "Yêu cầu đến từ địa chỉ không được phép. Hãy kết nối lại từ SubSlash.",
+    noCode: "Thiếu mã kết nối. Hãy kết nối lại từ SubSlash.",
+    inProgress: "Đang xử lý",
+    connecting: "Đang kết nối với SubSlash",
+    wait: "Đừng đóng cửa sổ, hãy chờ một chút. Thường xong trong 20 giây.",
+    failed: "Không kết nối được",
+    tryLater: "Hãy kết nối lại từ SubSlash sau ít phút.",
+    checkingRecent: function (days) {
+      return "Đang kiểm tra email thanh toán " + days + " ngày gần nhất";
+    },
+    gmailPageTitle: "Kết nối Gmail với SubSlash",
+    codeExpired: "Mã kết nối đã hết hạn hoặc đã được dùng. Hãy kết nối lại từ SubSlash.",
+    reconnect: "Hãy kết nối lại từ SubSlash.",
+    disconnectedTitle: "Đã ngắt kết nối",
+    disconnected: "SubSlash đã ngắt kết nối tài khoản này. Hãy kết nối lại.",
+    connectedTitle: "Đã kết nối Gmail",
+    connected: function (days, sent) {
+      return "Đã kiểm tra " + sent + " email trong " + days + " ngày gần nhất. Quay lại SubSlash, các gói tìm được " +
+        "sẽ được đăng ký. Phần còn lại của năm (thanh toán hằng năm) sẽ được kiểm tra tiếp trong vài phút, " +
+        "sau đó cứ 2 tuần kiểm tra email thanh toán mới.";
+    },
+    firstScanFailed: function (reason) {
+      return "Lần kiểm tra đầu chưa chạy được nên sẽ chạy lại ở lần kiểm tra sau 2 tuần (" + reason + ").";
+    },
+    sendFailed: function (status) {
+      return "Không gửi được đến SubSlash (" + status + ")";
+    },
+    calendarFailed: "Không thêm được vào Google Lịch",
+    calendarExpired: "Yêu cầu đã hết hạn hoặc đã được dùng. Hãy nhấn lại nút trong SubSlash.",
+    calendarDoneTitle: "Đã thêm vào Google Lịch",
+    calendarDone: function (name, count) {
+      return "Đã thêm " + count + " ngày thanh toán vào lịch '" + name + "'. Sửa gói xong, nhấn lại nút trong " +
+        "SubSlash thì lịch này sẽ được viết lại toàn bộ.";
+    },
+    calendarPageTitle: "Thêm lịch SubSlash",
+    backToApp: "Quay lại ứng dụng SubSlash",
+    backToAppNote: "Nếu nút không mở được, đóng cửa sổ này cũng sẽ quay lại ứng dụng.",
+    closeToApp: "Đóng cửa sổ này để quay lại ứng dụng SubSlash.",
+    backToWeb: "Quay lại SubSlash",
+  },
+  fr: {
+    cannotConnect: "Connexion impossible",
+    notAllowed: "Cette demande vient d'une adresse non autorisée. Reconnectez-vous depuis SubSlash.",
+    noCode: "Le code de connexion est manquant. Reconnectez-vous depuis SubSlash.",
+    inProgress: "En cours",
+    connecting: "Connexion à SubSlash",
+    wait: "Gardez cette fenêtre ouverte. Cela prend en général moins de 20 secondes.",
+    failed: "Connexion impossible",
+    tryLater: "Réessayez de vous connecter depuis SubSlash dans un instant.",
+    checkingRecent: function (days) {
+      return "Vérification des e-mails de paiement des " + days + " derniers jours";
+    },
+    gmailPageTitle: "Connecter Gmail à SubSlash",
+    codeExpired: "Le code de connexion a expiré ou a déjà été utilisé. Reconnectez-vous depuis SubSlash.",
+    reconnect: "Reconnectez-vous depuis SubSlash.",
+    disconnectedTitle: "Déconnecté",
+    disconnected: "SubSlash a déconnecté ce compte. Veuillez vous reconnecter.",
+    connectedTitle: "Gmail connecté",
+    connected: function (days, sent) {
+      return sent + (sent === 1 ? " e-mail vérifié" : " e-mails vérifiés") + " sur les " + days + " derniers jours. " +
+        "Revenez dans SubSlash et les abonnements trouvés seront ajoutés. Le reste de l'année (paiements annuels) " +
+        "est vérifié dans les minutes qui suivent, puis les nouveaux e-mails de paiement toutes les 2 semaines.";
+    },
+    firstScanFailed: function (reason) {
+      return "La première vérification n'a pas pu avoir lieu ; elle sera refaite à la prochaine, dans 2 semaines (" + reason + ").";
+    },
+    sendFailed: function (status) {
+      return "Envoi à SubSlash impossible (" + status + ")";
+    },
+    calendarFailed: "Ajout à Google Agenda impossible",
+    calendarExpired: "La demande a expiré ou a déjà été utilisée. Touchez à nouveau le bouton dans SubSlash.",
+    calendarDoneTitle: "Ajouté à Google Agenda",
+    calendarDone: function (name, count) {
+      return count + (count === 1 ? " jour de prélèvement ajouté" : " jours de prélèvement ajoutés") +
+        " à l'agenda '" + name + "'. Si vous modifiez vos abonnements, touchez à nouveau le bouton dans SubSlash " +
+        "et cet agenda sera réécrit.";
+    },
+    calendarPageTitle: "Agenda SubSlash",
+    backToApp: "Revenir à l'appli SubSlash",
+    backToAppNote: "Si le bouton ne s'ouvre pas, fermer cette fenêtre vous ramène aussi à l'appli.",
+    closeToApp: "Fermez cette fenêtre pour revenir à l'appli SubSlash.",
+    backToWeb: "Revenir à SubSlash",
+  },
+  es: {
+    cannotConnect: "No se puede conectar",
+    notAllowed: "La solicitud viene de una dirección no permitida. Vuelve a conectar desde SubSlash.",
+    noCode: "Falta el código de conexión. Vuelve a conectar desde SubSlash.",
+    inProgress: "En curso",
+    connecting: "Conectando con SubSlash",
+    wait: "No cierres esta ventana. Suele tardar menos de 20 segundos.",
+    failed: "No se pudo conectar",
+    tryLater: "Vuelve a conectar desde SubSlash en un momento.",
+    checkingRecent: function (days) {
+      return "Revisando los correos de pago de los últimos " + days + " días";
+    },
+    gmailPageTitle: "Conectar Gmail con SubSlash",
+    codeExpired: "El código de conexión caducó o ya se usó. Vuelve a conectar desde SubSlash.",
+    reconnect: "Vuelve a conectar desde SubSlash.",
+    disconnectedTitle: "Desconectado",
+    disconnected: "SubSlash desconectó esta cuenta. Vuelve a conectarla.",
+    connectedTitle: "Gmail conectado",
+    connected: function (days, sent) {
+      return "Se revisaron " + sent + (sent === 1 ? " correo" : " correos") + " de los últimos " + days + " días. " +
+        "Vuelve a SubSlash y se añadirán las suscripciones encontradas. El resto del año (pagos anuales) se revisa " +
+        "en los próximos minutos, y después los correos de pago nuevos cada 2 semanas.";
+    },
+    firstScanFailed: function (reason) {
+      return "La primera revisión no se pudo hacer; se hará en la siguiente, dentro de 2 semanas (" + reason + ").";
+    },
+    sendFailed: function (status) {
+      return "No se pudo enviar a SubSlash (" + status + ")";
+    },
+    calendarFailed: "No se pudo añadir a Google Calendar",
+    calendarExpired: "La solicitud caducó o ya se usó. Vuelve a tocar el botón en SubSlash.",
+    calendarDoneTitle: "Añadido a Google Calendar",
+    calendarDone: function (name, count) {
+      return "Se añadieron " + count + (count === 1 ? " día de cobro" : " días de cobro") + " al calendario '" + name +
+        "'. Si cambias tus suscripciones, vuelve a tocar el botón en SubSlash y este calendario se reescribe.";
+    },
+    calendarPageTitle: "Calendario de SubSlash",
+    backToApp: "Volver a la app SubSlash",
+    backToAppNote: "Si el botón no se abre, cerrar esta ventana también te lleva a la app.",
+    closeToApp: "Cierra esta ventana para volver a la app SubSlash.",
+    backToWeb: "Volver a SubSlash",
+  },
+  de: {
+    cannotConnect: "Verbindung nicht möglich",
+    notAllowed: "Die Anfrage kam von einer nicht erlaubten Adresse. Verbinde dich erneut über SubSlash.",
+    noCode: "Der Verbindungscode fehlt. Verbinde dich erneut über SubSlash.",
+    inProgress: "Läuft",
+    connecting: "Verbindung mit SubSlash",
+    wait: "Lass dieses Fenster offen. Es dauert meist weniger als 20 Sekunden.",
+    failed: "Verbindung fehlgeschlagen",
+    tryLater: "Verbinde dich gleich noch einmal über SubSlash.",
+    checkingRecent: function (days) {
+      return "Zahlungs-E-Mails der letzten " + days + " Tage werden geprüft";
+    },
+    gmailPageTitle: "Gmail mit SubSlash verbinden",
+    codeExpired: "Der Verbindungscode ist abgelaufen oder wurde schon benutzt. Verbinde dich erneut über SubSlash.",
+    reconnect: "Verbinde dich erneut über SubSlash.",
+    disconnectedTitle: "Getrennt",
+    disconnected: "SubSlash hat dieses Konto getrennt. Bitte verbinde es erneut.",
+    connectedTitle: "Gmail verbunden",
+    connected: function (days, sent) {
+      return sent + (sent === 1 ? " E-Mail" : " E-Mails") + " der letzten " + days + " Tage geprüft. " +
+        "Geh zurück zu SubSlash, dann werden die gefundenen Abos eingetragen. Der Rest des Jahres (Jahreszahlungen) " +
+        "wird in den nächsten Minuten geprüft, danach alle 2 Wochen neue Zahlungs-E-Mails.";
+    },
+    firstScanFailed: function (reason) {
+      return "Die erste Prüfung lief nicht und wird bei der nächsten in 2 Wochen nachgeholt (" + reason + ").";
+    },
+    sendFailed: function (status) {
+      return "Senden an SubSlash fehlgeschlagen (" + status + ")";
+    },
+    calendarFailed: "Eintragen in Google Kalender fehlgeschlagen",
+    calendarExpired: "Die Anfrage ist abgelaufen oder wurde schon benutzt. Tippe in SubSlash erneut auf den Button.",
+    calendarDoneTitle: "In Google Kalender eingetragen",
+    calendarDone: function (name, count) {
+      return count + (count === 1 ? " Abbuchungstag" : " Abbuchungstage") + " in den Kalender '" + name +
+        "' eingetragen. Wenn du deine Abos änderst, tippe in SubSlash erneut auf den Button, dann wird dieser " +
+        "Kalender neu geschrieben.";
+    },
+    calendarPageTitle: "SubSlash-Kalender",
+    backToApp: "Zurück zur SubSlash-App",
+    backToAppNote: "Wenn sich der Button nicht öffnet, bringt dich das Schließen dieses Fensters ebenfalls zur App.",
+    closeToApp: "Schließ dieses Fenster, um zur SubSlash-App zurückzukehren.",
+    backToWeb: "Zurück zu SubSlash",
+  },
+  pt: {
+    cannotConnect: "Não é possível conectar",
+    notAllowed: "A solicitação veio de um endereço não permitido. Conecte de novo pelo SubSlash.",
+    noCode: "Falta o código de conexão. Conecte de novo pelo SubSlash.",
+    inProgress: "Em andamento",
+    connecting: "Conectando ao SubSlash",
+    wait: "Mantenha esta janela aberta. Costuma levar menos de 20 segundos.",
+    failed: "Não foi possível conectar",
+    tryLater: "Tente conectar de novo pelo SubSlash em instantes.",
+    checkingRecent: function (days) {
+      return "Verificando e-mails de pagamento dos últimos " + days + " dias";
+    },
+    gmailPageTitle: "Conectar o Gmail ao SubSlash",
+    codeExpired: "O código de conexão expirou ou já foi usado. Conecte de novo pelo SubSlash.",
+    reconnect: "Conecte de novo pelo SubSlash.",
+    disconnectedTitle: "Desconectado",
+    disconnected: "O SubSlash desconectou esta conta. Conecte de novo.",
+    connectedTitle: "Gmail conectado",
+    connected: function (days, sent) {
+      return sent + (sent === 1 ? " e-mail verificado" : " e-mails verificados") + " dos últimos " + days + " dias. " +
+        "Volte ao SubSlash e as assinaturas encontradas serão cadastradas. O resto do ano (pagamentos anuais) é " +
+        "verificado nos próximos minutos, e depois os novos e-mails de pagamento a cada 2 semanas.";
+    },
+    firstScanFailed: function (reason) {
+      return "A primeira verificação não rodou; será feita na próxima, daqui a 2 semanas (" + reason + ").";
+    },
+    sendFailed: function (status) {
+      return "Não foi possível enviar ao SubSlash (" + status + ")";
+    },
+    calendarFailed: "Não foi possível adicionar ao Google Agenda",
+    calendarExpired: "A solicitação expirou ou já foi usada. Toque de novo no botão no SubSlash.",
+    calendarDoneTitle: "Adicionado ao Google Agenda",
+    calendarDone: function (name, count) {
+      return count + (count === 1 ? " dia de cobrança adicionado" : " dias de cobrança adicionados") +
+        " à agenda '" + name + "'. Se você alterar suas assinaturas, toque de novo no botão no SubSlash e esta " +
+        "agenda será reescrita.";
+    },
+    calendarPageTitle: "Agenda do SubSlash",
+    backToApp: "Voltar ao app SubSlash",
+    backToAppNote: "Se o botão não abrir, fechar esta janela também leva de volta ao app.",
+    closeToApp: "Feche esta janela para voltar ao app SubSlash.",
+    backToWeb: "Voltar ao SubSlash",
+  },
 };
 
 function t() {
@@ -202,7 +497,7 @@ function setClient(client, scheme, flow, lang) {
   FROM_APP = String(client || "") === "app";
   RETURN_SCHEME = FROM_APP && APP_RETURN_SCHEMES.indexOf(String(scheme || "")) !== -1 ? String(scheme) : "";
   FLOW = flow;
-  LANG = String(lang || "") === "en" ? "en" : "ko";
+  LANG = TEXT.hasOwnProperty(String(lang || "")) ? String(lang) : "ko";
 }
 
 function appReturnUrl() {

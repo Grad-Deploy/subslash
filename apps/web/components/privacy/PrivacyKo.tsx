@@ -212,8 +212,8 @@ export function PrivacyKo() {
             <li>
               구글 캘린더에 결제일 등록: 맡아 둔 구독 목록은 웹 앱이 받아 가면 곧바로 지우고, 받아
               가지 않아도 10분이 지나면 쓸 수 없으며 다음 등록 때 지웁니다. 캘린더에 들어간 일정은
-              구글 캘린더에서 &lsquo;SubSlash 결제일&rsquo;(영어 화면에서 등록했다면 &lsquo;SubSlash
-              Billing Days&rsquo;) 캘린더를 지워야 없어집니다.
+              구글 캘린더에서 &lsquo;SubSlash 결제일&rsquo;(다른 언어 화면에서 등록했다면 그 언어의
+              이름, 예: &lsquo;SubSlash Billing Days&rsquo;) 캘린더를 지워야 없어집니다.
             </li>
           )}
           {DEVICE_USAGE_STARTS_ON && (

@@ -190,7 +190,6 @@ export const en: Widen<typeof ko> = {
   },
 };
 
-// 원어민 검토 전의 번역(LOCALE_INFO.beta).
 const ovPl = (n: number, one: string, many: string) => (Number(n) === 1 ? one : many);
 
 export const zh: Widen<typeof ko> = {

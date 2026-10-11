@@ -81,7 +81,6 @@ export const en: Widen<typeof ko> = {
   deleteFailed: "Couldn't delete the usage records.",
 };
 
-// 원어민 검토 전의 번역(LOCALE_INFO.beta).
 export const zh: Widen<typeof ko> = {
   howTitle: "开启后会测量什么",
   howUpload:

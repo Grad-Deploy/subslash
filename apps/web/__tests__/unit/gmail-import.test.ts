@@ -973,10 +973,17 @@ describe("원클릭 연결 웹 앱", () => {
     });
     expect(failed.html.join("")).toContain("The request has expired or was already used.");
 
-    // 모르는 언어는 한국어다.
+    // 웹 앱이 아는 다른 언어는 그 언어로, 모르는 언어는 한국어다.
+    const french = runWebApp();
+    french.api.doGet({ parameter: { code: "c", origin: ORIGIN, lang: "fr" } });
+    expect(french.html[0]).toContain("Connexion à SubSlash");
     const unknown = runWebApp();
-    unknown.api.doGet({ parameter: { code: "c", origin: ORIGIN, lang: "fr" } });
+    unknown.api.doGet({ parameter: { code: "c", origin: ORIGIN, lang: "xx" } });
     expect(unknown.html[0]).toContain("SubSlash와 연결하는 중");
+    // 프로토타입 이름을 언어로 보내도 한국어다.
+    const proto = runWebApp();
+    proto.api.doGet({ parameter: { code: "c", origin: ORIGIN, lang: "toString" } });
+    expect(proto.html[0]).toContain("SubSlash와 연결하는 중");
   });
 
   it("허용 목록에 없는 주소에서 오면 캘린더에도 손대지 않는다", () => {

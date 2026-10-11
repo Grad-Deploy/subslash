@@ -305,7 +305,7 @@ export const en: Widen<typeof ko> = {
   },
 };
 
-// 원어민 검토 전의 번역(LOCALE_INFO.beta). 이 언어들의 소개 캡처는 영어 화면이다(components/home/screens).
+// 이 언어들의 소개 캡처는 영어 화면이다(components/home/screens).
 const lnPl = (n: number, one: string, many: string) => (Number(n) === 1 ? one : many);
 
 export const zh: Widen<typeof ko> = {

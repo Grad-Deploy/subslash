@@ -531,7 +531,6 @@ export const en: Widen<typeof ko> = {
   },
 };
 
-// 원어민 검토 전의 번역(LOCALE_INFO.beta).
 const ciPl = (n: number, one: string, many: string) => (Number(n) === 1 ? one : many);
 
 /** 용량 표기: 1GB 미만·약 N GB·약 N TB. 소수점은 그 언어의 구분자를 쓴다. */

@@ -200,7 +200,6 @@ export const en: Widen<typeof ko> = {
   },
 };
 
-// 원어민 검토 전의 번역(LOCALE_INFO.beta).
 const pcPl = (n: number, one: string, many: string) => (Number(n) === 1 ? one : many);
 const PC_TOOLS = {
   "claude-pro": "Claude Code",

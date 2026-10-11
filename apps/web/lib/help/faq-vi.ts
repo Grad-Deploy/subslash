@@ -1,7 +1,7 @@
 import type { FAQ_EN } from "./faq-en";
 
 /**
- * 도움말 FAQ의 베트남어. 원어민 검토 전의 번역이다(LOCALE_INFO.beta). 한국어 원문(`faq.ts`)과 id가 같고 같은
+ * 도움말 FAQ의 베트남어. 한국어 원문(`faq.ts`)과 id가 같고 같은
  * 사실만 적는다 — 한국어 답을 고치면 영어·이 파일도 함께 고친다.
  */
 export const FAQ_GROUP_TITLES_VI: Record<string, string> = {
