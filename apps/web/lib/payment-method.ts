@@ -1,5 +1,5 @@
 import { PAYMENT_METHOD_OPTIONS, type PaymentMethodOption } from "@subslash/shared";
-import type { Locale } from "./i18n/config";
+import { translationFor, type Locale, type Translations } from "./i18n/config";
 
 type PaymentMethodText = Pick<PaymentMethodOption, "label" | "shortName" | "guide">;
 
@@ -38,12 +38,16 @@ export const PAYMENT_METHODS_EN: Record<string, PaymentMethodText> = {
   other: { label: "Other payment method" },
 };
 
+/** 원문이 아닌 언어의 결제 수단 문구. */
+const PAYMENT_METHODS: Translations<Record<string, PaymentMethodText>> = { en: PAYMENT_METHODS_EN };
+
 /** 지금 언어의 결제 수단 목록. 주소·해지 경로 종류 같은 값은 그대로다. */
 export function paymentMethodOptions(locale: Locale): PaymentMethodOption[] {
-  if (locale !== "en") return PAYMENT_METHOD_OPTIONS;
+  const texts = translationFor(PAYMENT_METHODS, locale);
+  if (!texts) return PAYMENT_METHOD_OPTIONS;
   return PAYMENT_METHOD_OPTIONS.map((option) => ({
     ...option,
-    ...PAYMENT_METHODS_EN[option.value],
+    ...texts[option.value],
   }));
 }
 

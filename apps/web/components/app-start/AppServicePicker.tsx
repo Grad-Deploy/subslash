@@ -6,6 +6,7 @@ import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { shortServiceName } from "@lib/service-name";
 import { useLocale, useT } from "@lib/i18n";
 import type { Locale } from "@lib/i18n/config";
+import { packageLabel } from "@lib/usage/packages";
 
 /** 빈 대시보드에 바로 누를 수 있게 올려 둘 서비스. 나머지는 '더 보기'(서비스 고르기)에서 찾는다. */
 const QUICK_IDS = ["netflix", "youtube-premium", "coupang-wow", "tving", "spotify"];
@@ -111,6 +112,8 @@ export function AppServicePicker({
 
 /** 타일에는 괄호 속 설명(쿠팡플레이 등)을 빼고, 긴 이름은 앞말만 쓴다. */
 function shortName(preset: ServicePreset, locale: Locale): string {
-  if (preset.id === "youtube-premium") return locale === "en" ? "YouTube" : "유튜브";
+  if (preset.id === "youtube-premium") {
+    return packageLabel("com.google.android.youtube", locale) ?? shortServiceName(preset, locale);
+  }
   return shortServiceName(preset, locale);
 }

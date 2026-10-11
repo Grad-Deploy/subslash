@@ -13,6 +13,7 @@ import { Select } from "../ui/select";
 import { useKnownText, useLatestT, useLocale, useT } from "@lib/i18n";
 import { subscriptionName } from "@lib/service-name";
 import { calendarNameFor } from "@lib/calendar-names";
+import { appsScriptLocale } from "@lib/i18n/config";
 
 /**
  * 구독의 결제일을 내 구글 캘린더에 반복 일정으로 넣는다.
@@ -30,7 +31,7 @@ export function GoogleCalendarSync() {
   const tRef = useLatestT();
   // 캘린더 이름·일정 메모·구독 이름을 지금 화면의 언어로 쓴다(웹 앱이 이 언어의 이름으로 만들거나 바꾼다).
   const locale = useLocale();
-  const CALENDAR_NAME = calendarNameFor(locale);
+  const CALENDAR_NAME = calendarNameFor(appsScriptLocale(locale));
   const { account, loading } = useAuth();
   const subscriptions = useStore((state) => realRecords(state).subscriptions);
   const [reminderDays, setReminderDays] = useState(3);

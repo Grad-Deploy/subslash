@@ -100,7 +100,7 @@ describe("findSubscriptionSuggestions", () => {
       NOW,
     );
     expect(ids(found)).toEqual(["youtube-premium"]);
-    expect(found[0]).toMatchObject({ appName: "유튜브 뮤직" });
+    expect(found[0]).toMatchObject({ appPackage: "com.google.android.apps.youtube.music" });
     // 유튜브 앱 사용은 세지 않는다(무료로 쓴다).
     expect(found[0].totals.usedMs).toBe(30 * 30 * MIN);
 
@@ -124,7 +124,7 @@ describe("findSubscriptionSuggestions", () => {
     };
     const found = findSubscriptionSuggestions([], used, {}, NOW);
     expect(ids(found)).toEqual(["coupang-wow"]);
-    expect(found[0]).toMatchObject({ appName: "쿠팡플레이" });
+    expect(found[0]).toMatchObject({ appPackage: "com.coupang.mobile.play" });
     expect(found[0].note).toContain("무료");
   });
 

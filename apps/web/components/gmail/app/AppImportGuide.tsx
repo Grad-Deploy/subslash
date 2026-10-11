@@ -27,6 +27,7 @@ import { AppImportFlow } from "./AppImportFlow";
 import { AppStepper, StepTip, type AppStep } from "./AppStepper";
 import { useOverlayLock } from "@hooks/useOverlayLock";
 import { useKnownText, useLatestT, useLocale, useT } from "@lib/i18n";
+import { appsScriptLocale } from "@lib/i18n/config";
 
 type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 
@@ -192,7 +193,7 @@ export function AppImportGuide() {
             <AppCopyCode label="appsscript.json" code={GMAIL_AUTO_SCRIPT_MANIFEST} />
             <AppCopyCode
               label="Code.gs"
-              code={gmailAutoScript(webUrl("/api/gmail/ingest"), token, locale)}
+              code={gmailAutoScript(webUrl("/api/gmail/ingest"), token, appsScriptLocale(locale))}
             />
             <StepTip title={g.step3Tip}>{g.step3TipBody}</StepTip>
           </>

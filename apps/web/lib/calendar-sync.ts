@@ -29,6 +29,7 @@ export const MAX_PLAN_ENTRIES = 200;
 const MAX_REMINDER_DAYS = 28;
 
 import { CALENDAR_NAMES, calendarNameFor, type CalendarLang } from "./calendar-names";
+import { SOURCE_LOCALE, isAppsScriptLocale } from "./i18n/config";
 
 export { CALENDAR_NAMES, calendarNameFor, type CalendarLang };
 
@@ -119,7 +120,7 @@ export function parseCalendarPlan(input: unknown): CalendarPlan | null {
   return {
     entries,
     reminderDays: Math.min(Math.max(reminderDays, 0), MAX_REMINDER_DAYS),
-    lang: body.lang === "en" ? "en" : "ko",
+    lang: isAppsScriptLocale(body.lang) ? body.lang : SOURCE_LOCALE,
   };
 }
 

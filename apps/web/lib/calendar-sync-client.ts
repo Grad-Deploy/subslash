@@ -1,6 +1,7 @@
 import { currentCancelUrl, getBilledAmount, isInTrial, type Subscription } from "@subslash/shared";
 import { apiFetch, readApiError } from "./api";
 import { withAppReturn } from "./native";
+import { SOURCE_LOCALE, appsScriptLocale, type Locale } from "./i18n/config";
 
 /**
  * '구글 캘린더에 등록'의 브라우저 쪽.
@@ -53,8 +54,10 @@ export function toCalendarPlanEntries(subscriptions: Subscription[]): CalendarPl
 export async function startCalendarSync(
   entries: CalendarPlanEntryInput[],
   reminderDays: number,
-  lang: "ko" | "en" = "ko",
+  locale: Locale = SOURCE_LOCALE,
 ): Promise<string> {
+  // 캘린더 이름·일정 메모·웹 앱 화면의 언어. 웹 앱이 모르는 언어는 영어다.
+  const lang = appsScriptLocale(locale);
   const response = await apiFetch(await withAppReturn("/api/calendar-sync"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },

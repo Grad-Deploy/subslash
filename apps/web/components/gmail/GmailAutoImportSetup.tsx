@@ -20,6 +20,7 @@ import { InlineConfirm } from "../ui/inline-confirm";
 import { CopyBlock } from "./CopyBlock";
 import { GmailOlderScanNotice } from "./GmailOlderScanNotice";
 import { useKnownText, useLatestT, useLocale, useT } from "@lib/i18n";
+import { appsScriptLocale } from "@lib/i18n/config";
 
 type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 
@@ -196,7 +197,11 @@ export function GmailAutoImportSetup() {
                   <CopyBlock label={t.importing.page.manifest} code={GMAIL_AUTO_SCRIPT_MANIFEST} />
                   <CopyBlock
                     label={t.importing.page.script}
-                    code={gmailAutoScript(webUrl("/api/gmail/ingest"), token, locale)}
+                    code={gmailAutoScript(
+                      webUrl("/api/gmail/ingest"),
+                      token,
+                      appsScriptLocale(locale),
+                    )}
                   />
                 </div>
               ) : (
