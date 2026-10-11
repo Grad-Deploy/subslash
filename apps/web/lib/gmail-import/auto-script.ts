@@ -1,3 +1,4 @@
+import type { AppsScriptLocale } from "../i18n/config";
 import { MAIL_HELPERS } from "./mail-helpers";
 
 /**
@@ -122,7 +123,7 @@ function scan() {
 export function gmailAutoScript(
   ingestUrl: string,
   token: string,
-  lang: "ko" | "en" = "ko",
+  lang: AppsScriptLocale = "ko",
 ): string {
   return (
     AUTO_SCRIPT.replace("__INGEST_URL__", () => JSON.stringify(ingestUrl))
@@ -132,7 +133,10 @@ export function gmailAutoScript(
 }
 
 /** 실행 기록에 남기는 문구. 스크립트를 받은 SubSlash 화면 언어로 넣는다. */
-const AUTO_TEXT = {
+const AUTO_TEXT: Record<
+  AppsScriptLocale,
+  { disconnected: string; sendFailed: string; sent: string }
+> = {
   ko: {
     disconnected:
       "SubSlash 연결이 끊겼습니다. SubSlash에서 스크립트를 다시 받아 붙여 넣은 뒤 setup을 실행하세요.",
@@ -144,5 +148,49 @@ const AUTO_TEXT = {
       "SubSlash was disconnected. Get the script again from SubSlash, paste it, then run setup.",
     sendFailed: "Couldn't send to SubSlash ({status}). It will be sent again on the next run.",
     sent: "Sent {count} payment emails to SubSlash.",
+  },
+  zh: {
+    disconnected: "与 SubSlash 的连接已断开。请从 SubSlash 重新获取脚本并粘贴，然后运行 setup。",
+    sendFailed: "无法发送到 SubSlash（{status}）。下次运行时会再次发送。",
+    sent: "已将 {count} 封付款邮件发送到 SubSlash。",
+  },
+  ja: {
+    disconnected:
+      "SubSlash との接続が切れました。SubSlash からスクリプトを受け取り直して貼り付け、setup を実行してください。",
+    sendFailed: "SubSlash に送信できませんでした（{status}）。次の実行で再送します。",
+    sent: "支払いメール {count} 通を SubSlash に送りました。",
+  },
+  vi: {
+    disconnected:
+      "Đã mất kết nối với SubSlash. Hãy lấy lại script từ SubSlash, dán vào rồi chạy setup.",
+    sendFailed: "Không gửi được đến SubSlash ({status}). Sẽ gửi lại ở lần chạy sau.",
+    sent: "Đã gửi {count} email thanh toán đến SubSlash.",
+  },
+  fr: {
+    disconnected:
+      "SubSlash a été déconnecté. Récupérez à nouveau le script dans SubSlash, collez-le puis exécutez setup.",
+    sendFailed: "Envoi à SubSlash impossible ({status}). Nouvel envoi à la prochaine exécution.",
+    sent: "{count} e-mail(s) de paiement envoyé(s) à SubSlash.",
+  },
+  es: {
+    disconnected:
+      "Se perdió la conexión con SubSlash. Vuelve a obtener el script en SubSlash, pégalo y ejecuta setup.",
+    sendFailed:
+      "No se pudo enviar a SubSlash ({status}). Se volverá a enviar en la próxima ejecución.",
+    sent: "Se enviaron {count} correo(s) de pago a SubSlash.",
+  },
+  de: {
+    disconnected:
+      "Die Verbindung zu SubSlash wurde getrennt. Hol das Skript erneut in SubSlash, füg es ein und führ setup aus.",
+    sendFailed:
+      "Senden an SubSlash fehlgeschlagen ({status}). Beim nächsten Lauf wird erneut gesendet.",
+    sent: "{count} Zahlungs-E-Mail(s) an SubSlash gesendet.",
+  },
+  pt: {
+    disconnected:
+      "A conexão com o SubSlash caiu. Pegue o script de novo no SubSlash, cole e execute setup.",
+    sendFailed:
+      "Não foi possível enviar ao SubSlash ({status}). Será enviado de novo na próxima execução.",
+    sent: "{count} e-mail(s) de pagamento enviado(s) ao SubSlash.",
   },
 };

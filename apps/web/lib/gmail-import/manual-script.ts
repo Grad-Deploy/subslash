@@ -1,3 +1,4 @@
+import type { AppsScriptLocale } from "../i18n/config";
 import { MAIL_HELPERS } from "./mail-helpers";
 
 /**
@@ -92,7 +93,17 @@ function encodeEmails(emails) {
 `;
 
 /** 스크립트 화면 문구. 스크립트를 받은 SubSlash 화면 언어로 넣는다. `{count}`는 찾은 메일 수다. */
-const MANUAL_TEXT = {
+const MANUAL_TEXT: Record<
+  AppsScriptLocale,
+  {
+    noneTitle: string;
+    noneBody: string;
+    found: string;
+    foundBody: string;
+    button: string;
+    title: string;
+  }
+> = {
   ko: {
     noneTitle: "결제 메일을 찾지 못했습니다",
     noneBody:
@@ -113,10 +124,78 @@ const MANUAL_TEXT = {
     button: "Import into SubSlash",
     title: "SubSlash import",
   },
+  zh: {
+    noneTitle: "没有找到付款邮件",
+    noneBody: "请把付款邮件标题中的词加到脚本的 SEARCH_QUERIES，然后重新部署。",
+    found: "找到 {count} 封最近的邮件",
+    foundBody: "点按钮会打开 SubSlash，由你选择要登记的订阅。邮件内容不会发送到 SubSlash 服务器。",
+    button: "导入到 SubSlash",
+    title: "SubSlash 导入",
+  },
+  ja: {
+    noneTitle: "支払いメールが見つかりませんでした",
+    noneBody:
+      "支払いメールの件名に入る言葉をスクリプトの SEARCH_QUERIES に足して、もう一度デプロイしてください。",
+    found: "最近のメールが {count} 通見つかりました",
+    foundBody:
+      "ボタンを押すと SubSlash が開き、登録するサブスクを自分で選びます。メールの内容は SubSlash のサーバーに送られません。",
+    button: "SubSlash に取り込む",
+    title: "SubSlash 取り込み",
+  },
+  vi: {
+    noneTitle: "Không tìm thấy email thanh toán",
+    noneBody:
+      "Thêm các từ có trong tiêu đề email thanh toán vào SEARCH_QUERIES trong script rồi triển khai lại.",
+    found: "Tìm thấy {count} email gần đây",
+    foundBody:
+      "Nhấn nút để mở SubSlash và tự chọn gói cần đăng ký. Nội dung email không được gửi đến máy chủ SubSlash.",
+    button: "Nhập vào SubSlash",
+    title: "Nhập vào SubSlash",
+  },
+  fr: {
+    noneTitle: "Aucun e-mail de paiement trouvé",
+    noneBody:
+      "Ajoutez à SEARCH_QUERIES dans le script des mots présents dans l'objet de vos e-mails de paiement, puis redéployez.",
+    found: "{count} e-mail(s) récent(s) trouvé(s)",
+    foundBody:
+      "Touchez le bouton pour ouvrir SubSlash et choisir les abonnements à ajouter. Le contenu des e-mails n'est pas envoyé aux serveurs de SubSlash.",
+    button: "Importer dans SubSlash",
+    title: "Import SubSlash",
+  },
+  es: {
+    noneTitle: "No se encontraron correos de pago",
+    noneBody:
+      "Añade a SEARCH_QUERIES en el script palabras que aparezcan en el asunto de tus correos de pago y vuelve a implementar.",
+    found: "Se encontraron {count} correo(s) reciente(s)",
+    foundBody:
+      "Toca el botón para abrir SubSlash y elegir las suscripciones que quieres añadir. El contenido de los correos no se envía a los servidores de SubSlash.",
+    button: "Importar en SubSlash",
+    title: "Importación de SubSlash",
+  },
+  de: {
+    noneTitle: "Keine Zahlungs-E-Mails gefunden",
+    noneBody:
+      "Füg Wörter aus den Betreffzeilen deiner Zahlungs-E-Mails zu SEARCH_QUERIES im Skript hinzu und stell es erneut bereit.",
+    found: "{count} neue E-Mail(s) gefunden",
+    foundBody:
+      "Tippe auf den Button, um SubSlash zu öffnen und die Abos zum Hinzufügen auszuwählen. E-Mail-Inhalte werden nicht an SubSlash-Server gesendet.",
+    button: "In SubSlash importieren",
+    title: "SubSlash-Import",
+  },
+  pt: {
+    noneTitle: "Nenhum e-mail de pagamento encontrado",
+    noneBody:
+      "Adicione a SEARCH_QUERIES no script palavras que aparecem no assunto dos seus e-mails de pagamento e implante de novo.",
+    found: "{count} e-mail(s) recente(s) encontrado(s)",
+    foundBody:
+      "Toque no botão para abrir o SubSlash e escolher as assinaturas para adicionar. O conteúdo dos e-mails não é enviado aos servidores do SubSlash.",
+    button: "Importar para o SubSlash",
+    title: "Importação do SubSlash",
+  },
 };
 
 /** 사용자가 Apps Script 편집기에 붙여 넣을 코드. 가져오기 주소는 지금 보고 있는 SubSlash다. */
-export function gmailAppsScript(importUrl: string, lang: "ko" | "en" = "ko"): string {
+export function gmailAppsScript(importUrl: string, lang: AppsScriptLocale = "ko"): string {
   return (
     MANUAL_SCRIPT.replace("__IMPORT_URL__", () => JSON.stringify(importUrl)).replace(
       "__TEXT__",

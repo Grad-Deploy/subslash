@@ -234,8 +234,8 @@ export function PrivacyEn() {
               soon as the web app picks it up; if it isn&rsquo;t picked up, it becomes unusable
               after 10 minutes and is deleted at the next registration. Events already in the
               calendar are removed only by deleting the &lsquo;SubSlash Billing Days&rsquo; calendar
-              (named &lsquo;SubSlash 결제일&rsquo; if you registered from a Korean screen) in Google
-              Calendar.
+              (named in the language of the screen you registered from, e.g. &lsquo;SubSlash
+              결제일&rsquo; in Korean) in Google Calendar.
             </li>
           )}
           {DEVICE_USAGE_STARTS_ON && (

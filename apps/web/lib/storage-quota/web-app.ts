@@ -41,10 +41,10 @@ var ALLOWED_ORIGINS = __ORIGINS__;
 // 앱이 돌아올 주소의 스킴(앱 ID). 아무 스킴이나 받으면 이 화면이 남의 앱을 여는 데 쓰입니다.
 var APP_RETURN_SCHEMES = __RETURN_SCHEMES__;
 
-// 화면 언어. SubSlash가 화면 언어를 주소에 싣는다(lang=en). 모르는 값은 한국어다.
+// 화면 언어. SubSlash가 화면 언어를 주소에 싣는다(lang=en 등, TEXT에 있는 언어). 모르는 값은 한국어다.
 var LANG = "ko";
 
-// 화면 문구. SubSlash 화면 언어(한국어·영어)를 따른다.
+// 화면 문구. SubSlash 화면 언어(한국어·영어·중국어·일본어·베트남어·프랑스어·스페인어·독일어·포르투갈어)를 따른다.
 var TEXT = {
   ko: {
     readFailedTitle: "용량을 읽지 못했습니다",
@@ -82,6 +82,132 @@ var TEXT = {
     closeToApp: "Close this window to go back to the app, then enter the share above in your check-in.",
     closeTab: "Close this tab, go back to SubSlash and enter the share above in your check-in.",
   },
+  zh: {
+    readFailedTitle: "无法读取存储空间",
+    readFailed: "Google 没有返回存储空间。请稍后重新测量。",
+    back: "返回 SubSlash",
+    pageTitle: "Google 账户存储空间 — SubSlash",
+    unknown: "未知",
+    underOne: "不到 1%",
+    limit: "此账户的存储上限",
+    usage: "已用（Gmail、相册和云端硬盘合计）",
+    drive: "其中云端硬盘",
+    percent: "已用占上限的比例",
+    resultTitle: "Google 账户存储空间",
+    fill: "填入 SubSlash 签到",
+    privacy: "这个画面只读取存储空间数字，不会发送到任何地方，包括 SubSlash 服务器。",
+    buttonBlocked: "如果按钮打不开，请关闭这个窗口，自己填入上面的比例。",
+    closeToApp: "关闭窗口即可回到应用。请把上面的比例填入签到。",
+    closeTab: "关闭这个标签页，回到 SubSlash 把上面的比例填入签到。",
+  },
+  ja: {
+    readFailedTitle: "容量を読み取れませんでした",
+    readFailed: "Google からストレージ容量を受け取れませんでした。少ししてからもう一度測ってください。",
+    back: "SubSlash に戻る",
+    pageTitle: "Google アカウントの容量 — SubSlash",
+    unknown: "不明",
+    underOne: "1% 未満",
+    limit: "このアカウントの保存容量の上限",
+    usage: "使用量（Gmail・フォト・ドライブの合計）",
+    drive: "うちドライブ",
+    percent: "上限に対する使用率",
+    resultTitle: "Google アカウントの容量",
+    fill: "SubSlash のチェックインに入れる",
+    privacy: "この画面は容量の数字だけを読み取り、SubSlash のサーバーを含めどこにも送りません。",
+    buttonBlocked: "ボタンが開かないときは、このウィンドウを閉じて上の割合を自分で入力してください。",
+    closeToApp: "ウィンドウを閉じるとアプリに戻ります。上の割合をチェックインに入力してください。",
+    closeTab: "このタブを閉じて SubSlash に戻り、上の割合をチェックインに入力してください。",
+  },
+  vi: {
+    readFailedTitle: "Không đọc được dung lượng",
+    readFailed: "Google không trả về dung lượng lưu trữ. Hãy đo lại sau ít phút.",
+    back: "Quay lại SubSlash",
+    pageTitle: "Dung lượng tài khoản Google — SubSlash",
+    unknown: "Không rõ",
+    underOne: "Dưới 1%",
+    limit: "Giới hạn lưu trữ của tài khoản này",
+    usage: "Đã dùng (tổng Gmail, Ảnh và Drive)",
+    drive: "Trong đó Drive",
+    percent: "Tỷ lệ đã dùng so với giới hạn",
+    resultTitle: "Dung lượng tài khoản Google",
+    fill: "Điền vào check-in SubSlash",
+    privacy: "Màn hình này chỉ đọc các con số dung lượng và không gửi đi đâu, kể cả máy chủ SubSlash.",
+    buttonBlocked: "Nếu nút không mở được, hãy đóng cửa sổ này và tự nhập tỷ lệ ở trên.",
+    closeToApp: "Đóng cửa sổ để quay lại ứng dụng, rồi nhập tỷ lệ ở trên vào check-in.",
+    closeTab: "Đóng tab này, quay lại SubSlash và nhập tỷ lệ ở trên vào check-in.",
+  },
+  fr: {
+    readFailedTitle: "Impossible de lire votre stockage",
+    readFailed: "Google n'a pas renvoyé votre espace de stockage. Mesurez à nouveau dans un instant.",
+    back: "Revenir à SubSlash",
+    pageTitle: "Stockage du compte Google — SubSlash",
+    unknown: "Inconnu",
+    underOne: "Moins de 1 %",
+    limit: "Limite de stockage de ce compte",
+    usage: "Utilisé (Gmail, Photos et Drive au total)",
+    drive: "Dont Drive",
+    percent: "Part de la limite utilisée",
+    resultTitle: "Stockage du compte Google",
+    fill: "Remplir mon check-in SubSlash",
+    privacy: "Cette page lit seulement les chiffres de stockage et ne les envoie nulle part, y compris aux serveurs de SubSlash.",
+    buttonBlocked: "Si le bouton ne s'ouvre pas, fermez cette fenêtre et saisissez vous-même la part ci-dessus.",
+    closeToApp: "Fermez cette fenêtre pour revenir à l'appli, puis saisissez la part ci-dessus dans votre check-in.",
+    closeTab: "Fermez cet onglet, revenez dans SubSlash et saisissez la part ci-dessus dans votre check-in.",
+  },
+  es: {
+    readFailedTitle: "No se pudo leer tu almacenamiento",
+    readFailed: "Google no devolvió tu almacenamiento. Vuelve a medir en un momento.",
+    back: "Volver a SubSlash",
+    pageTitle: "Almacenamiento de la cuenta de Google — SubSlash",
+    unknown: "Desconocido",
+    underOne: "Menos del 1 %",
+    limit: "Límite de almacenamiento de esta cuenta",
+    usage: "Usado (Gmail, Fotos y Drive en total)",
+    drive: "De ello, Drive",
+    percent: "Parte del límite usada",
+    resultTitle: "Almacenamiento de la cuenta de Google",
+    fill: "Rellenar mi registro de SubSlash",
+    privacy: "Esta página solo lee las cifras de almacenamiento y no las envía a ningún sitio, ni siquiera a los servidores de SubSlash.",
+    buttonBlocked: "Si el botón no se abre, cierra esta ventana y escribe tú la parte de arriba.",
+    closeToApp: "Cierra esta ventana para volver a la app y escribe la parte de arriba en tu registro.",
+    closeTab: "Cierra esta pestaña, vuelve a SubSlash y escribe la parte de arriba en tu registro.",
+  },
+  de: {
+    readFailedTitle: "Speicher konnte nicht gelesen werden",
+    readFailed: "Google hat deinen Speicher nicht zurückgegeben. Bitte miss gleich noch einmal.",
+    back: "Zurück zu SubSlash",
+    pageTitle: "Speicher des Google-Kontos — SubSlash",
+    unknown: "Unbekannt",
+    underOne: "Unter 1 %",
+    limit: "Speicherlimit dieses Kontos",
+    usage: "Genutzt (Gmail, Fotos und Drive zusammen)",
+    drive: "Davon Drive",
+    percent: "Genutzter Anteil am Limit",
+    resultTitle: "Speicher des Google-Kontos",
+    fill: "In meinen SubSlash-Eintrag übernehmen",
+    privacy: "Diese Seite liest nur die Speicherzahlen und sendet sie nirgendwohin, auch nicht an SubSlash-Server.",
+    buttonBlocked: "Wenn sich der Button nicht öffnet, schließ dieses Fenster und trag den Anteil oben selbst ein.",
+    closeToApp: "Schließ dieses Fenster, um zur App zurückzukehren, und trag den Anteil oben in deinen Eintrag ein.",
+    closeTab: "Schließ diesen Tab, geh zurück zu SubSlash und trag den Anteil oben in deinen Eintrag ein.",
+  },
+  pt: {
+    readFailedTitle: "Não foi possível ler seu armazenamento",
+    readFailed: "O Google não retornou seu armazenamento. Meça de novo em instantes.",
+    back: "Voltar ao SubSlash",
+    pageTitle: "Armazenamento da conta Google — SubSlash",
+    unknown: "Desconhecido",
+    underOne: "Menos de 1%",
+    limit: "Limite de armazenamento desta conta",
+    usage: "Usado (Gmail, Fotos e Drive somados)",
+    drive: "Do qual Drive",
+    percent: "Parte do limite usada",
+    resultTitle: "Armazenamento da conta Google",
+    fill: "Preencher meu registro no SubSlash",
+    privacy: "Esta página só lê os números de armazenamento e não os envia a lugar nenhum, nem aos servidores do SubSlash.",
+    buttonBlocked: "Se o botão não abrir, feche esta janela e digite você mesmo a parte acima.",
+    closeToApp: "Feche esta janela para voltar ao app e digite a parte acima no seu registro.",
+    closeTab: "Feche esta aba, volte ao SubSlash e digite a parte acima no seu registro.",
+  },
 };
 
 function t() {
@@ -90,7 +216,7 @@ function t() {
 
 function doGet(e) {
   var params = (e && e.parameter) || {};
-  LANG = String(params.lang || "") === "en" ? "en" : "ko";
+  LANG = TEXT.hasOwnProperty(String(params.lang || "")) ? String(params.lang) : "ko";
   var fromApp = String(params.client || "") === "app";
   var scheme = APP_RETURN_SCHEMES.indexOf(String(params["return"] || "")) !== -1 ? String(params["return"]) : "";
   var origin = ALLOWED_ORIGINS.indexOf(String(params.origin || "")) !== -1 ? String(params.origin) : "";

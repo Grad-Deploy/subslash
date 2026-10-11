@@ -9,6 +9,13 @@ import type { AppsScriptLocale } from "./i18n/config";
 export const CALENDAR_NAMES: Record<AppsScriptLocale, string> = {
   ko: "SubSlash 결제일",
   en: "SubSlash Billing Days",
+  zh: "SubSlash 扣款日",
+  ja: "SubSlash 支払日",
+  vi: "SubSlash Ngày thanh toán",
+  fr: "SubSlash Jours de prélèvement",
+  es: "SubSlash Días de cobro",
+  de: "SubSlash Abbuchungstage",
+  pt: "SubSlash Dias de cobrança",
 };
 
 export type CalendarLang = AppsScriptLocale;
