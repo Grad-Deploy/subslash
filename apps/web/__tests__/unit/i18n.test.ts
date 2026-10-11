@@ -26,13 +26,16 @@ describe("resolveLocale", () => {
   });
 
   it("지원하지 않는 다른 언어는 영어(FALLBACK_LOCALE)로 보인다", () => {
-    expect(resolveLocale(null, ["ja-JP"])).toBe("en");
+    expect(resolveLocale(null, ["th-TH"])).toBe("en");
+    expect(resolveLocale(null, ["ja-JP"])).toBe("ja");
+    expect(resolveLocale(null, ["pt-PT"])).toBe("pt");
   });
 
   it("저장값이 틀렸거나 기기 언어를 모르면 원문(한국어)이다", () => {
-    expect(resolveLocale("fr", [])).toBe("ko");
+    expect(resolveLocale("xx", [])).toBe("ko");
     expect(resolveLocale(null, [])).toBe("ko");
-    expect(isLocale("fr")).toBe(false);
+    expect(isLocale("xx")).toBe(false);
+    expect(isLocale("fr")).toBe(true);
   });
 });
 

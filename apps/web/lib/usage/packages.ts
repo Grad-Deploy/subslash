@@ -92,8 +92,16 @@ export const PACKAGE_LABELS_EN: Readonly<Record<string, string>> = {
   "com.coupang.mobile.play": "Coupang Play",
 };
 
+// 앱 이름은 스토어에 올라간 영문 이름이다. 다른 언어의 스토어 이름은 확인하지 않아 영문 이름을 쓴다.
 const PACKAGE_LABEL_TRANSLATIONS: Translations<Readonly<Record<string, string>>> = {
   en: PACKAGE_LABELS_EN,
+  zh: PACKAGE_LABELS_EN,
+  ja: PACKAGE_LABELS_EN,
+  vi: PACKAGE_LABELS_EN,
+  fr: PACKAGE_LABELS_EN,
+  es: PACKAGE_LABELS_EN,
+  de: PACKAGE_LABELS_EN,
+  pt: PACKAGE_LABELS_EN,
 };
 
 /** 앱의 화면 이름. 표에 없는 앱이면 undefined. */

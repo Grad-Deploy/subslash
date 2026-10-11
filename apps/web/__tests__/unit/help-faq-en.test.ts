@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { allFaqs, faqGroups } from "@lib/help/faq";
 import { isConfident, searchFaqs } from "@lib/help/match";
+import { LOCALES } from "@lib/i18n/config";
 
 const ALL_OPEN = { gmailOpen: true, socialOpen: true, aiOpen: true };
 
@@ -42,5 +43,23 @@ describe("도움말 FAQ 영어", () => {
     const hits = searchFaqs("where are my records stored", faqs);
     expect(hits[0].faq.id).toBe("where-stored");
     expect(isConfident(searchFaqs("how is cost per use calculated", faqs))).toBe(true);
+  });
+});
+
+describe("도움말 FAQ의 모든 번역", () => {
+  it("한국어와 id·순서가 같고 번역에 한글이 섞이지 않는다", () => {
+    const ko = faqGroups(ALL_OPEN, "ko").map((g) => g.items.map((i) => i.id));
+    for (const locale of LOCALES.filter((l) => l !== "ko")) {
+      const groups = faqGroups(ALL_OPEN, locale);
+      expect(
+        groups.map((g) => g.items.map((i) => i.id)),
+        locale,
+      ).toEqual(ko);
+      for (const group of groups) {
+        expect(group.title, locale).not.toMatch(/[가-힣]/);
+        for (const item of group.items)
+          expect(`${item.q} ${item.a}`, `${locale} ${item.id}`).not.toMatch(/[가-힣]/);
+      }
+    }
   });
 });
