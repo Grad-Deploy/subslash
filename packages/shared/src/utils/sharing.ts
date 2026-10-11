@@ -123,15 +123,29 @@ function describeBillingSchedule(sub: {
     : "매년 1회";
 }
 
+/** 정산 문구에 들어가는 값. 문장은 화면 언어로 웹이 만든다(`formatSettlementMessage`는 한국어 문장). */
+export interface SettlementParts {
+  name: string;
+  /** 결제 월을 모르는 연간 구독이면 `billingMonth`가 없다 — 날짜를 지어 붙이지 않는다. */
+  billingCycle: "monthly" | "yearly";
+  billingDay: number;
+  billingMonth?: number;
+  /** 카드에 찍히는 한 번의 결제액(세금 포함), 통화 기호까지. */
+  total: string;
+  count: number;
+  /** 나머지 한 사람이 낼 금액, 통화 기호까지. */
+  each: string;
+}
+
 /**
- * Message the payer sends to the other members to collect their share.
+ * Values for the message the payer sends to the other members to collect their share.
  *
  * Deliberately plain text rather than a payment-app deep link: a transfer link
  * needs the recipient's bank and account number, which this app never asks for,
  * and a link built without them would open an empty transfer screen while
  * promising a one-tap request.
  */
-export function formatSettlementMessage(sub: {
+export function settlementParts(sub: {
   name: string;
   amount: number;
   currency: Currency;
@@ -141,15 +155,26 @@ export function formatSettlementMessage(sub: {
   sharingCount?: number;
   myShareAmount?: number;
   taxRate?: number;
-}): string {
+}): SettlementParts {
   const count = getSharingCount(sub);
   const perPerson = count > 1 ? getOthersShareAmount(sub) / (count - 1) : 0;
-  // 함께 쓰는 사람에게 알리는 것은 카드에 찍힌 금액이다 — 세금이 따로 붙으면 그것까지.
-  const total = formatAmount(getBilledAmount(sub), sub.currency);
-  const each =
-    sub.currency === "KRW" ? formatKRW(perPerson) : formatAmount(perPerson, sub.currency);
+  const yearly = sub.billingCycle === "yearly";
+  return {
+    name: sub.name,
+    billingCycle: yearly ? "yearly" : "monthly",
+    billingDay: sub.billingDay,
+    billingMonth: yearly && typeof sub.billingMonth === "number" ? sub.billingMonth : undefined,
+    // 함께 쓰는 사람에게 알리는 것은 카드에 찍힌 금액이다 — 세금이 따로 붙으면 그것까지.
+    total: formatAmount(getBilledAmount(sub), sub.currency),
+    count,
+    each: sub.currency === "KRW" ? formatKRW(perPerson) : formatAmount(perPerson, sub.currency),
+  };
+}
 
-  return `[${sub.name}] ${describeBillingSchedule(sub)} ${total} 결제 · ${count}명이서 나눠서 1인 ${each}입니다. 정산 부탁드려요!`;
+/** 한국어 정산 문구. 화면에서는 화면 언어의 문장(`t.subs.card.settlementMessage`)을 쓴다. */
+export function formatSettlementMessage(sub: Parameters<typeof settlementParts>[0]): string {
+  const p = settlementParts(sub);
+  return `[${p.name}] ${describeBillingSchedule(p)} ${p.total} 결제 · ${p.count}명이서 나눠서 1인 ${p.each}입니다. 정산 부탁드려요!`;
 }
 
 /**

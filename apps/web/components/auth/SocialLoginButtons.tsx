@@ -12,6 +12,7 @@ import { isKakaoNativeAvailable, kakaoNativeLogin } from "@lib/kakao-native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { oauthErrorMessage, oauthErrorMessageFrom } from "@lib/oauth-messages";
 import { useLatestT, useT } from "@lib/i18n";
+import { providerLabel } from "@lib/oauth-providers";
 
 interface Provider {
   id: "google" | "kakao" | "naver";
@@ -247,7 +248,7 @@ export function SocialLoginButtons({ mode }: { mode: "login" | "signup" }) {
                 disabled={busy}
                 onClick={() => void start(provider)}
               >
-                {t.auth.social.continueWith(provider.label)}
+                {t.auth.social.continueWith(providerLabel(provider.id, t.auth.social.providers))}
               </Button>
             );
           }

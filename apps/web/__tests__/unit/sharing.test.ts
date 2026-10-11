@@ -13,7 +13,10 @@ import {
   sumMyAnnualKRW,
   sumMyMonthlyKRW,
   sumMyYearDefendedKRW,
+  settlementParts,
 } from "@subslash/shared";
+import { messages } from "@lib/i18n/messages";
+import { ordinal } from "@lib/i18n/english";
 
 const netflix = {
   name: "넷플릭스",
@@ -117,6 +120,54 @@ describe("공유 구독 분담", () => {
 
     expect(message).toContain("매년 1회");
     expect(message).not.toContain("15일");
+  });
+});
+
+// 함께 쓰는 사람에게 보내는 글이라 화면 언어를 따른다. 예전에는 영어 화면에서도 한국어 글이 복사됐다.
+describe("화면 언어의 정산 문구", () => {
+  const ko = messages.ko.subs.card.settlementMessage;
+  const en = messages.en.subs.card.settlementMessage;
+
+  it("한국어 문장은 예전 문구와 같다", () => {
+    for (const sub of [
+      { ...netflix, sharingCount: 4 },
+      { ...netflix, billingCycle: "yearly" as const, billingMonth: 3, sharingCount: 4 },
+      { ...netflix, billingCycle: "yearly" as const, sharingCount: 4 },
+    ]) {
+      expect(ko(settlementParts(sub))).toBe(formatSettlementMessage(sub));
+    }
+  });
+
+  it("영어 문장은 같은 금액과 날짜를 영어로 말한다", () => {
+    const message = en({ ...settlementParts({ ...netflix, sharingCount: 4 }), name: "Netflix" });
+    expect(message).toBe(
+      "[Netflix] ₩17,000 is charged on the 15th of every month · split 4 ways, that's ₩4,250 each. Please send your share!",
+    );
+    expect(
+      en(settlementParts({ ...netflix, billingCycle: "yearly", billingMonth: 3, sharingCount: 4 })),
+    ).toContain("every year on Mar 15");
+  });
+
+  it("결제 월을 모르는 연간 구독은 영어에서도 날짜를 붙이지 않는다", () => {
+    const message = en(settlementParts({ ...netflix, billingCycle: "yearly", sharingCount: 4 }));
+    expect(message).toContain("once a year");
+    expect(message).not.toContain("15");
+  });
+
+  it("서수를 영어 규칙대로 붙인다", () => {
+    expect([1, 2, 3, 4, 11, 12, 13, 21, 22, 23, 31].map(ordinal)).toEqual([
+      "1st",
+      "2nd",
+      "3rd",
+      "4th",
+      "11th",
+      "12th",
+      "13th",
+      "21st",
+      "22nd",
+      "23rd",
+      "31st",
+    ]);
   });
 });
 

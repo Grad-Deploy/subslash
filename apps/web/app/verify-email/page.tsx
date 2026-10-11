@@ -2,9 +2,10 @@ import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import { AccountPageHeading } from "@components/auth/AccountPageHeading";
 import { EmailVerification } from "@components/auth/EmailVerification";
+import { ko as PAGE_TITLES } from "@lib/i18n/messages/pageTitles";
 
 export const metadata: Metadata = {
-  title: "이메일 확인 · SubSlash",
+  title: PAGE_TITLES.paths["/verify-email"],
   // 주소창의 토큰이 이 페이지에서 나가는 요청의 Referer에 실려 새지 않게 한다.
   referrer: "no-referrer",
   robots: { index: false, follow: false },

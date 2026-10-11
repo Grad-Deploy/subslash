@@ -5,9 +5,10 @@ import { LoginMethodsSection } from "@components/auth/LoginMethodsSection";
 import { DeleteAccountSection } from "@components/auth/DeleteAccountSection";
 import { AccountPageHeading } from "@components/auth/AccountPageHeading";
 import { DataSettings } from "@components/settings/DataSettings";
+import { ko as PAGE_TITLES } from "@lib/i18n/messages/pageTitles";
 
 export const metadata = {
-  title: "내 정보 · SubSlash",
+  title: PAGE_TITLES.paths["/me"],
 };
 
 export default function ProfilePage() {

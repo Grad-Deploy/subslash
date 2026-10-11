@@ -74,6 +74,8 @@ export const ko = {
     naver: "네이버 로그인",
     google: "Google 계정으로 로그인",
     continueWith: (label: string) => `${label}로 계속하기`,
+    /** 간편 로그인 회사 이름(로그인 방법 목록·연결 알림·끝 화면). */
+    providers: { google: "구글", kakao: "카카오", naver: "네이버" },
     note: "처음이면 그 계정으로 가입돼요. 받는 것은 이메일과 회원 번호(되돌릴 수 없는 형태로 저장)뿐이에요.",
   },
   resend: {
@@ -158,6 +160,7 @@ export const en: Widen<typeof ko> = {
     naver: "Log in with NAVER",
     google: "Sign in with Google",
     continueWith: (label) => `Continue with ${label}`,
+    providers: { google: "Google", kakao: "Kakao", naver: "NAVER" },
     note: "If it's your first time, an account is created with it. We only receive your email and member number (stored in a form that can't be reversed).",
   },
   resend: {

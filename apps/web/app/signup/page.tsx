@@ -1,8 +1,9 @@
 import React from "react";
 import { SignupScreen } from "@components/auth/SignupScreen";
+import { ko as PAGE_TITLES } from "@lib/i18n/messages/pageTitles";
 
 export const metadata = {
-  title: "회원가입 · SubSlash",
+  title: PAGE_TITLES.paths["/signup"],
 };
 
 export default function SignupPage() {

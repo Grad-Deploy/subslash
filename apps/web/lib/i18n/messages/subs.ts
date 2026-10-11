@@ -1,5 +1,6 @@
+import type { SettlementParts } from "@subslash/shared";
 import type { Widen } from "../types";
-import { one } from "../english";
+import { monthShort, one, ordinal } from "../english";
 
 /** 내 구독 목록: 제목·탭·분류 칩·카드·표·해지 완료 목록·확인 창. 등록 폼·상세·체크인은 다른 영역이다. */
 export const ko = {
@@ -55,6 +56,16 @@ export const ko = {
     monthlyEquiv: (amount: string) => `(월 ${amount})`,
     sharing: (count: number, mine: string) => `${count}명이서 나눔 · 내 몫 월 ${mine}`,
     settlementTitle: "정산 문구",
+    /** 함께 쓰는 사람에게 보내는 글. 결제 월을 모르는 연간 구독에는 날짜를 붙이지 않는다. */
+    settlementMessage: (p: SettlementParts) => {
+      const schedule =
+        p.billingCycle === "monthly"
+          ? `매월 ${p.billingDay}일`
+          : p.billingMonth
+            ? `매년 ${p.billingMonth}월 ${p.billingDay}일`
+            : "매년 1회";
+      return `[${p.name}] ${schedule} ${p.total} 결제 · ${p.count}명이서 나눠서 1인 ${p.each}입니다. 정산 부탁드려요!`;
+    },
     copied: "복사됨",
     copySettlement: "정산 문구 복사",
     revive: "다시 살리기",
@@ -177,6 +188,15 @@ export const en: Widen<typeof ko> = {
     monthlyEquiv: (amount) => `(${amount}/month)`,
     sharing: (count, mine) => `Shared by ${count} · your share ${mine}/month`,
     settlementTitle: "Settlement message",
+    settlementMessage: (p) => {
+      const schedule =
+        p.billingCycle === "monthly"
+          ? `on the ${ordinal(p.billingDay)} of every month`
+          : p.billingMonth
+            ? `every year on ${monthShort(p.billingMonth)} ${p.billingDay}`
+            : "once a year";
+      return `[${p.name}] ${p.total} is charged ${schedule} · split ${p.count} ways, that's ${p.each} each. Please send your share!`;
+    },
     copied: "Copied",
     copySettlement: "Copy settlement message",
     revive: "Restore",

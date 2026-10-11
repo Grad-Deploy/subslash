@@ -1,8 +1,9 @@
 import React from "react";
 import { OAuthDone } from "@components/auth/OAuthDone";
+import { ko as PAGE_TITLES } from "@lib/i18n/messages/pageTitles";
 
 export const metadata = {
-  title: "로그인 · SubSlash",
+  title: PAGE_TITLES.paths["/oauth/done"],
 };
 
 /**
