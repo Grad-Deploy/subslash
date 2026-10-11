@@ -37,7 +37,6 @@ export const en: Widen<typeof ko> = {
   },
 };
 
-// 원어민 검토 전의 번역(LOCALE_INFO.beta).
 export const zh: Widen<typeof ko> = {
   accountPages: {
     me: { title: "我的信息", body: "管理你的账户和记录。" },

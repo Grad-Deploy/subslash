@@ -535,7 +535,7 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import`)는 SubSlash가 G
 실제로 하는 일만 적고, 기능을 바꾸면 그 답도 같은 PR에서 고친다. 닫혀 있는 기능(Gmail 자동 가져오기 등)의 질문은
 그 기능이 열렸을 때만 보인다.
 
-## 화면 언어(한국어·영어 + 베타 7개)
+## 화면 언어(한국어·영어·중국어·일본어·베트남어·프랑스어·스페인어·독일어·포르투갈어)
 
 화면 문구는 `lib/i18n/messages/<영역>.ts`에 한국어(`ko`, 원문)와 영어(`en`)를 나란히 두고 컴포넌트에서
 `const t = useT()`로 쓴다. `en`의 타입은 `ko`의 모양에서 만들어(`Widen`) 영어가 빠지면 타입 검사가, 칸·인자 수가
@@ -565,7 +565,7 @@ Apps Script 웹 앱 화면(Gmail 연결·캘린더 등록·용량 측정)은 주
 요금제 이름은 서비스 이름처럼 목록의 한국어 이름 그대로일 때만 영어 화면에서 바꾼다(`PLAN_NAMES_EN`, `useServiceNames().plan`).
 E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-KR"`로 열고, 영어 화면은 `i18n.spec.ts`가 본다.
 
-중국어(간체)·일본어·베트남어·프랑스어·스페인어·독일어·포르투갈어(브라질)는 원어민 검토 전의 번역이라 `LOCALE_INFO.beta`로 두고, 설정의 언어 목록에 'Beta'를 붙이며 그 언어의 `settings.language.note`에 베타임을 적는다. 서비스·요금제·앱 이름은 그 언어로 확인한 표기가 없으면 영문(`nameEn`·`PLAN_NAMES_EN`·`PACKAGE_LABELS_EN`)으로 보인다 — 현지 표기를 짐작해 적지 않는다. 영어 밖의 서버 문장 번역(`known-text-<언어>.ts`)은 영어 표의 정규식을 함께 쓰고 같은 순서의 번역 함수만 둔다(개수는 `known-text.test`가 본다). 달 이름은 `lib/i18n/months`.
+중국어(간체)·일본어·베트남어·프랑스어·스페인어·독일어·포르투갈어(브라질)도 정식 언어로 둔다. 서비스·요금제·앱 이름은 그 언어로 확인한 표기가 없으면 영문(`nameEn`·`PLAN_NAMES_EN`·`PACKAGE_LABELS_EN`)으로 보인다 — 현지 표기를 짐작해 적지 않는다. 영어 밖의 서버 문장 번역(`known-text-<언어>.ts`)은 영어 표의 정규식을 함께 쓰고 같은 순서의 번역 함수만 둔다(개수는 `known-text.test`가 본다). 달 이름은 `lib/i18n/months`.
 언어를 더할 때는 `lib/i18n/config.ts`의 `LOCALES`·`LOCALE_INFO`에 넣는다. 원문(`SOURCE_LOCALE`, 한국어)이 아닌 언어마다 두는
 번역 표는 `Translations<T>` 타입이라, 넣는 순간 채울 곳이 타입 오류로 나온다(문구 `messages`, FAQ `faq.ts`, 서버 문장
 `known-text`, 결제 수단, 서비스·요금제 이름 `service-name`, 앱 이름 `usage/packages`). `locale === "en"`처럼 언어를 직접

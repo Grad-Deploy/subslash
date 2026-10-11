@@ -356,7 +356,7 @@ export const en: Widen<typeof ko> = {
   },
 };
 
-// 중국어(간체)·일본어·베트남어 — 원어민 검토 전의 번역이다(LOCALE_INFO.beta).
+// 중국어(간체)·일본어·베트남어.
 const zh0: Widen<typeof ko0> = {
   detail: {
     missingTitle: "这台设备上没有这个订阅",
@@ -869,7 +869,7 @@ export const vi: Widen<typeof ko> = {
   },
 };
 
-// 프랑스어·스페인어·독일어·포르투갈어 — 원어민 검토 전의 번역이다(LOCALE_INFO.beta).
+// 프랑스어·스페인어·독일어·포르투갈어.
 const fr0: Widen<typeof ko0> = {
   detail: {
     missingTitle: "Cet appareil n'a pas cet abonnement",
