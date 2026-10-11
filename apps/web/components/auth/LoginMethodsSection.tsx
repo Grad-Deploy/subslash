@@ -25,7 +25,7 @@ interface Methods {
 type Notice = { tone: "ok" | "error"; message: string } | null;
 
 function linkedMessage(t: Messages, provider: string): string {
-  return t.account.methods.linked(providerLabel(provider));
+  return t.account.methods.linked(providerLabel(provider, t.auth.social.providers));
 }
 
 /** 못 받으면 null — 칸을 그리지 않는다. 다른 설정은 그대로 쓴다. */
@@ -54,7 +54,8 @@ export function LoginMethodsSection() {
   const [notice, setNotice] = useState<Notice>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const latest = useLatestT();
-  const m = useT().account.methods;
+  const t = useT();
+  const m = t.account.methods;
   const known = useKnownText();
 
   const load = async () => setMethods(await fetchMethods());
@@ -163,7 +164,9 @@ export function LoginMethodsSection() {
       } else {
         setNotice({
           tone: "ok",
-          message: latest.current.account.methods.disconnected(providerLabel(provider)),
+          message: latest.current.account.methods.disconnected(
+            providerLabel(provider, latest.current.auth.social.providers),
+          ),
         });
         await load();
       }
@@ -203,7 +206,7 @@ export function LoginMethodsSection() {
               className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm"
             >
               <span className="font-medium">
-                {provider.label}
+                {providerLabel(provider.id, t.auth.social.providers)}
                 {isLinked && (
                   <span className="ml-2 text-xs font-normal text-muted-foreground">
                     {m.linkedBadge}
