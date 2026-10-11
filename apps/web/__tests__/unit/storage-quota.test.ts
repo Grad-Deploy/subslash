@@ -144,6 +144,30 @@ describe("Google 계정 용량 측정 — 웹 앱", () => {
     expect(runWebApp(quota, { origin: ORIGIN, state: STATE })).toContain("Google 계정 용량");
   });
 
+  it("다른 화면 언어도 그 언어로 열고, 모르는 언어는 한국어다", () => {
+    for (const [lang, title] of [
+      ["zh", "Google 账户存储空间"],
+      ["ja", "Google アカウントの容量"],
+      ["de", "Speicher des Google-Kontos"],
+      ["pt", "Armazenamento da conta Google"],
+    ]) {
+      const html = runWebApp(quota, { origin: ORIGIN, state: STATE, lang });
+      expect(html, lang).toContain(title);
+      expect(html, lang).toContain(`<html lang='${lang}'>`);
+      expect(html, lang).not.toMatch(/[가-힣]/);
+    }
+    expect(runWebApp(quota, { origin: ORIGIN, state: STATE, lang: "xx" })).toContain(
+      "Google 계정 용량",
+    );
+  });
+
+  it("측정 주소에 원문(한국어)이 아닌 화면 언어를 싣는다", () => {
+    const fr = "https://script.google.com/macros/s/x/exec";
+    expect(storageQuotaCheckUrl(fr, { state: STATE, origin: ORIGIN, lang: "fr" })).toContain(
+      "lang=fr",
+    );
+  });
+
   it("측정 주소에 영어 화면만 싣는다", () => {
     const base = "https://script.google.com/macros/s/x/exec";
     expect(storageQuotaCheckUrl(base, { state: STATE, origin: ORIGIN, lang: "en" })).toContain(

@@ -93,9 +93,21 @@ export function resolveLocale(stored: string | null, languages: readonly string[
 
 /**
  * Gmail 연결·캘린더 등록·용량 측정의 Apps Script 웹 앱이 아는 화면 언어. 웹 앱 코드(`TEXT`)를 고치면 운영자가
- * 다시 배포해야 하므로 화면 언어와 따로 둔다 — 모르는 언어는 영어로 연다.
+ * 다시 배포해야 하므로 화면 언어와 따로 둔다 — 모르는 언어는 영어로 연다. 지금은 화면 언어 전부다. 화면 언어를
+ * 더하면 웹 앱 문구를 함께 더하고, **웹 앱을 다시 배포한 뒤에** 여기에 넣는다(먼저 넣으면 옛 웹 앱이 모르는
+ * 언어를 받아 한국어로 연다).
  */
-export const APPS_SCRIPT_LOCALES = ["ko", "en"] as const satisfies readonly Locale[];
+export const APPS_SCRIPT_LOCALES = [
+  "ko",
+  "en",
+  "zh",
+  "ja",
+  "vi",
+  "fr",
+  "es",
+  "de",
+  "pt",
+] as const satisfies readonly Locale[];
 export type AppsScriptLocale = (typeof APPS_SCRIPT_LOCALES)[number];
 
 export function isAppsScriptLocale(value: unknown): value is AppsScriptLocale {
