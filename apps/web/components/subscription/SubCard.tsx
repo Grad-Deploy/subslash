@@ -6,12 +6,12 @@ import {
   Subscription,
   formatCurrency,
   formatKRW,
-  formatSettlementMessage,
   getBilledAmount,
   getMonthlyAmountKRW,
   getMyMonthlyAmountKRW,
   getSharingCount,
   isShared,
+  settlementParts,
 } from "@subslash/shared";
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
@@ -57,14 +57,19 @@ export function SubCard({
   const shared = isShared(subscription);
 
   const copySettlementMessage = async () => {
-    if (await copyText(formatSettlementMessage(subscription))) {
+    // 받는 사람이 읽는 글이라 화면 언어로, 이름도 화면에 보이는 이름으로 적는다.
+    const message = c.settlementMessage({
+      ...settlementParts(subscription),
+      name: names.sub(subscription),
+    });
+    if (await copyText(message)) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } else {
       // Clipboard access can be refused (insecure context, denied permission);
       // saying nothing would look like the copy silently worked.
       setCopied(false);
-      setCopyFallback(formatSettlementMessage(subscription));
+      setCopyFallback(message);
     }
   };
 
