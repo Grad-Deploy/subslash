@@ -3,6 +3,13 @@
 import { useCallback } from "react";
 import { useLocale } from "./locale";
 import { translationFor, type Locale, type Translations } from "./config";
+import { KNOWN_TEXT_DE } from "./known-text-de";
+import { KNOWN_TEXT_ES } from "./known-text-es";
+import { KNOWN_TEXT_FR } from "./known-text-fr";
+import { KNOWN_TEXT_JA } from "./known-text-ja";
+import { KNOWN_TEXT_PT } from "./known-text-pt";
+import { KNOWN_TEXT_VI } from "./known-text-vi";
+import { KNOWN_TEXT_ZH } from "./known-text-zh";
 
 /**
  * 화면 문구 파일(messages) 밖에서 만들어져 화면에 그대로 닿는 한국어 문장의 영어. 입력 검사
@@ -373,8 +380,25 @@ const EN: [RegExp, (...groups: string[]) => string][] = [
   [/^환율 설정이 올바르지 않습니다\.$/, () => "The exchange rate setting isn't valid."],
 ];
 
-/** 원문이 아닌 언어마다의 표. */
-const KNOWN_TEXT: Translations<typeof EN> = { en: EN };
+/**
+ * 영어가 아닌 번역은 영어 표의 정규식을 그대로 쓰고 번역 함수만 바꾼다 — 정규식을 언어마다 다시 적으면 한쪽만
+ * 고쳐 어긋난다. 같은 순서·개수인지는 테스트가 본다.
+ */
+function withRenders(renders: ((...groups: string[]) => string)[]): typeof EN {
+  return EN.map(([pattern], i) => [pattern, renders[i] ?? (() => "")]);
+}
+
+export const KNOWN_TEXT_RULE_COUNT = EN.length;
+const KNOWN_TEXT: Translations<typeof EN> = {
+  en: EN,
+  zh: withRenders(KNOWN_TEXT_ZH),
+  ja: withRenders(KNOWN_TEXT_JA),
+  vi: withRenders(KNOWN_TEXT_VI),
+  fr: withRenders(KNOWN_TEXT_FR),
+  es: withRenders(KNOWN_TEXT_ES),
+  de: withRenders(KNOWN_TEXT_DE),
+  pt: withRenders(KNOWN_TEXT_PT),
+};
 
 /** 표에 있는 한국어 문장이면 그 언어로, 아니면 그대로. */
 export function translateKnownText(text: string, locale: Locale): string {

@@ -1,5 +1,6 @@
 import type { Widen } from "../types";
 import { countOf, monthLong } from "../english";
+import { monthName } from "../months";
 
 /**
  * 기기 알림 문구(`lib/local-reminders`·`lib/native-reminders`), 알림 켜기 창, 대시보드 '시작하기'와 빈
@@ -171,6 +172,620 @@ export const en: Widen<typeof ko> = {
         "If an “unverified app” warning appears, continue from “Advanced”.",
       ],
       stop: (calendar) => `To stop, delete the “${calendar}” calendar.`,
+    },
+  },
+};
+
+// 원어민 검토 전의 번역(LOCALE_INFO.beta).
+export const zh: Widen<typeof ko> = {
+  reminders: {
+    notify: {
+      billingTitle: (name, daysBefore) =>
+        `${name} ${Number(daysBefore) === 0 ? "今天扣款" : `${daysBefore} 天后扣款`}`,
+      billingBody: (month, day, amount) =>
+        `${Number(month)}月${day}日将扣款 ${amount}。看看还要不要继续用。`,
+      receiptTitle: (month) => `${Number(month)}月的订阅小票出来了`,
+      receiptBody: "看看上个月每个订阅付了多少、值不值。",
+      resubscribeTitle: (name) => `该再看看 ${name} 了`,
+      resubscribeBody: "退订时你让我们今天提醒你。看看是不是该再用了。",
+      channelName: "扣款提醒",
+      channelDescription: "在订阅扣款日之前提醒你。",
+      testTitle: "SubSlash 扣款提醒测试",
+      testBody: "提醒会这样显示。我们会在扣款日前的上午 9 点提醒你。",
+    },
+    prompt: {
+      close: "关闭",
+      title: "要在扣款日前提醒你吗？",
+      body: (name, daysBefore) =>
+        `我们会在${Number(daysBefore) === 0 ? "扣款当天" : `扣款前 ${daysBefore} 天`}上午 9 点${name ? `为 ${name} ` : ""}在这部手机上提醒你。不经过服务器或邮件，所以不需要登录。`,
+      whenLabel: "提醒时间",
+      choice: (daysBefore) => (Number(daysBefore) === 0 ? "当天" : `${daysBefore} 天前`),
+      unknownBilling: (name) => `${name} 没有扣款日，无法设置提醒。`,
+      addBilling: "添加扣款日",
+      denied: "通知权限已关闭。请在手机设置 › 应用 › SubSlash › 通知中允许，然后再点一次。",
+      checking: "正在确认…",
+      turnOn: "接收提醒",
+      later: "稍后",
+    },
+    start: {
+      label: "开始使用",
+      done: "全部完成",
+      close: "关闭开始使用",
+      stepAdd: "登记正在用的订阅",
+      stepCheckIn: "输入本月使用次数",
+      stepReminders: "打开扣款提醒",
+      allDone: "以后每月输入一次使用次数就行。可以关闭这张卡片了。",
+      now: "现在",
+    },
+    picker: {
+      title: "选择你正在用的订阅",
+      body: "只选一个，也能马上算出单次成本。",
+      more: "更多",
+      email: "从付款邮件中一次找到",
+      usage: "从手机使用记录中查找",
+      custom: "列表里没有 · 手动输入",
+      paste: "粘贴付款短信",
+      sample: "用示例看看",
+    },
+    calendar: {
+      days: [
+        { value: 0, label: "扣款当天早上" },
+        { value: 1, label: "扣款前 1 天" },
+        { value: 3, label: "扣款前 3 天" },
+        { value: 7, label: "扣款前 7 天" },
+      ],
+      startFailed: "无法开始添加到日历。",
+      title: "将扣款日添加到 Google 日历",
+      body: (calendar) =>
+        `我们会创建一个“${calendar}”日历，并把扣款日作为重复日程添加。其他日历不会被改动。`,
+      loginBefore: "需要",
+      login: "登录",
+      loginAfter: "才能使用。",
+      notConfigured: "此服务器未设置 Google 日历同步。",
+      willSyncBefore: "现在要添加的扣款日：",
+      willSync: (count) => `${count} 个`,
+      undated: (count) => ` · 不包括 ${count} 个没有扣款月份的年付订阅`,
+      reminder: "日程提醒",
+      submit: "添加到 Google 日历",
+      nothing: "没有可添加的订阅。年付订阅请在详情中填写扣款月份。",
+      notes: [
+        "订阅名称、金额和扣款日会发送给 Google。我们的服务器最多保存 10 分钟后删除。",
+        "修改订阅后请再点一次。它不会自动更新。",
+        "如果出现“未经验证的应用”警告，请从“高级”继续。",
+      ],
+      stop: (calendar) => `要停止时，删除“${calendar}”日历即可。`,
+    },
+  },
+};
+
+export const ja: Widen<typeof ko> = {
+  reminders: {
+    notify: {
+      billingTitle: (name, daysBefore) =>
+        `${name} ${Number(daysBefore) === 0 ? "今日支払い" : `${daysBefore} 日後に支払い`}`,
+      billingBody: (month, day, amount) =>
+        `${Number(month)}月${day}日に ${amount} が請求されます。使い続けるか確認しましょう。`,
+      receiptTitle: (month) => `${Number(month)}月のサブスクのレシートができました`,
+      receiptBody: "先月それぞれのサブスクにいくら払い、元が取れたかを見てみましょう。",
+      resubscribeTitle: (name) => `${name} をもう一度見直す時期です`,
+      resubscribeBody:
+        "解約するとき、今日知らせるよう頼まれていました。また使う時期か見てみましょう。",
+      channelName: "支払い通知",
+      channelDescription: "サブスクの支払日の前にお知らせします。",
+      testTitle: "SubSlash 支払い通知のテスト",
+      testBody: "通知はこのように表示されます。支払日の前の午前 9 時にお知らせします。",
+    },
+    prompt: {
+      close: "閉じる",
+      title: "支払日の前にお知らせしましょうか？",
+      body: (name, daysBefore) =>
+        `${Number(daysBefore) === 0 ? "支払日当日" : `支払日の ${daysBefore} 日前`}の午前 9 時に${name ? `${name} について` : ""}このスマホでお知らせします。サーバーやメールを通さないので、ログインは不要です。`,
+      whenLabel: "お知らせのタイミング",
+      choice: (daysBefore) => (Number(daysBefore) === 0 ? "当日" : `${daysBefore} 日前`),
+      unknownBilling: (name) => `${name} は支払日がないため、通知を設定できません。`,
+      addBilling: "支払日を追加",
+      denied:
+        "通知の権限がオフです。スマホの設定 › アプリ › SubSlash › 通知で許可してから、もう一度押してください。",
+      checking: "確認中…",
+      turnOn: "通知を受け取る",
+      later: "あとで",
+    },
+    start: {
+      label: "はじめに",
+      done: "完了",
+      close: "はじめにを閉じる",
+      stepAdd: "使っているサブスクを登録",
+      stepCheckIn: "今月の利用回数を入力",
+      stepReminders: "支払い通知をオンにする",
+      allDone: "これからは月に一度、利用回数を入力するだけです。このカードは閉じてかまいません。",
+      now: "今",
+    },
+    picker: {
+      title: "使っているサブスクを選んでください",
+      body: "1 つ選ぶだけで、1 回あたりの単価がすぐにわかります。",
+      more: "もっと見る",
+      email: "支払いメールからまとめて探す",
+      usage: "スマホの利用記録から探す",
+      custom: "一覧にない · 手動で入力",
+      paste: "支払いのメッセージを貼り付け",
+      sample: "サンプルで見てみる",
+    },
+    calendar: {
+      days: [
+        { value: 0, label: "支払日の朝" },
+        { value: 1, label: "支払日の 1 日前" },
+        { value: 3, label: "支払日の 3 日前" },
+        { value: 7, label: "支払日の 7 日前" },
+      ],
+      startFailed: "カレンダーへの登録を開始できませんでした。",
+      title: "Google カレンダーに支払日を登録",
+      body: (calendar) =>
+        `「${calendar}」カレンダーを作り、支払日を繰り返しの予定として追加します。ほかのカレンダーには触れません。`,
+      loginBefore: "使うには",
+      login: "ログイン",
+      loginAfter: "が必要です。",
+      notConfigured: "このサーバーでは Google カレンダーへの登録が設定されていません。",
+      willSyncBefore: "今登録する支払日: ",
+      willSync: (count) => `${count} 件`,
+      undated: (count) => ` · 支払月がない年払いのサブスク ${count} 件は除外`,
+      reminder: "予定の通知",
+      submit: "Google カレンダーに登録",
+      nothing: "登録するサブスクがありません。年払いのサブスクは詳細で支払月を入力してください。",
+      notes: [
+        "サブスクの名前・金額・支払日が Google に送られます。私たちのサーバーは最大 10 分保管した後に削除します。",
+        "サブスクを変更したら、もう一度押してください。自動では更新されません。",
+        "「確認されていないアプリ」という警告が出たら、「詳細」から続けてください。",
+      ],
+      stop: (calendar) => `やめるときは「${calendar}」カレンダーを削除してください。`,
+    },
+  },
+};
+
+export const vi: Widen<typeof ko> = {
+  reminders: {
+    notify: {
+      billingTitle: (name, daysBefore) =>
+        `${name} ${Number(daysBefore) === 0 ? "thanh toán hôm nay" : `thanh toán sau ${daysBefore} ngày`}`,
+      billingBody: (month, day, amount) =>
+        `${amount} sẽ bị trừ vào ngày ${day} tháng ${Number(month)}. Hãy xem bạn có tiếp tục dùng không.`,
+      receiptTitle: (month) => `Hóa đơn gói đăng ký tháng ${Number(month)} đã sẵn sàng`,
+      receiptBody: "Xem tháng trước bạn đã trả bao nhiêu cho mỗi gói và có đáng không.",
+      resubscribeTitle: (name) => `Đến lúc xem lại ${name}`,
+      resubscribeBody: "Khi hủy, bạn đã nhờ nhắc vào hôm nay. Hãy xem đã đến lúc dùng lại chưa.",
+      channelName: "Nhắc thanh toán",
+      channelDescription: "Nhắc bạn trước ngày thanh toán gói đăng ký.",
+      testTitle: "Thử nhắc thanh toán SubSlash",
+      testBody:
+        "Lời nhắc sẽ hiển thị như thế này. Chúng tôi sẽ nhắc lúc 9 giờ sáng trước ngày thanh toán.",
+    },
+    prompt: {
+      close: "Đóng",
+      title: "Nhắc bạn trước ngày thanh toán?",
+      body: (name, daysBefore) =>
+        `Chúng tôi sẽ nhắc trên điện thoại này lúc 9 giờ sáng ${Number(daysBefore) === 0 ? "vào ngày thanh toán" : `${daysBefore} ngày trước ngày thanh toán`}${name ? ` cho ${name}` : ""}. Không qua máy chủ hay email nên không cần đăng nhập.`,
+      whenLabel: "Thời điểm nhắc",
+      choice: (daysBefore) => (Number(daysBefore) === 0 ? "Cùng ngày" : `${daysBefore} ngày trước`),
+      unknownBilling: (name) => `${name} chưa có ngày thanh toán nên không đặt được lời nhắc.`,
+      addBilling: "Thêm ngày thanh toán",
+      denied:
+        "Quyền thông báo đang tắt. Hãy cho phép trong Cài đặt điện thoại › Ứng dụng › SubSlash › Thông báo, rồi nhấn lại.",
+      checking: "Đang kiểm tra…",
+      turnOn: "Nhận lời nhắc",
+      later: "Để sau",
+    },
+    start: {
+      label: "Bắt đầu",
+      done: "Đã xong",
+      close: "Đóng phần bắt đầu",
+      stepAdd: "Thêm gói bạn đang dùng",
+      stepCheckIn: "Nhập số lần dùng tháng này",
+      stepReminders: "Bật nhắc thanh toán",
+      allDone: "Từ giờ, mỗi tháng chỉ cần nhập số lần dùng một lần. Bạn có thể đóng thẻ này.",
+      now: "Ngay",
+    },
+    picker: {
+      title: "Chọn gói bạn đang dùng",
+      body: "Chỉ cần chọn một gói là tính ngay chi phí mỗi lần dùng.",
+      more: "Thêm",
+      email: "Tìm tất cả trong email thanh toán",
+      usage: "Tìm từ dữ liệu sử dụng điện thoại",
+      custom: "Không có trong danh sách · Tự nhập",
+      paste: "Dán tin nhắn thanh toán",
+      sample: "Xem thử bằng dữ liệu mẫu",
+    },
+    calendar: {
+      days: [
+        { value: 0, label: "Sáng ngày thanh toán" },
+        { value: 1, label: "1 ngày trước ngày thanh toán" },
+        { value: 3, label: "3 ngày trước ngày thanh toán" },
+        { value: 7, label: "7 ngày trước ngày thanh toán" },
+      ],
+      startFailed: "Không thể bắt đầu thêm vào lịch.",
+      title: "Thêm ngày thanh toán vào Google Lịch",
+      body: (calendar) =>
+        `Chúng tôi tạo lịch “${calendar}” và thêm ngày thanh toán dưới dạng sự kiện lặp lại. Các lịch khác không bị động đến.`,
+      loginBefore: "Bạn cần ",
+      login: "đăng nhập",
+      loginAfter: " để dùng tính năng này.",
+      notConfigured: "Máy chủ này chưa thiết lập đồng bộ Google Lịch.",
+      willSyncBefore: "Số ngày thanh toán sẽ thêm: ",
+      willSync: (count) => `${count}`,
+      undated: (count) => ` · bỏ qua ${count} gói trả theo năm chưa có tháng thanh toán`,
+      reminder: "Nhắc sự kiện",
+      submit: "Thêm vào Google Lịch",
+      nothing:
+        "Không có gói nào để thêm. Với gói trả theo năm, hãy nhập tháng thanh toán trong chi tiết.",
+      notes: [
+        "Tên gói, số tiền và ngày thanh toán được gửi đến Google. Máy chủ của chúng tôi giữ tối đa 10 phút rồi xóa.",
+        "Nếu đã sửa gói đăng ký, hãy nhấn lại. Lịch không tự cập nhật.",
+        "Nếu thấy cảnh báo “ứng dụng chưa được xác minh”, hãy tiếp tục từ “Nâng cao”.",
+      ],
+      stop: (calendar) => `Muốn dừng, hãy xóa lịch “${calendar}”.`,
+    },
+  },
+};
+
+export const fr: Widen<typeof ko> = {
+  reminders: {
+    notify: {
+      billingTitle: (name, daysBefore) =>
+        `${name} : paiement ${Number(daysBefore) === 0 ? "aujourd'hui" : `dans ${daysBefore} jour${Number(daysBefore) === 1 ? "" : "s"}`}`,
+      billingBody: (month, day, amount) =>
+        `${amount} sera débité le ${day} ${monthName("fr", month)}. Voyez si vous continuez à l'utiliser.`,
+      receiptTitle: (month) => `Votre ticket d'abonnements de ${monthName("fr", month)} est prêt`,
+      receiptBody:
+        "Voyez ce que vous avez payé pour chaque abonnement le mois dernier et si cela en valait la peine.",
+      resubscribeTitle: (name) => `Il est temps de revoir ${name}`,
+      resubscribeBody:
+        "En résiliant, vous avez demandé un rappel aujourd'hui. Voyez s'il est temps de le réutiliser.",
+      channelName: "Rappels de paiement",
+      channelDescription: "Vous prévient avant les jours de paiement des abonnements.",
+      testTitle: "Test de rappel de paiement SubSlash",
+      testBody:
+        "Voici à quoi ressemblent les rappels. Nous vous préviendrons à 9 h avant le jour de paiement.",
+    },
+    prompt: {
+      close: "Fermer",
+      title: "Vous prévenir avant les jours de paiement ?",
+      body: (name, daysBefore) =>
+        `Nous vous préviendrons sur ce téléphone à 9 h ${Number(daysBefore) === 0 ? "le jour du paiement" : `${daysBefore} jour${Number(daysBefore) === 1 ? "" : "s"} avant le paiement`}${name ? ` pour ${name}` : ""}. Cela ne passe ni par un serveur ni par e-mail, pas besoin de se connecter.`,
+      whenLabel: "Quand prévenir",
+      choice: (daysBefore) =>
+        Number(daysBefore) === 0
+          ? "Le jour même"
+          : `${daysBefore} jour${Number(daysBefore) === 1 ? "" : "s"} avant`,
+      unknownBilling: (name) =>
+        `${name} n'a pas de date de paiement, aucun rappel ne peut être programmé.`,
+      addBilling: "Ajouter une date de paiement",
+      denied:
+        "L'autorisation des notifications est désactivée. Autorisez-la dans Réglages du téléphone › Applications › SubSlash › Notifications, puis appuyez à nouveau.",
+      checking: "Vérification…",
+      turnOn: "Recevoir des rappels",
+      later: "Plus tard",
+    },
+    start: {
+      label: "Pour commencer",
+      done: "Terminé",
+      close: "Fermer « Pour commencer »",
+      stepAdd: "Ajouter un abonnement que vous utilisez",
+      stepCheckIn: "Saisir les utilisations du mois",
+      stepReminders: "Activer les rappels de paiement",
+      allDone:
+        "Désormais, saisissez simplement vos utilisations une fois par mois. Vous pouvez fermer cette carte.",
+      now: "Maintenant",
+    },
+    picker: {
+      title: "Choisissez les abonnements que vous utilisez",
+      body: "Choisissez-en un seul et nous calculons tout de suite le coût par utilisation.",
+      more: "Plus",
+      email: "Tout trouver dans les e-mails de paiement",
+      usage: "Trouver via l'historique d'utilisation du téléphone",
+      custom: "Pas dans la liste · Saisir moi-même",
+      paste: "Coller un SMS de paiement",
+      sample: "Découvrir avec un exemple",
+    },
+    calendar: {
+      days: [
+        { value: 0, label: "Le matin du jour de paiement" },
+        { value: 1, label: "1 jour avant le paiement" },
+        { value: 3, label: "3 jours avant le paiement" },
+        { value: 7, label: "7 jours avant le paiement" },
+      ],
+      startFailed: "Impossible de commencer l'ajout au calendrier.",
+      title: "Ajouter les jours de paiement à Google Agenda",
+      body: (calendar) =>
+        `Nous créons un agenda « ${calendar} » et y ajoutons les jours de paiement comme événements récurrents. Les autres agendas ne sont pas touchés.`,
+      loginBefore: "Vous devez ",
+      login: "vous connecter",
+      loginAfter: " pour utiliser cette fonction.",
+      notConfigured: "L'ajout à Google Agenda n'est pas configuré sur ce serveur.",
+      willSyncBefore: "Jours de paiement à ajouter : ",
+      willSync: (count) => `${count}`,
+      undated: (count) =>
+        ` · ${count} abonnement${Number(count) === 1 ? "" : "s"} annuel${Number(count) === 1 ? "" : "s"} sans mois de paiement exclu${Number(count) === 1 ? "" : "s"}`,
+      reminder: "Rappel d'événement",
+      submit: "Ajouter à Google Agenda",
+      nothing:
+        "Aucun abonnement à ajouter. Pour un abonnement annuel, saisissez le mois de paiement dans son détail.",
+      notes: [
+        "Les noms, montants et jours de paiement des abonnements sont envoyés à Google. Notre serveur les garde au plus 10 minutes, puis les supprime.",
+        "Si vous avez modifié un abonnement, appuyez à nouveau. La mise à jour n'est pas automatique.",
+        "Si un avertissement « application non validée » apparaît, continuez via « Paramètres avancés ».",
+      ],
+      stop: (calendar) => `Pour arrêter, supprimez l'agenda « ${calendar} ».`,
+    },
+  },
+};
+
+export const es: Widen<typeof ko> = {
+  reminders: {
+    notify: {
+      billingTitle: (name, daysBefore) =>
+        `${name}: cobro ${Number(daysBefore) === 0 ? "hoy" : `en ${daysBefore} día${Number(daysBefore) === 1 ? "" : "s"}`}`,
+      billingBody: (month, day, amount) =>
+        `Se cobrarán ${amount} el ${day} de ${monthName("es", month)}. Revisa si vas a seguir usándola.`,
+      receiptTitle: (month) => `Tu ticket de suscripciones de ${monthName("es", month)} está listo`,
+      receiptBody: "Mira cuánto pagaste por cada suscripción el mes pasado y si valió la pena.",
+      resubscribeTitle: (name) => `Es hora de volver a mirar ${name}`,
+      resubscribeBody:
+        "Al cancelar pediste que te avisáramos hoy. Mira si es momento de volver a usarla.",
+      channelName: "Recordatorios de cobro",
+      channelDescription: "Te avisa antes de los días de cobro de las suscripciones.",
+      testTitle: "Prueba de recordatorio de SubSlash",
+      testBody: "Así se ven los recordatorios. Te avisaremos a las 9:00 antes del día de cobro.",
+    },
+    prompt: {
+      close: "Cerrar",
+      title: "¿Te avisamos antes de los días de cobro?",
+      body: (name, daysBefore) =>
+        `Te avisaremos en este móvil a las 9:00 ${Number(daysBefore) === 0 ? "el día del cobro" : `${daysBefore} día${Number(daysBefore) === 1 ? "" : "s"} antes del cobro`}${name ? ` para ${name}` : ""}. No pasa por un servidor ni por correo, así que no hace falta iniciar sesión.`,
+      whenLabel: "Cuándo avisar",
+      choice: (daysBefore) =>
+        Number(daysBefore) === 0
+          ? "El mismo día"
+          : `${daysBefore} día${Number(daysBefore) === 1 ? "" : "s"} antes`,
+      unknownBilling: (name) =>
+        `${name} no tiene fecha de cobro, así que no se puede poner un recordatorio.`,
+      addBilling: "Añadir fecha de cobro",
+      denied:
+        "El permiso de notificaciones está desactivado. Permítelo en Ajustes del móvil › Aplicaciones › SubSlash › Notificaciones y vuelve a pulsar.",
+      checking: "Comprobando…",
+      turnOn: "Recibir recordatorios",
+      later: "Más tarde",
+    },
+    start: {
+      label: "Primeros pasos",
+      done: "Listo",
+      close: "Cerrar primeros pasos",
+      stepAdd: "Añadir una suscripción que uses",
+      stepCheckIn: "Registrar los usos de este mes",
+      stepReminders: "Activar recordatorios de cobro",
+      allDone:
+        "A partir de ahora, solo registra tus usos una vez al mes. Puedes cerrar esta tarjeta.",
+      now: "Ahora",
+    },
+    picker: {
+      title: "Elige las suscripciones que usas",
+      body: "Elige solo una y calcularemos al instante el coste por uso.",
+      more: "Más",
+      email: "Encontrarlas todas en correos de pago",
+      usage: "Buscar en el historial de uso del móvil",
+      custom: "No está en la lista · Escribirla",
+      paste: "Pegar un SMS de pago",
+      sample: "Ver con un ejemplo",
+    },
+    calendar: {
+      days: [
+        { value: 0, label: "La mañana del día de cobro" },
+        { value: 1, label: "1 día antes del cobro" },
+        { value: 3, label: "3 días antes del cobro" },
+        { value: 7, label: "7 días antes del cobro" },
+      ],
+      startFailed: "No se pudo empezar a añadir al calendario.",
+      title: "Añadir días de cobro a Google Calendar",
+      body: (calendar) =>
+        `Creamos un calendario «${calendar}» y añadimos los días de cobro como eventos periódicos. Los demás calendarios no se tocan.`,
+      loginBefore: "Necesitas ",
+      login: "iniciar sesión",
+      loginAfter: " para usar esto.",
+      notConfigured: "Este servidor no tiene configurado el registro en Google Calendar.",
+      willSyncBefore: "Días de cobro que se añadirán: ",
+      willSync: (count) => `${count}`,
+      undated: (count) =>
+        ` · se excluye${Number(count) === 1 ? "" : "n"} ${count} suscripci${Number(count) === 1 ? "ón anual" : "ones anuales"} sin mes de cobro`,
+      reminder: "Aviso del evento",
+      submit: "Añadir a Google Calendar",
+      nothing:
+        "No hay suscripciones que añadir. Para una suscripción anual, indica el mes de cobro en su detalle.",
+      notes: [
+        "Los nombres, importes y días de cobro de las suscripciones se envían a Google. Nuestro servidor los guarda como máximo 10 minutos y luego los borra.",
+        "Si cambiaste una suscripción, vuelve a pulsar. No se actualiza sola.",
+        "Si aparece el aviso «aplicación no verificada», continúa desde «Configuración avanzada».",
+      ],
+      stop: (calendar) => `Para dejarlo, borra el calendario «${calendar}».`,
+    },
+  },
+};
+
+export const de: Widen<typeof ko> = {
+  reminders: {
+    notify: {
+      billingTitle: (name, daysBefore) =>
+        `${name}: Abbuchung ${Number(daysBefore) === 0 ? "heute" : `in ${daysBefore} ${Number(daysBefore) === 1 ? "Tag" : "Tagen"}`}`,
+      billingBody: (month, day, amount) =>
+        `Am ${day}. ${monthName("de", month)} werden ${amount} abgebucht. Prüf, ob du es weiter nutzen willst.`,
+      receiptTitle: (month) => `Dein Abo-Beleg für ${monthName("de", month)} ist fertig`,
+      receiptBody:
+        "Sieh dir an, was du letzten Monat für jedes Abo gezahlt hast und ob es sich gelohnt hat.",
+      resubscribeTitle: (name) => `Zeit, ${name} noch einmal anzusehen`,
+      resubscribeBody:
+        "Beim Kündigen wolltest du heute erinnert werden. Schau, ob es Zeit ist, es wieder zu nutzen.",
+      channelName: "Abbuchungserinnerungen",
+      channelDescription: "Erinnert dich vor den Abbuchungstagen deiner Abos.",
+      testTitle: "SubSlash Test-Erinnerung",
+      testBody: "So sehen Erinnerungen aus. Wir erinnern dich um 9 Uhr vor dem Abbuchungstag.",
+    },
+    prompt: {
+      close: "Schließen",
+      title: "Vor Abbuchungstagen erinnern?",
+      body: (name, daysBefore) =>
+        `Wir erinnern dich auf diesem Handy um 9 Uhr ${Number(daysBefore) === 0 ? "am Abbuchungstag" : `${daysBefore} ${Number(daysBefore) === 1 ? "Tag" : "Tage"} vor der Abbuchung`}${name ? ` an ${name}` : ""}. Es läuft weder über einen Server noch per E-Mail, daher musst du dich nicht anmelden.`,
+      whenLabel: "Wann erinnern",
+      choice: (daysBefore) =>
+        Number(daysBefore) === 0
+          ? "Am selben Tag"
+          : `${daysBefore} ${Number(daysBefore) === 1 ? "Tag" : "Tage"} vorher`,
+      unknownBilling: (name) =>
+        `${name} hat keinen Abbuchungstag, daher lässt sich keine Erinnerung einstellen.`,
+      addBilling: "Abbuchungstag hinzufügen",
+      denied:
+        "Die Benachrichtigungsberechtigung ist aus. Erlaube sie unter Handy-Einstellungen › Apps › SubSlash › Benachrichtigungen und tippe dann erneut.",
+      checking: "Wird geprüft…",
+      turnOn: "Erinnerungen erhalten",
+      later: "Später",
+    },
+    start: {
+      label: "Erste Schritte",
+      done: "Fertig",
+      close: "Erste Schritte schließen",
+      stepAdd: "Ein Abo eintragen, das du nutzt",
+      stepCheckIn: "Nutzungen dieses Monats eingeben",
+      stepReminders: "Abbuchungserinnerungen einschalten",
+      allDone:
+        "Ab jetzt trägst du einfach einmal im Monat deine Nutzung ein. Du kannst diese Karte schließen.",
+      now: "Jetzt",
+    },
+    picker: {
+      title: "Wähl die Abos, die du nutzt",
+      body: "Wähl nur eines, und wir berechnen sofort die Kosten pro Nutzung.",
+      more: "Mehr",
+      email: "Alle in Zahlungs-E-Mails finden",
+      usage: "Aus dem Nutzungsverlauf des Handys finden",
+      custom: "Nicht in der Liste · Selbst eingeben",
+      paste: "Zahlungs-SMS einfügen",
+      sample: "Mit einem Beispiel ansehen",
+    },
+    calendar: {
+      days: [
+        { value: 0, label: "Am Morgen des Abbuchungstags" },
+        { value: 1, label: "1 Tag vor der Abbuchung" },
+        { value: 3, label: "3 Tage vor der Abbuchung" },
+        { value: 7, label: "7 Tage vor der Abbuchung" },
+      ],
+      startFailed: "Das Hinzufügen zum Kalender konnte nicht gestartet werden.",
+      title: "Abbuchungstage zu Google Kalender hinzufügen",
+      body: (calendar) =>
+        `Wir legen einen Kalender „${calendar}“ an und tragen die Abbuchungstage als wiederkehrende Termine ein. Andere Kalender bleiben unberührt.`,
+      loginBefore: "Du musst dich ",
+      login: "anmelden",
+      loginAfter: ", um das zu nutzen.",
+      notConfigured: "Die Eintragung in Google Kalender ist auf diesem Server nicht eingerichtet.",
+      willSyncBefore: "Jetzt hinzuzufügende Abbuchungstage: ",
+      willSync: (count) => `${count}`,
+      undated: (count) =>
+        ` · ${count} ${Number(count) === 1 ? "Jahresabo" : "Jahresabos"} ohne Abbuchungsmonat ausgelassen`,
+      reminder: "Terminerinnerung",
+      submit: "Zu Google Kalender hinzufügen",
+      nothing:
+        "Keine Abos zum Hinzufügen. Trag bei Jahresabos den Abbuchungsmonat in den Details ein.",
+      notes: [
+        "Namen, Beträge und Abbuchungstage der Abos werden an Google gesendet. Unser Server hält sie höchstens 10 Minuten und löscht sie dann.",
+        "Wenn du ein Abo geändert hast, tippe erneut. Es aktualisiert sich nicht automatisch.",
+        "Wenn eine Warnung „nicht verifizierte App“ erscheint, fahre über „Erweitert“ fort.",
+      ],
+      stop: (calendar) => `Zum Beenden lösch den Kalender „${calendar}“.`,
+    },
+  },
+};
+
+export const pt: Widen<typeof ko> = {
+  reminders: {
+    notify: {
+      billingTitle: (name, daysBefore) =>
+        `${name}: cobrança ${Number(daysBefore) === 0 ? "hoje" : `em ${daysBefore} dia${Number(daysBefore) === 1 ? "" : "s"}`}`,
+      billingBody: (month, day, amount) =>
+        `${amount} será cobrado em ${day} de ${monthName("pt", month)}. Veja se vai continuar usando.`,
+      receiptTitle: (month) => `Seu recibo de assinaturas de ${monthName("pt", month)} está pronto`,
+      receiptBody: "Veja quanto você pagou por cada assinatura no mês passado e se valeu a pena.",
+      resubscribeTitle: (name) => `Hora de dar outra olhada em ${name}`,
+      resubscribeBody:
+        "Ao cancelar, você pediu um lembrete para hoje. Veja se é hora de usar de novo.",
+      channelName: "Lembretes de cobrança",
+      channelDescription: "Avisa antes dos dias de cobrança das assinaturas.",
+      testTitle: "Teste de lembrete do SubSlash",
+      testBody: "Os lembretes aparecem assim. Vamos avisar às 9h antes do dia de cobrança.",
+    },
+    prompt: {
+      close: "Fechar",
+      title: "Avisar antes dos dias de cobrança?",
+      body: (name, daysBefore) =>
+        `Vamos avisar neste celular às 9h ${Number(daysBefore) === 0 ? "no dia da cobrança" : `${daysBefore} dia${Number(daysBefore) === 1 ? "" : "s"} antes da cobrança`}${name ? ` para ${name}` : ""}. Não passa por servidor nem por e-mail, então não precisa entrar.`,
+      whenLabel: "Quando avisar",
+      choice: (daysBefore) =>
+        Number(daysBefore) === 0
+          ? "No mesmo dia"
+          : `${daysBefore} dia${Number(daysBefore) === 1 ? "" : "s"} antes`,
+      unknownBilling: (name) =>
+        `${name} não tem data de cobrança, então não dá para criar lembrete.`,
+      addBilling: "Adicionar data de cobrança",
+      denied:
+        "A permissão de notificações está desligada. Permita em Configurações do celular › Apps › SubSlash › Notificações e toque de novo.",
+      checking: "Verificando…",
+      turnOn: "Receber lembretes",
+      later: "Depois",
+    },
+    start: {
+      label: "Primeiros passos",
+      done: "Tudo pronto",
+      close: "Fechar primeiros passos",
+      stepAdd: "Cadastrar uma assinatura que você usa",
+      stepCheckIn: "Informar os usos deste mês",
+      stepReminders: "Ativar lembretes de cobrança",
+      allDone: "Daqui em diante, é só informar os usos uma vez por mês. Pode fechar este cartão.",
+      now: "Agora",
+    },
+    picker: {
+      title: "Escolha as assinaturas que você usa",
+      body: "Escolha só uma e já calculamos o custo por uso.",
+      more: "Mais",
+      email: "Encontrar todas nos e-mails de pagamento",
+      usage: "Buscar no histórico de uso do celular",
+      custom: "Não está na lista · Digitar",
+      paste: "Colar SMS de pagamento",
+      sample: "Ver com um exemplo",
+    },
+    calendar: {
+      days: [
+        { value: 0, label: "Manhã do dia da cobrança" },
+        { value: 1, label: "1 dia antes da cobrança" },
+        { value: 3, label: "3 dias antes da cobrança" },
+        { value: 7, label: "7 dias antes da cobrança" },
+      ],
+      startFailed: "Não foi possível começar a adicionar à agenda.",
+      title: "Adicionar dias de cobrança ao Google Agenda",
+      body: (calendar) =>
+        `Criamos uma agenda “${calendar}” e adicionamos os dias de cobrança como eventos recorrentes. As outras agendas não são alteradas.`,
+      loginBefore: "Você precisa ",
+      login: "entrar",
+      loginAfter: " para usar isto.",
+      notConfigured: "O registro no Google Agenda não está configurado neste servidor.",
+      willSyncBefore: "Dias de cobrança a adicionar agora: ",
+      willSync: (count) => `${count}`,
+      undated: (count) =>
+        ` · ${count} assinatura${Number(count) === 1 ? " anual" : "s anuais"} sem mês de cobrança ficou${Number(count) === 1 ? "" : "aram"} de fora`.replace(
+          "ficouaram",
+          "ficaram",
+        ),
+      reminder: "Lembrete do evento",
+      submit: "Adicionar ao Google Agenda",
+      nothing:
+        "Não há assinaturas para adicionar. Para uma assinatura anual, informe o mês de cobrança no detalhe.",
+      notes: [
+        "Os nomes, valores e dias de cobrança das assinaturas são enviados ao Google. Nosso servidor guarda por no máximo 10 minutos e depois apaga.",
+        "Se você alterou uma assinatura, toque de novo. Não atualiza sozinho.",
+        "Se aparecer o aviso “app não verificado”, continue em “Avançado”.",
+      ],
+      stop: (calendar) => `Para parar, apague a agenda “${calendar}”.`,
     },
   },
 };
