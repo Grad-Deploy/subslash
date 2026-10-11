@@ -39,6 +39,42 @@ test.describe("화면 언어 (E2E)", () => {
     await expect(page).toHaveTitle("SubSlash - The nerve to cut subscriptions");
   });
 
+  // 서비스 목록의 해지 안내는 확인한 원문이라 옮기지 않는다. 대신 원문이라고 밝히고 한국어로 읽게 한다.
+  test("번역하지 않은 해지 안내는 원문(한국어)이라고 적는다", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "subslash-storage",
+        JSON.stringify({
+          state: {
+            subscriptions: [
+              {
+                id: "sub1",
+                name: "넷플릭스",
+                amount: 17000,
+                currency: "KRW",
+                billingDay: 15,
+                billingCycle: "monthly",
+                category: "ott",
+                status: "active",
+                createdAt: "2026-09-01T00:00:00.000Z",
+                cancelUrl: "https://www.netflix.com/cancelplan",
+                cancelGuide: "1. 계정 메뉴로 이동\n2. 멤버십 해지 클릭",
+              },
+            ],
+            usageLogs: [],
+            accounts: [],
+          },
+          version: 0,
+        }),
+      );
+    });
+    await page.goto("/subs/detail?id=sub1");
+    const steps = page.getByText("멤버십 해지 클릭");
+    await expect(steps).toBeVisible({ timeout: 30_000 });
+    await expect(steps).toHaveAttribute("lang", "ko");
+    await expect(page.getByText(/^Original \(Korean\), not translated/)).toBeVisible();
+  });
+
   test("하단 탭·푸터도 영어다", async ({ page, isMobile }) => {
     await page.goto("/settings");
     await expect(page.getByRole("link", { name: "Privacy policy" }).first()).toBeVisible();

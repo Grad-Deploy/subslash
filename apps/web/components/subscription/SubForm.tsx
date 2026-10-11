@@ -27,6 +27,7 @@ import { AmountFields } from "./form/AmountFields";
 import { BillingFields } from "./form/BillingFields";
 import { AccountPaymentFields } from "./form/AccountPaymentFields";
 import { ServiceNameFields } from "./form/ServiceNameFields";
+import { SourceTextNote, sourceLang } from "@components/ui/source-text";
 
 /**
  * 구독 등록·수정 폼.
@@ -317,7 +318,12 @@ export function SubForm({
         />
       )}
       {!isEdit && preset && plans.length === 0 && preset.priceNote && (
-        <p className="text-[11px] text-muted-foreground">{preset.priceNote}</p>
+        <>
+          <p className="text-[11px] text-muted-foreground" lang={sourceLang(preset.priceNote)}>
+            {preset.priceNote}
+          </p>
+          <SourceTextNote text={preset.priceNote} />
+        </>
       )}
       {!isEdit && preset && <BundleNotes preset={preset} />}
 

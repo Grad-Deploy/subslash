@@ -19,6 +19,7 @@ import { useLocale, useT, useServiceNames } from "@lib/i18n";
 import { findPaymentMethod } from "@lib/payment-method";
 import { ServiceLogo } from "./ServiceLogo";
 import { PlanAlternatives } from "./PlanAlternatives";
+import { SourceTextNote, sourceLang } from "@components/ui/source-text";
 
 interface CancelGuideModalProps {
   subscription: Subscription | null;
@@ -284,7 +285,7 @@ export function CancelGuideModal({
               {t.guide.step2}
             </h4>
             {steps.length > 0 ? (
-              <ol className="space-y-2">
+              <ol className="space-y-2" lang={sourceLang(sub.cancelGuide)}>
                 {steps.map((step, index) => (
                   <li key={`${index}-${step}`} className="flex gap-2.5 text-xs leading-relaxed">
                     <span className="shrink-0 w-5 h-5 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-[10px]">
@@ -299,6 +300,7 @@ export function CancelGuideModal({
                 {t.guide.noSteps}
               </p>
             )}
+            {steps.length > 0 && <SourceTextNote text={sub.cancelGuide} />}
           </section>
 
           {/*
