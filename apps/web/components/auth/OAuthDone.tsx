@@ -41,7 +41,7 @@ export function OAuthDone() {
       ? d.linkFailed
       : d.loginFailed
     : linked
-      ? d.linked(providerLabel(linked))
+      ? d.linked(providerLabel(linked, t.auth.social.providers))
       : d.loggedIn;
   return (
     <div className="space-y-3 rounded-2xl border bg-card p-6 text-center" role="status">

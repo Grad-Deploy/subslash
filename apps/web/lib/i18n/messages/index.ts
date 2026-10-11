@@ -18,6 +18,7 @@ import * as account from "./account";
 import * as accountPages from "./accountPages";
 import * as oauth from "./oauth";
 import * as overview from "./overview";
+import * as pageTitles from "./pageTitles";
 import * as pcUsage from "./pcUsage";
 import * as receipt from "./receipt";
 import * as receiptView from "./receiptView";
@@ -34,6 +35,7 @@ import * as value from "./value";
 export const messages = {
   ko: {
     shell: shell.ko,
+    pageTitles: pageTitles.ko,
     settings: settings.ko,
     backup: backup.ko,
     deviceUsage: deviceUsage.ko,
@@ -65,6 +67,7 @@ export const messages = {
   },
   en: {
     shell: shell.en,
+    pageTitles: pageTitles.en,
     settings: settings.en,
     backup: backup.en,
     deviceUsage: deviceUsage.en,

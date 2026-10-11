@@ -50,3 +50,11 @@ export const MONTHS_SHORT = [
 /** 1~12월의 이름. 범위 밖이면 숫자 그대로. */
 export const monthLong = (month: number) => MONTHS_LONG[Number(month) - 1] ?? String(month);
 export const monthShort = (month: number) => MONTHS_SHORT[Number(month) - 1] ?? String(month);
+
+/** 서수: ordinal(1) → "1st", ordinal(12) → "12th", ordinal(23) → "23rd". */
+export const ordinal = (n: number) => {
+  const v = Number(n);
+  const tens = v % 100;
+  const suffix = tens >= 11 && tens <= 13 ? "th" : (["th", "st", "nd", "rd"][v % 10] ?? "th");
+  return `${v}${suffix}`;
+};

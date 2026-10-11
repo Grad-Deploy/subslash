@@ -550,8 +550,12 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import`)는 SubSlash가 G
 보인다(`useServiceNames`, `lib/service-name`) — 영어 화면에서 등록한 'Netflix'는 한국어 화면에서 '넷플릭스'다(예전에는 영어 화면에서만
 바꿔, 언어를 바꿔도 등록할 때의 언어로 남았다). 목록 이름과 다르게 고쳐 적은 이름('내 넷플릭스')은 그대로다 —
 이름은 사용자 기록이라 저장된 값을 고치지 않고 보여 줄 때만 바꾼다. 영어 화면에서 고르면 영문 이름으로 저장되므로, 이름으로 같은 서비스인지
-견줄 때는 `findPresetForSubscription`·`serviceNameKey`를 쓴다. 아직 옮기지 않은
-화면, 서버가 돌려주는 오류 문구, `@subslash/shared`가 만드는 문구는 한국어로 보인다 — 화면 단위로 옮겨 간다.
+견줄 때는 `findPresetForSubscription`·`serviceNameKey`를 쓴다. `@subslash/shared`는 화면에 보일 문장을 만들지 않고
+값을 돌려준다(예: 정산 문구는 `settlementParts` → `t.subs.card.settlementMessage`) — 한국어 문장을 돌려주는 shared 함수는
+서버·테스트·한국 서비스에 보내는 글(환불 요청 `formatRefundRequest`)만 쓴다. 일부러 한국어로 두는 것: 서비스 목록의
+해지 안내·요금 설명(확인한 원문), 환불 요청 글, 메일(`lib/email`), AI 프롬프트·도구 설명. 탭 제목은 `messages/pageTitles`
+한 곳에 두고 페이지 metadata(한국어)와 `LocaleEffects`(화면 언어)가 함께 쓴다. 간편 로그인 회사 이름은
+`t.auth.social.providers`로 보인다(서버의 `OAUTH_PROVIDER_LABEL`은 한국어).
 입력 검사(`@subslash/shared`)와 서버 응답은 한국어 문장을 돌려준다 — 서버와 같은 함수라 언어마다 나누지 않고, 보여 주는
 자리에서 `useKnownText()`(`lib/i18n/known-text`의 표)로 바꾼다. 표에 없는 문장은 원문을 보인다. 검사 함수나 서버 문구를 고치면
 표도 고친다(`known-text.test.ts`가 갈래마다 확인한다). 화면을 연 뒤 비동기로 붙이는 문구는 `useLatestT()`로 읽는다 — 첫 화면은

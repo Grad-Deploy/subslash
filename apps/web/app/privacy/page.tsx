@@ -2,8 +2,9 @@ import React from "react";
 import type { Metadata } from "next";
 import { PrivacyPolicy } from "@components/privacy/PrivacyPolicy";
 import { siteOpenGraph } from "@lib/site-metadata";
+import { ko as PAGE_TITLES } from "@lib/i18n/messages/pageTitles";
 
-const TITLE = "개인정보처리방침 · SubSlash";
+const TITLE = PAGE_TITLES.paths["/privacy"];
 const DESCRIPTION =
   "SubSlash가 무엇을, 왜, 얼마나 저장하는지 적었습니다. 구독 기록은 기본적으로 기기 안에만 저장됩니다.";
 

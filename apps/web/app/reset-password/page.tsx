@@ -2,9 +2,10 @@ import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import { AccountPageHeading } from "@components/auth/AccountPageHeading";
 import { ResetPassword } from "@components/auth/ResetPassword";
+import { ko as PAGE_TITLES } from "@lib/i18n/messages/pageTitles";
 
 export const metadata: Metadata = {
-  title: "새 비밀번호 정하기 · SubSlash",
+  title: PAGE_TITLES.paths["/reset-password"],
   // 주소창의 토큰이 이 페이지에서 나가는 요청의 Referer에 실려 새지 않게 한다.
   referrer: "no-referrer",
   robots: { index: false, follow: false },
