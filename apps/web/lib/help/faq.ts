@@ -7,7 +7,14 @@
  * 않는다(평가 세트의 정답이다).
  */
 import { SOURCE_LOCALE, translationFor, type Locale, type Translations } from "../i18n/config";
+import { FAQ_DE, FAQ_GROUP_TITLES_DE } from "./faq-de";
 import { FAQ_EN, FAQ_GROUP_TITLES_EN } from "./faq-en";
+import { FAQ_ES, FAQ_GROUP_TITLES_ES } from "./faq-es";
+import { FAQ_FR, FAQ_GROUP_TITLES_FR } from "./faq-fr";
+import { FAQ_JA, FAQ_GROUP_TITLES_JA } from "./faq-ja";
+import { FAQ_PT, FAQ_GROUP_TITLES_PT } from "./faq-pt";
+import { FAQ_VI, FAQ_GROUP_TITLES_VI } from "./faq-vi";
+import { FAQ_ZH, FAQ_GROUP_TITLES_ZH } from "./faq-zh";
 
 /** 원문이 아닌 언어의 FAQ: 묶음 제목(한국어 제목 → 그 언어)과 같은 id의 글. */
 const FAQ_TRANSLATIONS: Translations<{
@@ -15,6 +22,13 @@ const FAQ_TRANSLATIONS: Translations<{
   items: typeof FAQ_EN;
 }> = {
   en: { groupTitles: FAQ_GROUP_TITLES_EN, items: FAQ_EN },
+  zh: { groupTitles: FAQ_GROUP_TITLES_ZH, items: FAQ_ZH },
+  ja: { groupTitles: FAQ_GROUP_TITLES_JA, items: FAQ_JA },
+  vi: { groupTitles: FAQ_GROUP_TITLES_VI, items: FAQ_VI },
+  fr: { groupTitles: FAQ_GROUP_TITLES_FR, items: FAQ_FR },
+  es: { groupTitles: FAQ_GROUP_TITLES_ES, items: FAQ_ES },
+  de: { groupTitles: FAQ_GROUP_TITLES_DE, items: FAQ_DE },
+  pt: { groupTitles: FAQ_GROUP_TITLES_PT, items: FAQ_PT },
 };
 
 export interface Faq {

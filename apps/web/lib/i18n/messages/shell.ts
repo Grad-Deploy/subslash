@@ -137,3 +137,459 @@ export const en: Widen<typeof ko> = {
     exitHint: "Press back again to exit the app",
   },
 };
+
+// 원어민 검토 전의 번역(LOCALE_INFO.beta).
+export const zh: Widen<typeof ko> = {
+  nav: {
+    label: "主菜单",
+    dashboard: "仪表板",
+    subs: "我的订阅",
+    subsTab: "订阅",
+    report: "报告",
+    settings: "设置",
+  },
+  theme: {
+    label: "显示模式",
+    current: (label) => `显示模式（${label}）`,
+    system: "自动",
+    systemDetail: "跟随设备",
+    light: "浅色",
+    dark: "深色",
+  },
+  account: {
+    menu: "账户菜单",
+    menuFor: (username) => `账户菜单（${username}）`,
+    signedOut: "未登录",
+    storedInBrowser: "你的记录保存在这个浏览器中。",
+    me: "我的信息",
+    loginOrSignup: "登录 / 注册",
+    backup: "数据备份",
+    syncHint: "登录后可以在多台设备上使用同一份记录。",
+    help: "帮助与咨询",
+    logout: "退出登录",
+  },
+  demo: {
+    title: "你正在用示例数据体验 SubSlash。",
+    body: (minutes) =>
+      `显示的订阅都是示例，不会和你的订阅混在一起。这里的更改不会保存，刷新或 ${minutes} 分钟后体验就会结束。`,
+    end: "结束体验",
+  },
+  footer: {
+    help: "帮助与咨询",
+    privacy: "隐私政策",
+    trademarks:
+      "服务名称和标志是其所有者的商标，仅用于识别订阅。SubSlash 与这些服务没有合作关系，也未获得其认可。",
+  },
+  addMenu: {
+    title: "添加订阅",
+    manual: "手动添加",
+    manualDetail: "选择服务并输入金额和扣款日",
+    mail: "从付款邮件中查找",
+    mailDetail: "从 Gmail 的付款邮件中查找订阅",
+    paste: "粘贴付款短信",
+    pasteDetail: "粘贴银行卡付款短信",
+    phone: "从手机使用记录中查找",
+    phoneDetail: "查找这部手机上用过的 Netflix、TVING 等视频应用",
+  },
+  common: {
+    confirm: "确定",
+    cancel: "取消",
+    close: "关闭",
+    loading: "加载中",
+    copyFallback: "无法自动复制。请长按下面的文字进行复制。",
+    sourceText: "原文（韩语），未翻译：我们保留了在服务上确认过的原样内容。",
+  },
+  app: { sheetClose: "关闭", exitHint: "再按一次返回键退出应用" },
+};
+
+export const ja: Widen<typeof ko> = {
+  nav: {
+    label: "メインメニュー",
+    dashboard: "ダッシュボード",
+    subs: "マイサブスク",
+    subsTab: "サブスク",
+    report: "レポート",
+    settings: "設定",
+  },
+  theme: {
+    label: "表示モード",
+    current: (label) => `表示モード（${label}）`,
+    system: "自動",
+    systemDetail: "端末に合わせる",
+    light: "ライト",
+    dark: "ダーク",
+  },
+  account: {
+    menu: "アカウントメニュー",
+    menuFor: (username) => `アカウントメニュー（${username}）`,
+    signedOut: "ログインしていません",
+    storedInBrowser: "記録はこのブラウザに保存されています。",
+    me: "マイ情報",
+    loginOrSignup: "ログイン / 会員登録",
+    backup: "データのバックアップ",
+    syncHint: "ログインすると複数の端末で同じ記録を使えます。",
+    help: "ヘルプ・お問い合わせ",
+    logout: "ログアウト",
+  },
+  demo: {
+    title: "サンプルデータで SubSlash を体験中です。",
+    body: (minutes) =>
+      `表示されているサブスクは例で、あなたのサブスクとは混ざりません。ここでの変更は保存されず、再読み込みするか ${minutes} 分たつと体験が終わります。`,
+    end: "体験を終える",
+  },
+  footer: {
+    help: "ヘルプ・お問い合わせ",
+    privacy: "プライバシーポリシー",
+    trademarks:
+      "サービス名とロゴは各所有者の商標で、サブスクを見分けるためだけに使っています。SubSlash はこれらのサービスと提携しておらず、保証も受けていません。",
+  },
+  addMenu: {
+    title: "サブスクを追加",
+    manual: "手動で追加",
+    manualDetail: "サービスを選んで金額と支払日を入力",
+    mail: "支払いメールから探す",
+    mailDetail: "Gmail の支払いメールからサブスクを探す",
+    paste: "支払いのメッセージを貼り付け",
+    pasteDetail: "カード決済のメッセージを貼り付け",
+    phone: "スマホの利用記録から探す",
+    phoneDetail: "このスマホで使った Netflix・TVING などの動画アプリを探す",
+  },
+  common: {
+    confirm: "OK",
+    cancel: "キャンセル",
+    close: "閉じる",
+    loading: "読み込み中",
+    copyFallback: "自動でコピーできませんでした。下の文章を長押ししてコピーしてください。",
+    sourceText: "原文（韓国語）・未翻訳: サービスで確認したとおりの内容をそのまま載せています。",
+  },
+  app: { sheetClose: "閉じる", exitHint: "もう一度戻るを押すとアプリを終了します" },
+};
+
+export const vi: Widen<typeof ko> = {
+  nav: {
+    label: "Menu chính",
+    dashboard: "Bảng điều khiển",
+    subs: "Gói đăng ký của tôi",
+    subsTab: "Gói đăng ký",
+    report: "Báo cáo",
+    settings: "Cài đặt",
+  },
+  theme: {
+    label: "Chế độ hiển thị",
+    current: (label) => `Chế độ hiển thị (${label})`,
+    system: "Tự động",
+    systemDetail: "Theo thiết bị",
+    light: "Sáng",
+    dark: "Tối",
+  },
+  account: {
+    menu: "Menu tài khoản",
+    menuFor: (username) => `Menu tài khoản (${username})`,
+    signedOut: "Chưa đăng nhập",
+    storedInBrowser: "Dữ liệu của bạn được lưu trong trình duyệt này.",
+    me: "Thông tin của tôi",
+    loginOrSignup: "Đăng nhập / Đăng ký",
+    backup: "Sao lưu dữ liệu",
+    syncHint: "Đăng nhập để dùng cùng dữ liệu trên nhiều thiết bị.",
+    help: "Trợ giúp & liên hệ",
+    logout: "Đăng xuất",
+  },
+  demo: {
+    title: "Bạn đang dùng thử SubSlash với dữ liệu mẫu.",
+    body: (minutes) =>
+      `Các gói hiển thị là ví dụ và không trộn với gói của bạn. Thay đổi ở đây không được lưu, và bản dùng thử kết thúc khi bạn tải lại trang hoặc sau ${minutes} phút.`,
+    end: "Kết thúc dùng thử",
+  },
+  footer: {
+    help: "Trợ giúp & liên hệ",
+    privacy: "Chính sách quyền riêng tư",
+    trademarks:
+      "Tên và logo dịch vụ là nhãn hiệu của chủ sở hữu, chỉ được dùng để nhận diện gói đăng ký. SubSlash không liên kết hay được các dịch vụ này bảo trợ.",
+  },
+  addMenu: {
+    title: "Thêm gói đăng ký",
+    manual: "Thêm thủ công",
+    manualDetail: "Chọn dịch vụ rồi nhập số tiền và ngày thanh toán",
+    mail: "Tìm trong email thanh toán",
+    mailDetail: "Tìm gói đăng ký từ email thanh toán trong Gmail",
+    paste: "Dán tin nhắn thanh toán",
+    pasteDetail: "Dán tin nhắn thanh toán thẻ",
+    phone: "Tìm từ dữ liệu sử dụng điện thoại",
+    phoneDetail: "Tìm ứng dụng video như Netflix, TVING bạn đã dùng trên điện thoại này",
+  },
+  common: {
+    confirm: "OK",
+    cancel: "Hủy",
+    close: "Đóng",
+    loading: "Đang tải",
+    copyFallback: "Không thể tự động sao chép. Hãy nhấn giữ đoạn văn bên dưới để sao chép.",
+    sourceText:
+      "Bản gốc (tiếng Hàn), chưa dịch: chúng tôi giữ nguyên nội dung đã kiểm tra trên dịch vụ.",
+  },
+  app: { sheetClose: "Đóng", exitHint: "Nhấn quay lại lần nữa để thoát ứng dụng" },
+};
+
+export const fr: Widen<typeof ko> = {
+  nav: {
+    label: "Menu principal",
+    dashboard: "Tableau de bord",
+    subs: "Mes abonnements",
+    subsTab: "Abonnements",
+    report: "Rapport",
+    settings: "Réglages",
+  },
+  theme: {
+    label: "Apparence",
+    current: (label) => `Apparence (${label})`,
+    system: "Auto",
+    systemDetail: "Suit l'appareil",
+    light: "Clair",
+    dark: "Sombre",
+  },
+  account: {
+    menu: "Menu du compte",
+    menuFor: (username) => `Menu du compte (${username})`,
+    signedOut: "Non connecté",
+    storedInBrowser: "Vos données sont enregistrées dans ce navigateur.",
+    me: "Mon compte",
+    loginOrSignup: "Connexion / Inscription",
+    backup: "Sauvegarde des données",
+    syncHint: "Connectez-vous pour utiliser les mêmes données sur plusieurs appareils.",
+    help: "Aide et contact",
+    logout: "Se déconnecter",
+  },
+  demo: {
+    title: "Vous essayez SubSlash avec des données d'exemple.",
+    body: (minutes) =>
+      `Les abonnements affichés sont des exemples, séparés des vôtres. Les changements ne sont pas enregistrés, et l'essai se termine si vous actualisez ou après ${minutes} minutes.`,
+    end: "Terminer l'essai",
+  },
+  footer: {
+    help: "Aide et contact",
+    privacy: "Politique de confidentialité",
+    trademarks:
+      "Les noms et logos des services sont des marques de leurs propriétaires, utilisés uniquement pour identifier les abonnements. SubSlash n'est ni affilié à ces services ni approuvé par eux.",
+  },
+  addMenu: {
+    title: "Ajouter un abonnement",
+    manual: "Ajouter manuellement",
+    manualDetail: "Choisissez un service et saisissez le montant et le jour de paiement",
+    mail: "Trouver dans les e-mails de paiement",
+    mailDetail: "Trouver des abonnements dans les e-mails de paiement Gmail",
+    paste: "Coller un SMS de paiement",
+    pasteDetail: "Collez un SMS de paiement par carte",
+    phone: "Trouver via l'utilisation du téléphone",
+    phoneDetail:
+      "Trouvez les applis de streaming comme Netflix ou TVING utilisées sur ce téléphone",
+  },
+  common: {
+    confirm: "OK",
+    cancel: "Annuler",
+    close: "Fermer",
+    loading: "Chargement",
+    copyFallback:
+      "Impossible de copier automatiquement. Appuyez longuement sur le texte ci-dessous pour le copier.",
+    sourceText:
+      "Texte original (coréen), non traduit : nous le gardons tel que nous l'avons vérifié sur le service.",
+  },
+  app: {
+    sheetClose: "Fermer",
+    exitHint: "Appuyez à nouveau sur retour pour quitter l'application",
+  },
+};
+
+export const es: Widen<typeof ko> = {
+  nav: {
+    label: "Menú principal",
+    dashboard: "Panel",
+    subs: "Mis suscripciones",
+    subsTab: "Suscripciones",
+    report: "Informe",
+    settings: "Ajustes",
+  },
+  theme: {
+    label: "Apariencia",
+    current: (label) => `Apariencia (${label})`,
+    system: "Automático",
+    systemDetail: "Según el dispositivo",
+    light: "Claro",
+    dark: "Oscuro",
+  },
+  account: {
+    menu: "Menú de la cuenta",
+    menuFor: (username) => `Menú de la cuenta (${username})`,
+    signedOut: "Sin iniciar sesión",
+    storedInBrowser: "Tus registros se guardan en este navegador.",
+    me: "Mi cuenta",
+    loginOrSignup: "Iniciar sesión / Registrarse",
+    backup: "Copia de seguridad",
+    syncHint: "Inicia sesión para usar los mismos registros en varios dispositivos.",
+    help: "Ayuda y contacto",
+    logout: "Cerrar sesión",
+  },
+  demo: {
+    title: "Estás probando SubSlash con datos de ejemplo.",
+    body: (minutes) =>
+      `Las suscripciones mostradas son ejemplos y no se mezclan con las tuyas. Los cambios no se guardan, y la prueba termina al recargar o tras ${minutes} minutos.`,
+    end: "Terminar prueba",
+  },
+  footer: {
+    help: "Ayuda y contacto",
+    privacy: "Política de privacidad",
+    trademarks:
+      "Los nombres y logotipos de los servicios son marcas de sus propietarios y se usan solo para identificar suscripciones. SubSlash no está afiliado ni respaldado por estos servicios.",
+  },
+  addMenu: {
+    title: "Añadir suscripción",
+    manual: "Añadir a mano",
+    manualDetail: "Elige un servicio e introduce el importe y el día de cobro",
+    mail: "Buscar en correos de pago",
+    mailDetail: "Busca suscripciones en los correos de pago de Gmail",
+    paste: "Pegar un SMS de pago",
+    pasteDetail: "Pega un SMS de pago con tarjeta",
+    phone: "Buscar en el uso del móvil",
+    phoneDetail: "Busca apps de vídeo como Netflix o TVING que hayas usado en este móvil",
+  },
+  common: {
+    confirm: "Aceptar",
+    cancel: "Cancelar",
+    close: "Cerrar",
+    loading: "Cargando",
+    copyFallback:
+      "No se pudo copiar automáticamente. Mantén pulsado el texto de abajo para copiarlo.",
+    sourceText:
+      "Texto original (coreano), sin traducir: lo mantenemos tal como lo comprobamos en el servicio.",
+  },
+  app: { sheetClose: "Cerrar", exitHint: "Pulsa atrás otra vez para salir de la app" },
+};
+
+export const de: Widen<typeof ko> = {
+  nav: {
+    label: "Hauptmenü",
+    dashboard: "Übersicht",
+    subs: "Meine Abos",
+    subsTab: "Abos",
+    report: "Bericht",
+    settings: "Einstellungen",
+  },
+  theme: {
+    label: "Darstellung",
+    current: (label) => `Darstellung (${label})`,
+    system: "Automatisch",
+    systemDetail: "Wie das Gerät",
+    light: "Hell",
+    dark: "Dunkel",
+  },
+  account: {
+    menu: "Kontomenü",
+    menuFor: (username) => `Kontomenü (${username})`,
+    signedOut: "Nicht angemeldet",
+    storedInBrowser: "Deine Daten sind in diesem Browser gespeichert.",
+    me: "Mein Konto",
+    loginOrSignup: "Anmelden / Registrieren",
+    backup: "Datensicherung",
+    syncHint: "Melde dich an, um dieselben Daten auf mehreren Geräten zu nutzen.",
+    help: "Hilfe & Kontakt",
+    logout: "Abmelden",
+  },
+  demo: {
+    title: "Du testest SubSlash mit Beispieldaten.",
+    body: (minutes) =>
+      `Die angezeigten Abos sind Beispiele und werden nicht mit deinen vermischt. Änderungen werden nicht gespeichert, und der Test endet beim Neuladen oder nach ${minutes} Minuten.`,
+    end: "Test beenden",
+  },
+  footer: {
+    help: "Hilfe & Kontakt",
+    privacy: "Datenschutzerklärung",
+    trademarks:
+      "Namen und Logos der Dienste sind Marken ihrer Inhaber und dienen nur zur Erkennung der Abos. SubSlash ist mit diesen Diensten weder verbunden noch von ihnen unterstützt.",
+  },
+  addMenu: {
+    title: "Abo hinzufügen",
+    manual: "Manuell hinzufügen",
+    manualDetail: "Dienst wählen und Betrag sowie Abbuchungstag eingeben",
+    mail: "In Zahlungs-E-Mails suchen",
+    mailDetail: "Abos in den Zahlungs-E-Mails in Gmail finden",
+    paste: "Zahlungs-SMS einfügen",
+    pasteDetail: "Eine Kartenzahlungs-SMS einfügen",
+    phone: "Aus der Handynutzung suchen",
+    phoneDetail:
+      "Streaming-Apps wie Netflix oder TVING finden, die du auf diesem Handy genutzt hast",
+  },
+  common: {
+    confirm: "OK",
+    cancel: "Abbrechen",
+    close: "Schließen",
+    loading: "Wird geladen",
+    copyFallback:
+      "Automatisches Kopieren fehlgeschlagen. Halte den Text unten gedrückt, um ihn zu kopieren.",
+    sourceText:
+      "Original (Koreanisch), nicht übersetzt: Wir übernehmen es genau so, wie wir es beim Dienst geprüft haben.",
+  },
+  app: { sheetClose: "Schließen", exitHint: "Noch einmal Zurück drücken, um die App zu beenden" },
+};
+
+export const pt: Widen<typeof ko> = {
+  nav: {
+    label: "Menu principal",
+    dashboard: "Painel",
+    subs: "Minhas assinaturas",
+    subsTab: "Assinaturas",
+    report: "Relatório",
+    settings: "Configurações",
+  },
+  theme: {
+    label: "Aparência",
+    current: (label) => `Aparência (${label})`,
+    system: "Automático",
+    systemDetail: "Segue o dispositivo",
+    light: "Claro",
+    dark: "Escuro",
+  },
+  account: {
+    menu: "Menu da conta",
+    menuFor: (username) => `Menu da conta (${username})`,
+    signedOut: "Não conectado",
+    storedInBrowser: "Seus registros estão salvos neste navegador.",
+    me: "Minha conta",
+    loginOrSignup: "Entrar / Cadastrar",
+    backup: "Backup de dados",
+    syncHint: "Entre para usar os mesmos registros em vários dispositivos.",
+    help: "Ajuda e contato",
+    logout: "Sair",
+  },
+  demo: {
+    title: "Você está testando o SubSlash com dados de exemplo.",
+    body: (minutes) =>
+      `As assinaturas mostradas são exemplos e não se misturam com as suas. As mudanças não são salvas, e o teste termina ao atualizar a página ou depois de ${minutes} minutos.`,
+    end: "Encerrar teste",
+  },
+  footer: {
+    help: "Ajuda e contato",
+    privacy: "Política de privacidade",
+    trademarks:
+      "Os nomes e logotipos dos serviços são marcas de seus donos e são usados só para identificar assinaturas. O SubSlash não é afiliado nem endossado por esses serviços.",
+  },
+  addMenu: {
+    title: "Adicionar assinatura",
+    manual: "Adicionar manualmente",
+    manualDetail: "Escolha um serviço e informe o valor e o dia de cobrança",
+    mail: "Buscar nos e-mails de pagamento",
+    mailDetail: "Encontre assinaturas nos e-mails de pagamento do Gmail",
+    paste: "Colar SMS de pagamento",
+    pasteDetail: "Cole um SMS de pagamento com cartão",
+    phone: "Buscar no uso do celular",
+    phoneDetail: "Encontre apps de vídeo como Netflix ou TVING usados neste celular",
+  },
+  common: {
+    confirm: "OK",
+    cancel: "Cancelar",
+    close: "Fechar",
+    loading: "Carregando",
+    copyFallback:
+      "Não foi possível copiar automaticamente. Toque e segure o texto abaixo para copiar.",
+    sourceText:
+      "Texto original (coreano), sem tradução: mantemos exatamente como conferimos no serviço.",
+  },
+  app: { sheetClose: "Fechar", exitHint: "Toque em voltar de novo para sair do app" },
+};

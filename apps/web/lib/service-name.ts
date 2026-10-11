@@ -13,6 +13,15 @@ import {
  */
 const PRESET_NAMES: Translations<(preset: ServicePreset) => string | undefined> = {
   en: (preset) => preset.nameEn,
+  // 영어 밖의 표기는 확인하지 않았으므로 지어내지 않고 브랜드의 영문 표기를 쓴다. 그 나라 표기를
+  // 확인하면 서비스 목록에 칸을 더해 바꾼다.
+  zh: (preset) => preset.nameEn,
+  ja: (preset) => preset.nameEn,
+  vi: (preset) => preset.nameEn,
+  fr: (preset) => preset.nameEn,
+  es: (preset) => preset.nameEn,
+  de: (preset) => preset.nameEn,
+  pt: (preset) => preset.nameEn,
 };
 
 /**
@@ -113,7 +122,17 @@ export const PLAN_NAMES_EN: Record<string, string> = {
 };
 
 /** 원문이 아닌 언어의 요금제 이름 표. */
-const PLAN_NAMES: Translations<Record<string, string>> = { en: PLAN_NAMES_EN };
+// 요금제 이름도 서비스 이름처럼 확인한 그 나라 표기가 없으면 영문 표기를 쓴다.
+const PLAN_NAMES: Translations<Record<string, string>> = {
+  en: PLAN_NAMES_EN,
+  zh: PLAN_NAMES_EN,
+  ja: PLAN_NAMES_EN,
+  vi: PLAN_NAMES_EN,
+  fr: PLAN_NAMES_EN,
+  es: PLAN_NAMES_EN,
+  de: PLAN_NAMES_EN,
+  pt: PLAN_NAMES_EN,
+};
 
 /** 요금제 이름을 지금 언어로. 표에 없는 이름(사용자가 고친 이름·원래 영문인 이름)은 그대로다. */
 export function planName(name: string, locale: Locale = SOURCE_LOCALE): string {
