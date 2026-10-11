@@ -535,7 +535,7 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import`)는 SubSlash가 G
 실제로 하는 일만 적고, 기능을 바꾸면 그 답도 같은 PR에서 고친다. 닫혀 있는 기능(Gmail 자동 가져오기 등)의 질문은
 그 기능이 열렸을 때만 보인다.
 
-## 화면 언어(한국어·영어 + 베타 7개)
+## 화면 언어(한국어·영어·중국어·일본어·베트남어·프랑스어·스페인어·독일어·포르투갈어)
 
 화면 문구는 `lib/i18n/messages/<영역>.ts`에 한국어(`ko`, 원문)와 영어(`en`)를 나란히 두고 컴포넌트에서
 `const t = useT()`로 쓴다. `en`의 타입은 `ko`의 모양에서 만들어(`Widen`) 영어가 빠지면 타입 검사가, 칸·인자 수가
@@ -560,19 +560,19 @@ Gmail 결제 메일 가져오기(`/import`, `lib/gmail-import`)는 SubSlash가 G
 자리에서 `useKnownText()`(`lib/i18n/known-text`의 표)로 바꾼다. 표에 없는 문장은 원문을 보인다. 검사 함수나 서버 문구를 고치면
 표도 고친다(`known-text.test.ts`가 갈래마다 확인한다). 화면을 연 뒤 비동기로 붙이는 문구는 `useLatestT()`로 읽는다 — 첫 화면은
 한국어로 그린 뒤 다시 그리므로 effect가 잡아 둔 문구는 한국어일 수 있다.
-Apps Script 웹 앱 화면(Gmail 연결·캘린더 등록·용량 측정)은 주소의 `lang=en`으로 영어를 고르고(문구는 웹 앱 코드의 `TEXT`),
+Apps Script 웹 앱 화면(Gmail 연결·캘린더 등록·용량 측정)은 주소의 `lang=<언어>`로 화면 언어를 고르고(문구는 웹 앱 코드의 `TEXT`, 모르는 값은 한국어),
 서버의 한국어 오류 문장 대신 웹 앱의 문구를 보인다 — 문구를 고치면 운영자가 웹 앱을 다시 배포해야 반영된다.
 요금제 이름은 서비스 이름처럼 목록의 한국어 이름 그대로일 때만 영어 화면에서 바꾼다(`PLAN_NAMES_EN`, `useServiceNames().plan`).
 E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-KR"`로 열고, 영어 화면은 `i18n.spec.ts`가 본다.
 
-중국어(간체)·일본어·베트남어·프랑스어·스페인어·독일어·포르투갈어(브라질)는 원어민 검토 전의 번역이라 `LOCALE_INFO.beta`로 두고, 설정의 언어 목록에 'Beta'를 붙이며 그 언어의 `settings.language.note`에 베타임을 적는다. 서비스·요금제·앱 이름은 그 언어로 확인한 표기가 없으면 영문(`nameEn`·`PLAN_NAMES_EN`·`PACKAGE_LABELS_EN`)으로 보인다 — 현지 표기를 짐작해 적지 않는다. 영어 밖의 서버 문장 번역(`known-text-<언어>.ts`)은 영어 표의 정규식을 함께 쓰고 같은 순서의 번역 함수만 둔다(개수는 `known-text.test`가 본다). 달 이름은 `lib/i18n/months`.
+중국어(간체)·일본어·베트남어·프랑스어·스페인어·독일어·포르투갈어(브라질)도 정식 언어로 둔다. 서비스·요금제·앱 이름은 그 언어로 확인한 표기가 없으면 영문(`nameEn`·`PLAN_NAMES_EN`·`PACKAGE_LABELS_EN`)으로 보인다 — 현지 표기를 짐작해 적지 않는다. 영어 밖의 서버 문장 번역(`known-text-<언어>.ts`)은 영어 표의 정규식을 함께 쓰고 같은 순서의 번역 함수만 둔다(개수는 `known-text.test`가 본다). 달 이름은 `lib/i18n/months`.
 언어를 더할 때는 `lib/i18n/config.ts`의 `LOCALES`·`LOCALE_INFO`에 넣는다. 원문(`SOURCE_LOCALE`, 한국어)이 아닌 언어마다 두는
 번역 표는 `Translations<T>` 타입이라, 넣는 순간 채울 곳이 타입 오류로 나온다(문구 `messages`, FAQ `faq.ts`, 서버 문장
 `known-text`, 결제 수단, 서비스·요금제 이름 `service-name`, 앱 이름 `usage/packages`). `locale === "en"`처럼 언어를 직접
 견주지 않고 이 표나 `translationFor`·`intlLocale`을 쓴다. 표가 없어도 되는 것은 영어로 떨어진다: 지원하지 않는 기기 언어
 (`FALLBACK_LOCALE`), 소개 캡처, 개인정보처리방침(번역판이 없으면 영어판 — 법률 문서를 확인 없이 옮기지 않는다), 탈퇴 확인
-낱말(서버가 '탈퇴'·'DELETE'만 받는다), Apps Script 웹 앱·붙여 넣는 스크립트·캘린더 이름(`appsScriptLocale` —
-`APPS_SCRIPT_LOCALES`를 늘리려면 웹 앱을 다시 배포한다). 서비스 이름은 서비스 목록에 그 언어의 칸을 확인해 더하고
+낱말(서버가 '탈퇴'·'DELETE'만 받는다). Apps Script 웹 앱·붙여 넣는 스크립트·캘린더 이름·일정 메모는 화면 언어 전부를
+안다(`APPS_SCRIPT_LOCALES`) — 언어를 더하면 웹 앱 `TEXT`에 넣어 **웹 앱을 다시 배포한 뒤에** 이 목록에 넣는다. 서비스 이름은 서비스 목록에 그 언어의 칸을 확인해 더하고
 `PRESET_NAMES`에 잇는다.
 
 ## 첫 화면(소개)

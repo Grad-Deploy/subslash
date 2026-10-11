@@ -200,7 +200,6 @@ export const en: Widen<typeof ko> = {
   },
 };
 
-// 원어민 검토 전의 번역(LOCALE_INFO.beta). language.note는 이 언어가 베타라는 것까지 알린다.
 const stPl = (n: number, one: string, many: string) => (Number(n) === 1 ? one : many);
 
 export const zh: Widen<typeof ko> = {
@@ -210,7 +209,7 @@ export const zh: Widen<typeof ko> = {
   language: {
     title: "语言 · Language",
     system: "跟随设备",
-    note: "中文是测试版翻译，尚未经母语人士审校。服务列表、价格和隐私政策以韩国为准；退订指南和价格说明保留韩语原文，隐私政策显示英文版。",
+    note: "服务列表、价格和隐私政策以韩国为准；退订指南和价格说明保留韩语原文，隐私政策显示英文版。",
   },
   exchangeRate: {
     section: "汇率",
@@ -306,7 +305,7 @@ export const ja: Widen<typeof ko> = {
   language: {
     title: "言語 · Language",
     system: "端末に合わせる",
-    note: "日本語はネイティブのチェック前のベータ版翻訳です。サービス一覧・料金・プライバシーポリシーは韓国基準で、解約ガイドと料金の説明は韓国語の原文のまま、プライバシーポリシーは英語版を表示します。",
+    note: "サービス一覧・料金・プライバシーポリシーは韓国基準で、解約ガイドと料金の説明は韓国語の原文のまま、プライバシーポリシーは英語版を表示します。",
   },
   exchangeRate: {
     section: "為替レート",
@@ -404,7 +403,7 @@ export const vi: Widen<typeof ko> = {
   language: {
     title: "Ngôn ngữ · Language",
     system: "Theo thiết bị",
-    note: "Tiếng Việt là bản dịch thử nghiệm (beta), chưa được người bản ngữ kiểm tra. Danh sách dịch vụ, giá và chính sách quyền riêng tư theo tiêu chuẩn Hàn Quốc; hướng dẫn hủy và ghi chú giá giữ nguyên bản tiếng Hàn, chính sách quyền riêng tư hiển thị bản tiếng Anh.",
+    note: "Danh sách dịch vụ, giá và chính sách quyền riêng tư theo tiêu chuẩn Hàn Quốc; hướng dẫn hủy và ghi chú giá giữ nguyên bản tiếng Hàn, chính sách quyền riêng tư hiển thị bản tiếng Anh.",
   },
   exchangeRate: {
     section: "Tỷ giá",
@@ -501,7 +500,7 @@ export const fr: Widen<typeof ko> = {
   language: {
     title: "Langue · Language",
     system: "Suivre l'appareil",
-    note: "Le français est une traduction bêta, pas encore relue par un locuteur natif. La liste des services, les prix et la politique de confidentialité sont ceux de la Corée ; les guides de résiliation et notes de prix restent en coréen original, et la politique de confidentialité s'affiche en anglais.",
+    note: "La liste des services, les prix et la politique de confidentialité sont ceux de la Corée ; les guides de résiliation et notes de prix restent en coréen original, et la politique de confidentialité s'affiche en anglais.",
   },
   exchangeRate: {
     section: "Taux de change",
@@ -609,7 +608,7 @@ export const es: Widen<typeof ko> = {
   language: {
     title: "Idioma · Language",
     system: "Según el dispositivo",
-    note: "El español es una traducción beta, aún sin revisar por un hablante nativo. La lista de servicios, los precios y la política de privacidad son de Corea; las guías de cancelación y notas de precio siguen en coreano original, y la política de privacidad se muestra en inglés.",
+    note: "La lista de servicios, los precios y la política de privacidad son de Corea; las guías de cancelación y notas de precio siguen en coreano original, y la política de privacidad se muestra en inglés.",
   },
   exchangeRate: {
     section: "Tipo de cambio",
@@ -717,7 +716,7 @@ export const de: Widen<typeof ko> = {
   language: {
     title: "Sprache · Language",
     system: "Wie das Gerät",
-    note: "Deutsch ist eine Beta-Übersetzung, noch nicht von Muttersprachlern geprüft. Dienstliste, Preise und Datenschutzerklärung gelten für Korea; Kündigungsanleitungen und Preishinweise bleiben im koreanischen Original, die Datenschutzerklärung wird auf Englisch angezeigt.",
+    note: "Dienstliste, Preise und Datenschutzerklärung gelten für Korea; Kündigungsanleitungen und Preishinweise bleiben im koreanischen Original, die Datenschutzerklärung wird auf Englisch angezeigt.",
   },
   exchangeRate: {
     section: "Wechselkurs",
@@ -822,7 +821,7 @@ export const pt: Widen<typeof ko> = {
   language: {
     title: "Idioma · Language",
     system: "Seguir o dispositivo",
-    note: "O português é uma tradução beta, ainda não revisada por um falante nativo. A lista de serviços, os preços e a política de privacidade são da Coreia; os guias de cancelamento e notas de preço ficam no coreano original, e a política de privacidade aparece em inglês.",
+    note: "A lista de serviços, os preços e a política de privacidade são da Coreia; os guias de cancelamento e notas de preço ficam no coreano original, e a política de privacidade aparece em inglês.",
   },
   exchangeRate: {
     section: "Câmbio",

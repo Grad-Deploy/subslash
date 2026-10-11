@@ -7,6 +7,7 @@ import { isAppOrigin } from "@lib/app-origins";
 import { isAppReturnScheme } from "@lib/app-return";
 import { createConnectCode, gmailConnectWebAppUrl } from "@lib/gmail-auto-import";
 import { logError } from "@lib/log";
+import { SOURCE_LOCALE, isAppsScriptLocale } from "@lib/i18n/config";
 
 /**
  * 원클릭 Gmail 연결 시작. 로그인한 사람에게 SubSlash 웹 앱(Apps Script) 주소를 연결 코드와 함께
@@ -34,8 +35,9 @@ export async function POST(request: NextRequest) {
     url.searchParams.set("code", await createConnectCode(account.id));
     // 웹 앱은 이 주소로 코드를 바꾸고 메일을 보낸다. 스크립트가 허용 목록으로 다시 확인한다.
     url.searchParams.set("origin", appUrl());
-    // 웹 앱의 연결·결과 화면 언어. 영어만 싣고, 나머지는 웹 앱이 한국어로 보인다.
-    if (request.nextUrl.searchParams.get("lang") === "en") url.searchParams.set("lang", "en");
+    // 웹 앱의 연결·결과 화면 언어. 웹 앱이 아는 언어(원문 제외)만 싣고, 나머지는 웹 앱이 한국어로 보인다.
+    const lang = request.nextUrl.searchParams.get("lang");
+    if (isAppsScriptLocale(lang) && lang !== SOURCE_LOCALE) url.searchParams.set("lang", lang);
     // 앱은 이 주소를 인앱 브라우저로 연다. 웹 앱이 끝 화면에 웹사이트로 가는 '돌아가기' 대신 앱으로
     // 돌아가는 길을 두게 알린다. 앱이 보낸 돌아올 스킴(`return`, 앱 ID)은 목록에 있는 것만 옮긴다 — 웹 앱이
     // 그 앱을 연다(lib/app-return).

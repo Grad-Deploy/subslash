@@ -206,7 +206,9 @@ describe("구글 캘린더에 결제일 등록", () => {
     };
     expect(body.calendarName).toBe("SubSlash Billing Days");
     // 다른 언어로 만든 캘린더도 같은 캘린더로 찾아 이름만 바꾸게 한다.
-    expect(body.calendarNames).toEqual(["SubSlash 결제일", "SubSlash Billing Days"]);
+    expect(body.calendarNames).toContain("SubSlash 결제일");
+    expect(body.calendarNames).toContain("SubSlash Billing Days");
+    expect(body.calendarNames).toHaveLength(9);
     expect(body.events[0].description).toContain("billing day");
     expect(body.events[0].description).not.toMatch(/결제일입니다/);
   });

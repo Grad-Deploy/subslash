@@ -1,5 +1,5 @@
 /**
- * `known-text`의 베트남어. 원어민 검토 전의 번역이다(LOCALE_INFO.beta). 규칙(정규식)은 `known-text`의 영어 표에
+ * `known-text`의 베트남어. 규칙(정규식)은 `known-text`의 영어 표에
  * 한 벌만 있고, 여기는 **같은 순서의** 번역 함수만 둔다 — 순서·개수가 어긋나면 테스트가 잡는다.
  */
 type Render = (...groups: string[]) => string;

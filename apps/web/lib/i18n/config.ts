@@ -38,24 +38,19 @@ export const LOCALE_INFO: Record<
     nativeName: string;
     intl: string;
     listSeparator: string;
-    /**
-     * 원어민 검토 전의 번역. 언어 고르기에 '베타'라고 적고, 고르면 검토 중이라고 알린다 — 해지 판단의 근거를
-     * 보여 주는 앱이라, 검토하지 않은 번역을 다른 언어와 같은 무게로 내놓지 않는다.
-     */
-    beta?: boolean;
   }
 > = {
   ko: { nativeName: "한국어", intl: "ko-KR", listSeparator: "·" },
   en: { nativeName: "English", intl: "en-US", listSeparator: ", " },
   // 기기 언어 태그의 앞말로 고르므로 zh-TW·zh-HK도 간체로 보인다(번체판은 아직 없다).
-  zh: { nativeName: "简体中文", intl: "zh-CN", listSeparator: "、", beta: true },
-  ja: { nativeName: "日本語", intl: "ja-JP", listSeparator: "、", beta: true },
-  vi: { nativeName: "Tiếng Việt", intl: "vi-VN", listSeparator: ", ", beta: true },
-  fr: { nativeName: "Français", intl: "fr-FR", listSeparator: ", ", beta: true },
-  es: { nativeName: "Español", intl: "es-ES", listSeparator: ", ", beta: true },
-  de: { nativeName: "Deutsch", intl: "de-DE", listSeparator: ", ", beta: true },
+  zh: { nativeName: "简体中文", intl: "zh-CN", listSeparator: "、" },
+  ja: { nativeName: "日本語", intl: "ja-JP", listSeparator: "、" },
+  vi: { nativeName: "Tiếng Việt", intl: "vi-VN", listSeparator: ", " },
+  fr: { nativeName: "Français", intl: "fr-FR", listSeparator: ", " },
+  es: { nativeName: "Español", intl: "es-ES", listSeparator: ", " },
+  de: { nativeName: "Deutsch", intl: "de-DE", listSeparator: ", " },
   // 서식은 사용자가 가장 많은 브라질 포르투갈어로 맞춘다.
-  pt: { nativeName: "Português", intl: "pt-BR", listSeparator: ", ", beta: true },
+  pt: { nativeName: "Português", intl: "pt-BR", listSeparator: ", " },
 };
 
 /** 날짜·숫자 서식에 넘길 언어 태그. */
@@ -98,9 +93,21 @@ export function resolveLocale(stored: string | null, languages: readonly string[
 
 /**
  * Gmail 연결·캘린더 등록·용량 측정의 Apps Script 웹 앱이 아는 화면 언어. 웹 앱 코드(`TEXT`)를 고치면 운영자가
- * 다시 배포해야 하므로 화면 언어와 따로 둔다 — 모르는 언어는 영어로 연다.
+ * 다시 배포해야 하므로 화면 언어와 따로 둔다 — 모르는 언어는 영어로 연다. 지금은 화면 언어 전부다. 화면 언어를
+ * 더하면 웹 앱 문구를 함께 더하고, **웹 앱을 다시 배포한 뒤에** 여기에 넣는다(먼저 넣으면 옛 웹 앱이 모르는
+ * 언어를 받아 한국어로 연다).
  */
-export const APPS_SCRIPT_LOCALES = ["ko", "en"] as const satisfies readonly Locale[];
+export const APPS_SCRIPT_LOCALES = [
+  "ko",
+  "en",
+  "zh",
+  "ja",
+  "vi",
+  "fr",
+  "es",
+  "de",
+  "pt",
+] as const satisfies readonly Locale[];
 export type AppsScriptLocale = (typeof APPS_SCRIPT_LOCALES)[number];
 
 export function isAppsScriptLocale(value: unknown): value is AppsScriptLocale {

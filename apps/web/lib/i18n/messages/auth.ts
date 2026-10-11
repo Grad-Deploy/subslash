@@ -170,7 +170,7 @@ export const en: Widen<typeof ko> = {
   },
 };
 
-// 원어민 검토 전의 번역(LOCALE_INFO.beta). 구글 로그인 버튼 문구는 Google이 그 언어로 정한 표기를 따른다.
+// 구글 로그인 버튼 문구는 Google이 그 언어로 정한 표기를 따른다.
 export const zh: Widen<typeof ko> = {
   browseWithoutLogin: "不登录，继续浏览 →",
   login: {

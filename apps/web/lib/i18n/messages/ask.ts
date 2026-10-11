@@ -272,7 +272,7 @@ export const en: Widen<typeof ko> = {
   },
 };
 
-// 원어민 검토 전의 번역(LOCALE_INFO.beta). 숫자는 기기가 계산하고 여기서는 문장 틀만 만든다.
+// 숫자는 기기가 계산하고 여기서는 문장 틀만 만든다.
 const akPl = (n: number, one: string, many: string) => (Number(n) === 1 ? one : many);
 
 export const zh: Widen<typeof ko> = {
