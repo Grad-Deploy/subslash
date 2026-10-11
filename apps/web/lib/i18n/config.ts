@@ -8,7 +8,7 @@
  * (`Translations<T>`: 문구 `messages`, 서비스·요금제 이름, FAQ, 서버 문장 표 등)가 빈칸을 타입 오류로 알린다.
  */
 
-export const LOCALES = ["ko", "en"] as const;
+export const LOCALES = ["ko", "en", "zh", "ja", "vi", "fr", "es", "de", "pt"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 /** 원문 언어. 문구·서비스 목록·개인정보처리방침은 이 언어로 먼저 쓰고, 다른 언어는 이것을 옮긴다. */
@@ -34,10 +34,28 @@ export function translationFor<T>(table: Translations<T>, locale: Locale): T | n
  */
 export const LOCALE_INFO: Record<
   Locale,
-  { nativeName: string; intl: string; listSeparator: string }
+  {
+    nativeName: string;
+    intl: string;
+    listSeparator: string;
+    /**
+     * 원어민 검토 전의 번역. 언어 고르기에 '베타'라고 적고, 고르면 검토 중이라고 알린다 — 해지 판단의 근거를
+     * 보여 주는 앱이라, 검토하지 않은 번역을 다른 언어와 같은 무게로 내놓지 않는다.
+     */
+    beta?: boolean;
+  }
 > = {
   ko: { nativeName: "한국어", intl: "ko-KR", listSeparator: "·" },
   en: { nativeName: "English", intl: "en-US", listSeparator: ", " },
+  // 기기 언어 태그의 앞말로 고르므로 zh-TW·zh-HK도 간체로 보인다(번체판은 아직 없다).
+  zh: { nativeName: "简体中文", intl: "zh-CN", listSeparator: "、", beta: true },
+  ja: { nativeName: "日本語", intl: "ja-JP", listSeparator: "、", beta: true },
+  vi: { nativeName: "Tiếng Việt", intl: "vi-VN", listSeparator: ", ", beta: true },
+  fr: { nativeName: "Français", intl: "fr-FR", listSeparator: ", ", beta: true },
+  es: { nativeName: "Español", intl: "es-ES", listSeparator: ", ", beta: true },
+  de: { nativeName: "Deutsch", intl: "de-DE", listSeparator: ", ", beta: true },
+  // 서식은 사용자가 가장 많은 브라질 포르투갈어로 맞춘다.
+  pt: { nativeName: "Português", intl: "pt-BR", listSeparator: ", ", beta: true },
 };
 
 /** 날짜·숫자 서식에 넘길 언어 태그. */

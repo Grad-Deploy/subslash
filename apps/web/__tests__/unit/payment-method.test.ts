@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PAYMENT_METHOD_OPTIONS } from "@subslash/shared";
 import { PAYMENT_METHODS_EN, findPaymentMethod, paymentMethodOptions } from "@lib/payment-method";
+import { LOCALES } from "@lib/i18n/config";
 
 const HANGUL = /[가-힣]/;
 
@@ -35,5 +36,25 @@ describe("결제 수단의 영어 화면 문구", () => {
     expect(ko.label).toBe("Google Play 정기결제");
     expect(en.label).toBe("Google Play subscription");
     expect(findPaymentMethod("unknown", "en")).toBeUndefined();
+  });
+});
+
+describe("결제 수단의 모든 번역", () => {
+  it("언어마다 모든 결제 수단이 있고 한글이 남지 않으며, 해지 경로 갈래가 같다", () => {
+    for (const locale of LOCALES.filter((l) => l !== "ko")) {
+      const options = paymentMethodOptions(locale);
+      expect(
+        options.map((o) => o.value),
+        locale,
+      ).toEqual(PAYMENT_METHOD_OPTIONS.map((o) => o.value));
+      for (const option of options) {
+        const ko = PAYMENT_METHOD_OPTIONS.find((o) => o.value === option.value)!;
+        expect(
+          `${option.label} ${option.shortName ?? ""} ${option.guide ?? ""}`,
+          `${locale} ${option.value}`,
+        ).not.toMatch(HANGUL);
+        expect(Boolean(option.guide), `${locale} ${option.value}`).toBe(Boolean(ko.guide));
+      }
+    }
   });
 });

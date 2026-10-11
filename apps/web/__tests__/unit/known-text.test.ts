@@ -9,7 +9,8 @@ import {
 } from "@subslash/shared";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { translateKnownText } from "@lib/i18n/known-text";
+import { KNOWN_TEXT_RULE_COUNT, translateKnownText } from "@lib/i18n/known-text";
+import { LOCALES, SOURCE_LOCALE } from "@lib/i18n/config";
 import { parseBackup } from "@lib/backup";
 import {
   confirmStatusOf,
@@ -218,5 +219,51 @@ describe("translateKnownText", () => {
   it("한국어 화면은 그대로이고, 표에 없는 문장은 지어내지 않고 원문을 보인다", () => {
     expect(translateKnownText("아이디를 입력해주세요.", "ko")).toBe("아이디를 입력해주세요.");
     expect(en("처음 보는 문장입니다.")).toBe("처음 보는 문장입니다.");
+  });
+});
+
+describe("translateKnownText — 영어 밖의 번역", () => {
+  const others = LOCALES.filter((l) => l !== SOURCE_LOCALE && l !== "en");
+
+  it("언어마다 같은 문장이 모두 바뀌고 한글이 남지 않는다", () => {
+    const backup = (data: unknown) => JSON.stringify({ app: "subslash", version: 1, data });
+    const backupErrors = [
+      "not json",
+      backup({ subscriptions: [{ id: "a" }], usageLogs: [], accounts: [] }),
+    ].flatMap((input) => {
+      const result = parseBackup(input);
+      return result.ok ? [] : [result.error];
+    });
+    const messages = [...validatorMessages(), ...SERVER_MESSAGES, ...backupErrors];
+    for (const locale of others) {
+      for (const message of messages) {
+        expect(translateKnownText(message, locale), `${locale}: ${message}`).not.toMatch(HANGUL);
+      }
+    }
+  });
+
+  it("백업 칸 이름도 언어마다 모두 있다", () => {
+    const source = readFileSync(resolve(__dirname, "../../lib/backup.ts"), "utf8");
+    const fields = [...source.matchAll(/return "([^"]+)";/g)].map((m) => m[1]);
+    for (const locale of others) {
+      for (const field of fields) {
+        const text = translateKnownText(
+          `구독 1번째 항목의 '${field}' 칸이 올바르지 않습니다.`,
+          locale,
+        );
+        expect(text, `${locale}: ${field}`).not.toMatch(HANGUL);
+      }
+    }
+  });
+
+  it("번역 함수의 개수가 영어 규칙과 같다", async () => {
+    const files = { zh: "zh", ja: "ja", vi: "vi", fr: "fr", es: "es", de: "de", pt: "pt" } as const;
+    for (const locale of others) {
+      const mod = (await import(
+        `@lib/i18n/known-text-${files[locale as keyof typeof files]}`
+      )) as Record<string, unknown[]>;
+      const renders = Object.values(mod).find(Array.isArray)!;
+      expect(renders.length, locale).toBe(KNOWN_TEXT_RULE_COUNT);
+    }
   });
 });
