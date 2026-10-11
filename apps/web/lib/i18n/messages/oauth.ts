@@ -57,7 +57,6 @@ export const en: Widen<typeof ko> = {
     `This email is already registered with ${ways}. Log in that way, then link ${providerObject} under ‘Login methods’ in ‘My account’ to log in with ${provider} next time.`,
 };
 
-// 원어민 검토 전의 번역(LOCALE_INFO.beta).
 export const zh: Widen<typeof ko> = {
   errors: {
     unavailable: "现在无法用这种方式登录。",

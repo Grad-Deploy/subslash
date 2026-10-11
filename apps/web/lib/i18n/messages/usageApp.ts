@@ -206,7 +206,6 @@ export const en: Widen<typeof ko> = {
   },
 };
 
-// 원어민 검토 전의 번역(LOCALE_INFO.beta).
 const uaPl = (n: number, one: string, many: string) => (Number(n) === 1 ? one : many);
 const shortMonth = (locale: "fr" | "es" | "de" | "pt", m: number) =>
   monthName(locale, m).slice(0, 3);

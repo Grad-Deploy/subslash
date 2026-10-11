@@ -138,7 +138,6 @@ export const en: Widen<typeof ko> = {
   },
 };
 
-// 원어민 검토 전의 번역(LOCALE_INFO.beta).
 export const zh: Widen<typeof ko> = {
   nav: {
     label: "主菜单",
