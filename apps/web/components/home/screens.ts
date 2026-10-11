@@ -7,6 +7,11 @@ import type { Locale } from "@lib/i18n";
  */
 export type LandingScreen = "dashboard" | "cancel-guide" | "gmail-import" | "savings";
 
+/**
+ * 언어마다 캡처를 둔 폴더. 캡처가 없는 언어는 영어 캡처를 보인다 — 원문(한국어) 화면보다 읽을 수 있는 쪽이다.
+ */
+const SCREEN_DIRS: Partial<Record<Locale, string>> = { ko: "/landing", en: "/landing/en" };
+
 export function landingScreen(screen: LandingScreen, locale: Locale): string {
-  return locale === "en" ? `/landing/en/${screen}.png` : `/landing/${screen}.png`;
+  return `${SCREEN_DIRS[locale] ?? SCREEN_DIRS.en}/${screen}.png`;
 }

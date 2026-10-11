@@ -20,11 +20,12 @@ import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { Spinner } from "../ui/spinner";
 import { useKnownText, useLocale, useServiceNames, useT } from "@lib/i18n";
+import { intlLocale, type Locale } from "@lib/i18n/config";
 
 const MEASURED_SERVICE_IDS = Object.keys(ANDROID_PACKAGES);
 
-function shortDate(epochMs: number, locale: string): string {
-  return new Date(epochMs).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US", {
+function shortDate(epochMs: number, locale: Locale): string {
+  return new Date(epochMs).toLocaleDateString(intlLocale(locale), {
     month: "long",
     day: "numeric",
   });

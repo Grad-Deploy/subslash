@@ -1,4 +1,5 @@
 import { findPresetForSubscription, type Subscription } from "@subslash/shared";
+import { SOURCE_LOCALE, translationFor, type Locale, type Translations } from "../i18n/config";
 
 /**
  * 서비스(서비스 목록의 id) → 그 서비스를 쓰는 안드로이드 앱 패키지.
@@ -91,16 +92,25 @@ export const PACKAGE_LABELS_EN: Readonly<Record<string, string>> = {
   "com.coupang.mobile.play": "Coupang Play",
 };
 
+const PACKAGE_LABEL_TRANSLATIONS: Translations<Readonly<Record<string, string>>> = {
+  en: PACKAGE_LABELS_EN,
+};
+
+/** 앱의 화면 이름. 표에 없는 앱이면 undefined. */
+export function packageLabel(pkg: string, locale: Locale = SOURCE_LOCALE): string | undefined {
+  return translationFor(PACKAGE_LABEL_TRANSLATIONS, locale)?.[pkg] ?? PACKAGE_LABELS[pkg];
+}
+
 /** 구독의 앱별 사용 시간을 보여 줄 줄들. 앱이 하나뿐이면 빈 배열(나눌 것이 없다). */
 export function packageBreakdown(
   packages: readonly string[],
   byPackage: Record<string, { usedMs: number; opens: number }>,
-  locale: "ko" | "en" = "ko",
+  locale: Locale = SOURCE_LOCALE,
 ): { pkg: string; label: string; usedMs: number; opens: number }[] {
   if (packages.length < 2) return [];
   return packages.map((pkg) => ({
     pkg,
-    label: (locale === "en" ? PACKAGE_LABELS_EN[pkg] : undefined) ?? PACKAGE_LABELS[pkg] ?? pkg,
+    label: packageLabel(pkg, locale) ?? pkg,
     usedMs: byPackage[pkg]?.usedMs ?? 0,
     opens: byPackage[pkg]?.opens ?? 0,
   }));

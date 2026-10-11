@@ -28,6 +28,7 @@ import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { useLocale, useT, useServiceNames } from "@lib/i18n";
 import { describeQuantityText, shortUnitCostText } from "@lib/i18n/check-in-text";
 import { ServiceLogo } from "./ServiceLogo";
+import { intlLocale } from "@lib/i18n/config";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -310,7 +311,7 @@ export function SubTable({
                 <td className="px-4 py-3 text-right text-xs text-muted-foreground whitespace-nowrap">
                   {killedAtMs === null
                     ? s.unknownDate
-                    : new Date(killedAtMs).toLocaleDateString(locale === "ko" ? "ko-KR" : "en-US", {
+                    : new Date(killedAtMs).toLocaleDateString(intlLocale(locale), {
                         year: "numeric",
                         month: "short",
                         day: "numeric",

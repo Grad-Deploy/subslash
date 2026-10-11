@@ -89,7 +89,7 @@ describe("묻는 서비스마다 유튜브 뮤직과 같게 동작한다", () =>
       expect(found.map((s) => s.preset.id)).toEqual([id]);
       expect(found[0]).toMatchObject({ killed: false });
       expect(found[0].totals).toMatchObject({ coveredDays: 30, activeDays: 30 });
-      expect(found[0].appName).toBe(SUGGEST_SIGNALS[id]?.appName);
+      expect(found[0].appPackage).toBe(SUGGEST_SIGNALS[id]?.appPackage);
     });
 
     it("화면을 끄고 재생한 시간(재생 알림)도 쓴 시간으로 친다", () => {

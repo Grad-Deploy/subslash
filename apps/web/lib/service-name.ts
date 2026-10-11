@@ -1,16 +1,30 @@
 import { POPULAR_SERVICES, findPresetForSubscription, type ServicePreset } from "@subslash/shared";
-import type { Locale } from "./i18n/config";
+import {
+  LOCALES,
+  SOURCE_LOCALE,
+  translationFor,
+  type Locale,
+  type Translations,
+} from "./i18n/config";
 
 /**
- * 서비스 목록의 화면 이름. 영어 화면은 브랜드의 영문 표기(`nameEn`)를, 없으면 `nameKo`를 쓴다 — Claude·GitHub
- * Copilot처럼 원래 영문인 것은 `nameKo`가 이미 영문이다.
+ * 원문이 아닌 언어에서 서비스 목록의 어느 칸을 이름으로 쓰는지. 브랜드가 그 언어로 쓰는 표기를 확인해 서비스
+ * 목록에 적은 칸이다(영어는 `nameEn`). 언어를 더하면 서비스 목록에 칸을 더하고 여기에 잇는다.
  */
-export function presetName(preset: ServicePreset, locale: Locale = "ko"): string {
-  return locale === "en" ? (preset.nameEn ?? preset.nameKo) : preset.nameKo;
+const PRESET_NAMES: Translations<(preset: ServicePreset) => string | undefined> = {
+  en: (preset) => preset.nameEn,
+};
+
+/**
+ * 서비스 목록의 화면 이름. 그 언어의 표기가 없으면 `nameKo`를 쓴다 — Claude·GitHub Copilot처럼 원래 영문인
+ * 것은 `nameKo`가 이미 영문이다.
+ */
+export function presetName(preset: ServicePreset, locale: Locale = SOURCE_LOCALE): string {
+  return translationFor(PRESET_NAMES, locale)?.(preset) ?? preset.nameKo;
 }
 
 /** 탭·타일·목록처럼 좁은 자리에 쓰는 서비스 이름. 괄호 속 부연("쿠팡 와우 (쿠팡플레이)")을 뺀다. */
-export function shortServiceName(preset: ServicePreset, locale: Locale = "ko"): string {
+export function shortServiceName(preset: ServicePreset, locale: Locale = SOURCE_LOCALE): string {
   return presetName(preset, locale).replace(/\s*\(.*\)$/, "");
 }
 
@@ -22,17 +36,18 @@ export function shortServiceName(preset: ServicePreset, locale: Locale = "ko"): 
  */
 export function subscriptionName(
   sub: { name: string; cancelUrl?: string },
-  locale: Locale = "ko",
+  locale: Locale = SOURCE_LOCALE,
 ): string {
   const preset = findPresetForSubscription(sub);
   if (!preset) return sub.name;
   const name = sub.name.trim();
-  const listNames = [preset.nameKo, preset.nameEn, preset.name];
+  // 어느 언어 화면에서 등록했든 목록의 이름이면 같은 서비스의 이름이다.
+  const listNames = [preset.name, ...LOCALES.map((l) => presetName(preset, l))];
   return listNames.includes(name) ? presetName(preset, locale) : sub.name;
 }
 
 /** 서비스 id의 화면 이름(결합 상품의 구성, 통계처럼 id만 아는 자리). 목록에 없는 id는 id 그대로다. */
-export function serviceIdName(serviceId: string, locale: Locale = "ko"): string {
+export function serviceIdName(serviceId: string, locale: Locale = SOURCE_LOCALE): string {
   const preset = POPULAR_SERVICES.find((service) => service.id === serviceId);
   return preset ? presetName(preset, locale) : serviceId;
 }
@@ -97,8 +112,10 @@ export const PLAN_NAMES_EN: Record<string, string> = {
   "프로 (연 결제)": "Pro (annual)",
 };
 
+/** 원문이 아닌 언어의 요금제 이름 표. */
+const PLAN_NAMES: Translations<Record<string, string>> = { en: PLAN_NAMES_EN };
+
 /** 요금제 이름을 지금 언어로. 표에 없는 이름(사용자가 고친 이름·원래 영문인 이름)은 그대로다. */
-export function planName(name: string, locale: Locale = "ko"): string {
-  if (locale !== "en") return name;
-  return PLAN_NAMES_EN[name.trim()] ?? name;
+export function planName(name: string, locale: Locale = SOURCE_LOCALE): string {
+  return translationFor(PLAN_NAMES, locale)?.[name.trim()] ?? name;
 }

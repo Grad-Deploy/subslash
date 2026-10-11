@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { useLocale } from "./locale";
-import type { Locale } from "./config";
+import { translationFor, type Locale, type Translations } from "./config";
 
 /**
  * 화면 문구 파일(messages) 밖에서 만들어져 화면에 그대로 닿는 한국어 문장의 영어. 입력 검사
@@ -373,10 +373,14 @@ const EN: [RegExp, (...groups: string[]) => string][] = [
   [/^환율 설정이 올바르지 않습니다\.$/, () => "The exchange rate setting isn't valid."],
 ];
 
+/** 원문이 아닌 언어마다의 표. */
+const KNOWN_TEXT: Translations<typeof EN> = { en: EN };
+
 /** 표에 있는 한국어 문장이면 그 언어로, 아니면 그대로. */
 export function translateKnownText(text: string, locale: Locale): string {
-  if (locale === "ko") return text;
-  for (const [pattern, render] of EN) {
+  const rules = translationFor(KNOWN_TEXT, locale);
+  if (!rules) return text;
+  for (const [pattern, render] of rules) {
     const match = pattern.exec(text);
     if (match) return render(...match.slice(1));
   }

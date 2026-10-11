@@ -5,11 +5,12 @@ import { ChevronRight } from "lucide-react";
 import { sumMyMonthlyKRW } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useExchangeRate } from "@hooks/useExchangeRate";
-import { useT, useServiceNames } from "@lib/i18n";
+import { useLocale, useT, useServiceNames } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
 import { LEVEL_STYLE, compareValue, type MetricView, type SubUsage } from "@lib/usage/value";
 import { isUnused } from "./AppUsageLine";
 import { won } from "./parts";
+import { intlLocale } from "@lib/i18n/config";
 
 /** 카드의 구독 한 줄: 이름 · 막대 · 오른쪽 값. */
 function CardBarRow({
@@ -54,6 +55,7 @@ export function UsageCard({
 }) {
   const names = useServiceNames();
   const t = useT();
+  const locale = useLocale();
   const u = t.usageApp;
   const c = u.card;
   const rate = useExchangeRate();
@@ -83,7 +85,7 @@ export function UsageCard({
           <span>
             <span className="block text-[11px] text-muted-foreground">{u.opens}</span>
             <span className="text-xl font-black tracking-tight tabular-nums">
-              {totalOpens.toLocaleString("ko-KR")}
+              {totalOpens.toLocaleString(intlLocale(locale))}
               <span className="ml-0.5 text-xs font-bold">{u.timesUnit}</span>
             </span>
           </span>
@@ -188,7 +190,10 @@ export function UsageCard({
             ? ""
             : pendingDays > 0
               ? c.pendingFooter(pendingDays)
-              : c.totalFooter(formatDurationText(t, totalMs), totalOpens.toLocaleString("ko-KR"))}
+              : c.totalFooter(
+                  formatDurationText(t, totalMs),
+                  totalOpens.toLocaleString(intlLocale(locale)),
+                )}
         </span>
         <span className="flex items-center gap-0.5 font-bold">
           {c.more} <ChevronRight className="size-3.5" aria-hidden />

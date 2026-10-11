@@ -16,7 +16,8 @@ import { AppSheet } from "../../settings/app/AppSheet";
 import { Spinner } from "../../ui/spinner";
 import { useLocale, useT } from "@lib/i18n";
 import { presetName } from "@lib/service-name";
-import type { Locale } from "@lib/i18n/config";
+import { LOCALE_INFO, type Locale } from "@lib/i18n/config";
+import { packageLabel } from "@lib/usage/packages";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 import { SuggestionCard } from "./AppSubscriptionSuggestions";
 
@@ -24,10 +25,11 @@ import { SuggestionCard } from "./AppSubscriptionSuggestions";
 function serviceNames(locale: Locale): string {
   return SUGGESTABLE_SERVICES.map((id) => {
     const signal = SUGGEST_SIGNALS[id];
-    if (signal) return locale === "en" ? signal.appNameEn : signal.appName;
+    const app = signal && packageLabel(signal.appPackage, locale);
+    if (app) return app;
     const preset = POPULAR_SERVICES.find((service) => service.id === id);
     return preset ? presetName(preset, locale) : id;
-  }).join(locale === "en" ? ", " : "·");
+  }).join(LOCALE_INFO[locale].listSeparator);
 }
 
 /**
