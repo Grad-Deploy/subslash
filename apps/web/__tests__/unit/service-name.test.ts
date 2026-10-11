@@ -67,14 +67,35 @@ describe("등록한 구독의 화면 이름", () => {
     expect(subscriptionName({ name: "Netflix" }, "en")).toBe("Netflix");
   });
 
-  it("한국어 화면은 적힌 이름 그대로다 — 영문으로 적은 이름을 한국어로 바꾸지 않는다", () => {
-    expect(subscriptionName({ name: "Netflix" }, "ko")).toBe("Netflix");
+  // 영어 화면에서 등록하면 영문 이름으로 저장된다. 예전에는 한국어 화면으로 바꿔도 'Netflix'로 남았다.
+  it("한국어 화면은 영어 화면에서 등록한 구독을 한국어 이름으로 보인다", () => {
+    expect(subscriptionName({ name: "Netflix" }, "ko")).toBe("넷플릭스");
+    expect(subscriptionName({ name: "YouTube Premium" }, "ko")).toBe("유튜브 프리미엄");
+    expect(subscriptionName({ name: "TVING x Wavve Double Pass" }, "ko")).toBe(
+      "티빙 x 웨이브 더블 이용권",
+    );
     expect(subscriptionName({ name: "멜론" }, "ko")).toBe("멜론");
   });
 
-  it("사용자가 고쳐 적은 이름은 그대로 둔다", () => {
+  it("언어를 오가도 같은 구독은 같은 이름으로 돌아온다", () => {
+    for (const service of POPULAR_SERVICES) {
+      for (const stored of [service.nameKo, service.nameEn ?? service.nameKo]) {
+        expect(
+          subscriptionName({ name: stored, cancelUrl: service.cancelUrl }, "ko"),
+          service.id,
+        ).toBe(service.nameKo);
+        expect(
+          subscriptionName({ name: stored, cancelUrl: service.cancelUrl }, "en"),
+          service.id,
+        ).toBe(service.nameEn ?? service.nameKo);
+      }
+    }
+  });
+
+  it("사용자가 고쳐 적은 이름은 어느 언어에서도 그대로 둔다", () => {
     expect(subscriptionName({ name: "넷플릭스 (가족)" }, "en")).toBe("넷플릭스 (가족)");
     expect(subscriptionName({ name: "내 헬스장" }, "en")).toBe("내 헬스장");
+    expect(subscriptionName({ name: "My Netflix" }, "ko")).toBe("My Netflix");
   });
 
   it("영문 이름으로 저장한 구독도 같은 서비스로 알아본다", () => {
