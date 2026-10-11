@@ -18,7 +18,13 @@ export function isOAuthProviderId(value: unknown): value is OAuthProviderId {
   return typeof value === "string" && (OAUTH_PROVIDER_IDS as readonly string[]).includes(value);
 }
 
-/** 주소·응답에서 온 값의 이름. 모르는 값이면 받은 그대로 보인다. */
-export function providerLabel(value: string): string {
-  return isOAuthProviderId(value) ? OAUTH_PROVIDER_LABEL[value] : value;
+/**
+ * 주소·응답에서 온 값의 화면 이름. 화면에서는 지금 언어의 이름표(`t.auth.social.providers`)를 넘긴다 — 서버의
+ * `OAUTH_PROVIDER_LABEL`은 한국어라 영어 화면에 '구글'로 보였다. 모르는 값이면 받은 그대로 보인다.
+ */
+export function providerLabel(
+  value: string,
+  names: Record<OAuthProviderId, string> = OAUTH_PROVIDER_LABEL,
+): string {
+  return isOAuthProviderId(value) ? names[value] : value;
 }
