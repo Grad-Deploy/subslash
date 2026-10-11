@@ -137,6 +137,7 @@ export function ActionQueue({
           >
             <ServiceLogo
               name={item.name}
+              cancelUrl={item.cancelUrl}
               fallbackEmoji={item.iconEmoji}
               fallbackColor={item.iconColor}
               size={28}
