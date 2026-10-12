@@ -11,6 +11,8 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
+  // 대표 주소. 끝의 `/`가 붙은 주소도 같은 화면으로 리디렉션된다(app/page.tsx와 같은 이유).
+  alternates: { canonical: "/privacy" },
   openGraph: { ...siteOpenGraph, title: TITLE, description: DESCRIPTION, url: "/privacy" },
   twitter: { card: "summary", title: TITLE, description: DESCRIPTION },
 };
