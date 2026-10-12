@@ -103,7 +103,7 @@ const optional = (v: unknown, check: (value: unknown) => boolean) => v === undef
  * 없으면 통과하고 있을 때만 형식을 본다. 모르는 칸은 그대로 둔다 — 새 버전이
  * 더한 칸이 복원에서 사라지면 안 된다.
  */
-function checkSubscription(v: unknown): string | null {
+function checkSubscription(v: unknown) {
   if (!isObject(v)) return "형식";
   if (!isText(v.id)) return "ID";
   if (!isText(v.name)) return "이름";
@@ -173,7 +173,7 @@ function checkSubscription(v: unknown): string | null {
 const isTokenEvidence = (v: unknown) =>
   isObject(v) && isAmount(v.count) && (v.apiUsd === null || isAmount(v.apiUsd));
 
-function checkUsageLog(v: unknown): string | null {
+function checkUsageLog(v: unknown) {
   if (!isObject(v)) return "형식";
   if (!isText(v.id)) return "ID";
   if (!isText(v.subscriptionId)) return "구독 ID";
@@ -189,7 +189,7 @@ function checkUsageLog(v: unknown): string | null {
   return null;
 }
 
-function checkAccount(v: unknown): string | null {
+function checkAccount(v: unknown) {
   if (!isObject(v)) return "형식";
   if (!isText(v.id)) return "ID";
   if (!oneOf(v.provider, PROVIDERS)) return "로그인 제공자";
@@ -207,13 +207,22 @@ function isExchangeRateSetting(v: unknown): v is ExchangeRateSetting {
   return rateOk && oneOf(v.source, RATE_SOURCES) && updatedOk;
 }
 
+/**
+ * 틀렸다고 알리는 목록·칸 이름. 오류 문장에 그대로 들어가고, 화면은 known-text가 이 이름으로 옮긴다 — 칸을 더하면
+ * 번역 표가 빈칸을 타입 오류로 알린다. 칸 이름은 검사 함수가 돌려주는 값에서 만든다.
+ */
+export type BackupListLabel = "구독" | "체크인 기록" | "연동 계정";
+export type BackupFieldLabel = NonNullable<
+  ReturnType<typeof checkSubscription | typeof checkUsageLog | typeof checkAccount>
+>;
+
 const fail = (error: string): BackupParseResult => ({ ok: false, error });
 
 /** 목록의 몇 번째 항목이 어느 칸에서 틀렸는지. 전부 맞으면 null. */
 function firstProblem(
   items: unknown[],
-  label: string,
-  check: (v: unknown) => string | null,
+  label: BackupListLabel,
+  check: (v: unknown) => BackupFieldLabel | null,
 ): string | null {
   for (const [index, item] of items.entries()) {
     const field = check(item);

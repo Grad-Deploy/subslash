@@ -1,15 +1,22 @@
+import {
+  nameIn,
+  type BackupFieldNames,
+  type BackupListNames,
+  type KnownTextRender,
+  type WaitUnitNames,
+} from "./known-text-types";
+
 /**
  * `known-text`의 포르투갈어(브라질). 규칙(정규식)은 `known-text`의 영어 표에
  * 한 벌만 있고, 여기는 **같은 순서의** 번역 함수만 둔다 — 순서·개수가 어긋나면 테스트가 잡는다.
  */
-type Render = (...groups: string[]) => string;
 
-const BACKUP_LISTS: Record<string, string> = {
+const BACKUP_LISTS: BackupListNames = {
   구독: "da assinatura",
   "체크인 기록": "do registro de uso",
   "연동 계정": "da conta vinculada",
 };
-const BACKUP_FIELDS: Record<string, string> = {
+const BACKUP_FIELDS: BackupFieldNames = {
   형식: "formato",
   ID: "ID",
   이름: "nome",
@@ -56,9 +63,9 @@ const BACKUP_FIELDS: Record<string, string> = {
   "이메일/ID": "e-mail/ID",
   색: "cor",
 };
-const UNITS: Record<string, string> = { 초: "segundos", 분: "minutos", 시간: "horas" };
+const UNITS: WaitUnitNames = { 초: "segundos", 분: "minutos", 시간: "horas" };
 
-export const KNOWN_TEXT_PT: Render[] = [
+export const KNOWN_TEXT_PT: KnownTextRender[] = [
   // 아이디
   () => "Digite um nome de usuário.",
   (min, max) => `O nome de usuário deve ter de ${min} a ${max} caracteres.`,
@@ -115,7 +122,7 @@ export const KNOWN_TEXT_PT: Render[] = [
   (email) =>
     `Enviamos um e-mail de confirmação para ${email}. Se não estiver na caixa de entrada, confira o spam.`,
   (n, unit) =>
-    `E-mails foram enviados a este endereço com frequência demais. Você poderá reenviar em ${n} ${UNITS[unit] ?? unit}.`,
+    `E-mails foram enviados a este endereço com frequência demais. Você poderá reenviar em ${n} ${nameIn(UNITS, unit)}.`,
   () =>
     "O envio de e-mails não está configurado neste servidor, então não foi possível enviar a confirmação.",
   () => "Não foi possível enviar o e-mail de confirmação. Tente de novo em instantes.",
@@ -124,7 +131,7 @@ export const KNOWN_TEXT_PT: Render[] = [
   (email, m) =>
     `Enviamos um e-mail para redefinir a senha para ${email}. O link só pode ser usado uma vez por ${m} minutos. Se não estiver na caixa de entrada, confira o spam.`,
   (n, unit) =>
-    `E-mails foram enviados a este endereço com frequência demais. Você poderá pedir de novo em ${n} ${UNITS[unit] ?? unit}.`,
+    `E-mails foram enviados a este endereço com frequência demais. Você poderá pedir de novo em ${n} ${nameIn(UNITS, unit)}.`,
   () =>
     "O envio de e-mails não está configurado neste servidor, então não foi possível enviar o e-mail de redefinição.",
   () => "Não foi possível enviar o e-mail de redefinição. Peça de novo em instantes.",
@@ -203,7 +210,7 @@ export const KNOWN_TEXT_PT: Render[] = [
   () => "Este backup tem um formato mais novo que o app. Recarregue a página e tente de novo.",
   () => "O arquivo de backup deve ter as listas de assinaturas, registros e contas vinculadas.",
   (list, index, field) =>
-    `O campo “${BACKUP_FIELDS[field] ?? field}” ${BACKUP_LISTS[list] ?? list} nº ${index} não é válido.`,
+    `O campo “${nameIn(BACKUP_FIELDS, field)}” ${nameIn(BACKUP_LISTS, list)} nº ${index} não é válido.`,
   (index) => `A assinatura nº ${index} tem o mesmo ID de outra assinatura.`,
   () => "A configuração da taxa de câmbio não é válida.",
 ];

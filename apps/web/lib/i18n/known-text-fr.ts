@@ -1,15 +1,22 @@
+import {
+  nameIn,
+  type BackupFieldNames,
+  type BackupListNames,
+  type KnownTextRender,
+  type WaitUnitNames,
+} from "./known-text-types";
+
 /**
  * `known-text`의 프랑스어. 규칙(정규식)은 `known-text`의 영어 표에
  * 한 벌만 있고, 여기는 **같은 순서의** 번역 함수만 둔다 — 순서·개수가 어긋나면 테스트가 잡는다.
  */
-type Render = (...groups: string[]) => string;
 
-const BACKUP_LISTS: Record<string, string> = {
+const BACKUP_LISTS: BackupListNames = {
   구독: "l'abonnement",
   "체크인 기록": "le check-in",
   "연동 계정": "le compte lié",
 };
-const BACKUP_FIELDS: Record<string, string> = {
+const BACKUP_FIELDS: BackupFieldNames = {
   형식: "format",
   ID: "ID",
   이름: "nom",
@@ -56,9 +63,9 @@ const BACKUP_FIELDS: Record<string, string> = {
   "이메일/ID": "e-mail/ID",
   색: "couleur",
 };
-const UNITS: Record<string, string> = { 초: "secondes", 분: "minutes", 시간: "heures" };
+const UNITS: WaitUnitNames = { 초: "secondes", 분: "minutes", 시간: "heures" };
 
-export const KNOWN_TEXT_FR: Render[] = [
+export const KNOWN_TEXT_FR: KnownTextRender[] = [
   // 아이디
   () => "Saisissez un nom d'utilisateur.",
   (min, max) => `Le nom d'utilisateur doit comporter ${min} à ${max} caractères.`,
@@ -117,7 +124,7 @@ export const KNOWN_TEXT_FR: Render[] = [
   (email) =>
     `E-mail de confirmation envoyé à ${email}. S'il n'est pas dans votre boîte de réception, vérifiez les spams.`,
   (n, unit) =>
-    `Des e-mails ont été envoyés trop souvent à cette adresse. Vous pourrez renvoyer dans ${n} ${UNITS[unit] ?? unit}.`,
+    `Des e-mails ont été envoyés trop souvent à cette adresse. Vous pourrez renvoyer dans ${n} ${nameIn(UNITS, unit)}.`,
   () =>
     "L'envoi d'e-mails n'est pas configuré sur ce serveur : impossible d'envoyer l'e-mail de confirmation.",
   () => "Impossible d'envoyer l'e-mail de confirmation. Réessayez dans un instant.",
@@ -126,7 +133,7 @@ export const KNOWN_TEXT_FR: Render[] = [
   (email, m) =>
     `E-mail de réinitialisation du mot de passe envoyé à ${email}. Le lien n'est utilisable qu'une fois pendant ${m} minutes. S'il n'est pas dans votre boîte de réception, vérifiez les spams.`,
   (n, unit) =>
-    `Des e-mails ont été envoyés trop souvent à cette adresse. Vous pourrez redemander dans ${n} ${UNITS[unit] ?? unit}.`,
+    `Des e-mails ont été envoyés trop souvent à cette adresse. Vous pourrez redemander dans ${n} ${nameIn(UNITS, unit)}.`,
   () =>
     "L'envoi d'e-mails n'est pas configuré sur ce serveur : impossible d'envoyer l'e-mail de réinitialisation.",
   () => "Impossible d'envoyer l'e-mail de réinitialisation. Redemandez dans un instant.",
@@ -210,7 +217,7 @@ export const KNOWN_TEXT_FR: Render[] = [
   () =>
     "Le fichier de sauvegarde doit contenir les listes d'abonnements, de check-ins et de comptes liés.",
   (list, index, field) =>
-    `Le champ « ${BACKUP_FIELDS[field] ?? field} » de ${BACKUP_LISTS[list] ?? list} n° ${index} n'est pas valide.`,
+    `Le champ « ${nameIn(BACKUP_FIELDS, field)} » de ${nameIn(BACKUP_LISTS, list)} n° ${index} n'est pas valide.`,
   (index) => `L'abonnement n° ${index} a le même ID qu'un autre abonnement.`,
   () => "Le réglage du taux de change n'est pas valide.",
 ];
