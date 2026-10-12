@@ -120,6 +120,13 @@
       "when": 1790586525796,
       "tag": "0016_gmail_charge_history",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1791785168216,
+      "tag": "0017_drop_retired_notify",
+      "breakpoints": true
     }
   ]
 }

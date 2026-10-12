@@ -177,10 +177,10 @@ export function PrivacyEn() {
         </Item>
         <Item title="Billing reminder emails and calendar feed addresses (discontinued)">
           Discontinued on {effective}. We no longer collect them, and the email addresses, reminder
-          settings, subscriptions copied to the server, and sending records stored until then are
-          all deleted by a cleanup job that runs once a day. You can get billing reminders through
-          the app&rsquo;s &lsquo;Billing reminders on this device&rsquo; (which do not go through a
-          server) or &lsquo;Add billing days to Google Calendar&rsquo;.
+          settings, subscriptions copied to the server, and sending records stored until then have
+          all been deleted, along with the storage that held them. You can get billing reminders
+          through the app&rsquo;s &lsquo;Billing reminders on this device&rsquo; (which do not go
+          through a server) or &lsquo;Add billing days to Google Calendar&rsquo;.
         </Item>
         <Item title="Account email sending records">
           We keep the address and time of sign-up confirmation and password reset emails we send.
@@ -215,8 +215,8 @@ export function PrivacyEn() {
           </li>
           <li>
             Billing reminder emails (discontinued): remaining reminder information and the
-            subscriptions and sending records copied to the server are deleted automatically by a
-            cleanup job that runs once a day.
+            subscriptions and sending records copied to the server have all been deleted and are no
+            longer on the server.
           </li>
           {GMAIL_AUTO_IMPORT_STARTS_ON && (
             <li>

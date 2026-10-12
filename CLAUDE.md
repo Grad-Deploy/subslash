@@ -75,8 +75,8 @@ USD 환산 환율은 상수가 아니라 사용자 설정값이다. USD 구독�
 
 결제 알림 메일과 캘린더 피드(webcal)는 2026년 10월에 그만뒀다 — 웹에서 결제일을 알리는 길은 '구글
 캘린더에 결제일 등록', 앱은 기기 안의 로컬 알림이다. 남은 서버 기록(`notification_subscribers`·
-`mirrored_subscriptions`·`notification_log`)은 하루 크론(`/api/cron/notify`, 이름만 예전 그대로)이
-`purgeRetiredNotifyData`로 지운다. 표는 다음 마이그레이션에서 지운다. 다시 만들지 않는다 — 메일은
+`mirrored_subscriptions`·`notification_log`)은 `drizzle/0017_drop_retired_notify.sql`이 표째 지웠다(하루 크론
+`/api/cron/notify`는 이름만 예전 그대로다). 다시 만들지 않는다 — 메일은
 되돌리기 어려운 바깥 행동이고(보낸 메일은 회수할 수 없다), 이메일·구독 사본을 서버에 두는 유일한 이유였다.
 
 샘플 체험(`startDemo`)은 실제 기록에 섞지 않는다. 체험 중 화면의 목록은 샘플이고 실제 기록은
