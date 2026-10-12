@@ -10,6 +10,13 @@ import { KNOWN_TEXT_JA } from "./known-text-ja";
 import { KNOWN_TEXT_PT } from "./known-text-pt";
 import { KNOWN_TEXT_VI } from "./known-text-vi";
 import { KNOWN_TEXT_ZH } from "./known-text-zh";
+import {
+  nameIn,
+  type BackupFieldNames,
+  type BackupListNames,
+  type KnownTextRender,
+  type WaitUnitNames,
+} from "./known-text-types";
 
 /**
  * 화면 문구 파일(messages) 밖에서 만들어져 화면에 그대로 닿는 한국어 문장의 영어. 입력 검사
@@ -21,12 +28,12 @@ import { KNOWN_TEXT_ZH } from "./known-text-zh";
  * 이 표도 고친다. `__tests__/unit/known-text.test.ts`가 검사 함수의 갈래마다 영어가 나오는지 본다.
  */
 /** 백업 파일 검사(lib/backup)가 틀렸다고 알리는 목록·칸 이름. */
-const BACKUP_LISTS_EN: Record<string, string> = {
+const BACKUP_LISTS_EN: BackupListNames = {
   구독: "subscription",
   "체크인 기록": "check-in",
   "연동 계정": "linked account",
 };
-const BACKUP_FIELDS_EN: Record<string, string> = {
+const BACKUP_FIELDS_EN: BackupFieldNames = {
   형식: "format",
   ID: "ID",
   이름: "name",
@@ -74,7 +81,14 @@ const BACKUP_FIELDS_EN: Record<string, string> = {
   색: "color",
 };
 
-const EN: [RegExp, (...groups: string[]) => string][] = [
+const WAIT_UNITS_EN: WaitUnitNames = { 초: "second", 분: "minute", 시간: "hour" };
+
+/** "3 minutes", "1 hour". */
+function waitEn(n: string, unit: string): string {
+  return `${n} ${nameIn(WAIT_UNITS_EN, unit)}${n === "1" ? "" : "s"}`;
+}
+
+const EN: [RegExp, KnownTextRender][] = [
   // 아이디
   [/^아이디를 입력해주세요\.$/, () => "Enter a username."],
   [
@@ -190,9 +204,7 @@ const EN: [RegExp, (...groups: string[]) => string][] = [
   [
     /^이 주소로 메일을 너무 자주 보냈습니다\. (\d+)(초|분|시간) 뒤에 다시 보낼 수 있습니다\.$/,
     (n, unit) =>
-      `Too many emails were sent to this address. You can send again in ${n} ${
-        { 초: "second", 분: "minute", 시간: "hour" }[unit] ?? unit
-      }${n === "1" ? "" : "s"}.`,
+      `Too many emails were sent to this address. You can send again in ${waitEn(n, unit)}.`,
   ],
   [
     /^이 서버에는 메일 발송이 설정돼 있지 않아 확인 메일을 보내지 못했습니다\.$/,
@@ -213,9 +225,7 @@ const EN: [RegExp, (...groups: string[]) => string][] = [
   [
     /^이 주소로 메일을 너무 자주 보냈습니다\. (\d+)(초|분|시간) 뒤에 다시 요청할 수 있습니다\.$/,
     (n, unit) =>
-      `Too many emails were sent to this address. You can ask again in ${n} ${
-        { 초: "second", 분: "minute", 시간: "hour" }[unit] ?? unit
-      }${n === "1" ? "" : "s"}.`,
+      `Too many emails were sent to this address. You can ask again in ${waitEn(n, unit)}.`,
   ],
   [
     /^이 서버에는 메일 발송이 설정돼 있지 않아 재설정 메일을 보내지 못했습니다\.$/,
@@ -371,7 +381,7 @@ const EN: [RegExp, (...groups: string[]) => string][] = [
   [
     /^(구독|체크인 기록|연동 계정) (\d+)번째 항목의 '(.+)' 칸이 올바르지 않습니다\.$/,
     (list, index, field) =>
-      `The '${BACKUP_FIELDS_EN[field] ?? field}' field of ${BACKUP_LISTS_EN[list]} #${index} isn't valid.`,
+      `The '${nameIn(BACKUP_FIELDS_EN, field)}' field of ${nameIn(BACKUP_LISTS_EN, list)} #${index} isn't valid.`,
   ],
   [
     /^구독 (\d+)번째 항목의 ID가 다른 구독과 겹칩니다\.$/,
@@ -384,7 +394,7 @@ const EN: [RegExp, (...groups: string[]) => string][] = [
  * 영어가 아닌 번역은 영어 표의 정규식을 그대로 쓰고 번역 함수만 바꾼다 — 정규식을 언어마다 다시 적으면 한쪽만
  * 고쳐 어긋난다. 같은 순서·개수인지는 테스트가 본다.
  */
-function withRenders(renders: ((...groups: string[]) => string)[]): typeof EN {
+function withRenders(renders: KnownTextRender[]): typeof EN {
   return EN.map(([pattern], i) => [pattern, renders[i] ?? (() => "")]);
 }
 
