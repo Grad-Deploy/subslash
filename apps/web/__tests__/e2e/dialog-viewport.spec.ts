@@ -70,7 +70,7 @@ test.describe("창이 화면 밖으로 잘리지 않는다 (E2E)", () => {
     expect(box.bottom).toBeLessThanOrEqual(box.height + 1);
 
     // 닫기 버튼이 화면 안에 있고, 눌러서 닫힌다.
-    const close = dialog.getByRole("button", { name: "Close" });
+    const close = dialog.getByRole("button", { name: "닫기", exact: true });
     await expect(close).toBeInViewport();
     await close.click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -100,7 +100,7 @@ test.describe("창이 화면 밖으로 잘리지 않는다 (E2E)", () => {
     expect(topmostIsHeader).toBe(false);
 
     // 닫기 버튼이 상단 바 뒤로 숨지 않고, 눌러서 닫힌다(가려져 있으면 클릭이 가로채인다).
-    const close = dialog.getByRole("button", { name: "Close" });
+    const close = dialog.getByRole("button", { name: "닫기", exact: true });
     await expect(close).toBeInViewport();
     await close.click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -134,6 +134,6 @@ test.describe("창이 화면 밖으로 잘리지 않는다 (E2E)", () => {
     // 실제로 내려가지 않았으면 이 테스트는 아무것도 확인하지 못한 것이다.
     expect(scrolled).toBeGreaterThan(0);
 
-    await expect(dialog.getByRole("button", { name: "Close" })).toBeInViewport();
+    await expect(dialog.getByRole("button", { name: "닫기", exact: true })).toBeInViewport();
   });
 });
