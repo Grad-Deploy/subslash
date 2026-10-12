@@ -4,11 +4,9 @@ import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { accounts } from "@lib/schema";
 import { hashPassword } from "@lib/password";
 import {
-  SESSION_COOKIE,
   createSession,
   findConflicts,
-  sessionCookieOptions,
-  sessionTokenForApp,
+  sessionJsonResponse,
   toPublicAccount,
 } from "@lib/auth-server";
 import {
@@ -21,7 +19,7 @@ import {
   clientIp,
   hit,
   retryAfterSeconds,
-  tooManyRequestsMessage,
+  tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
 
@@ -68,10 +66,7 @@ export async function POST(request: NextRequest) {
     const ipKey = `signup:ip:${clientIp(request.headers)}`;
     const blocked = retryAfterSeconds(ipKey, ATTEMPTS_PER_IP);
     if (blocked > 0) {
-      return NextResponse.json(
-        { error: tooManyRequestsMessage(blocked) },
-        { status: 429, headers: { "Retry-After": String(blocked) } },
-      );
+      return tooManyRequestsResponse(blocked);
     }
     hit(ipKey, ATTEMPTS_PER_IP);
 
@@ -137,20 +132,18 @@ export async function POST(request: NextRequest) {
     // 보냈는지를 그대로 알린다 — 오지 않을 메일을 기다리게 하지 않기 위해서다.
     const outcome = await sendAccountVerification(account);
 
-    const response = NextResponse.json(
+    return sessionJsonResponse(
+      request,
+      session,
       {
         account: toPublicAccount(account),
         emailVerification: {
           status: outcome.status,
           message: describeSendOutcome(outcome, account.email),
         },
-        // 앱에서 온 요청이면 본문에도 토큰을 싣는다(sessionTokenForApp). 웹은 쿠키만 받는다.
-        ...sessionTokenForApp(request, session),
       },
       { status: 201 },
     );
-    response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
-    return response;
   } catch (error) {
     // 유니크 인덱스가 막은 경우 — 동시에 같은 아이디로 두 번 가입한 상황이다.
     if (isUniqueViolation(error)) {

@@ -8,7 +8,7 @@ import {
   clientIp,
   hit,
   retryAfterSeconds,
-  tooManyRequestsMessage,
+  tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
 
@@ -44,10 +44,7 @@ export async function POST(request: NextRequest) {
     const ipKey = `password-reset:ip:${clientIp(request.headers)}`;
     const blocked = retryAfterSeconds(ipKey, LOOKUPS_PER_IP);
     if (blocked > 0) {
-      return NextResponse.json(
-        { error: tooManyRequestsMessage(blocked) },
-        { status: 429, headers: { "Retry-After": String(blocked) } },
-      );
+      return tooManyRequestsResponse(blocked);
     }
     hit(ipKey, LOOKUPS_PER_IP);
 
