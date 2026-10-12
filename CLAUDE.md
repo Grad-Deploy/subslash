@@ -720,7 +720,8 @@ pnpm build
   스크립트의 `MIGRATIONS`에 확인 방법을 더한다. 먼저 `file:` 사본으로 시험해 볼 수 있다.
 - 배포 DB는 두 개이고 데이터를 섞지 않는다. `subslash`는 leesean2/subslash(Vercel
   `subslash-web-qki1`), `subslash-grad`는 Grad-Deploy/subslash 미러(Vercel `subslash-web`)가
-  쓴다. 미러가 병합 즉시 새 레포로 옮겨 곧바로 배포되므로, 스키마를 바꾸는 PR은 병합
+  쓴다. 검색에는 공개 웹만 노출한다 — `subslash-web-qki1`에는 환경 변수 `SEARCH_INDEXING=off`를 둬 모든 화면을
+  noindex로 둔다(`lib/site-metadata`). 미러가 병합 즉시 새 레포로 옮겨 곧바로 배포되므로, 스키마를 바꾸는 PR은 병합
   전에 **두 DB 모두** 마이그레이션 SQL을 적용한다. 한쪽만 적용하면 다른 쪽 배포에서 새
   테이블을 쓰는 화면이 500을 낸다.
 - 앱(`apps/mobile/eas.json`의 `NEXT_PUBLIC_WEB_ORIGIN`)은 공개 웹 `www.subslash.me`(`subslash-grad`)를

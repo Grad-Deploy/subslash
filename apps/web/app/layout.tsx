@@ -14,6 +14,7 @@ import { ServiceWorkerRegistrar } from "../components/layout/ServiceWorkerRegist
 import { NativeAppEffects } from "../components/layout/NativeAppEffects";
 import { AppLaunch } from "../components/launch/AppLaunch";
 import {
+  SEARCH_INDEXING,
   SITE_DESCRIPTION,
   SITE_METADATA_BASE,
   SITE_TITLE,
@@ -44,6 +45,8 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   applicationName: "SubSlash",
+  // 검색에 노출하지 않는 배포(lib/site-metadata의 SEARCH_INDEXING)는 모든 화면을 noindex로 둔다.
+  ...(SEARCH_INDEXING ? {} : { robots: { index: false, follow: false } }),
   appleWebApp: {
     capable: true,
     title: "SubSlash",

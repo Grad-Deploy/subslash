@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { siteUrl } from "@lib/site-metadata";
+import { SEARCH_INDEXING, siteUrl } from "@lib/site-metadata";
 
 /**
  * /robots.txt. 검색에 노출하는 것은 첫 화면과 개인정보처리방침뿐이다. 나머지 화면(대시보드·내 구독·
@@ -12,6 +12,11 @@ import { siteUrl } from "@lib/site-metadata";
  * 이 파일이 빠지는데, 앱에는 robots.txt가 필요 없다.
  */
 export default function robots(): MetadataRoute.Robots {
+  // 검색에 노출하지 않는 배포(테스트 서버). 크롤링은 막지 않는다 — 막으면 이미 모인 화면의 noindex(레이아웃)를
+  // 로봇이 읽지 못해 검색 결과에서 빠지지 않는다. 사이트맵은 비어 있다.
+  if (!SEARCH_INDEXING) {
+    return { rules: { userAgent: "*", allow: "/" } };
+  }
   return {
     rules: {
       userAgent: "*",
