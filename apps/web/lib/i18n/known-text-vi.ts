@@ -46,6 +46,7 @@ const BACKUP_FIELDS: BackupFieldNames = {
   메모: "ghi chú",
   "무료 요금제로 충분했는지": "gói miễn phí có đủ không",
   "토큰 사용량": "lượng token",
+  "체크인 기기": "Thiết bị check-in",
   "다시 살펴볼 날": "ngày xem lại",
   "해지 기록": "bản ghi hủy",
   "주문 메일 근거": "bằng chứng email đơn hàng",

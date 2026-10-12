@@ -1,6 +1,21 @@
 import { RiskLevel } from "./subscription";
 import type { CheckInOutcome } from "../utils/valueMetric";
 
+/**
+ * 체크인한 기기. 로그인한 기기끼리 기록을 맞추면 체크인이 여러 기기에서 섞이므로, 어디서 센 숫자인지 알아볼 수 있게
+ * 남긴다. 기기를 알아보는 값(기기 ID·모델·이름)은 남기지 않는다 — `id`는 이 브라우저·앱 설치마다 처음 만든 무작위
+ * 값이라, 같은 기기인지만 견줄 수 있다(브라우저 데이터를 지우면 새 값이 된다).
+ */
+export interface CheckInDevice {
+  /** 앱(안드로이드·iOS)에서 적었는지, 웹에서 적었는지. */
+  app: "web" | "android" | "ios";
+  /** 운영체제. 알아보지 못하면 `other`. */
+  os: "windows" | "mac" | "linux" | "chromeos" | "android" | "ios" | "other";
+  /** 휴대폰·태블릿처럼 작은 기기인지. */
+  mobile: boolean;
+  id: string;
+}
+
 export interface UsageLog {
   id: string;
   subscriptionId: string;
@@ -30,6 +45,8 @@ export interface UsageLog {
    * 올리는 데만 쓴다(utils/valueMetric).
    */
   tokens?: { count: number; apiUsd: number | null };
+  /** 체크인한 기기. 이 기능 전의 체크인과 기기를 알 수 없을 때(서버 렌더링 중 등)는 없다. */
+  device?: CheckInDevice;
 }
 
 export interface CheckInResponse {

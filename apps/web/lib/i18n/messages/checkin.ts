@@ -193,6 +193,11 @@ export const ko = {
     later: "나중에 할게요",
   },
   history: {
+    deviceApp: { android: "Android 앱", ios: "iOS 앱" },
+    deviceWeb: (os: string | null, mobile: boolean) =>
+      `${os ? `${os} ` : ""}${mobile ? "휴대폰" : "PC"} 웹`,
+    deviceLine: (device: string, here: boolean) =>
+      `체크인한 기기: ${device}${here ? " (이 기기)" : ""}`,
     phoneHours:
       "폰 기록으로 자동 체크인 · 앱을 쓴 시간과 재생 알림이 떠 있던 시간 중 긴 쪽이에요. 일시정지 시간이 섞일 수 있어요",
     phoneDays: "폰 기록으로 자동 체크인 · 이 폰에서 쓴 날이에요. PC에서 쓴 날은 빠져 있어요",
@@ -450,6 +455,9 @@ export const en: Widen<typeof ko> = {
     later: "Later",
   },
   history: {
+    deviceApp: { android: "Android app", ios: "iOS app" },
+    deviceWeb: (os, mobile) => `${os ? `${os} ` : ""}${mobile ? "phone" : "PC"} (web)`,
+    deviceLine: (device, here) => `Checked in on: ${device}${here ? " (this device)" : ""}`,
     phoneHours:
       "Auto check-in from phone records · the longer of the time the app was open and the time a playback notification was up. Paused time may be included",
     phoneDays:
@@ -717,6 +725,9 @@ export const zh: Widen<typeof ko> = {
     later: "稍后",
   },
   history: {
+    deviceApp: { android: "Android 应用", ios: "iOS 应用" },
+    deviceWeb: (os, mobile) => `${os ? `${os} ` : ""}${mobile ? "手机" : "电脑"}网页版`,
+    deviceLine: (device, here) => `打卡设备：${device}${here ? "（本设备）" : ""}`,
     phoneHours:
       "根据手机记录自动签到 · 取应用打开时间和播放通知显示时间中较长者。可能包含暂停的时间",
     phoneDays: "根据手机记录自动签到 · 这部手机上使用的天数。不包括电脑上的天数",
@@ -965,6 +976,9 @@ export const ja: Widen<typeof ko> = {
     later: "あとで",
   },
   history: {
+    deviceApp: { android: "Android アプリ", ios: "iOS アプリ" },
+    deviceWeb: (os, mobile) => `${os ? `${os} の` : ""}${mobile ? "スマホ" : "PC"}（ウェブ）`,
+    deviceLine: (device, here) => `チェックインした端末: ${device}${here ? "（この端末）" : ""}`,
     phoneHours:
       "スマホの記録で自動チェックイン · アプリを開いていた時間と再生通知の時間のうち長いほう。一時停止の時間が含まれることがあります",
     phoneDays:
@@ -1218,6 +1232,9 @@ export const vi: Widen<typeof ko> = {
     later: "Để sau",
   },
   history: {
+    deviceApp: { android: "Ứng dụng Android", ios: "Ứng dụng iOS" },
+    deviceWeb: (os, mobile) => `Web trên ${mobile ? "điện thoại" : "PC"}${os ? ` ${os}` : ""}`,
+    deviceLine: (device, here) => `Thiết bị check-in: ${device}${here ? " (thiết bị này)" : ""}`,
     phoneHours:
       "Tự động check-in từ dữ liệu điện thoại · lấy giá trị lớn hơn giữa thời gian mở ứng dụng và thời gian hiện thông báo phát. Có thể gồm thời gian tạm dừng",
     phoneDays:
@@ -1486,6 +1503,10 @@ export const fr: Widen<typeof ko> = {
     later: "Plus tard",
   },
   history: {
+    deviceApp: { android: "Appli Android", ios: "Appli iOS" },
+    deviceWeb: (os, mobile) => `Web sur ${mobile ? "téléphone" : "PC"}${os ? ` ${os}` : ""}`,
+    deviceLine: (device, here) =>
+      `Appareil du check-in : ${device}${here ? " (cet appareil)" : ""}`,
     phoneHours:
       "Check-in automatique depuis le téléphone · le plus long entre le temps d'ouverture de l'appli et celui de la notification de lecture. Des pauses peuvent être incluses",
     phoneDays:
@@ -1752,6 +1773,10 @@ export const es: Widen<typeof ko> = {
     later: "Más tarde",
   },
   history: {
+    deviceApp: { android: "App de Android", ios: "App de iOS" },
+    deviceWeb: (os, mobile) => `Web en ${mobile ? "móvil" : "PC"}${os ? ` ${os}` : ""}`,
+    deviceLine: (device, here) =>
+      `Dispositivo del check-in: ${device}${here ? " (este dispositivo)" : ""}`,
     phoneHours:
       "Registro automático con el móvil · el mayor entre el tiempo con la app abierta y el de la notificación de reproducción. Puede incluir pausas",
     phoneDays:
@@ -2020,6 +2045,9 @@ export const de: Widen<typeof ko> = {
     later: "Später",
   },
   history: {
+    deviceApp: { android: "Android-App", ios: "iOS-App" },
+    deviceWeb: (os, mobile) => `Web auf ${os ? `${os}-` : ""}${mobile ? "Handy" : "PC"}`,
+    deviceLine: (device, here) => `Check-in-Gerät: ${device}${here ? " (dieses Gerät)" : ""}`,
     phoneHours:
       "Automatischer Eintrag aus Handydaten · der längere Wert aus App-Öffnungszeit und Wiedergabe-Benachrichtigung. Pausen können enthalten sein",
     phoneDays:
@@ -2285,6 +2313,10 @@ export const pt: Widen<typeof ko> = {
     later: "Depois",
   },
   history: {
+    deviceApp: { android: "App Android", ios: "App iOS" },
+    deviceWeb: (os, mobile) => `Web no ${mobile ? "celular" : "PC"}${os ? ` ${os}` : ""}`,
+    deviceLine: (device, here) =>
+      `Dispositivo do check-in: ${device}${here ? " (este dispositivo)" : ""}`,
     phoneHours:
       "Registro automático pelo celular · o maior entre o tempo com o app aberto e o da notificação de reprodução. Pode incluir pausas",
     phoneDays: "Registro automático pelo celular · dias de uso neste celular. Faltam os dias no PC",
