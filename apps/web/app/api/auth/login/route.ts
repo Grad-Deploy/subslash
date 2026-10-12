@@ -5,10 +5,8 @@ import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { accounts } from "@lib/schema";
 import { hasPassword, hashPassword, needsRehash, verifyPassword } from "@lib/password";
 import {
-  SESSION_COOKIE,
   findAccountByIdentifier,
-  sessionCookieOptions,
-  sessionTokenForApp,
+  sessionJsonResponse,
   startLoginSession,
   toPublicAccount,
 } from "@lib/auth-server";
@@ -17,7 +15,7 @@ import {
   hit,
   reset,
   retryAfterSeconds,
-  tooManyRequestsMessage,
+  tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { logError } from "@lib/log";
@@ -63,10 +61,7 @@ export async function POST(request: NextRequest) {
       retryAfterSeconds(ipKey, FAILURES_PER_IP),
     );
     if (wait > 0) {
-      return NextResponse.json(
-        { error: tooManyRequestsMessage(wait) },
-        { status: 429, headers: { "Retry-After": String(wait) } },
-      );
+      return tooManyRequestsResponse(wait);
     }
 
     const account = await findAccountByIdentifier(value.identifier);
@@ -102,14 +97,7 @@ export async function POST(request: NextRequest) {
     if (!started) {
       return NextResponse.json({ error: "로그인을 처리하지 못했습니다." }, { status: 500 });
     }
-    const { session } = started;
-    // 앱에서 온 요청이면 본문에도 토큰을 싣는다(sessionTokenForApp). 웹은 쿠키만 받는다.
-    const response = NextResponse.json({
-      account: toPublicAccount(account),
-      ...sessionTokenForApp(request, session),
-    });
-    response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
-    return response;
+    return sessionJsonResponse(request, started.session, { account: toPublicAccount(account) });
   } catch (error) {
     logError("api/auth/login", error);
     return NextResponse.json({ error: "로그인을 처리하지 못했습니다." }, { status: 500 });

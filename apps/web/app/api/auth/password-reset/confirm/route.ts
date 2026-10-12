@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validatePassword } from "@subslash/shared";
+import { validatePassword, validatePasswordConfirm } from "@subslash/shared";
 import { databaseUnavailableResponse } from "@lib/db";
 import { hashPassword } from "@lib/password";
-import {
-  SESSION_COOKIE,
-  createSession,
-  sessionCookieOptions,
-  sessionTokenForApp,
-} from "@lib/auth-server";
+import { createSession, sessionJsonResponse } from "@lib/auth-server";
 import { applyPasswordReset, resolveResetLink } from "@lib/password-reset";
 import { logError } from "@lib/log";
 
@@ -59,9 +54,8 @@ export async function POST(request: NextRequest) {
     const fieldErrors: { password?: string; passwordConfirm?: string } = {};
     const passwordError = validatePassword(password);
     if (passwordError) fieldErrors.password = passwordError;
-    if (!passwordConfirm) fieldErrors.passwordConfirm = "비밀번호를 한 번 더 입력해주세요.";
-    else if (password !== passwordConfirm)
-      fieldErrors.passwordConfirm = "비밀번호가 서로 다릅니다.";
+    const confirmError = validatePasswordConfirm(password, passwordConfirm);
+    if (confirmError) fieldErrors.passwordConfirm = confirmError;
     if (fieldErrors.password || fieldErrors.passwordConfirm) {
       return NextResponse.json({ error: "입력값을 확인해주세요.", fieldErrors }, { status: 400 });
     }
@@ -71,14 +65,10 @@ export async function POST(request: NextRequest) {
     if (!changed) return NextResponse.json({ status: "invalid" }, { status: 400 });
 
     const session = await createSession(state.account.id);
-    // 앱에서 온 요청이면 본문에도 토큰을 싣는다(sessionTokenForApp). 웹은 쿠키만 받는다.
-    const response = NextResponse.json({
+    return sessionJsonResponse(request, session, {
       status: "reset",
       username: state.account.username,
-      ...sessionTokenForApp(request, session),
     });
-    response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
-    return response;
   } catch (error) {
     logError("api/auth/password-reset/confirm", error);
     return NextResponse.json({ error: "비밀번호를 바꾸지 못했습니다." }, { status: 500 });
