@@ -1,15 +1,22 @@
+import {
+  nameIn,
+  type BackupFieldNames,
+  type BackupListNames,
+  type KnownTextRender,
+  type WaitUnitNames,
+} from "./known-text-types";
+
 /**
  * `known-text`의 독일어. 규칙(정규식)은 `known-text`의 영어 표에
  * 한 벌만 있고, 여기는 **같은 순서의** 번역 함수만 둔다 — 순서·개수가 어긋나면 테스트가 잡는다.
  */
-type Render = (...groups: string[]) => string;
 
-const BACKUP_LISTS: Record<string, string> = {
+const BACKUP_LISTS: BackupListNames = {
   구독: "Abo",
   "체크인 기록": "Eintrag",
   "연동 계정": "verknüpften Konto",
 };
-const BACKUP_FIELDS: Record<string, string> = {
+const BACKUP_FIELDS: BackupFieldNames = {
   형식: "Format",
   ID: "ID",
   이름: "Name",
@@ -56,9 +63,9 @@ const BACKUP_FIELDS: Record<string, string> = {
   "이메일/ID": "E-Mail/ID",
   색: "Farbe",
 };
-const UNITS: Record<string, string> = { 초: "Sekunden", 분: "Minuten", 시간: "Stunden" };
+const UNITS: WaitUnitNames = { 초: "Sekunden", 분: "Minuten", 시간: "Stunden" };
 
-export const KNOWN_TEXT_DE: Render[] = [
+export const KNOWN_TEXT_DE: KnownTextRender[] = [
   // 아이디
   () => "Gib einen Benutzernamen ein.",
   (min, max) => `Der Benutzername muss ${min}–${max} Zeichen lang sein.`,
@@ -114,7 +121,7 @@ export const KNOWN_TEXT_DE: Render[] = [
   (email) =>
     `Wir haben eine Bestätigungs-E-Mail an ${email} gesendet. Wenn sie nicht im Posteingang ist, schau im Spam nach.`,
   (n, unit) =>
-    `An diese Adresse wurden zu oft E-Mails gesendet. Du kannst in ${n} ${UNITS[unit] ?? unit} erneut senden.`,
+    `An diese Adresse wurden zu oft E-Mails gesendet. Du kannst in ${n} ${nameIn(UNITS, unit)} erneut senden.`,
   () =>
     "Auf diesem Server ist der E-Mail-Versand nicht eingerichtet, daher konnte keine Bestätigung gesendet werden.",
   () => "Die Bestätigungs-E-Mail konnte nicht gesendet werden. Versuch es gleich erneut.",
@@ -123,7 +130,7 @@ export const KNOWN_TEXT_DE: Render[] = [
   (email, m) =>
     `Wir haben eine E-Mail zum Zurücksetzen des Passworts an ${email} gesendet. Der Link funktioniert einmal innerhalb von ${m} Minuten. Wenn sie nicht im Posteingang ist, schau im Spam nach.`,
   (n, unit) =>
-    `An diese Adresse wurden zu oft E-Mails gesendet. Du kannst es in ${n} ${UNITS[unit] ?? unit} erneut anfordern.`,
+    `An diese Adresse wurden zu oft E-Mails gesendet. Du kannst es in ${n} ${nameIn(UNITS, unit)} erneut anfordern.`,
   () =>
     "Auf diesem Server ist der E-Mail-Versand nicht eingerichtet, daher konnte keine Zurücksetzen-E-Mail gesendet werden.",
   () => "Die Zurücksetzen-E-Mail konnte nicht gesendet werden. Fordere sie gleich erneut an.",
@@ -204,7 +211,7 @@ export const KNOWN_TEXT_DE: Render[] = [
     "Diese Sicherung hat ein neueres Format als die App. Lade die Seite neu und versuch es erneut.",
   () => "Die Sicherungsdatei muss die Listen der Abos, Einträge und verknüpften Konten enthalten.",
   (list, index, field) =>
-    `Das Feld „${BACKUP_FIELDS[field] ?? field}“ im ${BACKUP_LISTS[list] ?? list} Nr. ${index} ist ungültig.`,
+    `Das Feld „${nameIn(BACKUP_FIELDS, field)}“ im ${nameIn(BACKUP_LISTS, list)} Nr. ${index} ist ungültig.`,
   (index) => `Abo Nr. ${index} hat dieselbe ID wie ein anderes Abo.`,
   () => "Die Wechselkurs-Einstellung ist ungültig.",
 ];

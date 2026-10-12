@@ -1,15 +1,22 @@
+import {
+  nameIn,
+  type BackupFieldNames,
+  type BackupListNames,
+  type KnownTextRender,
+  type WaitUnitNames,
+} from "./known-text-types";
+
 /**
  * `known-text`의 베트남어. 규칙(정규식)은 `known-text`의 영어 표에
  * 한 벌만 있고, 여기는 **같은 순서의** 번역 함수만 둔다 — 순서·개수가 어긋나면 테스트가 잡는다.
  */
-type Render = (...groups: string[]) => string;
 
-const BACKUP_LISTS: Record<string, string> = {
+const BACKUP_LISTS: BackupListNames = {
   구독: "gói đăng ký",
   "체크인 기록": "lượt check-in",
   "연동 계정": "tài khoản liên kết",
 };
-const BACKUP_FIELDS: Record<string, string> = {
+const BACKUP_FIELDS: BackupFieldNames = {
   형식: "định dạng",
   ID: "ID",
   이름: "tên",
@@ -56,9 +63,9 @@ const BACKUP_FIELDS: Record<string, string> = {
   "이메일/ID": "email/ID",
   색: "màu",
 };
-const UNITS: Record<string, string> = { 초: "giây", 분: "phút", 시간: "giờ" };
+const UNITS: WaitUnitNames = { 초: "giây", 분: "phút", 시간: "giờ" };
 
-export const KNOWN_TEXT_VI: Render[] = [
+export const KNOWN_TEXT_VI: KnownTextRender[] = [
   // 아이디
   () => "Nhập tên người dùng.",
   (min, max) => `Tên người dùng phải có ${min}–${max} ký tự.`,
@@ -113,7 +120,7 @@ export const KNOWN_TEXT_VI: Render[] = [
   (email) =>
     `Đã gửi email xác nhận đến ${email}. Nếu không thấy trong hộp thư đến, hãy kiểm tra thư rác.`,
   (n, unit) =>
-    `Đã gửi email đến địa chỉ này quá thường xuyên. Bạn có thể gửi lại sau ${n} ${UNITS[unit] ?? unit}.`,
+    `Đã gửi email đến địa chỉ này quá thường xuyên. Bạn có thể gửi lại sau ${n} ${nameIn(UNITS, unit)}.`,
   () => "Máy chủ này chưa thiết lập gửi email nên không gửi được email xác nhận.",
   () => "Không gửi được email xác nhận. Hãy thử lại sau ít phút.",
   () => "Không gửi được email xác nhận.",
@@ -121,7 +128,7 @@ export const KNOWN_TEXT_VI: Render[] = [
   (email, m) =>
     `Đã gửi email đặt lại mật khẩu đến ${email}. Đường dẫn chỉ dùng được một lần trong ${m} phút. Nếu không thấy trong hộp thư đến, hãy kiểm tra thư rác.`,
   (n, unit) =>
-    `Đã gửi email đến địa chỉ này quá thường xuyên. Bạn có thể yêu cầu lại sau ${n} ${UNITS[unit] ?? unit}.`,
+    `Đã gửi email đến địa chỉ này quá thường xuyên. Bạn có thể yêu cầu lại sau ${n} ${nameIn(UNITS, unit)}.`,
   () => "Máy chủ này chưa thiết lập gửi email nên không gửi được email đặt lại.",
   () => "Không gửi được email đặt lại. Hãy yêu cầu lại sau ít phút.",
   () => "Không gửi được email đặt lại.",
@@ -199,7 +206,7 @@ export const KNOWN_TEXT_VI: Render[] = [
   () => "Bản sao lưu này có định dạng mới hơn ứng dụng. Hãy tải lại trang rồi thử lại.",
   () => "Tệp sao lưu phải có đủ danh sách gói đăng ký, check-in và tài khoản liên kết.",
   (list, index, field) =>
-    `Trường “${BACKUP_FIELDS[field] ?? field}” của ${BACKUP_LISTS[list] ?? list} thứ ${index} không hợp lệ.`,
+    `Trường “${nameIn(BACKUP_FIELDS, field)}” của ${nameIn(BACKUP_LISTS, list)} thứ ${index} không hợp lệ.`,
   (index) => `ID của gói đăng ký thứ ${index} trùng với gói khác.`,
   () => "Cài đặt tỷ giá không hợp lệ.",
 ];

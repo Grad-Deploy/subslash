@@ -1,15 +1,22 @@
+import {
+  nameIn,
+  type BackupFieldNames,
+  type BackupListNames,
+  type KnownTextRender,
+  type WaitUnitNames,
+} from "./known-text-types";
+
 /**
  * `known-text`의 중국어(간체). 규칙(정규식)은 `known-text`의 영어
  * 표에 한 벌만 있고, 여기는 **같은 순서의** 번역 함수만 둔다 — 순서·개수가 어긋나면 테스트가 잡는다.
  */
-type Render = (...groups: string[]) => string;
 
-const BACKUP_LISTS: Record<string, string> = {
+const BACKUP_LISTS: BackupListNames = {
   구독: "订阅",
   "체크인 기록": "签到记录",
   "연동 계정": "关联账户",
 };
-const BACKUP_FIELDS: Record<string, string> = {
+const BACKUP_FIELDS: BackupFieldNames = {
   형식: "格式",
   ID: "ID",
   이름: "名称",
@@ -56,9 +63,9 @@ const BACKUP_FIELDS: Record<string, string> = {
   "이메일/ID": "邮箱/ID",
   색: "颜色",
 };
-const UNITS: Record<string, string> = { 초: "秒", 분: "分钟", 시간: "小时" };
+const UNITS: WaitUnitNames = { 초: "秒", 분: "分钟", 시간: "小时" };
 
-export const KNOWN_TEXT_ZH: Render[] = [
+export const KNOWN_TEXT_ZH: KnownTextRender[] = [
   // 아이디
   () => "请输入用户名。",
   (min, max) => `用户名须为 ${min}–${max} 个字符。`,
@@ -110,14 +117,14 @@ export const KNOWN_TEXT_ZH: Render[] = [
   () => "请求过多。请稍后再试。",
   // 확인 메일
   (email) => `已向 ${email} 发送确认邮件。如果收件箱里没有，请查看垃圾邮件。`,
-  (n, unit) => `向该地址发送邮件过于频繁。${n} ${UNITS[unit] ?? unit}后可以再次发送。`,
+  (n, unit) => `向该地址发送邮件过于频繁。${n} ${nameIn(UNITS, unit)}后可以再次发送。`,
   () => "此服务器未设置邮件发送，因此未能发送确认邮件。",
   () => "未能发送确认邮件。请稍后再试。",
   () => "未能发送确认邮件。",
   // 비밀번호 재설정 메일
   (email, m) =>
     `已向 ${email} 发送密码重置邮件。链接在 ${m} 分钟内只能使用一次。如果收件箱里没有，请查看垃圾邮件。`,
-  (n, unit) => `向该地址发送邮件过于频繁。${n} ${UNITS[unit] ?? unit}后可以再次申请。`,
+  (n, unit) => `向该地址发送邮件过于频繁。${n} ${nameIn(UNITS, unit)}后可以再次申请。`,
   () => "此服务器未设置邮件发送，因此未能发送重置邮件。",
   () => "未能发送重置邮件。请稍后再申请。",
   () => "未能发送重置邮件。",
@@ -193,7 +200,7 @@ export const KNOWN_TEXT_ZH: Render[] = [
   () => "此备份的格式比本应用更新。请刷新页面后再试。",
   () => "备份文件必须包含订阅、签到和关联账户列表。",
   (list, index, field) =>
-    `${BACKUP_LISTS[list] ?? list} 第 ${index} 项的“${BACKUP_FIELDS[field] ?? field}”不正确。`,
+    `${nameIn(BACKUP_LISTS, list)} 第 ${index} 项的“${nameIn(BACKUP_FIELDS, field)}”不正确。`,
   (index) => `第 ${index} 个订阅的 ID 与其他订阅重复。`,
   () => "汇率设置不正确。",
 ];
