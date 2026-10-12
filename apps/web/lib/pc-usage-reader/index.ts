@@ -6,9 +6,11 @@
  *   위 폴더(`.claude`·`.codex`)를 골라도 다른 파일은 열지 않는다 — `.codex`에는 로그인 토큰(`auth.json`)이 있다.
  * - Cursor·Antigravity는 SQLite: 정해진 파일 하나(와 WAL)만 찾아 sql.js로 열고, 공유 SQL로 필요한 칸만 조회한다.
  *   Cursor의 `state.vscdb`에는 로그인 토큰도 들어 있어 파일이 메모리에 올라오지만 그 칸은 조회하지 않는다.
+ * - claude.ai 대화 내보내기(`conversations.json`)는 사용자가 고른 파일 하나에서 사람이 보낸 시각만 꺼낸다(PC 기록이
+ *   아니라 웹·앱 대화다).
  */
 export type { CliTool } from "@subslash/shared";
 export * from "./tools";
 export * from "./select";
 export * from "./read";
-export { pickSessionFolder } from "./pick";
+export { pickExportFile, pickSessionFolder } from "./pick";

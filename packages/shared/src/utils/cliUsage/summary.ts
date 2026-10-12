@@ -5,6 +5,8 @@ import type { CliSessionUsage, CliTokenRecord } from "./types";
 export interface CliUsageSummary {
   /** 질문을 보낸 날(이 PC의 날짜 기준) 수. */
   days: number;
+  /** 그 날들(YYYY-MM-DD, 오름차순). 같은 구독을 여러 기록으로 셀 때 겹치는 날을 한 번만 세려고 둔다. */
+  dayKeys: string[];
   /** 질문 수(Antigravity는 대화 수). */
   prompts: number;
   /** 마지막 질문 시각(epoch ms). 없으면 null. */
@@ -98,7 +100,24 @@ export function summarizeCliUsage(
     }
   }
 
-  return { days: days.size, prompts, lastAt, planType, unknownSessions, excludedSessions, api };
+  return {
+    days: days.size,
+    dayKeys: [...days].sort(),
+    prompts,
+    lastAt,
+    planType,
+    unknownSessions,
+    excludedSessions,
+    api,
+  };
+}
+
+/**
+ * 같은 구독을 여러 기록(Claude Code와 claude.ai 내보내기 등)으로 센 쓴 날. 같은 날 둘 다 썼으면 한 날이다 —
+ * 더하면 하루를 두 번 센다. 기록마다 '최소 이만큼'이라 합친 것도 하한값이다.
+ */
+export function unionUsedDays(summaries: readonly Pick<CliUsageSummary, "dayKeys">[]): number {
+  return new Set(summaries.flatMap((summary) => summary.dayKeys)).size;
 }
 
 function newApiValue(): CliApiValue {

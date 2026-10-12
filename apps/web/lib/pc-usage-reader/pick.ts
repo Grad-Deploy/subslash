@@ -114,3 +114,18 @@ function pickWithInput({
     input.click();
   });
 }
+
+/**
+ * claude.ai 대화 내보내기 파일(`conversations.json`) 하나를 고른다. 폴더가 아니라 파일 하나라 폴더 선택 창을 쓰지
+ * 않는다. 취소하면 null.
+ */
+export function pickExportFile(): Promise<File | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json,application/json";
+    input.addEventListener("change", () => resolve(input.files?.[0] ?? null));
+    input.addEventListener("cancel", () => resolve(null));
+    input.click();
+  });
+}

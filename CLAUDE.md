@@ -425,6 +425,11 @@ PC에서 AI 코딩 도구를 쓴 날을 세는 길은 둘이고 같은 함수(`@
 일반 사용자가 실행하기 어려웠다(PowerShell 실행 정책 등). 고른 폴더에서는 `projects`·`sessions` 아래 세션 기록만 열고,
 `.codex/auth.json`(로그인 토큰)은 열지 않는다. 브라우저는 `~/.claude.json`을 못 읽으므로 Claude Code의 로그인 방식(구독·
 API 키)을 묻고, 답하기 전에는 세지 않는다. 체크인 창(PC 웹, Claude·ChatGPT 구독)에서 이 화면으로 가는 링크를 둔다.
+같은 화면에서 claude.ai 대화 내보내기 파일(`conversations.json`, `cliUsage/claudeExport`)도 고른다 — 웹·앱 대화라 PC
+기록에서 빠지는 사용을 채운다. 사람이 보낸 메시지(`sender: "human"`)의 `created_at`만 꺼내고, 파일에 요금제가 없어 구독
+계정의 파일인지 묻는다. Claude Code와 함께 고르면 같은 구독의 쓴 날을 합집합으로 합친다(`unionUsedDays` — 더하면 같은 날을
+두 번 센다). 내보낸 때까지의 대화만 들어 있다. 내보내기는 안내 파일(manifest)의 링크로 묶음마다 따로 받는 형식이다(2026년
+10월 확인).
 `apps/usage-cli`(`subslash-usage`)는 같은 셈을 하는 명령줄 도구다. 두 도구가 남긴 세션
 기록(JSONL)에는 대화 전체가 있으므로 줄마다 시각·종류·요금제 칸만 보고, 내용은 읽지도 결과에
 담지도 않는다(웹은 줄을 읽자마자 필요한 칸만 남긴다). 사람이 보낸 질문은 Claude Code의 `origin.kind === "human"`(예전 기록은 도구 결과·메타가 아닌 사용자
