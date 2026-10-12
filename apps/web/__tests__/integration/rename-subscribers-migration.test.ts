@@ -13,8 +13,10 @@ import { createClient, type Client } from "@libsql/client";
  */
 
 const migrationsDir = join(process.cwd(), "drizzle");
+// 0017이 이 표들을 지웠다(결제 알림을 그만둠). 이 테스트는 그 앞의 마이그레이션이 행을 지키는지를 본다.
+const DROPPED_AT = "0017_drop_retired_notify.sql";
 const files = readdirSync(migrationsDir)
-  .filter((file) => file.endsWith(".sql"))
+  .filter((file) => file.endsWith(".sql") && file < DROPPED_AT)
   .sort();
 const RENAME = "0006_rename_notification_subscribers.sql";
 

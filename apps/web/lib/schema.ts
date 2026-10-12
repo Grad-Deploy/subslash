@@ -2,140 +2,10 @@ import { sqliteTable, text, integer, real, uniqueIndex, index } from "drizzle-or
 import { sql } from "drizzle-orm";
 
 /**
- * 아래 세 표(`notification_subscribers`, `mirrored_subscriptions`, `notification_log`)는 그만둔 결제 알림
- * 메일과 캘린더 피드의 것이다. 이제 쓰는 API가 없고, 남은 줄은 크론이 지운다(`purgeRetiredNotifyData`).
- * 표는 다음 마이그레이션에서 지운다 — 그때까지 지우는 코드가 표를 찾을 수 있게 정의를 남긴다.
- */
-
-/**
- * 결제 알림을 켠 브라우저. 로그인 계정(`accounts`)이 아니다.
+ * 로그인 계정. 로그인은 선택 기능이므로, 계정이 없어도 앱은 그대로 동작한다.
  *
- * 로그인 없이 알림만 켜도 생기고, 이메일 하나와 그 브라우저가 쥔 sync 토큰으로
- * 식별된다. 예전 이름이 `users`여서 로그인 계정 테이블처럼 읽혔다(0006에서 바꿈).
- * 두 테이블을 합치면 "알림에는 로그인이 필요 없다"와 "계정마다 비밀번호가 있다"
- * 중 하나가 거짓이 된다.
- */
-export const notificationSubscribers = sqliteTable(
-  "notification_subscribers",
-  {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    email: text("email").notNull(),
-    /** SHA-256 of the bearer token held by the browser. The raw token is never stored. */
-    syncTokenHash: text("sync_token_hash").notNull(),
-    /** Null until the confirmation link is clicked; the cron skips unverified subscribers. */
-    verifiedAt: text("verified_at"),
-    /** How many days before a billing date the reminder goes out. */
-    reminderDays: integer("reminder_days").notNull().default(3),
-    /**
-     * SHA-256 of the calendar feed token, or null while the feed is off.
-     *
-     * Kept separate from the sync token on purpose: a calendar URL is pasted
-     * into apps, synced between devices and sometimes shared, so the credential
-     * it carries must not be the one that can overwrite the mirror. This one
-     * only reads, and rotating it revokes every subscribed calendar at once.
-     */
-    calendarTokenHash: text("calendar_token_hash"),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(datetime('now'))`),
-    lastSyncedAt: text("last_synced_at"),
-  },
-  (table) => ({
-    // 고유 인덱스가 아니다. 같은 주소로 다시 신청하면 확인 링크를 누르기 전까지 새 신청(확인 전)과
-    // 예전 기록(확인됨)이 함께 있고, 링크를 누를 때 새 것이 예전 것을 대신한다(api/notify/verify).
-    // 예전에는 한 줄만 허용해 신청하자마자 예전 기록을 지웠고, 그래서 남의 주소만 알면 그 사람의
-    // 알림을 끊을 수 있었다.
-    emailIdx: index("notification_subscribers_email_idx").on(table.email),
-    syncTokenIdx: uniqueIndex("notification_subscribers_sync_token_idx").on(table.syncTokenHash),
-    calendarTokenIdx: uniqueIndex("notification_subscribers_calendar_token_idx").on(
-      table.calendarTokenHash,
-    ),
-  }),
-);
-
-/**
- * Mirror of the browser's active subscriptions. Replaced wholesale on each sync,
- * so there is no merge/conflict handling: the client always wins. The server only writes the rows that
- * differ from what it already holds (`replaceMirror`), which is the same result for far fewer writes.
- */
-export const mirroredSubscriptions = sqliteTable(
-  "mirrored_subscriptions",
-  {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    /** notification_subscribers.id. 컬럼 이름은 테이블 이름을 바꾸기 전 그대로다. */
-    userId: text("user_id")
-      .notNull()
-      .references(() => notificationSubscribers.id, { onDelete: "cascade" }),
-    /** The browser-side subscription id, used to build the one-tap check-in link. */
-    clientId: text("client_id").notNull(),
-    name: text("name").notNull(),
-    amount: real("amount").notNull(),
-    currency: text("currency").notNull().default("KRW"),
-    billingDay: integer("billing_day").notNull(),
-    billingCycle: text("billing_cycle").notNull().default("monthly"),
-    /**
-     * Which month a yearly plan is charged in (1-12), or null when the browser
-     * has not recorded one. Without it the reminder has no date, so the sweep
-     * skips the subscription rather than mailing about it every month.
-     */
-    billingMonth: integer("billing_month"),
-    /**
-     * 해지 주소. 캘린더 피드의 일정 메모에 적어, 캘린더에서 바로 해지하러 갈 수 있게 한다.
-     * 브라우저가 이 구독에 적어 둔 주소를 그대로 보내고, 서버는 http(s)만 받는다. 없으면 null이고
-     * 그때 메모에는 해지 줄이 없다.
-     */
-    cancelUrl: text("cancel_url"),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(datetime('now'))`),
-  },
-  (table) => ({
-    userClientIdx: uniqueIndex("mirrored_subs_user_client_idx").on(table.userId, table.clientId),
-    billingDayIdx: index("mirrored_subs_billing_day_idx").on(table.billingDay),
-  }),
-);
-
-/**
- * Idempotency guard: one reminder per subscription per billing date, however
- * many times the cron runs or retries.
- */
-export const notificationLog = sqliteTable(
-  "notification_log",
-  {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    /** notification_subscribers.id. */
-    userId: text("user_id")
-      .notNull()
-      .references(() => notificationSubscribers.id, { onDelete: "cascade" }),
-    clientId: text("client_id").notNull(),
-    /** The billing date the reminder was about, as YYYY-MM-DD. */
-    billingDate: text("billing_date").notNull(),
-    sentAt: text("sent_at")
-      .notNull()
-      .default(sql`(datetime('now'))`),
-  },
-  (table) => ({
-    onceIdx: uniqueIndex("notification_log_once_idx").on(
-      table.userId,
-      table.clientId,
-      table.billingDate,
-    ),
-  }),
-);
-
-/**
- * 로그인 계정.
- *
- * 알림 미러의 `notification_subscribers`와 일부러 분리했다. 저쪽은 "알림을 켠
- * 브라우저"를 가리키고 이메일 하나로 식별되며, 계정 없이도 존재한다. 로그인은
- * 그와 다른 개념이라 한 테이블에 밀어 넣으면 둘 중 하나의 규칙이 반드시 거짓이
- * 된다. 로그인은 선택 기능이므로, 계정이 없어도 앱은 그대로 동작한다.
+ * 예전 결제 알림 메일의 구독자(`notification_subscribers`, 0017에서 지움)와 일부러 나눠 두었다 —
+ * 알림은 로그인 없이 이메일 하나로 켰다.
  */
 export const accounts = sqliteTable(
   "accounts",
@@ -401,12 +271,6 @@ export type CalendarSyncPlanRow = typeof calendarSyncPlans.$inferSelect;
 
 export type GmailImportLink = typeof gmailImportLinks.$inferSelect;
 export type GmailDiscovery = typeof gmailDiscoveries.$inferSelect;
-
-export type NotificationSubscriber = typeof notificationSubscribers.$inferSelect;
-export type NewNotificationSubscriber = typeof notificationSubscribers.$inferInsert;
-export type MirroredSubscription = typeof mirroredSubscriptions.$inferSelect;
-export type NewMirroredSubscription = typeof mirroredSubscriptions.$inferInsert;
-export type NotificationLogEntry = typeof notificationLog.$inferSelect;
 
 export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
