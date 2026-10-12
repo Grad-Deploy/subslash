@@ -5,12 +5,14 @@ import {
   POPULAR_SERVICES,
   apiCostUsd,
   claudeCodeSession,
+  claudeExportSession,
   codexSession,
   isClaudePrompt,
   parseCliLine,
   pcUsageLink,
   slimCliLine,
   summarizeCliUsage,
+  unionUsedDays,
   type CliDayKey,
   type CliTokenRecord,
 } from "@subslash/shared";
@@ -66,6 +68,54 @@ describe("Claude Code 기록", () => {
 
   it("알아볼 수 없는 형식이면 '모른다'로 표시한다", () => {
     expect(claudeCodeSession([{ foo: 1 }]).recognized).toBe(false);
+  });
+});
+
+describe("claude.ai 대화 내보내기", () => {
+  const message = (sender: string, created_at: unknown) => ({
+    uuid: "m",
+    text: "비밀 대화",
+    content: [{ type: "text", text: "비밀 대화" }],
+    sender,
+    created_at,
+  });
+
+  it("사람이 보낸 메시지의 시각만 꺼내고 내용은 돌려주지 않는다", () => {
+    const session = claudeExportSession([
+      {
+        uuid: "c1",
+        name: "비밀 제목",
+        chat_messages: [
+          message("human", "2026-10-08T01:00:00.000000Z"),
+          message("assistant", "2026-10-08T01:00:05.000000Z"),
+          message("human", "2026-10-09T02:00:00.000000Z"),
+        ],
+      },
+      // 메시지가 없는 대화도 형식은 맞다.
+      { uuid: "c2", chat_messages: [] },
+    ]);
+    expect(session.recognized).toBe(true);
+    expect(session.prompts).toEqual([
+      at("2026-10-08T01:00:00.000Z"),
+      at("2026-10-09T02:00:00.000Z"),
+    ]);
+    // 요금제가 없어 구독인지는 묻는다.
+    expect(session.subscription).toBeNull();
+    expect(JSON.stringify(session)).not.toContain("비밀");
+  });
+
+  it("시각이 없거나 깨진 메시지는 건너뛴다", () => {
+    const session = claudeExportSession([
+      { chat_messages: [message("human", null), message("human", "어제"), "줄"] },
+    ]);
+    expect(session.recognized).toBe(true);
+    expect(session.prompts).toEqual([]);
+  });
+
+  it("내보내기 형식이 아니면 알아보지 못했다고 남긴다", () => {
+    for (const data of [{ chat_messages: [] }, [{ uuid: "c" }], "text", null]) {
+      expect(claudeExportSession(data).recognized).toBe(false);
+    }
   });
 });
 
@@ -168,6 +218,35 @@ describe("요약", () => {
       { now: NOW, windowDays: 30, subscriptionDefault: null, dayKey: kstDay },
     );
     expect(summary.planType).toBe("go");
+  });
+});
+
+describe("여러 기록 합치기", () => {
+  const base = { now: NOW, windowDays: 30, subscriptionDefault: true, dayKey: kstDay };
+  const sessionAt = (...isos: string[]) => ({
+    prompts: isos.map(at),
+    subscription: true,
+    planType: null,
+    recognized: true,
+    tokens: [],
+  });
+
+  it("요약에 쓴 날을 날짜로 남긴다", () => {
+    const summary = summarizeCliUsage(
+      [sessionAt("2026-10-08T23:30:00+09:00", "2026-10-07T09:00:00+09:00")],
+      base,
+    );
+    expect(summary.dayKeys).toEqual(["2026-10-07", "2026-10-08"]);
+  });
+
+  it("같은 날 두 기록에 모두 있으면 한 날로 센다", () => {
+    const pc = summarizeCliUsage([sessionAt("2026-10-07T09:00:00+09:00")], base);
+    const web = summarizeCliUsage(
+      [sessionAt("2026-10-07T21:00:00+09:00", "2026-10-08T10:00:00+09:00")],
+      base,
+    );
+    expect(pc.days + web.days).toBe(3);
+    expect(unionUsedDays([pc, web])).toBe(2);
   });
 });
 

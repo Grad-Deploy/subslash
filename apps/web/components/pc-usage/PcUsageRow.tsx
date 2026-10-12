@@ -31,12 +31,18 @@ import { Button } from "../ui/button";
 export function PcUsageRow({
   serviceId,
   days,
+  sources,
   apiUsd = null,
   tokens = null,
   subscriptions,
 }: {
   serviceId: PcUsageServiceId;
   days: number;
+  /**
+   * 센 기록('PC 기록 읽기'). claude.ai 내보내기(`claudeWeb`)가 있으면 PC 기록만의 숫자가 아니라고 적는다. 링크로
+   * 온 숫자는 PC 기록뿐이라 비워 둔다.
+   */
+  sources?: readonly string[];
   /** 그 PC에서 구독으로 쓴 토큰을 API 요금표로 환산한 금액(USD). 모르면 null. */
   apiUsd?: number | null;
   /** 그 PC에서 구독으로 쓴 토큰 수. 모르면 null. */
@@ -83,7 +89,9 @@ export function PcUsageRow({
             {subscription ? names.sub(subscription) : names.id(serviceId)}
           </p>
           <p className="text-xs text-muted-foreground">
-            {t.tool[serviceId]} · {t.days(days)}
+            {sources?.includes("claudeWeb")
+              ? `${sources.map((source) => (source === "claudeWeb" ? t.toolWeb : t.tool[serviceId])).join(" + ")} · ${t.daysFromRecords(days)}`
+              : `${t.tool[serviceId]} · ${t.days(days)}`}
             {perDay !== null &&
               subscription &&
               ` · ${t.perDay(formatCurrency(perDay, subscription.currency))}`}
