@@ -169,11 +169,13 @@ export function PrivacyEn() {
         </Item>
         <Item title="Account sync (when logged in)">
           When you log in, we save one copy of this device&rsquo;s subscription, check-in, and
-          exchange rate records (including the sign-up account you note for each subscription) to
-          your account, and save it again whenever the records change, to keep them in step with
-          your other logged-in devices (web and app). You can turn this off on each device with
-          &lsquo;Turn off auto sync&rsquo;; a device with it off saves only when you tap &lsquo;Save
-          to account&rsquo;. Purpose: using the same records across devices.
+          exchange rate records (including the sign-up account you note for each subscription, and
+          for each check-in the type of device it was made on and a random value used to tell
+          whether it was the same device) to your account, and save it again whenever the records
+          change, to keep them in step with your other logged-in devices (web and app). You can turn
+          this off on each device with &lsquo;Turn off auto sync&rsquo;; a device with it off saves
+          only when you tap &lsquo;Save to account&rsquo;. Purpose: using the same records across
+          devices.
         </Item>
         <Item title="Billing reminder emails and calendar feed addresses (discontinued)">
           Discontinued on {effective}. We no longer collect them, and the email addresses, reminder

@@ -46,6 +46,7 @@ const BACKUP_FIELDS: BackupFieldNames = {
   메모: "nota",
   "무료 요금제로 충분했는지": "si bastaba el plan gratuito",
   "토큰 사용량": "tokens usados",
+  "체크인 기기": "Dispositivo del check-in",
   "다시 살펴볼 날": "fecha de revisión",
   "해지 기록": "registro de cancelación",
   "주문 메일 근거": "evidencia de correos de pedido",
