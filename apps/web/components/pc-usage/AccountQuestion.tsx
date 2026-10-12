@@ -7,33 +7,39 @@ import { Button } from "../ui/button";
 
 /**
  * 기록에 어떤 계정으로 썼는지가 없는 도구에 묻는 칸. Claude Code는 로그인 방식(구독·API 키), Antigravity는 Google AI
- * 구독 계정인지를 묻는다. 답하기 전에는 세지 않는다.
+ * 구독 계정인지, claude.ai 내보내기는 구독한 계정의 파일인지를 묻는다. 답하기 전에는 세지 않는다.
  */
 export function AccountQuestion({
   tool,
   answer,
   onAnswer,
 }: {
-  tool: AskedTool;
+  tool: AskedTool | "claudeWeb";
   /** true면 구독 계정으로 쓴다. 아직 답하지 않았으면 null. */
   answer: boolean | null;
   onAnswer: (value: boolean) => void;
 }) {
   const t = useT().pcUsage.reader;
-  const copy =
-    tool === "claude"
-      ? {
-          title: t.loginQuestion,
-          hint: t.loginHint,
-          yes: t.loginSubscription,
-          no: t.loginApiKey,
-        }
-      : {
-          title: t.antigravityQuestion,
-          hint: t.antigravityHint,
-          yes: t.antigravityYes,
-          no: t.antigravityNo,
-        };
+  const copy = {
+    claude: {
+      title: t.loginQuestion,
+      hint: t.loginHint,
+      yes: t.loginSubscription,
+      no: t.loginApiKey,
+    },
+    antigravity: {
+      title: t.antigravityQuestion,
+      hint: t.antigravityHint,
+      yes: t.antigravityYes,
+      no: t.antigravityNo,
+    },
+    claudeWeb: {
+      title: t.webQuestion,
+      hint: t.webHint,
+      yes: t.webYes,
+      no: t.webNo,
+    },
+  }[tool];
   return (
     <fieldset className="space-y-1.5 rounded-xl bg-secondary/60 p-2.5">
       <legend className="sr-only">{copy.title}</legend>
