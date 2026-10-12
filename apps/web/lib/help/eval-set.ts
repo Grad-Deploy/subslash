@@ -17,6 +17,13 @@ export const HELP_EVAL_SET: readonly HelpEvalCase[] = [
   { q: "1회 단가는 어떻게 계산해?", expect: ["cost-per-use"], tag: "basic" },
   { q: "한 번 쓸 때 얼마라는 숫자 어떻게 나온 거야", expect: ["cost-per-use"], tag: "paraphrase" },
   { q: "친구랑 나눠 내는 구독은 단가 어떻게 계산돼?", expect: ["cost-per-use"], tag: "paraphrase" },
+  { q: "체크인 숫자를 자동으로 채울 수 있어?", expect: ["checkin-auto"], tag: "basic" },
+  {
+    q: "몇 번 썼는지 일일이 세기 귀찮은데 알아서 세 주는 기능 있어요?",
+    expect: ["checkin-auto"],
+    tag: "paraphrase",
+  },
+  { q: "클로드 쓴 날 자동으로 세는 법", expect: ["checkin-auto"], tag: "casual" },
   { q: "내 기록은 서버에 저장돼?", expect: ["where-stored"], tag: "basic" },
   { q: "데이터 어디 저장됨", expect: ["where-stored"], tag: "casual" },
   { q: "폰 바꾸면 기록 날아가?", expect: ["lose-records"], tag: "casual" },

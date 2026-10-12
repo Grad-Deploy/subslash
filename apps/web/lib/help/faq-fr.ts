@@ -21,6 +21,10 @@ export const FAQ_FR: typeof FAQ_EN = {
     q: "Comment le coût par utilisation est-il calculé ?",
     a: "Votre part mensuelle est divisée par le nombre d'utilisations des 30 derniers jours. Pour un abonnement partagé, seule votre part compte, et les abonnements annuels sont d'abord ramenés à un montant mensuel. Sans check-in, il n'y a pas de nombre d'utilisations : nous n'inventons pas de coût et affichons « Pas encore de check-in ».",
   },
+  "checkin-auto": {
+    q: "Peut-on remplir les check-ins sans compter soi-même ?",
+    a: "Dans l'appli Android, activez « Connecter l'utilisation du téléphone » dans les Réglages : une fois 30 jours d'utilisation des applis d'abonnement accumulés sur ce téléphone, le check-in se fait tout seul. Sur le web depuis un PC, ouvrez l'écran de lecture des données via le lien de la fenêtre de check-in d'un abonnement Claude, ChatGPT, Cursor ou Google AI, puis choisissez le dossier de données d'un outil de code IA ou un fichier d'export des conversations claude.ai : les jours d'utilisation sont comptés et remplis dans la fenêtre de check-in. Les fichiers ne sont pas envoyés à un serveur et rien n'est enregistré avant votre confirmation. Dans les deux cas, seul ce qui est enregistré sur cet appareil ou dans ce fichier est compté, le total peut donc être inférieur à votre utilisation réelle.",
+  },
   "where-stored": {
     q: "Où sont stockées mes données d'abonnement ?",
     a: "Par défaut, uniquement sur cet appareil (dans le navigateur ou l'appli), sans envoi à un serveur. Si vous vous connectez, elles sont aussi stockées dans votre compte et synchronisées automatiquement avec vos autres appareils connectés.",
