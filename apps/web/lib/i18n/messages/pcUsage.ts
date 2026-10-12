@@ -33,6 +33,7 @@ export const ko = {
     toSubs: "내 구독으로 →",
     /** 체크인 창(PC 웹)의 링크. */
     modalLink: (tool: string) => `PC의 ${tool} 기록으로 세기 →`,
+    modalLinkClaude: "PC의 Claude Code 기록이나 claude.ai 대화 파일로 세기 →",
     apiValue: (usd: string) => `API 요금으로 환산하면 약 ${usd}`,
     ratioOver: (times: string) =>
       `내 몫 한 달 구독료의 ${times}배어치를 썼어요 — PC 사용만으로도 본전 이상이에요.`,
@@ -43,7 +44,7 @@ export const ko = {
     privacy: "숫자는 링크의 # 뒤에만 있어 서버로 보내지 않았어요.",
     reader: {
       description:
-        "이 PC의 Claude Code·Codex·Cursor·Antigravity 기록 폴더를 고르면, 브라우저가 기기 안에서 질문을 보낸 시각만 세어 최근 30일 중 쓴 날을 체크인에 채워 줘요.",
+        "이 PC의 Claude Code·Codex·Cursor·Antigravity 기록 폴더를 고르면, 브라우저가 기기 안에서 질문을 보낸 시각만 세어 최근 30일 중 쓴 날을 체크인에 채워 줘요. claude.ai에서 나눈 대화는 내보내기 파일(맨 아래 칸)로 함께 셀 수 있어요.",
       privacy:
         "파일은 서버로 보내지 않아요. 질문·답 내용은 읽자마자 버리고 시각만 남겨요. 브라우저가 폴더를 읽어도 되는지 물으면 허용해 주세요.",
       claude: "Claude Code",
@@ -142,6 +143,7 @@ export const en: Widen<typeof ko> = {
     staleBody: "We stopped it so old numbers aren't checked in. Read your PC records again below.",
     toSubs: "Go to subscriptions →",
     modalLink: (tool) => `Count from ${tool} records on this PC →`,
+    modalLinkClaude: "Count from Claude Code records on this PC or a claude.ai chat export →",
     apiValue: (usd) => `About ${usd} at API prices`,
     ratioOver: (times) =>
       `That's ${times}× your monthly share of the subscription — PC use alone already covers it.`,
@@ -152,7 +154,7 @@ export const en: Widen<typeof ko> = {
     privacy: "The numbers are only after # in the link and weren't sent to the server.",
     reader: {
       description:
-        "Pick the Claude Code, Codex, Cursor or Antigravity record folders on this PC. Your browser counts only the times you sent prompts, on this device, and fills in the days used in the last 30 days.",
+        "Pick the Claude Code, Codex, Cursor or Antigravity record folders on this PC. Your browser counts only the times you sent prompts, on this device, and fills in the days used in the last 30 days. Chats on claude.ai can be counted too, from an export file (the last box).",
       privacy:
         "Files aren't sent to the server. Prompt and reply contents are dropped as soon as they're read; only the times are kept. Allow the browser to read the folder when it asks.",
       claude: "Claude Code",
@@ -258,6 +260,7 @@ export const zh: Widen<typeof ko> = {
     staleBody: "为避免签到旧数字已停止。请在下方重新读取电脑记录。",
     toSubs: "前往订阅 →",
     modalLink: (tool) => `用这台电脑上的 ${tool} 记录计数 →`,
+    modalLinkClaude: "用这台电脑上的 Claude Code 记录或 claude.ai 对话导出文件计数 →",
     apiValue: (usd) => `按 API 价格约 ${usd}`,
     ratioOver: (times) => `相当于你每月订阅份额的 ${times} 倍——仅电脑上的使用就已经够本了。`,
     ratioUnder: (percent) =>
@@ -267,7 +270,7 @@ export const zh: Widen<typeof ko> = {
     privacy: "数字只在链接的 # 之后，没有发送到服务器。",
     reader: {
       description:
-        "选择这台电脑上 Claude Code、Codex、Cursor 或 Antigravity 的记录文件夹。浏览器只在这台设备上统计你发送提示的时间，并填入最近 30 天的使用天数。",
+        "选择这台电脑上 Claude Code、Codex、Cursor 或 Antigravity 的记录文件夹。浏览器只在这台设备上统计你发送提示的时间，并填入最近 30 天的使用天数。在 claude.ai 上的对话也可以用导出文件（最下面一栏）一起统计。",
       privacy:
         "文件不会发送到服务器。提示和回复的内容读到后立即丢弃，只保留时间。浏览器询问时请允许读取文件夹。",
       claude: "Claude Code",
@@ -354,6 +357,7 @@ export const ja: Widen<typeof ko> = {
       "古い数字がチェックインされないよう止めました。下で PC の記録をもう一度読み込んでください。",
     toSubs: "サブスクへ →",
     modalLink: (tool) => `この PC の ${tool} の記録で数える →`,
+    modalLinkClaude: "この PC の Claude Code の記録か claude.ai のチャットのエクスポートで数える →",
     apiValue: (usd) => `API 料金で約 ${usd}`,
     ratioOver: (times) => `月の自分の負担分の ${times} 倍です——PC での利用だけで元が取れています。`,
     ratioUnder: (percent) =>
@@ -363,7 +367,7 @@ export const ja: Widen<typeof ko> = {
     privacy: "数字はリンクの # の後ろにだけあり、サーバーには送っていません。",
     reader: {
       description:
-        "この PC の Claude Code・Codex・Cursor・Antigravity の記録フォルダを選んでください。ブラウザがこの端末の中で、質問を送った時刻だけを数えて、直近 30 日の利用日数を入れます。",
+        "この PC の Claude Code・Codex・Cursor・Antigravity の記録フォルダを選んでください。ブラウザがこの端末の中で、質問を送った時刻だけを数えて、直近 30 日の利用日数を入れます。claude.ai でのチャットも、エクスポートファイル（いちばん下の欄）で一緒に数えられます。",
       privacy:
         "ファイルはサーバーに送りません。質問や回答の内容は読んだらすぐに捨て、時刻だけを残します。ブラウザがフォルダの読み取りを尋ねたら許可してください。",
       claude: "Claude Code",
@@ -460,6 +464,7 @@ export const vi: Widen<typeof ko> = {
     staleBody: "Đã dừng để không check-in số liệu cũ. Hãy đọc lại dữ liệu PC bên dưới.",
     toSubs: "Đến gói đăng ký →",
     modalLink: (tool) => `Đếm từ dữ liệu ${tool} trên PC này →`,
+    modalLinkClaude: "Đếm từ dữ liệu Claude Code trên PC này hoặc tệp xuất trò chuyện claude.ai →",
     apiValue: (usd) => `Khoảng ${usd} theo giá API`,
     ratioOver: (times) =>
       `Gấp ${times} lần phần phí hằng tháng của bạn — riêng việc dùng trên PC đã đủ bù.`,
@@ -470,7 +475,7 @@ export const vi: Widen<typeof ko> = {
     privacy: "Các con số chỉ nằm sau dấu # trong đường dẫn và không được gửi đến máy chủ.",
     reader: {
       description:
-        "Chọn thư mục dữ liệu của Claude Code, Codex, Cursor hoặc Antigravity trên PC này. Trình duyệt chỉ đếm thời điểm bạn gửi câu lệnh, ngay trên thiết bị này, rồi điền số ngày dùng trong 30 ngày gần nhất.",
+        "Chọn thư mục dữ liệu của Claude Code, Codex, Cursor hoặc Antigravity trên PC này. Trình duyệt chỉ đếm thời điểm bạn gửi câu lệnh, ngay trên thiết bị này, rồi điền số ngày dùng trong 30 ngày gần nhất. Các cuộc trò chuyện trên claude.ai cũng có thể được đếm bằng tệp xuất (ô cuối cùng).",
       privacy:
         "Tệp không được gửi đến máy chủ. Nội dung câu lệnh và phản hồi bị bỏ ngay khi đọc; chỉ giữ thời điểm. Hãy cho phép khi trình duyệt hỏi quyền đọc thư mục.",
       claude: "Claude Code",
@@ -566,6 +571,8 @@ export const fr: Widen<typeof ko> = {
       "Nous l'avons bloqué pour éviter d'enregistrer d'anciens chiffres. Relisez les données de votre PC ci-dessous.",
     toSubs: "Aller aux abonnements →",
     modalLink: (tool) => `Compter depuis les données ${tool} de ce PC →`,
+    modalLinkClaude:
+      "Compter depuis les données Claude Code de ce PC ou un export des conversations claude.ai →",
     apiValue: (usd) => `Environ ${usd} au prix de l'API`,
     ratioOver: (times) =>
       `C'est ${times}× votre part mensuelle de l'abonnement — l'usage sur PC suffit déjà à le rentabiliser.`,
@@ -576,7 +583,7 @@ export const fr: Widen<typeof ko> = {
     privacy: "Les chiffres ne sont qu'après le # du lien et n'ont pas été envoyés au serveur.",
     reader: {
       description:
-        "Choisissez les dossiers de données de Claude Code, Codex, Cursor ou Antigravity sur ce PC. Votre navigateur compte uniquement les moments où vous avez envoyé des requêtes, sur cet appareil, et remplit les jours d'utilisation des 30 derniers jours.",
+        "Choisissez les dossiers de données de Claude Code, Codex, Cursor ou Antigravity sur ce PC. Votre navigateur compte uniquement les moments où vous avez envoyé des requêtes, sur cet appareil, et remplit les jours d'utilisation des 30 derniers jours. Les conversations sur claude.ai peuvent aussi être comptées à partir d'un fichier d'export (dernier encadré).",
       privacy:
         "Les fichiers ne sont pas envoyés au serveur. Le contenu des requêtes et réponses est écarté dès sa lecture ; seules les heures sont gardées. Autorisez la lecture du dossier quand le navigateur le demande.",
       claude: "Claude Code",
@@ -678,6 +685,8 @@ export const es: Widen<typeof ko> = {
       "Lo detuvimos para no registrar cifras antiguas. Vuelve a leer los registros de tu PC abajo.",
     toSubs: "Ir a suscripciones →",
     modalLink: (tool) => `Contar con los registros de ${tool} de este PC →`,
+    modalLinkClaude:
+      "Contar con los registros de Claude Code de este PC o una exportación de chats de claude.ai →",
     apiValue: (usd) => `Unos ${usd} a precio de API`,
     ratioOver: (times) =>
       `Es ${times}× tu parte mensual de la suscripción: solo el uso en el PC ya la amortiza.`,
@@ -688,7 +697,7 @@ export const es: Widen<typeof ko> = {
     privacy: "Las cifras solo están después de # en el enlace y no se enviaron al servidor.",
     reader: {
       description:
-        "Elige las carpetas de registros de Claude Code, Codex, Cursor o Antigravity de este PC. Tu navegador cuenta solo los momentos en que enviaste instrucciones, en este dispositivo, y rellena los días de uso de los últimos 30 días.",
+        "Elige las carpetas de registros de Claude Code, Codex, Cursor o Antigravity de este PC. Tu navegador cuenta solo los momentos en que enviaste instrucciones, en este dispositivo, y rellena los días de uso de los últimos 30 días. Los chats de claude.ai también se pueden contar con un archivo de exportación (el último recuadro).",
       privacy:
         "Los archivos no se envían al servidor. El contenido de instrucciones y respuestas se descarta al leerlo; solo se guardan las horas. Permite la lectura de la carpeta cuando el navegador lo pida.",
       claude: "Claude Code",
@@ -790,6 +799,8 @@ export const de: Widen<typeof ko> = {
       "Wir haben ihn gestoppt, damit keine alten Zahlen eingetragen werden. Lies deine PC-Daten unten erneut ein.",
     toSubs: "Zu den Abos →",
     modalLink: (tool) => `Aus den ${tool}-Daten dieses PCs zählen →`,
+    modalLinkClaude:
+      "Aus den Claude Code-Daten dieses PCs oder einem claude.ai-Chatexport zählen →",
     apiValue: (usd) => `Etwa ${usd} zu API-Preisen`,
     ratioOver: (times) =>
       `Das ist das ${times}-Fache deines monatlichen Abo-Anteils — schon die PC-Nutzung allein lohnt sich.`,
@@ -800,7 +811,7 @@ export const de: Widen<typeof ko> = {
     privacy: "Die Zahlen stehen nur hinter dem # im Link und wurden nicht an den Server gesendet.",
     reader: {
       description:
-        "Wähl die Datenordner von Claude Code, Codex, Cursor oder Antigravity auf diesem PC. Dein Browser zählt nur die Zeitpunkte, zu denen du Eingaben gesendet hast, auf diesem Gerät, und trägt die Nutzungstage der letzten 30 Tage ein.",
+        "Wähl die Datenordner von Claude Code, Codex, Cursor oder Antigravity auf diesem PC. Dein Browser zählt nur die Zeitpunkte, zu denen du Eingaben gesendet hast, auf diesem Gerät, und trägt die Nutzungstage der letzten 30 Tage ein. Chats auf claude.ai lassen sich ebenfalls zählen, mit einer Exportdatei (letztes Feld).",
       privacy:
         "Dateien werden nicht an den Server gesendet. Inhalte von Eingaben und Antworten werden gleich nach dem Lesen verworfen; nur die Zeitpunkte bleiben. Erlaube das Lesen des Ordners, wenn der Browser fragt.",
       claude: "Claude Code",
@@ -900,6 +911,8 @@ export const pt: Widen<typeof ko> = {
       "Paramos para não registrar números antigos. Leia de novo os registros do PC abaixo.",
     toSubs: "Ir para assinaturas →",
     modalLink: (tool) => `Contar pelos registros do ${tool} neste PC →`,
+    modalLinkClaude:
+      "Contar pelos registros do Claude Code neste PC ou por uma exportação de conversas do claude.ai →",
     apiValue: (usd) => `Cerca de ${usd} pelo preço da API`,
     ratioOver: (times) =>
       `Isso é ${times}× sua parte mensal da assinatura — só o uso no PC já compensa.`,
@@ -910,7 +923,7 @@ export const pt: Widen<typeof ko> = {
     privacy: "Os números ficam só depois do # no link e não foram enviados ao servidor.",
     reader: {
       description:
-        "Escolha as pastas de registros do Claude Code, Codex, Cursor ou Antigravity neste PC. Seu navegador conta só os momentos em que você enviou comandos, neste dispositivo, e preenche os dias de uso dos últimos 30 dias.",
+        "Escolha as pastas de registros do Claude Code, Codex, Cursor ou Antigravity neste PC. Seu navegador conta só os momentos em que você enviou comandos, neste dispositivo, e preenche os dias de uso dos últimos 30 dias. As conversas no claude.ai também podem ser contadas com um arquivo exportado (o último quadro).",
       privacy:
         "Os arquivos não são enviados ao servidor. O conteúdo dos comandos e respostas é descartado ao ser lido; só os horários ficam. Permita a leitura da pasta quando o navegador pedir.",
       claude: "Claude Code",

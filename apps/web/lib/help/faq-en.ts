@@ -27,6 +27,10 @@ export const FAQ_EN: Record<string, { q: string; a: string | ((options: FaqOptio
       q: "How is the cost per use calculated?",
       a: "Your monthly share is divided by the number of times you used it in the last 30 days. For subscriptions split with others only your share counts, and yearly subscriptions are divided into a monthly amount first. Subscriptions you haven't checked in on don't have a usage count, so we don't make up a cost and show “No check-in yet”.",
     },
+    "checkin-auto": {
+      q: "Can check-in numbers be filled in without counting myself?",
+      a: "In the Android app, turn on “Connect phone usage” in Settings and, once 30 days of usage from subscription apps on this phone have built up, it checks in for you. On the web on a PC, open the records screen from the link in the check-in window of a Claude, ChatGPT, Cursor or Google AI subscription, then choose an AI coding tool's record folder or a claude.ai chat export file. The days used are counted and filled into the check-in window. Files aren't sent to a server, and nothing is saved until you confirm. Either way, only what was recorded on that device or in that file is counted, so it can be lower than your real use.",
+    },
     "where-stored": {
       q: "Where are my subscription records stored?",
       a: "By default they're stored only on this device (in the browser or app) and aren't sent to a server. If you log in, your records are also stored in your account and automatically kept in sync with your other logged-in devices.",
