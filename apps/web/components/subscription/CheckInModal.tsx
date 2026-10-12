@@ -171,7 +171,10 @@ export function CheckInModal({
                 {pcService && (
                   <p className="text-center text-xs">
                     <Link href="/pc-usage" className="font-semibold underline">
-                      {t.pcUsage.modalLink(t.pcUsage.tool[pcService])}
+                      {pcService === "claude-pro"
+                        ? // claude.ai 대화 내보내기 파일로도 셀 수 있다(PC 기록 읽기의 마지막 칸).
+                          t.pcUsage.modalLinkClaude
+                        : t.pcUsage.modalLink(t.pcUsage.tool[pcService])}
                     </Link>
                   </p>
                 )}
