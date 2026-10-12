@@ -10,7 +10,7 @@ import { hasPassword, verifyPassword } from "@lib/password";
 import {
   hit,
   retryAfterSeconds,
-  tooManyRequestsMessage,
+  tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { logError } from "@lib/log";
@@ -89,10 +89,7 @@ export async function DELETE(request: NextRequest) {
     const checkKey = `password-check:${account.id}`;
     const wait = retryAfterSeconds(checkKey, PASSWORD_CHECK_FAILURES);
     if (wait > 0) {
-      return NextResponse.json(
-        { error: tooManyRequestsMessage(wait) },
-        { status: 429, headers: { "Retry-After": String(wait) } },
-      );
+      return tooManyRequestsResponse(wait);
     }
     if (!(await verifyPassword(password, account.passwordHash))) {
       hit(checkKey, PASSWORD_CHECK_FAILURES);

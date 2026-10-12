@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "crypto";
 import { and, eq, gt, lt, or } from "drizzle-orm";
 import { getDb } from "./db";
 import { accountSnapshots, accounts, sessions, type Account } from "./schema";
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { isAppOrigin } from "./app-origins";
 import { deleteGmailImportData } from "./gmail-auto-import";
 import { deleteCalendarSyncPlan } from "./calendar-sync";
@@ -274,4 +274,26 @@ export function sessionCookieOptions(expiresAt: Date) {
     path: "/",
     expires: expiresAt,
   };
+}
+
+/** 새 세션을 응답의 쿠키에 싣는다. 웹은 이 쿠키만으로 로그인한다. */
+export function withSessionCookie<T extends NextResponse>(response: T, session: IssuedSession): T {
+  response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
+  return response;
+}
+
+/**
+ * 로그인을 이어 주는 JSON 응답. 쿠키에 세션을 싣고, 앱에서 온 요청이면 본문에도 토큰을 싣는다
+ * (`sessionTokenForApp`). 웹은 쿠키만 받는다.
+ */
+export function sessionJsonResponse(
+  request: NextRequest,
+  session: IssuedSession,
+  body: Record<string, unknown>,
+  init?: ResponseInit,
+): NextResponse {
+  return withSessionCookie(
+    NextResponse.json({ ...body, ...sessionTokenForApp(request, session) }, init),
+    session,
+  );
 }

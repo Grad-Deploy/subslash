@@ -1,20 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validatePassword } from "@subslash/shared";
+import { validatePassword, validatePasswordConfirm } from "@subslash/shared";
 import { databaseUnavailableResponse } from "@lib/db";
 import { hashPassword, verifyPassword } from "@lib/password";
 import {
-  SESSION_COOKIE,
   createSession,
   getAccountBySessionToken,
   readSessionToken,
   replacePassword,
-  sessionCookieOptions,
-  sessionTokenForApp,
+  sessionJsonResponse,
 } from "@lib/auth-server";
 import {
   hit,
   retryAfterSeconds,
-  tooManyRequestsMessage,
+  tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { logError } from "@lib/log";
@@ -65,10 +63,7 @@ export async function PUT(request: NextRequest) {
     const checkKey = `password-check:${account.id}`;
     const wait = retryAfterSeconds(checkKey, PASSWORD_CHECK_FAILURES);
     if (wait > 0) {
-      return NextResponse.json(
-        { error: tooManyRequestsMessage(wait) },
-        { status: 429, headers: { "Retry-After": String(wait) } },
-      );
+      return tooManyRequestsResponse(wait);
     }
     if (!(await verifyPassword(currentPassword, account.passwordHash))) {
       hit(checkKey, PASSWORD_CHECK_FAILURES);
@@ -84,9 +79,8 @@ export async function PUT(request: NextRequest) {
     if (passwordError) fieldErrors.password = passwordError;
     else if (password === currentPassword)
       fieldErrors.password = "지금 비밀번호와 다른 비밀번호를 정해주세요.";
-    if (!passwordConfirm) fieldErrors.passwordConfirm = "비밀번호를 한 번 더 입력해주세요.";
-    else if (password !== passwordConfirm)
-      fieldErrors.passwordConfirm = "비밀번호가 서로 다릅니다.";
+    const confirmError = validatePasswordConfirm(password, passwordConfirm);
+    if (confirmError) fieldErrors.passwordConfirm = confirmError;
     if (fieldErrors.password || fieldErrors.passwordConfirm) {
       return NextResponse.json({ error: "입력값을 확인해주세요.", fieldErrors }, { status: 400 });
     }
@@ -101,13 +95,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const session = await createSession(account.id);
-    // 앱에서 온 요청이면 본문에도 토큰을 싣는다(sessionTokenForApp). 웹은 쿠키만 받는다.
-    const response = NextResponse.json({
-      status: "changed",
-      ...sessionTokenForApp(request, session),
-    });
-    response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
-    return response;
+    return sessionJsonResponse(request, session, { status: "changed" });
   } catch (error) {
     logError("api/auth/password", error);
     return NextResponse.json(
