@@ -16,6 +16,8 @@ export const ko = {
       "google-ai-pro": "Antigravity",
     },
     days: (days: number) => `PC 기록으로 ${days}일`,
+    toolWeb: "claude.ai",
+    daysFromRecords: (days: number) => `기록으로 ${days}일`,
     perDay: (cost: string) => `하루당 ${cost}`,
     tokens: (tokens: string) => `토큰 ${tokens}개`,
     checkIn: "체크인에 적기",
@@ -93,6 +95,17 @@ export const ko = {
       loginSubscription: "Claude 구독 계정(Pro·Max)",
       loginApiKey: "API 키",
       results: "체크인",
+      claudeWeb: "claude.ai 대화 (내보내기 파일)",
+      webHelp:
+        "웹·앱에서 나눈 대화는 PC 기록에 없어요. claude.ai 설정에서 데이터 내보내기를 요청하고, 받은 conversations 묶음(zip)을 풀어 conversations.json을 고르세요. 내가 보낸 시각만 세고 대화 내용은 읽자마자 버려요. 파일은 서버로 보내지 않아요.",
+      webReadFailed:
+        "claude.ai 대화 내보내기 파일로 읽지 못했어요. 압축을 푼 conversations.json을 골랐는지 확인해 주세요.",
+      webUntilExport: "내보낸 때까지의 대화만 들어 있어요. 그 뒤에 쓴 날은 빠져 있어요.",
+      webQuestion: "이 파일은 Claude 구독(Pro·Max) 계정의 것인가요?",
+      webHint:
+        "내보내기 파일에는 요금제가 없어서 물어요. 무료 계정의 대화는 구독 사용이 아니라 세지 않아요.",
+      webYes: "네, 구독 계정이에요",
+      webNo: "아니요, 무료 계정이에요",
       appOnly: "PC 브라우저에서 열어 주세요. 이 화면은 PC에 있는 Claude Code·Codex 기록을 읽어요.",
     },
   },
@@ -112,6 +125,8 @@ export const en: Widen<typeof ko> = {
       "google-ai-pro": "Antigravity",
     },
     days: (days) => `${days} ${one(days) ? "day" : "days"} from PC records`,
+    toolWeb: "claude.ai",
+    daysFromRecords: (days) => `${days} ${one(days) ? "day" : "days"} from records`,
     perDay: (cost) => `${cost} per day used`,
     tokens: (tokens) => `${tokens} tokens`,
     checkIn: "Check in",
@@ -194,6 +209,17 @@ export const en: Widen<typeof ko> = {
       loginSubscription: "Claude subscription account (Pro/Max)",
       loginApiKey: "API key",
       results: "Check-ins",
+      claudeWeb: "claude.ai chats (export file)",
+      webHelp:
+        "Chats on the web and app aren't in PC records. Request a data export in claude.ai settings, unzip the conversations bundle you receive, and choose conversations.json. Only the times you sent messages are counted, and chat content is discarded as soon as it's read. The file isn't sent to a server.",
+      webReadFailed:
+        "Couldn't read this as a claude.ai chat export. Check that you chose the unzipped conversations.json.",
+      webUntilExport: "It only has chats up to when you exported. Days after that aren't included.",
+      webQuestion: "Is this file from a Claude subscription (Pro/Max) account?",
+      webHint:
+        "The export file doesn't say which plan you're on, so we ask. Chats from a free account aren't subscription use and aren't counted.",
+      webYes: "Yes, a subscription account",
+      webNo: "No, a free account",
       appOnly:
         "Open this on your PC's browser. This page reads the Claude Code and Codex records on your PC.",
     },
@@ -217,6 +243,8 @@ export const zh: Widen<typeof ko> = {
       "只包括这台电脑上的天数。如果也在网页或手机上用过，请在签到时调高数字。确认之前不会保存。",
     tool: PC_TOOLS,
     days: (days) => `电脑记录 ${days} 天`,
+    toolWeb: "claude.ai",
+    daysFromRecords: (days) => `记录中 ${days} 天`,
     perDay: (cost) => `每个使用日 ${cost}`,
     tokens: (tokens) => `${tokens} 个令牌`,
     checkIn: "签到",
@@ -285,6 +313,16 @@ export const zh: Widen<typeof ko> = {
       loginSubscription: "Claude 订阅账户（Pro/Max）",
       loginApiKey: "API 密钥",
       results: "签到",
+      claudeWeb: "claude.ai 对话（导出文件）",
+      webHelp:
+        "在网页和应用中的对话不在电脑记录里。请在 claude.ai 设置中申请导出数据，解压收到的 conversations 压缩包，然后选择 conversations.json。只统计你发送消息的时间，对话内容读取后立即丢弃。文件不会发送到服务器。",
+      webReadFailed:
+        "无法作为 claude.ai 对话导出文件读取。请确认选择的是解压后的 conversations.json。",
+      webUntilExport: "只包含导出之前的对话。之后使用的天数不在其中。",
+      webQuestion: "这个文件来自 Claude 订阅（Pro/Max）账户吗？",
+      webHint: "导出文件里没有套餐信息，所以需要询问。免费账户的对话不算订阅使用，不会统计。",
+      webYes: "是，订阅账户",
+      webNo: "不是，免费账户",
       appOnly: "请在电脑的浏览器中打开。这个页面会读取电脑上的 Claude Code 和 Codex 记录。",
     },
   },
@@ -299,6 +337,8 @@ export const ja: Widen<typeof ko> = {
       "この PC での日数だけです。ウェブやスマホでも使ったなら、チェックインで数を増やしてください。確認するまで保存されません。",
     tool: PC_TOOLS,
     days: (days) => `PC の記録で ${days} 日`,
+    toolWeb: "claude.ai",
+    daysFromRecords: (days) => `記録で ${days} 日`,
     perDay: (cost) => `使った日 1 日あたり ${cost}`,
     tokens: (tokens) => `${tokens} トークン`,
     checkIn: "チェックイン",
@@ -376,6 +416,18 @@ export const ja: Widen<typeof ko> = {
       loginSubscription: "Claude のサブスクアカウント（Pro/Max）",
       loginApiKey: "API キー",
       results: "チェックイン",
+      claudeWeb: "claude.ai のチャット（エクスポートファイル）",
+      webHelp:
+        "ウェブやアプリでのチャットは PC の記録にありません。claude.ai の設定でデータのエクスポートを申請し、届いた conversations のまとめ（zip）を展開して conversations.json を選んでください。送信した時刻だけを数え、チャットの内容は読み取ったらすぐに捨てます。ファイルはサーバーに送りません。",
+      webReadFailed:
+        "claude.ai のチャットのエクスポートファイルとして読めませんでした。展開した conversations.json を選んだか確認してください。",
+      webUntilExport:
+        "エクスポートした時点までのチャットだけが入っています。その後に使った日は含まれません。",
+      webQuestion: "このファイルは Claude のサブスク（Pro/Max）アカウントのものですか？",
+      webHint:
+        "エクスポートファイルにはプランの情報がないので確認します。無料アカウントのチャットはサブスクの利用ではないので数えません。",
+      webYes: "はい、サブスクのアカウントです",
+      webNo: "いいえ、無料アカウントです",
       appOnly:
         "PC のブラウザで開いてください。このページは PC の Claude Code と Codex の記録を読みます。",
     },
@@ -391,6 +443,8 @@ export const vi: Widen<typeof ko> = {
       "Chỉ tính các ngày trên PC này. Nếu bạn cũng dùng trên web hay điện thoại, hãy tăng số khi check-in. Chưa lưu gì cho đến khi bạn xác nhận.",
     tool: PC_TOOLS,
     days: (days) => `${days} ngày theo dữ liệu PC`,
+    toolWeb: "claude.ai",
+    daysFromRecords: (days) => `${days} ngày theo dữ liệu`,
     perDay: (cost) => `${cost} mỗi ngày dùng`,
     tokens: (tokens) => `${tokens} token`,
     checkIn: "Check-in",
@@ -467,6 +521,18 @@ export const vi: Widen<typeof ko> = {
       loginSubscription: "Tài khoản đăng ký Claude (Pro/Max)",
       loginApiKey: "Khóa API",
       results: "Check-in",
+      claudeWeb: "Trò chuyện claude.ai (tệp xuất)",
+      webHelp:
+        "Các cuộc trò chuyện trên web và ứng dụng không có trong dữ liệu PC. Hãy yêu cầu xuất dữ liệu trong phần cài đặt claude.ai, giải nén gói conversations nhận được rồi chọn conversations.json. Chỉ đếm thời điểm bạn gửi tin nhắn, nội dung trò chuyện bị bỏ ngay khi đọc. Tệp không được gửi lên máy chủ.",
+      webReadFailed:
+        "Không đọc được tệp này như tệp xuất trò chuyện claude.ai. Hãy kiểm tra bạn đã chọn conversations.json sau khi giải nén.",
+      webUntilExport:
+        "Chỉ có các cuộc trò chuyện đến lúc bạn xuất. Những ngày dùng sau đó không có trong tệp.",
+      webQuestion: "Tệp này có phải của tài khoản đăng ký Claude (Pro/Max) không?",
+      webHint:
+        "Tệp xuất không ghi gói bạn dùng nên chúng tôi hỏi. Trò chuyện từ tài khoản miễn phí không phải là dùng gói đăng ký nên không được đếm.",
+      webYes: "Có, tài khoản đăng ký",
+      webNo: "Không, tài khoản miễn phí",
       appOnly:
         "Hãy mở trên trình duyệt của PC. Trang này đọc dữ liệu Claude Code và Codex trên PC của bạn.",
     },
@@ -482,6 +548,8 @@ export const fr: Widen<typeof ko> = {
       "Seuls les jours sur ce PC sont comptés. Si vous l'utilisez aussi sur le web ou le téléphone, augmentez le chiffre lors du check-in. Rien n'est enregistré avant votre confirmation.",
     tool: PC_TOOLS,
     days: (days) => `${days} jour${pcPl(days, "", "s")} selon le PC`,
+    toolWeb: "claude.ai",
+    daysFromRecords: (days) => `${days} jour${pcPl(days, "", "s")} selon les données`,
     perDay: (cost) => `${cost} par jour d'utilisation`,
     tokens: (tokens) => `${tokens} jetons`,
     checkIn: "Check-in",
@@ -565,6 +633,18 @@ export const fr: Widen<typeof ko> = {
       loginSubscription: "Compte d'abonnement Claude (Pro/Max)",
       loginApiKey: "Clé API",
       results: "Check-ins",
+      claudeWeb: "Conversations claude.ai (fichier d'export)",
+      webHelp:
+        "Les conversations sur le web et l'appli ne figurent pas dans les données du PC. Demandez un export des données dans les réglages de claude.ai, décompressez l'archive conversations reçue et choisissez conversations.json. Seules les heures d'envoi de vos messages sont comptées ; le contenu des conversations est supprimé dès sa lecture. Le fichier n'est pas envoyé à un serveur.",
+      webReadFailed:
+        "Impossible de lire ce fichier comme un export de conversations claude.ai. Vérifiez que vous avez choisi conversations.json décompressé.",
+      webUntilExport:
+        "Il ne contient que les conversations jusqu'à l'export. Les jours suivants n'y figurent pas.",
+      webQuestion: "Ce fichier provient-il d'un compte d'abonnement Claude (Pro/Max) ?",
+      webHint:
+        "Le fichier d'export n'indique pas votre formule, d'où la question. Les conversations d'un compte gratuit ne sont pas une utilisation de l'abonnement et ne sont pas comptées.",
+      webYes: "Oui, un compte abonné",
+      webNo: "Non, un compte gratuit",
       appOnly:
         "Ouvrez ceci dans le navigateur de votre PC. Cette page lit les données Claude Code et Codex de votre PC.",
     },
@@ -580,6 +660,8 @@ export const es: Widen<typeof ko> = {
       "Solo cuentan los días en este PC. Si también lo usaste en la web o en el móvil, sube el número al registrar. No se guarda nada hasta que confirmes.",
     tool: PC_TOOLS,
     days: (days) => `${days} día${pcPl(days, "", "s")} según el PC`,
+    toolWeb: "claude.ai",
+    daysFromRecords: (days) => `${days} día${pcPl(days, "", "s")} según los registros`,
     perDay: (cost) => `${cost} por día de uso`,
     tokens: (tokens) => `${tokens} tokens`,
     checkIn: "Registrar",
@@ -663,6 +745,18 @@ export const es: Widen<typeof ko> = {
       loginSubscription: "Cuenta de suscripción de Claude (Pro/Max)",
       loginApiKey: "Clave de API",
       results: "Registros",
+      claudeWeb: "Chats de claude.ai (archivo de exportación)",
+      webHelp:
+        "Los chats en la web y la app no están en los registros del PC. Solicita una exportación de datos en los ajustes de claude.ai, descomprime el paquete conversations que recibas y elige conversations.json. Solo se cuentan las horas en que enviaste mensajes y el contenido de los chats se descarta en cuanto se lee. El archivo no se envía a ningún servidor.",
+      webReadFailed:
+        "No se pudo leer como una exportación de chats de claude.ai. Comprueba que elegiste conversations.json descomprimido.",
+      webUntilExport:
+        "Solo incluye los chats hasta el momento de la exportación. Los días posteriores no están incluidos.",
+      webQuestion: "¿Este archivo es de una cuenta con suscripción a Claude (Pro/Max)?",
+      webHint:
+        "El archivo de exportación no indica tu plan, por eso lo preguntamos. Los chats de una cuenta gratuita no son uso de la suscripción y no se cuentan.",
+      webYes: "Sí, una cuenta con suscripción",
+      webNo: "No, una cuenta gratuita",
       appOnly:
         "Ábrelo en el navegador de tu PC. Esta página lee los registros de Claude Code y Codex de tu PC.",
     },
@@ -678,6 +772,8 @@ export const de: Widen<typeof ko> = {
       "Nur Tage auf diesem PC zählen. Wenn du es auch im Web oder auf dem Handy genutzt hast, erhöh die Zahl beim Eintragen. Nichts wird gespeichert, bis du bestätigst.",
     tool: PC_TOOLS,
     days: (days) => `${days} ${pcPl(days, "Tag", "Tage")} laut PC`,
+    toolWeb: "claude.ai",
+    daysFromRecords: (days) => `${days} ${pcPl(days, "Tag", "Tage")} laut Daten`,
     perDay: (cost) => `${cost} pro Nutzungstag`,
     tokens: (tokens) => `${tokens} Tokens`,
     checkIn: "Eintragen",
@@ -760,6 +856,17 @@ export const de: Widen<typeof ko> = {
       loginSubscription: "Claude-Abokonto (Pro/Max)",
       loginApiKey: "API-Schlüssel",
       results: "Einträge",
+      claudeWeb: "claude.ai-Chats (Exportdatei)",
+      webHelp:
+        "Chats im Web und in der App stehen nicht in den PC-Daten. Fordere in den Einstellungen von claude.ai einen Datenexport an, entpacke das erhaltene conversations-Paket und wähl conversations.json. Gezählt werden nur die Zeitpunkte, zu denen du Nachrichten gesendet hast; der Chatinhalt wird sofort nach dem Lesen verworfen. Die Datei wird an keinen Server gesendet.",
+      webReadFailed:
+        "Die Datei ließ sich nicht als claude.ai-Chatexport lesen. Prüf, ob du die entpackte conversations.json gewählt hast.",
+      webUntilExport: "Sie enthält nur Chats bis zum Export. Spätere Tage sind nicht enthalten.",
+      webQuestion: "Stammt diese Datei von einem Claude-Abokonto (Pro/Max)?",
+      webHint:
+        "Die Exportdatei nennt deinen Tarif nicht, deshalb fragen wir. Chats eines kostenlosen Kontos sind keine Abo-Nutzung und werden nicht gezählt.",
+      webYes: "Ja, ein Abokonto",
+      webNo: "Nein, ein kostenloses Konto",
       appOnly:
         "Öffne das im Browser deines PCs. Diese Seite liest die Claude-Code- und Codex-Daten auf deinem PC.",
     },
@@ -775,6 +882,8 @@ export const pt: Widen<typeof ko> = {
       "Só contam os dias neste PC. Se também usou na web ou no celular, aumente o número ao registrar. Nada é salvo até você confirmar.",
     tool: PC_TOOLS,
     days: (days) => `${days} dia${pcPl(days, "", "s")} pelo PC`,
+    toolWeb: "claude.ai",
+    daysFromRecords: (days) => `${days} dia${pcPl(days, "", "s")} pelos registros`,
     perDay: (cost) => `${cost} por dia de uso`,
     tokens: (tokens) => `${tokens} tokens`,
     checkIn: "Registrar",
@@ -856,6 +965,18 @@ export const pt: Widen<typeof ko> = {
       loginSubscription: "Conta de assinatura do Claude (Pro/Max)",
       loginApiKey: "Chave de API",
       results: "Registros",
+      claudeWeb: "Conversas do claude.ai (arquivo exportado)",
+      webHelp:
+        "As conversas na web e no app não estão nos registros do PC. Peça a exportação de dados nas configurações do claude.ai, descompacte o pacote conversations recebido e escolha conversations.json. Só contamos os horários em que você enviou mensagens, e o conteúdo das conversas é descartado assim que é lido. O arquivo não é enviado a nenhum servidor.",
+      webReadFailed:
+        "Não foi possível ler como uma exportação de conversas do claude.ai. Confira se você escolheu o conversations.json descompactado.",
+      webUntilExport:
+        "Só inclui conversas até o momento da exportação. Os dias depois disso não estão incluídos.",
+      webQuestion: "Este arquivo é de uma conta com assinatura do Claude (Pro/Max)?",
+      webHint:
+        "O arquivo exportado não informa seu plano, por isso perguntamos. Conversas de uma conta gratuita não são uso da assinatura e não são contadas.",
+      webYes: "Sim, conta com assinatura",
+      webNo: "Não, conta gratuita",
       appOnly:
         "Abra no navegador do seu PC. Esta página lê os registros do Claude Code e do Codex no seu PC.",
     },

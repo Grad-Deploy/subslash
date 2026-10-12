@@ -9,6 +9,7 @@
  *
  * - types: 도구↔구독 표와 공통 타입
  * - claudeCode·codex: JSONL 세션 기록
+ * - claudeExport: claude.ai 대화 내보내기(웹·앱 대화, PC 기록이 아니다)
  * - sqliteTools: Cursor·Antigravity의 SQLite 기록(SQL과 셈)
  * - slim: 웹이 줄을 읽자마자 셈에 쓰는 칸만 남기기
  * - summary: 최근 N일 요약과 API 환산
@@ -18,6 +19,7 @@ export * from "./types";
 export { parseCliLine } from "./values";
 export * from "./claudeCode";
 export * from "./codex";
+export * from "./claudeExport";
 export * from "./slim";
 export * from "./sqliteTools";
 export * from "./summary";
