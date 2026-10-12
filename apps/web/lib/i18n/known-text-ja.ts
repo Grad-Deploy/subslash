@@ -1,15 +1,22 @@
+import {
+  nameIn,
+  type BackupFieldNames,
+  type BackupListNames,
+  type KnownTextRender,
+  type WaitUnitNames,
+} from "./known-text-types";
+
 /**
  * `known-text`의 일본어. 규칙(정규식)은 `known-text`의 영어 표에
  * 한 벌만 있고, 여기는 **같은 순서의** 번역 함수만 둔다 — 순서·개수가 어긋나면 테스트가 잡는다.
  */
-type Render = (...groups: string[]) => string;
 
-const BACKUP_LISTS: Record<string, string> = {
+const BACKUP_LISTS: BackupListNames = {
   구독: "サブスク",
   "체크인 기록": "チェックイン記録",
   "연동 계정": "連携アカウント",
 };
-const BACKUP_FIELDS: Record<string, string> = {
+const BACKUP_FIELDS: BackupFieldNames = {
   형식: "形式",
   ID: "ID",
   이름: "名前",
@@ -56,9 +63,9 @@ const BACKUP_FIELDS: Record<string, string> = {
   "이메일/ID": "メール/ID",
   색: "色",
 };
-const UNITS: Record<string, string> = { 초: "秒", 분: "分", 시간: "時間" };
+const UNITS: WaitUnitNames = { 초: "秒", 분: "分", 시간: "時間" };
 
-export const KNOWN_TEXT_JA: Render[] = [
+export const KNOWN_TEXT_JA: KnownTextRender[] = [
   // 아이디
   () => "ユーザー名を入力してください。",
   (min, max) => `ユーザー名は ${min}〜${max} 文字で入力してください。`,
@@ -114,7 +121,7 @@ export const KNOWN_TEXT_JA: Render[] = [
   (email) =>
     `${email} に確認メールを送りました。受信トレイにない場合は迷惑メールフォルダも確認してください。`,
   (n, unit) =>
-    `このアドレスへのメール送信が多すぎます。${n} ${UNITS[unit] ?? unit}後にもう一度送れます。`,
+    `このアドレスへのメール送信が多すぎます。${n} ${nameIn(UNITS, unit)}後にもう一度送れます。`,
   () => "このサーバーではメール送信が設定されていないため、確認メールを送れませんでした。",
   () => "確認メールを送れませんでした。しばらくしてからもう一度送ってください。",
   () => "確認メールを送れませんでした。",
@@ -122,7 +129,7 @@ export const KNOWN_TEXT_JA: Render[] = [
   (email, m) =>
     `${email} にパスワード再設定メールを送りました。リンクは ${m} 分間、1 回だけ使えます。受信トレイにない場合は迷惑メールフォルダも確認してください。`,
   (n, unit) =>
-    `このアドレスへのメール送信が多すぎます。${n} ${UNITS[unit] ?? unit}後にもう一度リクエストできます。`,
+    `このアドレスへのメール送信が多すぎます。${n} ${nameIn(UNITS, unit)}後にもう一度リクエストできます。`,
   () => "このサーバーではメール送信が設定されていないため、再設定メールを送れませんでした。",
   () => "再設定メールを送れませんでした。しばらくしてからもう一度リクエストしてください。",
   () => "再設定メールを送れませんでした。",
@@ -202,7 +209,7 @@ export const KNOWN_TEXT_JA: Render[] = [
     "このアプリより新しい形式のバックアップです。ページを再読み込みしてからもう一度お試しください。",
   () => "バックアップファイルにはサブスク・チェックイン・連携アカウントの一覧がすべて必要です。",
   (list, index, field) =>
-    `${BACKUP_LISTS[list] ?? list}の ${index} 番目の項目の「${BACKUP_FIELDS[field] ?? field}」が正しくありません。`,
+    `${nameIn(BACKUP_LISTS, list)}の ${index} 番目の項目の「${nameIn(BACKUP_FIELDS, field)}」が正しくありません。`,
   (index) => `${index} 番目のサブスクの ID がほかのサブスクと重複しています。`,
   () => "為替レートの設定が正しくありません。",
 ];

@@ -1,15 +1,22 @@
+import {
+  nameIn,
+  type BackupFieldNames,
+  type BackupListNames,
+  type KnownTextRender,
+  type WaitUnitNames,
+} from "./known-text-types";
+
 /**
  * `known-text`의 스페인어. 규칙(정규식)은 `known-text`의 영어 표에
  * 한 벌만 있고, 여기는 **같은 순서의** 번역 함수만 둔다 — 순서·개수가 어긋나면 테스트가 잡는다.
  */
-type Render = (...groups: string[]) => string;
 
-const BACKUP_LISTS: Record<string, string> = {
+const BACKUP_LISTS: BackupListNames = {
   구독: "la suscripción",
   "체크인 기록": "el registro de uso",
   "연동 계정": "la cuenta vinculada",
 };
-const BACKUP_FIELDS: Record<string, string> = {
+const BACKUP_FIELDS: BackupFieldNames = {
   형식: "formato",
   ID: "ID",
   이름: "nombre",
@@ -56,9 +63,9 @@ const BACKUP_FIELDS: Record<string, string> = {
   "이메일/ID": "correo/ID",
   색: "color",
 };
-const UNITS: Record<string, string> = { 초: "segundos", 분: "minutos", 시간: "horas" };
+const UNITS: WaitUnitNames = { 초: "segundos", 분: "minutos", 시간: "horas" };
 
-export const KNOWN_TEXT_ES: Render[] = [
+export const KNOWN_TEXT_ES: KnownTextRender[] = [
   // 아이디
   () => "Escribe un nombre de usuario.",
   (min, max) => `El nombre de usuario debe tener entre ${min} y ${max} caracteres.`,
@@ -115,7 +122,7 @@ export const KNOWN_TEXT_ES: Render[] = [
   (email) =>
     `Enviamos un correo de confirmación a ${email}. Si no está en la bandeja de entrada, revisa el spam.`,
   (n, unit) =>
-    `Se han enviado correos a esta dirección con demasiada frecuencia. Podrás reenviar en ${n} ${UNITS[unit] ?? unit}.`,
+    `Se han enviado correos a esta dirección con demasiada frecuencia. Podrás reenviar en ${n} ${nameIn(UNITS, unit)}.`,
   () =>
     "El envío de correos no está configurado en este servidor, así que no se pudo enviar la confirmación.",
   () => "No se pudo enviar el correo de confirmación. Inténtalo de nuevo en un momento.",
@@ -124,7 +131,7 @@ export const KNOWN_TEXT_ES: Render[] = [
   (email, m) =>
     `Enviamos un correo para restablecer la contraseña a ${email}. El enlace solo se puede usar una vez durante ${m} minutos. Si no está en la bandeja de entrada, revisa el spam.`,
   (n, unit) =>
-    `Se han enviado correos a esta dirección con demasiada frecuencia. Podrás volver a pedirlo en ${n} ${UNITS[unit] ?? unit}.`,
+    `Se han enviado correos a esta dirección con demasiada frecuencia. Podrás volver a pedirlo en ${n} ${nameIn(UNITS, unit)}.`,
   () =>
     "El envío de correos no está configurado en este servidor, así que no se pudo enviar el correo de restablecimiento.",
   () => "No se pudo enviar el correo de restablecimiento. Vuelve a pedirlo en un momento.",
@@ -206,7 +213,7 @@ export const KNOWN_TEXT_ES: Render[] = [
   () =>
     "El archivo de copia debe incluir las listas de suscripciones, registros y cuentas vinculadas.",
   (list, index, field) =>
-    `El campo «${BACKUP_FIELDS[field] ?? field}» de ${BACKUP_LISTS[list] ?? list} n.º ${index} no es válido.`,
+    `El campo «${nameIn(BACKUP_FIELDS, field)}» de ${nameIn(BACKUP_LISTS, list)} n.º ${index} no es válido.`,
   (index) => `La suscripción n.º ${index} tiene el mismo ID que otra.`,
   () => "El ajuste del tipo de cambio no es válido.",
 ];

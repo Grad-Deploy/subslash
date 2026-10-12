@@ -64,14 +64,25 @@ export function calendarEligible(entries: CalendarEntry[]): CalendarEntry[] {
   );
 }
 
+/** 주소의 성격(`getCancelUrlKind`)마다 해지 안내 문구를 고른다 — 화면과 같게 나눈다. */
+function cancelNotesByKind(
+  notes: Record<"direct" | "entry" | "unknown", (url: string) => string>,
+): (url: string) => string {
+  return (url) => notes[getCancelUrlKind(url)](url);
+}
+
 /**
  * 일정 메모 문구. 캘린더 이름(`CALENDAR_NAMES`)처럼 웹 앱이 아는 언어마다 하나다. 해지 안내(`cancel`)는 한국어·영어가
- * 공유 코드(`cancelNoteFor`)에 있어 그 밖의 언어만 둔다 — 주소의 성격에 따라 문구를 나누는 것은 같다.
+ * 공유 코드(`cancelNoteFor`)에 있어 그것을 부르고, 그 밖의 언어는 여기 둔다. 언어마다 꼭 채워야 해서, 웹 앱 언어를
+ * 더하면 빠진 해지 안내가 타입 오류로 드러난다.
  */
-type CancelNotes = Record<"direct" | "entry" | "unknown", (url: string) => string>;
 const EVENT_TEXT: Record<
   AppsScriptLocale,
-  { billingDay: (name: string) => string; detail: (url: string) => string; cancel?: CancelNotes }
+  {
+    billingDay: (name: string) => string;
+    detail: (url: string) => string;
+    cancel: (url: string) => string | null;
+  }
 > = {
   ko: {
     billingDay: (name) =>
@@ -79,6 +90,7 @@ const EVENT_TEXT: Record<
     detail: (url) =>
       `구독 보기·수정: ${url}
 (이 구독을 등록한 기기에서 열거나, 로그인해 두면 다른 기기에서도 보입니다)`,
+    cancel: (url) => cancelNoteFor(url, "ko"),
   },
   en: {
     billingDay: (name) =>
@@ -86,19 +98,20 @@ const EVENT_TEXT: Record<
     detail: (url) =>
       `View or edit the subscription: ${url}
 (Open it on the device where you registered it, or log in to see it on other devices too)`,
+    cancel: (url) => cancelNoteFor(url, "en"),
   },
   zh: {
     billingDay: (name) =>
       `今天是 ${name} 的扣款日。回顾一下过去 30 天用了几次，不划算的话现在就退订吧。`,
     detail: (url) => `查看或修改订阅：${url}
 （请在登记这个订阅的设备上打开，登录后在其他设备上也能看到）`,
-    cancel: {
+    cancel: cancelNotesByKind({
       direct: (url) => `退订（已确认的退订页面）：${url}`,
       entry: (url) => `前往退订：${url}
 （这是服务首页或账户页面，不是退订页面。请从那里找到退订菜单。）`,
       unknown: (url) => `前往退订：${url}
 （这是你自己填写的地址，尚未确认会打开哪里。）`,
-    },
+    }),
   },
   ja: {
     billingDay: (name) =>
@@ -106,13 +119,13 @@ const EVENT_TEXT: Record<
     detail: (url) =>
       `サブスクを見る・直す: ${url}
 （このサブスクを登録した端末で開くか、ログインしておけばほかの端末でも見られます）`,
-    cancel: {
+    cancel: cancelNotesByKind({
       direct: (url) => `解約する（確認済みの解約ページ）: ${url}`,
       entry: (url) => `解約しに行く: ${url}
 （解約ページではなく、サービスのトップやアカウントのページです。そこから解約メニューを探してください。）`,
       unknown: (url) => `解約しに行く: ${url}
 （自分で入力したアドレスです。どこにつながるかは確認していません。）`,
-    },
+    }),
   },
   vi: {
     billingDay: (name) =>
@@ -120,13 +133,13 @@ const EVENT_TEXT: Record<
     detail: (url) =>
       `Xem hoặc sửa gói: ${url}
 (Mở trên thiết bị đã đăng ký gói này, hoặc đăng nhập để xem trên thiết bị khác)`,
-    cancel: {
+    cancel: cancelNotesByKind({
       direct: (url) => `Hủy (trang hủy đã xác nhận): ${url}`,
       entry: (url) => `Đi đến chỗ hủy: ${url}
 (Đây là trang chủ hoặc trang tài khoản của dịch vụ, không phải trang hủy. Hãy tìm menu hủy từ đó.)`,
       unknown: (url) => `Đi đến chỗ hủy: ${url}
 (Địa chỉ bạn tự nhập. Chưa kiểm tra nó dẫn đến đâu.)`,
-    },
+    }),
   },
   fr: {
     billingDay: (name) =>
@@ -134,13 +147,13 @@ const EVENT_TEXT: Record<
     detail: (url) =>
       `Voir ou modifier l'abonnement : ${url}
 (Ouvrez-le sur l'appareil où vous l'avez ajouté, ou connectez-vous pour le voir sur vos autres appareils)`,
-    cancel: {
+    cancel: cancelNotesByKind({
       direct: (url) => `Résilier (page de résiliation vérifiée) : ${url}`,
       entry: (url) => `Aller résilier : ${url}
 (C'est l'accueil ou la page de compte du service, pas la page de résiliation. Cherchez le menu de résiliation à partir de là.)`,
       unknown: (url) => `Aller résilier : ${url}
 (Adresse saisie par vous. Sa destination n'a pas été vérifiée.)`,
-    },
+    }),
   },
   es: {
     billingDay: (name) =>
@@ -148,13 +161,13 @@ const EVENT_TEXT: Record<
     detail: (url) =>
       `Ver o editar la suscripción: ${url}
 (Ábrela en el dispositivo donde la añadiste, o inicia sesión para verla en otros dispositivos)`,
-    cancel: {
+    cancel: cancelNotesByKind({
       direct: (url) => `Cancelar (página de cancelación comprobada): ${url}`,
       entry: (url) => `Ir a cancelar: ${url}
 (Es la página de inicio o de la cuenta del servicio, no la de cancelación. Busca desde ahí el menú de cancelación.)`,
       unknown: (url) => `Ir a cancelar: ${url}
 (Una dirección que escribiste tú. No se ha comprobado adónde lleva.)`,
-    },
+    }),
   },
   de: {
     billingDay: (name) =>
@@ -162,13 +175,13 @@ const EVENT_TEXT: Record<
     detail: (url) =>
       `Abo ansehen oder bearbeiten: ${url}
 (Öffne es auf dem Gerät, auf dem du es eingetragen hast, oder melde dich an, um es auf anderen Geräten zu sehen)`,
-    cancel: {
+    cancel: cancelNotesByKind({
       direct: (url) => `Kündigen (geprüfte Kündigungsseite): ${url}`,
       entry: (url) => `Zum Kündigen: ${url}
 (Das ist die Start- oder Kontoseite des Dienstes, nicht die Kündigungsseite. Such von dort das Kündigungsmenü.)`,
       unknown: (url) => `Zum Kündigen: ${url}
 (Eine selbst eingegebene Adresse. Wohin sie führt, wurde nicht geprüft.)`,
-    },
+    }),
   },
   pt: {
     billingDay: (name) =>
@@ -176,24 +189,15 @@ const EVENT_TEXT: Record<
     detail: (url) =>
       `Ver ou editar a assinatura: ${url}
 (Abra no dispositivo onde você a cadastrou, ou entre na conta para ver em outros dispositivos)`,
-    cancel: {
+    cancel: cancelNotesByKind({
       direct: (url) => `Cancelar (página de cancelamento verificada): ${url}`,
       entry: (url) => `Ir cancelar: ${url}
 (É a página inicial ou da conta do serviço, não a de cancelamento. Procure o menu de cancelamento a partir dela.)`,
       unknown: (url) => `Ir cancelar: ${url}
 (Um endereço que você digitou. Não foi verificado aonde ele leva.)`,
-    },
+    }),
   },
 };
-
-/** 일정 메모의 해지 안내. 주소가 없으면 null이다. */
-function cancelNoteIn(cancelUrl: string | null | undefined, lang: AppsScriptLocale): string | null {
-  if (lang === "ko" || lang === "en") return cancelNoteFor(cancelUrl, lang);
-  const notes = EVENT_TEXT[lang].cancel;
-  if (!cancelUrl || !notes) return null;
-
-  return notes[getCancelUrlKind(cancelUrl)](cancelUrl);
-}
 
 /**
  * 일정 본문. 캘린더 앱은 본문의 주소를 눌러 열 수 있게 보여주므로, 결제일 알림에서 바로 구독을
@@ -208,7 +212,7 @@ export function eventDescription(
   const parts = [text.billingDay(entry.name)];
 
   // 해지하려고 캘린더를 연 사람이 앱을 다시 열지 않아도 되게, 갈 곳을 메모에 적는다.
-  const cancelNote = cancelNoteIn(entry.cancelUrl, lang);
+  const cancelNote = entry.cancelUrl ? text.cancel(entry.cancelUrl) : null;
   if (cancelNote) parts.push(cancelNote);
 
   // 구독 기록은 서버가 아니라 기기에 있다. 등록한 기기가 아니면 열어도 보이지 않으므로 미리
