@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { clientIp, hit, retryAfterSeconds, type RateLimitRule } from "@lib/rate-limit";
+import {
+  clientIp,
+  hit,
+  retryAfterSeconds,
+  tooManyRequestsResponse,
+  type RateLimitRule,
+} from "@lib/rate-limit";
 
 /**
  * AI에게 묻는 API(`/api/ask`·`/api/help-ask`)가 같이 쓰는 제한. 질문은 표·로그에 남기지 않는다.
@@ -36,9 +42,9 @@ export function limitAiRequest(request: Request, scope: string): NextResponse | 
     retryAfterSeconds(dayKey, PER_IP_DAY),
   );
   if (wait > 0) {
-    return NextResponse.json(
-      { error: "질문이 많아 잠시 쉬어 갈게요. 조금 뒤에 다시 물어봐 주세요." },
-      { status: 429, headers: { "Retry-After": String(wait) } },
+    return tooManyRequestsResponse(
+      wait,
+      "질문이 많아 잠시 쉬어 갈게요. 조금 뒤에 다시 물어봐 주세요.",
     );
   }
   hit(shortKey, PER_IP_SHORT);

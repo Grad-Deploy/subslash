@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { isDatabaseConfigured } from "@lib/db";
-import { SESSION_COOKIE, startLoginSession, sessionCookieOptions } from "@lib/auth-server";
+import { startLoginSession, withSessionCookie } from "@lib/auth-server";
 import {
   OAUTH_COOKIE,
   OAuthError,
@@ -95,10 +95,9 @@ export async function GET(
 
     const started = await startLoginSession(account.id);
     if (!started) return fail("server");
-    const { session } = started;
-    const response = NextResponse.redirect(new URL(flow.next, origin));
-    response.cookies.set(SESSION_COOKIE, session.token, sessionCookieOptions(session.expiresAt));
-    return finish(response);
+    return finish(
+      withSessionCookie(NextResponse.redirect(new URL(flow.next, origin)), started.session),
+    );
   } catch (error) {
     if (error instanceof OAuthError) return fail(error.code, error.via);
     logError(`api/auth/oauth/${provider}/callback`, error);

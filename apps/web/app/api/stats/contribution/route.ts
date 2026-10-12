@@ -12,7 +12,7 @@ import {
   clientIp,
   hit,
   retryAfterSeconds,
-  tooManyRequestsMessage,
+  tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { logError } from "@lib/log";
@@ -59,13 +59,6 @@ function closed() {
   return NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
 }
 
-function limited(seconds: number) {
-  return NextResponse.json(
-    { error: tooManyRequestsMessage(seconds) },
-    { status: 429, headers: { "Retry-After": String(seconds) } },
-  );
-}
-
 export async function POST(request: NextRequest) {
   if (!isAnonymousStatsOpen()) return closed();
   const unavailable = databaseUnavailableResponse();
@@ -83,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (token) {
       const key = `stats-update:ip:${ip}`;
       const wait = retryAfterSeconds(key, UPDATES_PER_IP);
-      if (wait > 0) return limited(wait);
+      if (wait > 0) return tooManyRequestsResponse(wait);
       hit(key, UPDATES_PER_IP);
       if (!(await replaceContribution(token, contribution))) {
         // 기록이 지워졌다(오래돼서 정리됐거나 다른 곳에서 그만뒀다). 기기가 새로 참여하게 한다.
@@ -94,7 +87,7 @@ export async function POST(request: NextRequest) {
 
     const key = `stats-new:ip:${ip}`;
     const wait = retryAfterSeconds(key, NEW_PER_IP);
-    if (wait > 0) return limited(wait);
+    if (wait > 0) return tooManyRequestsResponse(wait);
     hit(key, NEW_PER_IP);
     return NextResponse.json({ token: await createContribution(contribution) }, { status: 201 });
   } catch (error) {

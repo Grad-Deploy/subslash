@@ -1,3 +1,5 @@
+import { NextResponse } from "next/server";
+
 /**
  * 같은 요청을 짧은 시간에 너무 많이 받지 않게 막는다(로그인 비밀번호 대입, 남의 주소로 메일 보내기).
  *
@@ -72,4 +74,15 @@ export function tooManyRequestsMessage(seconds: number): string {
   return minutes > 1
     ? `요청이 너무 많습니다. ${minutes}분 뒤에 다시 시도해 주세요.`
     : "요청이 너무 많습니다. 잠시 뒤에 다시 시도해 주세요.";
+}
+
+/** 429 응답. 얼마나 기다릴지를 `Retry-After`로도 알린다. */
+export function tooManyRequestsResponse(
+  seconds: number,
+  message: string = tooManyRequestsMessage(seconds),
+): NextResponse {
+  return NextResponse.json(
+    { error: message },
+    { status: 429, headers: { "Retry-After": String(seconds) } },
+  );
 }

@@ -12,7 +12,7 @@ import {
 import {
   hit,
   retryAfterSeconds,
-  tooManyRequestsMessage,
+  tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { logError } from "@lib/log";
@@ -58,10 +58,7 @@ export async function POST(request: NextRequest) {
     const key = `usage-upload:account:${account.id}`;
     const wait = retryAfterSeconds(key, UPLOADS_PER_ACCOUNT);
     if (wait > 0) {
-      return NextResponse.json(
-        { error: tooManyRequestsMessage(wait) },
-        { status: 429, headers: { "Retry-After": String(wait) } },
-      );
+      return tooManyRequestsResponse(wait);
     }
     hit(key, UPLOADS_PER_ACCOUNT);
 

@@ -212,6 +212,13 @@ export function validatePassword(value: string): string | undefined {
   return undefined;
 }
 
+/** 새 비밀번호를 한 번 더 적은 칸. 가입·비밀번호 변경·재설정이 같은 문구를 쓴다. */
+export function validatePasswordConfirm(password: string, confirm: string): string | undefined {
+  if (!confirm) return "비밀번호를 한 번 더 입력해주세요.";
+  if (password !== confirm) return "비밀번호가 서로 다릅니다.";
+  return undefined;
+}
+
 export function validateAge(value: number | string): string | undefined {
   if (value === "" || value === null || value === undefined) return "나이를 입력해주세요.";
   const age = typeof value === "number" ? value : Number(value);
@@ -252,11 +259,8 @@ export function validateSignup(input: Partial<SignupInput>): {
   const passwordError = validatePassword(password);
   if (passwordError) errors.password = passwordError;
 
-  if (!passwordConfirm) {
-    errors.passwordConfirm = "비밀번호를 한 번 더 입력해주세요.";
-  } else if (password !== passwordConfirm) {
-    errors.passwordConfirm = "비밀번호가 서로 다릅니다.";
-  }
+  const confirmError = validatePasswordConfirm(password, passwordConfirm);
+  if (confirmError) errors.passwordConfirm = confirmError;
 
   // 문자열 "true"나 1은 받지 않는다. 체크박스를 실제로 눌렀다는 값만 인정한다.
   if (input.isOver14 !== true) {
