@@ -21,6 +21,10 @@ export const FAQ_PT: typeof FAQ_EN = {
     q: "Como o custo por uso é calculado?",
     a: "Sua parte mensal é dividida pelo número de usos nos últimos 30 dias. Em assinaturas divididas com outras pessoas só conta a sua parte, e as anuais são primeiro convertidas em valor mensal. Assinaturas sem registro não têm número de usos, então não inventamos um custo e mostramos “Ainda sem registro”.",
   },
+  "checkin-auto": {
+    q: "Dá para preencher os check-ins sem contar eu mesmo?",
+    a: "No app para Android, ative “Conectar uso do celular” nas Configurações; quando houver 30 dias de uso dos apps de assinatura neste celular, o check-in é feito sozinho. Na web pelo PC, abra a tela de leitura dos registros pelo link na janela de check-in de uma assinatura do Claude, ChatGPT, Cursor ou Google AI e escolha a pasta de registros de uma ferramenta de programação com IA ou um arquivo exportado de conversas do claude.ai: os dias de uso são contados e preenchidos na janela de check-in. Os arquivos não são enviados a nenhum servidor e nada é salvo até você confirmar. Em qualquer caso, só conta o que ficou registrado naquele dispositivo ou arquivo, então pode ser menos que o seu uso real.",
+  },
   "where-stored": {
     q: "Onde ficam salvos meus dados de assinaturas?",
     a: "Por padrão, só neste dispositivo (no navegador ou no app), sem envio a servidor. Se você entrar na conta, eles também ficam na sua conta e são sincronizados automaticamente com seus outros dispositivos conectados.",
