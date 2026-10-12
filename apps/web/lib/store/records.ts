@@ -88,6 +88,8 @@ export function buildCheckInLog(
         tokens?: UsageLog["tokens"];
         /** 근거의 USD를 원화 구독과 견줄 때 쓰는 사용자 환율. */
         exchangeRate?: number;
+        /** 체크인한 기기(lib/check-in-device). 모르면 남기지 않는다. */
+        device?: UsageLog["device"] | null;
       }
     | undefined,
   now: Date,
@@ -131,6 +133,7 @@ export function buildCheckInLog(
     ...(options?.source ? { source: options.source } : {}),
     ...(freeTier ? { freeTier } : {}),
     ...(tokens ? { tokens } : {}),
+    ...(options?.device ? { device: options.device } : {}),
   };
   return { log, response: { outcome, riskLevel, costPerUse } };
 }

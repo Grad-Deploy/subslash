@@ -63,6 +63,7 @@ const BACKUP_FIELDS_EN: BackupFieldNames = {
   메모: "memo",
   "무료 요금제로 충분했는지": "free plan answer",
   "토큰 사용량": "token usage",
+  "체크인 기기": "check-in device",
   "다시 살펴볼 날": "review date",
   "해지 기록": "cancellation record",
   "주문 메일 근거": "order email evidence",

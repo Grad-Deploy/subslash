@@ -169,6 +169,14 @@ function checkSubscription(v: unknown) {
   return null;
 }
 
+/** 체크인한 기기(UsageLog.device). */
+const isCheckInDevice = (v: unknown) =>
+  isObject(v) &&
+  oneOf(v.app, ["web", "android", "ios"]) &&
+  oneOf(v.os, ["windows", "mac", "linux", "chromeos", "android", "ios", "other"]) &&
+  typeof v.mobile === "boolean" &&
+  isText(v.id);
+
 /** PC 기록의 토큰 근거(UsageLog.tokens): 토큰 수와 API 환산 금액(모르면 null). */
 const isTokenEvidence = (v: unknown) =>
   isObject(v) && isAmount(v.count) && (v.apiUsd === null || isAmount(v.apiUsd));
@@ -186,6 +194,7 @@ function checkUsageLog(v: unknown) {
   if (!optional(v.metric, isValueMetric)) return "체크인 지표";
   if (!optional(v.freeTier, isFreeTierAnswer)) return "무료 요금제로 충분했는지";
   if (!optional(v.tokens, isTokenEvidence)) return "토큰 사용량";
+  if (!optional(v.device, isCheckInDevice)) return "체크인 기기";
   return null;
 }
 

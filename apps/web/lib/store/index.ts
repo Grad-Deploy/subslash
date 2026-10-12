@@ -34,6 +34,7 @@ import {
   revivedRecord,
 } from "./records";
 import { DEFAULT_ACCOUNT_SYNC, type PersistedState, type SubSlashStore } from "./types";
+import { checkInDevice } from "../check-in-device";
 
 /**
  * 구독 기록 저장소(zustand + localStorage). 이 파일은 액션이 어느 기록을 바꾸는지만 정한다.
@@ -340,7 +341,7 @@ export const useStore = create<SubSlashStore>()(
           const { log, response } = buildCheckInLog(
             sub,
             usageCount,
-            { ...options, exchangeRate: get().getExchangeRate() },
+            { ...options, exchangeRate: get().getExchangeRate(), device: checkInDevice() },
             new Date(),
             crypto.randomUUID(),
           );
