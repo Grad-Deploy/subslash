@@ -4,7 +4,6 @@ import { databaseUnavailableResponse } from "@lib/db";
 import { pruneStaleContributions } from "@lib/stats-server";
 import { isAnonymousStatsOpen, isDeviceUsageOpen } from "@lib/privacy";
 import { pruneDeviceUsage } from "@lib/device-usage-server";
-import { purgeRetiredNotifyData } from "@lib/notify-server";
 import { pruneAbandonedAccounts } from "@lib/account-verification";
 import { pruneExpiredSessions } from "@lib/auth-server";
 import { logError } from "@lib/log";
@@ -40,12 +39,6 @@ export async function GET(request: NextRequest) {
   const now = new Date();
 
   try {
-    // 그만둔 결제 알림 메일의 이메일·구독 사본. 실패해도 다른 정리는 계속한다 — 다음 날 다시 지운다.
-    const purgedNotify = await purgeRetiredNotifyData().catch((error: unknown) => {
-      logError("cron/notify retired notify purge failed", error);
-      return null;
-    });
-
     // 익명 통계의 오래된 참여 기록(방침의 보관 기간). 기능을 열기 전에는 표가 없을 수 있다(마이그레이션은
     // 시작일을 정할 때 적용한다).
     const prunedStats = isAnonymousStatsOpen(now)
@@ -80,7 +73,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      purgedNotify,
       sessionsPruned,
       prunedAccounts,
       prunedStats,

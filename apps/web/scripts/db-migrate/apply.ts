@@ -59,6 +59,13 @@ function tablesState(schema: Schema, tables: string[], requires: string[]) {
   return { state: "missing" as State, detail: `${tables.join(", ")} 없음` };
 }
 
+/** 그만둔 결제 알림 메일의 표(0017에서 지운다). */
+const RETIRED_NOTIFY_TABLES = [
+  "notification_log",
+  "mirrored_subscriptions",
+  "notification_subscribers",
+];
+
 const MIGRATIONS: Migration[] = [
   {
     id: "0011",
@@ -128,6 +135,21 @@ const MIGRATIONS: Migration[] = [
       return /\bcharge_history\b/.test(sql)
         ? { state: "applied", detail: "gmail_discoveries.charge_history 있음" }
         : { state: "missing", detail: "gmail_discoveries.charge_history 없음" };
+    },
+  },
+  {
+    id: "0017",
+    file: "0017_drop_retired_notify.sql",
+    // 표를 만드는 마이그레이션과 반대로, 세 표가 모두 없으면 적용된 것이다.
+    check: (schema) => {
+      const left = RETIRED_NOTIFY_TABLES.filter((t) => schema.tables.has(t));
+      if (left.length === 0) {
+        return { state: "applied", detail: `${RETIRED_NOTIFY_TABLES.join(", ")} 없음` };
+      }
+      if (left.length < RETIRED_NOTIFY_TABLES.length) {
+        return { state: "partial", detail: `${left.join(", ")}만 남음 — 직접 확인이 필요합니다` };
+      }
+      return { state: "missing", detail: `${left.join(", ")} 있음` };
     },
   },
 ];
