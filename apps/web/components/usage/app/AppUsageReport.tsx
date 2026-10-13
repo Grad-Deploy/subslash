@@ -131,7 +131,7 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
   const covered = Math.max(0, ...usages.map((u) => u.totals.coveredDays));
   const since = firstRecordedDay(history);
   const unmappedCount = active.length - mapped.length;
-  const hasYear = months.some((m) => m.ms !== null);
+  const hasYear = months.some((m) => m.value !== null);
 
   const detail = (
     <section className="space-y-4 pt-1" aria-labelledby="usage-heading">

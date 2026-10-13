@@ -206,6 +206,9 @@ export const ko = {
     add: "+ 체크인 하기",
     empty: "아직 체크인 기록이 없어요. 이번 달 이용 횟수를 넣어 보세요.",
     monthRecord: (month: string) => `${month} 사용 기록`,
+    chartTitle: "달별 체크인",
+    chartGap: "점선은 체크인하지 않은 달이에요. 안 쓴 달이 아니라 모르는 달이에요.",
+    chartOtherMetric: (count: number) => `다른 기준으로 센 체크인 ${count}건은 막대에서 뺐어요.`,
     pcTokens: (tokens: string, apiValue: string | null) =>
       `PC 기록: 토큰 ${tokens}개${apiValue ? ` · API 요금으로 ${apiValue}` : ""}`,
   },
@@ -467,6 +470,10 @@ export const en: Widen<typeof ko> = {
     add: "+ Check in",
     empty: "No check-ins yet. Enter how much you used it this month.",
     monthRecord: (month) => `${month} usage`,
+    chartTitle: "Check-ins by month",
+    chartGap: "Dotted bars are months without a check-in. They're unknown, not unused.",
+    chartOtherMetric: (count) =>
+      `${count} ${count === 1 ? "check-in" : "check-ins"} measured another way ${count === 1 ? "is" : "are"} left out of the bars.`,
     pcTokens: (tokens, apiValue) =>
       `PC records: ${tokens} tokens${apiValue ? ` · ${apiValue} at API prices` : ""}`,
   },
@@ -736,6 +743,9 @@ export const zh: Widen<typeof ko> = {
     add: "+ 签到",
     empty: "还没有签到。请输入本月的使用量。",
     monthRecord: (month) => `${month} 使用量`,
+    chartTitle: "按月签到",
+    chartGap: "虚线表示没有签到的月份。那不是没用，而是不知道。",
+    chartOtherMetric: (count) => `${count} 条按其他标准记录的签到未计入柱状图。`,
     pcTokens: (tokens, apiValue) =>
       `电脑记录：${tokens} 个令牌${apiValue ? ` · 按 API 价格 ${apiValue}` : ""}`,
   },
@@ -988,6 +998,10 @@ export const ja: Widen<typeof ko> = {
     add: "+ チェックイン",
     empty: "まだチェックインしていません。今月どれだけ使ったかを入力してください。",
     monthRecord: (month) => `${month} の利用量`,
+    chartTitle: "月ごとのチェックイン",
+    chartGap: "点線はチェックインしていない月です。使わなかった月ではなく、分からない月です。",
+    chartOtherMetric: (count) =>
+      `別の基準で記録したチェックイン ${count} 件はグラフから外しています。`,
     pcTokens: (tokens, apiValue) =>
       `PC の記録: ${tokens} トークン${apiValue ? ` · API 料金で ${apiValue}` : ""}`,
   },
@@ -1244,6 +1258,11 @@ export const vi: Widen<typeof ko> = {
     add: "+ Check-in",
     empty: "Chưa có check-in. Hãy nhập mức dùng tháng này.",
     monthRecord: (month) => `Mức dùng ${month}`,
+    chartTitle: "Check-in theo tháng",
+    chartGap:
+      "Cột nét đứt là tháng chưa check-in. Đó là tháng chưa biết, không phải tháng không dùng.",
+    chartOtherMetric: (count) =>
+      `${count} lần check-in tính theo cách khác không được đưa vào biểu đồ.`,
     pcTokens: (tokens, apiValue) =>
       `Dữ liệu PC: ${tokens} token${apiValue ? ` · ${apiValue} theo giá API` : ""}`,
   },
@@ -1516,6 +1535,11 @@ export const fr: Widen<typeof ko> = {
     add: "+ Check-in",
     empty: "Pas encore de check-in. Indiquez votre utilisation du mois.",
     monthRecord: (month) => `Utilisation de ${month}`,
+    chartTitle: "Check-ins par mois",
+    chartGap:
+      "Les barres en pointillés sont les mois sans check-in : on ne sait pas, ce n'est pas zéro.",
+    chartOtherMetric: (count) =>
+      `${count} check-in${count > 1 ? "s" : ""} mesuré${count > 1 ? "s" : ""} autrement ${count > 1 ? "sont exclus" : "est exclu"} du graphique.`,
     pcTokens: (tokens, apiValue) =>
       `Données du PC : ${tokens} jetons${apiValue ? ` · ${apiValue} au prix de l'API` : ""}`,
   },
@@ -1786,6 +1810,10 @@ export const es: Widen<typeof ko> = {
     add: "+ Registrar",
     empty: "Aún no hay registros. Indica cuánto la usaste este mes.",
     monthRecord: (month) => `Uso de ${month}`,
+    chartTitle: "Check-ins por mes",
+    chartGap: "Las barras punteadas son meses sin check-in: no se sabe, no es que no se usara.",
+    chartOtherMetric: (count) =>
+      `${count} check-in${count === 1 ? "" : "s"} medido${count === 1 ? "" : "s"} de otra forma no ${count === 1 ? "aparece" : "aparecen"} en el gráfico.`,
     pcTokens: (tokens, apiValue) =>
       `Registros del PC: ${tokens} tokens${apiValue ? ` · ${apiValue} a precio de API` : ""}`,
   },
@@ -2057,6 +2085,10 @@ export const de: Widen<typeof ko> = {
     add: "+ Eintragen",
     empty: "Noch keine Einträge. Gib ein, wie viel du es diesen Monat genutzt hast.",
     monthRecord: (month) => `Nutzung ${month}`,
+    chartTitle: "Check-ins nach Monat",
+    chartGap: "Gestrichelte Balken sind Monate ohne Check-in – unbekannt, nicht ungenutzt.",
+    chartOtherMetric: (count) =>
+      `${count} anders gemessene${count === 1 ? "r" : ""} Check-in${count === 1 ? "" : "s"} ${count === 1 ? "ist" : "sind"} nicht im Diagramm.`,
     pcTokens: (tokens, apiValue) =>
       `PC-Daten: ${tokens} Tokens${apiValue ? ` · ${apiValue} zu API-Preisen` : ""}`,
   },
@@ -2325,6 +2357,10 @@ export const pt: Widen<typeof ko> = {
     add: "+ Registrar",
     empty: "Ainda não há registros. Informe quanto usou este mês.",
     monthRecord: (month) => `Uso de ${month}`,
+    chartTitle: "Check-ins por mês",
+    chartGap: "Barras tracejadas são meses sem check-in: não se sabe, não quer dizer que não usou.",
+    chartOtherMetric: (count) =>
+      `${count} check-in${count === 1 ? "" : "s"} medido${count === 1 ? "" : "s"} de outro jeito ${count === 1 ? "ficou" : "ficaram"} fora do gráfico.`,
     pcTokens: (tokens, apiValue) =>
       `Registros do PC: ${tokens} tokens${apiValue ? ` · ${apiValue} pelo preço da API` : ""}`,
   },
