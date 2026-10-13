@@ -23,6 +23,51 @@ export function setFont(ctx: CanvasRenderingContext2D, spec: FontSpec): void {
   }
 }
 
+/**
+ * 금액의 통화 기호와 숫자 사이(em). 큰 금액은 디자인대로 자간을 좁히는데, 그 자간을 기호까지 걸면 ₩가 숫자에 붙는다 —
+ * 기기에 JetBrains Mono가 없어 대체 고정폭 글꼴로 그리면 ₩가 더 좁아 거의 겹쳐 보였다. 그래서 기호는 자간 없이 따로
+ * 그리고 숫자와 이만큼 띄운다.
+ */
+const SYMBOL_GAP = 0.14;
+
+function splitMoney(text: string): [string | null, string] {
+  const match = /^([₩$€¥£])\s?(.+)$/u.exec(text);
+  return match ? [match[1], match[2]] : [null, text];
+}
+
+/** `drawMoney`로 그렸을 때의 폭. */
+export function moneyWidth(ctx: CanvasRenderingContext2D, text: string, spec: FontSpec): number {
+  const [symbol, number] = splitMoney(text);
+  setFont(ctx, spec);
+  const numberWidth = ctx.measureText(number).width;
+  if (!symbol) return numberWidth;
+  setFont(ctx, { ...spec, tracking: 0 });
+  return ctx.measureText(symbol).width + spec.size * SYMBOL_GAP + numberWidth;
+}
+
+/** 금액("₩37,111")을 그린다. 기호는 자간 없이, 숫자와 `SYMBOL_GAP`만큼 띄운다. */
+export function drawMoney(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  baseline: number,
+  spec: FontSpec & { color: string },
+  align: CanvasTextAlign = "left",
+): void {
+  const [symbol, number] = splitMoney(text);
+  const width = moneyWidth(ctx, text, spec);
+  let left = align === "right" ? x - width : align === "center" ? x - width / 2 : x;
+  ctx.fillStyle = spec.color;
+  ctx.textAlign = "left";
+  if (symbol) {
+    setFont(ctx, { ...spec, tracking: 0 });
+    ctx.fillText(symbol, left, baseline);
+    left += ctx.measureText(symbol).width + spec.size * SYMBOL_GAP;
+  }
+  setFont(ctx, spec);
+  ctx.fillText(number, left, baseline);
+}
+
 /** 폭을 넘으면 말줄임표로 자른다. */
 export function fit(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
   if (ctx.measureText(text).width <= maxWidth) return text;
@@ -149,6 +194,23 @@ export class Column {
       ctx.textAlign = spec.align ?? "left";
       ctx.fillText(value, x, top + baseline);
     });
+    this.y += lineHeight;
+  }
+
+  /** 금액 한 줄(`drawMoney`). */
+  money(
+    value: string,
+    spec: FontSpec & { color: string; align?: CanvasTextAlign; lineHeight?: number },
+  ): void {
+    const lineHeight = spec.lineHeight ?? spec.size * 1.3;
+    const baseline = this.y + (lineHeight + spec.size * 0.72) / 2;
+    const x =
+      spec.align === "right"
+        ? this.x + this.width
+        : spec.align === "center"
+          ? this.x + this.width / 2
+          : this.x;
+    this.ops.push((ctx, top) => drawMoney(ctx, value, x, top + baseline, spec, spec.align));
     this.y += lineHeight;
   }
 
