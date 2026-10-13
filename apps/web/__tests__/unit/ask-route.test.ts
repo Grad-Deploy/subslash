@@ -9,14 +9,20 @@ const ENV = {
   ANTHROPIC_API_KEY: "k",
 };
 
-function ask(question: unknown, ip = "1.2.3.4") {
+function ask(question: unknown, ip = "1.2.3.4", history?: unknown) {
   return POST(
     new Request("http://localhost/api/ask", {
       method: "POST",
       headers: { "content-type": "application/json", "x-forwarded-for": ip },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify(history === undefined ? { question } : { question, history }),
     }) as never,
   );
+}
+
+/** AI에 보낸 사용자 메시지. */
+function sentMessage(call: number): string {
+  const init = upstream.mock.calls[call][1] as RequestInit;
+  return JSON.parse(String(init.body)).messages[0].content;
 }
 
 const toolUse = (name: string, input: object = {}) =>
@@ -89,5 +95,36 @@ describe("POST /api/ask", () => {
       call: { tool: "spendTotal", args: { period: "month" } },
       cached: false,
     });
+  });
+
+  it("앞선 턴은 질문과 고른 호출만 AI에 함께 보내고, 꼬리 질문의 캐시는 앞선 턴마다 따로 둔다", async () => {
+    upstream.mockResolvedValue(toolUse("spendTotal", { period: "year" }));
+    const monthly = [
+      { question: "한 달에 얼마?", call: { tool: "spendTotal", args: { period: "month" } } },
+    ];
+    expect((await ask("그럼 1년이면?", "1.2.3.4", monthly)).status).toBe(200);
+    expect(sentMessage(0)).toContain('"한 달에 얼마?" → spendTotal {"period":"month"}');
+    expect(sentMessage(0)).toContain("지금 질문: 그럼 1년이면?");
+
+    // 같은 꼬리 질문이라도 앞선 턴이 다르면 다른 질문이다.
+    const ott = [
+      { question: "OTT에 얼마?", call: { tool: "spendByCategory", args: { category: "ott" } } },
+    ];
+    await ask("그럼 1년이면?", "1.2.3.4", ott);
+    expect(upstream).toHaveBeenCalledTimes(2);
+    await ask("그럼 1년이면?", "1.2.3.4", monthly);
+    expect(upstream).toHaveBeenCalledTimes(2);
+  });
+
+  it("앞선 턴이 틀린 모양이거나 너무 많으면 버리고 지금 질문만 보낸다", async () => {
+    const bad = [{ question: "x", call: { tool: "deleteAllSubscriptions" } }];
+    expect((await ask("안 쓰는 구독", "1.2.3.4", bad)).status).toBe(200);
+    expect(sentMessage(0)).toBe("안 쓰는 구독");
+    const many = Array.from({ length: 4 }, (_, i) => ({
+      question: `q${i}`,
+      call: { tool: "lowUsage" },
+    }));
+    await ask("겹치는 구독", "1.2.3.4", many);
+    expect(sentMessage(1)).toBe("겹치는 구독");
   });
 });
