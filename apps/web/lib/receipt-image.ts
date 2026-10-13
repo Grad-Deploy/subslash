@@ -7,12 +7,17 @@ import {
   receiptNumber,
   receiptPeriodSuffix,
 } from "./receipt-view";
+import { receiptArt } from "./receipt-art";
+import { fit, wrap } from "./receipt-canvas";
+import { renderThemedReceipt } from "./receipt-image-themes";
+import type { ReceiptTheme } from "./receipt-theme";
 
 /**
  * 영수증을 PNG로 그린다(공유·저장용). 화면의 영수증을 캡처하지 않고 캔버스에 직접 그린다 — 캡처
  * 라이브러리를 넣지 않고, 테마(어두운 화면)와 관계없이 늘 같은 종이 모양이 나오게.
  *
- * 문구는 화면과 같은 함수(lib/receipt-view)로 만든다.
+ * 문구는 화면과 같은 함수(lib/receipt-view)로 만든다. 기본(`classic`)은 화면의 영수증과 같은 종이이고, 다른 테마는
+ * lib/receipt-image-themes가 그린다.
  */
 
 const WIDTH = 400;
@@ -27,30 +32,6 @@ type Op = (ctx: CanvasRenderingContext2D) => void;
 
 function font(size: number, weight = 400): string {
   return `${weight} ${size}px ${FONT}`;
-}
-
-/** 폭을 넘으면 말줄임표로 자른다. */
-function fit(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
-  if (ctx.measureText(text).width <= maxWidth) return text;
-  let cut = text;
-  while (cut.length > 1 && ctx.measureText(`${cut}…`).width > maxWidth) cut = cut.slice(0, -1);
-  return `${cut}…`;
-}
-
-/** 폭에 맞춰 줄을 나눈다. 한국어는 낱말 사이가 아니어도 끊을 수 있어 글자 단위로 나눈다. */
-function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-  const lines: string[] = [];
-  let current = "";
-  for (const char of text) {
-    if (ctx.measureText(current + char).width > maxWidth && current) {
-      lines.push(current);
-      current = char.trimStart();
-    } else {
-      current += char;
-    }
-  }
-  if (current) lines.push(current);
-  return lines;
 }
 
 /** 기간에서 정해지는 막대 무늬(바코드 모양 장식). 읽을 수 있는 코드가 아니다. */
@@ -69,7 +50,13 @@ export async function renderReceiptImage(
   receipt: Receipt,
   issuedAt: Date,
   t: Messages,
+  theme: ReceiptTheme = "classic",
 ): Promise<Blob> {
+  if (theme !== "classic") return renderThemedReceipt(theme, receiptArt(t, receipt, issuedAt), t);
+  return renderClassic(receipt, issuedAt, t);
+}
+
+async function renderClassic(receipt: Receipt, issuedAt: Date, t: Messages): Promise<Blob> {
   const v = t.receiptView;
   // 글꼴이 늦게 오면 대체 글꼴로 그려진다. 이미 받아 둔 글꼴만 기다린다.
   await document.fonts?.ready;

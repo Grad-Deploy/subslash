@@ -20,7 +20,8 @@ import {
 } from "@lib/receipt-view";
 import { useLatestT, useServiceNames, useT } from "@lib/i18n";
 import { renderReceiptImage } from "@lib/receipt-image";
-import { ReceiptPaper } from "@components/report/ReceiptPaper";
+import { ReceiptThemePicker, ReceiptThemePreview } from "@components/report/ReceiptThemePreview";
+import { useReceiptTheme } from "@lib/receipt-theme";
 import { Button } from "@components/ui/button";
 import { Spinner } from "@components/ui/spinner";
 import { CopyFallbackDialog } from "@components/ui/copy-fallback-dialog";
@@ -80,6 +81,7 @@ function ReceiptFromQuery() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
+  const [theme, setTheme] = useReceiptTheme();
 
   const period: ReceiptPeriod = useMemo(() => {
     const parsed = parseReceiptPeriod(params);
@@ -129,7 +131,7 @@ function ReceiptFromQuery() {
   const saveAsImage = async () => {
     setBusy(true);
     try {
-      const image = await renderReceiptImage(receipt, now, tRef.current);
+      const image = await renderReceiptImage(receipt, now, tRef.current, theme);
       const saved = await saveImage(`subslash-receipt-${receiptNumber(period)}.png`, image);
       if (saved) flash(tRef.current.receiptView.page.imageSaved);
     } catch (error) {
@@ -219,9 +221,8 @@ function ReceiptFromQuery() {
         </Button>
       </nav>
 
-      <div className="drop-shadow-md">
-        <ReceiptPaper receipt={receipt} issuedAt={now} />
-      </div>
+      <ReceiptThemePicker theme={theme} onChange={setTheme} />
+      <ReceiptThemePreview receipt={receipt} issuedAt={now} theme={theme} />
 
       <div className="grid grid-cols-2 gap-2">
         <Button variant="outline" disabled={busy} onClick={() => void saveAsImage()}>
