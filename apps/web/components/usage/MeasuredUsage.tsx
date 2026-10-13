@@ -39,6 +39,15 @@ function usageFor(view: DeviceUsageView, serviceId: string): ServiceUsageSummary
 }
 
 /**
+ * AI 서비스인지. 측정은 안드로이드 앱이 화면에 떠 있던 것만 재는데, AI 구독은 PC·웹에서 많이 써서 'TV·PC에서 본 것'이
+ * 아니라 PC·웹에서 쓴 것이 빠졌다고 말해야 한다 — PC 기록으로 30일 중 30일 쓴 구독 옆에 '0번'만 있으면 둘 중 하나가
+ * 틀린 숫자로 읽힌다.
+ */
+function isAiService(sub: Subscription): boolean {
+  return findPresetForSubscription(sub)?.category === "ai";
+}
+
+/**
  * 시간으로 재는 구독(유튜브 프리미엄·음악·독서, utils/valueMetric)은 시간을 앞에 둔다. 체크인이 시간을
  * 묻는데 여기서만 '번'으로 말하면 같은 리포트에 두 단위가 섞인다.
  */
@@ -107,6 +116,8 @@ export function MeasuredUsageSection({ subscriptions }: { subscriptions: Subscri
   // 단위가 다른 줄이 섞이므로 모두 가진 쓴 시간으로 줄 세운다.
   rows.sort((a, b) => b.usage.activeMinutes - a.usage.activeMinutes);
   const anyHours = rows.some(({ sub }) => byHours(sub));
+  const anyZero = rows.some(({ usage }) => usage.sessionCount === 0);
+  const anyAi = rows.some(({ sub }) => isAiService(sub));
 
   return (
     <section className="space-y-3">
@@ -142,8 +153,10 @@ export function MeasuredUsageSection({ subscriptions }: { subscriptions: Subscri
         })}
       </ul>
       <PartialNote view={view} />
+      {anyZero && <p className="text-xs text-muted-foreground">{m.zeroWhy}</p>}
       <p className="text-xs text-muted-foreground">
         {m.notIncluded}
+        {anyAi && m.notIncludedPc}
         {anyHours && m.screenOff}
         {m.unitCost}
         {IS_APP_BUILD && m.differs}
@@ -174,8 +187,9 @@ export function MeasuredUsageLine({ sub }: { sub: Subscription }) {
       <p className="text-xs text-muted-foreground">
         {m.lineDevices(view.summary.measuredDeviceCount)}
         {usage.handoffCount > 0 && m.lineHandoff(usage.handoffCount)}
-        {m.lineAfter}
+        {isAiService(sub) ? m.lineAfterPc : m.lineAfter}
       </p>
+      {usage.sessionCount === 0 && <p className="text-xs text-muted-foreground">{m.zeroWhy}</p>}
       <PartialNote view={view} />
     </div>
   );
