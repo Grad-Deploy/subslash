@@ -213,6 +213,90 @@ describe("buildReceipt — 한 해", () => {
   });
 });
 
+describe("buildReceipt — 끝난 해의 연말 결산(2025년)", () => {
+  // 2025년 내내 쓴 기록. 지금(2026년 9월)에는 2025년이 끝났으므로 결제 예정 없이 12달이 모두 확정이다.
+  const LAST_YEAR = { kind: "year", year: 2025 } as const;
+  const jan2025 = new Date(2025, 0, 1).toISOString();
+  const subs: Subscription[] = [
+    // 월간 13,500원 × 12달
+    sub({ id: "netflix", createdAt: jan2025 }),
+    // 둘이 나눠 내는 14,900원: 내 몫 7,450원 × 12달, 카드에는 14,900원 × 12달
+    sub({ id: "youtube", name: "유튜브", amount: 14900, sharingCount: 2, createdAt: jan2025 }),
+    // 연간 59,000원(3월 결제): 한 해에 한 번
+    sub({
+      id: "goodnotes",
+      name: "굿노트",
+      amount: 59000,
+      billingCycle: "yearly",
+      billingMonth: 3,
+      createdAt: jan2025,
+    }),
+    // 달러 $20(세금 없음): 결제일 환율을 모르면 사용자 환율 1,400원 × 12달
+    sub({ id: "chatgpt", name: "ChatGPT", amount: 20, currency: "USD", createdAt: jan2025 }),
+    // 6월 15일 해지(결제일 10일): 1~6월 6번 청구, 7~12월 6번은 지킨 돈
+    sub({
+      id: "watcha",
+      name: "왓챠",
+      amount: 10000,
+      createdAt: jan2025,
+      status: "killed",
+      killedAt: new Date(2025, 5, 15, 12).toISOString(),
+    }),
+    // 4월 20일 등록(결제일 10일): 등록한 4월부터 12월까지 9번. 1~3월은 구독 중이었는지 모른다.
+    sub({
+      id: "tving",
+      name: "티빙",
+      amount: 9500,
+      createdAt: new Date(2025, 3, 20).toISOString(),
+    }),
+  ];
+  const receipt = buildReceipt(subs, [], LAST_YEAR, RATE, NOW);
+  const line = (id: string) => receipt.lines.find((l) => l.subscriptionId === id);
+
+  it("한 해가 끝났으면 결제 예정 없이 확정이다", () => {
+    expect(receipt.isComplete).toBe(true);
+    expect(receipt.upcomingCount).toBe(0);
+  });
+
+  it("구독마다 그 해에 결제된 횟수와 금액을 적는다", () => {
+    expect(line("netflix")).toMatchObject({ amountKRW: 13500 * 12 });
+    expect(line("netflix")?.chargeDates).toHaveLength(12);
+    expect(line("youtube")).toMatchObject({ amountKRW: 7450 * 12, billedKRW: 14900 * 12 });
+    expect(line("goodnotes")).toMatchObject({ amountKRW: 59000, chargeDates: ["2025-03-10"] });
+    expect(line("chatgpt")).toMatchObject({ amountKRW: 20 * RATE * 12 });
+    expect(line("watcha")?.chargeDates).toHaveLength(6);
+    expect(line("watcha")).toMatchObject({ amountKRW: 10000 * 6, killedOn: "2025-06-15" });
+    expect(line("tving")?.chargeDates).toHaveLength(9);
+    expect(line("tving")?.chargeDates[0]).toBe("2025-04-10");
+  });
+
+  it("합계(내 몫)·카드 청구액·건수가 줄의 합과 같다", () => {
+    const mine = 13500 * 12 + 7450 * 12 + 59000 + 20 * RATE * 12 + 10000 * 6 + 9500 * 9;
+    expect(receipt.totalKRW).toBe(mine);
+    expect(receipt.billedTotalKRW).toBe(mine + 7450 * 12);
+    expect(receipt.chargeCount).toBe(12 + 12 + 1 + 12 + 6 + 9);
+    expect(receipt.totalKRW).toBe(receipt.lines.reduce((sum, l) => sum + l.amountKRW, 0));
+  });
+
+  it("해지한 뒤의 결제일은 지킨 돈으로, 등록 전 달은 모른다고 센다", () => {
+    expect(receipt.defendedKRW).toBe(10000 * 6);
+    expect(receipt.killed.map((k) => k.killedOn)).toEqual(["2025-06-15"]);
+    expect(receipt.excluded.beforeRegistration).toBe(1);
+  });
+
+  it("지난 달러 결제를 몇 건 사용자 환율로 바꿨는지 센다", () => {
+    expect(receipt.fx).toEqual({ historical: 0, current: 12 });
+  });
+
+  it("결제일의 고시 환율을 알면 그 환율로 바꾼다", () => {
+    const withRates = buildReceipt(subs, [], LAST_YEAR, RATE, NOW, () => 1300);
+    expect(withRates.lines.find((l) => l.subscriptionId === "chatgpt")?.amountKRW).toBe(
+      20 * 1300 * 12,
+    );
+    expect(withRates.fx).toEqual({ historical: 12, current: 0 });
+  });
+});
+
 describe("previousMonth", () => {
   it("1월이면 지난해 12월이다", () => {
     expect(previousMonth(new Date(2027, 0, 3))).toEqual({ year: 2026, month: 12 });
