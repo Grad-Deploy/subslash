@@ -118,6 +118,9 @@ export function aiAskConfig(): AskProviderConfig | NextResponse {
 /**
  * 캐시에 있으면 그 값을, 없으면 횟수를 센 뒤 AI에 물어 `{ [field]: 값, cached }`로 답한다. AI가 실패하면 502로 알리고
  * 저장하지 않는다. 질문은 남기지 않고 회사 오류(한도·장애)인지만 본다.
+ *
+ * AI가 목록 밖의 것을 골라 확인에서 걸렀으면(`rejected`) 답은 하되 저장하지 않는다 — 모델이 한 번 틀린 것을 저장하면 같은
+ * 질문을 한 모든 사람이 하루 동안 '답할 수 없는 질문'을 받는다.
  */
 export async function answerWithAi<T>(options: {
   request: Request;
@@ -126,7 +129,7 @@ export async function answerWithAi<T>(options: {
   cache: AnswerCache<T>;
   cacheKey: string;
   field: string;
-  pick: () => Promise<T>;
+  pick: () => Promise<{ value: T; rejected: boolean }>;
 }): Promise<NextResponse> {
   const { request, scope, cache, cacheKey, field, pick } = options;
   const cached = cache.get(cacheKey);
@@ -136,8 +139,8 @@ export async function answerWithAi<T>(options: {
   if (blocked) return blocked;
 
   try {
-    const value = await pick();
-    cache.set(cacheKey, value);
+    const { value, rejected } = await pick();
+    if (!rejected) cache.set(cacheKey, value);
     return NextResponse.json({ [field]: value, cached: false });
   } catch (error) {
     logError(`api/${scope}`, error);

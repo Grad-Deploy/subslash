@@ -3,6 +3,7 @@ import {
   askProviderConfig,
   askUserMessage,
   pickAskCall,
+  pickTool,
   settleCall,
   toolParameters,
 } from "@lib/ask/provider";
@@ -90,9 +91,28 @@ describe("리포트에 물어보기 — AI 호출", () => {
     const [url, init] = fetcher.mock.calls[0];
     expect(url).toBe("https://api.anthropic.com/v1/messages");
     const sent = JSON.parse(String(init.body));
-    expect(sent.tool_choice).toEqual({ type: "any" });
+    // 강제(any)는 최신 모델이 400으로 거절한다 — 고르게 하는 것은 시스템 프롬프트가 맡는다
+    expect(sent.tool_choice).toEqual({ type: "auto" });
     expect(sent.messages).toEqual([{ role: "user", content: "돈 값 못하는 구독 3개만" }]);
     expect(sent.tools.map((t: { name: string }) => t.name)).toContain("unsupported");
+  });
+
+  it("출력 상한은 기본 200토큰이고, 늘리면 두 회사에 같은 값으로 보낸다", async () => {
+    const anthropic = fakeFetch({ content: [], usage: {} });
+    await pickTool("질문", "시스템", [], ANTHROPIC, anthropic);
+    await pickTool("질문", "시스템", [], ANTHROPIC, anthropic, {
+      maxTokens: 2000,
+      timeoutMs: 60_000,
+    });
+    expect(JSON.parse(String(anthropic.mock.calls[0][1].body)).max_tokens).toBe(200);
+    expect(JSON.parse(String(anthropic.mock.calls[1][1].body)).max_tokens).toBe(2000);
+    // 기다리는 시간은 요청마다 끊는 신호로 건다
+    expect(anthropic.mock.calls[1][1].signal).toBeInstanceOf(AbortSignal);
+
+    const gemini = fakeFetch({ candidates: [] });
+    await pickTool("질문", "시스템", [], GEMINI, gemini, { maxTokens: 2000 });
+    const sent = JSON.parse(String(gemini.mock.calls[0][1].body));
+    expect(sent.generationConfig.maxOutputTokens).toBe(2000);
   });
 
   it("Gemini: 함수 호출만 받게 하고 결과를 같은 모양으로 돌려준다", async () => {
