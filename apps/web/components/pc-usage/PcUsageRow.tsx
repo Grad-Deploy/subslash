@@ -13,6 +13,8 @@ import {
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { useStore } from "@lib/store";
 import { useLocale, useServiceNames, useT } from "@lib/i18n";
+import { intlLocale } from "@lib/i18n/config";
+import type { EvidencePart } from "@lib/pc-usage-evidence";
 import {
   apiValueRatio,
   formatRatio,
@@ -32,6 +34,7 @@ export function PcUsageRow({
   serviceId,
   days,
   sources,
+  evidence,
   apiUsd = null,
   tokens = null,
   subscriptions,
@@ -43,6 +46,11 @@ export function PcUsageRow({
    * 온 숫자는 PC 기록뿐이라 비워 둔다.
    */
   sources?: readonly string[];
+  /**
+   * 출처마다의 쓴 날('PC 기록 읽기'). 이 기기에 남은 지난 근거와 합쳤으면 그 내역과 겹친 날을 보이고, 지난 근거를
+   * 지울 수 있게 한다.
+   */
+  evidence?: { parts: EvidencePart[]; overlap: number; onForget: () => void };
   /** 그 PC에서 구독으로 쓴 토큰을 API 요금표로 환산한 금액(USD). 모르면 null. */
   apiUsd?: number | null;
   /** 그 PC에서 구독으로 쓴 토큰 수. 모르면 null. */
@@ -70,6 +78,27 @@ export function PcUsageRow({
 
   // 하루당 가격: 내 몫 한 달 구독료 ÷ PC 기록으로 센 쓴 날(체크인 결과의 하루 단가와 같은 셈).
   const perDay = subscription && days > 0 ? getMyMonthlyShareAmount(subscription) / days : null;
+
+  const sourceLabel = (source: string) =>
+    source === "claudeWeb"
+      ? t.toolWeb
+      : ((t.reader[source as keyof typeof t.reader] as string | undefined) ?? source);
+  const shortDate = (ms: number) =>
+    new Date(ms).toLocaleDateString(intlLocale(locale), { month: "short", day: "numeric" });
+  const fromSaved = evidence?.parts.some((part) => part.fromSaved) ?? false;
+  const breakdown =
+    evidence && (evidence.parts.length > 1 || fromSaved)
+      ? [
+          ...evidence.parts.map((part) =>
+            t.evidence.item(
+              sourceLabel(part.source),
+              part.days,
+              part.fromSaved ? shortDate(part.coveredUntil) : null,
+            ),
+          ),
+          ...(evidence.overlap > 0 ? [t.evidence.overlap(evidence.overlap)] : []),
+        ].join(" · ")
+      : null;
 
   const problem =
     match.kind === "none"
@@ -104,6 +133,19 @@ export function PcUsageRow({
           </Button>
         )}
       </div>
+      {breakdown && evidence && (
+        <div className="space-y-0.5 text-[11px] leading-relaxed text-muted-foreground">
+          <p>{breakdown}</p>
+          {fromSaved && (
+            <p>
+              {t.evidence.saved}{" "}
+              <button type="button" className="font-semibold underline" onClick={evidence.onForget}>
+                {t.evidence.forget}
+              </button>
+            </p>
+          )}
+        </div>
+      )}
       {apiUsd !== null && (
         <div className="space-y-0.5 rounded-xl bg-secondary/60 px-2.5 py-2 text-xs">
           <p className="font-semibold">{t.apiValue(formatUSD(apiUsd))}</p>

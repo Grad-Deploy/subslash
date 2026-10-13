@@ -69,12 +69,13 @@ export function PcUsageReader({ subscriptions }: { subscriptions: readonly Subsc
         <section className="space-y-2">
           <h2 className="text-sm font-bold">{t.results}</h2>
           <ul className="space-y-2">
-            {reads.results.map(({ serviceId, days, sources, summary }) => (
+            {reads.results.map(({ serviceId, days, sources, parts, overlap, summary }) => (
               <PcUsageRow
                 key={serviceId}
                 serviceId={serviceId}
                 days={days}
                 sources={sources}
+                evidence={{ parts, overlap, onForget: () => reads.forget(serviceId) }}
                 apiUsd={summary && summary.api.pricedRequests > 0 ? summary.api.usd : null}
                 tokens={summary && summary.api.tokens > 0 ? summary.api.tokens : null}
                 subscriptions={subscriptions}
