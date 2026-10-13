@@ -12,6 +12,7 @@ import { Button } from "../../ui/button";
 import { RiskBadge } from "../../dashboard/RiskBadge";
 import { MeasuredUsageLine } from "../../usage/MeasuredUsage";
 import { CheckInEvidence } from "../CheckInEvidence";
+import { CheckInMonthChart } from "./CheckInMonthChart";
 
 /** 폰 기록으로 자동 체크인한 줄에 붙이는 한 마디. 무엇을 쟀는지와 빠진 것을 말한다. */
 function phoneCheckInNote(t: Messages, metric: UsageLog["metric"]): string {
@@ -39,7 +40,7 @@ function deviceName(t: Messages, device: NonNullable<UsageLog["device"]>): strin
   return h.deviceWeb(OS_NAMES[device.os], device.mobile);
 }
 
-/** 구독 상세의 체크인 기록 — 근거 요약, 여러 기기 측정, 달마다의 기록. */
+/** 구독 상세의 체크인 기록 — 근거 요약, 달별 막대, 여러 기기 측정, 달마다의 기록. */
 export function CheckInHistory({
   sub,
   logs,
@@ -68,6 +69,8 @@ export function CheckInHistory({
       </div>
 
       <CheckInEvidence logs={logs} currency={sub.currency} />
+
+      <CheckInMonthChart sub={sub} logs={logs} />
 
       {!isKilled && <MeasuredUsageLine sub={sub} />}
 
