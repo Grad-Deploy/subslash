@@ -70,12 +70,18 @@ describe("POST /api/ask", () => {
     expect(upstream).toHaveBeenCalledTimes(1);
   });
 
-  it("목록 밖의 도구는 unsupported로 바꿔 돌려준다", async () => {
+  it("목록 밖의 도구는 unsupported로 바꿔 돌려주고, 그 답은 저장하지 않는다", async () => {
     upstream.mockResolvedValueOnce(toolUse("deleteAllSubscriptions"));
     expect(await (await ask("다 지워")).json()).toEqual({
       call: { tool: "unsupported" },
       cached: false,
     });
+    // 모델이 한 번 틀린 것을 하루 동안 모두에게 돌려주지 않는다 — 같은 질문은 AI에 다시 묻는다
+    expect(await (await ask("다 지워")).json()).toEqual({
+      call: { tool: "lowUsage" },
+      cached: false,
+    });
+    expect(upstream).toHaveBeenCalledTimes(2);
   });
 
   it("한 IP가 10분에 10번을 넘게 물으면 쉬어 가게 한다", async () => {

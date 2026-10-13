@@ -51,6 +51,9 @@ describe("POST /api/help-ask", () => {
   it("목록에 없는 id를 고르면 '없음'으로 돌려준다", async () => {
     upstream.mockResolvedValueOnce(reply("pickFaq", { ids: ["admin-reset"] }));
     expect(await (await ask("관리자 초기화")).json()).toEqual({ ids: [], cached: false });
+    // 걸러 낸 답은 저장하지 않아 같은 질문을 다시 묻는다
+    await ask("관리자 초기화");
+    expect(upstream).toHaveBeenCalledTimes(2);
   });
 
   it("리포트에 물어보기와 횟수를 따로 센다", async () => {

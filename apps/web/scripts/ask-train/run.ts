@@ -217,7 +217,10 @@ async function generate() {
       if (only && !only.includes(spec.call.tool)) continue;
       const message = `언어: ${LANGUAGE[locale]}\n개수: ${per}\n뜻: ${spec.meaning}`;
       try {
-        const raw = await pickTool(message, SYSTEM, [SUBMIT_TOOL], config, fetch, 2000);
+        const raw = await pickTool(message, SYSTEM, [SUBMIT_TOOL], config, fetch, {
+          maxTokens: 2000,
+          timeoutMs: 60_000,
+        });
         const questions = (raw.args as { questions?: unknown } | undefined)?.questions;
         if (!Array.isArray(questions)) throw new Error("질문 목록이 오지 않았다");
         for (const q of questions) {

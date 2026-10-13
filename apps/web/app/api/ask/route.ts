@@ -32,6 +32,9 @@ export async function POST(request: NextRequest) {
     cache,
     cacheKey: cacheKey(question, history),
     field: "call",
-    pick: async () => (await pickAskCall(question, config, fetch, history)).call,
+    pick: async () => {
+      const { call, rejected } = await pickAskCall(question, config, fetch, history);
+      return { value: call, rejected };
+    },
   });
 }
