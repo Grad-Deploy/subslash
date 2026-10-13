@@ -6,6 +6,7 @@ import {
   tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
+import { MAX_ASK_QUESTION, isValidAskHistory, type AskTurn } from "./tools";
 
 /**
  * AI에게 묻는 API(`/api/ask`·`/api/help-ask`)가 같이 쓰는 제한. 질문은 표·로그에 남기지 않는다.
@@ -15,12 +16,33 @@ import {
  * - 같은 질문의 결과를 인스턴스 메모리에 하루 둔다 — AI를 덜 부르기 위해서다(한도, 동시에 몰릴 때 멈춤). 캐시에서 답한
  *   것은 횟수에 세지 않는다.
  */
-export const MAX_QUESTION = 200;
+export const MAX_QUESTION = MAX_ASK_QUESTION;
 const PER_IP_SHORT: RateLimitRule = { limit: 10, windowMs: 10 * 60 * 1000 };
 const PER_IP_DAY: RateLimitRule = { limit: 50, windowMs: 24 * 60 * 60 * 1000 };
 
 export async function readQuestion(request: Request): Promise<string | NextResponse> {
   const body = (await request.json().catch(() => null)) as { question?: unknown } | null;
+  return questionFrom(body);
+}
+
+/**
+ * 리포트에 물어보기의 본문: 질문과 앞선 턴(`history`). 앞선 턴이 모양·개수·호출 중 하나라도 틀리면 버리고 질문만
+ * 쓴다 — 꼬리 질문을 못 알아들을 뿐, 틀린 값을 AI에 넘기지는 않는다.
+ */
+export async function readAskRequest(
+  request: Request,
+): Promise<{ question: string; history: AskTurn[] } | NextResponse> {
+  const body = (await request.json().catch(() => null)) as {
+    question?: unknown;
+    history?: unknown;
+  } | null;
+  const question = questionFrom(body);
+  if (typeof question !== "string") return question;
+  const history = isValidAskHistory(body?.history) ? body.history : [];
+  return { question, history };
+}
+
+function questionFrom(body: { question?: unknown } | null): string | NextResponse {
   const question = typeof body?.question === "string" ? body.question.trim() : "";
   if (!question) return NextResponse.json({ error: "질문을 적어 주세요." }, { status: 400 });
   if (question.length > MAX_QUESTION) {

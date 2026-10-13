@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ASK_EVAL_SET } from "@lib/ask/eval-set";
-import { ASK_TOOLS, isValidAskCall, type AskToolName } from "@lib/ask/tools";
+import { ASK_TOOLS, isValidAskCall, isValidAskHistory, type AskToolName } from "@lib/ask/tools";
 
 describe("리포트에 물어보기 — 도구 목록", () => {
   it("목록 밖의 도구·인자·값은 받지 않는다", () => {
@@ -27,6 +27,12 @@ describe("리포트에 물어보기 — 평가 세트", () => {
         expect(isValidAskCall(call), `${item.q} → ${JSON.stringify(call)}`).toBe(true);
       }
     }
+  });
+
+  it("꼬리 질문의 앞선 턴은 서버가 받는 모양이다 — 받지 않을 모양으로 재면 실제와 다르다", () => {
+    const followups = ASK_EVAL_SET.filter((item) => item.history);
+    expect(followups.length).toBeGreaterThanOrEqual(5);
+    for (const item of followups) expect(isValidAskHistory(item.history), item.q).toBe(true);
   });
 
   it("같은 질문을 두 번 적지 않는다", () => {
