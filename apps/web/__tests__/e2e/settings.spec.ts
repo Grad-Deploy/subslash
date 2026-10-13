@@ -145,9 +145,15 @@ test.describe("설정 화면 (E2E)", () => {
     await question.click();
     await expect(answer).toBeVisible();
 
-    const mail = page.getByRole("link", { name: "메일 앱으로 문의하기" });
-    await expect(mail).toHaveAttribute("href", /^mailto:privacy@subslash\.me\?/);
     await expect(page.getByText("privacy@subslash.me", { exact: true })).toBeVisible();
+    // 웹에는 메일 앱(mailto:) 버튼을 두지 않는다 — 기본 메일 앱이 없는 PC에서는 눌러도 아무것도 열리지 않았다.
+    await expect(page.getByRole("link", { name: "메일 앱으로 문의하기" })).toHaveCount(0);
+    const popup = page.waitForEvent("popup");
+    await page.getByRole("button", { name: "Gmail로 쓰기" }).click();
+    const compose = await popup;
+    expect(compose.url()).toContain("mail.google.com");
+    expect(decodeURIComponent(compose.url())).toContain("privacy@subslash.me");
+    await compose.close();
   });
 
   test("계정 메뉴에서 도움말로 갈 수 있다", async ({ page }) => {
@@ -158,7 +164,6 @@ test.describe("설정 화면 (E2E)", () => {
       .getByRole("menuitem", { name: "도움말 · 문의" })
       .click();
     await expect(page).toHaveURL(/\/help$/, { timeout: 30_000 });
-    await expect(page.getByRole("link", { name: "메일 앱으로 문의하기" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Gmail로 쓰기" })).toBeVisible();
   });
 

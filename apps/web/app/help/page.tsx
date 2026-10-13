@@ -35,11 +35,13 @@ export default function HelpPage() {
   const email = PRIVACY_OFFICER?.email ?? null;
   const subject = h.mailSubject;
   const body = h.mailBody(IS_APP_BUILD);
-  const mailto = email
-    ? `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-    : null;
   // mailto:는 기기에 기본 메일 앱이 정해져 있어야 열린다. 메일을 웹(Gmail)으로만 쓰는 PC에서는 눌러도 아무것도
-  // 열리지 않았고, 열리지 않은 것을 페이지는 알 수 없다. 그래서 웹 주소로 여는 Gmail 쓰기 화면을 함께 둔다.
+  // 열리지 않았고, 열리지 않은 것을 페이지는 알 수 없다. 그래서 웹에는 두지 않고 Gmail 쓰기 화면과 주소 복사만
+  // 둔다. 앱(안드로이드)은 Gmail이 기본으로 깔려 있어 메일 앱의 쓰기 화면이 채워진 채 열리므로 남긴다.
+  const mailto =
+    email && IS_APP_BUILD
+      ? `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      : null;
   const gmailCompose = email
     ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
     : null;
@@ -92,27 +94,37 @@ export default function HelpPage() {
           {h.contact}
         </h2>
         <div className="space-y-3 rounded-2xl border bg-card p-4 text-sm">
-          {email && mailto && gmailCompose ? (
+          {email && gmailCompose ? (
             <>
               <p className="leading-relaxed text-muted-foreground">{h.contactBody}</p>
               <p className="font-semibold">{email}</p>
               <div className="flex flex-wrap gap-2">
-                {/* 메일 앱을 여는 링크(mailto:). openExternal은 http(s)만 열기 때문에 쓰지 않는다. */}
-                <a
-                  href={mailto}
-                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                {mailto ? (
+                  // 메일 앱을 여는 링크(mailto:). openExternal은 http(s)만 열기 때문에 쓰지 않는다.
+                  <a
+                    href={mailto}
+                    className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-4 text-sm font-bold text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <Mail className="size-4" aria-hidden />
+                    {h.mailApp}
+                  </a>
+                ) : null}
+                <Button
+                  type="button"
+                  variant={mailto ? "outline" : "default"}
+                  className="gap-1.5"
+                  onClick={() => openExternal(gmailCompose)}
                 >
-                  <Mail className="size-4" aria-hidden />
-                  {h.mailApp}
-                </a>
-                <Button type="button" variant="outline" onClick={() => openExternal(gmailCompose)}>
+                  {!mailto ? <Mail className="size-4" aria-hidden /> : null}
                   {h.gmail}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => void copyEmail()}>
                   {copied ? h.copied : h.copyAddress}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">{h.mailFallback}</p>
+              <p className="text-xs text-muted-foreground">
+                {mailto ? h.mailFallback : h.mailFallbackWeb}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {h.privacyBefore}
                 <Link href="/privacy" className="underline underline-offset-4">
