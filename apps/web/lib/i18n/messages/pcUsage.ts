@@ -17,6 +17,13 @@ export const ko = {
     },
     days: (days: number) => `PC 기록으로 ${days}일`,
     toolWeb: "claude.ai",
+    evidence: {
+      item: (label: string, days: number, until: string | null) =>
+        `${label} ${days}일${until ? `(${until}까지)` : ""}`,
+      overlap: (days: number) => `겹친 날 ${days}일`,
+      saved: "지난번에 읽은 기록을 이 기기에 남겨 두었다가 함께 셌어요. 서버로 보내지 않아요.",
+      forget: "지난 기록 지우기",
+    },
     daysFromRecords: (days: number) => `기록으로 ${days}일`,
     perDay: (cost: string) => `하루당 ${cost}`,
     tokens: (tokens: string) => `토큰 ${tokens}개`,
@@ -127,6 +134,14 @@ export const en: Widen<typeof ko> = {
     },
     days: (days) => `${days} ${one(days) ? "day" : "days"} from PC records`,
     toolWeb: "claude.ai",
+    evidence: {
+      item: (label, days, until) =>
+        `${label} ${days} ${one(days) ? "day" : "days"}${until ? ` (up to ${until})` : ""}`,
+      overlap: (days) => `${days} ${one(days) ? "day" : "days"} in both`,
+      saved:
+        "Records you read earlier are kept on this device and counted together. They aren't sent to a server.",
+      forget: "Forget earlier records",
+    },
     daysFromRecords: (days) => `${days} ${one(days) ? "day" : "days"} from records`,
     perDay: (cost) => `${cost} per day used`,
     tokens: (tokens) => `${tokens} tokens`,
@@ -246,6 +261,12 @@ export const zh: Widen<typeof ko> = {
     tool: PC_TOOLS,
     days: (days) => `电脑记录 ${days} 天`,
     toolWeb: "claude.ai",
+    evidence: {
+      item: (label, days, until) => `${label} ${days} 天${until ? `（截至 ${until}）` : ""}`,
+      overlap: (days) => `重叠 ${days} 天`,
+      saved: "之前读取的记录保存在这台设备上，并一起统计。不会发送到服务器。",
+      forget: "清除之前的记录",
+    },
     daysFromRecords: (days) => `记录中 ${days} 天`,
     perDay: (cost) => `每个使用日 ${cost}`,
     tokens: (tokens) => `${tokens} 个令牌`,
@@ -341,6 +362,12 @@ export const ja: Widen<typeof ko> = {
     tool: PC_TOOLS,
     days: (days) => `PC の記録で ${days} 日`,
     toolWeb: "claude.ai",
+    evidence: {
+      item: (label, days, until) => `${label} ${days} 日${until ? `（${until}まで）` : ""}`,
+      overlap: (days) => `重なった日 ${days} 日`,
+      saved: "前に読んだ記録をこの端末に残しておき、一緒に数えました。サーバーには送りません。",
+      forget: "前の記録を消す",
+    },
     daysFromRecords: (days) => `記録で ${days} 日`,
     perDay: (cost) => `使った日 1 日あたり ${cost}`,
     tokens: (tokens) => `${tokens} トークン`,
@@ -448,6 +475,13 @@ export const vi: Widen<typeof ko> = {
     tool: PC_TOOLS,
     days: (days) => `${days} ngày theo dữ liệu PC`,
     toolWeb: "claude.ai",
+    evidence: {
+      item: (label, days, until) => `${label} ${days} ngày${until ? ` (đến ${until})` : ""}`,
+      overlap: (days) => `Trùng ${days} ngày`,
+      saved:
+        "Dữ liệu bạn đọc trước đó được giữ trên thiết bị này và được đếm cùng. Không gửi lên máy chủ.",
+      forget: "Xóa dữ liệu trước đó",
+    },
     daysFromRecords: (days) => `${days} ngày theo dữ liệu`,
     perDay: (cost) => `${cost} mỗi ngày dùng`,
     tokens: (tokens) => `${tokens} token`,
@@ -554,6 +588,14 @@ export const fr: Widen<typeof ko> = {
     tool: PC_TOOLS,
     days: (days) => `${days} jour${pcPl(days, "", "s")} selon le PC`,
     toolWeb: "claude.ai",
+    evidence: {
+      item: (label, days, until) =>
+        `${label} : ${days} jour${pcPl(days, "", "s")}${until ? ` (jusqu'au ${until})` : ""}`,
+      overlap: (days) => `${days} jour${pcPl(days, "", "s")} en commun`,
+      saved:
+        "Les données lues précédemment sont conservées sur cet appareil et comptées ensemble. Elles ne sont pas envoyées à un serveur.",
+      forget: "Oublier les données précédentes",
+    },
     daysFromRecords: (days) => `${days} jour${pcPl(days, "", "s")} selon les données`,
     perDay: (cost) => `${cost} par jour d'utilisation`,
     tokens: (tokens) => `${tokens} jetons`,
@@ -668,6 +710,14 @@ export const es: Widen<typeof ko> = {
     tool: PC_TOOLS,
     days: (days) => `${days} día${pcPl(days, "", "s")} según el PC`,
     toolWeb: "claude.ai",
+    evidence: {
+      item: (label, days, until) =>
+        `${label}: ${days} día${pcPl(days, "", "s")}${until ? ` (hasta el ${until})` : ""}`,
+      overlap: (days) => `${days} día${pcPl(days, "", "s")} en ambos`,
+      saved:
+        "Los registros leídos antes se guardan en este dispositivo y se cuentan juntos. No se envían a ningún servidor.",
+      forget: "Olvidar registros anteriores",
+    },
     daysFromRecords: (days) => `${days} día${pcPl(days, "", "s")} según los registros`,
     perDay: (cost) => `${cost} por día de uso`,
     tokens: (tokens) => `${tokens} tokens`,
@@ -782,6 +832,14 @@ export const de: Widen<typeof ko> = {
     tool: PC_TOOLS,
     days: (days) => `${days} ${pcPl(days, "Tag", "Tage")} laut PC`,
     toolWeb: "claude.ai",
+    evidence: {
+      item: (label, days, until) =>
+        `${label}: ${days} ${pcPl(days, "Tag", "Tage")}${until ? ` (bis ${until})` : ""}`,
+      overlap: (days) => `${days} ${pcPl(days, "Tag", "Tage")} doppelt`,
+      saved:
+        "Früher gelesene Daten bleiben auf diesem Gerät und werden mitgezählt. Sie werden an keinen Server gesendet.",
+      forget: "Frühere Daten vergessen",
+    },
     daysFromRecords: (days) => `${days} ${pcPl(days, "Tag", "Tage")} laut Daten`,
     perDay: (cost) => `${cost} pro Nutzungstag`,
     tokens: (tokens) => `${tokens} Tokens`,
@@ -894,6 +952,14 @@ export const pt: Widen<typeof ko> = {
     tool: PC_TOOLS,
     days: (days) => `${days} dia${pcPl(days, "", "s")} pelo PC`,
     toolWeb: "claude.ai",
+    evidence: {
+      item: (label, days, until) =>
+        `${label}: ${days} dia${pcPl(days, "", "s")}${until ? ` (até ${until})` : ""}`,
+      overlap: (days) => `${days} dia${pcPl(days, "", "s")} em comum`,
+      saved:
+        "Os registros lidos antes ficam neste dispositivo e são contados juntos. Não são enviados a nenhum servidor.",
+      forget: "Esquecer registros anteriores",
+    },
     daysFromRecords: (days) => `${days} dia${pcPl(days, "", "s")} pelos registros`,
     perDay: (cost) => `${cost} por dia de uso`,
     tokens: (tokens) => `${tokens} tokens`,
