@@ -182,9 +182,13 @@ function AnswerBody({ answer, question }: { answer: AskAnswer; question: string 
       {answer.rows.length > 0 && (
         <dl className="divide-y rounded-lg border bg-card text-xs">
           {answer.rows.map((row) => (
-            <div key={row.label} className="flex justify-between gap-3 px-3 py-2">
+            // 한 줄에 들어가지 않으면 값이 다음 줄 오른쪽으로 내려간다. 값을 줄이지 않던 때는 값이 긴 줄(겹치는
+            // 구독의 서비스 목록)에서 이름 칸이 눌려 "OTT"가 "OT / T"로 끊겼다.
+            <div key={row.label} className="flex flex-wrap justify-between gap-x-3 px-3 py-2">
               <dt className="min-w-0 [overflow-wrap:anywhere]">{row.label}</dt>
-              <dd className="shrink-0 font-semibold tabular-nums">{row.value}</dd>
+              <dd className="ml-auto min-w-0 text-right font-semibold tabular-nums [overflow-wrap:anywhere]">
+                {row.value}
+              </dd>
             </div>
           ))}
         </dl>
