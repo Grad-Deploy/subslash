@@ -39,7 +39,7 @@ function bars(
       key: date,
       label: range === "week" ? t.usageApp.weekdays[day.getDay()] : `${m}/${d}`,
       showLabel: range === "week" || i === 0 || i === dates.length - 1 || i === 14,
-      ms: totals.coveredDays > 0 ? totals.usedMs : null,
+      value: totals.coveredDays > 0 ? totals.usedMs : null,
       spoken: t.usageApp.monthDay(m, d),
     };
   });
@@ -129,7 +129,7 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
 
           <div>
             <UsageBarChart bars={series} />
-            {series.some((bar) => bar.ms === null) && (
+            {series.some((bar) => bar.value === null) && (
               <p className="mt-2 text-xs text-muted-foreground">{u.detail.dashed}</p>
             )}
           </div>

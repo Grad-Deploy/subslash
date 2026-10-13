@@ -80,13 +80,13 @@ export function monthDay(t: Messages, date: string): string {
   return t.usageApp.monthDay(Number(m), Number(d));
 }
 
-/** 사용 시간 막대 하나. `ms`가 null이면 그때의 기록이 없다(0분과 다르다). */
+/** 막대 하나. `value`가 null이면 그때의 기록이 없다(0과 다르다). 폰 기록은 밀리초, 체크인은 그 지표의 수량이다. */
 export interface UsageBar {
   key: string;
   label: string;
   /** 축에 글자를 붙일지(1달은 30칸이라 몇 칸에만). */
   showLabel: boolean;
-  ms: number | null;
+  value: number | null;
   spoken: string;
 }
 
@@ -103,7 +103,7 @@ export function monthBars(
       key: m.month,
       label,
       showLabel: true,
-      ms: m.totals.coveredDays > 0 ? m.totals.usedMs : null,
+      value: m.totals.coveredDays > 0 ? m.totals.usedMs : null,
       spoken: label,
     };
   });
@@ -114,20 +114,28 @@ export function monthBars(
  * 상세의 사용 현황이 같은 것을 쓴다 — 따로 그렸을 때는 같은 달별 막대가 두 화면에서 모양이 달랐다.
  * 읽는 기계에는 막대 대신 목록을 준다.
  */
-export function UsageBarChart({ bars }: { bars: UsageBar[] }) {
+export function UsageBarChart({
+  bars,
+  format,
+}: {
+  bars: UsageBar[];
+  /** 읽는 기계에 줄 값. 없으면 사용 시간(밀리초)으로 읽는다. */
+  format?: (value: number) => string;
+}) {
   const t = useT();
-  const maxMs = Math.max(1, ...bars.map((bar) => bar.ms ?? 0));
+  const describe = format ?? ((value: number) => formatDurationText(t, value));
+  const max = Math.max(1, ...bars.map((bar) => bar.value ?? 0));
   return (
     <div>
       <div className="flex h-28 items-end gap-[3px]" aria-hidden>
         {bars.map((bar) => (
           <div key={bar.key} className="flex h-full flex-1 flex-col justify-end">
-            {bar.ms === null ? (
+            {bar.value === null ? (
               <div className="h-1 w-full rounded-full border border-dashed border-border" />
             ) : (
               <div
                 className="w-full rounded-t-sm bg-foreground/80"
-                style={{ height: `${bar.ms > 0 ? Math.max(3, (bar.ms / maxMs) * 100) : 0}%` }}
+                style={{ height: `${bar.value > 0 ? Math.max(3, (bar.value / max) * 100) : 0}%` }}
               />
             )}
           </div>
@@ -146,7 +154,7 @@ export function UsageBarChart({ bars }: { bars: UsageBar[] }) {
       <ul className="sr-only">
         {bars.map((bar) => (
           <li key={bar.key}>
-            {bar.spoken}: {bar.ms === null ? t.usageApp.noRecord : formatDurationText(t, bar.ms)}
+            {bar.spoken}: {bar.value === null ? t.usageApp.noRecord : describe(bar.value)}
           </li>
         ))}
       </ul>
