@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
         socialOpen: isSocialLoginOpen(),
         aiOpen: true,
       });
-      return (await pickHelpFaqs(question, faqs, config)).ids;
+      const { ids, rejected } = await pickHelpFaqs(question, faqs, config);
+      return { value: ids, rejected };
     },
   });
 }

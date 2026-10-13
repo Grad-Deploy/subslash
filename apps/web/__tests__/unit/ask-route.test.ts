@@ -62,20 +62,42 @@ describe("POST /api/ask", () => {
     expect(upstream).not.toHaveBeenCalled();
   });
 
+  it("뜻이 하나뿐인 흔한 질문은 규칙으로 고르고 AI를 부르지도, 횟수에 세지도 않는다", async () => {
+    for (let i = 0; i < 12; i++) {
+      expect(await (await ask("한 달 구독료 얼마야?")).json()).toEqual({
+        call: { tool: "spendTotal", args: { period: "month" } },
+        cached: false,
+      });
+    }
+    expect(upstream).not.toHaveBeenCalled();
+    // 꼬리 질문은 앞선 턴을 아는 AI에 맡긴다
+    const monthly = [
+      { question: "한 달 구독료 얼마야?", call: { tool: "spendTotal", args: { period: "month" } } },
+    ];
+    expect((await ask("그럼 1년이면?", "1.2.3.4", monthly)).status).toBe(200);
+    expect(upstream).toHaveBeenCalledTimes(1);
+  });
+
   it("고른 도구를 돌려주고, 같은 질문은 AI를 다시 부르지 않는다", async () => {
-    const first = await ask("안 쓰는 구독 있어?");
+    const first = await ask("해지해도 될 만한 구독 알려줘");
     expect(await first.json()).toEqual({ call: { tool: "lowUsage" }, cached: false });
-    const again = await ask("  안 쓰는   구독 있어? ");
+    const again = await ask("  해지해도 될 만한   구독 알려줘 ");
     expect(await again.json()).toEqual({ call: { tool: "lowUsage" }, cached: true });
     expect(upstream).toHaveBeenCalledTimes(1);
   });
 
-  it("목록 밖의 도구는 unsupported로 바꿔 돌려준다", async () => {
+  it("목록 밖의 도구는 unsupported로 바꿔 돌려주고, 그 답은 저장하지 않는다", async () => {
     upstream.mockResolvedValueOnce(toolUse("deleteAllSubscriptions"));
     expect(await (await ask("다 지워")).json()).toEqual({
       call: { tool: "unsupported" },
       cached: false,
     });
+    // 모델이 한 번 틀린 것을 하루 동안 모두에게 돌려주지 않는다 — 같은 질문은 AI에 다시 묻는다
+    expect(await (await ask("다 지워")).json()).toEqual({
+      call: { tool: "lowUsage" },
+      cached: false,
+    });
+    expect(upstream).toHaveBeenCalledTimes(2);
   });
 
   it("한 IP가 10분에 10번을 넘게 물으면 쉬어 가게 한다", async () => {
@@ -118,13 +140,13 @@ describe("POST /api/ask", () => {
 
   it("앞선 턴이 틀린 모양이거나 너무 많으면 버리고 지금 질문만 보낸다", async () => {
     const bad = [{ question: "x", call: { tool: "deleteAllSubscriptions" } }];
-    expect((await ask("안 쓰는 구독", "1.2.3.4", bad)).status).toBe(200);
-    expect(sentMessage(0)).toBe("안 쓰는 구독");
+    expect((await ask("해지해도 될 만한 구독 알려줘", "1.2.3.4", bad)).status).toBe(200);
+    expect(sentMessage(0)).toBe("해지해도 될 만한 구독 알려줘");
     const many = Array.from({ length: 4 }, (_, i) => ({
       question: `q${i}`,
       call: { tool: "lowUsage" },
     }));
-    await ask("겹치는 구독", "1.2.3.4", many);
-    expect(sentMessage(1)).toBe("겹치는 구독");
+    await ask("비슷한 구독 여러개 하고 있나", "1.2.3.4", many);
+    expect(sentMessage(1)).toBe("비슷한 구독 여러개 하고 있나");
   });
 });

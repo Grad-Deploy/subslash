@@ -98,12 +98,13 @@ async function postJson(
   headers: Record<string, string>,
   body: unknown,
   fetcher: typeof fetch,
+  timeoutMs: number,
 ) {
   const response = await fetcher(url, {
     method: "POST",
     headers: { "content-type": "application/json", ...headers },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!response.ok) throw new Error(`ask provider HTTP ${response.status}`);
   return (await response.json()) as Record<string, unknown>;
@@ -133,8 +134,11 @@ export async function pickTool(
   tools: ToolDefinition[],
   config: AskProviderConfig,
   fetcher: typeof fetch = fetch,
-  /** 출력 토큰 상한. 질문을 고르는 데는 200이면 되고, 학습 질문을 여러 개 만드는 스크립트(scripts/ask-train)만 늘린다. */
-  maxTokens = 200,
+  /**
+   * 출력 토큰 상한과 기다리는 시간. 질문 하나를 고르는 데는 200토큰·10초면 되고, 학습 질문을 여러 개 만드는
+   * 스크립트(scripts/ask-train)만 늘린다 — 긴 출력은 10초를 넘겨 통째로 실패한다.
+   */
+  { maxTokens = 200, timeoutMs = 10_000 }: { maxTokens?: number; timeoutMs?: number } = {},
 ): Promise<RawToolCall> {
   if (config.provider === "anthropic") {
     const data = await postJson(
@@ -149,11 +153,14 @@ export async function pickTool(
           description: tool.description,
           input_schema: tool.parameters,
         })),
-        // 글로 답하지 못하게 도구 호출만 받는다.
-        tool_choice: { type: "any" },
+        // 도구를 고르게 하는 것은 시스템 프롬프트("반드시 도구 하나를 호출한다")가 맡는다. 강제(`any`)는 Claude Opus 5.5·
+        // Sonnet 5.5·Fable 5.1이 400으로 거절해, 그 모델을 고르면 모든 질문이 실패했다. 글로만 답하면 부르는 쪽이
+        // unsupported로 처리한다(settleCall·settleHelpPick).
+        tool_choice: { type: "auto" },
         messages: [{ role: "user", content: question }],
       },
       fetcher,
+      timeoutMs,
     );
     const content = Array.isArray(data.content) ? (data.content as Record<string, unknown>[]) : [];
     const use = content.find((block) => block.type === "tool_use");
@@ -189,6 +196,7 @@ export async function pickTool(
       generationConfig: { maxOutputTokens: maxTokens },
     },
     fetcher,
+    timeoutMs,
   );
   const candidates = Array.isArray(data.candidates)
     ? (data.candidates as Record<string, unknown>[])
