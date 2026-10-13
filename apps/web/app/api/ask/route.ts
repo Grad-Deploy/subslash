@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { koreaToday, localAskCall } from "@lib/ask/local";
 import { pickAskCall } from "@lib/ask/provider";
 import { aiAskConfig, answerWithAi, createAnswerCache, readAskRequest } from "@lib/ask/guard";
 import type { AskCall, AskTurn } from "@lib/ask/tools";
@@ -25,6 +26,11 @@ export async function POST(request: NextRequest) {
   const body = await readAskRequest(request);
   if (body instanceof NextResponse) return body;
   const { question, history } = body;
+
+  // 뜻이 하나뿐인 흔한 질문은 기기와 같은 규칙으로 고르고 AI를 부르지 않는다. 새 앱은 이 질문을 보내지 않지만, 규칙이
+  // 생기기 전에 설치한 앱은 모든 질문을 보낸다. AI를 부르지 않으므로 횟수에 세지 않는다.
+  const local = localAskCall(question, { now: koreaToday(), hasHistory: history.length > 0 });
+  if (local) return NextResponse.json({ call: local, cached: false });
 
   return answerWithAi({
     request,
