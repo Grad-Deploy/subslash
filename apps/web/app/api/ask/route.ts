@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAiAskOpen } from "@lib/privacy";
-import { askProviderConfig, pickAskCall } from "@lib/ask/provider";
-import { createAnswerCache, limitAiRequest, readAskRequest } from "@lib/ask/guard";
+import { pickAskCall } from "@lib/ask/provider";
+import { aiAskConfig, answerWithAi, createAnswerCache, readAskRequest } from "@lib/ask/guard";
 import type { AskCall, AskTurn } from "@lib/ask/tools";
-import { logError } from "@lib/log";
 
 /**
  * '리포트에 물어보기': 질문 문장(과 앞선 턴의 질문·호출)을 받아 AI가 고른 도구 호출을 돌려준다. 계산은 기기가 한다
@@ -22,31 +20,18 @@ function cacheKey(question: string, history: readonly AskTurn[]): string {
 }
 
 export async function POST(request: NextRequest) {
-  const config = askProviderConfig();
-  if (!isAiAskOpen() || !config) {
-    return NextResponse.json({ error: "아직 준비 중인 기능이에요." }, { status: 503 });
-  }
+  const config = aiAskConfig();
+  if (config instanceof NextResponse) return config;
   const body = await readAskRequest(request);
   if (body instanceof NextResponse) return body;
   const { question, history } = body;
-  const key = cacheKey(question, history);
 
-  const cached = cache.get(key);
-  if (cached) return NextResponse.json({ call: cached, cached: true });
-
-  const blocked = limitAiRequest(request, "ask");
-  if (blocked) return blocked;
-
-  try {
-    const { call } = await pickAskCall(question, config, fetch, history);
-    cache.set(key, call);
-    return NextResponse.json({ call, cached: false });
-  } catch (error) {
-    // 질문은 남기지 않는다. 회사 오류(한도·장애)인지만 본다.
-    logError("api/ask", error);
-    return NextResponse.json(
-      { error: "지금은 답할 수 없어요. 잠시 뒤에 다시 물어봐 주세요." },
-      { status: 502 },
-    );
-  }
+  return answerWithAi({
+    request,
+    scope: "ask",
+    cache,
+    cacheKey: cacheKey(question, history),
+    field: "call",
+    pick: async () => (await pickAskCall(question, config, fetch, history)).call,
+  });
 }
