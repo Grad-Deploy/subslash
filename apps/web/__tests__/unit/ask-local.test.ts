@@ -1,15 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ASK_EVAL_SET } from "@lib/ask/eval-set";
+import { ASK_EVAL_SET, isExpectedCall } from "@lib/ask/eval-set";
 import { localAskCall, parseDays, refineCall } from "@lib/ask/local";
 import type { AskCall } from "@lib/ask/tools";
 
 const NOW = new Date(2026, 9, 13, 12); // 2026-10-13
-
-const key = (call: AskCall) =>
-  JSON.stringify({
-    tool: call.tool,
-    args: Object.fromEntries(Object.entries(call.args ?? {}).sort()),
-  });
 
 describe("리포트에 물어보기 — 기기 규칙", () => {
   it("평가 세트에서 규칙이 답한 질문은 모두 정답이다(애매하면 AI에 넘긴다)", () => {
@@ -19,8 +13,9 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
       const got = localAskCall(item.q, { now: NOW, hasHistory: Boolean(item.history?.length) });
       if (!got) continue;
       answered++;
-      const ok = [item.expect, ...(item.also ?? [])].some((call) => key(call) === key(got));
-      if (!ok) wrong.push(`${item.q} → ${key(got)} (정답 ${key(item.expect)})`);
+      if (!isExpectedCall(item, got)) {
+        wrong.push(`${item.q} → ${JSON.stringify(got)} (정답 ${JSON.stringify(item.expect)})`);
+      }
     }
     expect(wrong).toEqual([]);
     // 규칙이 아무것도 답하지 않으면 이 장치가 있는 의미가 없다
