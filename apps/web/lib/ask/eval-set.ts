@@ -22,6 +22,19 @@ export interface AskEvalCase {
   tag: "basic" | "paraphrase" | "casual" | "args" | "scope" | "help" | "attack" | "followup";
 }
 
+/** 호출을 견줄 때 쓰는 열쇠. 인자 순서만 다른 호출은 같은 호출이다. */
+const callKey = (call: AskCall) =>
+  JSON.stringify([
+    call.tool,
+    Object.entries(call.args ?? {}).sort(([a], [b]) => a.localeCompare(b)),
+  ]);
+
+/** 고른 호출이 이 질문의 정답(`expect` 또는 `also`)인지. 평가 스크립트와 기기 규칙 테스트가 같은 기준으로 잰다. */
+export function isExpectedCall(item: Pick<AskEvalCase, "expect" | "also">, call: AskCall): boolean {
+  const key = callKey(call);
+  return [item.expect, ...(item.also ?? [])].some((expected) => callKey(expected) === key);
+}
+
 export const ASK_EVAL_SET: readonly AskEvalCase[] = [
   // spendTotal
   {

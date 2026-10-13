@@ -1,4 +1,5 @@
 import { POPULAR_SERVICES, type Subscription } from "@subslash/shared";
+import { compactName } from "./fuzzy";
 import type { ASK_CATEGORIES, AskCall } from "./tools";
 
 type AskCategory = (typeof ASK_CATEGORIES)[number];
@@ -78,13 +79,13 @@ const CATEGORY_WORDS: [RegExp, AskCategory][] = [
 
 /** 질문에 서비스 이름이 들어 있는지(서비스 목록과 이 기기의 구독). 들어 있으면 그 서비스를 묻는 질문일 수 있다. */
 function mentionsService(q: string, subscriptions: readonly Subscription[]): boolean {
-  const compact = q.replace(/\s+/g, "");
+  const compact = compactName(q);
   const names = [
     ...POPULAR_SERVICES.flatMap((preset) => [preset.nameKo, preset.nameEn]),
     ...subscriptions.map((sub) => sub.name),
   ]
     .filter((name): name is string => Boolean(name))
-    .map((name) => name.toLowerCase().replace(/\s+/g, ""))
+    .map(compactName)
     .filter((name) => name.length >= 2);
   // 한글 이름은 앞 두 글자 줄임말("넷플", "디즈")도 본다. 잘못 걸려도 AI에 넘길 뿐이라 넓게 잡는다. 영문은 앞 글자가
   // 흔한 낱말과 겹쳐(chatgpt의 'ch' ↔ 'charge') 이름 전체만 본다.

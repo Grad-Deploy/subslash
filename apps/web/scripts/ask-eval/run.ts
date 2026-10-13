@@ -17,25 +17,13 @@
 /* eslint-disable no-console -- 터미널에서 돌리는 평가 스크립트라 결과를 콘솔에 찍는다. */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { ASK_EVAL_SET } from "../../lib/ask/eval-set";
+import { ASK_EVAL_SET, isExpectedCall } from "../../lib/ask/eval-set";
 import { askProviderConfig, pickAskCall } from "../../lib/ask/provider";
 import type { AskCall } from "../../lib/ask/tools";
 import { allFaqs } from "../../lib/help/faq";
 import { HELP_EVAL_SET } from "../../lib/help/eval-set";
 import { pickHelpFaqs } from "../../lib/help/ai";
 import { isConfident, searchFaqs } from "../../lib/help/match";
-
-const sameCall = (a: AskCall, b: AskCall) =>
-  a.tool === b.tool && JSON.stringify(a.args ?? {}) === JSON.stringify(sortArgs(b.args ?? {}));
-
-function sortArgs(args: Record<string, string | number>) {
-  return Object.fromEntries(Object.entries(args).sort(([a], [b]) => a.localeCompare(b)));
-}
-
-const normalized = (call: AskCall): AskCall => ({
-  tool: call.tool,
-  ...(call.args ? { args: sortArgs(call.args) } : {}),
-});
 
 interface EvalRow {
   q: string;
@@ -97,14 +85,12 @@ async function main() {
     const started = Date.now();
     try {
       const pick = await pickAskCall(item.q, config, fetch, item.history ?? []);
-      const got = normalized(pick.call);
-      const accepted = [item.expect, ...(item.also ?? [])].map(normalized);
       results.push({
         q: item.q,
         tag: item.tag,
         expect: item.expect,
-        got,
-        ok: accepted.some((call) => sameCall(got, call)),
+        got: pick.call,
+        ok: isExpectedCall(item, pick.call),
         rejectedByValidator: pick.rejected,
         ms: Date.now() - started,
         usage: pick.usage,
