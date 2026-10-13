@@ -152,3 +152,32 @@ export function isValidAskCall(call: unknown): call is AskCall {
   }
   return true;
 }
+
+/**
+ * 대화의 앞선 한 턴: 그때 적은 질문과 AI가 고른 호출. 꼬리 질문("그럼 1년이면?")을 알아듣게 하려고 함께 보낸다.
+ * 답(기기가 계산한 숫자·구독 이름)은 넣지 않는다 — 넣으면 구독 기록이 AI로 나간다.
+ */
+export interface AskTurn {
+  question: string;
+  call: AskCall;
+}
+
+/** 함께 보내는 앞선 턴의 수. 오래된 것부터 버린다. */
+export const MAX_ASK_HISTORY = 3;
+/** 앞선 질문 하나의 길이(질문 칸과 같다). */
+export const MAX_ASK_QUESTION = 200;
+
+/** 앞선 턴 목록이 모양·개수·호출 모두 맞는지. 하나라도 틀리면 전체를 쓰지 않는다. */
+export function isValidAskHistory(history: unknown): history is AskTurn[] {
+  if (!Array.isArray(history) || history.length > MAX_ASK_HISTORY) return false;
+  return history.every((turn) => {
+    if (!turn || typeof turn !== "object") return false;
+    const { question, call } = turn as { question?: unknown; call?: unknown };
+    return (
+      typeof question === "string" &&
+      question.trim() !== "" &&
+      question.length <= MAX_ASK_QUESTION &&
+      isValidAskCall(call)
+    );
+  });
+}
