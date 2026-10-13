@@ -96,7 +96,7 @@ async function main() {
   for (const item of helpMode ? [] : ASK_EVAL_SET) {
     const started = Date.now();
     try {
-      const pick = await pickAskCall(item.q, config);
+      const pick = await pickAskCall(item.q, config, fetch, item.history ?? []);
       const got = normalized(pick.call);
       const accepted = [item.expect, ...(item.also ?? [])].map(normalized);
       results.push({

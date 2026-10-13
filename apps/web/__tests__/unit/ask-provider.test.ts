@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { askProviderConfig, pickAskCall, settleCall, toolParameters } from "@lib/ask/provider";
+import {
+  askProviderConfig,
+  askUserMessage,
+  pickAskCall,
+  settleCall,
+  toolParameters,
+} from "@lib/ask/provider";
 
 function fakeFetch(body: unknown, status = 200) {
   return vi.fn(
@@ -27,6 +33,23 @@ describe("리포트에 물어보기 — AI 호출", () => {
       model: "m",
       apiKey: "k",
     });
+  });
+
+  it("앞선 턴이 없으면 질문 그대로, 있으면 앞선 질문과 고른 호출을 위에 적는다", () => {
+    expect(askUserMessage("한 달에 얼마?")).toBe("한 달에 얼마?");
+    const message = askUserMessage("넷플릭스는?", [
+      { question: "티빙 결제일", call: { tool: "serviceDetail", args: { service: "티빙" } } },
+      { question: "안 쓰는 구독", call: { tool: "lowUsage" } },
+    ]);
+    expect(message).toBe(
+      [
+        "앞선 질문(꼬리 질문을 알아듣는 데만 쓴다):",
+        '1. "티빙 결제일" → serviceDetail {"service":"티빙"}',
+        '2. "안 쓰는 구독" → lowUsage',
+        "",
+        "지금 질문: 넷플릭스는?",
+      ].join("\n"),
+    );
   });
 
   it("도구 인자를 정해진 값만 받는 스키마로 보낸다", () => {
