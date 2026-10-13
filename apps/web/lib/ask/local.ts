@@ -1,4 +1,5 @@
 import { POPULAR_SERVICES, type Subscription } from "@subslash/shared";
+import { compactName } from "./fuzzy";
 import type { ASK_CATEGORIES, AskCall } from "./tools";
 
 type AskCategory = (typeof ASK_CATEGORIES)[number];
@@ -8,7 +9,8 @@ type AskCategory = (typeof ASK_CATEGORIES)[number];
  *
  * 1. `localAskCall`: 흔하고 뜻이 하나뿐인 질문은 규칙으로 바로 도구를 고른다. 이 질문은 서버·AI로 나가지 않는다.
  *    틀린 도구를 고르는 것이 'AI에게 넘김'보다 나쁘므로, 조금이라도 애매하면 null을 돌려 AI에 맡긴다 — 평가 세트에서
- *    규칙이 답한 질문은 모두 정답이어야 한다(테스트가 확인한다).
+ *    규칙이 답한 질문은 모두 정답이어야 한다(테스트가 확인한다). 처음 규칙은 평가 세트를 보며 만들어 그 숫자가
+ *    낙관적이다 — 앞으로 규칙은 학습 세트(lib/ask/train-set)를 보며 다듬고, 평가 세트는 재기만 한다.
  * 2. `refineCall`: 기간이 적힌 질문의 일수를 기기가 다시 정한다. AI는 오늘이 며칠인지 모르므로 "월말까지"를 셀 수 없다.
  */
 
@@ -77,13 +79,13 @@ const CATEGORY_WORDS: [RegExp, AskCategory][] = [
 
 /** 질문에 서비스 이름이 들어 있는지(서비스 목록과 이 기기의 구독). 들어 있으면 그 서비스를 묻는 질문일 수 있다. */
 function mentionsService(q: string, subscriptions: readonly Subscription[]): boolean {
-  const compact = q.replace(/\s+/g, "");
+  const compact = compactName(q);
   const names = [
     ...POPULAR_SERVICES.flatMap((preset) => [preset.nameKo, preset.nameEn]),
     ...subscriptions.map((sub) => sub.name),
   ]
     .filter((name): name is string => Boolean(name))
-    .map((name) => name.toLowerCase().replace(/\s+/g, ""))
+    .map(compactName)
     .filter((name) => name.length >= 2);
   // 한글 이름은 앞 두 글자 줄임말("넷플", "디즈")도 본다. 잘못 걸려도 AI에 넘길 뿐이라 넓게 잡는다. 영문은 앞 글자가
   // 흔한 낱말과 겹쳐(chatgpt의 'ch' ↔ 'charge') 이름 전체만 본다.

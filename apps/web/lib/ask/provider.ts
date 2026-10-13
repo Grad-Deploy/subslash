@@ -133,6 +133,8 @@ export async function pickTool(
   tools: ToolDefinition[],
   config: AskProviderConfig,
   fetcher: typeof fetch = fetch,
+  /** 출력 토큰 상한. 질문을 고르는 데는 200이면 되고, 학습 질문을 여러 개 만드는 스크립트(scripts/ask-train)만 늘린다. */
+  maxTokens = 200,
 ): Promise<RawToolCall> {
   if (config.provider === "anthropic") {
     const data = await postJson(
@@ -140,7 +142,7 @@ export async function pickTool(
       { "x-api-key": config.apiKey, "anthropic-version": "2023-06-01" },
       {
         model: config.model,
-        max_tokens: 200,
+        max_tokens: maxTokens,
         system,
         tools: tools.map((tool) => ({
           name: tool.name,
@@ -184,7 +186,7 @@ export async function pickTool(
         },
       ],
       toolConfig: { functionCallingConfig: { mode: "ANY" } },
-      generationConfig: { maxOutputTokens: 200 },
+      generationConfig: { maxOutputTokens: maxTokens },
     },
     fetcher,
   );
