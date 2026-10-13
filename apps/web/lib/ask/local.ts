@@ -14,6 +14,22 @@ type AskCategory = (typeof ASK_CATEGORIES)[number];
  * 2. `refineCall`: 기간이 적힌 질문의 일수를 기기가 다시 정한다. AI는 오늘이 며칠인지 모르므로 "월말까지"를 셀 수 없다.
  */
 
+/**
+ * 한국의 오늘 날짜(그날 정오, 실행하는 곳의 시간대로 만든 Date). 서버(Vercel)는 UTC라 `new Date()`로 날짜를 세면 한국
+ * 자정부터 아침 9시까지 하루 어긋난다 — "내일"·"월말까지"가 하루 틀린다.
+ */
+export function koreaToday(now: Date = new Date()): Date {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value);
+  return new Date(part("year"), part("month") - 1, part("day"), 12);
+}
+
 const normalize = (text: string) => text.toLowerCase().replace(/\s+/g, " ").trim();
 
 const clampDays = (n: number) => Math.min(31, Math.max(1, Math.round(n)));
