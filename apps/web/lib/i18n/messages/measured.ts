@@ -28,6 +28,10 @@ export const ko = {
     lineDevices: (devices: number) => `기기 ${devices}대를 이어서 셌어요`,
     lineHandoff: (n: number) => ` (기기를 바꿔 이어 쓴 ${n}번 포함)`,
     lineAfter: ". TV·PC에서 본 것은 없어서 체크인할 때 더해 주세요.",
+    zeroWhy:
+      "측정한 기기(안드로이드 휴대폰·태블릿)에서 1분 넘게 쓴 적이 없어요. 1분이 안 되는 사용은 세지 않아요.",
+    lineAfterPc: ". PC·웹에서 쓴 것은 빠져 있어서 체크인할 때 더해 주세요.",
+    notIncludedPc: " AI 서비스를 PC·웹에서 쓴 것도 빠져 있어요.",
   },
 };
 
@@ -62,6 +66,10 @@ export const en: Widen<typeof ko> = {
     lineHandoff: (n) =>
       ` (including ${countOf(n, "switch")} between devices)`.replace("switchs", "switches"),
     lineAfter: ". Watching on a TV or PC isn't included, so add it when you check in.",
+    zeroWhy:
+      "Not used for more than a minute on the measured devices (Android phones and tablets). Uses shorter than a minute aren't counted.",
+    lineAfterPc: ". Use on a PC or the web isn't included, so add it when you check in.",
+    notIncludedPc: " Using AI services on a PC or the web isn't included either.",
   },
 };
 
@@ -90,6 +98,9 @@ export const zh: Widen<typeof ko> = {
     lineDevices: (devices) => `合计了 ${devices} 台设备`,
     lineHandoff: (n) => `（含换设备接着用的 ${n} 次）`,
     lineAfter: "。不包括在电视或电脑上观看的部分，签到时请加上。",
+    zeroWhy: "在已测量的设备（Android 手机、平板）上没有使用超过 1 分钟。不足 1 分钟的使用不计入。",
+    lineAfterPc: "。不包括在电脑或网页上的使用，签到时请加上。",
+    notIncludedPc: " 在电脑或网页上使用 AI 服务的部分也不包括在内。",
   },
 };
 
@@ -120,6 +131,10 @@ export const ja: Widen<typeof ko> = {
     lineDevices: (devices) => `端末 ${devices} 台をつなげて数えました`,
     lineHandoff: (n) => `（端末を替えて続けて使った ${n} 回を含む）`,
     lineAfter: "。テレビ・PC で見た分はないので、チェックインのときに足してください。",
+    zeroWhy:
+      "測定した端末（Android のスマホ・タブレット）では 1 分を超えて使っていません。1 分未満の利用は数えません。",
+    lineAfterPc: "。PC・ウェブで使った分は含まれないので、チェックインのときに足してください。",
+    notIncludedPc: " AI サービスを PC・ウェブで使った分も含まれません。",
   },
 };
 
@@ -151,6 +166,10 @@ export const vi: Widen<typeof ko> = {
     lineDevices: (devices) => `Đếm liền mạch trên ${devices} thiết bị`,
     lineHandoff: (n) => ` (gồm ${n} lần chuyển thiết bị để dùng tiếp)`,
     lineAfter: ". Không có phần xem trên TV hay PC, hãy cộng thêm khi check-in.",
+    zeroWhy:
+      "Chưa dùng quá 1 phút trên các thiết bị đã đo (điện thoại, máy tính bảng Android). Lần dùng dưới 1 phút không được tính.",
+    lineAfterPc: ". Không tính phần dùng trên PC hay web, hãy cộng thêm khi check-in.",
+    notIncludedPc: " Phần dùng dịch vụ AI trên PC hay web cũng không được tính.",
   },
 };
 
@@ -185,6 +204,12 @@ export const fr: Widen<typeof ko> = {
     lineHandoff: (n) => ` (dont ${n} changement${Number(n) === 1 ? "" : "s"} d'appareil)`,
     lineAfter:
       ". Ce que vous regardez sur une TV ou un PC n'est pas inclus : ajoutez-le lors du check-in.",
+    zeroWhy:
+      "Pas utilisé plus d'une minute sur les appareils mesurés (téléphones et tablettes Android). Les utilisations de moins d'une minute ne sont pas comptées.",
+    lineAfterPc:
+      ". L'utilisation sur un PC ou sur le web n'est pas incluse : ajoutez-la lors du check-in.",
+    notIncludedPc:
+      " L'utilisation des services d'IA sur un PC ou sur le web n'est pas incluse non plus.",
   },
 };
 
@@ -219,6 +244,10 @@ export const es: Widen<typeof ko> = {
       `Contado en ${devices} dispositivo${Number(devices) === 1 ? "" : "s"}`,
     lineHandoff: (n) => ` (incluye ${n} cambio${Number(n) === 1 ? "" : "s"} de dispositivo)`,
     lineAfter: ". No incluye lo que veas en una TV o un PC, así que súmalo al registrar.",
+    zeroWhy:
+      "No se ha usado más de un minuto en los dispositivos medidos (teléfonos y tabletas Android). Los usos de menos de un minuto no se cuentan.",
+    lineAfterPc: ". No incluye el uso en un PC o en la web, así que súmalo al registrar.",
+    notIncludedPc: " Tampoco incluye el uso de servicios de IA en un PC o en la web.",
   },
 };
 
@@ -252,6 +281,10 @@ export const de: Widen<typeof ko> = {
       `Über ${devices} ${Number(devices) === 1 ? "Gerät" : "Geräte"} gezählt`,
     lineHandoff: (n) => ` (inklusive ${n} Gerätewechsel)`,
     lineAfter: ". Was du auf TV oder PC schaust, fehlt – rechne es beim Eintragen dazu.",
+    zeroWhy:
+      "Auf den gemessenen Geräten (Android-Handys und -Tablets) nicht länger als eine Minute genutzt. Nutzung unter einer Minute wird nicht gezählt.",
+    lineAfterPc: ". Nutzung am PC oder im Web fehlt – rechne sie beim Eintragen dazu.",
+    notIncludedPc: " Auch die Nutzung von KI-Diensten am PC oder im Web ist nicht enthalten.",
   },
 };
 
@@ -285,5 +318,9 @@ export const pt: Widen<typeof ko> = {
       `Contado em ${devices} dispositivo${Number(devices) === 1 ? "" : "s"}`,
     lineHandoff: (n) => ` (incluindo ${n} troca${Number(n) === 1 ? "" : "s"} de dispositivo)`,
     lineAfter: ". Não inclui o que você assiste na TV ou no PC, então some ao registrar.",
+    zeroWhy:
+      "Não foi usado por mais de um minuto nos dispositivos medidos (celulares e tablets Android). Usos com menos de um minuto não são contados.",
+    lineAfterPc: ". Não inclui o uso no PC ou na web, então some ao registrar.",
+    notIncludedPc: " O uso de serviços de IA no PC ou na web também não está incluído.",
   },
 };
