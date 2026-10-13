@@ -22,6 +22,7 @@ import type { Locale } from "@lib/i18n/config";
 import { describeQuantityText } from "@lib/i18n/check-in-text";
 import type { Messages } from "@lib/i18n/messages";
 import type { AskCall } from "./tools";
+import { compactName, expandAlias, isChosungOnly, isTypoOf, toChosung } from "./fuzzy";
 
 export { josa } from "./josa";
 
@@ -70,23 +71,37 @@ function paying(ctx: AskContext): Subscription[] {
   return ctx.subscriptions.filter((sub) => sub.status === "active" && !isInTrial(sub, ctx.now));
 }
 
-const normalize = (text: string) => text.toLowerCase().replace(/[\s·.\-_]/g, "");
-
 /**
- * 사용자가 적은 서비스 이름("넷플", "쿠팡와우")을 이 기기의 구독과 맞춘다. 구독 이름이 적은 말을 품거나 그 반대면 같다고
- * 본다. 둘 이상 맞으면 모두 돌려준다 — 하나를 골라 답하면 다른 구독의 숫자를 그 서비스의 것처럼 말하게 된다.
+ * 사용자가 적은 서비스 이름("넷플", "쿠팡와우", "유튭", "ㄴㅍㄹㅅ", "넷플릭쓰")을 이 기기의 구독과 맞춘다. 순서대로 보고,
+ * 앞 단계에서 맞은 것이 있으면 거기서 멈춘다 — 느슨한 비교일수록 엉뚱한 구독이 끼기 쉽다.
+ *
+ * 1. 구독 이름이 적은 말을 품거나 그 반대(줄임말 표의 이름으로 바꾼 말도 본다)
+ * 2. 초성만 적었으면 초성끼리
+ * 3. 오타(lib/ask/fuzzy의 `isTypoOf`)
+ *
+ * 둘 이상 맞으면 모두 돌려준다 — 하나를 골라 답하면 다른 구독의 숫자를 그 서비스의 것처럼 말하게 된다.
  */
 export function matchSubscriptions(query: string, subscriptions: Subscription[]): Subscription[] {
-  const wanted = normalize(query);
+  const wanted = compactName(query);
   if (wanted.length < 2) return [];
+  const alias = expandAlias(query);
   // 영어로 물으면("Netflix") 한국어 이름으로 등록한 구독(넷플릭스)도, 한국어로 물으면("넷플") 영어 화면에서 등록한
   // 구독(Netflix)도 맞춘다 — 서비스 목록의 두 언어 이름으로 견준다.
-  return subscriptions.filter((sub) =>
-    [sub.name, subscriptionName(sub, "ko"), subscriptionName(sub, "en")].some((raw) => {
-      const name = normalize(raw);
-      return name.includes(wanted) || wanted.includes(name);
-    }),
+  const namesOf = (sub: Subscription) =>
+    [sub.name, subscriptionName(sub, "ko"), subscriptionName(sub, "en")].map(compactName);
+
+  const contains = subscriptions.filter((sub) =>
+    namesOf(sub).some((name) => [wanted, alias].some((q) => name.includes(q) || q.includes(name))),
   );
+  if (contains.length > 0) return contains;
+
+  if (isChosungOnly(wanted)) {
+    return subscriptions.filter((sub) =>
+      namesOf(sub).some((name) => toChosung(name).includes(wanted)),
+    );
+  }
+
+  return subscriptions.filter((sub) => namesOf(sub).some((name) => isTypoOf(wanted, name)));
 }
 
 function startOfMonth(now: Date): Date {

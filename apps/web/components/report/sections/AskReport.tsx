@@ -6,6 +6,7 @@ import { ArrowUp, RotateCcw, Sparkles } from "lucide-react";
 import type { Subscription, UsageLog } from "@subslash/shared";
 import { answerAsk, type AskAnswer } from "@lib/ask/answer";
 import { askReport } from "@lib/ask/client";
+import { localAskCall, refineCall } from "@lib/ask/local";
 import type { AskCall, AskTurn } from "@lib/ask/tools";
 import { Spinner } from "@components/ui/spinner";
 import { cn } from "@lib/utils";
@@ -25,6 +26,7 @@ const MAX_TURNS = 20;
 
 /**
  * '리포트에 물어보기'. 질문 문장만 서버(AI)로 가고, AI가 고른 도구를 이 기기의 기록으로 계산해 답한다(lib/ask).
+ * 흔하고 뜻이 하나뿐인 질문은 기기의 규칙(lib/ask/local)으로 답해 서버로 보내지 않는다.
  * 대화처럼 이어 물을 수 있다 — 꼬리 질문("그럼 1년이면?")을 알아듣게 앞선 턴의 질문과 고른 호출을 함께 보내고
  * (`AskTurn`), 답과 숫자는 보내지 않는다. 대화는 이 화면에만 있고 저장하지 않는다.
  * 답 아래에 무엇으로 계산했는지를 적는다 — AI가 만든 숫자가 아니라는 것을 사용자가 볼 수 있게.
@@ -69,7 +71,9 @@ export function AskReport({
     const settle = (patch: Partial<ChatTurn>) =>
       setTurns((prev) => prev.map((turn) => (turn.id === id ? { ...turn, ...patch } : turn)));
     try {
-      const call = await askReport(trimmed, history);
+      // 뜻이 하나뿐인 흔한 질문은 기기의 규칙으로 고르고 서버로 보내지 않는다. 기간은 오늘을 아는 기기가 다시 맞춘다.
+      const local = localAskCall(trimmed, { now, subscriptions, hasHistory: history.length > 0 });
+      const call = refineCall(local ?? (await askReport(trimmed, history)), trimmed, now);
       settle({
         call,
         answer: answerAsk(call, { subscriptions, usageLogs, rate, now, t: tRef.current, locale }),

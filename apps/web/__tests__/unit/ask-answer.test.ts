@@ -139,6 +139,12 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
     expect(matchSubscriptions("넷플", SUBS).map((s) => s.id)).toEqual(["netflix"]);
     expect(matchSubscriptions("chat gpt", SUBS).map((s) => s.id)).toEqual(["gpt"]);
     expect(matchSubscriptions("넷", SUBS)).toEqual([]);
+    // 줄임말·초성·오타
+    expect(matchSubscriptions("ㄴㅍㄹㅅ", SUBS).map((s) => s.id)).toEqual(["netflix"]);
+    expect(matchSubscriptions("넷플릭쓰", SUBS).map((s) => s.id)).toEqual(["netflix"]);
+    expect(matchSubscriptions("지피티", SUBS).map((s) => s.id)).toEqual(["gpt"]);
+    // 두 글자 이름은 한 글자만 달라도 다른 서비스일 수 있어 오타로 보지 않는다
+    expect(matchSubscriptions("티방", SUBS)).toEqual([]);
     const both = [...SUBS, sub({ id: "netflix2", name: "넷플릭스 (가족)" })];
     const result = answerAsk(
       { tool: "serviceDetail", args: { service: "넷플릭스" } },
