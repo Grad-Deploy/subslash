@@ -14,6 +14,7 @@ export const ko = {
     copied: "복사했어요",
     mailFallback:
       "메일 앱이 열리지 않으면 ‘Gmail로 쓰기’를 누르거나, 주소를 복사해 쓰는 메일에서 보내 주세요.",
+    mailFallbackWeb: "Gmail을 쓰지 않으면 주소를 복사해 쓰는 메일에서 보내 주세요.",
     privacyBefore: "개인정보에 관한 요청도 같은 주소로 받아요(",
     privacyLink: "개인정보처리방침",
     privacyAfter: ").",
@@ -50,6 +51,7 @@ export const en: Widen<typeof ko> = {
     copied: "Copied",
     mailFallback:
       "If your mail app doesn't open, tap “Write in Gmail”, or copy the address and send from the mail you use.",
+    mailFallbackWeb: "If you don't use Gmail, copy the address and send from the mail you use.",
     privacyBefore: "Requests about personal information go to the same address (",
     privacyLink: "Privacy policy",
     privacyAfter: ").",
@@ -86,6 +88,7 @@ export const zh: Widen<typeof ko> = {
     copyAddress: "复制地址",
     copied: "已复制",
     mailFallback: "如果邮件应用没有打开，请点“在 Gmail 中写信”，或复制地址后用你常用的邮箱发送。",
+    mailFallbackWeb: "如果不用 Gmail，请复制地址后用你常用的邮箱发送。",
     privacyBefore: "有关个人信息的请求也发到同一个地址（",
     privacyLink: "隐私政策",
     privacyAfter: "）。",
@@ -122,6 +125,8 @@ export const ja: Widen<typeof ko> = {
     copied: "コピーしました",
     mailFallback:
       "メールアプリが開かない場合は「Gmail で書く」を押すか、アドレスをコピーしていつも使うメールから送ってください。",
+    mailFallbackWeb:
+      "Gmail をお使いでなければ、アドレスをコピーしていつも使うメールから送ってください。",
     privacyBefore: "個人情報に関するご依頼も同じアドレスへどうぞ（",
     privacyLink: "プライバシーポリシー",
     privacyAfter: "）。",
@@ -159,6 +164,7 @@ export const vi: Widen<typeof ko> = {
     copied: "Đã sao chép",
     mailFallback:
       "Nếu ứng dụng email không mở, hãy nhấn “Viết trong Gmail”, hoặc sao chép địa chỉ rồi gửi từ email bạn hay dùng.",
+    mailFallbackWeb: "Nếu không dùng Gmail, hãy sao chép địa chỉ rồi gửi từ email bạn hay dùng.",
     privacyBefore: "Yêu cầu về thông tin cá nhân cũng gửi đến cùng địa chỉ (",
     privacyLink: "Chính sách quyền riêng tư",
     privacyAfter: ").",
@@ -196,6 +202,8 @@ export const fr: Widen<typeof ko> = {
     copied: "Copié",
     mailFallback:
       "Si votre messagerie ne s'ouvre pas, appuyez sur « Écrire dans Gmail », ou copiez l'adresse et écrivez depuis votre messagerie habituelle.",
+    mailFallbackWeb:
+      "Si vous n'utilisez pas Gmail, copiez l'adresse et écrivez depuis votre messagerie habituelle.",
     privacyBefore: "Les demandes concernant vos données personnelles vont à la même adresse (",
     privacyLink: "Politique de confidentialité",
     privacyAfter: ").",
@@ -233,6 +241,7 @@ export const es: Widen<typeof ko> = {
     copied: "Copiado",
     mailFallback:
       "Si no se abre tu app de correo, pulsa «Escribir en Gmail» o copia la dirección y envía desde el correo que uses.",
+    mailFallbackWeb: "Si no usas Gmail, copia la dirección y envía desde el correo que uses.",
     privacyBefore: "Las solicitudes sobre datos personales van a la misma dirección (",
     privacyLink: "Política de privacidad",
     privacyAfter: ").",
@@ -270,6 +279,8 @@ export const de: Widen<typeof ko> = {
     copied: "Kopiert",
     mailFallback:
       "Wenn sich deine Mail-App nicht öffnet, tippe auf „In Gmail schreiben“ oder kopiere die Adresse und schreib aus deinem üblichen Postfach.",
+    mailFallbackWeb:
+      "Wenn du Gmail nicht nutzt, kopiere die Adresse und schreib aus deinem üblichen Postfach.",
     privacyBefore: "Anfragen zu personenbezogenen Daten gehen an dieselbe Adresse (",
     privacyLink: "Datenschutzerklärung",
     privacyAfter: ").",
@@ -307,6 +318,7 @@ export const pt: Widen<typeof ko> = {
     copied: "Copiado",
     mailFallback:
       "Se o app de e-mail não abrir, toque em “Escrever no Gmail” ou copie o endereço e envie do e-mail que você usa.",
+    mailFallbackWeb: "Se você não usa o Gmail, copie o endereço e envie do e-mail que você usa.",
     privacyBefore: "Pedidos sobre dados pessoais vão para o mesmo endereço (",
     privacyLink: "Política de privacidade",
     privacyAfter: ").",
