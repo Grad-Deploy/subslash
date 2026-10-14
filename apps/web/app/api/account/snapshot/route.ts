@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
+import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
 import {
   MAX_SNAPSHOT_BYTES,
   deleteSnapshot,
@@ -17,19 +17,13 @@ import { logError } from "@lib/log";
  * 계정의 id를 어디에 적어 보내도 그 계정의 기록에는 닿지 않는다.
  */
 
-async function currentAccount(request: NextRequest) {
-  return getAccountBySessionToken(readSessionToken(request));
-}
-
-const LOGIN_REQUIRED = () => NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
-
 /** `?summary=1`이면 기록 내용 없이 요약만 돌려준다 — 화면이 열릴 때마다 전체를 받지 않게. */
 export async function GET(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await currentAccount(request);
-    if (!account) return LOGIN_REQUIRED();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
 
     const snapshot = await readSnapshot(account.id);
     if (!snapshot) {
@@ -71,8 +65,8 @@ export async function PUT(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await currentAccount(request);
-    if (!account) return LOGIN_REQUIRED();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
 
     // 본문을 다 읽기 전에 알 수 있으면 먼저 거절한다.
     const declared = Number(request.headers.get("content-length"));
@@ -109,8 +103,8 @@ export async function DELETE(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await currentAccount(request);
-    if (!account) return LOGIN_REQUIRED();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
 
     const deleted = await deleteSnapshot(account.id);
     return NextResponse.json({ status: deleted ? "deleted" : "none" });

@@ -8,6 +8,7 @@ import {
   formatCurrency,
   getBreakEvenInfo,
   getMyMonthlyShareAmount,
+  spaceCurrencySymbol,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useT } from "@lib/i18n";
@@ -31,11 +32,6 @@ const TONE: Record<RiskLevel, { dot: string; bar: string; text: string }> = {
     text: "text-red-700 dark:text-red-400",
   },
 };
-
-/** '₩ 7,890'처럼 기호 뒤를 한 칸 띄운다(계산서와 같은 표기). */
-function spaced(text: string): string {
-  return text.replace(/^([−-]?)([₩$])\s*/, "$1$2 ");
-}
 
 /**
  * 앱의 체크인 결과. 웹의 결과 화면(충격 문구·배지·비유 카드·게이지 두 개·로그인 안내·버튼 셋)을
@@ -62,7 +58,8 @@ export function AppCheckInResult({
   const tone = TONE[result.riskLevel];
   const toneLabel = { green: r.green, yellow: r.yellow, red: r.red }[result.riskLevel];
   const monthly = getMyMonthlyShareAmount(subscription);
-  const money = (amount: number) => spaced(formatCurrency(amount, subscription.currency));
+  const money = (amount: number) =>
+    spaceCurrencySymbol(formatCurrency(amount, subscription.currency));
   const breakEven = getBreakEvenInfo(monthly, count);
   const progress = Math.min(100, breakEven.progressPercent);
   const remaining = Math.max(0, breakEven.breakEvenUsage - count);

@@ -18,7 +18,7 @@ import { webUrl } from "../../../lib/api";
 import { shareText } from "../../../lib/native";
 import { Button } from "../../../components/ui/button";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
-import { Spinner } from "../../../components/ui/spinner";
+import { PageSpinner } from "../../../components/ui/spinner";
 import { copyText } from "@lib/native";
 import { useT, useServiceNames } from "@lib/i18n";
 import { describeSpendingTypeText } from "@lib/i18n/savings-text";
@@ -31,14 +31,6 @@ function readYear(value: string | null, currentYear: number): number {
   return Number.isInteger(parsed) && parsed >= EARLIEST_YEAR && parsed <= currentYear
     ? parsed
     : currentYear;
-}
-
-function LoadingScreen() {
-  return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <Spinner className="size-8" />
-    </div>
-  );
 }
 
 function Standing({ label, item, value }: { label: string; item: CheckInStanding; value: string }) {
@@ -85,7 +77,7 @@ function YearInReviewContent() {
   );
   const { rateOn, loading: ratesLoading } = useHistoricalRates(range);
 
-  if (!mounted || ratesLoading) return <LoadingScreen />;
+  if (!mounted || ratesLoading) return <PageSpinner />;
 
   const review = buildYearInReview(subscriptions, usageLogs, year, rate, now, rateOn);
   const { defended, checkIns } = review;
@@ -360,7 +352,7 @@ function YearInReviewContent() {
 
 export default function YearInReviewPage() {
   return (
-    <Suspense fallback={<LoadingScreen />}>
+    <Suspense fallback={<PageSpinner />}>
       <YearInReviewContent />
     </Suspense>
   );

@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
 import { Button } from "../../components/ui/button";
-import { Spinner } from "../../components/ui/spinner";
+import { PageSpinner } from "../../components/ui/spinner";
 import { useT } from "../../lib/i18n";
 import { Inbox } from "lucide-react";
 
@@ -53,13 +53,7 @@ function ShareReceiver() {
 
 export default function SharePage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Spinner className="size-8" />
-        </div>
-      }
-    >
+    <Suspense fallback={<PageSpinner />}>
       <ShareReceiver />
     </Suspense>
   );

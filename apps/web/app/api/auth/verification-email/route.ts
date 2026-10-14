@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeEmailAddress, validateEmail } from "@subslash/shared";
 import { databaseUnavailableResponse } from "@lib/db";
-import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
+import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
 import {
   describeSendOutcome,
   findAccountByEmail,
@@ -42,9 +42,9 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      account = await getAccountBySessionToken(readSessionToken(request));
+      account = await getRequestAccount(request);
       if (!account) {
-        return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+        return loginRequiredResponse();
       }
     }
 

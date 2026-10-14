@@ -11,6 +11,7 @@ import {
   metricOfLog,
   sumMonthlyKRW,
   sumMyMonthlyKRW,
+  spaceCurrencySymbol,
 } from "@subslash/shared";
 import type { Messages } from "@lib/i18n";
 import { describeCheckInText } from "@lib/i18n/check-in-text";
@@ -31,11 +32,7 @@ export type SectionKey = "worth" | "wasted" | "unknown";
  * 자릿수가 정갈하게 보인다. 부호(−)는 기호 앞에 둔다.
  */
 export function won(amount: number): string {
-  return spaced(formatKRW(amount));
-}
-
-export function spaced(text: string): string {
-  return text.replace(/^([−-]?)([₩$])\s*/, "$1$2 ");
+  return spaceCurrencySymbol(formatKRW(amount));
 }
 
 /** 먼저 연 구독을 빼고, 남은 '쉬어가도 될 구독'을 금액이 큰 순서로. 이어서 해지할 차례다. */
@@ -54,7 +51,7 @@ export function receiptDetail(t: Messages, item: ValueReportItem): string {
   if (count === 0) return t.receipt.detailUnused;
   return t.receipt.detailUses(
     count,
-    spaced(formatCurrency(item.costPerUse ?? 0, item.sub.currency)),
+    spaceCurrencySymbol(formatCurrency(item.costPerUse ?? 0, item.sub.currency)),
   );
 }
 

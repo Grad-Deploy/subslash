@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
+import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
 import { acknowledgeDiscoveries, listDiscoveries } from "@lib/gmail-auto-import";
 import { logError } from "@lib/log";
 
@@ -11,16 +11,14 @@ import { logError } from "@lib/log";
  * 등록했거나 버린 후보의 id를 보내 지운다. 시작일 전에도 열어 둔다 — 후보가 없으면 빈 목록일 뿐이다.
  */
 
-const LOGIN_REQUIRED = () => NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
-
 const MAX_ACK_IDS = 200;
 
 export async function GET(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await getAccountBySessionToken(readSessionToken(request));
-    if (!account) return LOGIN_REQUIRED();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
     return NextResponse.json({ discoveries: await listDiscoveries(account.id) });
   } catch (error) {
     logError("api/gmail/discoveries GET", error);
@@ -32,8 +30,8 @@ export async function DELETE(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await getAccountBySessionToken(readSessionToken(request));
-    if (!account) return LOGIN_REQUIRED();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
 
     const body = (await request.json().catch(() => null)) as { ids?: unknown } | null;
     if (!Array.isArray(body?.ids)) {

@@ -9,6 +9,7 @@ import {
   getDaysUntilBillingFor,
   getNextBillingDateFor,
   isInTrial,
+  spaceCurrencySymbol,
 } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage, usePhoneUsageStore } from "@hooks/usePhoneUsage";
@@ -85,7 +86,7 @@ export function AppUnusedAlerts({
       if (hidden(u.sub.id) || u.totals.opens > 0 || u.totals.ms > 0) continue;
       const days = getDaysUntilBillingFor(u.sub, now);
       if (days === null || days < 0 || days > BILLING_WITHIN_DAYS) continue;
-      const amount = spacedCurrency(formatCurrency(getBilledAmount(u.sub), u.sub.currency));
+      const amount = spaceCurrencySymbol(formatCurrency(getBilledAmount(u.sub), u.sub.currency));
       list.push({
         kind: "unused",
         usage: u,
@@ -204,8 +205,4 @@ export function AppUnusedAlerts({
       )}
     </section>
   );
-}
-
-function spacedCurrency(text: string): string {
-  return text.replace(/^([−-]?)([₩$])\s*/, "$1$2 ");
 }

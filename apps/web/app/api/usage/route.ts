@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
+import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
 import { isDeviceUsageOpen } from "@lib/privacy";
 import { parseUsageUpload, USAGE_RETENTION_DAYS } from "@lib/device-usage";
 import {
@@ -25,7 +25,6 @@ import { logError } from "@lib/log";
 /** 기기는 앱을 열 때·하루 몇 번 올린다. 한 계정에 기기가 여럿이어도 넉넉한 값이다. */
 const UPLOADS_PER_ACCOUNT: RateLimitRule = { limit: 60, windowMs: 60 * 60 * 1000 };
 
-const LOGIN_REQUIRED = () => NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
 const CLOSED = () =>
   NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
 
@@ -34,8 +33,8 @@ export async function GET(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await getAccountBySessionToken(readSessionToken(request));
-    if (!account) return LOGIN_REQUIRED();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
     const requested = Number(request.nextUrl.searchParams.get("days") ?? 30);
     const days = Number.isInteger(requested)
       ? Math.min(Math.max(requested, 1), USAGE_RETENTION_DAYS)
@@ -52,8 +51,8 @@ export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await getAccountBySessionToken(readSessionToken(request));
-    if (!account) return LOGIN_REQUIRED();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
 
     const key = `usage-upload:account:${account.id}`;
     const wait = retryAfterSeconds(key, UPLOADS_PER_ACCOUNT);
@@ -82,8 +81,8 @@ export async function DELETE(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await getAccountBySessionToken(readSessionToken(request));
-    if (!account) return LOGIN_REQUIRED();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
     const body = (await request.json().catch(() => null)) as {
       deviceKey?: unknown;
       all?: unknown;
