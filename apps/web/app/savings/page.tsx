@@ -30,7 +30,7 @@ import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { Subscription } from "@subslash/shared";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
-import { Spinner } from "../../components/ui/spinner";
+import { PageSpinner } from "../../components/ui/spinner";
 import { PiggyBank } from "lucide-react";
 import { copyText } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
@@ -61,11 +61,7 @@ function SavingsDashboard() {
   const [reviveTarget, setReviveTarget] = useState<Subscription | null>(null);
 
   if (!mounted) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Spinner className="size-8" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   const killedSubs = getKilledSubscriptions();

@@ -8,6 +8,7 @@ import {
   formatCurrency,
   getMyMonthlyShareAmount,
   metricForSubscription,
+  spaceCurrencySymbol,
 } from "@subslash/shared";
 import { MetricQuantityInput } from "../MetricQuantityInput";
 import { cn } from "@lib/utils";
@@ -22,11 +23,6 @@ const AppPhoneHint = IS_APP_BUILD
   : null;
 
 const MAX_STEP = 10;
-
-/** '₩ 17,000'처럼 기호 뒤를 한 칸 띄운다(계산서와 같은 표기). */
-function spaced(text: string): string {
-  return text.replace(/^([−-]?)([₩$])\s*/, "$1$2 ");
-}
 
 /**
  * 앱의 체크인 입력. 등록 직후·첫 체크인 카드·체크인 창이 모두 이것을 쓴다.
@@ -136,7 +132,7 @@ export function AppUsageCountPicker({
             : count === 0
               ? p.notUsed
               : p.perUse(
-                  spaced(
+                  spaceCurrencySymbol(
                     formatCurrency(calculateCostPerUse(monthly, count), subscription.currency),
                   ),
                 )}

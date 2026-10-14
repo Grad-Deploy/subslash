@@ -23,3 +23,12 @@ export function Spinner({ className, label }: { className?: string; label?: stri
     />
   );
 }
+
+/** 화면 전체를 기다릴 때 가운데 두는 큰 표시. */
+export function PageSpinner() {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <Spinner className="size-8" />
+    </div>
+  );
+}

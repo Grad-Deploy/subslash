@@ -23,20 +23,12 @@ import { renderReceiptImage } from "@lib/receipt-image";
 import { ReceiptThemePicker, ReceiptThemePreview } from "@components/report/ReceiptThemePreview";
 import { useReceiptTheme } from "@lib/receipt-theme";
 import { Button } from "@components/ui/button";
-import { Spinner } from "@components/ui/spinner";
+import { Spinner, PageSpinner } from "@components/ui/spinner";
 import { CopyFallbackDialog } from "@components/ui/copy-fallback-dialog";
 import { cn } from "@lib/utils";
 
 /** 이보다 이른 해는 이 앱에 기록이 있을 수 없다(연말 결산과 같은 값). */
 const EARLIEST_YEAR = 2020;
-
-function LoadingScreen() {
-  return (
-    <div className="flex min-h-[50vh] items-center justify-center">
-      <Spinner className="size-8" />
-    </div>
-  );
-}
 
 function shift(period: ReceiptPeriod, step: number): ReceiptPeriod {
   if (period.kind === "year") return { kind: "year", year: period.year + step };
@@ -113,7 +105,7 @@ function ReceiptFromQuery() {
     };
   }, [subscriptions, usageLogs, period, rate, now, rateOn, names]);
 
-  if (!mounted || ratesLoading) return <LoadingScreen />;
+  if (!mounted || ratesLoading) return <PageSpinner />;
 
   const previous = shift(period, -1);
   const next = shift(period, 1);
@@ -257,7 +249,7 @@ function ReceiptFromQuery() {
 
 export default function ReceiptPage() {
   return (
-    <Suspense fallback={<LoadingScreen />}>
+    <Suspense fallback={<PageSpinner />}>
       <ReceiptFromQuery />
     </Suspense>
   );

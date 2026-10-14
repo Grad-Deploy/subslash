@@ -1,6 +1,6 @@
 import type { Subscription } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
-import { getNextBillingDateFor } from "./date";
+import { getNextBillingDateFor, startOfDay } from "./date";
 import { getFirstBillingDateAfterKill, getKillCheckStatus } from "./killCheck";
 import { rateForCharge, type RateOn } from "./historicalRate";
 import {
@@ -45,10 +45,6 @@ export interface DefenseRange {
 
 /** 깨진 데이터로 끝없이 돌지 않게 막는 상한. 월 결제 100년치. */
 const MAX_BILLING_DATES = 1200;
-
-function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
 
 /** 결제일 한 번에 빠져나갔을 내 몫(KRW). 연간 플랜은 한 번에 1년치가 나간다. */
 function chargeKRW(sub: Subscription, rate: number): number {

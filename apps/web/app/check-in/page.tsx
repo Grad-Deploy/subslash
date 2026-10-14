@@ -9,7 +9,7 @@ import { useServiceNames, useT } from "../../lib/i18n";
 import { CheckInModal } from "../../components/subscription/CheckInModal";
 import { CancelGuideModal } from "../../components/subscription/CancelGuideModal";
 import { Button } from "../../components/ui/button";
-import { Spinner } from "../../components/ui/spinner";
+import { PageSpinner } from "../../components/ui/spinner";
 import { CalendarCheck } from "lucide-react";
 
 type Stage = "check-in" | "guide";
@@ -67,11 +67,7 @@ function CheckInReceiver() {
   const l = t.checkin.link;
 
   if (!mounted) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Spinner className="size-8" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   if (!subId || count === null) {
@@ -145,13 +141,7 @@ function Fallback({ title, body }: { title: string; body: string }) {
 
 export default function CheckInPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Spinner className="size-8" />
-        </div>
-      }
-    >
+    <Suspense fallback={<PageSpinner />}>
       <CheckInReceiver />
     </Suspense>
   );

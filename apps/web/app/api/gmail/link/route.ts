@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
+import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
 import { isGmailAutoImportOpen } from "@lib/privacy";
 import {
   createImportLink,
@@ -17,7 +17,6 @@ import { logError } from "@lib/log";
  * 남는다. 사용자는 그 토큰이 든 스크립트를 자기 Apps Script에 붙여 넣는다.
  */
 
-const LOGIN_REQUIRED = () => NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
 const NOT_OPEN = () =>
   NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
 
@@ -27,8 +26,8 @@ export async function GET(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await getAccountBySessionToken(readSessionToken(request));
-    if (!account) return LOGIN_REQUIRED();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
     const link = await readImportLink(account.id);
     // 운영자가 웹 앱을 배포해 주소를 넣었을 때만 원클릭 연결을 보여준다.
     const connectAvailable = gmailConnectWebAppUrl() !== null;
@@ -48,8 +47,8 @@ export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await getAccountBySessionToken(readSessionToken(request));
-    if (!account) return LOGIN_REQUIRED();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
     const token = await createImportLink(account.id);
     return NextResponse.json({ token });
   } catch (error) {
@@ -63,8 +62,8 @@ export async function DELETE(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await getAccountBySessionToken(readSessionToken(request));
-    if (!account) return LOGIN_REQUIRED();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
     const deleted = await deleteGmailImportData(account.id);
     return NextResponse.json({ status: deleted ? "deleted" : "none" });
   } catch (error) {

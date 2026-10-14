@@ -8,7 +8,7 @@ import { formatKRW, getDetoxLevel, getSavingsEquivalents } from "@subslash/share
 import { useT } from "@lib/i18n";
 import { rewardHeadline } from "@lib/i18n/savings-text";
 import { readSharedSavings } from "../../../lib/share-savings";
-import { Spinner } from "../../../components/ui/spinner";
+import { PageSpinner } from "../../../components/ui/spinner";
 import { PiggyBank } from "lucide-react";
 import { KilledServicesCard } from "@components/savings/KilledServicesCard";
 
@@ -164,13 +164,7 @@ function SharedSavingsContent() {
 
 export default function SharedSavingsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Spinner className="size-8" />
-        </div>
-      }
-    >
+    <Suspense fallback={<PageSpinner />}>
       <SharedSavingsContent />
     </Suspense>
   );

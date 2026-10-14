@@ -2,7 +2,7 @@ import type { ChargeRecord, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { isSameService } from "./chargeHistory";
 import { getBilledAmount, toKRW } from "./currency";
-import { isInTrial } from "./date";
+import { isInTrial, startOfDay } from "./date";
 import type { RateOn } from "./historicalRate";
 import {
   getMyAnnualAmountKRW,
@@ -110,10 +110,6 @@ function pad(n: number): string {
 
 function dateOnly(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 /** ISO 시각을 그 기기 시간대의 날짜로. 깨졌으면 null. */

@@ -252,6 +252,16 @@ export function readSessionToken(request: NextRequest): string | undefined {
   return header.slice("Bearer ".length).trim() || undefined;
 }
 
+/** 요청을 보낸 계정. 로그인하지 않았거나 세션이 끝났으면 null이다. */
+export function getRequestAccount(request: NextRequest): Promise<Account | null> {
+  return getAccountBySessionToken(readSessionToken(request));
+}
+
+/** 로그인이 필요한 API가 로그인하지 않은 요청에 돌려주는 응답. */
+export function loginRequiredResponse() {
+  return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+}
+
 /**
  * 앱에서 온 요청이면 응답 본문에 실을 세션 토큰. 웹 요청에는 빈 객체다 — 웹의 토큰은
  * 자바스크립트가 읽을 수 없는 쿠키에만 둔다. 출처(Origin) 헤더는 페이지의 스크립트가 바꿀 수

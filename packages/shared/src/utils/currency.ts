@@ -17,6 +17,14 @@ export function formatAmount(amount: number, currency: Currency): string {
   return formatUSD(amount);
 }
 
+/**
+ * 통화 기호와 숫자 사이를 한 칸 띄운다(₩ 17,000). 앱의 계산서·체크인 화면이 가게 영수증처럼
+ * 자릿수를 정갈하게 보이려고 쓴다. 부호(−)는 기호 앞에 둔다.
+ */
+export function spaceCurrencySymbol(text: string): string {
+  return text.replace(/^([−-]?)([₩$])\s*/, "$1$2 ");
+}
+
 /** Normalises any amount to KRW so mixed-currency subscriptions can be summed. */
 export function toKRW(
   amount: number,

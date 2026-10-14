@@ -47,7 +47,8 @@ export function getNextBillingDateFor(
   return new Date(nextYear, monthIndex, effectiveDay(nextYear, monthIndex, schedule.billingDay));
 }
 
-function startOfDay(date: Date): Date {
+/** 그 기기 시간대의 그날 0시. */
+export function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
