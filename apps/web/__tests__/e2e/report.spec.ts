@@ -78,4 +78,31 @@ test.describe("구독 리포트 (E2E)", () => {
     const tab = page.locator("nav").getByRole("link", { name: "리포트" });
     await expect(tab).toHaveClass(/text-primary/, { timeout: 30_000 });
   });
+
+  test("AI가 닫혀 있어도 물어보기 칸이 있고, 추천 질문과 기기 규칙으로만 답하며 서버로 보내지 않는다", async ({
+    page,
+  }) => {
+    test.skip(process.env.NEXT_PUBLIC_AI_ASK_TEST_OPEN === "true", "AI가 닫힌 서버에서만 확인한다");
+    const asked: string[] = [];
+    page.on("request", (req) => {
+      if (req.url().includes("/api/ask")) asked.push(req.url());
+    });
+    await seed(page, { subscriptions: [NETFLIX, MELON], usageLogs: [], accounts: [] });
+    await page.goto("/report");
+
+    const ask = page.getByRole("region", { name: "리포트에 물어보기" });
+    await expect(ask.getByText(/서버나 AI로 보내지 않아요/)).toBeVisible({ timeout: 30_000 });
+
+    // 추천 질문 버튼은 정해 둔 계산으로 바로 답한다.
+    await ask.getByRole("button", { name: "한 달에 구독비 얼마 나가?" }).click();
+    await expect(ask.getByText(/28,990/).first()).toBeVisible();
+
+    // 기기 규칙이 모르는 질문은 서버로 보내지 않고 버튼을 다시 보여 준다.
+    await ask.getByRole("textbox", { name: "리포트에 물어볼 질문" }).fill("오늘 날씨 어때?");
+    await ask.getByRole("button", { name: "묻기", exact: true }).click();
+    await expect(ask.getByText(/아직 알아듣지 못해요/)).toBeVisible();
+    await expect(ask.getByRole("button", { name: "겹치는 구독 있어?" })).toBeVisible();
+
+    expect(asked).toEqual([]);
+  });
 });

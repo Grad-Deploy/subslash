@@ -110,6 +110,9 @@ export const ko = {
       youAsked: "물어본 질문",
       privacy:
         "질문 문장만 AI로 보내요. 내 구독 목록과 금액은 보내지 않아요. 이름·연락처 같은 개인정보는 적지 마세요.",
+      privacyLocal: "질문은 이 기기에서만 알아듣고 계산해요. 서버나 AI로 보내지 않아요.",
+      localMiss:
+        "이 질문은 아직 알아듣지 못해요. 아래 질문 버튼을 눌러 보거나, '한 달 구독료 얼마야?'처럼 물어봐 주세요.",
     },
   },
 };
@@ -224,6 +227,9 @@ export const en: Widen<typeof ko> = {
       youAsked: "You asked",
       privacy:
         "Only the question text goes to the AI. Your subscription list and amounts aren't sent. Don't include personal details such as your name or contacts.",
+      privacyLocal:
+        "Questions are understood and calculated on this device only. Nothing is sent to a server or an AI.",
+      localMiss: "I can't understand this question yet. Try one of the question buttons below.",
     },
   },
 };
@@ -336,6 +342,8 @@ export const zh: Widen<typeof ko> = {
       youAsked: "你的问题",
       privacy:
         "只有问题文字会发送给 AI，订阅列表和金额不会发送。请不要写入姓名、联系方式等个人信息。",
+      privacyLocal: "问题只在本设备上理解和计算，不会发送到服务器或 AI。",
+      localMiss: "暂时还无法理解这个问题。请试试下面的问题按钮。",
     },
   },
 };
@@ -449,6 +457,8 @@ export const ja: Widen<typeof ko> = {
       youAsked: "聞いた質問",
       privacy:
         "AI には質問の文章だけが送られ、サブスクの一覧や金額は送られません。名前や連絡先などの個人情報は書かないでください。",
+      privacyLocal: "質問はこの端末の中だけで理解・計算します。サーバーや AI には送りません。",
+      localMiss: "この質問はまだ理解できません。下の質問ボタンを押してみてください。",
     },
   },
 };
@@ -565,6 +575,9 @@ export const vi: Widen<typeof ko> = {
       youAsked: "Bạn đã hỏi",
       privacy:
         "Chỉ nội dung câu hỏi được gửi đến AI. Danh sách và số tiền đăng ký không được gửi. Đừng ghi thông tin cá nhân như tên hay số liên lạc.",
+      privacyLocal:
+        "Câu hỏi chỉ được hiểu và tính trên thiết bị này. Không gửi đến máy chủ hay AI.",
+      localMiss: "Chưa hiểu được câu hỏi này. Hãy thử các nút câu hỏi bên dưới.",
     },
   },
 };
@@ -683,6 +696,10 @@ export const fr: Widen<typeof ko> = {
       youAsked: "Votre question",
       privacy:
         "Seul le texte de la question est envoyé à l'IA. Votre liste d'abonnements et vos montants ne le sont pas. N'y mettez pas de données personnelles comme votre nom ou vos coordonnées.",
+      privacyLocal:
+        "Les questions sont comprises et calculées uniquement sur cet appareil. Rien n'est envoyé à un serveur ni à une IA.",
+      localMiss:
+        "Je ne comprends pas encore cette question. Essayez l'un des boutons de questions ci-dessous.",
     },
   },
 };
@@ -798,6 +815,10 @@ export const es: Widen<typeof ko> = {
       youAsked: "Preguntaste",
       privacy:
         "Solo el texto de la pregunta va a la IA. Tu lista de suscripciones y los importes no se envían. No incluyas datos personales como tu nombre o contacto.",
+      privacyLocal:
+        "Las preguntas se entienden y calculan solo en este dispositivo. No se envía nada a un servidor ni a una IA.",
+      localMiss:
+        "Todavía no entiendo esta pregunta. Prueba uno de los botones de preguntas de abajo.",
     },
   },
 };
@@ -913,6 +934,10 @@ export const de: Widen<typeof ko> = {
       youAsked: "Deine Frage",
       privacy:
         "Nur der Fragetext geht an die KI. Deine Abo-Liste und Beträge werden nicht gesendet. Schreib keine persönlichen Daten wie Namen oder Kontaktdaten hinein.",
+      privacyLocal:
+        "Fragen werden nur auf diesem Gerät verstanden und berechnet. Nichts wird an einen Server oder eine KI gesendet.",
+      localMiss:
+        "Diese Frage verstehe ich noch nicht. Probiere einen der Fragen-Buttons unten aus.",
     },
   },
 };
@@ -1031,6 +1056,9 @@ export const pt: Widen<typeof ko> = {
       youAsked: "Você perguntou",
       privacy:
         "Só o texto da pergunta vai para a IA. Sua lista de assinaturas e os valores não são enviados. Não inclua dados pessoais como nome ou contato.",
+      privacyLocal:
+        "As perguntas são entendidas e calculadas só neste dispositivo. Nada é enviado a um servidor nem a uma IA.",
+      localMiss: "Ainda não entendo esta pergunta. Experimente um dos botões de perguntas abaixo.",
     },
   },
 };

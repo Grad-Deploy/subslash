@@ -7,6 +7,7 @@ import type { Subscription, UsageLog } from "@subslash/shared";
 import { answerAsk, type AskAnswer } from "@lib/ask/answer";
 import { askReport } from "@lib/ask/client";
 import { localAskCall, refineCall } from "@lib/ask/local";
+import { SUGGESTED_CALLS } from "@lib/ask/suggestions";
 import type { AskCall, AskTurn } from "@lib/ask/tools";
 import { Spinner } from "@components/ui/spinner";
 import { cn } from "@lib/utils";
@@ -19,6 +20,8 @@ interface ChatTurn {
   call?: AskCall;
   answer?: AskAnswer;
   error?: string;
+  /** AI가 닫혀 있고 기기 규칙도 알아듣지 못한 질문. 서버로 보내지 않았다. */
+  miss?: boolean;
 }
 
 /** 화면에 남기는 턴 수. 오래된 것부터 지운다(앞선 턴으로 보내는 것은 그중 최근 몇 개뿐이다). */
@@ -30,17 +33,22 @@ const MAX_TURNS = 20;
  * 대화처럼 이어 물을 수 있다 — 꼬리 질문("그럼 1년이면?")을 알아듣게 앞선 턴의 질문과 고른 호출을 함께 보내고
  * (`AskTurn`), 답과 숫자는 보내지 않는다. 대화는 이 화면에만 있고 저장하지 않는다.
  * 답 아래에 무엇으로 계산했는지를 적는다 — AI가 만든 숫자가 아니라는 것을 사용자가 볼 수 있게.
+ *
+ * AI가 닫혀 있으면(`aiOpen`이 false) 아무것도 서버로 보내지 않는다. 추천 질문 버튼은 정해 둔 호출
+ * (`SUGGESTED_CALLS`)로, 직접 쓴 질문은 기기 규칙으로만 답하고, 규칙이 알아듣지 못하면 버튼을 다시 보여 준다.
  */
 export function AskReport({
   subscriptions,
   usageLogs,
   rate,
   now,
+  aiOpen,
 }: {
   subscriptions: Subscription[];
   usageLogs: UsageLog[];
   rate: number;
   now: Date;
+  aiOpen: boolean;
 }) {
   const t = useT();
   const known = useKnownText();
@@ -57,7 +65,8 @@ export function AskReport({
     if (turns.length > 0) endRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [turns]);
 
-  const ask = async (text: string) => {
+  /** `preset`은 추천 질문 버튼의 호출이다 — 문장을 해석하지 않고 그대로 답한다. */
+  const ask = async (text: string, preset?: AskCall) => {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
     const id = nextId.current++;
@@ -72,8 +81,13 @@ export function AskReport({
       setTurns((prev) => prev.map((turn) => (turn.id === id ? { ...turn, ...patch } : turn)));
     try {
       // 뜻이 하나뿐인 흔한 질문은 기기의 규칙으로 고르고 서버로 보내지 않는다. 기간은 오늘을 아는 기기가 다시 맞춘다.
-      const local = localAskCall(trimmed, { now, subscriptions, hasHistory: history.length > 0 });
-      const call = refineCall(local ?? (await askReport(trimmed, history)), trimmed, now);
+      const local =
+        preset ?? localAskCall(trimmed, { now, subscriptions, hasHistory: history.length > 0 });
+      if (!local && !aiOpen) {
+        settle({ miss: true });
+        return;
+      }
+      const call = preset ?? refineCall(local ?? (await askReport(trimmed, history)), trimmed, now);
       settle({
         call,
         answer: answerAsk(call, { subscriptions, usageLogs, rate, now, t: tRef.current, locale }),
@@ -111,19 +125,7 @@ export function AskReport({
       </div>
 
       {turns.length === 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {t.ask.suggestions.map((text) => (
-            <button
-              key={text}
-              type="button"
-              disabled={busy}
-              onClick={() => void ask(text)}
-              className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-muted"
-            >
-              {text}
-            </button>
-          ))}
-        </div>
+        <Suggestions disabled={busy} onPick={(text, preset) => void ask(text, preset)} />
       )}
 
       {turns.length > 0 && (
@@ -137,10 +139,19 @@ export function AskReport({
               <div
                 className={cn(
                   "max-w-[92%] space-y-2 rounded-2xl rounded-bl-sm bg-muted/40 p-3 text-sm",
-                  !turn.answer && !turn.error && "w-fit",
+                  !turn.answer && !turn.error && !turn.miss && "w-fit",
                 )}
               >
-                {!turn.answer && !turn.error && <Spinner className="size-5" />}
+                {!turn.answer && !turn.error && !turn.miss && <Spinner className="size-5" />}
+                {turn.miss && (
+                  <>
+                    <p>{a.localMiss}</p>
+                    <Suggestions
+                      disabled={busy}
+                      onPick={(text, preset) => void ask(text, preset)}
+                    />
+                  </>
+                )}
                 {turn.error && <p className="text-destructive">{known(turn.error)}</p>}
                 {turn.answer && <AnswerBody answer={turn.answer} question={turn.question} />}
               </div>
@@ -155,7 +166,7 @@ export function AskReport({
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           maxLength={200}
-          placeholder={turns.length > 0 ? a.followupPlaceholder : a.placeholder}
+          placeholder={aiOpen && turns.length > 0 ? a.followupPlaceholder : a.placeholder}
           aria-label={a.inputLabel}
           className="min-w-0 flex-1 rounded-xl border bg-card px-3 py-2.5 text-sm"
         />
@@ -168,9 +179,37 @@ export function AskReport({
           <ArrowUp className="size-4" aria-hidden />
         </button>
       </form>
-      <p className="text-[11px] text-muted-foreground">{a.privacy}</p>
-      {turns.length > 0 && <p className="text-[11px] text-muted-foreground">{a.contextNote}</p>}
+      <p className="text-[11px] text-muted-foreground">{aiOpen ? a.privacy : a.privacyLocal}</p>
+      {aiOpen && turns.length > 0 && (
+        <p className="text-[11px] text-muted-foreground">{a.contextNote}</p>
+      )}
     </section>
+  );
+}
+
+/** 추천 질문 버튼. 누르면 버튼 문장과 그 뜻의 호출(`SUGGESTED_CALLS`)로 묻는다. */
+function Suggestions({
+  disabled,
+  onPick,
+}: {
+  disabled: boolean;
+  onPick: (text: string, preset: AskCall) => void;
+}) {
+  const suggestions = useT().ask.suggestions;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {suggestions.map((text, i) => (
+        <button
+          key={text}
+          type="button"
+          disabled={disabled}
+          onClick={() => onPick(text, SUGGESTED_CALLS[i])}
+          className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-muted"
+        >
+          {text}
+        </button>
+      ))}
+    </div>
   );
 }
 
