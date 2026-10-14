@@ -54,7 +54,8 @@ describe("usageChartBars — 구독별 사용 시간 막대", () => {
 
   it("30일이 안 된 기록은 색을 매기지 않는다(평가 전)", () => {
     const dates = rangeDates("month", NOW);
-    const recent = dates.slice(-5);
+    // 2회 — '잘 씀'(4회)을 아직 채우지 못했다. 채웠으면 30일 전이라도 초록이다.
+    const recent = dates.slice(-2);
     const { bars, partial } = usageChartBars(
       [netflix],
       history(NETFLIX, recent, HOUR),
@@ -64,6 +65,20 @@ describe("usageChartBars — 구독별 사용 시간 막대", () => {
     );
     expect(bars[0].level).toBeNull();
     expect(partial).toBe(true);
+  });
+
+  it("평가 전인 구독은 fallback(최근 체크인)의 색을 쓴다", () => {
+    const dates = rangeDates("month", NOW);
+    const { bars } = usageChartBars(
+      [netflix],
+      history(NETFLIX, dates.slice(-2), HOUR),
+      null,
+      dates,
+      1400,
+      false,
+      () => "yellow",
+    );
+    expect(bars[0].level).toBe("yellow");
   });
 
   it("이 폰에서 잴 수 없는 구독은 0으로 그리지 않고 센다", () => {

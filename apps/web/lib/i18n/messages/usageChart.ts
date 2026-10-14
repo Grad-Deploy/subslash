@@ -9,7 +9,7 @@ export const ko = {
     monthly: "월별",
     pending: "평가 전",
     legend:
-      "막대 색은 가성비예요(체크인과 같은 기준). 30일 치 기록이 모이기 전에는 회색으로 두고 평가하지 않아요.",
+      "막대 색은 가성비예요(체크인과 같은 기준). 기록이 30일 모이기 전에는 최근 체크인의 색을 쓰고, 체크인도 없으면 회색으로 둬요. 그 전이라도 '잘 씀' 기준을 채우면 그때부터 초록이에요.",
     partialMonth: "이 달은 기록이 있는 날만 셌어요.",
     excluded: (n: number) => `이 폰에 앱이 없거나 기록이 없는 구독 ${n}개는 빠져 있어요.`,
     noBars: "이 기간에 이 폰에서 잰 사용 기록이 없어요.",
@@ -37,7 +37,7 @@ export const en: Widen<typeof ko> = {
     monthly: "By month",
     pending: "Not rated yet",
     legend:
-      "Bar colors show value for money (same rule as check-ins). Until 30 days of records are in, bars stay gray and aren't rated.",
+      "Bar colors show value for money (same rule as check-ins). Until 30 days of records are in, a bar takes the color of your latest check-in, or stays gray without one. It turns green as soon as it reaches the 'good value' mark.",
     partialMonth: "This month counts only the days with records.",
     excluded: (n) =>
       `${n} ${n === 1 ? "subscription isn't" : "subscriptions aren't"} shown because the app isn't on this phone or there are no records.`,
@@ -70,19 +70,20 @@ export const zh: Widen<typeof ko> = {
     recent: "最近 30 天",
     monthly: "按月",
     pending: "尚未评价",
-    legend: "柱子颜色表示性价比（与打卡相同的标准）。记录未满 30 天前显示为灰色，不作评价。",
+    legend:
+      "柱子颜色表示性价比（与签到相同的标准）。记录未满 30 天时使用最近一次签到的颜色，没有签到则为灰色。达到“值回票价”标准后即显示为绿色。",
     partialMonth: "本月只计算有记录的日子。",
     excluded: (n) => `有 ${n} 个订阅因本手机未安装应用或没有记录而未显示。`,
     noBars: "这段时间本手机没有测到使用记录。",
     more: "查看详情",
     checkIn: {
       title: "各订阅的使用量",
-      basis: "按打卡",
+      basis: "按签到",
       legend:
-        "柱子满格表示达到“值回票价”标准(每月视频 4 次 · AI 10 天 · 音乐 10 小时)。颜色是打卡时的性价比。",
-      pending: (n) => `${n} 个尚未打卡的订阅未显示。`,
+        "柱子满格表示达到“值回票价”标准(每月视频 4 次 · AI 10 天 · 音乐 10 小时)。颜色是签到时的性价比。",
+      pending: (n) => `${n} 个尚未签到的订阅未显示。`,
       other: (n) => `${n} 个按权益或存储空间衡量的订阅请见下方。`,
-      empty: "还没有打卡的订阅。在仪表盘填写最近 30 天的使用量后，这里会出现柱子。",
+      empty: "还没有签到的订阅。在仪表盘填写最近 30 天的使用量后，这里会出现柱子。",
       appHint: "在安卓应用中，柱子显示手机记录的使用时间。",
     },
   },
@@ -96,7 +97,7 @@ export const ja: Widen<typeof ko> = {
     monthly: "月別",
     pending: "評価前",
     legend:
-      "棒の色はコスパです（チェックインと同じ基準）。30日分の記録がそろうまではグレーで、評価しません。",
+      "棒の色はコスパです（チェックインと同じ基準）。30日分の記録がそろうまでは最新のチェックインの色を使い、チェックインもなければグレーです。それまでに「元が取れている」基準に届けば、その時点で緑になります。",
     partialMonth: "この月は記録がある日だけを数えています。",
     excluded: (n) => `この端末にアプリがないか記録がないサブスク ${n} 件は表示していません。`,
     noBars: "この期間、この端末で計測した利用記録はありません。",
@@ -123,7 +124,7 @@ export const vi: Widen<typeof ko> = {
     monthly: "Theo tháng",
     pending: "Chưa đánh giá",
     legend:
-      "Màu cột thể hiện độ đáng tiền (cùng tiêu chí với check-in). Khi chưa đủ 30 ngày dữ liệu, cột để màu xám và chưa đánh giá.",
+      "Màu cột thể hiện độ đáng tiền (cùng tiêu chí với check-in). Khi chưa đủ 30 ngày dữ liệu, cột lấy màu của lần check-in gần nhất, nếu chưa check-in thì để màu xám. Đạt mức 'đáng tiền' sớm thì cột chuyển xanh ngay.",
     partialMonth: "Tháng này chỉ tính những ngày có dữ liệu.",
     excluded: (n) =>
       `${n} gói không hiển thị vì điện thoại này không có ứng dụng hoặc chưa có dữ liệu.`,
@@ -131,13 +132,13 @@ export const vi: Widen<typeof ko> = {
     more: "Xem chi tiết",
     checkIn: {
       title: "Mức dùng theo gói",
-      basis: "Theo lần ghi nhận",
+      basis: "Theo check-in",
       legend:
-        "Cột đầy nghĩa là đã đạt mức 'đáng tiền' (mỗi tháng 4 lần xem phim · 10 ngày dùng AI · 10 giờ nghe nhạc). Màu là đánh giá giá trị của lần ghi nhận.",
-      pending: (n) => `${n} gói chưa ghi nhận không được hiển thị.`,
+        "Cột đầy nghĩa là đã đạt mức 'đáng tiền' (mỗi tháng 4 lần xem phim · 10 ngày dùng AI · 10 giờ nghe nhạc). Màu là đánh giá giá trị của lần check-in.",
+      pending: (n) => `${n} gói chưa check-in không được hiển thị.`,
       other: (n) => `${n} gói tính theo ưu đãi hoặc dung lượng xem ở mục bên dưới.`,
       empty:
-        "Chưa có gói nào được ghi nhận. Nhập mức dùng 30 ngày gần nhất ở bảng điều khiển để cột hiện ra ở đây.",
+        "Chưa có gói nào được check-in. Nhập mức dùng 30 ngày gần nhất ở bảng điều khiển để cột hiện ra ở đây.",
       appHint: "Trên ứng dụng Android, cột hiển thị thời gian dùng từ dữ liệu điện thoại.",
     },
   },
@@ -151,7 +152,7 @@ export const fr: Widen<typeof ko> = {
     monthly: "Par mois",
     pending: "Pas encore évalué",
     legend:
-      "La couleur des barres indique le rapport qualité-prix (même règle que les check-ins). Tant que 30 jours de données ne sont pas réunis, elles restent grises et ne sont pas évaluées.",
+      "La couleur des barres indique le rapport qualité-prix (même règle que les check-ins). Tant que 30 jours de données ne sont pas réunis, une barre prend la couleur du dernier check-in, ou reste grise sans check-in. Elle passe au vert dès que le seuil « rentable » est atteint.",
     partialMonth: "Ce mois ne compte que les jours avec des données.",
     excluded: (n) =>
       `${n} abonnement${n === 1 ? " n'est pas affiché" : "s ne sont pas affichés"} : l'appli n'est pas sur ce téléphone ou il n'y a pas de données.`,
@@ -159,19 +160,19 @@ export const fr: Widen<typeof ko> = {
     more: "Voir le détail",
     checkIn: {
       title: "Utilisation par abonnement",
-      basis: "D'après les bilans",
+      basis: "D'après les check-ins",
       legend:
-        "Une barre pleine signifie que le seuil « rentable » est atteint (par mois : 4 visionnages, 10 jours d'IA ou 10 heures de musique). La couleur est l'évaluation du bilan.",
+        "Une barre pleine signifie que le seuil « rentable » est atteint (par mois : 4 visionnages, 10 jours d'IA ou 10 heures de musique). La couleur est l'évaluation du check-in.",
       pending: (n) =>
         n === 1
-          ? "1 abonnement sans bilan n'est pas affiché."
-          : `${n} abonnements sans bilan ne sont pas affichés.`,
+          ? "1 abonnement sans check-in n'est pas affiché."
+          : `${n} abonnements sans check-in ne sont pas affichés.`,
       other: (n) =>
         n === 1
           ? "1 abonnement mesuré par avantages ou stockage est affiché plus bas."
           : `${n} abonnements mesurés par avantages ou stockage sont affichés plus bas.`,
       empty:
-        "Aucun bilan pour l'instant. Indiquez votre utilisation des 30 derniers jours sur le tableau de bord pour voir une barre ici.",
+        "Aucun check-in pour l'instant. Indiquez votre utilisation des 30 derniers jours sur le tableau de bord pour voir une barre ici.",
       appHint:
         "Dans l'application Android, les barres montrent le temps d'utilisation relevé par le téléphone.",
     },
@@ -186,7 +187,7 @@ export const es: Widen<typeof ko> = {
     monthly: "Por mes",
     pending: "Sin valorar",
     legend:
-      "El color de las barras indica cuánto vale lo que pagas (mismo criterio que los check-ins). Hasta reunir 30 días de datos quedan en gris y no se valoran.",
+      "El color de las barras indica cuánto vale lo que pagas (mismo criterio que los check-ins). Hasta reunir 30 días de datos, una barra toma el color de tu último registro, o queda en gris si no hay. Se vuelve verde en cuanto llega al nivel «vale la pena».",
     partialMonth: "Este mes solo cuenta los días con datos.",
     excluded: (n) =>
       `${n} suscripci${n === 1 ? "ón no se muestra" : "ones no se muestran"} porque la app no está en este teléfono o no hay datos.`,
@@ -221,7 +222,7 @@ export const de: Widen<typeof ko> = {
     monthly: "Nach Monat",
     pending: "Noch nicht bewertet",
     legend:
-      "Die Balkenfarbe zeigt das Preis-Leistungs-Verhältnis (gleiche Regel wie beim Check-in). Bis 30 Tage Daten da sind, bleiben die Balken grau und unbewertet.",
+      "Die Balkenfarbe zeigt das Preis-Leistungs-Verhältnis (gleiche Regel wie beim Check-in). Bis 30 Tage Daten da sind, übernimmt ein Balken die Farbe des letzten Check-ins, ohne Check-in bleibt er grau. Sobald die Schwelle „lohnt sich“ erreicht ist, wird er grün.",
     partialMonth: "Dieser Monat zählt nur Tage mit Daten.",
     excluded: (n) =>
       `${n} Abo${n === 1 ? " wird" : "s werden"} nicht gezeigt, weil die App nicht auf diesem Handy ist oder keine Daten da sind.`,
@@ -252,7 +253,7 @@ export const pt: Widen<typeof ko> = {
     monthly: "Por mês",
     pending: "Ainda sem avaliação",
     legend:
-      "A cor das barras mostra o custo-benefício (mesmo critério do check-in). Até juntar 30 dias de dados, elas ficam cinza e sem avaliação.",
+      'A cor das barras mostra o custo-benefício (mesmo critério do check-in). Até juntar 30 dias de dados, a barra usa a cor do último registro, ou fica cinza se não houver. Ela fica verde assim que chega ao nível "vale a pena".',
     partialMonth: "Este mês conta só os dias com dados.",
     excluded: (n) =>
       `${n} assinatura${n === 1 ? " não aparece" : "s não aparecem"} porque o app não está neste celular ou não há dados.`,

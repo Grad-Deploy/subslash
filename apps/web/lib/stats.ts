@@ -3,6 +3,8 @@ import {
   findPresetForSubscription,
   getMyMonthlyAmountKRW,
   isInTrial,
+  metricForSubscription,
+  metricOfLog,
   sumMyMonthlyKRW,
   type Subscription,
   type UsageLog,
@@ -92,6 +94,19 @@ export function latestFreshLog(
     if (!latest || checkedAt > Date.parse(latest.checkedAt)) latest = log;
   }
   return latest;
+}
+
+/**
+ * 이 구독이 지금 재는 지표로 적은 최근 체크인. 체크인 전이거나 지표가 바뀌기 전의 옛 체크인뿐이면 null —
+ * 음악을 시간으로 재게 된 뒤에 남은 '5회' 체크인을 5시간으로 읽지 않는다.
+ */
+export function latestFreshLogFor(
+  usageLogs: UsageLog[],
+  sub: Subscription,
+  now: Date = new Date(),
+): UsageLog | null {
+  const log = latestFreshLog(usageLogs, sub.id, now);
+  return log && metricOfLog(log) === metricForSubscription(sub) ? log : null;
 }
 
 /** 지금 구독에서 보낼 요약을 만든다. 체험 중인 구독은 돈이 나가지 않으므로 뺀다. */

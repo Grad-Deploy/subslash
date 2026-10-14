@@ -2,12 +2,11 @@ import {
   calculateCostPerUse,
   getMyMonthlyAmountKRW,
   metricForSubscription,
-  metricOfLog,
   type RiskLevel,
   type Subscription,
   type UsageLog,
 } from "@subslash/shared";
-import { latestFreshLog, latestFreshUsage } from "@lib/stats";
+import { latestFreshLog, latestFreshLogFor, latestFreshUsage } from "@lib/stats";
 import { GOOD_AT } from "@lib/usage/value";
 
 /** 1회 단가 순위의 한 줄. */
@@ -107,8 +106,8 @@ export function buildCheckInBars(
       other += 1;
       continue;
     }
-    const log = latestFreshLog(usageLogs, sub.id, now);
-    if (!log || metricOfLog(log) !== metric) {
+    const log = latestFreshLogFor(usageLogs, sub, now);
+    if (!log) {
       pending += 1;
       continue;
     }
