@@ -102,13 +102,7 @@ export const KNOWN_TEXT_PT: KnownTextRender[] = [
   () => "As senhas não coincidem.",
   () => "As senhas coincidem.",
   () => "A senha é válida.",
-  // 나이·성별·만 14세
-  () => "Digite sua idade.",
-  () => "Digite sua idade em números.",
-  (age) => `Você precisa ter pelo menos ${age} anos para usar o SubSlash.`,
-  () => "Confira sua idade.",
-  () => "Escolha seu gênero.",
-  () => "Escolha seu gênero de novo.",
+  // 만 14세
   (age) => `Confirme que você tem pelo menos ${age} anos.`,
   // 서버 응답
   () => "Não foi possível entender a solicitação.",
@@ -140,7 +134,6 @@ export const KNOWN_TEXT_PT: KnownTextRender[] = [
   () => "Não há conta cadastrada com este e-mail.",
   // 내 정보·비밀번호·탈퇴·로그인 방법
   () => "Você precisa entrar.",
-  () => "Não foi possível salvar suas informações.",
   () => "Digite sua senha atual.",
   () => "A senha atual está incorreta.",
   () => "Escolha uma senha diferente da atual.",

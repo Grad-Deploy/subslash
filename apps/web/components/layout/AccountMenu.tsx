@@ -97,7 +97,6 @@ export function AccountMenu() {
           )}
 
           {account ? (
-            // 나이·성별을 가입에서 뺐으므로, 적고 싶은 사람이 찾아갈 곳이 필요하다.
             <Link href="/me" role="menuitem" className={itemClass} onClick={() => setOpen(false)}>
               <User className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               {t.me}

@@ -3,7 +3,7 @@ import { MONTHS_SHORT, countOf } from "../english";
 import { monthName } from "../months";
 
 /**
- * 내 정보·계정 화면: 이메일 확인 링크, 내 정보(나이·성별), 비밀번호 변경·재설정·찾기, 로그인 방법, 회원 탈퇴,
+ * 내 정보·계정 화면: 이메일 확인 링크, 내 정보, 비밀번호 변경·재설정·찾기, 로그인 방법, 회원 탈퇴,
  * 앱 간편 로그인의 끝 화면, 계정 동기화 충돌 창. 서버가 돌려준 문장은 보여 주는 자리에서 known-text로 바꾼다.
  */
 export const ko = {
@@ -48,24 +48,11 @@ export const ko = {
     profile: {
       guest: "로그인하지 않아도 모든 기록을 쓸 수 있어요. 로그인하면 기기끼리 기록이 맞춰져요.",
       login: "로그인하기",
-      saveFailed: "저장하지 못했습니다.",
-      saved: "저장했습니다.",
-      saveNetwork: "네트워크에 문제가 있어 저장하지 못했습니다. 잠시 후 다시 시도해주세요.",
       verified: "확인됨",
       unverified: "미확인",
       unverifiedNote:
         "이 이메일이 본인 것인지 아직 확인하지 않았습니다. 확인 메일의 링크에서 ‘맞아요’를 누르면 확인됩니다. 확인 전에도 모든 기능을 그대로 쓸 수 있습니다.",
       sendVerification: "확인 메일 보내기",
-      optionalTitle: "나이·성별 (선택)",
-      optionalBody:
-        "적지 않아도 모든 기능을 그대로 쓸 수 있습니다. 지금은 어떤 계산에도 쓰이지 않고, 나중에 ‘비슷한 사용자와 비교’ 기능이 생기면 그때 따로 동의를 받은 경우에만 쓰입니다. 칸을 비우고 저장하면 지워집니다.",
-      age: "나이",
-      agePlaceholder: "만 나이",
-      gender: "성별",
-      genderNone: "적지 않음",
-      genders: { female: "여성", male: "남성", other: "기타", undisclosed: "밝히지 않음" },
-      saving: "저장하는 중...",
-      save: "저장하기",
     },
     change: {
       sameAsCurrent: "지금 비밀번호와 다른 비밀번호를 정해주세요.",
@@ -132,7 +119,7 @@ export const ko = {
       failed: "탈퇴를 처리하지 못했습니다.",
       network: "네트워크에 문제가 있어 탈퇴하지 못했습니다. 잠시 후 다시 시도해주세요.",
       title: "회원 탈퇴",
-      what: "계정(아이디·이메일·비밀번호 해시·나이·성별), 로그인 세션, 계정에 저장한 기록을 서버에서 바로 지웁니다. 되돌릴 수 없습니다.",
+      what: "계정(아이디·이메일·비밀번호 해시), 로그인 세션, 계정에 저장한 기록을 서버에서 바로 지웁니다. 되돌릴 수 없습니다.",
       kept: "이 브라우저에 있는 구독·체크인 기록은 지워지지 않습니다. 지우려면 내 구독의 ‘전체 초기화’나 브라우저 데이터 삭제를 쓰세요.",
       /** 서버가 받는 확인 글자. 언어와 상관없이 이 글자를 입력해야 한다. */
       typeRequired: (word: string) => `'${word}'를 입력해주세요.`,
@@ -214,24 +201,11 @@ export const en: Widen<typeof ko> = {
       guest:
         "You can use all your records without logging in. Log in to keep your records in sync across devices.",
       login: "Log in",
-      saveFailed: "Couldn't save.",
-      saved: "Saved.",
-      saveNetwork: "A network problem stopped the save. Please try again shortly.",
       verified: "Confirmed",
       unverified: "Unconfirmed",
       unverifiedNote:
         "We haven't confirmed this email is yours yet. Tap “Yes” in the confirmation email to confirm it. Everything works the same before you confirm.",
       sendVerification: "Send confirmation email",
-      optionalTitle: "Age · gender (optional)",
-      optionalBody:
-        "Everything works without them. They aren't used in any calculation now; if a “compare with similar users” feature comes later, they'll be used only with your separate consent. Clear the fields and save to delete them.",
-      age: "Age",
-      agePlaceholder: "Age in years",
-      gender: "Gender",
-      genderNone: "Not given",
-      genders: { female: "Female", male: "Male", other: "Other", undisclosed: "Prefer not to say" },
-      saving: "Saving...",
-      save: "Save",
     },
     change: {
       sameAsCurrent: "Choose a password different from your current one.",
@@ -298,7 +272,7 @@ export const en: Widen<typeof ko> = {
       failed: "Couldn't delete the account.",
       network: "A network problem stopped the deletion. Please try again shortly.",
       title: "Delete account",
-      what: "Your account (username, email, password hash, age, gender), login sessions, and records saved to your account are deleted from the server right away. This can't be undone.",
+      what: "Your account (username, email, password hash), login sessions, and records saved to your account are deleted from the server right away. This can't be undone.",
       kept: "Subscription and check-in records in this browser aren't deleted. To delete them, use “Reset everything” in My subscriptions or clear your browser data.",
       typeRequired: (word) => `Type '${word}'.`,
       passwordRequired: "Enter your password.",
@@ -377,24 +351,11 @@ export const zh: Widen<typeof ko> = {
     profile: {
       guest: "不登录也能使用所有记录。登录后可以让记录在各设备间保持同步。",
       login: "登录",
-      saveFailed: "无法保存。",
-      saved: "已保存。",
-      saveNetwork: "因网络问题无法保存。请稍后再试。",
       verified: "已确认",
       unverified: "未确认",
       unverifiedNote:
         "我们还没有确认这个邮箱是你的。在确认邮件中点“是”即可确认。确认之前所有功能照常使用。",
       sendVerification: "发送确认邮件",
-      optionalTitle: "年龄 · 性别（可选）",
-      optionalBody:
-        "不填也能使用全部功能。目前不用于任何计算；如果以后推出“与相似用户比较”功能，也只在你另行同意后使用。清空后保存即可删除。",
-      age: "年龄",
-      agePlaceholder: "周岁",
-      gender: "性别",
-      genderNone: "未填写",
-      genders: { female: "女", male: "男", other: "其他", undisclosed: "不便透露" },
-      saving: "正在保存...",
-      save: "保存",
     },
     change: {
       sameAsCurrent: "请设置一个与当前密码不同的密码。",
@@ -458,7 +419,7 @@ export const zh: Widen<typeof ko> = {
       failed: "无法注销账户。",
       network: "因网络问题无法注销。请稍后再试。",
       title: "注销账户",
-      what: "你的账户（用户名、邮箱、密码哈希、年龄、性别）、登录会话以及账户中保存的记录会立即从服务器删除。此操作无法撤销。",
+      what: "你的账户（用户名、邮箱、密码哈希）、登录会话以及账户中保存的记录会立即从服务器删除。此操作无法撤销。",
       kept: "这个浏览器中的订阅和签到记录不会被删除。要删除它们，请用“我的订阅”中的“全部重置”或清除浏览器数据。",
       typeRequired: (word) => `请输入“${word}”。`,
       passwordRequired: "请输入密码。",
@@ -537,25 +498,11 @@ export const ja: Widen<typeof ko> = {
       guest:
         "ログインしなくてもすべての記録を使えます。ログインすると端末どうしで記録がそろいます。",
       login: "ログイン",
-      saveFailed: "保存できませんでした。",
-      saved: "保存しました。",
-      saveNetwork:
-        "ネットワークの問題で保存できませんでした。しばらくしてからもう一度お試しください。",
       verified: "確認済み",
       unverified: "未確認",
       unverifiedNote:
         "このメールアドレスがご本人のものかまだ確認していません。確認メールで「はい」を押すと確認されます。確認前でも同じように使えます。",
       sendVerification: "確認メールを送る",
-      optionalTitle: "年齢 · 性別（任意）",
-      optionalBody:
-        "入れなくてもすべて使えます。今はどの計算にも使っておらず、今後「似た人との比較」機能ができても、別途同意した場合だけ使います。消して保存すると削除されます。",
-      age: "年齢",
-      agePlaceholder: "満年齢",
-      gender: "性別",
-      genderNone: "未選択",
-      genders: { female: "女性", male: "男性", other: "その他", undisclosed: "回答しない" },
-      saving: "保存中...",
-      save: "保存",
     },
     change: {
       sameAsCurrent: "現在のパスワードとは違うパスワードにしてください。",
@@ -625,7 +572,7 @@ export const ja: Widen<typeof ko> = {
       failed: "退会を処理できませんでした。",
       network: "ネットワークの問題で退会できませんでした。しばらくしてからもう一度お試しください。",
       title: "退会",
-      what: "アカウント（ユーザー名・メールアドレス・パスワードのハッシュ・年齢・性別）、ログインセッション、アカウントに保存した記録をすぐにサーバーから削除します。元に戻せません。",
+      what: "アカウント（ユーザー名・メールアドレス・パスワードのハッシュ）、ログインセッション、アカウントに保存した記録をすぐにサーバーから削除します。元に戻せません。",
       kept: "このブラウザのサブスクとチェックインの記録は削除されません。消すには「マイサブスク」の「すべてリセット」を使うか、ブラウザのデータを消してください。",
       typeRequired: (word) => `「${word}」と入力してください。`,
       passwordRequired: "パスワードを入力してください。",
@@ -706,24 +653,11 @@ export const vi: Widen<typeof ko> = {
       guest:
         "Không đăng nhập vẫn dùng được mọi dữ liệu. Đăng nhập để đồng bộ dữ liệu giữa các thiết bị.",
       login: "Đăng nhập",
-      saveFailed: "Không lưu được.",
-      saved: "Đã lưu.",
-      saveNetwork: "Không lưu được do sự cố mạng. Hãy thử lại sau ít phút.",
       verified: "Đã xác nhận",
       unverified: "Chưa xác nhận",
       unverifiedNote:
         "Chúng tôi chưa xác nhận email này là của bạn. Nhấn “Đúng” trong email xác nhận để xác nhận. Trước khi xác nhận vẫn dùng như bình thường.",
       sendVerification: "Gửi email xác nhận",
-      optionalTitle: "Tuổi · giới tính (tùy chọn)",
-      optionalBody:
-        "Không điền vẫn dùng được mọi tính năng. Hiện chúng không dùng cho phép tính nào; nếu sau này có tính năng “so sánh với người tương tự”, chỉ dùng khi bạn đồng ý riêng. Xóa trống rồi lưu để xóa.",
-      age: "Tuổi",
-      agePlaceholder: "Số tuổi",
-      gender: "Giới tính",
-      genderNone: "Chưa chọn",
-      genders: { female: "Nữ", male: "Nam", other: "Khác", undisclosed: "Không muốn trả lời" },
-      saving: "Đang lưu...",
-      save: "Lưu",
     },
     change: {
       sameAsCurrent: "Hãy đặt mật khẩu khác với mật khẩu hiện tại.",
@@ -790,7 +724,7 @@ export const vi: Widen<typeof ko> = {
       failed: "Không xóa được tài khoản.",
       network: "Không xóa được do sự cố mạng. Hãy thử lại sau ít phút.",
       title: "Xóa tài khoản",
-      what: "Tài khoản (tên người dùng, email, bản băm mật khẩu, tuổi, giới tính), phiên đăng nhập và dữ liệu lưu trong tài khoản sẽ bị xóa khỏi máy chủ ngay lập tức. Không thể hoàn tác.",
+      what: "Tài khoản (tên người dùng, email, bản băm mật khẩu), phiên đăng nhập và dữ liệu lưu trong tài khoản sẽ bị xóa khỏi máy chủ ngay lập tức. Không thể hoàn tác.",
       kept: "Dữ liệu đăng ký và check-in trong trình duyệt này không bị xóa. Để xóa, hãy dùng “Đặt lại tất cả” trong Gói đăng ký của tôi hoặc xóa dữ liệu trình duyệt.",
       typeRequired: (word) => `Hãy nhập '${word}'.`,
       passwordRequired: "Nhập mật khẩu.",
@@ -871,29 +805,11 @@ export const fr: Widen<typeof ko> = {
       guest:
         "Vous pouvez utiliser toutes vos données sans vous connecter. Connectez-vous pour les synchroniser entre appareils.",
       login: "Se connecter",
-      saveFailed: "Impossible d'enregistrer.",
-      saved: "Enregistré.",
-      saveNetwork: "Un problème réseau a empêché l'enregistrement. Réessayez dans un instant.",
       verified: "Confirmé",
       unverified: "Non confirmé",
       unverifiedNote:
         "Nous n'avons pas encore confirmé que cet e-mail est le vôtre. Appuyez sur « Oui » dans l'e-mail de confirmation. Tout fonctionne de la même façon avant la confirmation.",
       sendVerification: "Envoyer l'e-mail de confirmation",
-      optionalTitle: "Âge · genre (facultatif)",
-      optionalBody:
-        "Tout fonctionne sans. Ils ne servent à aucun calcul pour l'instant ; si une fonction « comparer avec des personnes similaires » arrive, ils ne seront utilisés qu'avec votre accord séparé. Videz les champs et enregistrez pour les supprimer.",
-      age: "Âge",
-      agePlaceholder: "Âge en années",
-      gender: "Genre",
-      genderNone: "Non renseigné",
-      genders: {
-        female: "Femme",
-        male: "Homme",
-        other: "Autre",
-        undisclosed: "Je préfère ne pas dire",
-      },
-      saving: "Enregistrement...",
-      save: "Enregistrer",
     },
     change: {
       sameAsCurrent: "Choisissez un mot de passe différent de l'actuel.",
@@ -960,7 +876,7 @@ export const fr: Widen<typeof ko> = {
       failed: "Impossible de supprimer le compte.",
       network: "Un problème réseau a empêché la suppression. Réessayez dans un instant.",
       title: "Supprimer le compte",
-      what: "Votre compte (identifiant, e-mail, hachage du mot de passe, âge, genre), vos sessions et les données enregistrées dans le compte sont supprimés du serveur immédiatement. C'est irréversible.",
+      what: "Votre compte (identifiant, e-mail, hachage du mot de passe), vos sessions et les données enregistrées dans le compte sont supprimés du serveur immédiatement. C'est irréversible.",
       kept: "Les abonnements et check-ins de ce navigateur ne sont pas supprimés. Pour les effacer, utilisez « Tout réinitialiser » dans Mes abonnements ou videz les données du navigateur.",
       typeRequired: (word) => `Saisissez « ${word} ».`,
       passwordRequired: "Saisissez votre mot de passe.",
@@ -1042,29 +958,11 @@ export const es: Widen<typeof ko> = {
       guest:
         "Puedes usar todos tus registros sin iniciar sesión. Inicia sesión para sincronizarlos entre dispositivos.",
       login: "Iniciar sesión",
-      saveFailed: "No se pudo guardar.",
-      saved: "Guardado.",
-      saveNetwork: "Un problema de red impidió guardar. Inténtalo en un momento.",
       verified: "Confirmado",
       unverified: "Sin confirmar",
       unverifiedNote:
         "Aún no hemos confirmado que este correo es tuyo. Pulsa «Sí» en el correo de confirmación. Todo funciona igual antes de confirmar.",
       sendVerification: "Enviar correo de confirmación",
-      optionalTitle: "Edad · género (opcional)",
-      optionalBody:
-        "Todo funciona sin ellos. Ahora no se usan en ningún cálculo; si llega una función de «comparar con personas parecidas», solo se usarán con tu consentimiento aparte. Vacía los campos y guarda para borrarlos.",
-      age: "Edad",
-      agePlaceholder: "Edad en años",
-      gender: "Género",
-      genderNone: "Sin indicar",
-      genders: {
-        female: "Mujer",
-        male: "Hombre",
-        other: "Otro",
-        undisclosed: "Prefiero no decirlo",
-      },
-      saving: "Guardando...",
-      save: "Guardar",
     },
     change: {
       sameAsCurrent: "Elige una contraseña distinta de la actual.",
@@ -1132,7 +1030,7 @@ export const es: Widen<typeof ko> = {
       failed: "No se pudo borrar la cuenta.",
       network: "Un problema de red impidió borrarla. Inténtalo en un momento.",
       title: "Borrar cuenta",
-      what: "Tu cuenta (usuario, correo, hash de la contraseña, edad, género), las sesiones y los registros guardados en la cuenta se borran del servidor al instante. No se puede deshacer.",
+      what: "Tu cuenta (usuario, correo, hash de la contraseña), las sesiones y los registros guardados en la cuenta se borran del servidor al instante. No se puede deshacer.",
       kept: "Los registros de suscripciones y uso de este navegador no se borran. Para borrarlos, usa «Restablecer todo» en Mis suscripciones o borra los datos del navegador.",
       typeRequired: (word) => `Escribe '${word}'.`,
       passwordRequired: "Escribe tu contraseña.",
@@ -1215,30 +1113,11 @@ export const de: Widen<typeof ko> = {
       guest:
         "Du kannst alle Daten ohne Anmeldung nutzen. Melde dich an, um sie zwischen Geräten abzugleichen.",
       login: "Anmelden",
-      saveFailed: "Speichern fehlgeschlagen.",
-      saved: "Gespeichert.",
-      saveNetwork:
-        "Ein Netzwerkproblem hat das Speichern verhindert. Bitte versuch es gleich noch einmal.",
       verified: "Bestätigt",
       unverified: "Nicht bestätigt",
       unverifiedNote:
         "Wir haben noch nicht bestätigt, dass diese E-Mail dir gehört. Tippe in der Bestätigungs-E-Mail auf „Ja“. Bis dahin funktioniert alles genauso.",
       sendVerification: "Bestätigungs-E-Mail senden",
-      optionalTitle: "Alter · Geschlecht (optional)",
-      optionalBody:
-        "Alles funktioniert auch ohne. Sie fließen derzeit in keine Berechnung ein; falls später ein Vergleich mit ähnlichen Nutzern kommt, nur mit deiner gesonderten Zustimmung. Felder leeren und speichern, um sie zu löschen.",
-      age: "Alter",
-      agePlaceholder: "Alter in Jahren",
-      gender: "Geschlecht",
-      genderNone: "Keine Angabe",
-      genders: {
-        female: "Weiblich",
-        male: "Männlich",
-        other: "Divers",
-        undisclosed: "Keine Angabe",
-      },
-      saving: "Wird gespeichert...",
-      save: "Speichern",
     },
     change: {
       sameAsCurrent: "Wähl ein anderes Passwort als das aktuelle.",
@@ -1310,7 +1189,7 @@ export const de: Widen<typeof ko> = {
       network:
         "Ein Netzwerkproblem hat das Löschen verhindert. Bitte versuch es gleich noch einmal.",
       title: "Konto löschen",
-      what: "Dein Konto (Benutzername, E-Mail, Passwort-Hash, Alter, Geschlecht), deine Sitzungen und die im Konto gespeicherten Daten werden sofort vom Server gelöscht. Das lässt sich nicht rückgängig machen.",
+      what: "Dein Konto (Benutzername, E-Mail, Passwort-Hash), deine Sitzungen und die im Konto gespeicherten Daten werden sofort vom Server gelöscht. Das lässt sich nicht rückgängig machen.",
       kept: "Abo- und Nutzungsdaten in diesem Browser werden nicht gelöscht. Um sie zu löschen, nutze „Alles zurücksetzen“ unter Meine Abos oder lösche die Browserdaten.",
       typeRequired: (word) => `Gib '${word}' ein.`,
       passwordRequired: "Gib dein Passwort ein.",
@@ -1392,29 +1271,11 @@ export const pt: Widen<typeof ko> = {
       guest:
         "Dá para usar todos os registros sem entrar. Entre para sincronizá-los entre dispositivos.",
       login: "Entrar",
-      saveFailed: "Não foi possível salvar.",
-      saved: "Salvo.",
-      saveNetwork: "Um problema de rede impediu o salvamento. Tente de novo em instantes.",
       verified: "Confirmado",
       unverified: "Não confirmado",
       unverifiedNote:
         "Ainda não confirmamos que este e-mail é seu. Toque em “Sim” no e-mail de confirmação. Tudo funciona igual antes da confirmação.",
       sendVerification: "Enviar e-mail de confirmação",
-      optionalTitle: "Idade · gênero (opcional)",
-      optionalBody:
-        "Tudo funciona sem eles. Hoje não entram em nenhum cálculo; se surgir um recurso de “comparar com pessoas parecidas”, só serão usados com seu consentimento à parte. Esvazie os campos e salve para apagá-los.",
-      age: "Idade",
-      agePlaceholder: "Idade em anos",
-      gender: "Gênero",
-      genderNone: "Não informado",
-      genders: {
-        female: "Feminino",
-        male: "Masculino",
-        other: "Outro",
-        undisclosed: "Prefiro não dizer",
-      },
-      saving: "Salvando...",
-      save: "Salvar",
     },
     change: {
       sameAsCurrent: "Escolha uma senha diferente da atual.",
@@ -1481,7 +1342,7 @@ export const pt: Widen<typeof ko> = {
       failed: "Não foi possível excluir a conta.",
       network: "Um problema de rede impediu a exclusão. Tente de novo em instantes.",
       title: "Excluir conta",
-      what: "Sua conta (usuário, e-mail, hash da senha, idade, gênero), as sessões e os registros salvos na conta são apagados do servidor na hora. Não dá para desfazer.",
+      what: "Sua conta (usuário, e-mail, hash da senha), as sessões e os registros salvos na conta são apagados do servidor na hora. Não dá para desfazer.",
       kept: "Os registros de assinaturas e uso deste navegador não são apagados. Para apagá-los, use “Redefinir tudo” em Minhas assinaturas ou limpe os dados do navegador.",
       typeRequired: (word) => `Digite '${word}'.`,
       passwordRequired: "Informe sua senha.",

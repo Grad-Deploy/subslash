@@ -7,6 +7,7 @@ import {
   GMAIL_AUTO_IMPORT_STARTS_ON,
   GMAIL_CHARGE_HISTORY_STARTS_ON,
   SOCIAL_LOGIN_STARTS_ON,
+  EMAIL_REMINDERS_ENDED_ON,
   PRIVACY_EFFECTIVE_DATE,
   PRIVACY_OFFICER,
 } from "@lib/privacy";
@@ -160,12 +161,10 @@ export function PrivacyEn() {
         )}
         <Item title="Sign-up and login (optional)">
           We store your username, email, password (only as an irreversible hash; the original is not
-          stored), email confirmation time, and sign-up and last login times. Age and gender are
-          optional and stored only if you enter them at sign-up or under &lsquo;My account&rsquo;;
-          you can sign up and use every feature without them. They are not currently used in any
-          calculation or statistic. Whether you are 14 or older, asked at sign-up, is used only for
-          confirmation and not stored. Purpose: identifying you, keeping you logged in, and sending
-          sign-up confirmation and password reset emails.
+          stored), email confirmation time, and sign-up and last login times. Whether you are 14 or
+          older, asked at sign-up, is used only for confirmation and not stored. Purpose:
+          identifying you, keeping you logged in, and sending sign-up confirmation and password
+          reset emails.
         </Item>
         <Item title="Account sync (when logged in)">
           When you log in, we save one copy of this device&rsquo;s subscription, check-in, and
@@ -178,7 +177,7 @@ export function PrivacyEn() {
           devices.
         </Item>
         <Item title="Billing reminder emails and calendar feed addresses (discontinued)">
-          Discontinued on {effective}. We no longer collect them, and the email addresses, reminder
+          Discontinued on {englishDate(EMAIL_REMINDERS_ENDED_ON)}. We no longer collect them, and the email addresses, reminder
           settings, subscriptions copied to the server, and sending records stored until then have
           all been deleted, along with the storage that held them. You can get billing reminders
           through the app&rsquo;s &lsquo;Billing reminders on this device&rsquo; (which do not go
@@ -416,7 +415,7 @@ export function PrivacyEn() {
             <Link href="/me" className="underline underline-offset-4">
               My account
             </Link>{" "}
-            you can see your account information and correct or delete your age and gender.
+            you can see your account information.
           </li>
           <li>
             Deletion: you can delete it yourself with &lsquo;Delete account&rsquo; and &lsquo;Delete

@@ -7,6 +7,7 @@ import {
   GMAIL_AUTO_IMPORT_STARTS_ON,
   GMAIL_CHARGE_HISTORY_STARTS_ON,
   SOCIAL_LOGIN_STARTS_ON,
+  EMAIL_REMINDERS_ENDED_ON,
   PRIVACY_EFFECTIVE_DATE,
   PRIVACY_OFFICER,
 } from "@lib/privacy";
@@ -152,9 +153,7 @@ export function PrivacyKo() {
         )}
         <Item title="회원가입·로그인 (선택)">
           아이디, 이메일, 비밀번호(되돌릴 수 없는 해시로만 저장하며 원문은 저장하지 않음), 이메일
-          확인 시각, 가입·마지막 로그인 시각을 저장합니다. 나이·성별은 선택 항목으로, 가입할 때나
-          &lsquo;내 정보&rsquo;에서 직접 적었을 때만 저장하고 적지 않아도 가입과 모든 기능을 쓸 수
-          있습니다. 지금은 어떤 계산이나 통계에도 쓰지 않습니다. 가입할 때 묻는 만 14세 이상 여부는
+          확인 시각, 가입·마지막 로그인 시각을 저장합니다. 가입할 때 묻는 만 14세 이상 여부는
           확인에만 쓰고 저장하지 않습니다. 목적: 본인 식별, 로그인 유지, 가입 확인·비밀번호 재설정
           메일 발송.
         </Item>
@@ -166,7 +165,7 @@ export function PrivacyKo() {
           목적: 여러 기기에서 같은 기록 쓰기.
         </Item>
         <Item title="결제 알림 메일·캘린더 구독 주소 (종료)">
-          {PRIVACY_EFFECTIVE_DATE}에 그만뒀습니다. 새로 받지 않으며, 그때까지 저장한 이메일
+          {EMAIL_REMINDERS_ENDED_ON}에 그만뒀습니다. 새로 받지 않으며, 그때까지 저장한 이메일
           주소·알림 설정·서버에 복사한 구독·발송 기록은 그것을 담던 저장 공간째 모두 지웠습니다.
           결제일 알림은 앱의 &lsquo;이 기기 결제 알림&rsquo;(서버를 거치지 않음)이나 &lsquo;구글
           캘린더에 결제일 등록&rsquo;으로 받을 수 있습니다.
@@ -393,7 +392,7 @@ export function PrivacyKo() {
             <Link href="/me" className="underline underline-offset-4">
               내 정보
             </Link>
-            에서 계정 정보를 보고 나이·성별을 고치거나 지울 수 있습니다.
+            에서 계정 정보를 확인할 수 있습니다.
           </li>
           <li>
             삭제: 내 정보의 &lsquo;회원 탈퇴&rsquo;와 &lsquo;계정에서 지우기&rsquo;로 직접 지울 수

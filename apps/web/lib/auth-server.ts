@@ -35,10 +35,6 @@ export interface PublicAccount {
   id: string;
   username: string;
   email: string;
-  /** 선택 항목. 적지 않았으면 null. */
-  age: number | null;
-  /** 선택 항목. 적지 않았으면 null. */
-  gender: string | null;
   /** 확인 메일에서 본인이 맞다고 답했는지. 이 기능 전에 가입한 계정은 false다. */
   emailVerified: boolean;
   /**
@@ -54,8 +50,6 @@ export function toPublicAccount(account: Account): PublicAccount {
     id: account.id,
     username: account.username,
     email: account.email,
-    age: account.age,
-    gender: account.gender,
     emailVerified: account.emailVerifiedAt !== null,
     hasPassword: hasPassword(account.passwordHash),
     createdAt: account.createdAt,
@@ -190,23 +184,6 @@ export async function findAccountByIdentifier(identifier: string): Promise<Accou
     .from(accounts)
     .where(or(eq(accounts.username, identifier), eq(accounts.email, identifier)))
     .limit(1);
-  return rows[0] ?? null;
-}
-
-/**
- * '내 정보'의 선택 항목을 바꾼다. null을 넘기면 적지 않은 상태로 되돌린다.
- * 계정이 그사이 사라졌으면 `null`.
- */
-export async function updateAccountProfile(
-  accountId: string,
-  profile: { age: number | null; gender: string | null },
-): Promise<Account | null> {
-  const db = getDb();
-  const rows = await db
-    .update(accounts)
-    .set({ age: profile.age, gender: profile.gender })
-    .where(eq(accounts.id, accountId))
-    .returning();
   return rows[0] ?? null;
 }
 

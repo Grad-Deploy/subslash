@@ -10,10 +10,6 @@ export interface AuthAccount {
   id: string;
   username: string;
   email: string;
-  /** 선택 항목. 적지 않았으면 null. */
-  age: number | null;
-  /** 선택 항목. 적지 않았으면 null. */
-  gender: string | null;
   /** 확인 메일에서 본인이 맞다고 답했는지. */
   emailVerified: boolean;
   /** 비밀번호로 로그인할 수 있는지. 소셜 로그인으로만 가입했으면 false. 예전 서버 응답에는 없다. */

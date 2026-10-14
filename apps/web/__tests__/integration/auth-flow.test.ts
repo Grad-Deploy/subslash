@@ -24,7 +24,6 @@ const { POST: loginRoute } = await import("../../app/api/auth/login/route");
 const { resetAllRateLimits } = await import("../../lib/rate-limit");
 const { POST: logoutRoute } = await import("../../app/api/auth/logout/route");
 const { GET: meRoute } = await import("../../app/api/auth/me/route");
-const { PUT: profileRoute } = await import("../../app/api/auth/profile/route");
 
 const migrationsDir = join(process.cwd(), "drizzle");
 const migrations = readdirSync(migrationsDir)
@@ -84,17 +83,6 @@ function json(url: string, body: unknown, cookie?: string) {
   });
 }
 
-function putProfile(body: unknown, cookie?: string) {
-  return profileRoute(
-    request("http://localhost/api/auth/profile", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      cookie,
-    }),
-  );
-}
-
 /**
  * scrypt는 일부러 느리다(그게 방어의 핵심이다). 해시를 여러 번 도는
  * 테스트는 기본 5초 안에 끝나지 않으므로 개별로 시간을 넉넉히 준다.
@@ -134,9 +122,9 @@ describe("회원가입", () => {
     const body = await res.json();
     expect(body.account.username).toBe("sean_lee");
     expect(body.account.email).toBe("sean@gmail.com");
-    // 나이·성별은 가입 때 받지 않는다. 적지 않은 상태는 null이다.
-    expect(body.account.age).toBeNull();
-    expect(body.account.gender).toBeNull();
+    // 나이·성별은 받지도 두지도 않는다.
+    expect(body.account).not.toHaveProperty("age");
+    expect(body.account).not.toHaveProperty("gender");
 
     // 응답에 비밀번호 관련 값이 섞여 나가지 않는다.
     expect(JSON.stringify(body)).not.toContain("password");
@@ -186,38 +174,6 @@ describe("회원가입", () => {
     );
     expect(res.status).toBe(400);
     expect((await res.json()).fieldErrors.isOver14).toBeDefined();
-    expect(await getDb().select().from(accounts)).toHaveLength(0);
-  });
-
-  it("나이·성별은 선택이다 — 적으면 저장하고, 비우면 null로 가입된다", async () => {
-    const res = await signupRoute(
-      json("http://localhost/api/auth/signup", { ...VALID_SIGNUP, age: 30, gender: "male" }),
-    );
-    expect(res.status).toBe(201);
-    const [row] = await getDb().select().from(accounts);
-    expect(row.age).toBe(30);
-    expect(row.gender).toBe("male");
-
-    const blank = await signupRoute(
-      json("http://localhost/api/auth/signup", {
-        ...VALID_SIGNUP,
-        username: "no_profile",
-        email: "noprofile@gmail.com",
-      }),
-    );
-    expect(blank.status).toBe(201);
-    const rows = await getDb().select().from(accounts);
-    const saved = rows.find((account) => account.username === "no_profile");
-    expect(saved?.age).toBeNull();
-    expect(saved?.gender).toBeNull();
-  });
-
-  it("나이가 규칙에 맞지 않으면 가입하지 않고 그 칸을 알려준다", async () => {
-    const res = await signupRoute(
-      json("http://localhost/api/auth/signup", { ...VALID_SIGNUP, age: 10 }),
-    );
-    expect(res.status).toBe(400);
-    expect((await res.json()).fieldErrors.age).toBeDefined();
     expect(await getDb().select().from(accounts)).toHaveLength(0);
   });
 
@@ -446,74 +402,6 @@ describe("세션", () => {
   });
 });
 
-describe("내 정보 (나이·성별 선택 입력)", () => {
-  async function signedIn(overrides: Record<string, unknown> = {}): Promise<string> {
-    const signup = await signupRoute(
-      json("http://localhost/api/auth/signup", { ...VALID_SIGNUP, ...overrides }),
-    );
-    return `${SESSION_COOKIE}=${sessionTokenFrom(signup)}`;
-  }
-
-  it("로그인한 본인의 나이·성별을 저장하고, 현재 계정 조회에 보인다", async () => {
-    const cookie = await signedIn();
-
-    const res = await putProfile({ age: "30", gender: "female" }, cookie);
-    expect(res.status).toBe(200);
-    expect((await res.json()).account).toMatchObject({ age: 30, gender: "female" });
-
-    const me = await meRoute(request("http://localhost/api/auth/me", { cookie }));
-    expect((await me.json()).account).toMatchObject({ age: 30, gender: "female" });
-  });
-
-  it("칸을 비우고 저장하면 지운다", async () => {
-    const cookie = await signedIn();
-    await putProfile({ age: 30, gender: "male" }, cookie);
-
-    const res = await putProfile({ age: "", gender: "" }, cookie);
-    expect(res.status).toBe(200);
-    const [row] = await getDb().select().from(accounts);
-    expect(row.age).toBeNull();
-    expect(row.gender).toBeNull();
-  });
-
-  it("로그인하지 않았으면 401이다", async () => {
-    const res = await putProfile({ age: 30 });
-    expect(res.status).toBe(401);
-  });
-
-  it("잘못된 값은 400이고 아무것도 저장하지 않는다", async () => {
-    const cookie = await signedIn();
-    const res = await putProfile({ age: 10, gender: "'; DROP TABLE accounts; --" }, cookie);
-    expect(res.status).toBe(400);
-    const { fieldErrors } = await res.json();
-    expect(fieldErrors.age).toBeDefined();
-    expect(fieldErrors.gender).toBeDefined();
-
-    const [row] = await getDb().select().from(accounts);
-    expect(row.age).toBeNull();
-    expect(row.gender).toBeNull();
-  });
-
-  it(
-    "본문에 다른 계정의 id를 넣어도 세션의 계정만 바뀐다",
-    async () => {
-      const cookieA = await signedIn();
-      await signedIn({ username: "other_one", email: "other@naver.com" });
-      const [other] = await getDb()
-        .select()
-        .from(accounts)
-        .where(eq(accounts.username, "other_one"));
-
-      await putProfile({ id: other.id, accountId: other.id, age: 40 }, cookieA);
-
-      const rows = await getDb().select().from(accounts);
-      expect(rows.find((row) => row.username === "sean_lee")?.age).toBe(40);
-      expect(rows.find((row) => row.username === "other_one")?.age).toBeNull();
-    },
-    SCRYPT_TIMEOUT_MS,
-  );
-});
-
 describe("데이터베이스가 없는 배포", () => {
   /** NODE_ENV는 타입상 읽기 전용이라 서술자로 바꾼다. */
   const setNodeEnv = (value: string | undefined) => {
@@ -570,11 +458,6 @@ describe("데이터베이스가 없는 배포", () => {
     );
     expect(res.status).toBe(200);
     expect(res.headers.get("set-cookie")).toContain(`${SESSION_COOKIE}=`);
-  });
-
-  it("내 정보 저장도 500이 아니라 503으로 설정 누락임을 알린다", async () => {
-    const res = await withProductionNoDb(() => putProfile({ age: 30 }, `${SESSION_COOKIE}=x`));
-    expect(res.status).toBe(503);
   });
 });
 

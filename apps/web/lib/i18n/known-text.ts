@@ -168,16 +168,7 @@ const EN: [RegExp, KnownTextRender][] = [
   [/^비밀번호가 일치합니다\.$/, () => "The passwords match."],
   [/^사용할 수 있는 비밀번호입니다\.$/, () => "This password works."],
 
-  // 나이·성별·만 14세
-  [/^나이를 입력해주세요\.$/, () => "Enter your age."],
-  [/^나이는 숫자로 입력해주세요\.$/, () => "Enter your age as a number."],
-  [
-    /^만 (\d+)세 이상만 이용할 수 있습니다\.$/,
-    (age) => `You must be ${age} or older to use SubSlash.`,
-  ],
-  [/^나이를 다시 확인해주세요\.$/, () => "Please check your age."],
-  [/^성별을 선택해주세요\.$/, () => "Select a gender."],
-  [/^성별을 다시 선택해주세요\.$/, () => "Please select a gender again."],
+  // 만 14세
   [/^만 (\d+)세 이상인지 확인해주세요\.$/, (age) => `Confirm that you are ${age} or older.`],
 
   // 서버 응답
@@ -241,7 +232,6 @@ const EN: [RegExp, KnownTextRender][] = [
 
   // 내 정보·비밀번호·탈퇴·로그인 방법
   [/^로그인이 필요합니다\.$/, () => "You need to log in."],
-  [/^내 정보를 저장하지 못했습니다\.$/, () => "Couldn't save your details."],
   [/^지금 비밀번호를 입력해주세요\.$/, () => "Enter your current password."],
   [/^지금 비밀번호가 맞지 않습니다\.$/, () => "Your current password is incorrect."],
   [
