@@ -5,6 +5,8 @@ import {
   Column,
   barcode,
   canvasToPng,
+  drawMoney,
+  moneyWidth,
   line,
   roundRectPath,
   setFont,
@@ -54,7 +56,7 @@ function nameAmountRow(
   leader?: { color: string },
 ): void {
   const lineHeight = Math.max(nameInk.size, amountInk.size) * 1.35;
-  const amountWidth = col.measureText(amount, amountInk);
+  const amountWidth = moneyWidth(col.context, amount, amountInk);
   const room = col.width - amountWidth - (leader ? 40 : 14);
   const shown = col.fit(name, nameInk, room);
   const nameWidth = col.measureText(shown, nameInk);
@@ -64,10 +66,7 @@ function nameAmountRow(
     ctx.fillStyle = nameInk.color;
     ctx.textAlign = "left";
     ctx.fillText(shown, x, y + baseline);
-    setFont(ctx, amountInk);
-    ctx.fillStyle = amountInk.color;
-    ctx.textAlign = "right";
-    ctx.fillText(amount, x + col.width, y + baseline);
+    drawMoney(ctx, amount, x + col.width, y + baseline, amountInk, "right");
     if (leader) {
       // 디자인의 점선 리더: 이름과 금액 사이, 밑줄보다 4px 위.
       const from = x + nameWidth + 8;
@@ -179,7 +178,7 @@ async function renderColor(art: ReceiptArt, t: Messages): Promise<HTMLCanvasElem
     lineHeight: 20,
   });
   body.gap(2);
-  body.text(art.total, {
+  body.money(art.total, {
     size: 72,
     weight: 800,
     mono: true,
@@ -339,9 +338,13 @@ async function renderPass(art: ReceiptArt, t: Messages): Promise<HTMLCanvasEleme
     ctx.fillStyle = MUTED;
     ctx.textAlign = "left";
     ctx.fillText(t.receiptView.share.total, x, y + 13);
-    setFont(ctx, { size: 46, weight: 800, mono: true, tracking: -0.04 });
-    ctx.fillStyle = ACCENT;
-    ctx.fillText(art.total, x, y + 58);
+    drawMoney(ctx, art.total, x, y + 58, {
+      size: 46,
+      weight: 800,
+      mono: true,
+      tracking: -0.04,
+      color: ACCENT,
+    });
     barcode(ctx, x + innerW - 120, y + 20, 120, 42, INK);
   });
   stub.gap(14);
@@ -431,7 +434,7 @@ async function renderTag(art: ReceiptArt, t: Messages): Promise<HTMLCanvasElemen
   col.gap(18);
   col.paragraph(art.totalLabel, center);
   col.gap(2);
-  col.text(art.total, {
+  col.money(art.total, {
     size: 58,
     weight: 800,
     mono: true,
@@ -600,7 +603,7 @@ async function renderChat(art: ReceiptArt, t: Messages): Promise<HTMLCanvasEleme
   card.gap(20);
   card.paragraph(art.totalLabel, { size: 13, weight: 600, color: MUTED, lineHeight: 18 });
   card.gap(2);
-  card.text(art.total, {
+  card.money(art.total, {
     size: 50,
     weight: 800,
     mono: true,
