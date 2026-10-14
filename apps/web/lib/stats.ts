@@ -3,6 +3,8 @@ import {
   findPresetForSubscription,
   getMyMonthlyAmountKRW,
   isInTrial,
+  metricForSubscription,
+  metricOfLog,
   sumMyMonthlyKRW,
   type Subscription,
   type UsageLog,
@@ -35,15 +37,6 @@ export const STATS_MIN_PER_AGE_BAND = 10;
  */
 export const AGE_BANDS = ["10s", "20s", "30s", "40s", "50s", "60s+"] as const;
 export type AgeBand = (typeof AGE_BANDS)[number];
-
-export const AGE_BAND_LABELS: Record<AgeBand, string> = {
-  "10s": "10대",
-  "20s": "20대",
-  "30s": "30대",
-  "40s": "40대",
-  "50s": "50대",
-  "60s+": "60대 이상",
-};
 
 export function isAgeBand(value: unknown): value is AgeBand {
   return typeof value === "string" && (AGE_BANDS as readonly string[]).includes(value);
@@ -101,6 +94,19 @@ export function latestFreshLog(
     if (!latest || checkedAt > Date.parse(latest.checkedAt)) latest = log;
   }
   return latest;
+}
+
+/**
+ * 이 구독이 지금 재는 지표로 적은 최근 체크인. 체크인 전이거나 지표가 바뀌기 전의 옛 체크인뿐이면 null —
+ * 음악을 시간으로 재게 된 뒤에 남은 '5회' 체크인을 5시간으로 읽지 않는다.
+ */
+export function latestFreshLogFor(
+  usageLogs: UsageLog[],
+  sub: Subscription,
+  now: Date = new Date(),
+): UsageLog | null {
+  const log = latestFreshLog(usageLogs, sub.id, now);
+  return log && metricOfLog(log) === metricForSubscription(sub) ? log : null;
 }
 
 /** 지금 구독에서 보낼 요약을 만든다. 체험 중인 구독은 돈이 나가지 않으므로 뺀다. */

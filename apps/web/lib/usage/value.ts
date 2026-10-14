@@ -200,7 +200,7 @@ export interface MetricView {
   goal: number;
   /** 평가까지 남은 날. 0이면 평가가 나왔다. */
   pendingDays: number;
-  /** 평가. 기록이 VERDICT_DAYS가 안 되면 null(보류). */
+  /** 평가. 기록이 VERDICT_DAYS가 안 되면 null(보류) — 이미 '잘 씀'을 채웠으면 그때부터 초록. */
   level: RiskLevel | null;
 }
 
@@ -208,8 +208,17 @@ export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {
   const { totals, monthlyKRW } = usage;
   const covered = totals.coveredDays;
   const scale = covered > 0 ? 30 / covered : 0;
-  const pendingDays = Math.max(0, VERDICT_DAYS - covered);
-  const judge = (level: RiskLevel | null) => (pendingDays > 0 ? null : level);
+  const waiting = Math.max(0, VERDICT_DAYS - covered);
+  /**
+   * 평가. 기록이 30일이면 30일로 늘린 양의 색(`full`)이다. 그 전이라도 잰 양 그대로(`soFar`) 이미 '잘 씀'이면
+   * 그때부터 초록이다 — 남은 날에 더 써도 양은 늘 뿐이라 초록은 바뀌지 않는다. 빨강·노랑은 남은 날에 달라질 수
+   * 있어 30일을 기다린다. 일찍 초록이 된 구독은 늘리지 않은 양을 보인다(30일로 늘려 말하지 않는다).
+   */
+  const verdict = (have: number, full: RiskLevel, soFar: RiskLevel) => {
+    if (waiting === 0) return { have30: have * scale, pendingDays: 0, level: full };
+    if (soFar === "green") return { have30: have, pendingDays: 0, level: soFar };
+    return { have30: have * scale, pendingDays: waiting, level: null };
+  };
   if (metric === "uses") {
     const have = totals.opens;
     return {
@@ -218,50 +227,44 @@ export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {
       short: false,
       quantity: have,
       have,
-      have30: have * scale,
       goal: GOOD_AT.uses,
-      pendingDays,
       // 연 적이 없으면(perOpenKRW null) subUsage가 색을 매기지 않는다 — 0회는 비쌈이다.
-      level: judge(usage.level ?? "red"),
+      ...verdict(have, usage.level ?? "red", metricRiskLevel("uses", monthlyKRW, have)),
     };
   }
   if (metric === "days") {
     const have = totals.activeDays;
     const per30 = have * scale;
+    // 체크인과 같게, 무료로도 충분했다고 답한 구독은 많이 써도 '잘 씀'이 아니다.
+    const freeTier = asksFreeTier(usage.sub) ? (usage.sub.freeTierAnswer ?? null) : null;
     return {
       metric,
       unitKRW: per30 > 0 ? monthlyKRW / per30 : null,
       short: false,
       quantity: have,
       have,
-      have30: per30,
       goal: GOOD_AT.days,
-      pendingDays,
-      // 체크인과 같게, 무료로도 충분했다고 답한 구독은 많이 써도 '잘 씀'이 아니다.
-      level: judge(
-        metricRiskLevel(
-          "days",
-          monthlyKRW,
-          Math.round(per30),
-          null,
-          asksFreeTier(usage.sub) ? (usage.sub.freeTierAnswer ?? null) : null,
-        ),
+      ...verdict(
+        have,
+        metricRiskLevel("days", monthlyKRW, Math.round(per30), null, freeTier),
+        metricRiskLevel("days", monthlyKRW, have, null, freeTier),
       ),
     };
   }
   // 시간(음악·독서). 혜택·용량은 폰 기록으로 재지 않으므로 여기 오지 않는다 — 오면 시간으로 본다.
   const have = totals.usedMs / 3_600_000;
-  const hoursPer30 = have * scale;
   return {
     metric: "hours",
     unitKRW: usage.hourlyKRW,
     short: totals.usedMs > 0 && totals.usedMs < MIN_HOURLY_MS,
     quantity: totals.usedMs,
     have,
-    have30: hoursPer30,
     goal: GOOD_AT.hours,
-    pendingDays,
-    level: judge(metricRiskLevel("hours", monthlyKRW, hoursPer30)),
+    ...verdict(
+      have,
+      metricRiskLevel("hours", monthlyKRW, have * scale),
+      metricRiskLevel("hours", monthlyKRW, have),
+    ),
   };
 }
 

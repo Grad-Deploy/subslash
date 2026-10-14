@@ -4,8 +4,7 @@
  * 구독은 색 없이(null) 둔다 — 짧은 기록을 늘려 '잘 씀'·'비쌈'이라고 하지 않는다.
  */
 import { metricForSubscription, type RiskLevel, type Subscription } from "@subslash/shared";
-import { monthlyTotals, type UsageHistory } from "./history";
-import { packagesFor } from "./packages";
+import type { UsageHistory } from "./history";
 import { metricView, subUsage, type SubUsage } from "./value";
 
 export type ChartMode = "recent" | "month";
@@ -18,32 +17,20 @@ export interface ChartBar {
   level: RiskLevel | null;
 }
 
-/** `YYYY-MM` 달의 날짜들. 이번 달이면 오늘까지. */
-export function monthDates(month: string, now: Date): string[] {
-  const [year, m] = month.split("-").map(Number);
-  const isCurrent = year === now.getFullYear() && m === now.getMonth() + 1;
-  const last = isCurrent ? now.getDate() : new Date(year, m, 0).getDate();
-  return Array.from({ length: last }, (_, d) => `${month}-${String(d + 1).padStart(2, "0")}`);
-}
-
-/** 기록이 하루라도 있는 달(`YYYY-MM`), 이른 순. 최근 12달 안에서. */
-export function chartMonths(
-  history: UsageHistory,
-  subs: readonly Subscription[],
-  now: Date,
-): string[] {
-  const packages = [...new Set(subs.flatMap((sub) => packagesFor(sub) ?? []))];
-  if (packages.length === 0) return [];
-  return monthlyTotals(history, packages, now)
-    .filter((m) => m.totals.coveredDays > 0)
-    .map((m) => m.month);
+/** 막대로 그리지 않은 구독 수. 이유마다 화면에 하는 말이 다르다. */
+export interface ChartExclusions {
+  /** 폰 기록으로 잴 방법이 없는 구독(멤버십·PC에서 쓰는 구독 — 연결표에 없음). */
+  unmapped: number;
+  /** 잴 수는 있지만 이 폰에 앱이 없거나 이 기간에 기록이 없는 구독. */
+  unmeasured: number;
 }
 
 /**
- * 기간의 막대. 이 폰에서 잴 수 없는 구독(앱 없음·기록 없음·연결표에 없음)은 막대로 만들지 않고 센다 —
- * 0으로 그리면 '안 썼다'로 읽힌다. 많이 쓴 순.
+ * 기간의 막대. 이 폰에서 잴 수 없는 구독은 막대로 만들지 않고 이유별로 센다 — 0으로 그리면 '안 썼다'로
+ * 읽힌다. 많이 쓴 순.
  *
  * `wholeMonth`면 그 달을 하루도 빠짐없이 잰 경우에 한 달 치로 평가한다(28일인 2월도 평가가 나오게).
+ * `fallback`은 폰 기록으로 아직 평가하지 못한 구독(30일 전)의 색이다 — 최근 30일 막대에서 최근 체크인의 색을 준다.
  */
 export function usageChartBars(
   subs: readonly Subscription[],
@@ -52,14 +39,15 @@ export function usageChartBars(
   dates: readonly string[],
   rate: number,
   wholeMonth = false,
-): { bars: ChartBar[]; excluded: number; partial: boolean } {
+  fallback?: (sub: Subscription) => RiskLevel | null,
+): { bars: ChartBar[]; excluded: ChartExclusions; partial: boolean } {
   const bars: ChartBar[] = [];
-  let excluded = 0;
+  const excluded: ChartExclusions = { unmapped: 0, unmeasured: 0 };
   let partial = false;
   for (const sub of subs) {
     const usage = subUsage(sub, history, installed, dates, rate);
     if (usage.state !== "measured") {
-      excluded += 1;
+      excluded[usage.state === "unmapped" ? "unmapped" : "unmeasured"] += 1;
       continue;
     }
     if (usage.totals.coveredDays < dates.length) partial = true;
@@ -70,7 +58,7 @@ export function usageChartBars(
     bars.push({
       sub,
       usedMs: usage.totals.usedMs,
-      level: metricView(judged, metricForSubscription(sub)).level,
+      level: metricView(judged, metricForSubscription(sub)).level ?? fallback?.(sub) ?? null,
     });
   }
   bars.sort((a, b) => b.usedMs - a.usedMs);

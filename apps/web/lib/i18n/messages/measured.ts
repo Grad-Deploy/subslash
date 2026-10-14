@@ -1,7 +1,7 @@
 import type { Widen } from "../types";
 import { countOf } from "../english";
 
-/** 여러 기기 사용 측정의 리포트 칸·구독 상세 한 줄(`components/usage/MeasuredUsage`). */
+/** 여러 기기 사용 측정의 구독 상세 한 줄(`components/usage/MeasuredUsage`). */
 export const ko = {
   measured: {
     count: (n: number) => `${n}번`,
