@@ -216,6 +216,7 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
         installed={installed}
         rate={rate}
         now={now}
+        unmappedCount={unmappedCount}
         onOpenDetail={() => setSheetOpen(true)}
       />
       <AppSheet open={sheetOpen} onClose={() => setSheetOpen(false)} label={u.title}>
