@@ -4,16 +4,8 @@ import React, { Suspense, useEffect } from "react";
 import { useIsClient } from "@hooks/useIsClient";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SubscriptionDetail } from "../../../components/subscription/SubscriptionDetail";
-import { Spinner } from "../../../components/ui/spinner";
+import { PageSpinner } from "../../../components/ui/spinner";
 import { useT } from "@lib/i18n";
-
-function LoadingScreen() {
-  return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <Spinner className="size-8" />
-    </div>
-  );
-}
 
 /**
  * 구독 상세 페이지. 넓은 화면에서는 내 구독 목록 옆 칸(/subs?sub=)에 열리고, 좁은 화면에서는
@@ -30,7 +22,7 @@ function DetailFromQuery() {
   }, [id, router]);
 
   // 구독은 브라우저 저장소에 있어 서버에서는 그릴 수 없다.
-  if (!mounted || !id) return <LoadingScreen />;
+  if (!mounted || !id) return <PageSpinner />;
 
   return (
     <SubscriptionDetail
@@ -45,7 +37,7 @@ function DetailFromQuery() {
 
 export default function SubscriptionDetailPage() {
   return (
-    <Suspense fallback={<LoadingScreen />}>
+    <Suspense fallback={<PageSpinner />}>
       <DetailFromQuery />
     </Suspense>
   );

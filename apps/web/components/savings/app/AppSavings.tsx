@@ -25,7 +25,7 @@ import { buildShareSearchParams } from "@lib/share-savings";
 import { ServiceLogo } from "../../subscription/ServiceLogo";
 import { ConfirmDialog } from "../../ui/confirm-dialog";
 import { SubjectChip } from "../../subscription/SubjectChip";
-import { Spinner } from "../../ui/spinner";
+import { PageSpinner } from "../../ui/spinner";
 import { AppDefenseChart } from "./AppDefenseChart";
 import { AppIncomeRate } from "./AppIncomeRate";
 import { useT, useServiceNames } from "@lib/i18n";
@@ -67,11 +67,7 @@ export function AppSavings() {
   const [showAllKilled, setShowAllKilled] = useState(false);
 
   if (!mounted) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   const now = new Date();

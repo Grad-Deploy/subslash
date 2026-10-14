@@ -20,7 +20,7 @@ import {
 import { CostPerUseRanking, OtherMetricList } from "@components/report/sections/ValueSections";
 import { PeerComparison } from "@components/report/sections/PeerComparison";
 import { AskReport } from "@components/report/sections/AskReport";
-import { Spinner } from "../../components/ui/spinner";
+import { PageSpinner } from "../../components/ui/spinner";
 import { useT } from "@lib/i18n";
 
 // 폰 사용 기록(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
@@ -61,11 +61,7 @@ export default function ReportPage() {
   );
 
   if (!mounted) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   const monthly = sumMyMonthlyKRW(active, rate);

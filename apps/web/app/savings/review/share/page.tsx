@@ -8,7 +8,7 @@ import { useT } from "@lib/i18n";
 import { describeSpendingTypeText } from "@lib/i18n/savings-text";
 import { Button } from "@components/ui/button";
 import { readSharedReview } from "@lib/share-review";
-import { Spinner } from "../../../../components/ui/spinner";
+import { PageSpinner } from "../../../../components/ui/spinner";
 import { KilledServicesCard } from "@components/savings/KilledServicesCard";
 
 /**
@@ -96,13 +96,7 @@ function SharedReviewContent() {
 
 export default function SharedReviewPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Spinner className="size-8" />
-        </div>
-      }
-    >
+    <Suspense fallback={<PageSpinner />}>
       <SharedReviewContent />
     </Suspense>
   );
