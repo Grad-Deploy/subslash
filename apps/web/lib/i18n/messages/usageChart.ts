@@ -14,6 +14,18 @@ export const ko = {
     excluded: (n: number) => `이 폰에 앱이 없거나 기록이 없는 구독 ${n}개는 빠져 있어요.`,
     noBars: "이 기간에 이 폰에서 잰 사용 기록이 없어요.",
     more: "자세히 보기",
+    /** 웹의 사용량 그래프(체크인 기준, `CheckInUsageChart`). */
+    checkIn: {
+      title: "구독별 사용량",
+      basis: "체크인 기준",
+      legend:
+        "막대가 꽉 차면 '잘 씀' 기준(한 달에 OTT 4회 · AI 10일 · 음악 10시간)에 닿은 거예요. 색은 체크인의 가성비예요.",
+      pending: (n: number) => `체크인 전인 구독 ${n}개는 빠져 있어요.`,
+      other: (n: number) => `혜택·용량으로 재는 구독 ${n}개는 아래 칸에서 봐요.`,
+      empty:
+        "아직 체크인한 구독이 없어요. 대시보드에서 최근 30일 사용량을 알려 주면 막대가 생겨요.",
+      appHint: "안드로이드 앱에서는 폰 사용 기록으로 사용 시간을 그려요.",
+    },
   },
 };
 
@@ -31,6 +43,23 @@ export const en: Widen<typeof ko> = {
       `${n} ${n === 1 ? "subscription isn't" : "subscriptions aren't"} shown because the app isn't on this phone or there are no records.`,
     noBars: "No usage was measured on this phone in this period.",
     more: "See details",
+    checkIn: {
+      title: "Usage by subscription",
+      basis: "From check-ins",
+      legend:
+        "A full bar means it reached the 'good value' mark (4 uses of a streaming service, 10 days of AI or 10 hours of music a month). The color is the check-in's value rating.",
+      pending: (n) =>
+        n === 1
+          ? "1 subscription without a check-in is left out."
+          : `${n} subscriptions without a check-in are left out.`,
+      other: (n) =>
+        n === 1
+          ? "1 subscription measured by benefits or storage is shown below."
+          : `${n} subscriptions measured by benefits or storage are shown below.`,
+      empty:
+        "No check-ins yet. Tell the dashboard how much you used a subscription in the last 30 days and a bar appears here.",
+      appHint: "In the Android app, bars show usage time from your phone's records.",
+    },
   },
 };
 
@@ -46,6 +75,16 @@ export const zh: Widen<typeof ko> = {
     excluded: (n) => `有 ${n} 个订阅因本手机未安装应用或没有记录而未显示。`,
     noBars: "这段时间本手机没有测到使用记录。",
     more: "查看详情",
+    checkIn: {
+      title: "各订阅的使用量",
+      basis: "按打卡",
+      legend:
+        "柱子满格表示达到“值回票价”标准(每月视频 4 次 · AI 10 天 · 音乐 10 小时)。颜色是打卡时的性价比。",
+      pending: (n) => `${n} 个尚未打卡的订阅未显示。`,
+      other: (n) => `${n} 个按权益或存储空间衡量的订阅请见下方。`,
+      empty: "还没有打卡的订阅。在仪表盘填写最近 30 天的使用量后，这里会出现柱子。",
+      appHint: "在安卓应用中，柱子显示手机记录的使用时间。",
+    },
   },
 };
 
@@ -62,6 +101,17 @@ export const ja: Widen<typeof ko> = {
     excluded: (n) => `この端末にアプリがないか記録がないサブスク ${n} 件は表示していません。`,
     noBars: "この期間、この端末で計測した利用記録はありません。",
     more: "詳しく見る",
+    checkIn: {
+      title: "サブスク別の利用量",
+      basis: "チェックイン基準",
+      legend:
+        "バーがいっぱいなら「元が取れている」基準(月に動画 4 回 · AI 10 日 · 音楽 10 時間)に届いています。色はチェックインのコスパです。",
+      pending: (n) => `チェックイン前のサブスク ${n} 件は表示していません。`,
+      other: (n) => `特典・容量で測るサブスク ${n} 件は下の欄で見られます。`,
+      empty:
+        "まだチェックインしたサブスクがありません。ダッシュボードで最近 30 日の利用量を入力するとバーが表示されます。",
+      appHint: "Android アプリでは、スマホの記録から利用時間を表示します。",
+    },
   },
 };
 
@@ -79,6 +129,17 @@ export const vi: Widen<typeof ko> = {
       `${n} gói không hiển thị vì điện thoại này không có ứng dụng hoặc chưa có dữ liệu.`,
     noBars: "Không đo được thời gian dùng trên điện thoại này trong khoảng thời gian này.",
     more: "Xem chi tiết",
+    checkIn: {
+      title: "Mức dùng theo gói",
+      basis: "Theo lần ghi nhận",
+      legend:
+        "Cột đầy nghĩa là đã đạt mức 'đáng tiền' (mỗi tháng 4 lần xem phim · 10 ngày dùng AI · 10 giờ nghe nhạc). Màu là đánh giá giá trị của lần ghi nhận.",
+      pending: (n) => `${n} gói chưa ghi nhận không được hiển thị.`,
+      other: (n) => `${n} gói tính theo ưu đãi hoặc dung lượng xem ở mục bên dưới.`,
+      empty:
+        "Chưa có gói nào được ghi nhận. Nhập mức dùng 30 ngày gần nhất ở bảng điều khiển để cột hiện ra ở đây.",
+      appHint: "Trên ứng dụng Android, cột hiển thị thời gian dùng từ dữ liệu điện thoại.",
+    },
   },
 };
 
@@ -96,6 +157,24 @@ export const fr: Widen<typeof ko> = {
       `${n} abonnement${n === 1 ? " n'est pas affiché" : "s ne sont pas affichés"} : l'appli n'est pas sur ce téléphone ou il n'y a pas de données.`,
     noBars: "Aucune utilisation mesurée sur ce téléphone pendant cette période.",
     more: "Voir le détail",
+    checkIn: {
+      title: "Utilisation par abonnement",
+      basis: "D'après les bilans",
+      legend:
+        "Une barre pleine signifie que le seuil « rentable » est atteint (par mois : 4 visionnages, 10 jours d'IA ou 10 heures de musique). La couleur est l'évaluation du bilan.",
+      pending: (n) =>
+        n === 1
+          ? "1 abonnement sans bilan n'est pas affiché."
+          : `${n} abonnements sans bilan ne sont pas affichés.`,
+      other: (n) =>
+        n === 1
+          ? "1 abonnement mesuré par avantages ou stockage est affiché plus bas."
+          : `${n} abonnements mesurés par avantages ou stockage sont affichés plus bas.`,
+      empty:
+        "Aucun bilan pour l'instant. Indiquez votre utilisation des 30 derniers jours sur le tableau de bord pour voir une barre ici.",
+      appHint:
+        "Dans l'application Android, les barres montrent le temps d'utilisation relevé par le téléphone.",
+    },
   },
 };
 
@@ -113,6 +192,24 @@ export const es: Widen<typeof ko> = {
       `${n} suscripci${n === 1 ? "ón no se muestra" : "ones no se muestran"} porque la app no está en este teléfono o no hay datos.`,
     noBars: "No se midió uso en este teléfono en este periodo.",
     more: "Ver detalles",
+    checkIn: {
+      title: "Uso por suscripción",
+      basis: "Según los registros",
+      legend:
+        "Una barra llena significa que llegó al nivel «vale la pena» (al mes: 4 usos de streaming, 10 días de IA o 10 horas de música). El color es la valoración del registro.",
+      pending: (n) =>
+        n === 1
+          ? "1 suscripción sin registro queda fuera."
+          : `${n} suscripciones sin registro quedan fuera.`,
+      other: (n) =>
+        n === 1
+          ? "1 suscripción medida por beneficios o almacenamiento aparece más abajo."
+          : `${n} suscripciones medidas por beneficios o almacenamiento aparecen más abajo.`,
+      empty:
+        "Aún no hay registros. Indica en el panel cuánto usaste una suscripción en los últimos 30 días y aparecerá una barra aquí.",
+      appHint:
+        "En la app de Android, las barras muestran el tiempo de uso registrado por el móvil.",
+    },
   },
 };
 
@@ -130,6 +227,20 @@ export const de: Widen<typeof ko> = {
       `${n} Abo${n === 1 ? " wird" : "s werden"} nicht gezeigt, weil die App nicht auf diesem Handy ist oder keine Daten da sind.`,
     noBars: "In diesem Zeitraum wurde auf diesem Handy keine Nutzung gemessen.",
     more: "Details ansehen",
+    checkIn: {
+      title: "Nutzung pro Abo",
+      basis: "Nach Check-ins",
+      legend:
+        "Ein voller Balken heißt, die Schwelle „lohnt sich“ ist erreicht (pro Monat 4-mal Streaming, 10 Tage KI oder 10 Stunden Musik). Die Farbe ist die Bewertung des Check-ins.",
+      pending: (n) => (n === 1 ? "1 Abo ohne Check-in fehlt." : `${n} Abos ohne Check-in fehlen.`),
+      other: (n) =>
+        n === 1
+          ? "1 Abo, das nach Vorteilen oder Speicher gemessen wird, steht weiter unten."
+          : `${n} Abos, die nach Vorteilen oder Speicher gemessen werden, stehen weiter unten.`,
+      empty:
+        "Noch keine Check-ins. Gib im Dashboard an, wie viel du ein Abo in den letzten 30 Tagen genutzt hast, dann erscheint hier ein Balken.",
+      appHint: "In der Android-App zeigen die Balken die vom Handy erfasste Nutzungszeit.",
+    },
   },
 };
 
@@ -147,5 +258,22 @@ export const pt: Widen<typeof ko> = {
       `${n} assinatura${n === 1 ? " não aparece" : "s não aparecem"} porque o app não está neste celular ou não há dados.`,
     noBars: "Nenhum uso medido neste celular neste período.",
     more: "Ver detalhes",
+    checkIn: {
+      title: "Uso por assinatura",
+      basis: "Pelos registros",
+      legend:
+        'Barra cheia quer dizer que chegou ao nível "vale a pena" (por mês: 4 usos de streaming, 10 dias de IA ou 10 horas de música). A cor é a avaliação do registro.',
+      pending: (n) =>
+        n === 1
+          ? "1 assinatura sem registro fica de fora."
+          : `${n} assinaturas sem registro ficam de fora.`,
+      other: (n) =>
+        n === 1
+          ? "1 assinatura medida por benefícios ou armazenamento aparece mais abaixo."
+          : `${n} assinaturas medidas por benefícios ou armazenamento aparecem mais abaixo.`,
+      empty:
+        "Ainda não há registros. Informe no painel quanto você usou uma assinatura nos últimos 30 dias e uma barra aparece aqui.",
+      appHint: "No app Android, as barras mostram o tempo de uso registrado pelo celular.",
+    },
   },
 };
