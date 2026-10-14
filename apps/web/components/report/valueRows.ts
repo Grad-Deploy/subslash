@@ -2,10 +2,12 @@ import {
   calculateCostPerUse,
   getMyMonthlyAmountKRW,
   metricForSubscription,
+  type RiskLevel,
   type Subscription,
   type UsageLog,
 } from "@subslash/shared";
-import { latestFreshLog, latestFreshUsage } from "@lib/stats";
+import { latestFreshLog, latestFreshLogFor, latestFreshUsage } from "@lib/stats";
+import { GOOD_AT } from "@lib/usage/value";
 
 /** 1회 단가 순위의 한 줄. */
 export interface ValueRow {
@@ -72,4 +74,51 @@ export function buildOtherMetricRows(
     .filter((sub) => metricForSubscription(sub) !== "uses")
     .map((sub) => ({ sub, log: latestFreshLog(usageLogs, sub.id, now) }))
     .sort((a, b) => levelRank(b.log) - levelRank(a.log));
+}
+
+/** 사용량 막대그래프(웹)의 막대 하나. */
+export interface CheckInBar {
+  sub: Subscription;
+  metric: keyof typeof GOOD_AT;
+  /** 최근 체크인에 적은 양(30일 동안의 횟수·쓴 날·시간). */
+  quantity: number;
+  /** '잘 씀' 기준 대비(0~1, 넘으면 1). 단위가 구독마다 달라 기준에 견준 비율로 막대를 맞춘다. */
+  fraction: number;
+  level: RiskLevel;
+}
+
+/**
+ * 리포트의 사용량 막대그래프(웹). 웹에는 폰 사용 기록이 없으므로 최근 체크인으로 그린다. 횟수·쓴 날·시간으로
+ * 재는 구독만 막대로 만들고(혜택·용량은 '잘 씀' 기준이 금액·비율이라 아래 칸에서 본다), 체크인 전이거나
+ * 지표가 바뀌기 전의 체크인뿐인 구독은 막대 없이 센다 — 모름을 0으로 그리지 않는다. 기준에 가까운 순.
+ */
+export function buildCheckInBars(
+  active: Subscription[],
+  usageLogs: UsageLog[],
+  now: Date,
+): { bars: CheckInBar[]; pending: number; other: number } {
+  const bars: CheckInBar[] = [];
+  let pending = 0;
+  let other = 0;
+  for (const sub of active) {
+    const metric = metricForSubscription(sub);
+    if (metric !== "uses" && metric !== "days" && metric !== "hours") {
+      other += 1;
+      continue;
+    }
+    const log = latestFreshLogFor(usageLogs, sub, now);
+    if (!log) {
+      pending += 1;
+      continue;
+    }
+    bars.push({
+      sub,
+      metric,
+      quantity: log.usageCount,
+      fraction: Math.min(1, log.usageCount / GOOD_AT[metric]),
+      level: log.riskLevel,
+    });
+  }
+  bars.sort((a, b) => b.fraction - a.fraction || b.quantity - a.quantity);
+  return { bars, pending, other };
 }

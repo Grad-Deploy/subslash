@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { apiFetch, apiUrl, readApiError } from "./api";
-import type { AgeBand, StatsContribution, StatsSummary } from "./stats";
+import type { AgeBand, StatsContribution } from "./stats";
 
 /**
  * 익명 구독 통계의 브라우저 쪽. 참여 여부와 토큰은 **이 기기**의 것이라 구독 기록 저장소·백업·계정
@@ -93,10 +93,4 @@ export async function withdrawContribution(token: string): Promise<void> {
   if (!response.ok && response.status !== 401) {
     throw new Error(await readApiError(response, "기록을 지우지 못했습니다."));
   }
-}
-
-export async function fetchStatsSummary(): Promise<StatsSummary> {
-  const response = await fetch(apiUrl("/api/stats/summary"));
-  if (!response.ok) throw new Error(await readApiError(response, "통계를 읽지 못했습니다."));
-  return (await response.json()) as StatsSummary;
 }

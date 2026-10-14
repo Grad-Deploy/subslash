@@ -1,8 +1,9 @@
 import { eq, inArray, lt } from "drizzle-orm";
+import { NextResponse } from "next/server";
 import { getDb } from "./db";
 import { statsContributors, statsItems } from "./schema";
 import { generateSyncToken, hashSyncToken } from "./tokens";
-import { isStatsAgeBandOpen } from "./privacy";
+import { isAnonymousStatsEnded, isStatsAgeBandOpen } from "./privacy";
 import {
   isAgeBand,
   STATS_RETENTION_DAYS,
@@ -16,6 +17,16 @@ import {
  * 익명 구독 통계의 서버 쪽. 참여 기록은 토큰 해시로만 찾고, 계정·알림 구독자·IP와 묶지 않는다.
  * 저장은 통째로 바꾼다 — 기기가 보낸 요약이 곧 그 기기의 기록이다.
  */
+
+/**
+ * 통계가 열려 있지 않을 때의 응답. 그만둔 뒤에는 '아직 시작하지 않았다'고 하지 않는다(410). 지우기(DELETE)는
+ * 그만둔 뒤에도 받으므로 이 응답을 쓰지 않는다.
+ */
+export function statsClosedResponse(): NextResponse {
+  return isAnonymousStatsEnded()
+    ? NextResponse.json({ error: "그만둔 기능입니다." }, { status: 410 })
+    : NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
+}
 
 export function readBearer(header: string | null): string | null {
   const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : "";
@@ -122,9 +133,11 @@ export async function pruneStaleContributions(now: Date = new Date()): Promise<n
  * 참여했던 기기가 다시 열리지 않아도 서버에 남지 않게 크론이 부른다.
  */
 export async function deleteAllContributions(): Promise<number> {
-  const all = await getDb().select({ id: statsContributors.id }).from(statsContributors);
-  await deleteContributors(all.map((row) => row.id));
-  return all.length;
+  const db = getDb();
+  // ON DELETE CASCADE는 PRAGMA foreign_keys가 켜져 있을 때만 돈다. 항목을 직접 지운다.
+  await db.delete(statsItems);
+  const deleted = await db.delete(statsContributors);
+  return deleted.rowsAffected;
 }
 
 /** 보관 기간 안의 기록을 모아 요약한다. */

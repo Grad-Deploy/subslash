@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { isAnonymousStatsEnded, isAnonymousStatsOpen } from "@lib/privacy";
+import { isAnonymousStatsOpen } from "@lib/privacy";
 import { parseContribution } from "@lib/stats";
 import {
   createContribution,
   deleteContribution,
   readBearer,
   replaceContribution,
+  statsClosedResponse,
 } from "@lib/stats-server";
 import {
   clientIp,
@@ -55,16 +56,8 @@ const NEW_PER_IP: RateLimitRule = { limit: 5, windowMs: 60 * 60 * 1000 };
 /** 갱신은 기록을 고칠 때마다 온다. 넉넉하게 두되 끝없이 받지는 않는다. */
 const UPDATES_PER_IP: RateLimitRule = { limit: 120, windowMs: 60 * 60 * 1000 };
 
-function closed() {
-  // 그만둔 뒤에는 '아직 시작하지 않았다'고 하지 않는다. 지우기(DELETE)는 그만둔 뒤에도 받는다.
-  if (isAnonymousStatsEnded()) {
-    return NextResponse.json({ error: "그만둔 기능입니다." }, { status: 410 });
-  }
-  return NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
-}
-
 export async function POST(request: NextRequest) {
-  if (!isAnonymousStatsOpen()) return closed();
+  if (!isAnonymousStatsOpen()) return statsClosedResponse();
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
