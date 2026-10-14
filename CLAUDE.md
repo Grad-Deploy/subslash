@@ -600,7 +600,7 @@ E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-K
 번역 표는 `Translations<T>` 타입이라, 넣는 순간 채울 곳이 타입 오류로 나온다(문구 `messages`, FAQ `faq.ts`, 서버 문장
 `known-text`, 결제 수단, 서비스·요금제 이름 `service-name`, 앱 이름 `usage/packages`). `locale === "en"`처럼 언어를 직접
 견주지 않고 이 표나 `translationFor`·`intlLocale`을 쓴다. 표가 없어도 되는 것은 영어로 떨어진다: 지원하지 않는 기기 언어
-(`FALLBACK_LOCALE`), 소개 캡처, 개인정보처리방침(번역판이 없으면 영어판 — 법률 문서를 확인 없이 옮기지 않는다), 탈퇴 확인
+(`FALLBACK_LOCALE`), 소개 캡처, 개인정보처리방침(번역판이 없으면 영어판 — 법률 문서를 확인 없이 옮기지 않는다. 그때는 맨 위에 영어판이라는 것과 한국어판이 우선한다는 것을 화면 언어로 한 줄 알린다, `privacyPage.englishOnly`), 탈퇴 확인
 낱말(서버가 '탈퇴'·'DELETE'만 받는다). Apps Script 웹 앱·붙여 넣는 스크립트·캘린더 이름·일정 메모는 화면 언어 전부를
 안다(`APPS_SCRIPT_LOCALES`) — 언어를 더하면 웹 앱 `TEXT`에 넣어 **웹 앱을 다시 배포한 뒤에** 이 목록에 넣는다. 서비스 이름은 서비스 목록에 그 언어의 칸을 확인해 더하고
 `PRESET_NAMES`에 잇는다.
