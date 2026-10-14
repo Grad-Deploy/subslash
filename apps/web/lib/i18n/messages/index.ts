@@ -13,6 +13,7 @@ import * as importing from "./importing";
 import * as landing from "./landing";
 import * as usageApp from "./usageApp";
 import * as usageMore from "./usageMore";
+import * as usageChart from "./usageChart";
 import * as measured from "./measured";
 import * as reminders from "./reminders";
 import * as account from "./account";
@@ -55,6 +56,7 @@ function messagesFor<L extends Locale>(locale: L) {
     ...landing[locale],
     ...usageApp[locale],
     ...usageMore[locale],
+    ...usageChart[locale],
     ...measured[locale],
     ...reminders[locale],
     ...account[locale],

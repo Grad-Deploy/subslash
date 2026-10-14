@@ -18,14 +18,13 @@ import {
   metricView,
   rangeDates,
   subUsage,
-  type MetricView,
   type UsageRange,
 } from "@lib/usage/value";
 import { Button } from "../../ui/button";
 import { AppSheet } from "../../settings/app/AppSheet";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 import { UsageLine, isUnused, type SortKey, type UsageReportLine } from "./AppUsageLine";
-import { UsageCard } from "./AppUsageCard";
+import { UsageTimeChart } from "./UsageTimeChart";
 import { RangeTabs, StatTile, SubLogo, UsageBarChart, monthBars, monthDay } from "./parts";
 import { intlLocale } from "@lib/i18n/config";
 
@@ -93,15 +92,6 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
     const packages = [...new Set(mapped.flatMap((sub) => packagesFor(sub) ?? []))];
     return monthBars(t, history, packages.length > 0 ? packages : MEASURED_USAGE_PACKAGES, now);
   }, [t, mapped, history, now]);
-
-  // 카드는 기간 탭과 관계없이 늘 최근 30일이다(체크인과 같은 기준).
-  const card = useMemo(
-    () =>
-      lines
-        .filter((line) => line.month.state === "measured" && line.view)
-        .map((line) => ({ usage: line.month, view: line.view as MetricView })),
-    [lines],
-  );
 
   if (status === "loading" || status === "unsupported" || mapped.length === 0) return null;
 
@@ -220,7 +210,14 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
 
   return (
     <>
-      <UsageCard rows={card} onOpen={() => setSheetOpen(true)} />
+      <UsageTimeChart
+        subs={mapped}
+        history={history}
+        installed={installed}
+        rate={rate}
+        now={now}
+        onOpenDetail={() => setSheetOpen(true)}
+      />
       <AppSheet open={sheetOpen} onClose={() => setSheetOpen(false)} label={u.title}>
         {detail}
       </AppSheet>

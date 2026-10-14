@@ -273,6 +273,7 @@ const EN: [RegExp, KnownTextRender][] = [
 
   // Gmail 자동 가져오기(api/gmail, lib/gmail-auto-client)
   [/^아직 시작하지 않은 기능입니다\.$/, () => "This feature hasn't started yet."],
+  [/^그만둔 기능입니다\.$/, () => "This feature has been discontinued."],
   [/^연결 상태를 읽지 못했습니다\.$/, () => "Couldn't read the connection status."],
   [/^연결 토큰을 만들지 못했습니다\.$/, () => "Couldn't create a connection token."],
   [/^Gmail 연결을 시작하지 못했습니다\.$/, () => "Couldn't start connecting Gmail."],
