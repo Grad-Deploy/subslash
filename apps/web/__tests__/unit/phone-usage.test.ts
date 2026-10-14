@@ -343,6 +343,37 @@ describe("subUsage", () => {
     expect(view.pendingDays).toBe(15);
   });
 
+  it("30일이 안 돼도 잰 양 그대로 '잘 씀' 기준을 채웠으면 그때부터 초록이다", () => {
+    const recent = dates.slice(15); // 15일치 기록
+    const make = (activeDays: number, ms: number) => {
+      const days: Record<string, Record<string, [number, number]>> = {};
+      for (const date of recent) days[date] = {};
+      for (const date of recent.slice(0, activeDays)) {
+        days[date] = { "com.netflix.mediaclient": [ms, 1] };
+      }
+      return subUsage(
+        sub(),
+        { v: 1, days, syncedAt: null },
+        ["com.netflix.mediaclient"],
+        dates,
+        1350,
+      );
+    };
+    // 쓴 날: 15일 동안 이미 10일 — 남은 날에 더 써도 줄지 않는다.
+    const days = metricView(make(GOOD_AT.days, 600_000), "days");
+    expect(days.level).toBe("green");
+    expect(days.pendingDays).toBe(0);
+    // 일찍 초록이 된 것은 30일로 늘려 말하지 않는다.
+    expect(days.have30).toBe(GOOD_AT.days);
+    // 시간: 15일 동안 12시간.
+    const hours = metricView(make(6, 2 * 3_600_000), "hours");
+    expect(hours.level).toBe("green");
+    // 기준에 못 미치면(빨강·노랑은 남은 날에 달라질 수 있다) 여전히 기다린다.
+    const short = metricView(make(3, 600_000), "days");
+    expect(short.level).toBeNull();
+    expect(short.pendingDays).toBe(15);
+  });
+
   it("기록이 30일 쌓이면 평가하고, '잘 씀' 기준(GOOD_AT)에 닿으면 초록이다", () => {
     const make = (opens: number) => {
       const days: Record<string, Record<string, [number, number]>> = {};
