@@ -117,6 +117,16 @@ export async function pruneStaleContributions(now: Date = new Date()): Promise<n
   return stale.length;
 }
 
+/**
+ * 익명 통계를 그만둔 뒤(isAnonymousStatsEnded) 남은 참여 기록을 모두 지운다. 지운 참여자 수를 돌려준다.
+ * 참여했던 기기가 다시 열리지 않아도 서버에 남지 않게 크론이 부른다.
+ */
+export async function deleteAllContributions(): Promise<number> {
+  const all = await getDb().select({ id: statsContributors.id }).from(statsContributors);
+  await deleteContributors(all.map((row) => row.id));
+  return all.length;
+}
+
 /** 보관 기간 안의 기록을 모아 요약한다. */
 export async function loadSummary(now: Date = new Date()): Promise<StatsSummary> {
   const db = getDb();

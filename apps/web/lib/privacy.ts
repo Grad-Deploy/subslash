@@ -96,8 +96,23 @@ export function isGmailChargeHistoryOpen(now: Date = new Date()): boolean {
  */
 export const ANONYMOUS_STATS_STARTS_ON: string | null = "2026-09-25";
 
-/** 익명 구독 통계가 열렸는지. */
+/**
+ * 익명 구독 통계를 그만둔 날(YYYY-MM-DD, 한국 시간 0시). 리포트에서 '다른 사용자와 비교' 칸을 걷으면서
+ * 그만뒀다 — 보여 주지 않는 통계를 모으지 않는다. 이날부터 서버는 새 요약을 받지 않고(지우기는 받는다),
+ * 하루 크론이 남은 기록을 모두 지우며, 참여했던 기기는 열릴 때 자기 기록을 지우고 참여를 끈다
+ * (useStatsContribution). 방침의 통계 항목은 '종료'로 바뀐다.
+ */
+export const ANONYMOUS_STATS_ENDED_ON: string | null = "2026-10-14";
+
+/** 익명 구독 통계를 그만뒀는지. */
+export function isAnonymousStatsEnded(now: Date = new Date()): boolean {
+  if (!ANONYMOUS_STATS_ENDED_ON) return false;
+  return now.getTime() >= new Date(`${ANONYMOUS_STATS_ENDED_ON}T00:00:00+09:00`).getTime();
+}
+
+/** 익명 구독 통계가 열렸는지(시작했고 아직 그만두지 않았는지). */
 export function isAnonymousStatsOpen(now: Date = new Date()): boolean {
+  if (isAnonymousStatsEnded(now)) return false;
   // 테스트 서버만 시작 전에 여는 스위치. 운영 빌드에서는 이 줄이 빠진다.
   if (
     process.env.NODE_ENV !== "production" &&

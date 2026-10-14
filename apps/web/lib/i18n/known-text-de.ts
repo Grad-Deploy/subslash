@@ -155,6 +155,7 @@ export const KNOWN_TEXT_DE: KnownTextRender[] = [
     "Das ist deine einzige Anmeldemethode und kann nicht getrennt werden. Leg zuerst ein Passwort an oder verknüpfe ein anderes Konto.",
   // Gmail 자동 가져오기
   () => "Diese Funktion ist noch nicht gestartet.",
+  () => "Diese Funktion wurde eingestellt.",
   () => "Der Verbindungsstatus konnte nicht gelesen werden.",
   () => "Es konnte kein Verbindungstoken erstellt werden.",
   () => "Die Gmail-Verbindung konnte nicht gestartet werden.",

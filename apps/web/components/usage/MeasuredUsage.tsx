@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import {
   findPresetForSubscription,
   metricForSubscription,
@@ -10,10 +9,15 @@ import {
 } from "@subslash/shared";
 import { useAccountDeviceUsage } from "@hooks/useAccountDeviceUsage";
 import { isMeasurableService } from "@lib/device-usage";
-import { IS_APP_BUILD } from "@lib/platform";
 import type { DeviceUsageView } from "@lib/device-usage-server";
-import { useT, type Messages, useServiceNames } from "@lib/i18n";
+import { useT, type Messages } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
+
+function PartialNote({ view }: { view: DeviceUsageView }) {
+  const t = useT();
+  if (!view.summary.partial) return null;
+  return <p className="text-xs text-muted-foreground">{t.measured.partial}</p>;
+}
 
 /** 이 구독을 잴 수 있으면 서비스 id. 앱으로 쓰지 않는 구독(멤버십 등)은 재지 않는다. */
 function measurableServiceId(sub: Subscription): string | null {
@@ -63,106 +67,6 @@ function usageTexts(t: Messages, sub: Subscription, usage: ServiceUsageSummary) 
   return byHours(sub)
     ? { main: m.atLeast(time), sub: count, zero: m.zeroTime }
     : { main: m.atLeast(count), sub: time, zero: m.zeroCount };
-}
-
-function PartialNote({ view }: { view: DeviceUsageView }) {
-  const t = useT();
-  if (!view.summary.partial) return null;
-  return <p className="text-xs text-muted-foreground">{t.measured.partial}</p>;
-}
-
-/**
- * 리포트의 '측정한 기기에서' 칸. 체크인 순위를 바꾸지 않고 옆에 놓는다 — 측정은 잴 수 있는 기기에서의
- * 최소치라, 체크인(사용자가 센 횟수)을 대신하지 않는다.
- */
-export function MeasuredUsageSection({ subscriptions }: { subscriptions: Subscription[] }) {
-  const names = useServiceNames();
-  const t = useT();
-  const m = t.measured;
-  const { available, view, error } = useAccountDeviceUsage();
-  if (!available) return null;
-
-  if (error) {
-    return (
-      <section className="rounded-2xl border p-4 text-xs text-muted-foreground">
-        {m.loadFailed(error)}
-      </section>
-    );
-  }
-  if (!view) return null;
-
-  if (view.summary.measuredDeviceCount === 0) {
-    // 켤 수 있는 곳은 앱뿐이라, 웹에서는 켜라고 말하지 않는다.
-    if (!IS_APP_BUILD) return null;
-    return (
-      <section className="space-y-1 rounded-2xl border p-4 text-sm">
-        <p className="font-bold">{m.offTitle}</p>
-        <p className="text-xs text-muted-foreground">
-          <Link href="/subs" className="underline underline-offset-2">
-            {m.offLink}
-          </Link>
-          {m.offAfter}
-        </p>
-      </section>
-    );
-  }
-
-  const rows = subscriptions.flatMap((sub) => {
-    const serviceId = measurableServiceId(sub);
-    const usage = serviceId ? usageFor(view, serviceId) : null;
-    return usage ? [{ sub, usage }] : [];
-  });
-  if (rows.length === 0) return null;
-  // 단위가 다른 줄이 섞이므로 모두 가진 쓴 시간으로 줄 세운다.
-  rows.sort((a, b) => b.usage.activeMinutes - a.usage.activeMinutes);
-  const anyHours = rows.some(({ sub }) => byHours(sub));
-  const anyZero = rows.some(({ usage }) => usage.sessionCount === 0);
-  const anyAi = rows.some(({ sub }) => isAiService(sub));
-
-  return (
-    <section className="space-y-3">
-      <div className="space-y-0.5">
-        <h2 className="text-base font-bold">{anyHours ? m.titleAmount : m.titleCount}</h2>
-        <p className="text-xs text-muted-foreground">
-          {m.subtitle(view.summary.measuredDeviceCount)}
-        </p>
-      </div>
-      <ul className="divide-y rounded-2xl border">
-        {rows.map(({ sub, usage }) => {
-          const text = usageTexts(t, sub, usage);
-          return (
-            <li key={sub.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-              <div className="min-w-0">
-                <p className="truncate font-semibold">{names.sub(sub)}</p>
-                {usage.handoffCount > 0 && (
-                  <p className="text-xs text-muted-foreground">{m.handoff(usage.handoffCount)}</p>
-                )}
-              </div>
-              <div className="shrink-0 text-right">
-                {usage.sessionCount === 0 ? (
-                  <p className="text-xs text-muted-foreground">{m.zeroOn(text.zero)}</p>
-                ) : (
-                  <>
-                    <p className="font-bold tabular-nums">{text.main}</p>
-                    <p className="text-[11px] text-muted-foreground tabular-nums">{text.sub}</p>
-                  </>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      <PartialNote view={view} />
-      {anyZero && <p className="text-xs text-muted-foreground">{m.zeroWhy}</p>}
-      <p className="text-xs text-muted-foreground">
-        {m.notIncluded}
-        {anyAi && m.notIncludedPc}
-        {anyHours && m.screenOff}
-        {m.unitCost}
-        {IS_APP_BUILD && m.differs}
-      </p>
-    </section>
-  );
 }
 
 /** 구독 상세의 한 줄. 잴 수 있는 구독이고 측정한 기기가 있을 때만 보인다. */
