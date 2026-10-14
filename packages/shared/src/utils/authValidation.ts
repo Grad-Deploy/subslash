@@ -6,22 +6,8 @@
  * 않고 API를 직접 부르는 요청이 있기 때문이다.
  */
 
-export type Gender = "male" | "female" | "other" | "undisclosed";
-
-export const GENDER_OPTIONS: ReadonlyArray<{ value: Gender; label: string }> = [
-  { value: "female", label: "여성" },
-  { value: "male", label: "남성" },
-  { value: "other", label: "기타" },
-  { value: "undisclosed", label: "밝히지 않음" },
-] as const;
-
-export function isGender(value: unknown): value is Gender {
-  return GENDER_OPTIONS.some((option) => option.value === value);
-}
-
 /** 만 14세 미만은 법정대리인 동의가 필요해 지금은 가입을 받지 않는다. */
 export const MIN_AGE = 14;
-export const MAX_AGE = 120;
 
 export const USERNAME_MIN = 4;
 export const USERNAME_MAX = 20;
@@ -57,10 +43,6 @@ export interface SignupInput {
    * 없으므로 이 확인만은 필수다.
    */
   isOver14: boolean;
-  /** 선택. 가입 화면의 나이 칸(만 나이). */
-  age?: number | string | null;
-  /** 선택. 가입 화면의 성별 칸. */
-  gender?: string | null;
 }
 
 /** 필드명 → 사용자에게 보여줄 오류 메시지. 통과하면 빈 객체다. */
@@ -70,10 +52,6 @@ export interface NormalizedSignup {
   username: string;
   email: string;
   password: string;
-  /** 선택. 비우면 null. */
-  age: number | null;
-  /** 선택. 비우면 null. */
-  gender: Gender | null;
 }
 
 /** 아이디·이메일은 대소문자 차이로 같은 사람이 두 계정을 만들지 않도록 낮춘다. */
@@ -219,21 +197,6 @@ export function validatePasswordConfirm(password: string, confirm: string): stri
   return undefined;
 }
 
-export function validateAge(value: number | string): string | undefined {
-  if (value === "" || value === null || value === undefined) return "나이를 입력해주세요.";
-  const age = typeof value === "number" ? value : Number(value);
-  if (!Number.isInteger(age)) return "나이는 숫자로 입력해주세요.";
-  if (age < MIN_AGE) return `만 ${MIN_AGE}세 이상만 이용할 수 있습니다.`;
-  if (age > MAX_AGE) return "나이를 다시 확인해주세요.";
-  return undefined;
-}
-
-export function validateGender(value: string): string | undefined {
-  if (!value) return "성별을 선택해주세요.";
-  if (!isGender(value)) return "성별을 다시 선택해주세요.";
-  return undefined;
-}
-
 /**
  * 회원가입 입력 전체를 검사하고, 통과하면 저장에 쓸 정규화된 값을 함께 준다.
  *
@@ -267,12 +230,6 @@ export function validateSignup(input: Partial<SignupInput>): {
     errors.isOver14 = `만 ${MIN_AGE}세 이상인지 확인해주세요.`;
   }
 
-  // 나이·성별은 가입 화면에서도 묻지만 **선택**이다. 서비스에 꼭 필요한 정보가 아니라, 필수로
-  // 받거나 비웠다고 가입을 막으면 개인정보 보호법 제16조(최소 수집)에 어긋난다. 적었다면 '내 정보'와
-  // 같은 규칙으로 검사한다.
-  const profile = validateProfile({ age: input.age, gender: input.gender });
-  Object.assign(errors, profile.errors);
-
   if (Object.keys(errors).length > 0) return { errors, value: null };
 
   return {
@@ -281,60 +238,8 @@ export function validateSignup(input: Partial<SignupInput>): {
       username,
       email,
       password,
-      age: profile.value?.age ?? null,
-      gender: profile.value?.gender ?? null,
     },
   };
-}
-
-export interface ProfileInput {
-  age?: number | string | null;
-  gender?: string | null;
-}
-
-export type ProfileErrors = Partial<Record<keyof ProfileInput, string>>;
-
-export interface NormalizedProfile {
-  /** 적지 않았으면 null. */
-  age: number | null;
-  /** 적지 않았으면 null. '밝히지 않음'을 고른 것과는 다른 상태다. */
-  gender: Gender | null;
-}
-
-function isBlank(value: unknown): boolean {
-  return value === undefined || value === null || value === "";
-}
-
-/**
- * '내 정보'의 나이·성별 검사. 둘 다 선택 항목이다.
- *
- * 비운 칸은 null로 저장한다. 0이나 '밝히지 않음'으로 채우면, 적지 않은 사람과
- * 그렇게 답한 사람이 구분되지 않는다 — 나중에 비교 통계를 낼 때 없는 응답을
- * 있는 것처럼 세게 된다.
- */
-export function validateProfile(input: ProfileInput): {
-  errors: ProfileErrors;
-  value: NormalizedProfile | null;
-} {
-  const errors: ProfileErrors = {};
-
-  let age: number | null = null;
-  if (!isBlank(input.age)) {
-    const ageError = validateAge(input.age as number | string);
-    if (ageError) errors.age = ageError;
-    else age = Number(input.age);
-  }
-
-  let gender: Gender | null = null;
-  if (!isBlank(input.gender)) {
-    const genderError =
-      typeof input.gender === "string" ? validateGender(input.gender) : "성별을 다시 선택해주세요.";
-    if (genderError) errors.gender = genderError;
-    else gender = input.gender as Gender;
-  }
-
-  if (Object.keys(errors).length > 0) return { errors, value: null };
-  return { errors, value: { age, gender } };
 }
 
 export interface LoginInput {

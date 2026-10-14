@@ -100,13 +100,7 @@ export const KNOWN_TEXT_VI: KnownTextRender[] = [
   () => "Hai mật khẩu không khớp.",
   () => "Hai mật khẩu đã khớp.",
   () => "Mật khẩu hợp lệ.",
-  // 나이·성별·만 14세
-  () => "Nhập tuổi của bạn.",
-  () => "Nhập tuổi bằng số.",
-  (age) => `Bạn phải từ ${age} tuổi trở lên để dùng SubSlash.`,
-  () => "Hãy kiểm tra lại tuổi.",
-  () => "Chọn giới tính.",
-  () => "Hãy chọn lại giới tính.",
+  // 만 14세
   (age) => `Hãy xác nhận bạn từ ${age} tuổi trở lên.`,
   // 서버 응답
   () => "Không hiểu được yêu cầu.",
@@ -136,7 +130,6 @@ export const KNOWN_TEXT_VI: KnownTextRender[] = [
   () => "Không có tài khoản nào đăng ký bằng email này.",
   // 내 정보·비밀번호·탈퇴·로그인 방법
   () => "Bạn cần đăng nhập.",
-  () => "Không lưu được thông tin của bạn.",
   () => "Nhập mật khẩu hiện tại.",
   () => "Mật khẩu hiện tại không đúng.",
   () => "Hãy đặt mật khẩu khác với mật khẩu hiện tại.",

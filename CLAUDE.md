@@ -756,7 +756,10 @@ pnpm build
   쓴다. 검색에는 공개 웹만 노출한다 — `subslash-web-qki1`에는 환경 변수 `SEARCH_INDEXING=off`를 둬 모든 화면을
   noindex로 둔다(`lib/site-metadata`). 미러가 병합 즉시 새 레포로 옮겨 곧바로 배포되므로, 스키마를 바꾸는 PR은 병합
   전에 **두 DB 모두** 마이그레이션 SQL을 적용한다. 한쪽만 적용하면 다른 쪽 배포에서 새
-  테이블을 쓰는 화면이 500을 낸다.
+  테이블을 쓰는 화면이 500을 낸다. **지우는 변경은 순서가 반대다** — 먼저 그 칼럼·표를 읽고 쓰지 않는 코드를
+  병합해 두 배포에 나간 뒤에 DROP을 적용한다. Drizzle은 스키마의 칼럼을 모두 조회하므로, DROP을 먼저 적용하면
+  배포 중인 옛 코드가 `no such column`으로 실패한다(2026년 10월 14일 `accounts.age`·`gender`를 먼저 지워 로그인·가입이
+  500을 냈다). DROP은 되돌릴 수 없으니 적용 전에 값이 든 행 수를 확인한다.
 - 앱(`apps/mobile/eas.json`의 `NEXT_PUBLIC_WEB_ORIGIN`)은 공개 웹 `www.subslash.me`(`subslash-grad`)를
   부른다. 웹과 다른 배포를 부르게 하면 DB가 달라져, 웹 계정으로 앱에 로그인할 수 없다.
 - E2E는 CI와 같게 `--workers=1`로 돌린다. 기본 병렬로는 샘플 데이터 테스트가

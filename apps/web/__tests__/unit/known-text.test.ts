@@ -48,8 +48,6 @@ function validatorMessages(): string[] {
     password: "secret-pass-1",
     passwordConfirm: "different-pass",
     isOver14: false,
-    age: "5",
-    gender: "nope",
   }).errors;
   out.push(...Object.values(signup));
   out.push(
@@ -60,8 +58,6 @@ function validatorMessages(): string[] {
         password: "secret-pass-1",
         passwordConfirm: "",
         isOver14: true,
-        age: "abc",
-        gender: "",
       }).errors,
     ),
   );
@@ -99,9 +95,8 @@ const SERVER_MESSAGES = [
   describeResetOutcome({ status: "not_sent", reason: "not_configured" }, "a@b.co"),
   describeResetOutcome({ status: "not_sent", reason: "failed" }, "a@b.co"),
   "이 이메일로 가입한 계정이 없습니다.",
-  // 내 정보·비밀번호 변경·탈퇴·로그인 방법(app/api/auth/profile·password·account·oauth/link)
+  // 비밀번호 변경·탈퇴·로그인 방법(app/api/auth/password·account·oauth/link)
   "로그인이 필요합니다.",
-  "내 정보를 저장하지 못했습니다.",
   "지금 비밀번호를 입력해주세요.",
   "지금 비밀번호가 맞지 않습니다.",
   "지금 비밀번호와 다른 비밀번호를 정해주세요.",

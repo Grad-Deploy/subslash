@@ -7,15 +7,10 @@ import {
   validateSignupEmail,
   SIGNUP_EMAIL_DOMAINS,
   validatePassword,
-  validateAge,
-  validateGender,
-  validateProfile,
   normalizeUsername,
   normalizeEmailAddress,
   getEmailDomain,
-  isGender,
   MIN_AGE,
-  MAX_AGE,
   PASSWORD_MIN,
 } from "@subslash/shared";
 
@@ -35,26 +30,7 @@ describe("validateSignup", () => {
       username: "sean_lee",
       email: "sean@gmail.com",
       password: "hunter2-hunter2",
-      age: null,
-      gender: null,
     });
-  });
-
-  it("나이·성별은 선택이다 — 비워도 통과하고, 적으면 '내 정보'와 같은 규칙으로 검사한다", () => {
-    // 필수로 받거나 비웠다고 가입을 막으면 개인정보 보호법 제16조(최소 수집)에 어긋난다.
-    expect(validateSignup({ ...VALID, age: "", gender: "" }).value).toMatchObject({
-      age: null,
-      gender: null,
-    });
-    expect(validateSignup({ ...VALID, age: "30", gender: "female" }).value).toMatchObject({
-      age: 30,
-      gender: "female",
-    });
-
-    const young = validateSignup({ ...VALID, age: 10 });
-    expect(young.value).toBeNull();
-    expect(young.errors.age).toBe(`만 ${MIN_AGE}세 이상만 이용할 수 있습니다.`);
-    expect(validateSignup({ ...VALID, gender: "robot" }).errors.gender).toBeDefined();
   });
 
   it(`만 ${MIN_AGE}세 이상 확인은 체크한 값(true)만 인정한다`, () => {
@@ -107,36 +83,6 @@ describe("validateSignup", () => {
       "passwordConfirm",
       "username",
     ]);
-  });
-});
-
-describe("validateProfile", () => {
-  it("둘 다 선택 항목이라 비워 두면 null로 통과한다", () => {
-    expect(validateProfile({}).value).toEqual({ age: null, gender: null });
-    expect(validateProfile({ age: "", gender: "" }).value).toEqual({ age: null, gender: null });
-    expect(validateProfile({ age: null, gender: null }).value).toEqual({ age: null, gender: null });
-  });
-
-  it("나이를 문자열로 보내도 숫자로 저장한다", () => {
-    expect(validateProfile({ age: "42" }).value?.age).toBe(42);
-  });
-
-  it("적은 나이는 범위를 검사한다", () => {
-    expect(validateProfile({ age: MIN_AGE - 1 }).errors.age).toBeDefined();
-    expect(validateProfile({ age: 30.5 }).errors.age).toBeDefined();
-    expect(validateProfile({ age: "서른" }).value).toBeNull();
-  });
-
-  it("'밝히지 않음'을 고른 것과 비워 둔 것을 구분한다", () => {
-    expect(validateProfile({ gender: "undisclosed" }).value?.gender).toBe("undisclosed");
-    expect(validateProfile({ gender: "" }).value?.gender).toBeNull();
-  });
-
-  it("성별을 임의의 문자열로 밀어 넣을 수 없다", () => {
-    const { errors, value } = validateProfile({ gender: "'; DROP TABLE accounts; --" });
-    expect(value).toBeNull();
-    expect(errors.gender).toBeDefined();
-    expect(validateProfile({ gender: 3 as never }).value).toBeNull();
   });
 });
 
@@ -246,37 +192,6 @@ describe("validatePassword", () => {
 
   it("길이를 채운 평범한 비밀번호는 통과시킨다", () => {
     expect(validatePassword("subslash-2026!")).toBeUndefined();
-  });
-});
-
-describe("validateAge", () => {
-  it(`만 ${MIN_AGE}세 미만은 거부한다`, () => {
-    expect(validateAge(MIN_AGE - 1)).toBeDefined();
-    expect(validateAge(MIN_AGE)).toBeUndefined();
-  });
-
-  it(`${MAX_AGE}세를 넘으면 거부한다`, () => {
-    expect(validateAge(MAX_AGE + 1)).toBeDefined();
-  });
-
-  it("숫자가 아니거나 소수면 거부한다", () => {
-    expect(validateAge("서른")).toBeDefined();
-    expect(validateAge(30.5)).toBeDefined();
-    expect(validateAge("")).toBeDefined();
-  });
-});
-
-describe("validateGender", () => {
-  it("정해진 값만 통과시킨다", () => {
-    expect(validateGender("female")).toBeUndefined();
-    expect(validateGender("undisclosed")).toBeUndefined();
-    expect(validateGender("남")).toBeDefined();
-    expect(validateGender("")).toBeDefined();
-  });
-
-  it("isGender는 목록 밖의 값을 걸러낸다", () => {
-    expect(isGender("male")).toBe(true);
-    expect(isGender("robot")).toBe(false);
   });
 });
 

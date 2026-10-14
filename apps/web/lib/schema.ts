@@ -22,11 +22,11 @@ export const accounts = sqliteTable(
      */
     passwordHash: text("password_hash").notNull(),
     /**
-     * 선택 항목. 가입 화면과 '내 정보'에서 원할 때만 적는다. 적지 않았으면 null이다.
-     * 필수로 받지 않는다 — 서비스에 꼭 필요한 정보가 아니다(개인정보 보호법 제16조).
+     * 예전의 선택 항목(나이·성별). 이제 읽지도 쓰지도 않는다. 칼럼은 이 코드가 두 배포에 나간 뒤
+     * `0018_drop_account_demographics`로 지운다 — 먼저 지우면 배포 중인 옛 코드가 이 칼럼을 조회하다
+     * 실패한다(2026년 10월 14일, 로그인·가입이 500을 냈다).
      */
     age: integer("age"),
-    /** male | female | other | undisclosed. 선택 항목이라 적지 않았으면 null. */
     gender: text("gender"),
     /**
      * 가입한 이메일이 그 사람 것인지 확인된 시각. 확인 메일에서 '맞아요'를 누르기

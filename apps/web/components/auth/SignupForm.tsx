@@ -9,7 +9,7 @@ import { useSignupForm } from "@hooks/useSignupForm";
 import { useKnownText, useT } from "@lib/i18n";
 import { ResendVerificationButton } from "./ResendVerificationButton";
 import { SignupDone } from "./SignupDone";
-import { Field, OptionalProfileFields, Over14Checkbox, statusProps } from "./SignupFields";
+import { Field, Over14Checkbox, statusProps } from "./SignupFields";
 
 /**
  * 회원가입 폼. 상태와 제출은 useSignupForm이 맡고, 여기는 칸을 배치한다.
@@ -96,15 +96,6 @@ export function SignupForm() {
           {...statusProps("passwordConfirm", status.passwordConfirm)}
         />
       </Field>
-
-      <OptionalProfileFields
-        age={signup.age}
-        onAgeChange={signup.setAge}
-        gender={signup.gender}
-        onGenderChange={signup.setGender}
-        ageError={errors.age}
-        genderError={errors.gender}
-      />
 
       <Over14Checkbox
         checked={signup.isOver14}
