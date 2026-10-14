@@ -48,4 +48,25 @@ test.describe("개인정보처리방침 (E2E)", () => {
       page.getByRole("main").getByRole("link", { name: "개인정보처리방침" }),
     ).toHaveAttribute("href", "/privacy", { timeout: 30_000 });
   });
+
+  test("번역판이 없는 언어에서는 영어판이라는 안내를 그 언어로 먼저 보인다", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("subslash-locale", "ja"));
+    await page.goto("/privacy");
+    await expect(page.getByRole("note").filter({ hasText: "英語版を表示しています" })).toBeVisible({
+      timeout: 30_000,
+    });
+    const heading = page.getByRole("heading", { name: "Privacy Policy", level: 1 });
+    await expect(heading).toBeVisible();
+    // 영어 본문은 영어로 읽히게 표시한다.
+    await expect(page.locator("[lang=en]").filter({ has: heading })).toHaveCount(1);
+  });
+
+  test("한국어·영어 화면에는 그 안내가 없다", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("subslash-locale", "en"));
+    await page.goto("/privacy");
+    await expect(page.getByRole("heading", { name: "Privacy Policy", level: 1 })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByText(/isn't available in this language yet/)).toHaveCount(0);
+  });
 });
