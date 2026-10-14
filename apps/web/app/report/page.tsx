@@ -10,7 +10,11 @@ import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { isAiAskOpen } from "@lib/privacy";
 import { IS_APP_BUILD } from "@lib/platform";
-import { buildOtherMetricRows, buildValueRows } from "@components/report/valueRows";
+import {
+  buildCheckInBars,
+  buildOtherMetricRows,
+  buildValueRows,
+} from "@components/report/valueRows";
 import {
   BundleOverlapNotice,
   ReceiptLinks,
@@ -18,6 +22,7 @@ import {
 } from "@components/report/sections/SummarySections";
 import { CostPerUseRanking, OtherMetricList } from "@components/report/sections/ValueSections";
 import { AskReport } from "@components/report/sections/AskReport";
+import { CheckInUsageChart } from "@components/report/sections/CheckInUsageChart";
 import { PageSpinner } from "../../components/ui/spinner";
 import { useT } from "@lib/i18n";
 
@@ -31,7 +36,8 @@ const AppUsageReport = IS_APP_BUILD
 
 /**
  * 구독 리포트. 해지하기 전에도 볼 것이 있어야 한다 — 예전 '절약 현황'은 해지한 구독이 없으면 빈 화면
- * 이었다. 여기서는 지금 내는 돈과 1회 단가, 그리고 앱에서는 구독별 사용 시간(폰 기록)을 보여 준다. 다른
+ * 이었다. 여기서는 지금 내는 돈과 1회 단가, 그리고 구독별 막대그래프 — 앱은 사용 시간(폰 기록), 웹은 체크인한
+ * 사용량 — 를 보여 준다. 다른
  * 사용자와의 비교(익명 통계)와 여러 기기 사용 측정 칸은 걷었다 — 통계는 그만뒀고(ANONYMOUS_STATS_ENDED_ON), 기기
  * 측정은 구독 상세의 한 줄과 설정에 남아 있다. 해지로 지킨 돈(/savings)은 앱과 같게 리포트에 두지 않는다 — 웹은 대시보드에서 들어간다.
  * 칸마다의 모양은 components/report/sections에, 순위 계산은 components/report/valueRows에 있다.
@@ -53,6 +59,11 @@ export default function ReportPage() {
   const rows = useMemo(
     () => buildValueRows(active, usageLogs, rate, now),
     [active, usageLogs, rate, now],
+  );
+  // 웹에는 폰 사용 기록이 없어 체크인으로 그린다. 앱은 폰 기록으로 그린다(AppUsageReport).
+  const checkInBars = useMemo(
+    () => (AppUsageReport ? null : buildCheckInBars(active, usageLogs, now)),
+    [active, usageLogs, now],
   );
   const otherRows = useMemo(
     () => buildOtherMetricRows(active, usageLogs, now),
@@ -106,11 +117,11 @@ export default function ReportPage() {
           />
           {/* 구독별 사용 시간 막대그래프(안드로이드 앱의 폰 기록). '자세히 보기'는 전체를 시트로 연다. */}
           {AppUsageReport && <AppUsageReport active={active} />}
+          {checkInBars && <CheckInUsageChart {...checkInBars} />}
           <CostPerUseRanking rows={rows} />
           <OtherMetricList rows={otherRows} />
         </>
       )}
-
     </div>
   );
 }
