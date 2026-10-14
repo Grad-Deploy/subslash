@@ -4,6 +4,8 @@ import React, { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Subscription } from "@subslash/shared";
 import { useT } from "@lib/i18n";
+import { useStore } from "@lib/store";
+import { latestFreshLogFor } from "@lib/stats";
 import { formatDurationText } from "@lib/i18n/duration";
 import { isCurrentMonth, monthDates, type UsageHistory } from "@lib/usage/history";
 import { usageChartBars, type ChartMode } from "@lib/usage/chart";
@@ -37,6 +39,7 @@ export function UsageTimeChart({
 }) {
   const t = useT();
   const c = t.usageChart;
+  const usageLogs = useStore((state) => state.usageLogs);
   const [mode, setMode] = useState<ChartMode>("recent");
   const [monthIndex, setMonthIndex] = useState<number | null>(null);
   // 고른 달이 없으면 기록이 있는 가장 최근 달.
@@ -54,8 +57,18 @@ export function UsageTimeChart({
             rate,
             !isCurrentMonth(month, now),
           )
-        : usageChartBars(subs, history, installed, rangeDates("month", now), rate),
-    [month, subs, history, installed, rate, now],
+        : // 최근 30일은 폰 기록으로 아직 평가하지 못한 구독에 최근 체크인의 색을 준다(웹 그래프와 같은 색).
+          // 지난 달에는 주지 않는다 — 지금의 체크인은 그 달의 사용이 아니다.
+          usageChartBars(
+            subs,
+            history,
+            installed,
+            rangeDates("month", now),
+            rate,
+            false,
+            (sub) => latestFreshLogFor(usageLogs, sub, now)?.riskLevel ?? null,
+          ),
+    [month, subs, history, installed, rate, now, usageLogs],
   );
 
   const max = Math.max(1, ...bars.map((bar) => bar.usedMs));
