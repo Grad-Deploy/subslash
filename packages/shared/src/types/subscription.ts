@@ -25,6 +25,26 @@ export interface ChargeRecord {
   amount: number;
 }
 
+/** 한 번 결제에 드는 돈을 정하는 칸들. 금액 변경 이력(`AmountChange`)이 고치기 전·뒤를 이 모양으로 남긴다. */
+export interface PriceSnapshot {
+  amount: number;
+  currency: Currency;
+  taxRate?: number;
+  sharingCount?: number;
+  myShareAmount?: number;
+}
+
+/**
+ * 사용자가 금액(통화·세율·나눠 내기 포함)을 고친 기록(utils/amountHistory). 결제 기록(`ChargeRecord`)이
+ * 아니다 — 결제 메일 같은 증거가 아니라 사용자가 적은 값이고, 고친 그날부터 새 금액이라고 본다.
+ */
+export interface AmountChange {
+  /** 고친 시각(ISO). 이날부터 `after`가 적용된다. */
+  changedAt: string;
+  before: PriceSnapshot;
+  after: PriceSnapshot;
+}
+
 export interface Subscription {
   id: string;
   name: string;
@@ -134,6 +154,13 @@ export interface Subscription {
   chargeHistory?: ChargeRecord[];
 
   /**
+   * 사용자가 금액을 고친 기록(utils/amountHistory). 영수증이 지난 결제를 그때의 금액으로 셈하는 데 쓴다 —
+   * 없으면 요금을 올려 적은 뒤 지난 달 영수증까지 새 금액으로 다시 계산됐다. `chargeHistory`와 섞지 않는다:
+   * 그쪽은 결제 메일이 보여 주는 실제 결제이고, 이쪽은 사용자가 적은 값이다.
+   */
+  amountHistory?: AmountChange[];
+
+  /**
    * 사용자가 "이 금액이 지금도 맞다"고 마지막으로 확인해 준 시각.
    *
    * 없으면 등록 이후 한 번도 확인한 적이 없다는 뜻이다. 앱은 이 값을
@@ -216,6 +243,7 @@ export type SubscriptionFormData = Omit<
   | "freeTierAnswer"
   | "orderEvidence"
   | "chargeHistory"
+  | "amountHistory"
 >;
 
 export type EmailType = "payment" | "cancellation" | "refund" | "onetime";

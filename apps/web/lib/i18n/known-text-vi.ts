@@ -51,6 +51,7 @@ const BACKUP_FIELDS: BackupFieldNames = {
   "해지 기록": "bản ghi hủy",
   "주문 메일 근거": "bằng chứng email đơn hàng",
   "결제 메일 기록": "lịch sử email thanh toán",
+  "금액 변경 기록": "lịch sử đổi số tiền",
   "구독 ID": "ID gói đăng ký",
   월: "tháng",
   "사용 횟수": "số lần dùng",

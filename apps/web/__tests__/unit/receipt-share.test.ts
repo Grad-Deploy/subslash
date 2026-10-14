@@ -55,6 +55,7 @@ function receipt(lines: ReceiptLine[] = defaultLines()): Receipt {
     defendedUnknownCount: 1,
     killed: [{ subscriptionId: "sub-tving", name: "티빙", killedOn: "2026-09-10" }],
     fx: { historical: 0, current: 0 },
+    priorAmount: 0,
     excluded: { undated: 0, beforeRegistration: 0, trial: 0 },
   };
 }

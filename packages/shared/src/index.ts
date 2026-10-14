@@ -23,6 +23,7 @@ export * from "./utils/metaphor";
 export * from "./utils/valueMetric";
 export * from "./utils/orderEvidence";
 export * from "./utils/chargeHistory";
+export * from "./utils/amountHistory";
 export * from "./utils/cancelNotice";
 export * from "./utils/bundles";
 export * from "./utils/deviceUsage";

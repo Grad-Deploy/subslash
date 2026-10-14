@@ -22,6 +22,7 @@ function receipt(overrides: Partial<Receipt> = {}): Receipt {
     defendedUnknownCount: 0,
     killed: [],
     fx: { historical: 0, current: 0 },
+    priorAmount: 0,
     excluded: { undated: 0, beforeRegistration: 0, trial: 0 },
     ...overrides,
   };
