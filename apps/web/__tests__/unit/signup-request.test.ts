@@ -10,21 +10,15 @@ const VALUES = {
   password: "password123",
   passwordConfirm: "password123",
   isOver14: true,
-  age: "",
-  gender: "",
 };
 
 describe("signupRequestBody", () => {
-  it("비운 선택 항목은 null로 보낸다", () => {
-    const body = JSON.parse(signupRequestBody({ ...VALUES, age: "  " }));
-    expect(body.age).toBeNull();
-    expect(body.gender).toBeNull();
+  it("가입 칸과 만 14세 확인만 보낸다", () => {
+    const body = JSON.parse(signupRequestBody(VALUES));
+    expect(Object.keys(body).sort()).toEqual(
+      ["email", "isOver14", "password", "passwordConfirm", "username"].sort(),
+    );
     expect(body.isOver14).toBe(true);
-  });
-
-  it("적은 나이·성별은 그대로 보낸다", () => {
-    const body = JSON.parse(signupRequestBody({ ...VALUES, age: "30", gender: "female" }));
-    expect(body).toMatchObject({ age: "30", gender: "female" });
   });
 });
 

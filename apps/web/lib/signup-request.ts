@@ -10,9 +10,6 @@ export interface SignupFormValues {
   password: string;
   passwordConfirm: string;
   isOver14: boolean;
-  /** 선택 항목. 빈 문자열이면 보내지 않은 것(null)으로 둔다. */
-  age: string;
-  gender: string;
 }
 
 /**
@@ -26,8 +23,6 @@ export function signupRequestBody(values: SignupFormValues): string {
     password: values.password,
     passwordConfirm: values.passwordConfirm,
     isOver14: values.isOver14,
-    age: values.age.trim() === "" ? null : values.age,
-    gender: values.gender === "" ? null : values.gender,
   });
 }
 

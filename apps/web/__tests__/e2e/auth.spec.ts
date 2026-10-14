@@ -12,8 +12,10 @@ test.describe("계정 (E2E)", () => {
     const over14 = page.getByLabel(/만 14세 이상입니다/);
     await expect(over14).toBeVisible({ timeout: 30_000 });
     await expect(over14).not.toBeChecked();
-    await expect(page.locator("#age")).toHaveCount(0);
-    await expect(page.locator("#gender")).toHaveCount(0);
+    // id가 아니라 칸의 이름과 보이는 문구로 본다. 예전 검사(#age·#gender)는 실제 칸의 id
+    // (signup-age·signup-gender)와 달라, 칸이 있어도 늘 통과했다.
+    await expect(page.locator("[name=age], [name=gender]")).toHaveCount(0);
+    await expect(page.getByRole("main").getByText(/나이|성별/)).toHaveCount(0);
 
     // 확인하지 않고 제출하면 서버까지 가지 않고 그 자리에서 알려준다.
     await page.getByRole("button", { name: "회원가입" }).click();
