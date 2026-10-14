@@ -165,7 +165,7 @@ export const en: Widen<typeof ko> = {
       legendShare: "All bars add up to 100%. The color is the value rating.",
       tvMissing: "Watching on a TV or PC isn't included.",
       unmapped: (count) =>
-        ` ${countOf(count, "subscription")} used as a membership or on a PC can't be measured from phone records and are left out.`,
+        ` ${countOf(count, "subscription")} used as a membership or on a PC can't be measured from phone records and ${count === 1 ? "is" : "are"} left out.`,
       yearTitle: "1-year trend",
       yearSub: "Time used per month",
       since: (date) =>
