@@ -34,7 +34,7 @@ import {
   AppSortSelect,
 } from "../../components/subscription/app/appParts";
 import { useIsClient } from "@hooks/useIsClient";
-import { Spinner } from "../../components/ui/spinner";
+import { PageSpinner } from "../../components/ui/spinner";
 import { Receipt, ShieldCheck } from "lucide-react";
 import { useToast } from "@hooks/useToast";
 import { useLatestT, useT, useServiceNames } from "@lib/i18n";
@@ -101,11 +101,7 @@ export default function SubscriptionsPage() {
   const { selectedId } = selection;
 
   if (!mounted) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Spinner className="size-8" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   const selectedExists = selectedId !== null && subscriptions.some((s) => s.id === selectedId);

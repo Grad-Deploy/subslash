@@ -18,7 +18,7 @@ import { Button } from "../../components/ui/button";
 import { ExchangeRateNote } from "../../components/settings/ExchangeRateNote";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { usePhoneUsageStore } from "../../hooks/usePhoneUsage";
-import { Spinner } from "../../components/ui/spinner";
+import { PageSpinner } from "../../components/ui/spinner";
 import { AppStartChecklist } from "../../components/app-start/AppStartChecklist";
 import { AppServicePicker } from "../../components/app-start/AppServicePicker";
 import { FirstCheckInCard } from "../../components/app-start/FirstCheckInCard";
@@ -93,11 +93,7 @@ export default function Dashboard() {
   }, []);
 
   if (!mounted) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Spinner className="size-8" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   const activeSubs = getActiveSubscriptions();

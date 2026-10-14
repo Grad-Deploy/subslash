@@ -7,17 +7,13 @@ import {
   formatCurrency,
   getMyMonthlyShareAmount,
   metricForSubscription,
+  spaceCurrencySymbol,
 } from "@subslash/shared";
 import { useT, useServiceNames } from "@lib/i18n";
 import { useStore } from "@lib/store";
 import { ServiceLogo } from "../ServiceLogo";
 import { DialogDescription, DialogTitle } from "../../ui/dialog";
 import { AppUsageCountPicker } from "./AppUsageCountPicker";
-
-/** '₩ 17,000'처럼 기호 뒤를 한 칸 띄운다(계산서와 같은 표기). */
-function spaced(text: string): string {
-  return text.replace(/^([−-]?)([₩$])\s*/, "$1$2 ");
-}
 
 /**
  * 앱에서 구독을 하나 등록한 직후, 같은 창에서 '이번 달 대략 몇 번 썼는지'를 묻는다.
@@ -64,7 +60,7 @@ export function AppAddCheckIn({
           <p className="truncate text-base font-black tracking-tight">{names.sub(subscription)}</p>
         </div>
         <p className="ml-auto shrink-0 text-[13px] font-extrabold tabular-nums">
-          {spaced(formatCurrency(monthly, subscription.currency))}
+          {spaceCurrencySymbol(formatCurrency(monthly, subscription.currency))}
           <span className="text-[11px] font-semibold text-muted-foreground">
             {c.addCheckIn.perMonth}
           </span>

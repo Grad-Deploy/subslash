@@ -7,7 +7,7 @@ import { useT } from "@lib/i18n";
 import { parsePcUsageHash } from "@lib/pc-usage";
 import { PcUsageReader } from "../../components/pc-usage/PcUsageReader";
 import { PcUsageRow } from "../../components/pc-usage/PcUsageRow";
-import { Spinner } from "../../components/ui/spinner";
+import { PageSpinner } from "../../components/ui/spinner";
 
 /**
  * PC의 AI 코딩 도구 사용을 체크인으로 받는다.
@@ -29,11 +29,7 @@ export default function PcUsagePage() {
   }, [mounted]);
 
   if (!parsed) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   return (

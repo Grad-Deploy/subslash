@@ -23,7 +23,7 @@ import { AutoImportModal } from "../../components/import/AutoImportModal";
 import { CopyBlock } from "../../components/gmail/CopyBlock";
 import { GmailAutoImportSetup } from "../../components/gmail/GmailAutoImportSetup";
 import { Button } from "../../components/ui/button";
-import { Spinner } from "../../components/ui/spinner";
+import { PageSpinner } from "../../components/ui/spinner";
 import { Inbox, SearchX } from "lucide-react";
 import { IS_APP_BUILD } from "@lib/platform";
 import dynamic from "next/dynamic";
@@ -43,14 +43,6 @@ type ImportState =
   | { kind: "guide" }
   | { kind: "error"; message: string }
   | { kind: "ready"; emailCount: number; items: DiscoveredSubscription[] };
-
-function LoadingScreen() {
-  return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <Spinner className="size-8" />
-    </div>
-  );
-}
 
 function Guide() {
   const p = useT().importing.page;
@@ -180,7 +172,7 @@ export default function ImportPage() {
       );
   }, []);
 
-  if (!mounted || state.kind === "checking") return <LoadingScreen />;
+  if (!mounted || state.kind === "checking") return <PageSpinner />;
   if (state.kind === "guide") return <Guide />;
 
   if (state.kind === "error" || state.items.length === 0) {

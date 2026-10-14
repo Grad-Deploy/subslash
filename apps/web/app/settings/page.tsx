@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { IS_APP_BUILD } from "@lib/platform";
 import { useIsClient } from "@hooks/useIsClient";
 import { SettingsScreen } from "../../components/settings/SettingsScreen";
-import { Spinner } from "../../components/ui/spinner";
+import { PageSpinner } from "../../components/ui/spinner";
 
 // 앱의 설정 탭(폰 사용 기록 칸이 더 있다). 폰 기록 코드가 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
 const AppSettingsPage = IS_APP_BUILD
@@ -23,11 +23,7 @@ export default function SettingsPage() {
   const mounted = useIsClient();
   if (AppSettingsPage) return <AppSettingsPage />;
   if (!mounted) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Spinner className="size-8" />
-      </div>
-    );
+    return <PageSpinner />;
   }
   return <SettingsScreen storedOn="web" />;
 }
