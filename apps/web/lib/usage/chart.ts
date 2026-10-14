@@ -30,6 +30,7 @@ export interface ChartExclusions {
  * 읽힌다. 많이 쓴 순.
  *
  * `wholeMonth`면 그 달을 하루도 빠짐없이 잰 경우에 한 달 치로 평가한다(28일인 2월도 평가가 나오게).
+ * `fallback`은 폰 기록으로 아직 평가하지 못한 구독(30일 전)의 색이다 — 최근 30일 막대에서 최근 체크인의 색을 준다.
  */
 export function usageChartBars(
   subs: readonly Subscription[],
@@ -38,6 +39,7 @@ export function usageChartBars(
   dates: readonly string[],
   rate: number,
   wholeMonth = false,
+  fallback?: (sub: Subscription) => RiskLevel | null,
 ): { bars: ChartBar[]; excluded: ChartExclusions; partial: boolean } {
   const bars: ChartBar[] = [];
   const excluded: ChartExclusions = { unmapped: 0, unmeasured: 0 };
@@ -56,7 +58,7 @@ export function usageChartBars(
     bars.push({
       sub,
       usedMs: usage.totals.usedMs,
-      level: metricView(judged, metricForSubscription(sub)).level,
+      level: metricView(judged, metricForSubscription(sub)).level ?? fallback?.(sub) ?? null,
     });
   }
   bars.sort((a, b) => b.usedMs - a.usedMs);
