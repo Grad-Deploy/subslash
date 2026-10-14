@@ -96,10 +96,15 @@ export default function ReportPage() {
             annual={sumMyAnnualKRW(active, rate)}
             count={active.length}
           />
-          {/* AI는 질문에 맞는 계산만 고르고, 숫자는 이 기기의 기록으로 계산한다(lib/ask). */}
-          {isAiAskOpen() && (
-            <AskReport subscriptions={subscriptions} usageLogs={usageLogs} rate={rate} now={now} />
-          )}
+          {/* 숫자는 이 기기의 기록으로 계산한다(lib/ask). AI가 닫혀 있으면 추천 질문과 기기 규칙으로만 답하고
+              아무것도 서버로 보내지 않는다. */}
+          <AskReport
+            subscriptions={subscriptions}
+            usageLogs={usageLogs}
+            rate={rate}
+            now={now}
+            aiOpen={isAiAskOpen()}
+          />
           {/* 폰 사용 기록 요약 카드(안드로이드 앱). 누르면 전체를 시트로 연다. */}
           {AppUsageReport && <AppUsageReport active={active} />}
           <CostPerUseRanking rows={rows} />
