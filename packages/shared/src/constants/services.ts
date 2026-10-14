@@ -113,11 +113,6 @@ export interface ServicePreset {
    * 따로 구독하고 있으면 두 번 내는 것일 수 있다고 알린다(utils/bundles).
    */
   includes?: string[];
-  /**
-   * 구성을 고르는 멤버십이라 결합 상품 탭에 둔다(네이버플러스). `includes`가 없어도 — 무엇을 골랐는지 모르면
-   * 구성을 적지 않는다 — 단독 서비스와 섞이지 않게 한다.
-   */
-  bundleTab?: boolean;
   /** 결합 구성·요금제 요금을 확인한 곳. 요금이 바뀌면 여기부터 다시 본다. */
   sourceUrl?: string;
 }
@@ -462,11 +457,10 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     nameEn: "Naver Plus",
     category: "shopping",
     defaultAmount: 4900,
-    // 디지털 콘텐츠를 매달 하나 고르는 멤버십이라 결합 상품 탭에 둔다. 넷플릭스·스포티파이를 골랐으면 아래의
-    // '네이버플러스 + …'로 등록해야 따로 낸 같은 서비스와 겹치는지 알 수 있다.
-    bundleTab: true,
+    // 무엇을 골랐는지 모르므로 구성(includes)을 적지 않고 쇼핑 탭에 둔다. 넷플릭스·스포티파이를 골랐으면
+    // 결합 상품 탭의 '네이버플러스 + …'로 등록해야 따로 낸 같은 서비스와 겹치는지 알 수 있다.
     priceNote:
-      "넷플릭스나 스포티파이를 골랐다면 '네이버플러스 + 넷플릭스'·'네이버플러스 + 스포티파이'로 등록해 주세요.",
+      "넷플릭스나 스포티파이를 골랐다면 결합 상품 탭의 '네이버플러스 + 넷플릭스'·'네이버플러스 + 스포티파이'로 등록해 주세요.",
     currency: "KRW",
     cancelUrl: "https://nid.naver.com/membership/my",
     cancelUrlKind: "direct",
