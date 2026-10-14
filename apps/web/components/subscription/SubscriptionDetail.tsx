@@ -14,6 +14,7 @@ import { SubForm } from "./SubForm";
 import { CheckInModal } from "./CheckInModal";
 import { CancelGuideModal } from "./CancelGuideModal";
 import { PlanAlternatives } from "./PlanAlternatives";
+import { AmountHistoryCard } from "./AmountHistoryCard";
 import { KillRecordCard } from "./KillRecordCard";
 import { SubscriptionActionConfirm } from "./SubscriptionActionConfirm";
 import { SubscriptionSummaryCard } from "./detail/SubscriptionSummaryCard";
@@ -186,6 +187,8 @@ export function SubscriptionDetail({
       ) : (
         <PlanAlternatives subscription={sub} onChanged={showToast} />
       )}
+
+      <AmountHistoryCard subscription={sub} />
 
       <CancelRoutesCard sub={sub} onMessage={showToast} onOpenGuide={() => setIsGuideOpen(true)} />
 

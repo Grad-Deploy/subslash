@@ -18,6 +18,7 @@ import * as measured from "./measured";
 import * as reminders from "./reminders";
 import * as account from "./account";
 import * as accountPages from "./accountPages";
+import * as amountHistory from "./amountHistory";
 import * as oauth from "./oauth";
 import * as overview from "./overview";
 import * as pageTitles from "./pageTitles";
@@ -61,6 +62,7 @@ function messagesFor<L extends Locale>(locale: L) {
     ...reminders[locale],
     ...account[locale],
     ...accountPages[locale],
+    ...amountHistory[locale],
     ...importing[locale],
     ...savings[locale],
     ...receiptView[locale],
