@@ -121,7 +121,9 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
   const covered = Math.max(0, ...usages.map((u) => u.totals.coveredDays));
   const since = firstRecordedDay(history);
   const unmappedCount = active.length - mapped.length;
-  const hasYear = months.some((m) => m.value !== null);
+  // 1년 추이와 사용 시간 그래프의 월별이 같은 달별 합계를 쓴다.
+  const recordedMonths = months.filter((m) => m.value !== null).map((m) => m.key);
+  const hasYear = recordedMonths.length > 0;
 
   const detail = (
     <section className="space-y-4 pt-1" aria-labelledby="usage-heading">
@@ -211,12 +213,12 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
   return (
     <>
       <UsageTimeChart
-        subs={mapped}
+        subs={active}
+        months={recordedMonths}
         history={history}
         installed={installed}
         rate={rate}
         now={now}
-        unmappedCount={unmappedCount}
         onOpenDetail={() => setSheetOpen(true)}
       />
       <AppSheet open={sheetOpen} onClose={() => setSheetOpen(false)} label={u.title}>

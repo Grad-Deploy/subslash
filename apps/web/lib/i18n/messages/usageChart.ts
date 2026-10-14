@@ -7,8 +7,6 @@ export const ko = {
     modeLabel: "기간",
     recent: "최근 30일",
     monthly: "월별",
-    prevMonth: "이전 달",
-    nextMonth: "다음 달",
     pending: "평가 전",
     legend:
       "막대 색은 가성비예요(체크인과 같은 기준). 30일 치 기록이 모이기 전에는 회색으로 두고 평가하지 않아요.",
@@ -25,8 +23,6 @@ export const en: Widen<typeof ko> = {
     modeLabel: "Period",
     recent: "Last 30 days",
     monthly: "By month",
-    prevMonth: "Previous month",
-    nextMonth: "Next month",
     pending: "Not rated yet",
     legend:
       "Bar colors show value for money (same rule as check-ins). Until 30 days of records are in, bars stay gray and aren't rated.",
@@ -44,8 +40,6 @@ export const zh: Widen<typeof ko> = {
     modeLabel: "期间",
     recent: "最近 30 天",
     monthly: "按月",
-    prevMonth: "上个月",
-    nextMonth: "下个月",
     pending: "尚未评价",
     legend: "柱子颜色表示性价比（与打卡相同的标准）。记录未满 30 天前显示为灰色，不作评价。",
     partialMonth: "本月只计算有记录的日子。",
@@ -61,8 +55,6 @@ export const ja: Widen<typeof ko> = {
     modeLabel: "期間",
     recent: "直近30日",
     monthly: "月別",
-    prevMonth: "前の月",
-    nextMonth: "次の月",
     pending: "評価前",
     legend:
       "棒の色はコスパです（チェックインと同じ基準）。30日分の記録がそろうまではグレーで、評価しません。",
@@ -79,8 +71,6 @@ export const vi: Widen<typeof ko> = {
     modeLabel: "Khoảng thời gian",
     recent: "30 ngày qua",
     monthly: "Theo tháng",
-    prevMonth: "Tháng trước",
-    nextMonth: "Tháng sau",
     pending: "Chưa đánh giá",
     legend:
       "Màu cột thể hiện độ đáng tiền (cùng tiêu chí với check-in). Khi chưa đủ 30 ngày dữ liệu, cột để màu xám và chưa đánh giá.",
@@ -98,8 +88,6 @@ export const fr: Widen<typeof ko> = {
     modeLabel: "Période",
     recent: "30 derniers jours",
     monthly: "Par mois",
-    prevMonth: "Mois précédent",
-    nextMonth: "Mois suivant",
     pending: "Pas encore évalué",
     legend:
       "La couleur des barres indique le rapport qualité-prix (même règle que les check-ins). Tant que 30 jours de données ne sont pas réunis, elles restent grises et ne sont pas évaluées.",
@@ -117,8 +105,6 @@ export const es: Widen<typeof ko> = {
     modeLabel: "Periodo",
     recent: "Últimos 30 días",
     monthly: "Por mes",
-    prevMonth: "Mes anterior",
-    nextMonth: "Mes siguiente",
     pending: "Sin valorar",
     legend:
       "El color de las barras indica cuánto vale lo que pagas (mismo criterio que los check-ins). Hasta reunir 30 días de datos quedan en gris y no se valoran.",
@@ -136,8 +122,6 @@ export const de: Widen<typeof ko> = {
     modeLabel: "Zeitraum",
     recent: "Letzte 30 Tage",
     monthly: "Nach Monat",
-    prevMonth: "Vorheriger Monat",
-    nextMonth: "Nächster Monat",
     pending: "Noch nicht bewertet",
     legend:
       "Die Balkenfarbe zeigt das Preis-Leistungs-Verhältnis (gleiche Regel wie beim Check-in). Bis 30 Tage Daten da sind, bleiben die Balken grau und unbewertet.",
@@ -155,8 +139,6 @@ export const pt: Widen<typeof ko> = {
     modeLabel: "Período",
     recent: "Últimos 30 dias",
     monthly: "Por mês",
-    prevMonth: "Mês anterior",
-    nextMonth: "Próximo mês",
     pending: "Ainda sem avaliação",
     legend:
       "A cor das barras mostra o custo-benefício (mesmo critério do check-in). Até juntar 30 dias de dados, elas ficam cinza e sem avaliação.",

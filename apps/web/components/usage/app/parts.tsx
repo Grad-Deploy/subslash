@@ -28,6 +28,42 @@ export function SubLogo({ sub, size = 32 }: { sub: Subscription; size?: number }
 
 const RANGES: UsageRange[] = ["week", "month", "year"];
 
+/** 칸을 나눠 하나를 고르는 탭. 사용 현황의 기간(1주·1달·1년)과 사용 시간 그래프(최근 30일·월별)가 함께 쓴다. */
+export function SegmentedTabs<T extends string>({
+  value,
+  onChange,
+  label,
+  options,
+}: {
+  value: T;
+  onChange: (value: T) => void;
+  label: string;
+  options: readonly { value: T; label: string; disabled?: boolean }[];
+}) {
+  return (
+    <div role="tablist" aria-label={label} className="flex gap-1 rounded-xl bg-secondary p-1">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          role="tab"
+          aria-selected={value === option.value}
+          disabled={option.disabled}
+          onClick={() => onChange(option.value)}
+          className={cn(
+            "flex-1 rounded-lg py-1.5 text-xs font-bold transition-colors disabled:opacity-40",
+            value === option.value
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** 1주 / 1달 / 1년 */
 export function RangeTabs({
   value,
@@ -40,25 +76,12 @@ export function RangeTabs({
 }) {
   const t = useT();
   return (
-    <div role="tablist" aria-label={label} className="flex gap-1 rounded-xl bg-secondary p-1">
-      {RANGES.map((range) => (
-        <button
-          key={range}
-          type="button"
-          role="tab"
-          aria-selected={value === range}
-          onClick={() => onChange(range)}
-          className={cn(
-            "flex-1 rounded-lg py-1.5 text-xs font-bold transition-colors",
-            value === range
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          {t.usageApp.range[range]}
-        </button>
-      ))}
-    </div>
+    <SegmentedTabs
+      value={value}
+      onChange={onChange}
+      label={label}
+      options={RANGES.map((range) => ({ value: range, label: t.usageApp.range[range] }))}
+    />
   );
 }
 

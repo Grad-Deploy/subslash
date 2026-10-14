@@ -13,12 +13,6 @@ import type { DeviceUsageView } from "@lib/device-usage-server";
 import { useT, type Messages } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
 
-function PartialNote({ view }: { view: DeviceUsageView }) {
-  const t = useT();
-  if (!view.summary.partial) return null;
-  return <p className="text-xs text-muted-foreground">{t.measured.partial}</p>;
-}
-
 /** 이 구독을 잴 수 있으면 서비스 id. 앱으로 쓰지 않는 구독(멤버십 등)은 재지 않는다. */
 function measurableServiceId(sub: Subscription): string | null {
   const id = findPresetForSubscription(sub)?.id;
@@ -94,7 +88,7 @@ export function MeasuredUsageLine({ sub }: { sub: Subscription }) {
         {isAiService(sub) ? m.lineAfterPc : m.lineAfter}
       </p>
       {usage.sessionCount === 0 && <p className="text-xs text-muted-foreground">{m.zeroWhy}</p>}
-      <PartialNote view={view} />
+      {view.summary.partial && <p className="text-xs text-muted-foreground">{m.partial}</p>}
     </div>
   );
 }
