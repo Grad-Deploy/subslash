@@ -21,6 +21,7 @@ import * as oauth from "./oauth";
 import * as overview from "./overview";
 import * as pageTitles from "./pageTitles";
 import * as pcUsage from "./pcUsage";
+import * as privacyPage from "./privacyPage";
 import * as receipt from "./receipt";
 import * as receiptView from "./receiptView";
 import * as reportPage from "./reportPage";
@@ -66,6 +67,7 @@ function messagesFor<L extends Locale>(locale: L) {
     ...detail[locale],
     ...receipt[locale],
     ...pcUsage[locale],
+    ...privacyPage[locale],
   };
 }
 
