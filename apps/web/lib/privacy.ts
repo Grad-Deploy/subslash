@@ -17,7 +17,13 @@ export const PRIVACY_OFFICER: { name: string; email: string } | null = {
 };
 
 /** 이 방침이 효력을 갖는 날. 내용을 바꾸면 함께 바꾼다. */
-export const PRIVACY_EFFECTIVE_DATE = "2026년 10월 1일";
+export const PRIVACY_EFFECTIVE_DATE = "2026년 10월 14일";
+
+/**
+ * 결제 알림 메일·캘린더 구독 주소를 그만둔 날. 방침의 '(종료)' 항목이 쓴다 — 예전에는 시행일을 그대로 써서,
+ * 방침을 고쳐 시행일을 올리면 그만둔 날까지 함께 바뀌었다.
+ */
+export const EMAIL_REMINDERS_ENDED_ON = "2026년 10월 1일";
 
 /**
  * Gmail 자동 가져오기를 시작하는 날(YYYY-MM-DD, 한국 시간 0시). 이 기능은 서버에 저장하는 항목을

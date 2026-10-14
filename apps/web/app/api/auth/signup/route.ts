@@ -111,7 +111,6 @@ export async function POST(request: NextRequest) {
     // 평문 비밀번호는 여기서 해시로 바뀌고, 그 뒤로는 어디에도 남지 않는다.
     const passwordHash = await hashPassword(value.password);
 
-    // 나이·성별은 가입 화면에서도 묻지만 선택이다(validateSignup). '내 정보'에서 바꾸거나 지울 수 있다.
     const db = getDb();
     const inserted = await db
       .insert(accounts)
@@ -119,9 +118,6 @@ export async function POST(request: NextRequest) {
         username: value.username,
         email: value.email,
         passwordHash,
-        // 선택 항목. 적지 않았으면 null이다.
-        age: value.age,
-        gender: value.gender,
       })
       .returning();
 

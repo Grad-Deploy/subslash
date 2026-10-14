@@ -38,14 +38,6 @@ export const ko = {
     blockedAfter:
       "하면 됩니다. 가입한 적이 없다면, 이 주소로 확인 메일을 받아 ‘제가 가입하지 않았어요’를 누르세요. 그 계정이 지워지고 이 주소로 가입할 수 있습니다.",
     blockedResend: "이 주소로 확인 메일 받기",
-    profileTitle: "나이·성별",
-    optional: "(선택)",
-    age: "나이",
-    agePlaceholder: "만 나이",
-    gender: "성별",
-    genderNone: "성별 선택 안 함",
-    genders: { female: "여성", male: "남성", other: "기타", undisclosed: "밝히지 않음" },
-    profileNote: "비워도 가입돼요. ‘내 정보’에서 언제든 바꾸거나 지울 수 있어요.",
     over14: (age: number) => `만 ${age}세 이상입니다.`,
     required: "(필수)",
     storageBefore:
@@ -124,14 +116,6 @@ export const en: Widen<typeof ko> = {
     blockedAfter:
       ". If you never signed up, get a confirmation email at this address and press ‘I didn't sign up’. That account will be deleted and you can sign up with this address.",
     blockedResend: "Send a confirmation email to this address",
-    profileTitle: "Age & gender",
-    optional: "(optional)",
-    age: "Age",
-    agePlaceholder: "Age",
-    gender: "Gender",
-    genderNone: "Prefer not to choose",
-    genders: { female: "Female", male: "Male", other: "Other", undisclosed: "Prefer not to say" },
-    profileNote: "You can leave these empty, and change or remove them anytime in ‘My account’.",
     over14: (age) => `I am ${age} or older.`,
     required: "(required)",
     storageBefore:
@@ -207,14 +191,6 @@ export const zh: Widen<typeof ko> = {
     blockedAfter:
       "即可。如果你从未注册，请向这个地址发送确认邮件并点“我没有注册”。那个账户会被删除，你就可以用这个地址注册。",
     blockedResend: "向这个地址发送确认邮件",
-    profileTitle: "年龄和性别",
-    optional: "（可选）",
-    age: "年龄",
-    agePlaceholder: "年龄",
-    gender: "性别",
-    genderNone: "不选择",
-    genders: { female: "女", male: "男", other: "其他", undisclosed: "不便透露" },
-    profileNote: "可以不填，之后也可以在“我的信息”中随时修改或删除。",
     over14: (age) => `我已年满 ${age} 周岁。`,
     required: "（必填）",
     storageBefore: "注册时会保存用户名、邮箱和密码的哈希值。我们保存什么、保存多久、如何删除，请见",
@@ -291,14 +267,6 @@ export const ja: Widen<typeof ko> = {
     blockedAfter:
       "してください。登録した覚えがなければ、このアドレスに確認メールを送って「登録していません」を押してください。そのアカウントは削除され、このアドレスで登録できます。",
     blockedResend: "このアドレスに確認メールを送る",
-    profileTitle: "年齢・性別",
-    optional: "（任意）",
-    age: "年齢",
-    agePlaceholder: "年齢",
-    gender: "性別",
-    genderNone: "選ばない",
-    genders: { female: "女性", male: "男性", other: "その他", undisclosed: "回答しない" },
-    profileNote: "空欄のままでもよく、「マイ情報」でいつでも変更・削除できます。",
     over14: (age) => `満 ${age} 歳以上です。`,
     required: "（必須）",
     storageBefore:
@@ -375,14 +343,6 @@ export const vi: Widen<typeof ko> = {
     blockedAfter:
       ". Nếu bạn chưa từng đăng ký, hãy gửi email xác nhận đến địa chỉ này và nhấn “Tôi không đăng ký”. Tài khoản đó sẽ bị xóa và bạn có thể đăng ký bằng địa chỉ này.",
     blockedResend: "Gửi email xác nhận đến địa chỉ này",
-    profileTitle: "Tuổi & giới tính",
-    optional: "(tùy chọn)",
-    age: "Tuổi",
-    agePlaceholder: "Tuổi",
-    gender: "Giới tính",
-    genderNone: "Không chọn",
-    genders: { female: "Nữ", male: "Nam", other: "Khác", undisclosed: "Không muốn trả lời" },
-    profileNote: "Có thể để trống, và đổi hoặc xóa bất cứ lúc nào trong “Thông tin của tôi”.",
     over14: (age) => `Tôi từ ${age} tuổi trở lên.`,
     required: "(bắt buộc)",
     storageBefore:
@@ -460,20 +420,6 @@ export const fr: Widen<typeof ko> = {
     blockedAfter:
       ". Si vous ne vous êtes jamais inscrit, recevez un e-mail de confirmation à cette adresse et appuyez sur « Je ne me suis pas inscrit ». Ce compte sera supprimé et vous pourrez vous inscrire avec cette adresse.",
     blockedResend: "Envoyer un e-mail de confirmation à cette adresse",
-    profileTitle: "Âge et genre",
-    optional: "(facultatif)",
-    age: "Âge",
-    agePlaceholder: "Âge",
-    gender: "Genre",
-    genderNone: "Ne pas choisir",
-    genders: {
-      female: "Femme",
-      male: "Homme",
-      other: "Autre",
-      undisclosed: "Je préfère ne pas dire",
-    },
-    profileNote:
-      "Vous pouvez laisser ces champs vides, et les modifier ou supprimer à tout moment dans « Mon compte ».",
     over14: (age) => `J'ai ${age} ans ou plus.`,
     required: "(obligatoire)",
     storageBefore:
@@ -551,14 +497,6 @@ export const es: Widen<typeof ko> = {
     blockedAfter:
       ". Si nunca te registraste, recibe un correo de confirmación en esta dirección y pulsa «No me registré». Esa cuenta se borrará y podrás registrarte con esta dirección.",
     blockedResend: "Enviar un correo de confirmación a esta dirección",
-    profileTitle: "Edad y género",
-    optional: "(opcional)",
-    age: "Edad",
-    agePlaceholder: "Edad",
-    gender: "Género",
-    genderNone: "No elegir",
-    genders: { female: "Mujer", male: "Hombre", other: "Otro", undisclosed: "Prefiero no decirlo" },
-    profileNote: "Puedes dejarlos vacíos y cambiarlos o borrarlos cuando quieras en «Mi cuenta».",
     over14: (age) => `Tengo ${age} años o más.`,
     required: "(obligatorio)",
     storageBefore:
@@ -637,15 +575,6 @@ export const de: Widen<typeof ko> = {
     blockedAfter:
       ". Wenn du dich nie registriert hast, lass dir eine Bestätigungs-E-Mail an diese Adresse schicken und tippe auf „Ich habe mich nicht registriert“. Dieses Konto wird gelöscht, und du kannst dich mit dieser Adresse registrieren.",
     blockedResend: "Bestätigungs-E-Mail an diese Adresse senden",
-    profileTitle: "Alter & Geschlecht",
-    optional: "(optional)",
-    age: "Alter",
-    agePlaceholder: "Alter",
-    gender: "Geschlecht",
-    genderNone: "Keine Auswahl",
-    genders: { female: "Weiblich", male: "Männlich", other: "Divers", undisclosed: "Keine Angabe" },
-    profileNote:
-      "Du kannst die Felder leer lassen und jederzeit unter „Mein Konto“ ändern oder löschen.",
     over14: (age) => `Ich bin mindestens ${age} Jahre alt.`,
     required: "(Pflicht)",
     storageBefore:
@@ -725,19 +654,6 @@ export const pt: Widen<typeof ko> = {
     blockedAfter:
       ". Se você nunca se cadastrou, receba um e-mail de confirmação neste endereço e toque em “Não me cadastrei”. Essa conta será apagada e você poderá se cadastrar com este endereço.",
     blockedResend: "Enviar e-mail de confirmação para este endereço",
-    profileTitle: "Idade e gênero",
-    optional: "(opcional)",
-    age: "Idade",
-    agePlaceholder: "Idade",
-    gender: "Gênero",
-    genderNone: "Não escolher",
-    genders: {
-      female: "Feminino",
-      male: "Masculino",
-      other: "Outro",
-      undisclosed: "Prefiro não dizer",
-    },
-    profileNote: "Pode deixar em branco e mudar ou apagar quando quiser em “Minha conta”.",
     over14: (age) => `Tenho ${age} anos ou mais.`,
     required: "(obrigatório)",
     storageBefore:

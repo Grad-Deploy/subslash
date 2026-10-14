@@ -104,13 +104,7 @@ export const KNOWN_TEXT_FR: KnownTextRender[] = [
   () => "Les mots de passe ne correspondent pas.",
   () => "Les mots de passe correspondent.",
   () => "Le mot de passe est valide.",
-  // 나이·성별·만 14세
-  () => "Saisissez votre âge.",
-  () => "Saisissez votre âge en chiffres.",
-  (age) => `Vous devez avoir au moins ${age} ans pour utiliser SubSlash.`,
-  () => "Vérifiez votre âge.",
-  () => "Choisissez votre genre.",
-  () => "Choisissez à nouveau votre genre.",
+  // 만 14세
   (age) => `Confirmez que vous avez au moins ${age} ans.`,
   // 서버 응답
   () => "La requête n'a pas pu être comprise.",
@@ -142,7 +136,6 @@ export const KNOWN_TEXT_FR: KnownTextRender[] = [
   () => "Aucun compte n'est inscrit avec cet e-mail.",
   // 내 정보·비밀번호·탈퇴·로그인 방법
   () => "Vous devez vous connecter.",
-  () => "Impossible d'enregistrer vos informations.",
   () => "Saisissez votre mot de passe actuel.",
   () => "Le mot de passe actuel est incorrect.",
   () => "Choisissez un mot de passe différent de l'actuel.",

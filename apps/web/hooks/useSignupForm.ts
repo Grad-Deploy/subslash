@@ -54,9 +54,6 @@ export function useSignupForm() {
   const t = useT().auth.signup;
   const [form, setForm] = useState(EMPTY);
   const [isOver14, setIsOver14State] = useState(false);
-  // 선택 항목. 비워도 가입된다.
-  const [age, setAgeState] = useState("");
-  const [gender, setGenderState] = useState("");
   // 입력했거나 거쳐 간 칸. 이 칸들만 입력하는 동안 판정한다.
   const [touched, setTouched] = useState<Partial<Record<SignupTextField, boolean>>>({});
   // 제출 때 받은 칸별 오류(이미 쓰는 아이디 등). 그 칸을 고치면 치운다.
@@ -116,16 +113,6 @@ export function useSignupForm() {
     clearError(field);
   };
 
-  const setAge = (value: string) => {
-    setAgeState(value);
-    clearError("age");
-  };
-
-  const setGender = (value: string) => {
-    setGenderState(value);
-    clearError("gender");
-  };
-
   const setIsOver14 = (value: boolean) => {
     setIsOver14State(value);
     clearError("isOver14");
@@ -142,7 +129,7 @@ export function useSignupForm() {
     event.preventDefault();
     setFormError(null);
 
-    const values = { ...form, isOver14, age, gender };
+    const values = { ...form, isOver14 };
     const { errors: localErrors, value } = validateSignup(values);
     if (!value) {
       // 칸별 문구는 입력 중 판정이 그대로 보여준다(같은 검증 함수를 쓴다). 모든
@@ -152,8 +139,6 @@ export function useSignupForm() {
       setErrors((prev) => ({
         ...prev,
         isOver14: localErrors.isOver14,
-        age: localErrors.age,
-        gender: localErrors.gender,
       }));
       return;
     }
@@ -193,10 +178,6 @@ export function useSignupForm() {
     update,
     touch,
     checkEmailNow,
-    age,
-    setAge,
-    gender,
-    setGender,
     isOver14,
     setIsOver14,
     errors,
