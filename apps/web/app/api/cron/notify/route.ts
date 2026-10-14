@@ -1,8 +1,8 @@
 import { timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { pruneStaleContributions } from "@lib/stats-server";
-import { isAnonymousStatsOpen, isDeviceUsageOpen } from "@lib/privacy";
+import { deleteAllContributions, pruneStaleContributions } from "@lib/stats-server";
+import { isAnonymousStatsEnded, isAnonymousStatsOpen, isDeviceUsageOpen } from "@lib/privacy";
 import { pruneDeviceUsage } from "@lib/device-usage-server";
 import { pruneAbandonedAccounts } from "@lib/account-verification";
 import { pruneExpiredSessions } from "@lib/auth-server";
@@ -41,12 +41,18 @@ export async function GET(request: NextRequest) {
   try {
     // 익명 통계의 오래된 참여 기록(방침의 보관 기간). 기능을 열기 전에는 표가 없을 수 있다(마이그레이션은
     // 시작일을 정할 때 적용한다).
-    const prunedStats = isAnonymousStatsOpen(now)
-      ? await pruneStaleContributions(now).catch((error: unknown) => {
-          logError("cron/notify stats prune failed", error);
+    // 그만둔 뒤에는 남은 기록을 모두 지운다 — 보여 주지 않는 통계를 서버에 두지 않는다.
+    const prunedStats = isAnonymousStatsEnded(now)
+      ? await deleteAllContributions().catch((error: unknown) => {
+          logError("cron/notify stats delete failed", error);
           return null;
         })
-      : null;
+      : isAnonymousStatsOpen(now)
+        ? await pruneStaleContributions(now).catch((error: unknown) => {
+            logError("cron/notify stats prune failed", error);
+            return null;
+          })
+        : null;
 
     // 기기 간 사용 측정의 보관 기간(40일)이 지난 구간. 열기 전에는 표가 없을 수 있다.
     const prunedUsage = isDeviceUsageOpen(now)

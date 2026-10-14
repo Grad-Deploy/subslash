@@ -158,6 +158,7 @@ export const KNOWN_TEXT_FR: KnownTextRender[] = [
     "C'est votre seule méthode de connexion, elle ne peut pas être déliée. Créez d'abord un mot de passe ou liez un autre compte.",
   // Gmail 자동 가져오기
   () => "Cette fonctionnalité n'a pas encore commencé.",
+  () => "Cette fonctionnalité a été arrêtée.",
   () => "Impossible de lire l'état de la connexion.",
   () => "Impossible de créer un jeton de connexion.",
   () => "Impossible de lancer la connexion à Gmail.",

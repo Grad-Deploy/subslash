@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { isAnonymousStatsOpen } from "@lib/privacy";
+import { isAnonymousStatsEnded, isAnonymousStatsOpen } from "@lib/privacy";
 import { loadSummary } from "@lib/stats-server";
 import { logError } from "@lib/log";
 
@@ -9,6 +9,9 @@ import { logError } from "@lib/log";
  * 명의 값이 드러나지 않는다. 자주 바뀌지 않아 CDN에 10분 둔다.
  */
 export async function GET() {
+  if (isAnonymousStatsEnded()) {
+    return NextResponse.json({ error: "그만둔 기능입니다." }, { status: 410 });
+  }
   if (!isAnonymousStatsOpen()) {
     return NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
   }

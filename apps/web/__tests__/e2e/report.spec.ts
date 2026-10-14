@@ -72,6 +72,14 @@ test.describe("구독 리포트 (E2E)", () => {
     await expect(rows.nth(1)).toContainText("체크인 전");
   });
 
+  test("다른 사용자와의 비교와 여러 기기 사용 측정 칸은 리포트에 없다", async ({ page }) => {
+    await seed(page, { subscriptions: [NETFLIX, MELON], usageLogs: [], accounts: [] });
+    await page.goto("/report");
+    await expect(page.getByRole("region", { name: "지출 요약" })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByText(/다른 사용자/)).toHaveCount(0);
+    await expect(page.getByText(/기기를 오가며|모든 기기 합쳐/)).toHaveCount(0);
+  });
+
   test("하단 탭의 '리포트'는 절약 기록 화면에서도 켜져 있다", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/savings");

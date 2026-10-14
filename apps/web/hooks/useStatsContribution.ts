@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { realRecords, useStore } from "../lib/store";
-import { isAnonymousStatsOpen, isStatsAgeBandOpen } from "../lib/privacy";
+import { isAnonymousStatsEnded, isAnonymousStatsOpen, isStatsAgeBandOpen } from "../lib/privacy";
 import { buildContribution } from "../lib/stats";
 import {
   sendContribution,
@@ -28,6 +28,19 @@ export function useStatsContribution() {
   const withdrawing = useRef(false);
 
   useEffect(() => {
+    // 그만둔 뒤에는 보내지 않고, 참여했던 기기는 자기 기록을 지우고 참여를 끈다. 지우지 못하면 토큰을 남겨
+    // 다음에 열 때 다시 지운다(서버의 하루 크론도 남은 기록을 모두 지운다).
+    if (isAnonymousStatsEnded()) {
+      const sharing = useStatsSharing.getState();
+      if (sharing.enabled) sharing.setEnabled(false);
+      const token = sharing.token;
+      if (token) {
+        withdrawContribution(token)
+          .then(() => useStatsSharing.getState().setToken(null))
+          .catch((error) => console.error("[stats] 그만둔 통계의 기록을 지우지 못했습니다", error));
+      }
+      return;
+    }
     if (!isAnonymousStatsOpen()) return;
 
     const evaluate = () => {
