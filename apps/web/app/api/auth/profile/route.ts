@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateProfile } from "@subslash/shared";
 import { databaseUnavailableResponse } from "@lib/db";
 import {
-  getAccountBySessionToken,
-  readSessionToken,
   toPublicAccount,
   updateAccountProfile,
+  getRequestAccount,
+  loginRequiredResponse,
 } from "@lib/auth-server";
 import { logError } from "@lib/log";
 
@@ -20,9 +20,9 @@ export async function PUT(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await getAccountBySessionToken(readSessionToken(request));
+    const account = await getRequestAccount(request);
     if (!account) {
-      return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+      return loginRequiredResponse();
     }
 
     const body = await request.json().catch(() => null);
@@ -40,7 +40,7 @@ export async function PUT(request: NextRequest) {
 
     const updated = await updateAccountProfile(account.id, value);
     if (!updated) {
-      return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+      return loginRequiredResponse();
     }
     return NextResponse.json({ account: toPublicAccount(updated) });
   } catch (error) {

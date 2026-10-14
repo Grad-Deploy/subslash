@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
+import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
 import {
   OAUTH_PROVIDER_LABEL,
   enabledProviders,
@@ -20,21 +20,13 @@ import { logError } from "@lib/log";
  * 로그인하려면 처음 가입한 방법으로 로그인한 뒤 여기서 잇는다.
  */
 
-async function signedInAccount(request: NextRequest) {
-  return getAccountBySessionToken(readSessionToken(request));
-}
-
-function unauthorized() {
-  return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
-}
-
 /** 잇거나 끊을 수 있는 제공자와 지금 이어 둔 제공자. 소셜 로그인이 닫혀 있으면 고를 제공자가 없다. */
 export async function GET(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await signedInAccount(request);
-    if (!account) return unauthorized();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
     const providers =
       isSocialLoginOpen() && canSignLinks()
         ? enabledProviders().map((id) => ({ id, label: OAUTH_PROVIDER_LABEL[id] }))
@@ -67,8 +59,8 @@ export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await signedInAccount(request);
-    if (!account) return unauthorized();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
     const provider = await readProvider(request);
     if (!provider || !isSocialLoginOpen() || !canSignLinks()) {
       return NextResponse.json({ error: "지금은 연결할 수 없어요." }, { status: 400 });
@@ -93,8 +85,8 @@ export async function DELETE(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const account = await signedInAccount(request);
-    if (!account) return unauthorized();
+    const account = await getRequestAccount(request);
+    if (!account) return loginRequiredResponse();
     const provider = await readProvider(request);
     if (!provider) {
       return NextResponse.json({ error: "요청을 이해할 수 없습니다." }, { status: 400 });
