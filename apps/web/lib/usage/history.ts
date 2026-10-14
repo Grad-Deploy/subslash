@@ -277,6 +277,19 @@ export function firstRecordedDay(history: UsageHistory): string | null {
   return keys[0] ?? null;
 }
 
+/** `YYYY-MM`이 오늘이 든 달인지. */
+export function isCurrentMonth(month: string, now: Date): boolean {
+  const [year, m] = month.split("-").map(Number);
+  return year === now.getFullYear() && m === now.getMonth() + 1;
+}
+
+/** `YYYY-MM` 달의 날짜들. 이번 달이면 오늘까지. */
+export function monthDates(month: string, now: Date): string[] {
+  const [year, m] = month.split("-").map(Number);
+  const last = isCurrentMonth(month, now) ? now.getDate() : new Date(year, m, 0).getDate();
+  return Array.from({ length: last }, (_, d) => `${month}-${String(d + 1).padStart(2, "0")}`);
+}
+
 /** 최근 12개월(이번 달 포함, 오래된 것부터)의 달별 합계. */
 export function monthlyTotals(
   history: UsageHistory,
@@ -287,12 +300,7 @@ export function monthlyTotals(
   for (let i = 11; i >= 0; i -= 1) {
     const first = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const month = `${first.getFullYear()}-${String(first.getMonth() + 1).padStart(2, "0")}`;
-    const last =
-      i === 0 ? now.getDate() : new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
-    const dates = Array.from(
-      { length: last },
-      (_, d) => `${month}-${String(d + 1).padStart(2, "0")}`,
-    );
+    const dates = monthDates(month, now);
     months.push({
       month,
       label: `${first.getMonth() + 1}월`,

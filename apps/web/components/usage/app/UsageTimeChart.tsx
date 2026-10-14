@@ -8,16 +8,10 @@ import { cn } from "@lib/utils";
 import { subscriptionDetailHref } from "@lib/routes";
 import { useServiceNames, useT } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
-import type { UsageHistory } from "@lib/usage/history";
-import {
-  chartMonths,
-  monthDates,
-  usageChartBars,
-  type ChartBar,
-  type ChartMode,
-} from "@lib/usage/chart";
+import { isCurrentMonth, monthDates, type UsageHistory } from "@lib/usage/history";
+import { usageChartBars, type ChartBar, type ChartMode } from "@lib/usage/chart";
 import { LEVEL_STYLE, rangeDates } from "@lib/usage/value";
-import { SubLogo } from "./parts";
+import { SegmentedTabs, SubLogo } from "./parts";
 
 /**
  * 막대가 들어가는 높이(px). 가장 오래 쓴 구독이 이 높이이고 나머지는 그 비율이라, 시간이 길어도 칸을 넘지
@@ -34,41 +28,46 @@ const PENDING_BAR = "bg-muted-foreground/35";
  */
 export function UsageTimeChart({
   subs,
+  months,
   history,
   installed,
   rate,
   now,
-  unmappedCount,
   onOpenDetail,
 }: {
+  /** 구독 중인 구독 전부. 폰 기록으로 잴 수 없는 것은 막대 없이 센다. */
   subs: Subscription[];
+  /** 기록이 하루라도 있는 달(`YYYY-MM`), 이른 순. */
+  months: readonly string[];
   history: UsageHistory;
   installed: readonly string[] | null;
   rate: number;
   now: Date;
-  /** 폰 기록으로 잴 방법이 없는 구독(멤버십·PC에서 쓰는 구독) 수. 막대 없이 빠진 것을 말해 준다. */
-  unmappedCount: number;
   onOpenDetail: () => void;
 }) {
   const t = useT();
   const c = t.usageChart;
   const names = useServiceNames();
   const [mode, setMode] = useState<ChartMode>("recent");
-  const months = useMemo(() => chartMonths(history, subs, now), [history, subs, now]);
   const [monthIndex, setMonthIndex] = useState<number | null>(null);
   // 고른 달이 없으면 기록이 있는 가장 최근 달.
   const index = monthIndex ?? months.length - 1;
-  const month = months[index] ?? null;
+  const month = mode === "month" ? (months[index] ?? null) : null;
 
-  const { bars, excluded, partial } = useMemo(() => {
-    if (mode === "month" && month) {
-      const dates = monthDates(month, now);
-      const [y, m] = month.split("-").map(Number);
-      const complete = !(y === now.getFullYear() && m === now.getMonth() + 1);
-      return usageChartBars(subs, history, installed, dates, rate, complete);
-    }
-    return usageChartBars(subs, history, installed, rangeDates("month", now), rate);
-  }, [mode, month, subs, history, installed, rate, now]);
+  const { bars, excluded, partial } = useMemo(
+    () =>
+      month
+        ? usageChartBars(
+            subs,
+            history,
+            installed,
+            monthDates(month, now),
+            rate,
+            !isCurrentMonth(month, now),
+          )
+        : usageChartBars(subs, history, installed, rangeDates("month", now), rate),
+    [month, subs, history, installed, rate, now],
+  );
 
   const max = Math.max(1, ...bars.map((bar) => bar.usedMs));
   const [year, monthNumber] = month ? month.split("-").map(Number) : [0, 0];
@@ -82,36 +81,21 @@ export function UsageTimeChart({
         <span className="text-xs text-muted-foreground">{t.usageApp.thisPhone}</span>
       </div>
 
-      <div
-        role="tablist"
-        aria-label={c.modeLabel}
-        className="flex gap-1 rounded-xl bg-secondary p-1"
-      >
-        {(["recent", "month"] as const).map((value) => (
-          <button
-            key={value}
-            type="button"
-            role="tab"
-            aria-selected={mode === value}
-            disabled={value === "month" && months.length === 0}
-            onClick={() => setMode(value)}
-            className={cn(
-              "flex-1 rounded-lg py-1.5 text-xs font-bold transition-colors disabled:opacity-40",
-              mode === value
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {value === "recent" ? c.recent : c.monthly}
-          </button>
-        ))}
-      </div>
+      <SegmentedTabs
+        value={mode}
+        onChange={setMode}
+        label={c.modeLabel}
+        options={[
+          { value: "recent", label: c.recent },
+          { value: "month", label: c.monthly, disabled: months.length === 0 },
+        ]}
+      />
 
-      {mode === "month" && month && (
+      {month && (
         <div className="flex items-center justify-between">
           <button
             type="button"
-            aria-label={c.prevMonth}
+            aria-label={t.overview.calendar.prevMonth}
             disabled={index <= 0}
             onClick={() => setMonthIndex(index - 1)}
             className="rounded-full p-1.5 hover:bg-muted disabled:opacity-30"
@@ -119,11 +103,11 @@ export function UsageTimeChart({
             <ChevronLeft className="size-4" aria-hidden />
           </button>
           <span className="text-sm font-bold tabular-nums" aria-live="polite">
-            {t.receiptView.periodMonth(year, monthNumber)}
+            {t.overview.calendar.monthLabel(year, monthNumber)}
           </span>
           <button
             type="button"
-            aria-label={c.nextMonth}
+            aria-label={t.overview.calendar.nextMonth}
             disabled={index >= months.length - 1}
             onClick={() => setMonthIndex(index + 1)}
             className="rounded-full p-1.5 hover:bg-muted disabled:opacity-30"
@@ -164,9 +148,10 @@ export function UsageTimeChart({
       </div>
       <p className="text-xs text-muted-foreground">
         {c.legend}
-        {mode === "month" && partial && ` ${c.partialMonth}`}
-        {excluded > 0 && ` ${c.excluded(excluded)}`} {t.usageApp.report.tvMissing}
-        {unmappedCount > 0 && t.usageApp.report.unmapped(unmappedCount)}
+        {month && partial && ` ${c.partialMonth}`}
+        {excluded.unmeasured > 0 && ` ${c.excluded(excluded.unmeasured)}`}{" "}
+        {t.usageApp.report.tvMissing}
+        {excluded.unmapped > 0 && t.usageApp.report.unmapped(excluded.unmapped)}
       </p>
 
       <button
