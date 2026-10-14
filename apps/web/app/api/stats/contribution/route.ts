@@ -16,7 +16,7 @@ import {
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { logError } from "@lib/log";
-import { getAccountBySessionToken, readSessionToken, SESSION_COOKIE } from "@lib/auth-server";
+import { SESSION_COOKIE, getRequestAccount } from "@lib/auth-server";
 
 /**
  * 익명 구독 통계에 참여한 기기가 요약을 보내는 곳. 토큰이 없으면 새 참여자로 만들고 토큰을 돌려주고,
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "보낸 요약을 읽지 못했습니다." }, { status: 400 });
     }
 
-    if (!(await getAccountBySessionToken(readSessionToken(request)))) return loginRequired();
+    if (!(await getRequestAccount(request))) return loginRequired();
 
     const ip = clientIp(request.headers);
     const token = readStatsToken(request);

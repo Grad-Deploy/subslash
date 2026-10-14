@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import {
-  getAccountBySessionToken,
-  readSessionToken,
   sessionTokenForApp,
   startLoginSession,
   toPublicAccount,
+  getRequestAccount,
+  loginRequiredResponse,
 } from "@lib/auth-server";
 import { isAppOrigin } from "@lib/app-origins";
 import { OAuthError, fetchNativeProfile, isOAuthProviderId, nativeProviders } from "@lib/oauth";
@@ -57,8 +57,8 @@ export async function POST(request: NextRequest) {
     const profile = await fetchNativeProfile(provider, accessToken);
 
     if (body?.link === true) {
-      const signedIn = await getAccountBySessionToken(readSessionToken(request));
-      if (!signedIn) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+      const signedIn = await getRequestAccount(request);
+      if (!signedIn) return loginRequiredResponse();
       await linkOAuthIdentity(signedIn.id, provider, profile);
       return NextResponse.json({ ok: true, linked: provider });
     }

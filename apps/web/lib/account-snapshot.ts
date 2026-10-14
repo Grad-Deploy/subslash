@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { getDb } from "./db";
 import { accountSnapshots } from "./schema";
 import { createBackup, parseBackup, type BackupFile } from "./backup";
+import { logError } from "./log";
 
 /**
  * 계정에 저장한 기록 한 벌.
@@ -171,7 +172,7 @@ export async function readSnapshot(
   try {
     text = unpackPayload(payload);
   } catch (error) {
-    console.error("[account-snapshot] stored snapshot could not be decompressed:", error);
+    logError("account-snapshot stored snapshot could not be decompressed", error);
     return null;
   }
   const parsed = parseBackup(text);
