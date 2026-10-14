@@ -19,8 +19,11 @@ import {
 import { LEVEL_STYLE, rangeDates } from "@lib/usage/value";
 import { SubLogo } from "./parts";
 
-/** 막대가 들어가는 높이(px). 가장 오래 쓴 구독이 이 높이다. */
-const BAR_AREA = 144;
+/**
+ * 막대가 들어가는 높이(px). 가장 오래 쓴 구독이 이 높이이고 나머지는 그 비율이라, 시간이 길어도 칸을 넘지
+ * 않는다.
+ */
+const BAR_AREA = 112;
 /** 평가 전 막대 색. 가성비 색(빨강·노랑·초록)과 겹치지 않게 회색으로 둔다. */
 const PENDING_BAR = "bg-muted-foreground/35";
 
@@ -35,6 +38,7 @@ export function UsageTimeChart({
   installed,
   rate,
   now,
+  unmappedCount,
   onOpenDetail,
 }: {
   subs: Subscription[];
@@ -42,6 +46,8 @@ export function UsageTimeChart({
   installed: readonly string[] | null;
   rate: number;
   now: Date;
+  /** 폰 기록으로 잴 방법이 없는 구독(멤버십·PC에서 쓰는 구독) 수. 막대 없이 빠진 것을 말해 준다. */
+  unmappedCount: number;
   onOpenDetail: () => void;
 }) {
   const t = useT();
@@ -130,7 +136,7 @@ export function UsageTimeChart({
       {bars.length === 0 ? (
         <p className="rounded-2xl bg-secondary/50 p-4 text-sm text-muted-foreground">{c.noBars}</p>
       ) : (
-        <ul className="-mx-1 flex items-end gap-2 overflow-x-auto px-1 pb-1" aria-label={c.title}>
+        <ul className="-mx-1 flex items-start overflow-x-auto px-1 pb-1" aria-label={c.title}>
           {bars.map((bar) => (
             <BarColumn
               key={bar.sub.id}
@@ -160,6 +166,7 @@ export function UsageTimeChart({
         {c.legend}
         {mode === "month" && partial && ` ${c.partialMonth}`}
         {excluded > 0 && ` ${c.excluded(excluded)}`} {t.usageApp.report.tvMissing}
+        {unmappedCount > 0 && t.usageApp.report.unmapped(unmappedCount)}
       </p>
 
       <button
@@ -188,7 +195,7 @@ function BarColumn({
 }) {
   const height = bar.usedMs > 0 ? Math.max(4, Math.round((bar.usedMs / max) * BAR_AREA)) : 0;
   return (
-    <li className="w-14 shrink-0">
+    <li className="min-w-16 flex-1 shrink-0">
       <Link
         href={subscriptionDetailHref(bar.sub.id)}
         className="flex flex-col items-center gap-1 rounded-lg pt-1 hover:bg-muted/50"
@@ -197,7 +204,8 @@ function BarColumn({
           {name}: {time}, {levelText}
         </span>
         <div
-          className="flex flex-col items-center justify-end"
+          // 칸이 줄 너비를 나눠 가져 바닥선이 끝까지 이어진다 — 막대가 정해진 칸 안에서 비율로 그려진다는 것이 보이게.
+          className="flex w-full flex-col items-center justify-end border-b border-border"
           style={{ height: BAR_AREA + 34 }}
           aria-hidden
         >
@@ -210,15 +218,16 @@ function BarColumn({
             style={{ height }}
           />
         </div>
+        {/* 자르지 않는다 — 칸이 좁아 '114시간 39분'이 '114시간 3…'으로 보였다. 띄어 쓴 곳에서 줄을 바꾼다. */}
         <span
-          className="w-full truncate text-center text-[10px] font-bold tabular-nums"
+          className="w-full break-keep text-center text-[10px] font-bold leading-tight tabular-nums"
           aria-hidden
         >
           {time}
         </span>
         <span
           className={cn(
-            "w-full truncate text-center text-[10px]",
+            "w-full break-keep text-center text-[10px] leading-tight",
             bar.level ? LEVEL_STYLE[bar.level].text : "text-muted-foreground",
           )}
           aria-hidden
