@@ -43,6 +43,26 @@ test.describe("새 구독 등록 — 서비스 고르기 (E2E)", () => {
     await expect(dialog.getByRole("button", { name: /^넷플릭스/ })).toHaveCount(0);
   });
 
+  test("구성을 고르기 전의 네이버플러스는 쇼핑 탭에, 고른 조합은 결합 상품 탭에 있다", async ({
+    page,
+  }) => {
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "더 보기", exact: true }).click({ timeout: 30_000 });
+
+    const dialog = page.getByRole("dialog");
+    const tabs = dialog.getByRole("group", { name: "서비스 분류" });
+    const plain = dialog.getByRole("button", { name: /^네이버플러스(?! \+)/ });
+    const combo = dialog.getByRole("button", { name: /^네이버플러스 \+ 넷플릭스/ });
+
+    await tabs.getByRole("button", { name: /쇼핑/ }).click({ timeout: 30_000 });
+    await expect(plain).toBeVisible();
+    await expect(combo).toHaveCount(0);
+
+    await tabs.getByRole("button", { name: /결합 상품/ }).click();
+    await expect(combo.first()).toBeVisible();
+    await expect(plain).toHaveCount(0);
+  });
+
   test("목록에서 뺀 앱스토어·플레이스토어 정기결제와 웹툰 쿠키는 나오지 않는다", async ({
     page,
   }) => {
