@@ -156,6 +156,7 @@ export const KNOWN_TEXT_ES: KnownTextRender[] = [
     "Es tu único método de inicio de sesión, así que no se puede desvincular. Crea primero una contraseña o vincula otra cuenta.",
   // Gmail 자동 가져오기
   () => "Esta función aún no ha empezado.",
+  () => "Esta función se ha dejado de ofrecer.",
   () => "No se pudo leer el estado de la conexión.",
   () => "No se pudo crear un token de conexión.",
   () => "No se pudo empezar a conectar Gmail.",
