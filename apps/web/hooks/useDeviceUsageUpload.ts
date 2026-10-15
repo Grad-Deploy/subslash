@@ -5,6 +5,7 @@ import { useAuth } from "@hooks/useAuth";
 import { IS_APP_BUILD } from "@lib/platform";
 import { isDeviceUsageOpen } from "@lib/privacy";
 import { refreshDeviceUsageView, uploadThisDevice } from "@lib/device-usage-client";
+import { onPageVisible } from "@lib/page-visibility";
 
 /** 올리는 최소 간격. 서버는 계정당 한 시간 60번까지 받는다(api/usage). */
 const MIN_UPLOAD_GAP_MS = 15 * 60 * 1000;
@@ -43,8 +44,6 @@ export function useDeviceUsageUpload() {
     };
 
     void run();
-    const onVisible = () => void run();
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
+    return onPageVisible(() => void run());
   }, [accountId]);
 }

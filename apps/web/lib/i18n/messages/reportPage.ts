@@ -1,4 +1,4 @@
-import { josa } from "../../ask/josa";
+import { withJosa } from "../josa";
 import type { Widen } from "../types";
 import { monthLong, pluralOf } from "../english";
 import { monthName } from "../months";
@@ -29,7 +29,7 @@ export const ko = {
     overlap: {
       label: "결합 상품과 겹치는 구독",
       title: "두 번 내고 있을 수 있어요",
-      middle: (services: string) => `에 ${services}${josa(services, "이", "가")} 들어 있는데 `,
+      middle: (services: string) => `에 ${withJosa(services, "이", "가")} 들어 있는데 `,
       after: "도 따로 구독 중이에요. 다른 계정으로 쓰는 게 아니라면 한 쪽을 해지해도 돼요.",
     },
     ranking: {

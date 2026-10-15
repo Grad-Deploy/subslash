@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { create } from "zustand";
+import { onPageVisible } from "@lib/page-visibility";
 import {
   EMPTY_HISTORY,
   daysToQuery,
@@ -126,13 +127,9 @@ export function startPhoneUsage(): void {
   if (started) return;
   started = true;
   void usePhoneUsageStore.getState().refresh(true);
-  const onVisible = () => {
-    if (document.visibilityState === "visible") void usePhoneUsageStore.getState().refresh();
-  };
-  document.addEventListener("visibilitychange", onVisible);
-  // Capacitor는 앱이 앞으로 돌아올 때 document에 'resume'도 보낸다. 웹뷰에 따라 visibilitychange가
-  // 늦거나 오지 않아도 설정에서 돌아온 것을 알아채게 둘 다 듣는다(60초 안의 중복은 refresh가 거른다).
-  document.addEventListener("resume", onVisible);
+  // 웹뷰에 따라 visibilitychange가 늦거나 오지 않아도 설정에서 돌아온 것을 알아채게 Capacitor의 'resume'도
+  // 듣는다(60초 안의 중복은 refresh가 거른다).
+  onPageVisible(() => void usePhoneUsageStore.getState().refresh(), { resume: true });
 }
 
 /** 설정 화면을 연다. 돌아오면 visibilitychange가 다시 확인한다. */
