@@ -6,7 +6,7 @@ import {
   type Subscription,
   type UsageLog,
 } from "@subslash/shared";
-import { latestFreshLog, latestFreshLogFor, latestFreshUsage } from "@lib/stats";
+import { latestFreshLog, latestFreshLogFor, latestFreshUsage } from "@lib/checkins";
 import { GOOD_AT } from "@lib/usage/value";
 
 /** 1회 단가 순위의 한 줄. */

@@ -155,7 +155,6 @@ export const KNOWN_TEXT_PT: KnownTextRender[] = [
     "É seu único método de login, então não dá para desvincular. Crie uma senha ou vincule outra conta primeiro.",
   // Gmail 자동 가져오기
   () => "Este recurso ainda não começou.",
-  () => "Este recurso foi encerrado.",
   () => "Não foi possível ler o status da conexão.",
   () => "Não foi possível criar um token de conexão.",
   () => "Não foi possível começar a conectar o Gmail.",
@@ -174,14 +173,9 @@ export const KNOWN_TEXT_PT: KnownTextRender[] = [
   () => "Não foi possível ler os dados de uso enviados.",
   () => "Não foi possível salvar os dados de uso.",
   () => "Não foi possível apagar os dados de uso.",
-  // 익명 통계
-  () => "Você precisa entrar para participar das estatísticas.",
-  () => "Não foi possível ler o resumo enviado.",
-  () => "Não há registro de participação.",
-  () => "Não foi possível enviar para as estatísticas.",
+  // 토큰·기록 지우기
   () => "O token está faltando.",
   () => "Não foi possível apagar o registro.",
-  () => "Não foi possível ler as estatísticas.",
   // 물어보기·도움말 AI
   () => "Este recurso ainda não está pronto.",
   () => "Não é possível responder agora.",

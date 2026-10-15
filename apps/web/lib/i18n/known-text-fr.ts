@@ -158,7 +158,6 @@ export const KNOWN_TEXT_FR: KnownTextRender[] = [
     "C'est votre seule méthode de connexion, elle ne peut pas être déliée. Créez d'abord un mot de passe ou liez un autre compte.",
   // Gmail 자동 가져오기
   () => "Cette fonctionnalité n'a pas encore commencé.",
-  () => "Cette fonctionnalité a été arrêtée.",
   () => "Impossible de lire l'état de la connexion.",
   () => "Impossible de créer un jeton de connexion.",
   () => "Impossible de lancer la connexion à Gmail.",
@@ -177,14 +176,9 @@ export const KNOWN_TEXT_FR: KnownTextRender[] = [
   () => "Impossible de lire les données d'utilisation envoyées.",
   () => "Impossible d'enregistrer les données d'utilisation.",
   () => "Impossible de supprimer les données d'utilisation.",
-  // 익명 통계
-  () => "Vous devez vous connecter pour participer aux statistiques.",
-  () => "Impossible de lire le résumé envoyé.",
-  () => "Aucune participation enregistrée.",
-  () => "Impossible d'envoyer aux statistiques.",
+  // 토큰·기록 지우기
   () => "Le jeton est manquant.",
   () => "Impossible de supprimer l'enregistrement.",
-  () => "Impossible de lire les statistiques.",
   // 물어보기·도움말 AI
   () => "Cette fonctionnalité n'est pas encore prête.",
   () => "Impossible de répondre pour l'instant.",
