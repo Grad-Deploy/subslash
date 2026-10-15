@@ -45,6 +45,13 @@ describe("Metaphor and Value Calculation Utils", () => {
       expect(metaphor(20, "USD", 1, "Claude", 1000).comparison).toContain("1.3장");
       expect(metaphor(20, "USD", 1, "Claude", 2000).comparison).toContain("2.7장");
     });
+
+    it("1에 가까운 개수를 '1.0장'으로 적지 않는다", () => {
+      // ₩14,900 ÷ 영화관 티켓 ₩15,000 = 0.993 — 소수 한 자리로 반올림하면 '1.0'이 된다.
+      const comparison = metaphor(14900, "KRW", 1, "유튜브 프리미엄", RATE).comparison;
+      expect(comparison).toContain("1장");
+      expect(comparison).not.toContain("1.0");
+    });
   });
 
   describe("getBreakEvenInfo", () => {

@@ -8,19 +8,18 @@ import type { Widen } from "../types";
 function koCount(raw: number): string {
   const n = Number(raw); // 문구 검사가 글자를 넘기기도 한다.
   if (n >= 10) return Math.floor(n).toString();
-  if (n >= 1) return n.toFixed(1).replace(/\.0$/, "");
-  if (n >= 0.1) return n.toFixed(1);
+  // 0.95~0.99는 소수 한 자리로 '1.0'이 되므로 1 미만도 '.0'을 뗀다('영화관 티켓 1.0장'이 나왔다).
+  if (n >= 0.1) return n.toFixed(1).replace(/\.0$/, "");
   return "0.1 미만";
 }
 
 function enCount(raw: number): { text: string; one: boolean } {
   const n = Number(raw);
   if (n >= 10) return { text: Math.floor(n).toString(), one: false };
-  if (n >= 1) {
+  if (n >= 0.1) {
     const text = n.toFixed(1).replace(/\.0$/, "");
     return { text, one: text === "1" };
   }
-  if (n >= 0.1) return { text: n.toFixed(1), one: false };
   return { text: "under 0.1", one: false };
 }
 
@@ -142,12 +141,7 @@ export const en: Widen<typeof ko> = {
 function countIn(raw: number, intl: string, under: string): string {
   const n = Number(raw);
   if (n >= 10) return Math.floor(n).toLocaleString(intl);
-  if (n >= 1)
-    return n
-      .toFixed(1)
-      .replace(/\.0$/, "")
-      .replace(".", intl === "en-US" ? "." : decimalOf(intl));
-  if (n >= 0.1) return n.toFixed(1).replace(".", decimalOf(intl));
+  if (n >= 0.1) return n.toFixed(1).replace(/\.0$/, "").replace(".", decimalOf(intl));
   return under;
 }
 
