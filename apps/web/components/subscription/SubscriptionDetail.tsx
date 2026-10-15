@@ -22,7 +22,7 @@ import { CheckInHistory } from "./detail/CheckInHistory";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { cn } from "@lib/utils";
-import { useCelebrateKill } from "@hooks/useCelebrateKill";
+import { useRecordKill } from "@hooks/useCelebrateKill";
 import { IS_APP_BUILD } from "@lib/platform";
 import { useToast } from "@hooks/useToast";
 import { useT, useServiceNames } from "@lib/i18n";
@@ -65,12 +65,11 @@ export function SubscriptionDetail({
     subscriptions,
     usageLogs,
     updateSubscription,
-    killSubscription,
     reviveSubscription,
     deleteSubscription,
     checkIn,
   } = useStore();
-  const celebrateKill = useCelebrateKill();
+  const recordKill = useRecordKill();
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
@@ -230,8 +229,7 @@ export function SubscriptionDetail({
         onClose={() => setIsGuideOpen(false)}
         onConfirmKilled={() => {
           // 가이드에서 '해지 완료했어요'를 누른 것이 곧 확인이다.
-          killSubscription(sub.id);
-          celebrateKill(sub);
+          recordKill(sub);
           showToast(t.detail.killRecorded(names.sub(sub)));
         }}
       />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe, Languages } from "lucide-react";
+import { Globe, Languages, type LucideIcon } from "lucide-react";
 import { useLocale, useT } from "@lib/i18n";
 import { SOURCE_LOCALE } from "@lib/i18n/config";
 import { cn } from "@lib/utils";
@@ -30,12 +30,7 @@ export function SourceTextNote({
   const locale = useLocale();
   const label = useT().shell.common.sourceText;
   if (locale === SOURCE_LOCALE || !sourceLang(text)) return null;
-  return (
-    <p className={cn("flex items-start gap-1 text-[11px] text-muted-foreground", className)}>
-      <Languages className="mt-px size-3 shrink-0" aria-hidden />
-      <span>{label}</span>
-    </p>
-  );
+  return <NoteLine icon={Languages} label={label} className={className} />;
 }
 
 /**
@@ -47,9 +42,21 @@ export function KoreanPriceNote({ className }: { className?: string }) {
   const locale = useLocale();
   const label = useT().shell.common.koreanPrice;
   if (locale === SOURCE_LOCALE) return null;
+  return <NoteLine icon={Globe} label={label} className={className} />;
+}
+
+function NoteLine({
+  icon: Icon,
+  label,
+  className,
+}: {
+  icon: LucideIcon;
+  label: string;
+  className?: string;
+}) {
   return (
     <p className={cn("flex items-start gap-1 text-[11px] text-muted-foreground", className)}>
-      <Globe className="mt-px size-3 shrink-0" aria-hidden />
+      <Icon className="mt-px size-3 shrink-0" aria-hidden />
       <span>{label}</span>
     </p>
   );
