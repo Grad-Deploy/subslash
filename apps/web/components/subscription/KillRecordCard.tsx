@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import {
   formatRefundRequest,
   isResubscribeReminderDue,
-  toDateOnly,
+  localDateKey,
   type Subscription,
 } from "@subslash/shared";
 import { Button } from "../ui/button";
@@ -23,7 +23,7 @@ interface KillRecordCardProps {
 /** 이 구독을 해지한 날(기기 시간대). 기록이 없거나 깨졌으면 null. */
 function killedDate(sub: Subscription): string | null {
   const killed = sub.killedAt ? new Date(sub.killedAt) : null;
-  return killed && !Number.isNaN(killed.getTime()) ? toDateOnly(killed) : null;
+  return killed && !Number.isNaN(killed.getTime()) ? localDateKey(killed) : null;
 }
 
 /**
@@ -45,7 +45,7 @@ export function KillRecordCard({ subscription: sub, onMessage }: KillRecordCardP
   // 날짜 칸의 최솟값. 화면을 여는 동안 날이 바뀌어도 하루 차이라 처음 값으로 둔다.
   const [tomorrow] = useState(() => {
     const now = new Date();
-    return toDateOnly(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+    return localDateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
   });
   const due = isResubscribeReminderDue(sub);
   const refund = formatRefundRequest(sub);
@@ -148,7 +148,7 @@ export function KillRecordCard({ subscription: sub, onMessage }: KillRecordCardP
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-muted-foreground">
             {sub.killEvidence
-              ? t.recordedOn(toDateOnly(new Date(sub.killEvidence.recordedAt)))
+              ? t.recordedOn(localDateKey(new Date(sub.killEvidence.recordedAt)))
               : ""}
           </span>
           <Button

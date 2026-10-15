@@ -1,4 +1,4 @@
-import { DAY_MS } from "@subslash/shared";
+import { DAY_MS, localDateKey, localMonthKey } from "@subslash/shared";
 
 /**
  * 폰 사용 기록을 기기에 쌓고 기간별로 합치는 순수 함수들.
@@ -62,12 +62,8 @@ export function packageSince(history: UsageHistory, pkg: string): string | null 
 /** 이보다 오래된 날은 지운다(1년 추이 + 여유). */
 export const KEEP_DAYS = 400;
 
-export function dayKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
+/** 폰 기록의 날짜 칸(기기 시간대 `YYYY-MM-DD`). */
+export const dayKey = localDateKey;
 
 export function addDays(date: Date, days: number): Date {
   const next = new Date(date);
@@ -301,7 +297,7 @@ export function monthlyTotals(
   const months: { month: string; label: string; totals: UsageTotals }[] = [];
   for (let i = 11; i >= 0; i -= 1) {
     const first = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const month = `${first.getFullYear()}-${String(first.getMonth() + 1).padStart(2, "0")}`;
+    const month = localMonthKey(first);
     const dates = monthDates(month, now);
     months.push({
       month,

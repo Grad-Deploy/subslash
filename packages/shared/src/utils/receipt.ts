@@ -2,7 +2,7 @@ import type { ChargeRecord, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { isSameService } from "./chargeHistory";
 import { getBilledAmount, toKRW } from "./currency";
-import { isInTrial, startOfDay } from "./date";
+import { isInTrial, startOfDay, localDateKey } from "./date";
 import type { RateOn } from "./historicalRate";
 import {
   getMyAnnualAmountKRW,
@@ -102,14 +102,6 @@ export interface Receipt {
     /** 체험 중이던 결제일이 있던 구독 수. */
     trial: number;
   };
-}
-
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
-}
-
-function dateOnly(date: Date): string {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 /** ISO 시각을 그 기기 시간대의 날짜로. 깨졌으면 null. */
@@ -228,7 +220,7 @@ export function buildReceipt(
    */
   const rateFor = (sub: Subscription, date: Date, count: boolean): number => {
     if (sub.currency !== "USD" || date > today) return rate;
-    const historical = rateOn?.(dateOnly(date)) ?? null;
+    const historical = rateOn?.(localDateKey(date)) ?? null;
     if (count) {
       if (historical === null) fx.current += 1;
       else fx.historical += 1;
@@ -336,14 +328,14 @@ export function buildReceipt(
       subscriptionId: sub.id,
       name: sub.name,
       iconUrl: sub.iconUrl,
-      chargeDates: chargeDates.map(dateOnly),
-      upcomingDates: upcomingDates.map(dateOnly),
-      evidencedDates: evidenced.map(({ date }) => dateOnly(date)),
+      chargeDates: chargeDates.map(localDateKey),
+      upcomingDates: upcomingDates.map(localDateKey),
+      evidencedDates: evidenced.map(({ date }) => localDateKey(date)),
       amountKRW: recordedMine + evidencedMine.reduce((total, value) => total + value, 0),
       billedKRW: recordedBilled + evidencedBilled.reduce((total, value) => total + value, 0),
       shared: isShared(sub),
       billingCycle: sub.billingCycle,
-      killedOn: killed && inPeriod(killed, period) ? dateOnly(killed) : null,
+      killedOn: killed && inPeriod(killed, period) ? localDateKey(killed) : null,
       usage: log
         ? {
             count: log.usageCount,
@@ -383,7 +375,11 @@ export function buildReceipt(
     .map((sub) => ({ sub, day: dayOf(sub.killedAt) }))
     .filter(({ day }) => inPeriod(day, period))
     .sort((a, b) => a.day!.getTime() - b.day!.getTime())
-    .map(({ sub, day }) => ({ subscriptionId: sub.id, name: sub.name, killedOn: dateOnly(day!) }));
+    .map(({ sub, day }) => ({
+      subscriptionId: sub.id,
+      name: sub.name,
+      killedOn: localDateKey(day!),
+    }));
 
   const withUsage = lines.filter((line) => line.usage && line.usage.count > 0);
   const priciestPerUse =

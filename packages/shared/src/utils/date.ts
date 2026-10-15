@@ -4,6 +4,23 @@ import { BillingCycle } from "../types";
 export const HOUR_MS = 60 * 60 * 1000;
 export const DAY_MS = 24 * HOUR_MS;
 
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** 기기 시간대의 날짜를 `YYYY-MM-DD`로. 파일마다 따로 적던 것을 여기 모았다. */
+export function localDateKey(date: Date): string {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+/** 기기 시간대의 달을 `YYYY-MM`로. */
+export function localMonthKey(date: Date): string {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
+}
+
+/** 기기 시간대의 날짜를 `2026.10.07`로. 영수증·메일 날짜와 같은 모양이다. */
+export function formatDotDate(date: Date): string {
+  return `${date.getFullYear()}.${pad2(date.getMonth() + 1)}.${pad2(date.getDate())}`;
+}
+
 /** Everything needed to work out when a subscription is charged next. */
 export interface BillingSchedule {
   billingDay: number;
