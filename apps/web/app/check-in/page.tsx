@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import { useIsClient } from "@hooks/useIsClient";
-import { useCelebrateKill } from "@hooks/useCelebrateKill";
+import { useRecordKill } from "@hooks/useCelebrateKill";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { CheckInResponse, Subscription } from "@subslash/shared";
 import { useStore } from "../../lib/store";
@@ -25,8 +25,8 @@ type Stage = "check-in" | "guide";
 function CheckInReceiver() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { subscriptions, checkIn, killSubscription } = useStore();
-  const celebrateKill = useCelebrateKill();
+  const { subscriptions, checkIn } = useStore();
+  const recordKill = useRecordKill();
   const t = useT();
   const names = useServiceNames();
 
@@ -119,9 +119,8 @@ function CheckInReceiver() {
         onClose={() => leave()}
         onConfirmKilled={() => {
           // 가이드에서 '해지 완료했어요'를 누른 것이 곧 확인이다 — 예전에는 확인 창을 한 번 더 띄웠다.
-          killSubscription(subscription.id);
           // 축하 화면은 레이아웃에 있어 /savings로 옮겨도 이어서 보인다.
-          celebrateKill(subscription);
+          recordKill(subscription);
           skipNextClose.current = true;
           router.replace("/savings");
         }}
