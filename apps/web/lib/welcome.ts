@@ -6,19 +6,13 @@
  * 웹에서는 이 화면 자체를 렌더링하지 않으므로 두 함수 모두 부를 일이 없다.
  */
 import { IS_APP_BUILD } from "./platform";
+import { preferencesModule } from "./preferences";
 
 // 소개를 크게 바꿔 다시 보여 줄 때는 키를 바꾼다 — 예전 키에 '봤다'가 남은 사용자도 업데이트 뒤 새 소개를 한 번 본다.
 // - "subslash-welcome-seen": 예전 환영 화면(AppWelcome)
 // - "subslash-onboarding-seen": 첫 소개 슬라이드(App Onboarding)
 // - "subslash-onboarding-v2-seen": 지금 소개(App Onboarding v2 — 문제·답·계산기·직접 해 보기)
 const KEY = "subslash-onboarding-v2-seen";
-
-// 플러그인 객체(Preferences)를 Promise의 결과로 돌려주면 안 된다. Capacitor 플러그인은 없는
-// 메서드도 호출할 수 있는 척하는 프록시라, Promise가 then을 찾아 부르면 "Preferences.then() is
-// not implemented"로 실패한다. 모듈을 돌려주고 쓰는 곳에서 꺼낸다.
-function preferencesModule() {
-  return import("@capacitor/preferences");
-}
 
 // 소개 마지막 장에서 고른 서비스. 대시보드가 받아 등록 창을 차례로 연다(useAddSubscriptionFlow의 openQueue).
 // 소개와 대시보드는 같은 화면 안에서 옮겨 가므로 메모리에만 둔다 — 앱을 껐다 켜면 고른 것은 남지 않는다.

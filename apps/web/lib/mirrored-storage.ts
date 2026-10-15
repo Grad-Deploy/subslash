@@ -10,6 +10,7 @@
  */
 import type { StateStorage } from "zustand/middleware";
 import { IS_APP_BUILD } from "./platform";
+import { preferencesModule } from "./preferences";
 
 type LocalStorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
@@ -100,9 +101,8 @@ export function createMirroredStorage(
 let appStorage: MirroredStorage | null = null;
 
 function preferencesKeyValue(): NativeKeyValue {
-  // 플러그인 객체가 아니라 모듈을 기다린다. 플러그인은 프록시라 Promise의 결과가 되면 then을
-  // 찾는 순간 실패한다(lib/session-token 참고).
-  const plugin = import("@capacitor/preferences");
+  // 플러그인 객체가 아니라 모듈을 기다린다(lib/preferences 참고).
+  const plugin = preferencesModule();
   return {
     get: async (key) => (await (await plugin).Preferences.get({ key })).value,
     set: async (key, value) => (await plugin).Preferences.set({ key, value }),
