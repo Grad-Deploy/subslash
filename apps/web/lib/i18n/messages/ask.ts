@@ -1,11 +1,11 @@
-import { josa } from "../../ask/josa";
+import { withJosa } from "../josa";
 import type { Widen } from "../types";
 import { MONTHS_SHORT, one } from "../english";
 import { monthName } from "../months";
 
 /**
  * '리포트에 물어보기'의 답 문장 틀. AI는 도구와 인자만 고르고, 기기가 자기 기록으로 계산해 이 틀에 넣는다
- * (`lib/ask/answer`). 한국어의 조사(은/는, 이에요/예요)는 이름의 받침으로 고른다(`lib/ask/josa`).
+ * (`lib/ask/answer`). 한국어의 조사(은/는, 이에요/예요)는 이름의 받침으로 고른다(`lib/i18n/josa`).
  */
 export const ko = {
   ask: {
@@ -35,7 +35,7 @@ export const ko = {
       sourceYear: "내 몫 1년 합계",
     },
     category: {
-      none: (label: string) => `${label}${josa(label, "으로", "로")} 등록한 구독이 없어요.`,
+      none: (label: string) => `${withJosa(label, "으로", "로")} 등록한 구독이 없어요.`,
       some: (label: string, count: number, amount: string, share: number) =>
         `${label} ${count}개에 한 달 ${amount}을 내요. 전체 구독비의 ${share}%예요.`,
       source: "분류별 내 몫 한 달 합계",
@@ -46,9 +46,9 @@ export const ko = {
       source: "리포트의 1회 단가 순위(최근 30일 체크인)",
       sourceNone: "리포트 1회 단가 순위",
       worst: (name: string, per: string) =>
-        `가장 아까운 구독은 ${name}${josa(name, "이에요", "예요")}. ${per}.`,
+        `가장 아까운 구독은 ${withJosa(name, "이에요", "예요")}. ${per}.`,
       best: (name: string, per: string) =>
-        `가성비가 가장 좋은 구독은 ${name}${josa(name, "이에요", "예요")}. ${per}.`,
+        `가성비가 가장 좋은 구독은 ${withJosa(name, "이에요", "예요")}. ${per}.`,
       perZero: "0회 (한 번도 안 씀)",
       perUse: (amount: string) => `1회 ${amount}`,
       skipped: "체크인하지 않았거나 횟수로 재지 않는 구독은 순위에서 빠졌어요.",
@@ -95,12 +95,12 @@ export const ko = {
       many: (query: string, count: number) =>
         `'${query}'에 맞는 구독이 ${count}개예요. 이름을 더 정확히 적어 주세요.`,
       plansSource: "서비스 요금제 목록",
-      noPlans: (name: string) => `${name}${josa(name, "은", "는")} 비교할 요금제 목록이 없어요.`,
+      noPlans: (name: string) => `${withJosa(name, "은", "는")} 비교할 요금제 목록이 없어요.`,
       planUnknown: (name: string) => `${name}의 지금 요금제를 몰라 비교할 수 없어요.`,
       planUnknownNote: "구독 정보에서 요금제를 고르면 비교할 수 있어요.",
-      cheapest: (name: string) => `${name}${josa(name, "은", "는")} 이미 가장 싼 요금제예요.`,
+      cheapest: (name: string) => `${withJosa(name, "은", "는")} 이미 가장 싼 요금제예요.`,
       best: (plan: string, saving: string) =>
-        `${plan}${josa(plan, "으로", "로")} 바꾸면 1년에 ${saving} 덜 내요.`,
+        `${withJosa(plan, "으로", "로")} 바꾸면 1년에 ${saving} 덜 내요.`,
       bestSource: "서비스 요금제 목록 · 요금표 가격",
       saving: (amount: string) => `1년 ${amount} 절약`,
       current: (plan: string) => `지금 요금제: ${plan}`,

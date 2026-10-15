@@ -210,15 +210,15 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
 
 describe("리포트에 물어보기 — 문장", () => {
   it("이름 뒤 조사를 받침으로 고른다", async () => {
-    const { josa } = await import("@lib/ask/answer");
-    expect(`웨이브${josa("웨이브", "이에요", "예요")}`).toBe("웨이브예요");
-    expect(`넷플릭스${josa("넷플릭스", "은", "는")}`).toBe("넷플릭스는");
-    expect(`티빙${josa("티빙", "은", "는")}`).toBe("티빙은");
-    expect(`광고형 스탠다드${josa("광고형 스탠다드", "으로", "로")}`).toBe("광고형 스탠다드로");
-    expect(`멜론${josa("멜론", "으로", "로")}`).toBe("멜론으로");
-    expect(`음악${josa("음악", "으로", "로")}`).toBe("음악으로");
-    expect(`클라우드${josa("클라우드", "으로", "로")}`).toBe("클라우드로");
-    expect(`ChatGPT Plus${josa("ChatGPT Plus", "은", "는")}`).toBe("ChatGPT Plus은(는)");
+    const { josa, withJosa } = await import("@lib/i18n/josa");
+    expect(withJosa("웨이브", "이에요", "예요")).toBe("웨이브예요");
+    expect(withJosa("넷플릭스", "은", "는")).toBe("넷플릭스는");
+    expect(withJosa("티빙", "은", "는")).toBe("티빙은");
+    expect(withJosa("광고형 스탠다드", "으로", "로")).toBe("광고형 스탠다드로");
+    expect(withJosa("멜론", "으로", "로")).toBe("멜론으로");
+    expect(withJosa("음악", "으로", "로")).toBe("음악으로");
+    expect(withJosa("클라우드", "으로", "로")).toBe("클라우드로");
+    expect(withJosa("ChatGPT Plus", "은", "는")).toBe("ChatGPT Plus은(는)");
     // 끝의 닫는 괄호·따옴표는 건너뛰고 그 앞 글자로 고른다.
     expect(josa("쿠팡 와우 (쿠팡플레이)", "을", "를")).toBe("를");
     expect(josa("'티빙'", "을", "를")).toBe("을");

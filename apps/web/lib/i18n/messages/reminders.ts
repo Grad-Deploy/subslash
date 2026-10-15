@@ -1,4 +1,4 @@
-import { josa } from "../../ask/josa";
+import { withJosa } from "../josa";
 import type { Widen } from "../types";
 import { countOf, monthLong } from "../english";
 import { monthName } from "../months";
@@ -31,7 +31,7 @@ export const ko = {
       whenLabel: "언제 알릴지",
       choice: (daysBefore: number) => (daysBefore === 0 ? "당일" : `${daysBefore}일 전`),
       unknownBilling: (name: string) =>
-        `${name}${josa(name, "은", "는")} 결제일을 몰라서 알림을 걸 수 없어요.`,
+        `${withJosa(name, "은", "는")} 결제일을 몰라서 알림을 걸 수 없어요.`,
       addBilling: "결제일 넣기",
       denied:
         "알림 권한이 꺼져 있어요. 휴대폰 설정 › 애플리케이션 › SubSlash › 알림에서 허용한 뒤 다시 눌러 주세요.",
