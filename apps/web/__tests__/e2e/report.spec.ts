@@ -65,11 +65,17 @@ test.describe("구독 리포트 (E2E)", () => {
     await expect(summary.getByText("₩28,990")).toBeVisible({ timeout: 30_000 });
     await expect(summary.getByText("2개")).toBeVisible();
 
-    // 1회 단가를 아는 것이 먼저, 체크인 전인 것은 뒤에 온다.
-    const rows = page.getByRole("listitem");
-    await expect(rows.first()).toContainText("넷플릭스");
-    await expect(rows.first()).toContainText("₩8,500");
-    await expect(rows.nth(1)).toContainText("체크인 전");
+    // 위의 구독별 막대그래프도 목록이라 칸마다 그 안에서 찾는다. 횟수로 재는 넷플릭스는 1회 단가 순위에,
+    // 들은 시간으로 재는 멜론은 아래 칸에 체크인 전으로 들어간다.
+    const ranking = page.getByRole("region", { name: "1회 단가 순위" }).getByRole("listitem");
+    await expect(ranking).toHaveCount(1);
+    await expect(ranking.first()).toContainText("넷플릭스");
+    await expect(ranking.first()).toContainText("₩8,500");
+    const other = page
+      .getByRole("region", { name: "횟수 말고 다른 기준으로 재는 구독" })
+      .getByRole("listitem");
+    await expect(other.first()).toContainText("멜론");
+    await expect(other.first()).toContainText("체크인 전");
   });
 
   test("다른 사용자와의 비교와 여러 기기 사용 측정 칸은 리포트에 없다", async ({ page }) => {
