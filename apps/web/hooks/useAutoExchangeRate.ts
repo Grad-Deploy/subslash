@@ -1,5 +1,6 @@
 "use client";
 
+import { onPageVisible } from "@lib/page-visibility";
 import { HOUR_MS } from "@subslash/shared";
 import { readLocal, writeLocal } from "@lib/local-storage";
 import { useEffect } from "react";
@@ -84,16 +85,11 @@ export function useAutoExchangeRate() {
   useEffect(() => {
     if (!hasUSD || manual) return;
     void refreshExchangeRate();
-    const onVisible = () => {
-      if (document.visibilityState === "visible") void refreshExchangeRate();
-    };
-    document.addEventListener("visibilitychange", onVisible);
     // 앱은 돌아올 때 'resume'을 받는다(Capacitor).
-    document.addEventListener("resume", onVisible);
+    const stopVisible = onPageVisible(() => void refreshExchangeRate(), { resume: true });
     const timer = window.setInterval(() => void refreshExchangeRate(), CHECK_INTERVAL_MS);
     return () => {
-      document.removeEventListener("visibilitychange", onVisible);
-      document.removeEventListener("resume", onVisible);
+      stopVisible();
       window.clearInterval(timer);
     };
   }, [hasUSD, manual]);
