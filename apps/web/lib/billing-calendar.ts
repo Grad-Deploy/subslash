@@ -3,6 +3,7 @@ import {
   isInTrial,
   needsBillingMonth,
   toKRW,
+  effectiveDay,
   type Subscription,
 } from "@subslash/shared";
 
@@ -33,12 +34,6 @@ export interface BillingMonth {
    * 아무 달에나 찍으면 있지도 않은 결제를 사실처럼 보여주게 된다.
    */
   undatedCount: number;
-}
-
-/** 카드 회사가 하는 것처럼, 그 달에 없는 날짜(2월 30일 등)는 말일로 당긴다. */
-function effectiveDay(year: number, monthIndex: number, billingDay: number): number {
-  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-  return Math.min(billingDay, lastDay);
 }
 
 /** 이 구독이 그 달에 청구되는 날. 청구되지 않으면 null. */
