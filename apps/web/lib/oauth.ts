@@ -94,17 +94,13 @@ export function redirectUri(origin: string, provider: OAuthProviderId): string {
   return `${origin}/api/auth/oauth/${provider}/callback`;
 }
 
-function base64url(buffer: Buffer): string {
-  return buffer.toString("base64url");
-}
-
 export function randomToken(): string {
-  return base64url(randomBytes(32));
+  return randomBytes(32).toString("base64url");
 }
 
 /** PKCE S256. 앱 넘겨받기(oauth_app_claims)도 같은 계산을 쓴다. */
 export function s256(verifier: string): string {
-  return base64url(createHash("sha256").update(verifier).digest());
+  return createHash("sha256").update(verifier).digest("base64url");
 }
 
 /** 제공자 회원 번호의 해시. 제공자 이름을 섞어, 다른 제공자의 같은 번호와 겹치지 않게 한다. */

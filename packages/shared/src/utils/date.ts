@@ -12,8 +12,8 @@ export interface BillingSchedule {
   billingMonth?: number;
 }
 
-/** Clamps a day to a month that may be shorter, the way card issuers do. */
-function effectiveDay(year: number, monthIndex: number, billingDay: number): number {
+/** 카드 회사가 하는 것처럼, 그 달에 없는 날짜(2월 30일 등)는 말일로 당긴다. 결제 캘린더도 이 함수를 쓴다. */
+export function effectiveDay(year: number, monthIndex: number, billingDay: number): number {
   const lastDay = new Date(year, monthIndex + 1, 0).getDate();
   return Math.min(billingDay, lastDay);
 }

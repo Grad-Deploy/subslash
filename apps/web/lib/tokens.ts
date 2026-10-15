@@ -90,16 +90,12 @@ export function passwordFingerprint(passwordHash: string): string {
     .slice(0, 22);
 }
 
-function base64url(input: Buffer | string): string {
-  return Buffer.from(input).toString("base64url");
-}
-
 export function signLink(payload: Omit<LinkPayload, "exp">, ttlSeconds: number): string {
   const body: LinkPayload = {
     ...payload,
     exp: Math.floor(Date.now() / 1000) + ttlSeconds,
   };
-  const encoded = base64url(JSON.stringify(body));
+  const encoded = Buffer.from(JSON.stringify(body)).toString("base64url");
   const mac = createHmac("sha256", linkSecret()).update(encoded).digest("base64url");
   return `${encoded}.${mac}`;
 }
