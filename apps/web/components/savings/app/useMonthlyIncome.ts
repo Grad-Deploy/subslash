@@ -15,25 +15,29 @@ import { useCallback, useSyncExternalStore } from "react";
 const KEY = "subslash-monthly-income";
 const channel = localChannel("subslash:monthly-income");
 
-/** 체험 중에 넣은 수입. undefined면 체험 중에 손대지 않은 것이라 기기에 둔 값을 보여 준다. */
-let demoIncome: number | null | undefined;
+/**
+ * 체험 중에 넣은 수입과 그 체험의 시작 시각. 지금 체험의 것이 아니면(체험 중에 손대지 않았거나 지난 체험의 값) 기기에 둔
+ * 값을 보여 준다. 체험이 끝날 때 지우지 않고 시작 시각으로 가린다 — 끝날 때 이 화면이 열려 있지 않으면 지울 리스너가
+ * 없어, 같은 탭에서 다시 시작한 체험에 지난 체험의 수입이 보였다.
+ */
+let demoIncome: { startedAt: string; value: number | null } | null = null;
 
 function normalize(value: number | null): number | null {
   return value !== null && Number.isFinite(value) && value > 0 ? Math.floor(value) : null;
 }
 
-function read(): number | null {
-  if (useStore.getState().demo && demoIncome !== undefined) return demoIncome;
+/** 지금 보여 줄 월 수입. */
+export function readMonthlyIncome(): number | null {
+  const demo = useStore.getState().demo;
+  if (demo && demoIncome?.startedAt === demo.startedAt) return demoIncome.value;
   return normalize(Number(readLocal(KEY)));
 }
 
 function subscribe(onChange: () => void): () => void {
   const stopLocal = channel.subscribe(onChange);
-  // 체험이 끝나면(새로고침 말고 '체험 끝내기'·30분) 체험 중의 값을 버리고 기기의 값으로 돌아간다.
+  // 체험이 시작·끝나면(새로고침 말고 '체험 끝내기'·30분) 보여 줄 값이 바뀐다.
   const stopDemo = useStore.subscribe((state, previous) => {
-    if (state.demo === previous.demo) return;
-    if (!state.demo) demoIncome = undefined;
-    onChange();
+    if (state.demo !== previous.demo) onChange();
   });
   return () => {
     stopLocal();
@@ -41,13 +45,19 @@ function subscribe(onChange: () => void): () => void {
   };
 }
 
+/** 월 수입을 남긴다. 체험 중이면 이 탭의 메모리에만 둔다. null이면 지운다. */
+export function saveMonthlyIncome(next: number | null): void {
+  const value = normalize(next);
+  const demo = useStore.getState().demo;
+  if (demo) demoIncome = { startedAt: demo.startedAt, value };
+  else if (value !== null) writeLocal(KEY, String(value));
+  else removeLocal(KEY);
+}
+
 export function useMonthlyIncome() {
-  const income = useSyncExternalStore(subscribe, read, () => null);
+  const income = useSyncExternalStore(subscribe, readMonthlyIncome, () => null);
   const setIncome = useCallback((next: number | null) => {
-    const value = normalize(next);
-    if (useStore.getState().demo) demoIncome = value;
-    else if (value !== null) writeLocal(KEY, String(value));
-    else removeLocal(KEY);
+    saveMonthlyIncome(next);
     channel.notify();
   }, []);
   return [income, setIncome] as const;
