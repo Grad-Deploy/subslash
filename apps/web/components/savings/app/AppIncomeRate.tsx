@@ -15,9 +15,15 @@ const SAVED = "stroke-emerald-500 dark:stroke-emerald-600";
 const SPEND_BG = "bg-zinc-600 dark:bg-zinc-400";
 const SAVED_BG = "bg-emerald-500 dark:bg-emerald-600";
 
-function pct(part: number, whole: number): string {
+/** 화면에 적는 비율(%) 숫자. 10% 아래는 소수 한 자리, 그 위는 정수로 반올림한다. */
+function shownPercent(part: number, whole: number): number {
   const value = (part / whole) * 100;
-  return `${value < 10 ? value.toFixed(1) : Math.round(value)}%`;
+  return value < 10 ? Math.round(value * 10) / 10 : Math.round(value);
+}
+
+function pct(part: number, whole: number): string {
+  const value = shownPercent(part, whole);
+  return `${value < 10 ? value.toFixed(1) : value}%`;
 }
 
 /**
@@ -116,7 +122,11 @@ function Rate({
   const spendLen = Math.min(100, (activeMonthly / income) * 100);
   const savedLen = Math.min(100 - spendLen, (killedMonthly / income) * 100);
   const gap = spendLen > 0 && savedLen > 0 ? 0.6 : 0;
-  const diff = before > 0 ? ((before - activeMonthly) / income) * 100 : 0;
+  // 줄어든 폭은 화면에 적은 두 비율의 차이로 센다. 반올림 전 값으로 세면 '1.3% → 0.3%'에 '1.1%p 줄었어요'가 붙었다.
+  const diff =
+    before > 0
+      ? Math.round((shownPercent(before, income) - shownPercent(activeMonthly, income)) * 10) / 10
+      : 0;
 
   return (
     <>
@@ -211,7 +221,7 @@ function Rate({
             </CompareRow>
           </div>
           <p className="mt-2.5 text-[11.5px] font-bold text-emerald-700 dark:text-emerald-300">
-            {n.lowered(diff < 10 ? diff.toFixed(1) : String(Math.round(diff)))}
+            {n.lowered(Number.isInteger(diff) ? String(diff) : diff.toFixed(1))}
           </p>
         </>
       )}
