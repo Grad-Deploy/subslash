@@ -1,3 +1,4 @@
+import { josa } from "../../ask/josa";
 import type { SettlementParts } from "@subslash/shared";
 import type { Widen } from "../types";
 import { monthShort, one, ordinal } from "../english";
@@ -95,7 +96,7 @@ export const ko = {
     unknownDate: "—",
     pickAria: (name: string) => `${name} 고르기`,
     unhide: "다시 보이기",
-    unhidden: (name: string) => `${name}을(를) 다시 보이게 했어요`,
+    unhidden: (name: string) => `${name}${josa(name, "을", "를")} 다시 보이게 했어요`,
     hidden: (count: number) => `${count}개를 숨겼어요 · 절약 현황에는 남아요`,
     removed: (count: number) => `${count}개를 삭제했어요`,
     killedAt: "해지일",
@@ -128,8 +129,9 @@ export const ko = {
     reviveNote: "구독 중으로 돌아가고,\n절약 기록에서는 빠져요.",
     deleteNote: "절약 현황에서도 빠지고\n되돌릴 수 없어요.",
     reviveBody: (name: string) =>
-      `'${name}'을(를) 다시 구독 중으로 바꿀까요?\n절약 기록에서 빠져요.`,
-    deleteBody: (name: string) => `'${name}'을(를) 삭제할까요?\n되돌릴 수 없어요.`,
+      `'${name}'${josa(name, "을", "를")} 다시 구독 중으로 바꿀까요?\n절약 기록에서 빠져요.`,
+    deleteBody: (name: string) =>
+      `'${name}'${josa(name, "을", "를")} 삭제할까요?\n되돌릴 수 없어요.`,
     reviveConfirm: "다시 살리기",
     deleteConfirm: "삭제",
     cancel: "취소",

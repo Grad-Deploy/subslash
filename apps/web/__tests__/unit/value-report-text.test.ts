@@ -55,7 +55,7 @@ describe("월간 가성비 리포트 문장", () => {
     expect(one).toContain("Pause 넷플릭스");
     expect(one).toContain("₩17,000");
     expect(describeWasteSuggestion(messages.ko, summary.wasteSuggestion!)).toContain(
-      "넷플릭스을(를) 잠시 쉬어가면",
+      "넷플릭스를 잠시 쉬어가면",
     );
     const many = describeWasteSuggestion(messages.en, { ...summary.wasteSuggestion!, name: null });
     expect(many).toContain("rarely use");
