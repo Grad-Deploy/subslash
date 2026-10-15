@@ -208,7 +208,6 @@ Expo 프로젝트 `@leesean2/subslash-mobile`을 씁니다. 앱은 Capacitor라 
 cd apps/mobile
 eas build --platform android --profile preview       # 기기에 바로 설치하는 APK
 eas build --platform android --profile production    # 스토어용 AAB
-eas build --platform android --profile closed-test   # 비공개 테스트용 (리포트 비교에 가상 데이터)
 eas build --platform ios --profile preview           # 시뮬레이터용 (Apple 계정 없이 됨)
 ```
 
@@ -216,7 +215,6 @@ eas build --platform ios --profile preview           # 시뮬레이터용 (Apple
 - 서명 키는 EAS 서버에 둡니다(`eas credentials`).
 - EAS는 작업 폴더를 `.gitignore` 기준으로 올립니다. `.easignore`를 만들면 `.gitignore`를 통째로 대신해 `.env`까지
   올라갈 수 있으니 만들지 않습니다.
-- `closed-test` 빌드는 프로덕션 트랙으로 올리지 않습니다.
 
 ## PC의 AI 코딩 도구 사용 (subslash-usage)
 
