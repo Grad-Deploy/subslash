@@ -277,59 +277,8 @@ export type NewAccount = typeof accounts.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
 
 /**
- * 익명 구독 통계에 참여한 기기(lib/stats). 로그인 계정·알림 구독자와 묶지 않는다 — 누가 보낸 것인지
- * 알 수 없어야 익명이다. 기기는 토큰을 쥐고 자기 기록을 바꾸거나 지울 뿐이고, 서버는 해시만 둔다.
- * STATS_RETENTION_DAYS 동안 갱신되지 않으면 크론이 지운다.
- */
-export const statsContributors = sqliteTable(
-  "stats_contributors",
-  {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    tokenHash: text("token_hash").notNull(),
-    /** 한 달 구독 지출(내 몫) 합계, 1,000원 단위. */
-    totalMonthlyKrw: integer("total_monthly_krw").notNull(),
-    activeCount: integer("active_count").notNull(),
-    /**
-     * 참여자가 고른 연령대('10s'…'60s+', lib/stats의 AGE_BANDS). 고르지 않았거나 연령대 비교를 열기
-     * 전(STATS_AGE_BAND_STARTS_ON)이면 null.
-     */
-    ageBand: text("age_band"),
-    createdAt: text("created_at").notNull(),
-    updatedAt: text("updated_at").notNull(),
-  },
-  (table) => ({
-    tokenIdx: uniqueIndex("stats_contributors_token_idx").on(table.tokenHash),
-    updatedIdx: index("stats_contributors_updated_idx").on(table.updatedAt),
-  }),
-);
-
-/** 참여자의 알려진 서비스 하나. 서비스 이름이 아니라 서비스 목록의 id만 둔다. */
-export const statsItems = sqliteTable(
-  "stats_items",
-  {
-    id: text("id")
-      .primaryKey()
-      .$defaultFn(() => crypto.randomUUID()),
-    contributorId: text("contributor_id")
-      .notNull()
-      .references(() => statsContributors.id, { onDelete: "cascade" }),
-    presetId: text("preset_id").notNull(),
-    /** 내 몫의 한 달 금액, 100원 단위. */
-    monthlyKrw: integer("monthly_krw").notNull(),
-    /** 마지막 체크인의 이용 횟수. 최근 체크인이 없으면 null. */
-    usageCount: integer("usage_count"),
-  },
-  (table) => ({
-    contributorIdx: index("stats_items_contributor_idx").on(table.contributorId),
-    presetIdx: index("stats_items_preset_idx").on(table.presetId),
-  }),
-);
-
-/**
  * 기기 간 사용 측정(lib/device-usage)에 참여한 기기. 로그인 계정의 것이다 — 같은 사람의 휴대폰과
- * 태블릿을 이어 세려면 계정이라는 공통 식별자가 있어야 한다. 알림 구독자·익명 통계와는 묶지 않는다.
+ * 태블릿을 이어 세려면 계정이라는 공통 식별자가 있어야 한다. 다른 표와는 묶지 않는다.
  *
  * `deviceKey`는 안드로이드가 이 앱에 주는 기기 식별값(`ANDROID_ID`)을 계정과 섞은 SHA-256이다
  * (`stableDeviceKey`, lib/device-usage-client). 식별값 자체는 서버로 보내지 않고 서버는 해시만 둔다.

@@ -127,6 +127,13 @@
       "when": 1791785168216,
       "tag": "0017_drop_retired_notify",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1791979477433,
+      "tag": "0018_drop_anonymous_stats",
+      "breakpoints": true
     }
   ]
 }
