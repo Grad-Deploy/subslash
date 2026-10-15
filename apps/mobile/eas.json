@@ -33,14 +33,6 @@
     "production": {
       "extends": "base",
       "autoIncrement": true
-    },
-    "closed-test": {
-      "extends": "production",
-      "env": {
-        "NEXT_PUBLIC_WEB_ORIGIN": "https://www.subslash.me",
-        "NEXT_PUBLIC_STORAGE_QUOTA_WEB_APP_URL": "https://script.google.com/macros/s/AKfycbwttL0VNzhAAu0rv7GqriFPS3h1d_YvLujFqWJ1UjBe6lg_AyTMg8YCv54vlZGCXguoPA/exec",
-        "NEXT_PUBLIC_STATS_SAMPLE": "1"
-      }
     }
   },
   "submit": {

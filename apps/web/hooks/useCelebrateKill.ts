@@ -2,6 +2,7 @@
 
 import { getMyMonthlyAmountKRW, type Subscription } from "@subslash/shared";
 import { useKillCelebration } from "@lib/kill-celebration";
+import { useStore } from "@lib/store";
 import { useExchangeRate } from "./useExchangeRate";
 
 /**
@@ -18,5 +19,18 @@ export function useCelebrateKill() {
       subs.length,
       subs.reduce((sum, sub) => sum + getMyMonthlyAmountKRW(sub, rate), 0),
     );
+  };
+}
+
+/**
+ * 구독 하나를 해지로 기록하고 축하 화면을 띄운다. 해지하는 곳마다 둘을 따로 부르면 새로 만든 곳이 축하를 빠뜨린다.
+ * 계산서에서 이어서 해지하는 대시보드는 마지막에 모아서 축하하므로 `useCelebrateKill`을 직접 쓴다(useKillSeries).
+ */
+export function useRecordKill() {
+  const killSubscription = useStore((s) => s.killSubscription);
+  const celebrateKill = useCelebrateKill();
+  return (sub: Subscription) => {
+    killSubscription(sub.id);
+    celebrateKill(sub);
   };
 }

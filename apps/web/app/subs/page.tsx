@@ -37,7 +37,7 @@ import { useIsClient } from "@hooks/useIsClient";
 import { PageSpinner } from "../../components/ui/spinner";
 import { Receipt, ShieldCheck } from "lucide-react";
 import { useToast } from "@hooks/useToast";
-import { useCelebrateKill } from "@hooks/useCelebrateKill";
+import { useRecordKill } from "@hooks/useCelebrateKill";
 import { useLatestT, useT, useServiceNames } from "@lib/i18n";
 
 /**
@@ -49,13 +49,12 @@ export default function SubscriptionsPage() {
   const {
     subscriptions,
     usageLogs,
-    killSubscription,
     reviveSubscription,
     deleteSubscription,
     getActiveSubscriptions,
     getKilledSubscriptions,
   } = useStore();
-  const celebrateKill = useCelebrateKill();
+  const recordKill = useRecordKill();
   const rate = useExchangeRate();
   const router = useRouter();
   const t = useT().subs;
@@ -121,8 +120,7 @@ export default function SubscriptionsPage() {
   const handleConfirmKilled = (id: string) => {
     const sub = findSub(id);
     if (!sub) return;
-    killSubscription(sub.id);
-    celebrateKill(sub);
+    recordKill(sub);
     showToast(tRef.current.subs.page.killRecorded(names.sub(sub)));
   };
 
