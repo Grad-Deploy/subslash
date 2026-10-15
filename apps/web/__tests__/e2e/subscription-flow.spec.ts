@@ -111,6 +111,8 @@ test.describe("Subscription Flow (E2E)", () => {
     await guideDialog.getByRole("button", { name: "해지 완료했어요" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page.getByText("넷플릭스 해지 완료로 기록")).toBeVisible();
+    // 어느 화면에서 해지하든 같은 축하 화면이 뜬다.
+    await expect(page.getByText("구독 1개를 정리했어요")).toBeVisible();
 
     await page.getByRole("button", { name: /해지 완료 \(1\)/ }).click();
 

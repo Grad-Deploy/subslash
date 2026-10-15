@@ -15,12 +15,8 @@ export const AppValueReceipt = IS_APP_BUILD
   ? dynamic(() => import("./AppValueReceipt").then((m) => m.AppValueReceipt), { ssr: false })
   : null;
 
-// 계산서에서 이어서 해지를 마쳤을 때의 축하 화면과, 다음 구독을 이어서 해지할지 묻는 창.
-export const AppKillCelebration = IS_APP_BUILD
-  ? dynamic(() => import("./AppKillCelebration").then((m) => m.AppKillCelebration), {
-      ssr: false,
-    })
-  : null;
+// 계산서에서 이어서 해지할 때 다음 구독을 이어서 해지할지 묻는 창. 해지 축하 화면은 웹·앱 공통이라
+// 레이아웃에 있다(subscription/KillCelebration).
 export const AppNextKillDialog = IS_APP_BUILD
   ? dynamic(() => import("./AppNextKillDialog").then((m) => m.AppNextKillDialog), { ssr: false })
   : null;

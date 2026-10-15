@@ -6,6 +6,7 @@ import { useStore } from "@lib/store";
 import { CancelGuideModal } from "../components/subscription/CancelGuideModal";
 import { ConfirmDialog } from "../components/ui/confirm-dialog";
 import { useKillSeries } from "./useKillSeries";
+import { useCelebrateKill } from "./useCelebrateKill";
 import { useLatestT, useT, useServiceNames } from "@lib/i18n";
 
 /**
@@ -31,6 +32,7 @@ export function useDashboardActions(showToast: (message: string) => void) {
   const [chargedTarget, setChargedTarget] = useState<Subscription | null>(null);
   // 앱 계산서에서 이어서 해지하기(hooks/useKillSeries).
   const killSeries = useKillSeries((sub) => setGuideTarget(sub));
+  const celebrateKill = useCelebrateKill();
 
   const findSub = (id: string) => useStore.getState().subscriptions.find((s) => s.id === id);
 
@@ -42,7 +44,8 @@ export function useDashboardActions(showToast: (message: string) => void) {
   const confirmKill = (target: Subscription) => {
     killSubscription(target.id);
     showToast(tRef.current.actions.killRecorded(names.sub(target)));
-    killSeries.advance(target);
+    // 이어서 해지하는 중이면 마지막에 모아서 축하한다.
+    if (!killSeries.advance(target)) celebrateKill(target);
   };
 
   // 가이드에서 '해지 완료했어요'를 누른 것이 곧 확인이다 — 예전에는 확인 창을 한 번 더 띄웠다.
@@ -104,7 +107,7 @@ export function useDashboardActions(showToast: (message: string) => void) {
           onConfirmKilled={confirmKillById}
         />
 
-        {/* 앱 계산서에서 이어서 해지할 때만 뜬다. */}
+        {/* 앱 계산서에서 이어서 해지할 때 다음 구독을 묻는 창. */}
         {killSeries.dialogs}
 
         {chargedTarget && (
