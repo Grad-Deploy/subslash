@@ -1,7 +1,7 @@
 "use client";
 
-import { readLocal, writeLocal } from "@lib/local-storage";
-import { useCallback, useSyncExternalStore } from "react";
+import { localChannel, readLocal, writeLocal } from "@lib/local-storage";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 /** 같은 탭 안에서 값이 바뀐 것을 알린다. storage 이벤트는 다른 탭에만 온다. */
 const CHANGE_EVENT = "subslash:stored-flag";
@@ -21,23 +21,10 @@ function read(key: string): boolean {
  * 번쩍이지 않게, 안내를 숨기는 쪽 값을 넘긴다.
  */
 export function useStoredFlag(key: string, serverValue: boolean): [boolean, () => void] {
-  const subscribe = useCallback(
-    (onChange: () => void) => {
-      const onStorage = (e: StorageEvent) => {
-        if (e.key === key) onChange();
-      };
-      window.addEventListener("storage", onStorage);
-      window.addEventListener(CHANGE_EVENT, onChange);
-      return () => {
-        window.removeEventListener("storage", onStorage);
-        window.removeEventListener(CHANGE_EVENT, onChange);
-      };
-    },
-    [key],
-  );
+  const channel = useMemo(() => localChannel(CHANGE_EVENT, key), [key]);
 
   const value = useSyncExternalStore(
-    subscribe,
+    channel.subscribe,
     () => read(key),
     () => serverValue,
   );
@@ -45,8 +32,8 @@ export function useStoredFlag(key: string, serverValue: boolean): [boolean, () =
   const turnOn = useCallback(() => {
     setInMemory.add(key);
     writeLocal(key, "true");
-    window.dispatchEvent(new Event(CHANGE_EVENT));
-  }, [key]);
+    channel.notify();
+  }, [key, channel]);
 
   return [value, turnOn];
 }

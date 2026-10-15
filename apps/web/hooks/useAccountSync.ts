@@ -1,5 +1,6 @@
 "use client";
 
+import { onPageVisible } from "@lib/page-visibility";
 import { useCallback, useEffect, useState } from "react";
 import { create } from "zustand";
 import { createBackup } from "@lib/backup";
@@ -254,19 +255,16 @@ export function useAccountSync() {
       lastHash = hash;
       schedule();
     };
-    const onVisible = () => {
-      if (document.visibilityState === "visible") void run();
-    };
 
     requestRun = () => void run();
     lastHash = recordsHash(localData());
     void run();
     const unsubscribe = useStore.subscribe(onStoreChange);
-    document.addEventListener("visibilitychange", onVisible);
+    const stopVisible = onPageVisible(() => void run());
     return () => {
       requestRun = null;
       unsubscribe();
-      document.removeEventListener("visibilitychange", onVisible);
+      stopVisible();
       if (timer) clearTimeout(timer);
     };
   }, [accountId]);
