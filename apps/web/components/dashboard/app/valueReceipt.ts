@@ -12,6 +12,7 @@ import {
   sumMonthlyKRW,
   sumMyMonthlyKRW,
   spaceCurrencySymbol,
+  formatDotDate,
 } from "@subslash/shared";
 import type { Messages } from "@lib/i18n";
 import { describeCheckInText } from "@lib/i18n/check-in-text";
@@ -140,8 +141,7 @@ export function receiptSections(receipt: ValueReceipt, expanded: boolean) {
 
 /** 계산서 머리의 날짜(2026.10.07). */
 export function receiptDate(now: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}`;
+  return formatDotDate(now);
 }
 
 /** 계산서 맨 아래 한 줄. 체크인이 하나도 없으면 체크인을 권한다. */

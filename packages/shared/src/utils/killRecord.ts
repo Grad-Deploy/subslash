@@ -1,5 +1,6 @@
 import type { Subscription } from "../types";
 import { formatAmount } from "./currency";
+import { formatDotDate } from "./date";
 
 /**
  * 해지한 뒤의 기록 — 다시 살펴볼 날(`resubscribeRemindOn`)과 해지 근거(`killEvidence`).
@@ -22,12 +23,6 @@ export function parseDateOnly(value: string | undefined): Date | null {
   return date;
 }
 
-/** 오늘(기기 시간대)을 `YYYY-MM-DD`로. 날짜 입력칸의 최솟값에 쓴다. */
-export function toDateOnly(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
 /** 다시 살펴볼 날이 왔는지. 해지한 구독에만 참이고, 그날 0시부터 참이다. */
 export function isResubscribeReminderDue(
   sub: Pick<Subscription, "status" | "resubscribeRemindOn">,
@@ -36,12 +31,6 @@ export function isResubscribeReminderDue(
   if (sub.status !== "killed") return false;
   const on = parseDateOnly(sub.resubscribeRemindOn);
   return on !== null && on.getTime() <= now.getTime();
-}
-
-/** "2026.09.27". 영수증·메일 날짜와 같은 모양이다. */
-function formatDot(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`;
 }
 
 /**
@@ -68,7 +57,7 @@ export function formatRefundRequest(
 
   const killed = sub.killedAt ? new Date(sub.killedAt) : null;
   const killedText =
-    killed && !Number.isNaN(killed.getTime()) ? `${formatDot(killed)}에 ` : "앞서 ";
+    killed && !Number.isNaN(killed.getTime()) ? `${formatDotDate(killed)}에 ` : "앞서 ";
   const reference = sub.killEvidence?.reference?.trim();
   const amount =
     typeof sub.chargedAfterKillAmount === "number"

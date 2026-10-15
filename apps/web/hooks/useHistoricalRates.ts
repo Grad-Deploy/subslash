@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   RATE_LOOKBACK_DAYS,
-  localYmd,
+  localDateKey,
   rateOnFromTable,
   type RateOn,
   type Subscription,
@@ -24,7 +24,7 @@ export function rateRangeFor(
     start.getMonth(),
     start.getDate() - RATE_LOOKBACK_DAYS,
   );
-  return { from: localYmd(from), to: localYmd(end < now ? end : now) };
+  return { from: localDateKey(from), to: localDateKey(end < now ? end : now) };
 }
 
 /**

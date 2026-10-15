@@ -1,4 +1,4 @@
-import { formatKRW, type Receipt } from "@subslash/shared";
+import { formatKRW, type Receipt, formatDotDate } from "@subslash/shared";
 import type { Messages } from "@lib/i18n/messages";
 import {
   describeReceiptLine,
@@ -45,7 +45,7 @@ const pad = (n: number) => String(n).padStart(2, "0");
 
 export function receiptArt(t: Messages, receipt: Receipt, issuedAt: Date): ReceiptArt {
   const v = t.receiptView;
-  const issuedDate = `${issuedAt.getFullYear()}.${pad(issuedAt.getMonth() + 1)}.${pad(issuedAt.getDate())}`;
+  const issuedDate = formatDotDate(issuedAt);
   const number = receiptNumber(receipt.period);
   const { period } = receipt;
 
