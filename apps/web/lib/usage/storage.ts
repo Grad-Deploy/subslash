@@ -6,20 +6,13 @@
  * 비었으면 사본으로 되살린다(lib/mirrored-storage와 같은 이유 — 운영체제가 웹뷰 저장소를 비우면
  * 1년 동안 쌓은 기록이 사라진다).
  */
+import { readLocal, writeLocal } from "@lib/local-storage";
 import { IS_APP_BUILD } from "../platform";
 
 export const HISTORY_KEY = "subslash-phone-usage";
 export const SNOOZE_KEY = "subslash-usage-snooze";
 /** 폰 기록으로 찾은 구독 후보 중 '내가 내지 않아요'를 고른 서비스(lib/usage/suggest). */
 export const SUGGEST_DISMISSED_KEY = "subslash-usage-suggest-dismissed";
-
-function readLocal(key: string): string | null {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
 
 type PreferencesPlugin = typeof import("@capacitor/preferences").Preferences;
 
@@ -42,13 +35,8 @@ export async function readDeviceValue(key: string): Promise<string | null> {
   if (!prefs) return null;
   try {
     const { value } = await prefs.get({ key });
-    if (value !== null) {
-      try {
-        localStorage.setItem(key, value);
-      } catch {
-        // 되살리지 못해도 이번에는 사본 값을 쓴다
-      }
-    }
+    // 되살리지 못해도 이번에는 사본 값을 쓴다
+    if (value !== null) writeLocal(key, value);
     return value;
   } catch {
     return null;
@@ -56,11 +44,8 @@ export async function readDeviceValue(key: string): Promise<string | null> {
 }
 
 export function writeDeviceValue(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // 저장소가 막혀도 화면은 이번 값으로 그린다
-  }
+  // 저장소가 막혀도 화면은 이번 값으로 그린다
+  writeLocal(key, value);
   void preferences().then((loaded) =>
     loaded?.prefs
       .set({ key, value })

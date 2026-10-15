@@ -1,3 +1,4 @@
+import { DAY_MS } from "./date";
 import type {
   BillingCycle,
   DiscoveredSubscription,
@@ -263,8 +264,6 @@ export function isStaleReceipt(
   const days = daysSinceReceipt(receiptDate, now);
   return days !== null && days > STALE_AFTER_DAYS[billingCycle];
 }
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * 어느 시간대의 달력으로 본 날짜인지. 서버(UTC)에서 한국 시각 오전 8시에 온 메일을 그냥 읽으면

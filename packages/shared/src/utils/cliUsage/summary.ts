@@ -1,3 +1,4 @@
+import { DAY_MS } from "../date";
 import { apiCostUsd } from "../../constants/aiApiPrices";
 import type { CliSessionUsage, CliTokenRecord } from "./types";
 
@@ -55,7 +56,7 @@ export function summarizeCliUsage(
   },
 ): CliUsageSummary {
   const dayKey = options.dayKey ?? cliDayKey;
-  const since = options.now - options.windowDays * 24 * 60 * 60 * 1000;
+  const since = options.now - options.windowDays * DAY_MS;
   const inWindow = (at: number) => at >= since && at <= options.now;
   const days = new Set<string>();
   let prompts = 0;

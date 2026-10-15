@@ -20,6 +20,7 @@ import {
   toKRW,
   type RiskLevel,
   metricOfLog,
+  DAY_MS,
 } from "@subslash/shared";
 import { Button } from "../ui/button";
 import { cn } from "@lib/utils";
@@ -29,8 +30,6 @@ import { useLocale, useT, useServiceNames } from "@lib/i18n";
 import { describeQuantityText, shortUnitCostText } from "@lib/i18n/check-in-text";
 import { ServiceLogo } from "./ServiceLogo";
 import { intlLocale } from "@lib/i18n/config";
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 type SortKey = "name" | "myMonthly" | "nextBilling" | "costPerUse" | "killedAt";
 type SortDir = "asc" | "desc";
@@ -139,7 +138,7 @@ export function SubTable({
           : null,
       checkedDaysAgo: Number.isNaN(checkedMs)
         ? null
-        : Math.floor((now.getTime() - checkedMs) / MS_PER_DAY),
+        : Math.floor((now.getTime() - checkedMs) / DAY_MS),
       killedAtMs: Number.isNaN(killedMs) ? null : killedMs,
     };
   });

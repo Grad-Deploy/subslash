@@ -1,5 +1,6 @@
 "use client";
 
+import { readLocal, removeLocal, writeLocal } from "@lib/local-storage";
 import React, {
   createContext,
   useCallback,
@@ -52,12 +53,8 @@ function readTheme(): Theme {
  * 누르면 시스템 설정으로 돌아갈 길이 없었다.
  */
 function readPreference(): ThemePreference {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === "light" || stored === "dark" ? stored : "system";
-  } catch {
-    return "system";
-  }
+  const stored = readLocal(STORAGE_KEY);
+  return stored === "light" || stored === "dark" ? stored : "system";
 }
 
 function systemPrefersDark(): boolean {
@@ -95,10 +92,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [preference]);
 
   const setPreference = useCallback((next: ThemePreference) => {
-    try {
-      if (next === "system") localStorage.removeItem(STORAGE_KEY);
-      else localStorage.setItem(STORAGE_KEY, next);
-    } catch {}
+    if (next === "system") removeLocal(STORAGE_KEY);
+    else writeLocal(STORAGE_KEY, next);
     applyPreference(next);
   }, []);
 

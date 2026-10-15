@@ -1,3 +1,5 @@
+import { DAY_MS } from "@subslash/shared";
+
 /**
  * 폰 사용 기록을 기기에 쌓고 기간별로 합치는 순수 함수들.
  *
@@ -113,7 +115,7 @@ export function daysToQuery(
 ): number {
   if (!history.syncedAt || history.measureVersion !== MEASURE_VERSION) return 35;
   if (packages.some((pkg) => packageSince(history, pkg) === null)) return 35;
-  const since = (now.getTime() - Date.parse(history.syncedAt)) / 86_400_000;
+  const since = (now.getTime() - Date.parse(history.syncedAt)) / DAY_MS;
   return Math.max(2, Math.min(35, Math.ceil(since) + 1));
 }
 

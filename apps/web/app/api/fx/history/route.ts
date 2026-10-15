@@ -1,3 +1,4 @@
+import { DAY_MS } from "@subslash/shared";
 import { NextRequest, NextResponse } from "next/server";
 import { logError } from "@lib/log";
 
@@ -27,7 +28,7 @@ function parseDate(value: string | null): Date | null {
 export async function GET(request: NextRequest) {
   const from = parseDate(request.nextUrl.searchParams.get("from"));
   const to = parseDate(request.nextUrl.searchParams.get("to"));
-  if (!from || !to || from > to || (to.getTime() - from.getTime()) / 86_400_000 > MAX_DAYS) {
+  if (!from || !to || from > to || (to.getTime() - from.getTime()) / DAY_MS > MAX_DAYS) {
     return NextResponse.json({ error: "invalid_range" }, { status: 400 });
   }
   // 오늘 뒤의 환율은 없다. 끝을 오늘로 당긴다.

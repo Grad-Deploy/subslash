@@ -1,3 +1,4 @@
+import { DAY_MS } from "@subslash/shared";
 import { createHash, randomBytes } from "crypto";
 import { and, eq, gt, lt, or } from "drizzle-orm";
 import { getDb } from "./db";
@@ -24,7 +25,7 @@ import { hasPassword } from "./password";
 
 export const SESSION_COOKIE = "subslash_session";
 const SESSION_TTL_DAYS = 30;
-const SESSION_TTL_MS = SESSION_TTL_DAYS * 24 * 60 * 60 * 1000;
+const SESSION_TTL_MS = SESSION_TTL_DAYS * DAY_MS;
 
 export function hashSessionToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");

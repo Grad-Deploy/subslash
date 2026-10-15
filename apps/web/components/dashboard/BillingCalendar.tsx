@@ -8,6 +8,7 @@ import {
   formatKRW,
   getBilledAmount,
   type Subscription,
+  DAY_MS,
 } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { subscriptionDetailHref } from "@lib/routes";
@@ -227,7 +228,7 @@ function SelectedDay({
   // 날짜끼리만 뺀다. 시각이 섞이면 같은 날인데 D-1로 보이는 일이 생긴다.
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const target = new Date(month.year, month.monthIndex, day).getTime();
-  const daysAway = Math.round((target - startOfToday) / (24 * 60 * 60 * 1000));
+  const daysAway = Math.round((target - startOfToday) / DAY_MS);
   // 통화가 섞였을 때만 환산 합계를 보여준다. 원화뿐이면 같은 숫자를 두 번 쓰는 셈이다.
   const mixed = subs.some((sub) => sub.currency !== subs[0].currency);
 
