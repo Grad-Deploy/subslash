@@ -1,5 +1,6 @@
 "use client";
 
+import { removeLocal } from "@lib/local-storage";
 import React, { useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -47,13 +48,7 @@ export function Header() {
   ];
 
   // 그만둔 익명 통계(2026-10-14)에 참여했던 기기의 토큰. 서버 기록은 표째 지웠으므로 기기에 남은 것도 치운다.
-  useEffect(() => {
-    try {
-      localStorage.removeItem("subslash-stats-sharing");
-    } catch {
-      // 저장소를 못 쓰는 브라우저 — 남은 것도 없다.
-    }
-  }, []);
+  useEffect(() => removeLocal("subslash-stats-sharing"), []);
   // 이 기기에서 여러 기기 사용 측정을 켰으면 앱을 열 때·돌아올 때 잰 것을 계정에 올린다.
   useDeviceUsageUpload();
   // USD 구독이 있으면 환산 환율을 고시 환율로 저절로 맞춘다(직접 적은 환율은 그대로).

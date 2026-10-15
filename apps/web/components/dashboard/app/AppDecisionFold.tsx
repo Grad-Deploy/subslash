@@ -1,5 +1,6 @@
 "use client";
 
+import { readLocal, writeLocal } from "@lib/local-storage";
 import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { formatDday, type ActionItem } from "@subslash/shared";
@@ -9,19 +10,12 @@ import { useT } from "@lib/i18n";
 const FOLDED_KEY = "subslash-dashboard-queue-folded";
 
 function readFolded(): boolean {
-  try {
-    return window.localStorage.getItem(FOLDED_KEY) === "1";
-  } catch {
-    return false;
-  }
+  return readLocal(FOLDED_KEY) === "1";
 }
 
+// 저장하지 못해도 이번 화면에서는 접힌다.
 function writeFolded(folded: boolean): void {
-  try {
-    window.localStorage.setItem(FOLDED_KEY, folded ? "1" : "0");
-  } catch {
-    // 저장하지 못해도 이번 화면에서는 접힌다.
-  }
+  writeLocal(FOLDED_KEY, folded ? "1" : "0");
 }
 
 /**

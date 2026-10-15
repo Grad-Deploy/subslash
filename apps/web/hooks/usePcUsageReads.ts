@@ -10,6 +10,7 @@ import {
   type CliSessionUsage,
   type CliTool,
   type CliUsageSummary,
+  DAY_MS,
 } from "@subslash/shared";
 import {
   pickExportFile,
@@ -27,7 +28,6 @@ import {
 } from "@lib/pc-usage-evidence";
 
 export const PC_USAGE_WINDOW_DAYS = 30;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * 기록에 어떤 계정으로 썼는지가 없어 사용자에게 묻는 도구. 답하기 전에는 세지 않는다 — 모르는 것을 구독 사용으로

@@ -1,5 +1,6 @@
 "use client";
 
+import { writeLocal } from "@lib/local-storage";
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { IS_APP_BUILD } from "@lib/platform";
 import { ownerScopedKey, readOwnerScoped } from "@lib/owner-scoped";
@@ -77,9 +78,7 @@ function subscribe(onChange: () => void) {
 export function useLocalReminderSettings() {
   const settings = useSyncExternalStore(subscribe, read, () => DEFAULT_SETTINGS);
   const update = useCallback((next: Partial<LocalReminderSettings>) => {
-    try {
-      localStorage.setItem(ownerScopedKey(KEY), JSON.stringify({ ...read(), ...next }));
-    } catch {}
+    writeLocal(ownerScopedKey(KEY), JSON.stringify({ ...read(), ...next }));
     window.dispatchEvent(new Event(EVENT));
   }, []);
   return [settings, update] as const;

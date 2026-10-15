@@ -1,3 +1,4 @@
+import { DAY_MS } from "./date";
 import { Currency, BillingCycle } from "../types";
 import { referencePriceFor } from "../constants/services";
 
@@ -41,10 +42,8 @@ export interface PriceCheckCandidate {
   everChecked: boolean;
 }
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 function daysBetween(from: Date, to: Date): number {
-  return Math.floor((to.getTime() - from.getTime()) / MS_PER_DAY);
+  return Math.floor((to.getTime() - from.getTime()) / DAY_MS);
 }
 
 /**

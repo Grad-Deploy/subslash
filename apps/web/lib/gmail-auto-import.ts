@@ -5,6 +5,7 @@ import {
   parseReceiptEmails,
   type ChargeRecord,
   type DiscoveredSubscription,
+  DAY_MS,
 } from "@subslash/shared";
 import { getDb } from "./db";
 import { accounts, gmailDiscoveries, gmailImportLinks, type GmailDiscovery } from "./schema";
@@ -27,7 +28,7 @@ export const MAX_INGEST_BYTES = 2_000_000;
 const MAX_PENDING = 100;
 
 /** 받아 가지 않은 후보를 남겨 두는 기간. */
-const PENDING_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const PENDING_TTL_MS = 30 * DAY_MS;
 
 /** 결제일을 읽는 달력의 시간대. 한국 서비스라 한국 시간으로 본다(캘린더 피드와 같다). */
 const USER_TIME_ZONE = "Asia/Seoul";

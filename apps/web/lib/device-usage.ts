@@ -9,6 +9,7 @@
  * 음악, 배속은 없다. 그래서 결과는 "측정한 기기에서 최소 N회"이고 체크인을 대신하지 않는다.
  */
 
+import { DAY_MS, HOUR_MS } from "@subslash/shared";
 import { USAGE_PACKAGES } from "./usage/packages";
 
 /** 서버에 두는 기간. 체크인이 묻는 '지난 30일'에 경계 여유를 더했다. 지난 것은 크론이 지운다. */
@@ -18,7 +19,7 @@ export const USAGE_RETENTION_DAYS = 40;
 export const MAX_INTERVALS_PER_UPLOAD = 5000;
 
 /** 한 구간의 최대 길이. 이보다 길면 기기가 닫힘 이벤트를 놓친 것이다. */
-export const MAX_INTERVAL_MS = 12 * 60 * 60 * 1000;
+export const MAX_INTERVAL_MS = 12 * HOUR_MS;
 
 /**
  * 서비스 목록 id → 안드로이드 패키지 이름. 폰 사용 기록(lib/usage)과 **같은 표**를 쓴다 — 표가 둘이면
@@ -74,7 +75,7 @@ export function parseUsageUpload(body: unknown, now: number = Date.now()): Usage
   if (!isFiniteInt(from) || !isFiniteInt(until) || until <= from) return null;
   // 미래는 받지 않고(기기 시계가 조금 빠른 것만 봐준다), 보관 기간보다 오래된 것도 받지 않는다.
   if (until > now + 5 * 60 * 1000) return null;
-  if (from < now - USAGE_RETENTION_DAYS * 24 * 60 * 60 * 1000) return null;
+  if (from < now - USAGE_RETENTION_DAYS * DAY_MS) return null;
 
   if (!Array.isArray(raw.intervals) || raw.intervals.length > MAX_INTERVALS_PER_UPLOAD) return null;
   const intervals: UsageUpload["intervals"] = [];

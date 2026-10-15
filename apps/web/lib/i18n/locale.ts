@@ -1,5 +1,6 @@
 "use client";
 
+import { readLocal, removeLocal, writeLocal } from "@lib/local-storage";
 import { useCallback, useSyncExternalStore } from "react";
 import { LOCALE_STORAGE_KEY, SERVER_LOCALE, isLocale, resolveLocale, type Locale } from "./config";
 
@@ -13,11 +14,7 @@ let inMemory: Locale | null | undefined;
 
 function readStored(): string | null {
   if (inMemory !== undefined) return inMemory;
-  try {
-    return localStorage.getItem(LOCALE_STORAGE_KEY);
-  } catch {
-    return null;
-  }
+  return readLocal(LOCALE_STORAGE_KEY);
 }
 
 function deviceLanguages(): readonly string[] {
@@ -50,10 +47,8 @@ function readPreference(): LocalePreference {
 
 export function setLocalePreference(preference: LocalePreference) {
   inMemory = preference;
-  try {
-    if (preference) localStorage.setItem(LOCALE_STORAGE_KEY, preference);
-    else localStorage.removeItem(LOCALE_STORAGE_KEY);
-  } catch {}
+  if (preference) writeLocal(LOCALE_STORAGE_KEY, preference);
+  else removeLocal(LOCALE_STORAGE_KEY);
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 

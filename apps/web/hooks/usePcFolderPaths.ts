@@ -1,5 +1,6 @@
 "use client";
 
+import { readLocal, removeLocal, writeLocal } from "@lib/local-storage";
 import { useState } from "react";
 import type { CliTool } from "@subslash/shared";
 import { folderPath, isWindowsUserName, type PcPlatform } from "@lib/pc-usage-reader";
@@ -14,20 +15,13 @@ function detectPlatform(): PcPlatform {
 }
 
 function loadWindowsUser(): string {
-  try {
-    return localStorage.getItem(WINDOWS_USER_KEY) ?? "";
-  } catch {
-    return "";
-  }
+  return readLocal(WINDOWS_USER_KEY) ?? "";
 }
 
+// 저장소를 못 쓰면 이번만 쓴다.
 function saveWindowsUser(name: string) {
-  try {
-    if (name) localStorage.setItem(WINDOWS_USER_KEY, name);
-    else localStorage.removeItem(WINDOWS_USER_KEY);
-  } catch {
-    // 저장소를 못 쓰면 이번만 쓴다.
-  }
+  if (name) writeLocal(WINDOWS_USER_KEY, name);
+  else removeLocal(WINDOWS_USER_KEY);
 }
 
 /**

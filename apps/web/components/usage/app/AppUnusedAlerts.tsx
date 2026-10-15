@@ -10,6 +10,7 @@ import {
   getNextBillingDateFor,
   isInTrial,
   spaceCurrencySymbol,
+  DAY_MS,
 } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage, usePhoneUsageStore } from "@hooks/usePhoneUsage";
@@ -117,7 +118,7 @@ export function AppUnusedAlerts({
       });
     }
 
-    const staleBefore = now.getTime() - CHECK_IN_STALE_DAYS * 86_400_000;
+    const staleBefore = now.getTime() - CHECK_IN_STALE_DAYS * DAY_MS;
     const need = usages.filter(
       (u) =>
         !usageLogs.some(

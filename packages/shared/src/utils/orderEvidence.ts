@@ -1,3 +1,4 @@
+import { DAY_MS } from "./date";
 import type { ReceiptEmail } from "./parser";
 import { isDomainOf, senderDomainOf } from "./parser";
 
@@ -51,7 +52,7 @@ function dayKey(date: Date): string {
  * 메일에 없다는 것이지 주문하지 않았다는 뜻이 아니다(스크립트는 메일 수에 상한을 둔다).
  */
 export function countMembershipOrders(emails: readonly ReceiptEmail[], now: Date): OrderCount[] {
-  const sinceMs = now.getTime() - WINDOW_DAYS * 24 * 60 * 60 * 1000;
+  const sinceMs = now.getTime() - WINDOW_DAYS * DAY_MS;
   const since = dayKey(new Date(sinceMs));
   const result: OrderCount[] = [];
   for (const source of MEMBERSHIP_ORDER_SOURCES) {
