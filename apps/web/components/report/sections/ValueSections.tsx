@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { formatKRW } from "@subslash/shared";
 import { useT } from "@lib/i18n";
 import { describeCheckInText } from "@lib/i18n/check-in-text";
@@ -7,9 +8,13 @@ import { ReportRowList } from "./ReportRowList";
 /** 1회 단가 순위. 비싼 것부터, 체크인 전은 뒤. */
 export function CostPerUseRanking({ rows }: { rows: ValueRow[] }) {
   const r = useT().reportPage.ranking;
+  const headingId = useId();
+  // 제목을 칸 이름으로 단다 — 위에 구독별 막대그래프도 목록이라, 이름이 없으면 어느 목록의 줄인지 가릴 수 없다.
   return (
-    <section className="space-y-3">
-      <h2 className="text-base font-bold">{r.title}</h2>
+    <section className="space-y-3" aria-labelledby={headingId}>
+      <h2 id={headingId} className="text-base font-bold">
+        {r.title}
+      </h2>
       <ReportRowList
         rows={rows}
         detail={(row) => (
@@ -57,10 +62,13 @@ export function OtherMetricList({ rows }: { rows: OtherMetricRow[] }) {
     yellow: t.checkin.appResult.yellow,
     green: t.checkin.appResult.green,
   };
+  const headingId = useId();
   if (rows.length === 0) return null;
   return (
-    <section className="space-y-3">
-      <h2 className="text-base font-bold">{o.title}</h2>
+    <section className="space-y-3" aria-labelledby={headingId}>
+      <h2 id={headingId} className="text-base font-bold">
+        {o.title}
+      </h2>
       <p className="text-xs text-muted-foreground">{o.note}</p>
       <ReportRowList
         rows={rows}
