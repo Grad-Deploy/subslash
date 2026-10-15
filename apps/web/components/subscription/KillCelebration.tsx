@@ -5,17 +5,37 @@ import { createPortal } from "react-dom";
 import { formatKRW } from "@subslash/shared";
 import { useIsClient } from "@hooks/useIsClient";
 import { useT } from "@lib/i18n";
-import styles from "./AppKillCelebration.module.css";
+import { useKillCelebration } from "@lib/kill-celebration";
+import styles from "./KillCelebration.module.css";
 
 const BURST_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
 const AUTO_CLOSE_MS = 2600;
 
 /**
- * 계산서에서 이어서 해지하다가 쉬어갈 구독을 모두 정리했을 때 잠깐 뜨는 축하 화면.
- * 몇 개를 정리했고 매달 얼마를 아끼게 됐는지 보여주고, 잠시 뒤 저절로 닫힌다(누르면 바로 닫힌다).
- * 이모지 대신 체크와 빨간 슬래시 조각으로 그린다.
+ * 레이아웃에 한 번 두는 축하 화면 자리. 해지를 기록한 곳이 `useCelebrateKill`로 띄운다(lib/kill-celebration).
+ * 연달아 띄우면 key(`id`)가 바뀌어 처음부터 다시 그리고 타이머도 다시 돈다.
  */
-export function AppKillCelebration({
+export function KillCelebrationHost() {
+  const celebration = useKillCelebration((s) => s.celebration);
+  const dismiss = useKillCelebration((s) => s.dismiss);
+  if (!celebration) return null;
+  return (
+    <KillCelebration
+      key={celebration.id}
+      count={celebration.count}
+      monthlyKRW={celebration.monthlyKRW}
+      onDone={dismiss}
+    />
+  );
+}
+
+/**
+ * 해지를 기록했을 때 잠깐 뜨는 축하 화면. 해지하는 곳(대시보드·계산서·내 구독·구독 상세·체크인)이 모두
+ * 같은 화면을 띄운다. 몇 개를 정리했고 매달 얼마를 아끼게 됐는지 보여주고, 잠시 뒤 저절로 닫힌다(누르면
+ * 바로 닫힌다). 아끼는 돈이 0원이면(무료 구독 등) 금액 줄을 쓰지 않는다. 이모지 대신 체크와 빨간 슬래시
+ * 조각으로 그린다.
+ */
+export function KillCelebration({
   count,
   monthlyKRW,
   onDone,
@@ -75,14 +95,16 @@ export function AppKillCelebration({
         </div>
         <div className={styles.text}>
           <p className="mt-5 text-xl font-black tracking-tight">{s.doneTitle(count)}</p>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {s.doneBefore}{" "}
-            {/* 본문과 같은 글꼴로 두고(고정폭 글꼴은 이 문장에서 혼자 튄다), 색과 크기로 금액을 띄운다. */}
-            <b className="text-lg font-black tracking-tight text-emerald-700 tabular-nums dark:text-emerald-400">
-              {formatKRW(monthlyKRW).replace(/^₩\s*/, "₩ ")}
-            </b>
-            {s.doneAfter}
-          </p>
+          {monthlyKRW > 0 && (
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {s.doneBefore}{" "}
+              {/* 본문과 같은 글꼴로 두고(고정폭 글꼴은 이 문장에서 혼자 튄다), 색과 크기로 금액을 띄운다. */}
+              <b className="text-lg font-black tracking-tight text-emerald-700 tabular-nums dark:text-emerald-400">
+                {formatKRW(monthlyKRW).replace(/^₩\s*/, "₩ ")}
+              </b>
+              {s.doneAfter}
+            </p>
+          )}
         </div>
       </div>
     </div>,
