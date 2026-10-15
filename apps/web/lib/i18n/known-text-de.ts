@@ -155,7 +155,6 @@ export const KNOWN_TEXT_DE: KnownTextRender[] = [
     "Das ist deine einzige Anmeldemethode und kann nicht getrennt werden. Leg zuerst ein Passwort an oder verknüpfe ein anderes Konto.",
   // Gmail 자동 가져오기
   () => "Diese Funktion ist noch nicht gestartet.",
-  () => "Diese Funktion wurde eingestellt.",
   () => "Der Verbindungsstatus konnte nicht gelesen werden.",
   () => "Es konnte kein Verbindungstoken erstellt werden.",
   () => "Die Gmail-Verbindung konnte nicht gestartet werden.",
@@ -174,14 +173,9 @@ export const KNOWN_TEXT_DE: KnownTextRender[] = [
   () => "Die gesendeten Nutzungsdaten konnten nicht gelesen werden.",
   () => "Die Nutzungsdaten konnten nicht gespeichert werden.",
   () => "Die Nutzungsdaten konnten nicht gelöscht werden.",
-  // 익명 통계
-  () => "Du musst dich anmelden, um an der Statistik teilzunehmen.",
-  () => "Die gesendete Zusammenfassung konnte nicht gelesen werden.",
-  () => "Kein Teilnahmeeintrag vorhanden.",
-  () => "Senden an die Statistik fehlgeschlagen.",
+  // 토큰·기록 지우기
   () => "Das Token fehlt.",
   () => "Der Eintrag konnte nicht gelöscht werden.",
-  () => "Die Statistik konnte nicht gelesen werden.",
   // 물어보기·도움말 AI
   () => "Diese Funktion ist noch nicht bereit.",
   () => "Gerade ist keine Antwort möglich.",
