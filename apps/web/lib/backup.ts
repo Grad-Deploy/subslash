@@ -5,6 +5,7 @@ import {
   isValueMetric,
   isFreeTierAnswer,
   parseDateOnly,
+  localDateKey,
 } from "@subslash/shared";
 import type { LinkedAccount, Subscription, UsageLog } from "@subslash/shared";
 // 스토어 모듈에서는 타입만 가져온다. 이 파일은 서버(계정에 저장한 기록의 검증)도
@@ -61,8 +62,7 @@ export function createBackup(data: BackupData, now: Date = new Date()): BackupFi
 
 /** "subslash-backup-2026-09-11.json". 날짜는 사용자가 있는 곳 기준이다. */
 export function backupFileName(now: Date = new Date()): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `subslash-backup-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.json`;
+  return `subslash-backup-${localDateKey(now)}.json`;
 }
 
 const CURRENCIES = ["KRW", "USD"];

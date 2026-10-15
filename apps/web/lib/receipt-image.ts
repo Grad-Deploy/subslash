@@ -1,4 +1,4 @@
-import { formatKRW, type Receipt } from "@subslash/shared";
+import { formatKRW, type Receipt, formatDotDate } from "@subslash/shared";
 import type { Messages } from "@lib/i18n/messages";
 import {
   describeReceiptLine,
@@ -125,13 +125,11 @@ async function renderClassic(receipt: Receipt, issuedAt: Date, t: Messages): Pro
     align: "center",
   });
   y += 20;
-  text(
-    v.issued(
-      receiptNumber(receipt.period),
-      `${issuedAt.getFullYear()}.${String(issuedAt.getMonth() + 1).padStart(2, "0")}.${String(issuedAt.getDate()).padStart(2, "0")}`,
-    ),
-    { size: 11, color: MUTED, align: "center" },
-  );
+  text(v.issued(receiptNumber(receipt.period), formatDotDate(issuedAt)), {
+    size: 11,
+    color: MUTED,
+    align: "center",
+  });
   dashed();
 
   // 줄

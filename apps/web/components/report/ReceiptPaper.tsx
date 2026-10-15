@@ -1,5 +1,5 @@
 import React from "react";
-import { formatKRW, type Receipt } from "@subslash/shared";
+import { formatKRW, type Receipt, formatDotDate } from "@subslash/shared";
 import { useT } from "@lib/i18n";
 import {
   describeReceiptLine,
@@ -20,7 +20,7 @@ export function ReceiptPaper({ receipt, issuedAt }: { receipt: Receipt; issuedAt
   const t = useT();
   const v = t.receiptView;
   const period = formatReceiptPeriodText(t, receipt.period);
-  const issued = `${issuedAt.getFullYear()}.${String(issuedAt.getMonth() + 1).padStart(2, "0")}.${String(issuedAt.getDate()).padStart(2, "0")}`;
+  const issued = formatDotDate(issuedAt);
 
   return (
     <article

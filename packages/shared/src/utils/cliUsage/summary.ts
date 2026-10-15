@@ -1,4 +1,4 @@
-import { DAY_MS } from "../date";
+import { DAY_MS, localDateKey } from "../date";
 import { apiCostUsd } from "../../constants/aiApiPrices";
 import type { CliSessionUsage, CliTokenRecord } from "./types";
 
@@ -36,11 +36,7 @@ export interface CliApiValue {
 /** 이 PC의 날짜(YYYY-MM-DD). 테스트는 시간대를 주입한다. */
 export type CliDayKey = (ms: number) => string;
 
-export const cliDayKey: CliDayKey = (ms) => {
-  const date = new Date(ms);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-};
+export const cliDayKey: CliDayKey = (ms) => localDateKey(new Date(ms));
 
 /**
  * 세션들을 최근 `windowDays`일로 요약한다. `subscriptionDefault`는 기록에 구독 여부가 없는 세션에 쓸 값이다
