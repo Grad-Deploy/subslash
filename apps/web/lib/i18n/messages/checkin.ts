@@ -1,4 +1,4 @@
-import { josa } from "../../ask/josa";
+import { withJosa } from "../josa";
 import { METRIC_SPECS, type ValueMetric } from "@subslash/shared";
 import type { Widen } from "../types";
 import { one } from "../english";
@@ -97,11 +97,11 @@ export const ko = {
     once: (name: string, amount: string) => `이번 달 ${name} 1회를 ${amount}에 이용하셨습니다.`,
     perUse: (name: string, cost: string) => `이번 달 ${name} 1회당 ${cost}을 지출하셨습니다.`,
     daysNone: (name: string, monthly: string) =>
-      `최근 30일 동안 ${name}${josa(name, "을", "를")} 하루도 안 썼어요. ${monthly}을 그냥 냈어요.`,
+      `최근 30일 동안 ${withJosa(name, "을", "를")} 하루도 안 썼어요. ${monthly}을 그냥 냈어요.`,
     daysSome: (name: string, cost: string) =>
-      `${name}${josa(name, "을", "를")} 쓴 날 하루에 ${cost}씩 냈어요.`,
+      `${withJosa(name, "을", "를")} 쓴 날 하루에 ${cost}씩 냈어요.`,
     hoursNone: (name: string, monthly: string) =>
-      `최근 30일 동안 ${name}${josa(name, "을", "를")} 안 썼어요. ${monthly}을 그냥 냈어요.`,
+      `최근 30일 동안 ${withJosa(name, "을", "를")} 안 썼어요. ${monthly}을 그냥 냈어요.`,
     hoursSome: (name: string, cost: string) => `${name} 한 시간에 ${cost}씩 냈어요.`,
     benefitOver: (monthly: string, benefit: string) =>
       `회비 ${monthly}보다 많은 ${benefit}을 혜택으로 돌려받았어요.`,

@@ -12,3 +12,8 @@ export function josa(word: string, withFinal: string, withoutFinal: string): str
   if (withoutFinal === "로" && final === 8) return "로";
   return final === 0 ? withoutFinal : withFinal;
 }
+
+/** 이름에 조사를 붙인 것(`withJosa("넷플릭스", "을", "를")` → "넷플릭스를"). */
+export function withJosa(word: string, withFinal: string, withoutFinal: string): string {
+  return `${word}${josa(word, withFinal, withoutFinal)}`;
+}
