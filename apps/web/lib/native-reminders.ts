@@ -23,7 +23,7 @@ const CHANNEL_ID = "billing";
 const TEST_NOTIFICATION_ID = 2_147_480_000;
 
 // 플러그인 객체가 아니라 모듈을 돌려준다. 플러그인은 프록시라 Promise의 결과가 되면 then을
-// 찾는 순간 실패한다(lib/session-token 참고).
+// 찾는 순간 실패한다(lib/preferences 참고).
 function pluginModule() {
   return import("@capacitor/local-notifications");
 }
