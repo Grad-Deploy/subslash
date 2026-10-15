@@ -1,4 +1,4 @@
-import { josa } from "../../ask/josa";
+import { withJosa } from "../josa";
 import type { Widen } from "../types";
 import { MONTHS_LONG } from "../english";
 
@@ -141,9 +141,9 @@ const ko0 = {
     unknownTitle: "해지 대신 요금제를 낮출 수도 있어요",
     unknownBody: (count: number) =>
       `이 서비스에는 요금제가 ${count}개 있어요. ‘정보 수정’에서 지금 쓰는 요금제를 고르면 더 싼 요금제와 비교해 드려요.`,
-    recorded: (plan: string) => `${plan}${josa(plan, "으로", "로")} 기록했어요`,
+    recorded: (plan: string) => `${withJosa(plan, "으로", "로")} 기록했어요`,
     recordedYearly: (plan: string) =>
-      `${plan}${josa(plan, "으로", "로")} 기록했어요. 결제 월을 ‘정보 수정’에서 적어 주세요.`,
+      `${withJosa(plan, "으로", "로")} 기록했어요. 결제 월을 ‘정보 수정’에서 적어 주세요.`,
     titleCompact: "해지 전에: 더 싼 방법",
     title: "해지 대신 할 수 있는 것",
     nowOn: (plan: string, cycle: string, amount: string, perUse: string | null) =>
@@ -156,7 +156,7 @@ const ko0 = {
       `${cycle} ${amount}${monthly ? ` (월 ${monthly}꼴)` : ""}${perUse ? ` · 1회 ${perUse}` : ""}`,
     saves: "1년에 덜 내요",
     confirm: (plan: string) =>
-      `서비스에서 ${plan}${josa(plan, "으로", "로")} 바꿨나요? 금액과 요금제를 이걸로 고쳐 둘게요.`,
+      `서비스에서 ${withJosa(plan, "으로", "로")} 바꿨나요? 금액과 요금제를 이걸로 고쳐 둘게요.`,
     confirmYes: "바꿨어요",
     switched: "이 요금제로 바꿨어요",
     footerBase: (taxExcluded: boolean) =>

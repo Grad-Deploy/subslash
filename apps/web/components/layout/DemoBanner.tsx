@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { DEMO_DURATION_MS, isDemoExpired, useStore } from "@lib/store";
 import { Button } from "../ui/button";
 import { useT } from "@lib/i18n";
+import { onPageVisible } from "@lib/page-visibility";
 
 /** 체험 시간이 지났는지 다시 보는 간격. */
 const CHECK_INTERVAL_MS = 30 * 1000;
@@ -28,10 +29,10 @@ export function DemoBanner() {
     endIfExpired();
     const timer = setInterval(endIfExpired, CHECK_INTERVAL_MS);
     // 잠든 탭에서는 타이머가 늦게 돈다. 돌아왔을 때 바로 한 번 더 본다.
-    document.addEventListener("visibilitychange", endIfExpired);
+    const stopVisible = onPageVisible(endIfExpired);
     return () => {
       clearInterval(timer);
-      document.removeEventListener("visibilitychange", endIfExpired);
+      stopVisible();
     };
   }, [demo, endDemo]);
 

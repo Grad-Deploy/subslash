@@ -24,8 +24,6 @@ import type { Messages } from "@lib/i18n/messages";
 import type { AskCall } from "./tools";
 import { compactName, expandAlias, isChosungOnly, isTypoOf, toChosung } from "./fuzzy";
 
-export { josa } from "./josa";
-
 /**
  * '리포트에 물어보기'의 답을 기기에서 만든다. AI가 고른 호출(`AskCall`)을 받아 이 기기의 기록으로 계산하고, 도구마다
  * 정해 둔 문장 틀(`messages/ask`)에 넣는다. AI는 이 함수에 들어오는 기록도, 나가는 숫자도 보지 않는다.
