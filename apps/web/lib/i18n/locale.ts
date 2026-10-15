@@ -1,13 +1,12 @@
 "use client";
 
-import { readLocal, removeLocal, writeLocal } from "@lib/local-storage";
+import { localChannel, readLocal, removeLocal, writeLocal } from "@lib/local-storage";
 import { useCallback, useSyncExternalStore } from "react";
 import { LOCALE_STORAGE_KEY, SERVER_LOCALE, isLocale, resolveLocale, type Locale } from "./config";
 
 export type { Locale } from "./config";
 
-/** 같은 탭 안에서 값이 바뀐 것을 알린다. storage 이벤트는 다른 탭에만 온다. */
-const CHANGE_EVENT = "subslash:locale";
+const channel = localChannel("subslash:locale", LOCALE_STORAGE_KEY);
 
 /** 저장소에 쓰지 못한 경우(사생활 보호 모드 등)에도 이 탭에서는 고른 언어를 쓴다. */
 let inMemory: Locale | null | undefined;
@@ -23,16 +22,11 @@ function deviceLanguages(): readonly string[] {
 }
 
 function subscribe(onChange: () => void) {
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === LOCALE_STORAGE_KEY) onChange();
-  };
-  window.addEventListener("storage", onStorage);
-  window.addEventListener(CHANGE_EVENT, onChange);
+  const stopLocal = channel.subscribe(onChange);
   // 고른 언어가 없으면 기기 언어를 따르므로, 기기 언어가 바뀌어도 다시 그린다.
   window.addEventListener("languagechange", onChange);
   return () => {
-    window.removeEventListener("storage", onStorage);
-    window.removeEventListener(CHANGE_EVENT, onChange);
+    stopLocal();
     window.removeEventListener("languagechange", onChange);
   };
 }
@@ -49,7 +43,7 @@ export function setLocalePreference(preference: LocalePreference) {
   inMemory = preference;
   if (preference) writeLocal(LOCALE_STORAGE_KEY, preference);
   else removeLocal(LOCALE_STORAGE_KEY);
-  window.dispatchEvent(new Event(CHANGE_EVENT));
+  channel.notify();
 }
 
 /** 지금 화면 언어. 하이드레이션 동안은 원문(SERVER_LOCALE)이고, 그 뒤 기기의 언어로 다시 그린다. */
