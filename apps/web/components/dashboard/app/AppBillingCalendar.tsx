@@ -105,21 +105,24 @@ export function AppNextBilling() {
       >
         <CalendarDays className="size-5 shrink-0 text-muted-foreground" aria-hidden />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-bold">
+          {/* 이름만 줄이고 D-day는 늘 보인다 — 한 칸에 넣고 줄였더니 긴 이름·긴 언어에서 D-day가 잘렸다. */}
+          <span className="flex min-w-0 items-baseline gap-1 text-sm font-bold">
             {next ? (
               <>
-                {c.next} · {names.sub(next.sub)}{" "}
+                <span className="min-w-0 truncate">
+                  {c.next} · {names.sub(next.sub)}
+                </span>
                 <span
                   className={cn(
                     next.days <= SOON_DAYS ? "text-destructive" : "text-muted-foreground",
-                    "font-black",
+                    "shrink-0 font-black",
                   )}
                 >
                   {formatDday(next.days)}
                 </span>
               </>
             ) : (
-              c.noKnownDate
+              <span className="min-w-0 truncate">{c.noKnownDate}</span>
             )}
           </span>
           <span className="block text-xs text-muted-foreground">
