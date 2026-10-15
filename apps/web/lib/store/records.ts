@@ -10,6 +10,7 @@ import {
   type SubscriptionFormData,
   type UsageLog,
   type ValueMetric,
+  localMonthKey,
 } from "@subslash/shared";
 import { apiValueRatio } from "../pc-usage";
 
@@ -118,7 +119,7 @@ export function buildCheckInLog(
     freeTier,
     ratio,
   );
-  const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const month = localMonthKey(now);
 
   const log: UsageLog = {
     id,

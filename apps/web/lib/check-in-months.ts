@@ -1,4 +1,4 @@
-import { metricOfLog, type UsageLog, type ValueMetric } from "@subslash/shared";
+import { metricOfLog, type UsageLog, type ValueMetric, localMonthKey } from "@subslash/shared";
 
 /** 한 달의 체크인 수량. 그 달에 체크인하지 않았으면 null이다 — 0(안 썼다)과 다르다. */
 export interface CheckInMonth {
@@ -11,10 +11,6 @@ export interface CheckInMonths {
   months: CheckInMonth[];
   /** 기간 안에서 지금 지표와 다른 기준으로 센 체크인 수. 단위가 달라 같은 축에 그리지 않는다. */
   otherMetric: number;
-}
-
-function monthKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 /**
@@ -31,7 +27,7 @@ export function checkInMonths(
 ): CheckInMonths {
   const keys: string[] = [];
   for (let i = count - 1; i >= 0; i--) {
-    keys.push(monthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+    keys.push(localMonthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
   }
   const inRange = new Set(keys);
   const latest = new Map<string, UsageLog>();

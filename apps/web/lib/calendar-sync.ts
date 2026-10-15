@@ -4,6 +4,7 @@ import {
   getNextBillingDateFor,
   type BillingCycle,
   type Currency,
+  localDateKey,
 } from "@subslash/shared";
 import { getDb } from "./db";
 import { calendarSyncPlans } from "./schema";
@@ -124,14 +125,6 @@ export function parseCalendarPlan(input: unknown): CalendarPlan | null {
   };
 }
 
-function toDateValue(date: Date): string {
-  return (
-    `${date.getFullYear()}-` +
-    `${String(date.getMonth() + 1).padStart(2, "0")}-` +
-    `${String(date.getDate()).padStart(2, "0")}`
-  );
-}
-
 /**
  * 계획을 캘린더 일정으로. 다음 결제일부터 반복한다.
  *
@@ -168,8 +161,8 @@ export function buildCalendarEvents(
         options.appUrl ? `${options.appUrl}${subscriptionDetailHref(entry.clientId)}` : null,
         plan.lang ?? "ko",
       ),
-      start: toDateValue(start),
-      end: toDateValue(end),
+      start: localDateKey(start),
+      end: localDateKey(end),
       rrule: billingRRule(entry),
       reminderMinutes: plan.reminderDays * 24 * 60,
     });

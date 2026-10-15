@@ -26,6 +26,7 @@ import {
   type ValueMetric,
   HOUR_MS,
   DAY_MS,
+  localMonthKey,
 } from "@subslash/shared";
 import { lastDays, type UsageHistory } from "./history";
 import { packagesFor } from "./packages";
@@ -47,8 +48,7 @@ export interface AutoCheckIn {
 }
 
 function monthOf(iso: string): string {
-  const date = new Date(iso);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  return localMonthKey(new Date(iso));
 }
 
 export function planAutoCheckIns(

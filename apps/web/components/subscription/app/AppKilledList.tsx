@@ -8,6 +8,7 @@ import {
   getMyAnnualAmountKRW,
   getMyMonthlyAmountKRW,
   type Subscription,
+  formatDotDate,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useStore } from "@lib/store";
@@ -25,9 +26,7 @@ function killedDate(sub: Subscription, unknown: string): string {
   if (!sub.killedAt) return unknown;
   const date = new Date(sub.killedAt);
   if (Number.isNaN(date.getTime())) return unknown;
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}.${m}.${d}`;
+  return formatDotDate(date);
 }
 
 /**

@@ -1,4 +1,4 @@
-import { DAY_MS } from "./date";
+import { DAY_MS, localDateKey } from "./date";
 import type { ReceiptEmail } from "./parser";
 import { isDomainOf, senderDomainOf } from "./parser";
 
@@ -41,19 +41,13 @@ export interface OrderCount {
   since: string;
 }
 
-function dayKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-    date.getDate(),
-  ).padStart(2, "0")}`;
-}
-
 /**
  * 받은 메일에서 멤버십마다 최근 30일 주문 메일 수. 한 통도 못 찾은 멤버십은 돌려주지 않는다 — 가져온
  * 메일에 없다는 것이지 주문하지 않았다는 뜻이 아니다(스크립트는 메일 수에 상한을 둔다).
  */
 export function countMembershipOrders(emails: readonly ReceiptEmail[], now: Date): OrderCount[] {
   const sinceMs = now.getTime() - WINDOW_DAYS * DAY_MS;
-  const since = dayKey(new Date(sinceMs));
+  const since = localDateKey(new Date(sinceMs));
   const result: OrderCount[] = [];
   for (const source of MEMBERSHIP_ORDER_SOURCES) {
     let count = 0;
