@@ -3,6 +3,7 @@ import {
   metricOfLog,
   type Subscription,
   type UsageLog,
+  DAY_MS,
 } from "@subslash/shared";
 
 /** 체크인이 이보다 오래됐으면 이용량을 모른다고 본다(일). 리포트의 1회 단가도 같은 기준을 쓴다. */
@@ -14,7 +15,7 @@ export function latestFreshLog(
   subscriptionId: string,
   now: Date = new Date(),
 ): UsageLog | null {
-  const freshAfter = now.getTime() - USAGE_FRESH_DAYS * 24 * 60 * 60 * 1000;
+  const freshAfter = now.getTime() - USAGE_FRESH_DAYS * DAY_MS;
   let latest: UsageLog | null = null;
   for (const log of usageLogs) {
     if (log.subscriptionId !== subscriptionId) continue;

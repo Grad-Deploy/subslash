@@ -1,7 +1,7 @@
 import { Currency, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { getBilledAmount } from "./currency";
-import { getDaysUntilBillingFor, getDaysUntilTrialEnd } from "./date";
+import { getDaysUntilBillingFor, getDaysUntilTrialEnd, DAY_MS } from "./date";
 import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
 import { getKillCheckStatus } from "./killCheck";
@@ -211,8 +211,6 @@ const VERB: Record<ActionKind, ActionVerb> = {
   "resubscribe-reminder": "review-resubscribe",
 };
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 /** 구독별 가장 최근 체크인. */
 function latestLogBySubscription(logs: UsageLog[]): Map<string, UsageLog> {
   const latest = new Map<string, UsageLog>();
@@ -228,7 +226,7 @@ function latestLogBySubscription(logs: UsageLog[]): Map<string, UsageLog> {
 function daysSince(iso: string, now: Date): number | null {
   const then = new Date(iso);
   if (Number.isNaN(then.getTime())) return null;
-  return Math.floor((now.getTime() - then.getTime()) / MS_PER_DAY);
+  return Math.floor((now.getTime() - then.getTime()) / DAY_MS);
 }
 
 /** 이번 결제에서 빠져나갈 내 몫. 연간 플랜은 한 번에 연 결제액이 나간다. */

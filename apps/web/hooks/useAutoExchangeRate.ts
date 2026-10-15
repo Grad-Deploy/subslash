@@ -1,5 +1,7 @@
 "use client";
 
+import { HOUR_MS } from "@subslash/shared";
+import { readLocal, writeLocal } from "@lib/local-storage";
 import { useEffect } from "react";
 import { apiUrl } from "@lib/api";
 import { isValidExchangeRate, realRecords, useStore } from "@lib/store";
@@ -16,23 +18,17 @@ import { isValidExchangeRate, realRecords, useStore } from "@lib/store";
  */
 
 /** 이만큼 지나지 않았으면 다시 묻지 않는다. 서버도 한 시간 동안 같은 값을 준다(app/api/fx). */
-const CHECK_INTERVAL_MS = 60 * 60 * 1000;
+const CHECK_INTERVAL_MS = HOUR_MS;
 const CHECKED_KEY = "subslash-fx-checked-at";
 
 let inFlight: Promise<boolean> | null = null;
 
 function readCheckedAt(): number {
-  try {
-    return Number(localStorage.getItem(CHECKED_KEY)) || 0;
-  } catch {
-    return 0;
-  }
+  return Number(readLocal(CHECKED_KEY)) || 0;
 }
 
 function writeCheckedAt(time: number) {
-  try {
-    localStorage.setItem(CHECKED_KEY, String(time));
-  } catch {}
+  writeLocal(CHECKED_KEY, String(time));
 }
 
 function wantsAutoRate(): boolean {

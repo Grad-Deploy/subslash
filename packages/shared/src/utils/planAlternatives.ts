@@ -1,3 +1,4 @@
+import { DAY_MS } from "./date";
 import type { BillingCycle, Currency, Subscription, UsageLog } from "../types";
 import {
   counterpartPlan,
@@ -26,8 +27,6 @@ import { getSharingCount } from "./sharing";
 
 /** 이만큼 지난 체크인으로는 1회 단가를 다시 계산하지 않는다(행동 큐의 STALE_CHECK_IN_DAYS와 같다). */
 const RECENT_USAGE_DAYS = 30;
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export interface PlanPrice {
   planId: string;
@@ -86,7 +85,7 @@ function recentUsesLog(
     // 1회 단가로 줄 세우므로 횟수 체크인만 본다. 시간·쓴 날과 섞으면 '1회'의 뜻이 달라진다.
     if ((log.metric ?? "uses") !== "uses") continue;
     const time = Date.parse(log.checkedAt);
-    if (Number.isNaN(time) || now.getTime() - time > RECENT_USAGE_DAYS * MS_PER_DAY) continue;
+    if (Number.isNaN(time) || now.getTime() - time > RECENT_USAGE_DAYS * DAY_MS) continue;
     if (!latest || time >= Date.parse(latest.checkedAt)) latest = log;
   }
   return latest;

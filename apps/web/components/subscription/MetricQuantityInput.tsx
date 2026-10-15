@@ -11,6 +11,7 @@ import {
   getMyMonthlyShareAmount,
   storagePlanFit,
   asksFreeTier,
+  DAY_MS,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
@@ -92,7 +93,7 @@ export function MetricQuantityInput({
   const openedAt = useMemo(() => new Date().getTime(), []);
   const evidence =
     subscription.orderEvidence &&
-    openedAt - Date.parse(subscription.orderEvidence.checkedAt) < 45 * 24 * 60 * 60 * 1000
+    openedAt - Date.parse(subscription.orderEvidence.checkedAt) < 45 * DAY_MS
       ? subscription.orderEvidence
       : null;
 

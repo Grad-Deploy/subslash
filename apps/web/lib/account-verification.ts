@@ -1,3 +1,4 @@
+import { DAY_MS } from "@subslash/shared";
 import { and, desc, eq, gt, isNull, lt, notExists } from "drizzle-orm";
 import { getDb } from "./db";
 import { accountSnapshots, accounts, sessions, verificationMailLog, type Account } from "./schema";
@@ -39,7 +40,6 @@ const VERIFY_ACCOUNT_TTL_SECONDS = VERIFY_ACCOUNT_TTL_DAYS * 24 * 60 * 60;
 export const RESEND_COOLDOWN_SECONDS = 60;
 /** 한 주소로 24시간 동안 보낼 수 있는 계정 메일 수(확인·재설정 합산). */
 export const DAILY_SEND_LIMIT = 5;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type SendOutcome =
   | { status: "sent" }

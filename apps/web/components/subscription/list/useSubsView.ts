@@ -1,3 +1,4 @@
+import { readLocal, writeLocal } from "@lib/local-storage";
 import { useState } from "react";
 
 export type SubsView = "cards" | "table";
@@ -14,19 +15,12 @@ const VIEW_KEY = "subslash-subs-view";
  */
 export function useSubsView(): [SubsView, (next: SubsView) => void] {
   const [view, setView] = useState<SubsView>(() => {
-    if (typeof window === "undefined") return "cards";
-    try {
-      return localStorage.getItem(VIEW_KEY) === "table" ? "table" : "cards";
-    } catch {
-      return "cards";
-    }
+    return readLocal(VIEW_KEY) === "table" ? "table" : "cards";
   });
 
   const changeView = (next: SubsView) => {
     setView(next);
-    try {
-      localStorage.setItem(VIEW_KEY, next);
-    } catch {}
+    writeLocal(VIEW_KEY, next);
   };
 
   return [view, changeView];

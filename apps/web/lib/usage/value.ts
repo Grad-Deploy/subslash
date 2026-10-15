@@ -10,6 +10,7 @@ import {
   type RiskLevel,
   type Subscription,
   type ValueMetric,
+  HOUR_MS,
 } from "@subslash/shared";
 import { lastDays, totalsFor, type UsageHistory, type UsageTotals } from "./history";
 import { packagesFor } from "./packages";
@@ -66,7 +67,7 @@ export interface SubUsage {
 }
 
 /** 이보다 적게 썼으면 시간당 금액을 내지 않는다. 한 시간으로 늘려 말하면 쓴 시간보다 큰 숫자가 된다. */
-export const MIN_HOURLY_MS = 3_600_000;
+export const MIN_HOURLY_MS = HOUR_MS;
 
 export function subUsage(
   sub: Subscription,
@@ -127,7 +128,7 @@ export function subUsage(
   }
   const periodCost = (monthlyKRW * totals.coveredDays) / 30;
   // 화면을 끄고 들은 재생도 넣는다(유튜브 뮤직·음악 앱). 재생 시간을 모르면 앞에 있던 시간만.
-  const hours = totals.usedMs / 3_600_000;
+  const hours = totals.usedMs / HOUR_MS;
   const opensPer30 = (totals.opens * 30) / totals.coveredDays;
   const perOpenKRW = opensPer30 > 0 ? monthlyKRW / opensPer30 : null;
   return {
@@ -252,7 +253,7 @@ export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {
     };
   }
   // 시간(음악·독서). 혜택·용량은 폰 기록으로 재지 않으므로 여기 오지 않는다 — 오면 시간으로 본다.
-  const have = totals.usedMs / 3_600_000;
+  const have = totals.usedMs / HOUR_MS;
   return {
     metric: "hours",
     unitKRW: usage.hourlyKRW,

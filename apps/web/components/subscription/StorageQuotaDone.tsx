@@ -1,5 +1,6 @@
 "use client";
 
+import { writeLocal } from "@lib/local-storage";
 import React, { useEffect, useState } from "react";
 import { useT } from "@lib/i18n";
 import { STORAGE_QUOTA_RESULT_KEY, parseStorageQuotaResult } from "@lib/storage-quota";
@@ -19,19 +20,14 @@ export function StorageQuotaDone() {
     const result = parseStorageQuotaResult(params);
     window.history.replaceState(null, "", window.location.pathname);
     let next: Status = "invalid";
-    if (result) {
-      try {
-        // 같은 값을 다시 써도 이벤트가 나게 받은 시각을 함께 둔다.
-        window.localStorage.setItem(
-          STORAGE_QUOTA_RESULT_KEY,
-          JSON.stringify({ ...result, at: Date.now() }),
-        );
-        next = "sent";
-        // 스크립트가 연 탭이면 닫힌다. 닫히지 않으면 안내가 남는다.
-        window.close();
-      } catch {
-        next = "invalid";
-      }
+    // 같은 값을 다시 써도 이벤트가 나게 받은 시각을 함께 둔다.
+    if (
+      result &&
+      writeLocal(STORAGE_QUOTA_RESULT_KEY, JSON.stringify({ ...result, at: Date.now() }))
+    ) {
+      next = "sent";
+      // 스크립트가 연 탭이면 닫힌다. 닫히지 않으면 안내가 남는다.
+      window.close();
     }
     // 주소의 값을 읽는 것은 화면을 그린 뒤에만 할 수 있다.
     // eslint-disable-next-line react-hooks/set-state-in-effect

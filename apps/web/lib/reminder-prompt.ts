@@ -1,3 +1,4 @@
+import { writeLocal } from "@lib/local-storage";
 import { IS_APP_BUILD } from "@lib/platform";
 import { ownerScopedKey, readOwnerScoped } from "@lib/owner-scoped";
 
@@ -19,7 +20,5 @@ export function shouldPromptReminder(remindersEnabled: boolean): boolean {
 }
 
 export function markReminderPrompted(): void {
-  try {
-    localStorage.setItem(ownerScopedKey(KEY), "1");
-  } catch {}
+  writeLocal(ownerScopedKey(KEY), "1");
 }

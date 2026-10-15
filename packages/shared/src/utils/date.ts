@@ -1,5 +1,9 @@
 import { BillingCycle } from "../types";
 
+/** 한 시간·하루의 밀리초. 파일마다 따로 적던 것을 여기 모았다. */
+export const HOUR_MS = 60 * 60 * 1000;
+export const DAY_MS = 24 * HOUR_MS;
+
 /** Everything needed to work out when a subscription is charged next. */
 export interface BillingSchedule {
   billingDay: number;
@@ -62,7 +66,7 @@ export function getDaysUntilBillingFor(
 ): number | null {
   const next = getNextBillingDateFor(schedule, now);
   if (!next) return null;
-  return Math.ceil((next.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.ceil((next.getTime() - now.getTime()) / DAY_MS);
 }
 
 /** True when a yearly plan is missing the month it is charged in. */
@@ -96,7 +100,7 @@ export function getNextBillingDate(billingDay: number, now: Date = new Date()): 
 export function getDaysUntilBilling(billingDay: number, now: Date = new Date()): number {
   const nextBillingDate = getNextBillingDate(billingDay, now);
   const diffTime = nextBillingDate.getTime() - now.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return Math.ceil(diffTime / DAY_MS);
 }
 
 export function formatDday(daysLeft: number): string {
@@ -109,9 +113,9 @@ export function formatCountdown(targetDate: Date, now: Date = new Date()): strin
   const diffTime = targetDate.getTime() - now.getTime();
   if (diffTime <= 0) return "D-Day 00:00:00";
 
-  const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
+  const days = Math.floor(diffTime / DAY_MS);
+  const hours = Math.floor((diffTime % DAY_MS) / HOUR_MS);
+  const minutes = Math.floor((diffTime % HOUR_MS) / (1000 * 60));
   const seconds = Math.floor((diffTime % (1000 * 60)) / 1000);
 
   const formatUnit = (unit: number) => unit.toString().padStart(2, "0");
@@ -138,5 +142,5 @@ export function getDaysUntilTrialEnd(
 ): number | null {
   if (!isInTrial(sub, now)) return null;
   const ends = new Date(`${sub.trialEndsAt}T00:00:00`);
-  return Math.round((ends.getTime() - startOfDay(now).getTime()) / (1000 * 60 * 60 * 24));
+  return Math.round((ends.getTime() - startOfDay(now).getTime()) / DAY_MS);
 }

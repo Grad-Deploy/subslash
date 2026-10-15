@@ -24,6 +24,8 @@ import {
   type Subscription,
   type UsageLog,
   type ValueMetric,
+  HOUR_MS,
+  DAY_MS,
 } from "@subslash/shared";
 import { lastDays, type UsageHistory } from "./history";
 import { packagesFor } from "./packages";
@@ -32,8 +34,8 @@ import { subUsage } from "./value";
 /** 자동 체크인에 필요한 기록 날 수. 체크인이 묻는 기간과 같다. */
 export const AUTO_CHECKIN_DAYS = 30;
 /** 같은 달의 자동 체크인을 다시 맞추는 최소 간격. */
-const REFRESH_GAP_MS = 20 * 60 * 60 * 1000;
-const MANUAL_FRESH_MS = AUTO_CHECKIN_DAYS * 24 * 60 * 60 * 1000;
+const REFRESH_GAP_MS = 20 * HOUR_MS;
+const MANUAL_FRESH_MS = AUTO_CHECKIN_DAYS * DAY_MS;
 
 export interface AutoCheckIn {
   subscriptionId: string;
@@ -119,7 +121,7 @@ export function phoneQuantity(
     case "days":
       return totals.activeDays;
     case "hours":
-      return totals.listenMs === null ? null : Math.floor(totals.listenMs / 3_600_000);
+      return totals.listenMs === null ? null : Math.floor(totals.listenMs / HOUR_MS);
     default:
       return null;
   }
@@ -137,5 +139,5 @@ export function measuredQuantity(
   metric: ValueMetric,
   totals: { activeDays: number; usedMs: number },
 ): number {
-  return metric === "days" ? totals.activeDays : Math.floor(totals.usedMs / 3_600_000);
+  return metric === "days" ? totals.activeDays : Math.floor(totals.usedMs / HOUR_MS);
 }

@@ -1,3 +1,4 @@
+import { DAY_MS } from "@subslash/shared";
 import { NextResponse } from "next/server";
 import { isAiAskOpen } from "@lib/privacy";
 import { logError } from "@lib/log";
@@ -23,7 +24,7 @@ import { MAX_ASK_QUESTION, isValidAskHistory, type AskTurn } from "./tools";
  * 한쪽에만 고친 순서(예: 캐시에서 답한 것을 횟수에 세는지)가 두 기능에서 다르게 동작한다.
  */
 const PER_IP_SHORT: RateLimitRule = { limit: 10, windowMs: 10 * 60 * 1000 };
-const PER_IP_DAY: RateLimitRule = { limit: 50, windowMs: 24 * 60 * 60 * 1000 };
+const PER_IP_DAY: RateLimitRule = { limit: 50, windowMs: DAY_MS };
 
 export async function readQuestion(request: Request): Promise<string | NextResponse> {
   const body = (await request.json().catch(() => null)) as { question?: unknown } | null;
@@ -79,7 +80,7 @@ export function limitAiRequest(request: Request, scope: string): NextResponse | 
   return null;
 }
 
-const CACHE_MS = 24 * 60 * 60 * 1000;
+const CACHE_MS = DAY_MS;
 const CACHE_MAX = 500;
 
 export interface AnswerCache<T> {
