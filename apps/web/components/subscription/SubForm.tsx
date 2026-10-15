@@ -27,7 +27,7 @@ import { AmountFields } from "./form/AmountFields";
 import { BillingFields } from "./form/BillingFields";
 import { AccountPaymentFields } from "./form/AccountPaymentFields";
 import { ServiceNameFields } from "./form/ServiceNameFields";
-import { SourceTextNote, sourceLang } from "@components/ui/source-text";
+import { KoreanPriceNote, SourceTextNote, sourceLang } from "@components/ui/source-text";
 
 /**
  * 구독 등록·수정 폼.
@@ -326,6 +326,10 @@ export function SubForm({
         </>
       )}
       {!isEdit && preset && <BundleNotes preset={preset} />}
+      {/* 요금제가 없는 서비스는 금액이 바로 채워지므로 여기서 알린다(요금제가 있으면 PlanPicker가 알린다). */}
+      {!isEdit && preset && plans.length === 0 && preset.defaultAmount !== null && (
+        <KoreanPriceNote />
+      )}
 
       <AmountFields idPrefix={fieldId} formData={formData} onChange={handleChange} />
 

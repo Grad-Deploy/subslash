@@ -75,6 +75,23 @@ test.describe("화면 언어 (E2E)", () => {
     await expect(page.getByText(/^Original \(Korean\), not translated/)).toBeVisible();
   });
 
+  // 서비스 목록의 요금은 한국에서 확인한 값이라 언어를 바꿔도 옮기지 않는다. 대신 그렇다고 밝힌다.
+  test("목록 요금은 한국에서 확인한 값이라고 적고, 한국어 화면에서는 적지 않는다", async ({
+    page,
+  }) => {
+    await page.goto("/subs");
+    const note = page.getByText("Prices are as checked for Korea.", { exact: false });
+    await expect(note.first()).toBeVisible({ timeout: 30_000 });
+
+    await page.goto("/settings");
+    await page.getByRole("radio", { name: "한국어" }).click();
+    await page.goto("/subs");
+    await expect(page.getByRole("heading", { level: 1, name: "구독 관리" })).toBeVisible();
+    await expect(page.getByText("요금은 한국에서 확인한 값이에요.", { exact: false })).toHaveCount(
+      0,
+    );
+  });
+
   test("하단 탭·푸터도 영어다", async ({ page, isMobile }) => {
     await page.goto("/settings");
     await expect(page.getByRole("link", { name: "Privacy policy" }).first()).toBeVisible();
