@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   ANONYMOUS_STATS_ENDED_ON,
   ANONYMOUS_STATS_STARTS_ON,
-  STATS_AGE_BAND_STARTS_ON,
   DEVICE_USAGE_STARTS_ON,
   GMAIL_AUTO_IMPORT_STARTS_ON,
   GMAIL_CHARGE_HISTORY_STARTS_ON,
@@ -31,7 +30,6 @@ export function PrivacyKo() {
           SubSlash는 구독 기록을 기본적으로 이 기기 안에만 저장합니다. 서버에 개인정보가 저장되는
           것은 로그인, 계정에 저장
           {GMAIL_AUTO_IMPORT_STARTS_ON && ", Gmail 자동 가져오기"}
-          {ANONYMOUS_STATS_STARTS_ON && !ANONYMOUS_STATS_ENDED_ON && ", 익명 구독 통계"}
           {DEVICE_USAGE_STARTS_ON && ", 여러 기기 사용 측정"}
           {SOCIAL_LOGIN_STARTS_ON && ", 구글·카카오·네이버로 로그인"}처럼 직접 고른 기능을 쓸
           때뿐입니다. 로그인하면 구독 기록이 계정에 자동으로 저장됩니다(기기마다 끌 수 있음). 아래에
@@ -109,46 +107,15 @@ export function PrivacyKo() {
             캘린더에 반복 일정으로 넣기.
           </Item>
         )}
-        {/*
-          익명 구독 통계도 저장 항목이 늘어나는 변경이라 시작일을 정하면 먼저 게시된다
-          (lib/privacy.ts의 ANONYMOUS_STATS_STARTS_ON). 비교 화면의 '무엇을 모으나요?'가 이 항목을 가리킨다.
-        */}
-        {ANONYMOUS_STATS_STARTS_ON && (
-          <div id="anonymous-stats">
-            <Item
-              title={
-                ANONYMOUS_STATS_ENDED_ON
-                  ? "익명 구독 통계 (종료)"
-                  : `익명 구독 통계 (선택, ${koreanDate(ANONYMOUS_STATS_STARTS_ON)}부터)`
-              }
-            >
-              {ANONYMOUS_STATS_ENDED_ON ? (
-                <>
-                  {koreanDate(ANONYMOUS_STATS_ENDED_ON)}에 그만뒀습니다. 리포트의 &lsquo;다른
-                  사용자와 비교&rsquo; 칸을 걷으면서, 보여 주지 않는 통계는 모으지 않기로 했습니다.
-                  그날부터 새 요약을 받지 않고, 그때까지 받은 요약(한 달 지출 합계·구독
-                  개수·서비스별 금액과 이용 횟수)은 하루에 한 번 도는 정리 작업이 모두
-                  지웁니다(늦어도 다음 날). 참여했던 기기는 SubSlash를 열 때 자기 기록을 지우고
-                  참여를 끕니다.
-                </>
-              ) : (
-                <>
-                  로그인한 상태에서 리포트의 &lsquo;익명으로 참여하기&rsquo;를 누른 기기만, 로그인한
-                  동안 한 달 구독 지출 합계(1,000원 단위)와 구독 개수, 그리고 서비스 목록에 있는
-                  서비스마다 서비스 종류·내 몫의 한 달 금액(100원 단위)·마지막 체크인의 이용 횟수를
-                  서버에 보냅니다. 구독 이름을 직접 적은 서비스, 메모, 결제일, 이메일, 계정은 보내지
-                  않습니다. 로그인은 보낼 때 확인만 하고, 기록을 로그인 계정·IP와 묶어 저장하지
-                  않습니다. 로그아웃하면 그 기기의 기록을 지웁니다. 기기는 기록을 고치고 지울 때
-                  쓰는 토큰을 갖고, 서버는 그 토큰의 되돌릴 수 없는 해시만 저장합니다. 비교는
-                  참여자가 충분할 때(전체 20명, 서비스마다 10명 이상)만 가운데 값으로 보여 주어 한
-                  사람의 값이 드러나지 않게 합니다. 목적: 다른 사용자와 구독 지출·이용 횟수 비교.
-                  {STATS_AGE_BAND_STARTS_ON &&
-                    ` ${koreanDate(STATS_AGE_BAND_STARTS_ON)}부터는 참여한 기기가 고른 연령대(10대·20대·30대·40대·50대·60대 이상, 나이는 받지 않음)를 함께 보내, 연령대마다 10명 이상 모였을 때 연령대별 한 달 구독 지출의 가운데 값을 보여 줍니다. 연령대는 고르지 않아도 참여할 수 있습니다.`}
-                </>
-              )}
-            </Item>
-          </div>
-        )}
+        <div id="anonymous-stats">
+          <Item title="익명 구독 통계 (종료)">
+            {koreanDate(ANONYMOUS_STATS_STARTS_ON)}부터 {koreanDate(ANONYMOUS_STATS_ENDED_ON)}까지
+            운영하고 그만뒀습니다. 리포트의 &lsquo;다른 사용자와 비교&rsquo; 칸을 걷으면서, 보여
+            주지 않는 통계는 모으지 않기로 했습니다. 그날부터 새 요약을 받지 않았고, 그때까지 받은
+            요약(한 달 지출 합계·구독 개수·서비스별 금액과 이용 횟수)은 저장하던 표째 서버에서
+            지웁니다. 참여했던 기기에 남은 토큰도 SubSlash를 열 때 지웁니다.
+          </Item>
+        </div>
         {/*
           여러 기기 사용 측정도 저장 항목이 늘어나는 변경이라 시작일을 정하면 먼저 게시된다
           (lib/privacy.ts의 DEVICE_USAGE_STARTS_ON, lib/device-usage).
@@ -242,13 +209,7 @@ export function PrivacyKo() {
               기기의 기록을, 회원 탈퇴하면 모든 기기의 기록을 곧바로 지웁니다.
             </li>
           )}
-          {ANONYMOUS_STATS_STARTS_ON && (
-            <li>
-              {ANONYMOUS_STATS_ENDED_ON
-                ? "익명 구독 통계: 그만둔 날 남은 기록을 모두 지웁니다(하루에 한 번 도는 정리 작업, 늦어도 다음 날)."
-                : "익명 구독 통계: 리포트에서 ‘그만두기’를 누르면 곧바로 지우고, 180일 동안 갱신되지 않은 기록은 자동으로 지웁니다."}
-            </li>
-          )}
+          <li>익명 구독 통계: 그만둔 뒤 남은 기록을 저장하던 표째 지웁니다.</li>
           {SOCIAL_LOGIN_STARTS_ON && (
             <li>
               구글·카카오·네이버로 로그인: 회원 번호의 해시는 회원 탈퇴하면 계정과 함께 곧바로
@@ -354,7 +315,6 @@ export function PrivacyKo() {
             끊기&rsquo;로 보낸 정보를 지우고 멈출 수 있습니다. 다만 거부하면 로그인, 계정에 저장,
             여러 기기 동기화
             {GMAIL_AUTO_IMPORT_STARTS_ON && ", Gmail 자동 가져오기, 구글 캘린더에 결제일 등록"}
-            {ANONYMOUS_STATS_STARTS_ON && !ANONYMOUS_STATS_ENDED_ON && ", 익명 구독 통계 참여"}
             {DEVICE_USAGE_STARTS_ON && ", 여러 기기 사용 측정"}
             {SOCIAL_LOGIN_STARTS_ON && ", 구글·카카오·네이버로 로그인"}은 쓸 수 없습니다.
           </p>

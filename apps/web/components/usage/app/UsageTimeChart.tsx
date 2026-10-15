@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Subscription } from "@subslash/shared";
 import { useT } from "@lib/i18n";
 import { useStore } from "@lib/store";
-import { latestFreshLogFor } from "@lib/stats";
+import { latestFreshLogFor } from "@lib/checkins";
 import { formatDurationText } from "@lib/i18n/duration";
 import { isCurrentMonth, monthDates, type UsageHistory } from "@lib/usage/history";
 import { usageChartBars, type ChartMode } from "@lib/usage/chart";

@@ -66,11 +66,32 @@ const RETIRED_NOTIFY_TABLES = [
   "notification_subscribers",
 ];
 
+/** 그만둔 익명 구독 통계의 표(0011·0015가 만들고 0018에서 지운다). */
+const RETIRED_STATS_TABLES = ["stats_contributors", "stats_items"];
+
+/** 표를 지우는 마이그레이션은 반대로, 표가 모두 없으면 적용된 것이다. */
+function droppedState(schema: Schema, tables: string[]): { state: State; detail: string } {
+  const left = tables.filter((t) => schema.tables.has(t));
+  if (left.length === 0) return { state: "applied", detail: `${tables.join(", ")} 없음` };
+  if (left.length < tables.length) {
+    return { state: "partial", detail: `${left.join(", ")}만 남음 — 직접 확인이 필요합니다` };
+  }
+  return { state: "missing", detail: `${left.join(", ")} 있음` };
+}
+
+/** 0018이 통계 표를 지웠으면 그 표를 만들던 마이그레이션(0011·0015)은 다시 적용하지 않는다. */
+function statsRetired(schema: Schema): { state: State; detail: string } | null {
+  return RETIRED_STATS_TABLES.every((t) => !schema.tables.has(t))
+    ? { state: "applied", detail: "통계 표 없음 — 0018에서 지웠으면 다시 적용하지 않습니다" }
+    : null;
+}
+
 const MIGRATIONS: Migration[] = [
   {
     id: "0011",
     file: "0011_anonymous_stats.sql",
-    check: (schema) => tablesState(schema, ["stats_contributors", "stats_items"], []),
+    check: (schema) =>
+      statsRetired(schema) ?? tablesState(schema, ["stats_contributors", "stats_items"], []),
   },
   {
     id: "0012",
@@ -109,6 +130,8 @@ const MIGRATIONS: Migration[] = [
     id: "0015",
     file: "0015_stats_age_band.sql",
     check: (schema) => {
+      const retired = statsRetired(schema);
+      if (retired) return retired;
       const sql = schema.tableSql.get("stats_contributors");
       if (sql === undefined) {
         return {
@@ -140,17 +163,12 @@ const MIGRATIONS: Migration[] = [
   {
     id: "0017",
     file: "0017_drop_retired_notify.sql",
-    // 표를 만드는 마이그레이션과 반대로, 세 표가 모두 없으면 적용된 것이다.
-    check: (schema) => {
-      const left = RETIRED_NOTIFY_TABLES.filter((t) => schema.tables.has(t));
-      if (left.length === 0) {
-        return { state: "applied", detail: `${RETIRED_NOTIFY_TABLES.join(", ")} 없음` };
-      }
-      if (left.length < RETIRED_NOTIFY_TABLES.length) {
-        return { state: "partial", detail: `${left.join(", ")}만 남음 — 직접 확인이 필요합니다` };
-      }
-      return { state: "missing", detail: `${left.join(", ")} 있음` };
-    },
+    check: (schema) => droppedState(schema, RETIRED_NOTIFY_TABLES),
+  },
+  {
+    id: "0018",
+    file: "0018_drop_anonymous_stats.sql",
+    check: (schema) => droppedState(schema, RETIRED_STATS_TABLES),
   },
 ];
 

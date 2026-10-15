@@ -16,7 +16,7 @@ import {
   type UsageLog,
 } from "@subslash/shared";
 import { buildValueRows } from "../../components/report/valueRows";
-import { latestFreshLog } from "@lib/stats";
+import { latestFreshLog } from "@lib/checkins";
 import { planName, serviceIdName, subscriptionName } from "@lib/service-name";
 import type { Locale } from "@lib/i18n/config";
 import { describeQuantityText } from "@lib/i18n/check-in-text";

@@ -273,7 +273,6 @@ const EN: [RegExp, KnownTextRender][] = [
 
   // Gmail 자동 가져오기(api/gmail, lib/gmail-auto-client)
   [/^아직 시작하지 않은 기능입니다\.$/, () => "This feature hasn't started yet."],
-  [/^그만둔 기능입니다\.$/, () => "This feature has been discontinued."],
   [/^연결 상태를 읽지 못했습니다\.$/, () => "Couldn't read the connection status."],
   [/^연결 토큰을 만들지 못했습니다\.$/, () => "Couldn't create a connection token."],
   [/^Gmail 연결을 시작하지 못했습니다\.$/, () => "Couldn't start connecting Gmail."],
@@ -301,17 +300,9 @@ const EN: [RegExp, KnownTextRender][] = [
   [/^사용 기록을 저장하지 못했습니다\.$/, () => "Couldn't save your usage."],
   [/^사용 기록을 지우지 못했습니다\.$/, () => "Couldn't delete your usage."],
 
-  // 익명 통계(api/stats, lib/stats-client)
-  [
-    /^로그인해야 통계에 참여할 수 있습니다\.$/,
-    () => "You need to be logged in to take part in the statistics.",
-  ],
-  [/^보낸 요약을 읽지 못했습니다\.$/, () => "Couldn't read the summary you sent."],
-  [/^참여 기록이 없습니다\.$/, () => "There's no participation record."],
-  [/^통계에 보내지 못했습니다\.$/, () => "Couldn't send to the statistics."],
+  // 토큰·기록 지우기
   [/^토큰이 없습니다\.$/, () => "The token is missing."],
   [/^기록을 지우지 못했습니다\.$/, () => "Couldn't delete the record."],
-  [/^통계를 읽지 못했습니다\.$/, () => "Couldn't read the statistics."],
 
   // 리포트에 물어보기·도움말 AI(api/ask, api/help-ask, lib/ask/guard)
   [/^아직 준비 중인 기능이에요\.$/, () => "This feature isn't ready yet."],

@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   ANONYMOUS_STATS_ENDED_ON,
   ANONYMOUS_STATS_STARTS_ON,
-  STATS_AGE_BAND_STARTS_ON,
   DEVICE_USAGE_STARTS_ON,
   GMAIL_AUTO_IMPORT_STARTS_ON,
   GMAIL_CHARGE_HISTORY_STARTS_ON,
@@ -31,9 +30,6 @@ export function PrivacyEn() {
           information is stored on our server only when you use a feature you choose, such as
           logging in, saving to your account
           {GMAIL_AUTO_IMPORT_STARTS_ON && ", Gmail auto import"}
-          {ANONYMOUS_STATS_STARTS_ON &&
-            !ANONYMOUS_STATS_ENDED_ON &&
-            ", anonymous subscription statistics"}
           {DEVICE_USAGE_STARTS_ON && ", multi-device usage measurement"}
           {SOCIAL_LOGIN_STARTS_ON && ", or logging in with Google, Kakao, or Naver"}. When you log
           in, your subscription records are saved to your account automatically (you can turn this
@@ -118,46 +114,18 @@ export function PrivacyEn() {
             calendar. Purpose: adding billing days to your Google Calendar as recurring events.
           </Item>
         )}
-        {ANONYMOUS_STATS_STARTS_ON && (
-          <div id="anonymous-stats">
-            <Item
-              title={
-                ANONYMOUS_STATS_ENDED_ON
-                  ? "Anonymous subscription statistics (discontinued)"
-                  : `Anonymous subscription statistics (optional, from ${englishDate(ANONYMOUS_STATS_STARTS_ON)})`
-              }
-            >
-              {ANONYMOUS_STATS_ENDED_ON ? (
-                <>
-                  Discontinued on {englishDate(ANONYMOUS_STATS_ENDED_ON)}. We removed the
-                  &lsquo;Compare with other users&rsquo; section from the report and decided not to
-                  collect statistics we don&rsquo;t show. From that day we no longer receive
-                  summaries, and the summaries received until then (monthly spending total, number
-                  of subscriptions, per-service amounts and usage counts) are all deleted by a
-                  cleanup that runs once a day (by the next day at the latest). Devices that
-                  participated delete their own record and stop participating when SubSlash opens.
-                </>
-              ) : (
-                <>
-                  Only devices that tapped &lsquo;Join anonymously&rsquo; in the report while logged
-                  in send to the server, while logged in, the monthly subscription spending total
-                  (in units of ₩1,000) and the number of subscriptions, plus, for each service on
-                  our service list, the service type, your share of the monthly amount (in units of
-                  ₩100), and the number of uses in your last check-in. Services whose name you typed
-                  yourself, notes, billing days, email, and account are not sent. Login is only
-                  checked when sending; records are not stored linked to your login account or IP.
-                  Logging out deletes that device&rsquo;s record. The device holds a token used to
-                  update and delete its record, and the server stores only an irreversible hash of
-                  that token. Comparisons are shown as median values only when there are enough
-                  participants (20 overall and 10 per service), so no single person&rsquo;s value is
-                  revealed. Purpose: comparing subscription spending and usage with other users.
-                  {STATS_AGE_BAND_STARTS_ON &&
-                    ` From ${englishDate(STATS_AGE_BAND_STARTS_ON)}, participating devices also send the age band they chose (teens, 20s, 30s, 40s, 50s, 60s and over; age itself is not collected), and once 10 or more people are in an age band we show the median monthly subscription spending for that band. You can participate without choosing an age band.`}
-                </>
-              )}
-            </Item>
-          </div>
-        )}
+        <div id="anonymous-stats">
+          <Item title="Anonymous subscription statistics (discontinued)">
+            We ran this from {englishDate(ANONYMOUS_STATS_STARTS_ON)} to{" "}
+            {englishDate(ANONYMOUS_STATS_ENDED_ON)} and then discontinued it. We removed the
+            &lsquo;Compare with other users&rsquo; section from the report and decided not to
+            collect statistics we don&rsquo;t show. From that day we no longer received summaries,
+            and the summaries received until then (monthly spending total, number of subscriptions,
+            per-service amounts and usage counts) are deleted from our server together with the
+            tables that stored them. The token left on participating devices is also deleted when
+            SubSlash opens.
+          </Item>
+        </div>
         {DEVICE_USAGE_STARTS_ON && (
           <div id="device-usage">
             <Item
@@ -268,13 +236,10 @@ export function PrivacyEn() {
               and deleting your account immediately deletes the records of all devices.
             </li>
           )}
-          {ANONYMOUS_STATS_STARTS_ON && (
-            <li>
-              {ANONYMOUS_STATS_ENDED_ON
-                ? "Anonymous subscription statistics: all remaining records are deleted on the day it was discontinued (by a cleanup that runs once a day, by the next day at the latest)."
-                : "Anonymous subscription statistics: deleted immediately when you tap ‘Stop’ in the report, and records not updated for 180 days are deleted automatically."}
-            </li>
-          )}
+          <li>
+            Anonymous subscription statistics: remaining records are deleted together with the
+            tables that stored them after it was discontinued.
+          </li>
           {SOCIAL_LOGIN_STARTS_ON && (
             <li>
               Login with Google, Kakao, or Naver: the member number hash is deleted immediately with
@@ -386,9 +351,6 @@ export function PrivacyEn() {
             multi-device sync
             {GMAIL_AUTO_IMPORT_STARTS_ON &&
               ", Gmail auto import, adding billing days to Google Calendar"}
-            {ANONYMOUS_STATS_STARTS_ON &&
-              !ANONYMOUS_STATS_ENDED_ON &&
-              ", joining anonymous subscription statistics"}
             {DEVICE_USAGE_STARTS_ON && ", multi-device usage measurement"}
             {SOCIAL_LOGIN_STARTS_ON && ", or logging in with Google, Kakao, or Naver"}.
           </p>

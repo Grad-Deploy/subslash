@@ -151,7 +151,6 @@ export const KNOWN_TEXT_VI: KnownTextRender[] = [
     "Đây là cách đăng nhập duy nhất nên không thể ngắt. Hãy tạo mật khẩu hoặc kết nối tài khoản khác trước.",
   // Gmail 자동 가져오기
   () => "Tính năng này chưa bắt đầu.",
-  () => "Tính năng này đã ngừng.",
   () => "Không đọc được trạng thái kết nối.",
   () => "Không tạo được mã kết nối.",
   () => "Không thể bắt đầu kết nối Gmail.",
@@ -170,14 +169,9 @@ export const KNOWN_TEXT_VI: KnownTextRender[] = [
   () => "Không đọc được dữ liệu sử dụng bạn đã gửi.",
   () => "Không lưu được dữ liệu sử dụng.",
   () => "Không xóa được dữ liệu sử dụng.",
-  // 익명 통계
-  () => "Bạn cần đăng nhập để tham gia thống kê.",
-  () => "Không đọc được bản tóm tắt bạn đã gửi.",
-  () => "Không có bản ghi tham gia.",
-  () => "Không gửi được đến thống kê.",
+  // 토큰·기록 지우기
   () => "Thiếu mã token.",
   () => "Không xóa được bản ghi.",
-  () => "Không đọc được thống kê.",
   // 물어보기·도움말 AI
   () => "Tính năng này chưa sẵn sàng.",
   () => "Hiện không thể trả lời.",
