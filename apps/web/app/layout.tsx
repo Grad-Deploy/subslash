@@ -6,6 +6,7 @@ import { DemoBanner } from "../components/layout/DemoBanner";
 import { GmailDiscoveryInbox } from "../components/gmail/GmailDiscoveryInbox";
 import { BottomNav } from "../components/layout/BottomNav";
 import { SiteChrome } from "../components/layout/SiteChrome";
+import { KillCelebrationHost } from "../components/subscription/KillCelebration";
 import { ThemeProvider } from "../components/layout/ThemeProvider";
 import { SiteFooter } from "../components/layout/SiteFooter";
 import { LocaleEffects } from "../components/layout/LocaleEffects";
@@ -112,6 +113,8 @@ export default function RootLayout({
             <SiteFooter />
             <BottomNav />
           </SiteChrome>
+          {/* 해지를 기록하면 어느 화면에서든 같은 축하 화면이 뜬다(lib/kill-celebration). */}
+          <KillCelebrationHost />
         </ThemeProvider>
       </body>
     </html>
