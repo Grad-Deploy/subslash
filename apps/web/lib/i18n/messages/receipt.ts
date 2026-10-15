@@ -58,6 +58,7 @@ export const ko = {
   series: {
     doneTitle: (count: number) => `구독 ${count}개를 정리했어요`,
     doneBefore: "매달",
+    // 금액 바로 뒤에 붙는다 — 띄어 쓰는 언어는 앞에 공백을 둔다(" a month").
     doneAfter: "을 아껴요",
     nextTitle: "다음 구독도 정리할까요?",
     nextHint: (remaining: number) =>
@@ -138,7 +139,7 @@ export const en: Widen<typeof ko> = {
   series: {
     doneTitle: (count) => `Tidied up ${count} ${one(count) ? "subscription" : "subscriptions"}`,
     doneBefore: "You save",
-    doneAfter: "a month",
+    doneAfter: " a month",
     nextTitle: "Tidy up the next one too?",
     nextHint: (remaining) =>
       `Fine to pause${remaining > 0 ? ` · ${remaining} more after this` : " · the last one"}`,
@@ -370,7 +371,7 @@ export const vi: Widen<typeof ko> = {
   series: {
     doneTitle: (count) => `Đã dọn ${count} gói`,
     doneBefore: "Bạn tiết kiệm",
-    doneAfter: "mỗi tháng",
+    doneAfter: " mỗi tháng",
     nextTitle: "Dọn tiếp gói sau nhé?",
     nextHint: (remaining) =>
       `Có thể tạm dừng${remaining > 0 ? ` · còn ${remaining} gói sau đó` : " · gói cuối cùng"}`,
@@ -454,7 +455,7 @@ export const fr: Widen<typeof ko> = {
   series: {
     doneTitle: (count) => `${count} abonnement${Number(count) === 1 ? " trié" : "s triés"}`,
     doneBefore: "Vous économisez",
-    doneAfter: "par mois",
+    doneAfter: " par mois",
     nextTitle: "On fait le tri du suivant aussi ?",
     nextHint: (remaining) =>
       `À mettre en pause${remaining > 0 ? ` · encore ${remaining} après` : " · le dernier"}`,
@@ -536,7 +537,7 @@ export const es: Widen<typeof ko> = {
     doneTitle: (count) =>
       `${count} suscripci${Number(count) === 1 ? "ón ordenada" : "ones ordenadas"}`,
     doneBefore: "Ahorras",
-    doneAfter: "al mes",
+    doneAfter: " al mes",
     nextTitle: "¿Ordenamos la siguiente también?",
     nextHint: (remaining) =>
       `Se puede pausar${remaining > 0 ? ` · quedan ${remaining} después` : " · la última"}`,
@@ -618,7 +619,7 @@ export const de: Widen<typeof ko> = {
   series: {
     doneTitle: (count) => `${count} ${Number(count) === 1 ? "Abo" : "Abos"} aufgeräumt`,
     doneBefore: "Du sparst",
-    doneAfter: "pro Monat",
+    doneAfter: " pro Monat",
     nextTitle: "Das nächste auch aufräumen?",
     nextHint: (remaining) =>
       `Kann pausieren${remaining > 0 ? ` · danach noch ${remaining}` : " · das letzte"}`,
@@ -700,7 +701,7 @@ export const pt: Widen<typeof ko> = {
     doneTitle: (count) =>
       `${count} assinatura${Number(count) === 1 ? " organizada" : "s organizadas"}`,
     doneBefore: "Você economiza",
-    doneAfter: "por mês",
+    doneAfter: " por mês",
     nextTitle: "Organizar a próxima também?",
     nextHint: (remaining) =>
       `Pode pausar${remaining > 0 ? ` · faltam ${remaining} depois desta` : " · a última"}`,
