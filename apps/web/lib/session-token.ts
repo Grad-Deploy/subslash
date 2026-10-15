@@ -10,17 +10,11 @@
  * 운영체제가 웹뷰 저장소를 비우면 어느 날 말없이 로그아웃된다.
  */
 import { IS_APP_BUILD } from "./platform";
+import { preferencesModule } from "./preferences";
 
 const KEY = "subslash-session-token";
 
 let loaded: Promise<string | null> | null = null;
-
-// 플러그인 객체(Preferences)를 Promise의 결과로 돌려주면 안 된다. Capacitor 플러그인은 없는
-// 메서드도 호출할 수 있는 척하는 프록시라, Promise가 then을 찾아 부르면 "Preferences.then() is
-// not implemented"로 실패한다. 모듈을 돌려주고 쓰는 곳에서 꺼낸다.
-function preferencesModule() {
-  return import("@capacitor/preferences");
-}
 
 /** 보관한 토큰. 처음 한 번만 기기 저장소에서 읽는다. */
 export function loadSessionToken(): Promise<string | null> {

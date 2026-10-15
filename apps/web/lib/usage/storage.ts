@@ -8,6 +8,7 @@
  */
 import { readLocal, writeLocal } from "@lib/local-storage";
 import { IS_APP_BUILD } from "../platform";
+import { preferencesModule } from "../preferences";
 
 export const HISTORY_KEY = "subslash-phone-usage";
 export const SNOOZE_KEY = "subslash-usage-snooze";
@@ -21,7 +22,7 @@ type PreferencesPlugin = typeof import("@capacitor/preferences").Preferences;
 async function preferences(): Promise<{ prefs: PreferencesPlugin } | null> {
   if (!IS_APP_BUILD) return null;
   try {
-    const { Preferences } = await import("@capacitor/preferences");
+    const { Preferences } = await preferencesModule();
     return { prefs: Preferences };
   } catch {
     return null;
