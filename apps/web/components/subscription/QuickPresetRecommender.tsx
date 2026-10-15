@@ -6,6 +6,7 @@ import { Subscription } from "@subslash/shared";
 import { useServiceNames, useT } from "@lib/i18n";
 import { describePresetPriceText } from "@lib/i18n/preset-price";
 import { ServiceLogo } from "./ServiceLogo";
+import { KoreanPriceNote } from "../ui/source-text";
 
 interface QuickPresetRecommenderProps {
   subscriptions: Subscription[];
@@ -61,6 +62,7 @@ export function QuickPresetRecommender({
         <div>
           <h3 className="font-bold text-sm sm:text-base flex items-center gap-1.5">{t.title}</h3>
           <p className="text-xs text-muted-foreground mt-0.5">{t.hint}</p>
+          <KoreanPriceNote className="mt-1" />
         </div>
       </div>
 

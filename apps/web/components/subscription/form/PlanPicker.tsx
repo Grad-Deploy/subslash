@@ -9,7 +9,7 @@ import {
 } from "@subslash/shared";
 import { useServiceNames, useT } from "@lib/i18n";
 import { FIELD_LABEL } from "./fieldLabel";
-import { SourceTextNote, sourceLang } from "@components/ui/source-text";
+import { KoreanPriceNote, SourceTextNote, sourceLang } from "@components/ui/source-text";
 
 /**
  * 요금제가 여럿인 서비스의 요금제 고르기. 등록할 때는 반드시 고르게 한다 — 하나를 미리 골라
@@ -74,6 +74,7 @@ export function PlanPicker({
           );
         })}
       </div>
+      <KoreanPriceNote />
       {preset.priceNote && (
         <>
           <p className="text-[11px] text-muted-foreground" lang={sourceLang(preset.priceNote)}>
