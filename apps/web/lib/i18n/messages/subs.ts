@@ -18,7 +18,7 @@ export const ko = {
     emptyActive: "구독 중인 서비스가 없어요",
     emptyActiveHint: "구독을 등록해 보세요.",
     emptyKilled: "아직 해지한 구독이 없어요",
-    emptyKilledHint: "‘지금 해지하기’로 기록하면 여기에 모여요.",
+    emptyKilledHint: "‘해지하기’로 기록하면 여기에 모여요.",
     killedSummary: (count: number, amount: string) =>
       `해지한 구독 ${count}개 · 해지를 유지하면 매달 ${amount}을 아껴요.`,
     addAria: "구독 추가",
@@ -151,7 +151,7 @@ export const en: Widen<typeof ko> = {
     emptyActive: "No active subscriptions",
     emptyActiveHint: "Try adding one.",
     emptyKilled: "No cancelled subscriptions yet",
-    emptyKilledHint: "Record one with “Cancel now” and it will show up here.",
+    emptyKilledHint: "Record one with “Cancel” and it will show up here.",
     killedSummary: (count, amount) =>
       `${count} cancelled · staying cancelled saves you ${amount} a month.`,
     addAria: "Add subscription",
@@ -283,7 +283,7 @@ export const zh: Widen<typeof ko> = {
     emptyActive: "没有订阅中的服务",
     emptyActiveHint: "试着添加一个吧。",
     emptyKilled: "还没有已退订的订阅",
-    emptyKilledHint: "用“立即退订”记录后会显示在这里。",
+    emptyKilledHint: "用“退订”记录后会显示在这里。",
     killedSummary: (count, amount) => `已退订 ${count} 个 · 保持退订每月可省 ${amount}。`,
     addAria: "添加订阅",
   },
@@ -401,7 +401,7 @@ export const ja: Widen<typeof ko> = {
     emptyActive: "契約中のサブスクはありません",
     emptyActiveHint: "追加してみましょう。",
     emptyKilled: "解約したサブスクはまだありません",
-    emptyKilledHint: "「今すぐ解約」で記録するとここに表示されます。",
+    emptyKilledHint: "「解約」で記録するとここに表示されます。",
     killedSummary: (count, amount) =>
       `${count} 件解約 · 解約したままなら毎月 ${amount} の節約です。`,
     addAria: "サブスクを追加",
@@ -523,7 +523,7 @@ export const vi: Widen<typeof ko> = {
     emptyActive: "Không có gói đang đăng ký",
     emptyActiveHint: "Hãy thử thêm một gói.",
     emptyKilled: "Chưa có gói nào đã hủy",
-    emptyKilledHint: "Ghi nhận bằng “Hủy ngay” thì gói sẽ hiện ở đây.",
+    emptyKilledHint: "Ghi nhận bằng “Hủy” thì gói sẽ hiện ở đây.",
     killedSummary: (count, amount) =>
       `Đã hủy ${count} gói · giữ nguyên giúp bạn tiết kiệm ${amount} mỗi tháng.`,
     addAria: "Thêm gói đăng ký",
@@ -646,7 +646,7 @@ export const fr: Widen<typeof ko> = {
     emptyActive: "Aucun abonnement actif",
     emptyActiveHint: "Essayez d'en ajouter un.",
     emptyKilled: "Aucun abonnement résilié pour l'instant",
-    emptyKilledHint: "Enregistrez-en un avec « Résilier maintenant » et il apparaîtra ici.",
+    emptyKilledHint: "Enregistrez-en un avec « Résilier » et il apparaîtra ici.",
     killedSummary: (count, amount) =>
       `${count} résilié${sbPl(count, "", "s")} · rester résilié vous fait économiser ${amount} par mois.`,
     addAria: "Ajouter un abonnement",
@@ -770,7 +770,7 @@ export const es: Widen<typeof ko> = {
     emptyActive: "No hay suscripciones activas",
     emptyActiveHint: "Prueba a añadir una.",
     emptyKilled: "Todavía no hay suscripciones canceladas",
-    emptyKilledHint: "Regístrala con «Cancelar ahora» y aparecerá aquí.",
+    emptyKilledHint: "Regístrala con «Cancelar» y aparecerá aquí.",
     killedSummary: (count, amount) =>
       `${count} cancelada${sbPl(count, "", "s")} · seguir sin ellas te ahorra ${amount} al mes.`,
     addAria: "Añadir suscripción",
@@ -894,7 +894,7 @@ export const de: Widen<typeof ko> = {
     emptyActive: "Keine aktiven Abos",
     emptyActiveHint: "Füg doch eines hinzu.",
     emptyKilled: "Noch keine gekündigten Abos",
-    emptyKilledHint: "Trag eines mit „Jetzt kündigen“ ein, dann erscheint es hier.",
+    emptyKilledHint: "Trag eines mit „Kündigen“ ein, dann erscheint es hier.",
     killedSummary: (count, amount) =>
       `${count} gekündigt · gekündigt zu bleiben spart dir ${amount} im Monat.`,
     addAria: "Abo hinzufügen",
@@ -1017,7 +1017,7 @@ export const pt: Widen<typeof ko> = {
     emptyActive: "Nenhuma assinatura ativa",
     emptyActiveHint: "Que tal adicionar uma?",
     emptyKilled: "Ainda não há assinaturas canceladas",
-    emptyKilledHint: "Registre com “Cancelar agora” e ela aparece aqui.",
+    emptyKilledHint: "Registre com “Cancelar” e ela aparece aqui.",
     killedSummary: (count, amount) =>
       `${count} cancelada${sbPl(count, "", "s")} · manter assim economiza ${amount} por mês.`,
     addAria: "Adicionar assinatura",
