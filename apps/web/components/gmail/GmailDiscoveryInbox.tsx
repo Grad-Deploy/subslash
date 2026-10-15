@@ -1,5 +1,6 @@
 "use client";
 
+import { onPageVisible } from "@lib/page-visibility";
 import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "@hooks/useAuth";
 import { realRecords, useStore } from "@lib/store";
@@ -122,19 +123,17 @@ export function GmailDiscoveryInbox() {
 
     // 화면으로 돌아올 때도 받는다 — 웹 탭을 열어 둔 채 2주 검사가 돌았거나, 앱을 켜 둔 채 다른 곳에서
     // 연결했을 수 있다. 자주 돌아오는 화면이라 1분 안에는 다시 묻지 않는다.
-    const onVisible = () => {
-      if (document.visibilityState !== "visible") return;
-      if (Date.now() - lastPulledAt.current < RECHECK_AFTER_MS) return;
-      void pull();
-    };
 
     void pull();
     // Gmail 연결 화면에서 돌아왔다는 신호는 바로 받는다. 앱은 이때 화면이 새로 열리지 않는다.
     const stopListening = onGmailDiscoveriesRequested(() => void pull());
-    document.addEventListener("visibilitychange", onVisible);
+    const stopVisible = onPageVisible(() => {
+      if (Date.now() - lastPulledAt.current < RECHECK_AFTER_MS) return;
+      void pull();
+    });
     return () => {
       stopListening();
-      document.removeEventListener("visibilitychange", onVisible);
+      stopVisible();
     };
   }, [
     accountId,
