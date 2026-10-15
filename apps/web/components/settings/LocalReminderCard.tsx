@@ -1,5 +1,6 @@
 "use client";
 
+import { onPageVisible } from "@lib/page-visibility";
 import React, { useEffect, useState } from "react";
 import { needsBillingMonth } from "@subslash/shared";
 import { realRecords, useStore } from "@lib/store";
@@ -36,13 +37,9 @@ export function LocalReminderCard({ onMessage }: LocalReminderCardProps) {
 
   // 설정에서 권한을 바꾸고 돌아올 수 있으므로 화면에 돌아올 때마다 다시 확인한다.
   useEffect(() => {
-    const refresh = () => {
-      if (document.visibilityState !== "visible") return;
-      void checkReminderPermission().then(setPermission);
-    };
+    const refresh = () => void checkReminderPermission().then(setPermission);
     refresh();
-    document.addEventListener("visibilitychange", refresh);
-    return () => document.removeEventListener("visibilitychange", refresh);
+    return onPageVisible(refresh);
   }, []);
 
   const on = settings.enabled && permission === "granted";

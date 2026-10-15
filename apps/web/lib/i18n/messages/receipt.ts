@@ -1,3 +1,4 @@
+import { josa } from "../../ask/josa";
 import type { Widen } from "../types";
 import { monthLong, one } from "../english";
 import { monthName } from "../months";
@@ -17,7 +18,7 @@ export const ko = {
     unusedThisMonth: "이번 달 미사용 · 쉬어가기 추천",
     diet: (checkIn: string) => `${checkIn} · 지출 다이어트 추천`,
     suggestOne: (name: string, item: string, amount: string) =>
-      `이번 달 ${name}을(를) 잠시 쉬어가면 ${item} 값(${amount})을 아낄 수 있어요.`,
+      `이번 달 ${name}${josa(name, "을", "를")} 잠시 쉬어가면 ${item} 값(${amount})을 아낄 수 있어요.`,
     suggestMany: (item: string, amount: string) =>
       `자주 쓰지 않는 구독을 정리하면 매달 ${item} 값(${amount})을 내 지갑에 세이브할 수 있어요.`,
   },
@@ -72,7 +73,7 @@ export const ko = {
     priceUpdated: (name: string, amount: string) => `${name} 요금을 ${amount}으로 바꿨어요.`,
     priceConfirmed: (name: string) => `${name} 요금 확인 완료`,
     killVerified: (name: string) => `${name} 결제 멈춤 확인`,
-    stillSubscribed: (name: string) => `${name}은(는) 구독 중으로 둘게요`,
+    stillSubscribed: (name: string) => `${name}${josa(name, "은", "는")} 구독 중으로 둘게요`,
     revived: (name: string) => `${name} 구독 중으로 되돌림`,
     chargedTitle: "해지가 안 됐을 수 있어요",
     chargedBody:

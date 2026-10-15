@@ -1,5 +1,6 @@
 "use client";
 
+import { onPageVisible } from "@lib/page-visibility";
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@hooks/useAuth";
@@ -104,15 +105,12 @@ export function DeviceUsageCard({ onMessage }: { onMessage: (message: string) =>
   // 설정 화면에서 돌아오면 허용했는지 다시 본다. 켜려던 중이었으면 이어서 켠다.
   useEffect(() => {
     if (!canMeasure) return;
-    const onVisible = () => {
-      if (document.visibilityState !== "visible") return;
+    return onPageVisible(() => {
       void hasUsageAccess().then((granted) => {
         setAccess(granted);
         if (granted && waitingForAccess) void turnOn();
       });
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
+    });
   }, [canMeasure, waitingForAccess, turnOn]);
 
   const turnOff = async () => {
