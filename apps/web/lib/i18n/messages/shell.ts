@@ -64,6 +64,8 @@ export const ko = {
     copyFallback: "자동으로 복사하지 못했습니다. 아래 글을 길게 눌러 복사해주세요.",
     /** 번역하지 않은 원문 옆의 표시. 원문 언어 화면에서는 보이지 않는다(SourceTextNote). */
     sourceText: "원문",
+    /** 한국어가 아닌 화면에서 서비스 목록 요금 옆의 표시(KoreanPriceNote). 목록 요금은 한국에서 확인한 값이라 언어를 바꿔도 옮기지 않는다. */
+    koreanPrice: "요금은 한국에서 확인한 값이에요. 다르게 낸다면 실제로 내는 금액을 적어 주세요.",
   },
   app: {
     sheetClose: "닫기",
@@ -131,6 +133,8 @@ export const en: Widen<typeof ko> = {
     copyFallback: "Couldn't copy automatically. Press and hold the text below to copy it.",
     sourceText:
       "Original (Korean), not translated: we keep it exactly as we checked it on the service.",
+    koreanPrice:
+      "Prices are as checked for Korea. If you pay a different amount, enter what you actually pay.",
   },
   app: {
     sheetClose: "Close",
@@ -197,6 +201,7 @@ export const zh: Widen<typeof ko> = {
     loading: "加载中",
     copyFallback: "无法自动复制。请长按下面的文字进行复制。",
     sourceText: "原文（韩语），未翻译：我们保留了在服务上确认过的原样内容。",
+    koreanPrice: "价格为在韩国确认的金额。如果你支付的金额不同，请填写实际支付的金额。",
   },
   app: { sheetClose: "关闭", exitHint: "再按一次返回键退出应用" },
 };
@@ -260,6 +265,8 @@ export const ja: Widen<typeof ko> = {
     loading: "読み込み中",
     copyFallback: "自動でコピーできませんでした。下の文章を長押ししてコピーしてください。",
     sourceText: "原文（韓国語）・未翻訳: サービスで確認したとおりの内容をそのまま載せています。",
+    koreanPrice:
+      "料金は韓国で確認した金額です。支払い額が違う場合は、実際に支払っている金額を入力してください。",
   },
   app: { sheetClose: "閉じる", exitHint: "もう一度戻るを押すとアプリを終了します" },
 };
@@ -324,6 +331,8 @@ export const vi: Widen<typeof ko> = {
     copyFallback: "Không thể tự động sao chép. Hãy nhấn giữ đoạn văn bên dưới để sao chép.",
     sourceText:
       "Bản gốc (tiếng Hàn), chưa dịch: chúng tôi giữ nguyên nội dung đã kiểm tra trên dịch vụ.",
+    koreanPrice:
+      "Giá là mức đã kiểm tra tại Hàn Quốc. Nếu bạn trả số tiền khác, hãy nhập số tiền bạn thực sự trả.",
   },
   app: { sheetClose: "Đóng", exitHint: "Nhấn quay lại lần nữa để thoát ứng dụng" },
 };
@@ -390,6 +399,8 @@ export const fr: Widen<typeof ko> = {
       "Impossible de copier automatiquement. Appuyez longuement sur le texte ci-dessous pour le copier.",
     sourceText:
       "Texte original (coréen), non traduit : nous le gardons tel que nous l'avons vérifié sur le service.",
+    koreanPrice:
+      "Les prix sont ceux vérifiés pour la Corée. Si vous payez un autre montant, saisissez ce que vous payez réellement.",
   },
   app: {
     sheetClose: "Fermer",
@@ -458,6 +469,8 @@ export const es: Widen<typeof ko> = {
       "No se pudo copiar automáticamente. Mantén pulsado el texto de abajo para copiarlo.",
     sourceText:
       "Texto original (coreano), sin traducir: lo mantenemos tal como lo comprobamos en el servicio.",
+    koreanPrice:
+      "Los precios son los comprobados para Corea. Si pagas otro importe, introduce lo que pagas realmente.",
   },
   app: { sheetClose: "Cerrar", exitHint: "Pulsa atrás otra vez para salir de la app" },
 };
@@ -524,6 +537,8 @@ export const de: Widen<typeof ko> = {
       "Automatisches Kopieren fehlgeschlagen. Halte den Text unten gedrückt, um ihn zu kopieren.",
     sourceText:
       "Original (Koreanisch), nicht übersetzt: Wir übernehmen es genau so, wie wir es beim Dienst geprüft haben.",
+    koreanPrice:
+      "Die Preise wurden für Korea geprüft. Wenn du einen anderen Betrag zahlst, gib ein, was du tatsächlich zahlst.",
   },
   app: { sheetClose: "Schließen", exitHint: "Noch einmal Zurück drücken, um die App zu beenden" },
 };
@@ -589,6 +604,8 @@ export const pt: Widen<typeof ko> = {
       "Não foi possível copiar automaticamente. Toque e segure o texto abaixo para copiar.",
     sourceText:
       "Texto original (coreano), sem tradução: mantemos exatamente como conferimos no serviço.",
+    koreanPrice:
+      "Os preços são os conferidos para a Coreia. Se você paga outro valor, informe o que paga de fato.",
   },
   app: { sheetClose: "Fechar", exitHint: "Toque em voltar de novo para sair do app" },
 };

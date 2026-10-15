@@ -6,6 +6,7 @@ import { describePresetPriceText } from "@lib/i18n/preset-price";
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
 import { ServiceLogo } from "../ServiceLogo";
+import { KoreanPriceNote } from "../../ui/source-text";
 
 /** 서비스 고르기 탭의 순서. 목록에 서비스가 하나도 없는 분류는 탭을 만들지 않는다. */
 const PICK_CATEGORY_ORDER: SubscriptionCategory[] = [
@@ -110,6 +111,8 @@ export function ServicePicker({
           );
         })}
       </div>
+
+      <KoreanPriceNote />
 
       {matches.length > 0 ? (
         <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1">
