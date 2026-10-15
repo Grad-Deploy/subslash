@@ -1,5 +1,6 @@
 "use client";
 
+import { onPageVisible } from "@lib/page-visibility";
 import React from "react";
 import {
   Subscription,
@@ -51,18 +52,13 @@ export function CancelGuideModal({
   const [cameBackFor, setCameBackFor] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    const onReturn = () => {
-      if (document.visibilityState === "visible" && leftFor.current) {
-        setCameBackFor(leftFor.current);
-      }
-    };
-    document.addEventListener("visibilitychange", onReturn);
     // Capacitor는 앱이 앞으로 돌아올 때 document에 'resume'도 보낸다.
-    document.addEventListener("resume", onReturn);
-    return () => {
-      document.removeEventListener("visibilitychange", onReturn);
-      document.removeEventListener("resume", onReturn);
-    };
+    return onPageVisible(
+      () => {
+        if (leftFor.current) setCameBackFor(leftFor.current);
+      },
+      { resume: true },
+    );
   }, []);
 
   if (!subscription) return null;
