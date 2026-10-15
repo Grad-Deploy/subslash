@@ -15,6 +15,7 @@ import {
   getSavingsEquivalents,
   getSavingsTiers,
   sumMyMonthlyKRW,
+  DAY_MS,
 } from "@subslash/shared";
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
@@ -31,7 +32,6 @@ import { AppIncomeRate } from "./AppIncomeRate";
 import { useT, useServiceNames } from "@lib/i18n";
 import { rewardHeadline } from "@lib/i18n/savings-text";
 
-const DAY = 24 * 60 * 60 * 1000;
 /** 목록이 이보다 길면 앞의 몇 개만 보이고 '더 보기'로 펼친다. */
 const LIST_LIMIT = 5;
 
@@ -295,7 +295,7 @@ export function AppSavings() {
               </div>
               <ul className="mt-1.5">
                 {upcoming.slice(0, 4).map(({ sub, date }) => {
-                  const days = Math.ceil((date.getTime() - now.getTime()) / DAY);
+                  const days = Math.ceil((date.getTime() - now.getTime()) / DAY_MS);
                   return (
                     <li
                       key={sub.id}

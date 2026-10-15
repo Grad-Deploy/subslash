@@ -6,6 +6,7 @@ import {
   toKRW,
   type CliServiceId,
   type Subscription,
+  DAY_MS,
 } from "@subslash/shared";
 import { intlLocale, type Locale } from "./i18n/config";
 
@@ -58,9 +59,8 @@ export function parsePcUsageHash(hash: string, now: Date = new Date()): PcUsageP
   if (!/^\d{4}-\d{2}-\d{2}$/.test(until)) return { ok: false, reason: "invalid" };
   const untilMs = Date.parse(`${until}T00:00:00`);
   if (!Number.isFinite(untilMs)) return { ok: false, reason: "invalid" };
-  const dayMs = 24 * 60 * 60 * 1000;
   // PC와 이 기기의 날짜가 하루 어긋날 수 있다(시간대). 그보다 미래면 틀린 링크다.
-  if (untilMs > now.getTime() + dayMs) return { ok: false, reason: "invalid" };
+  if (untilMs > now.getTime() + DAY_MS) return { ok: false, reason: "invalid" };
 
   const entries: PcUsageLink["entries"] = [];
   for (const part of (params.get("pc") ?? "").split(",")) {
@@ -87,7 +87,7 @@ export function parsePcUsageHash(hash: string, now: Date = new Date()): PcUsageP
   }
   if (entries.length === 0) return { ok: false, reason: "invalid" };
 
-  if (now.getTime() - untilMs > PC_USAGE_STALE_DAYS * dayMs) return { ok: false, reason: "stale" };
+  if (now.getTime() - untilMs > PC_USAGE_STALE_DAYS * DAY_MS) return { ok: false, reason: "stale" };
   return { ok: true, link: { entries, windowDays, until } };
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { readLocal, writeLocal } from "@lib/local-storage";
 import { useCallback, useSyncExternalStore } from "react";
 
 /** 같은 탭 안에서 값이 바뀐 것을 알린다. storage 이벤트는 다른 탭에만 온다. */
@@ -10,11 +11,7 @@ const setInMemory = new Set<string>();
 
 function read(key: string): boolean {
   if (setInMemory.has(key)) return true;
-  try {
-    return localStorage.getItem(key) === "true";
-  } catch {
-    return false;
-  }
+  return readLocal(key) === "true";
 }
 
 /**
@@ -47,9 +44,7 @@ export function useStoredFlag(key: string, serverValue: boolean): [boolean, () =
 
   const turnOn = useCallback(() => {
     setInMemory.add(key);
-    try {
-      localStorage.setItem(key, "true");
-    } catch {}
+    writeLocal(key, "true");
     window.dispatchEvent(new Event(CHANGE_EVENT));
   }, [key]);
 

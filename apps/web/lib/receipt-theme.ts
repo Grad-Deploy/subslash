@@ -1,5 +1,6 @@
 "use client";
 
+import { readLocal, writeLocal } from "@lib/local-storage";
 import { useCallback, useSyncExternalStore } from "react";
 
 /**
@@ -19,12 +20,8 @@ export function isReceiptTheme(value: unknown): value is ReceiptTheme {
 
 function read(): ReceiptTheme {
   if (inMemory) return inMemory;
-  try {
-    const saved = localStorage.getItem(KEY);
-    return isReceiptTheme(saved) ? saved : "classic";
-  } catch {
-    return "classic";
-  }
+  const saved = readLocal(KEY);
+  return isReceiptTheme(saved) ? saved : "classic";
 }
 
 function subscribe(onChange: () => void): () => void {
@@ -41,11 +38,8 @@ export function useReceiptTheme(): [ReceiptTheme, (theme: ReceiptTheme) => void]
   const theme = useSyncExternalStore(subscribe, read, () => "classic" as const);
   const choose = useCallback((next: ReceiptTheme) => {
     inMemory = next;
-    try {
-      localStorage.setItem(KEY, next);
-    } catch {
-      // 남기지 못해도 이번에 고른 것으로 그린다.
-    }
+    // 남기지 못해도 이번에 고른 것으로 그린다.
+    writeLocal(KEY, next);
     window.dispatchEvent(new Event(CHANGE_EVENT));
   }, []);
   return [theme, choose];

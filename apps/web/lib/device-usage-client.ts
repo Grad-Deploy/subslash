@@ -1,3 +1,4 @@
+import { DAY_MS } from "@subslash/shared";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { apiFetch, readApiError } from "./api";
@@ -99,8 +100,6 @@ export async function hasUsageAccess(): Promise<boolean> {
 export async function openUsageAccessSettings(): Promise<void> {
   if (!(await openUsageSettings())) throw new Error("사용 정보 접근 설정을 열지 못했습니다.");
 }
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * 앱을 지웠다 다시 설치해도 같은 이 기기의 키. 기기 식별값을 그대로 보내지 않고 계정과 섞은 SHA-256만

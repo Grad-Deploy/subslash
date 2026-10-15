@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { validateSignup } from "@subslash/shared";
+import { validateSignup, HOUR_MS } from "@subslash/shared";
 import { databaseUnavailableResponse, getDb } from "@lib/db";
 import { accounts } from "@lib/schema";
 import { hashPassword } from "@lib/password";
@@ -40,7 +40,7 @@ import {
  * 않으면 남의 주소를 대량으로 넣어 누가 SubSlash를 쓰는지 알아낼 수 있다(구독 관리 앱을 쓴다는
  * 것 자체가 개인정보다). 사람이 가입하다 틀리는 횟수로는 닿지 않는 값이다.
  */
-const ATTEMPTS_PER_IP: RateLimitRule = { limit: 20, windowMs: 60 * 60 * 1000 };
+const ATTEMPTS_PER_IP: RateLimitRule = { limit: 20, windowMs: HOUR_MS };
 
 export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();

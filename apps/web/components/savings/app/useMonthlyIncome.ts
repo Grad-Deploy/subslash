@@ -1,5 +1,6 @@
 "use client";
 
+import { readLocal, removeLocal, writeLocal } from "@lib/local-storage";
 import { useCallback, useSyncExternalStore } from "react";
 
 /**
@@ -11,12 +12,8 @@ const KEY = "subslash-monthly-income";
 const EVENT = "subslash:monthly-income";
 
 function read(): number | null {
-  try {
-    const value = Number(localStorage.getItem(KEY));
-    return Number.isFinite(value) && value > 0 ? Math.floor(value) : null;
-  } catch {
-    return null;
-  }
+  const value = Number(readLocal(KEY));
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : null;
 }
 
 function subscribe(onChange: () => void) {
@@ -31,10 +28,8 @@ function subscribe(onChange: () => void) {
 export function useMonthlyIncome() {
   const income = useSyncExternalStore(subscribe, read, () => null);
   const setIncome = useCallback((next: number | null) => {
-    try {
-      if (next && next > 0) localStorage.setItem(KEY, String(Math.floor(next)));
-      else localStorage.removeItem(KEY);
-    } catch {}
+    if (next && next > 0) writeLocal(KEY, String(Math.floor(next)));
+    else removeLocal(KEY);
     window.dispatchEvent(new Event(EVENT));
   }, []);
   return [income, setIncome] as const;

@@ -1,3 +1,4 @@
+import { HOUR_MS } from "@subslash/shared";
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
@@ -23,7 +24,7 @@ import { logError } from "@lib/log";
  */
 
 /** 기기는 앱을 열 때·하루 몇 번 올린다. 한 계정에 기기가 여럿이어도 넉넉한 값이다. */
-const UPLOADS_PER_ACCOUNT: RateLimitRule = { limit: 60, windowMs: 60 * 60 * 1000 };
+const UPLOADS_PER_ACCOUNT: RateLimitRule = { limit: 60, windowMs: HOUR_MS };
 
 const CLOSED = () =>
   NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });

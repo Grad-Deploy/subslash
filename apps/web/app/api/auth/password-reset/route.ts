@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeEmailAddress, validateEmail } from "@subslash/shared";
+import { normalizeEmailAddress, validateEmail, HOUR_MS } from "@subslash/shared";
 import { databaseUnavailableResponse } from "@lib/db";
 import { findAccountByEmail } from "@lib/account-verification";
 import { describeResetOutcome, sendPasswordReset } from "@lib/password-reset";
@@ -24,7 +24,7 @@ import {
  * 기다리게 된다. 대신 가입 폼과 같이 IP당 횟수를 제한해, 남의 주소를 대량으로 넣어 가입 여부를
  * 알아내는 것을 막는다.
  */
-const LOOKUPS_PER_IP: RateLimitRule = { limit: 20, windowMs: 60 * 60 * 1000 };
+const LOOKUPS_PER_IP: RateLimitRule = { limit: 20, windowMs: HOUR_MS };
 
 export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();

@@ -1,5 +1,5 @@
 import { and, eq, gte, inArray, lt } from "drizzle-orm";
-import { summarizeUsage, type UsageWindowSummary } from "@subslash/shared";
+import { summarizeUsage, type UsageWindowSummary, DAY_MS } from "@subslash/shared";
 import { getDb } from "./db";
 import { usageDevices, usageIntervals } from "./schema";
 import { USAGE_RETENTION_DAYS, type UsageUpload } from "./device-usage";
@@ -8,8 +8,6 @@ import { USAGE_RETENTION_DAYS, type UsageUpload } from "./device-usage";
  * 기기 간 사용 측정의 서버 쪽. 기기는 자기 구간만 올리고(기기마다 따로라 서로 충돌하지 않는다),
  * 읽을 때 계정의 모든 기기 구간을 모아 세션으로 잇는다. 서버가 기기로 먼저 보내지 않는다.
  */
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * 한 기기가 잰 기간의 구간을 통째로 바꾼다. 같은 기간을 다시 올려도 결과가 같다 — 기기가 올리다

@@ -1,4 +1,11 @@
-import { cliDayKey, type CliDayKey, type CliServiceId, type CliTool } from "@subslash/shared";
+import { writeLocal } from "@lib/local-storage";
+import {
+  cliDayKey,
+  type CliDayKey,
+  type CliServiceId,
+  type CliTool,
+  DAY_MS,
+} from "@subslash/shared";
 
 /**
  * 'PC 기록 읽기'로 센 쓴 날의 근거를 **이 기기에** 날짜로 남겨, 다른 때 다른 기록을 읽어도 같은 구독의 쓴 날을 합친다.
@@ -28,7 +35,6 @@ export const EVIDENCE_KEY = "subslash-pc-usage-evidence";
 
 /** 이만큼 지난 날짜는 지운다. 체크인은 최근 30일을 묻고, 하루 이틀 늦게 다시 읽어도 겹치게 여유를 둔다. */
 const KEEP_DAYS = 40;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export function readEvidence(): EvidenceStore {
   try {
@@ -42,12 +48,9 @@ export function readEvidence(): EvidenceStore {
   }
 }
 
+// 저장소를 쓸 수 없으면 이번 화면 안에서만 합친다.
 function writeEvidence(store: EvidenceStore) {
-  try {
-    localStorage.setItem(EVIDENCE_KEY, JSON.stringify(store));
-  } catch {
-    // 저장소를 쓸 수 없으면 이번 화면 안에서만 합친다.
-  }
+  writeLocal(EVIDENCE_KEY, JSON.stringify(store));
 }
 
 /** 한 출처의 새 근거로 바꾼다(같은 출처의 예전 것은 버린다). 오래된 날짜는 지운다. 바뀐 저장소를 돌려준다. */

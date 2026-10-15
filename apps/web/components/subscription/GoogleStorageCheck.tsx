@@ -1,5 +1,6 @@
 "use client";
 
+import { removeLocal } from "@lib/local-storage";
 import React, { useEffect, useRef, useState } from "react";
 import { Gauge } from "lucide-react";
 import type { Subscription } from "@subslash/shared";
@@ -81,11 +82,8 @@ export function GoogleStorageCheck({
       } catch {
         return;
       } finally {
-        try {
-          window.localStorage.removeItem(STORAGE_QUOTA_RESULT_KEY);
-        } catch {
-          // 지우지 못해도 다음 측정은 state가 달라 섞이지 않는다.
-        }
+        // 지우지 못해도 다음 측정은 state가 달라 섞이지 않는다.
+        removeLocal(STORAGE_QUOTA_RESULT_KEY);
       }
     };
     window.addEventListener("storage", onStorage);
