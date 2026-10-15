@@ -1,6 +1,7 @@
 "use client";
 
-import { writeLocal } from "@lib/local-storage";
+import { onPageVisible } from "@lib/page-visibility";
+import { localChannel, writeLocal } from "@lib/local-storage";
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 import { IS_APP_BUILD } from "@lib/platform";
 import { ownerScopedKey, readOwnerScoped } from "@lib/owner-scoped";
@@ -28,7 +29,7 @@ export interface LocalReminderSettings {
 export const REMINDER_DAY_CHOICES = [0, 1, 3, 7] as const;
 
 const KEY = "subslash-local-reminders";
-const EVENT = "subslash:local-reminders";
+const channel = localChannel("subslash:local-reminders");
 const DEFAULT_SETTINGS: LocalReminderSettings = { enabled: false, daysBefore: 3 };
 
 let cachedRaw: string | null | undefined;
@@ -62,15 +63,13 @@ function read(): LocalReminderSettings {
 }
 
 function subscribe(onChange: () => void) {
-  window.addEventListener(EVENT, onChange);
-  window.addEventListener("storage", onChange);
+  const stopLocal = channel.subscribe(onChange);
   // 로그인·로그아웃으로 기록 주인이 바뀌면 그 주인의 설정을 다시 읽는다.
   const unsubscribeOwner = useStore.subscribe((state, previous) => {
     if (state.recordsOwner !== previous.recordsOwner) onChange();
   });
   return () => {
-    window.removeEventListener(EVENT, onChange);
-    window.removeEventListener("storage", onChange);
+    stopLocal();
     unsubscribeOwner();
   };
 }
@@ -79,7 +78,7 @@ export function useLocalReminderSettings() {
   const settings = useSyncExternalStore(subscribe, read, () => DEFAULT_SETTINGS);
   const update = useCallback((next: Partial<LocalReminderSettings>) => {
     writeLocal(ownerScopedKey(KEY), JSON.stringify({ ...read(), ...next }));
-    window.dispatchEvent(new Event(EVENT));
+    channel.notify();
   }, []);
   return [settings, update] as const;
 }
@@ -143,16 +142,13 @@ export function useLocalReminderSync() {
     void apply();
     const unsubscribe = useStore.subscribe(schedule);
     // 앱으로 돌아올 때도 다시 건다. 설정에서 권한을 켜고 돌아온 경우, 날짜가 바뀐 경우.
-    const onVisible = () => {
-      if (document.visibilityState === "visible") {
-        lastSignature = null;
-        schedule();
-      }
-    };
-    document.addEventListener("visibilitychange", onVisible);
+    const stopVisible = onPageVisible(() => {
+      lastSignature = null;
+      schedule();
+    });
     return () => {
       unsubscribe();
-      document.removeEventListener("visibilitychange", onVisible);
+      stopVisible();
       if (timer) clearTimeout(timer);
     };
   }, [settings, text, locale]);

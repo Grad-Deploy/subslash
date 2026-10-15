@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 /** 토스트가 떠 있는 시간. */
 const TOAST_MS = 3000;
@@ -11,6 +12,9 @@ const TOAST_MS = 3000;
  * 대시보드·내 구독·구독 상세·내 정보가 같은 토스트를 따로 들고 있었다. 셋은 앞 타이머를 지우지 않아,
  * 3초 안에 토스트가 두 번 뜨면 첫 타이머가 두 번째 메시지를 일찍 지웠다. 화면 읽기 프로그램이 읽도록
  * status 역할을 준다.
+ *
+ * `document.body`에 포털로 붙이고 창(`Dialog`·`AppSheet`, z-50)보다 위, 해지 축하 화면(z-60)보다 아래에 둔다.
+ * 페이지 안에 그리면 같은 z-50이어도 body 끝에 붙은 창이 덮어, 계산서 창에서 해지한 알림이 가려 보이지 않았다.
  */
 export function useToast() {
   const [message, setMessage] = useState<string | null>(null);
@@ -29,14 +33,17 @@ export function useToast() {
     timer.current = setTimeout(() => setMessage(null), TOAST_MS);
   };
 
-  const toast = message && (
-    <div
-      role="status"
-      className="fixed top-16 right-4 z-50 bg-foreground text-background px-4 py-2.5 rounded-xl shadow-2xl text-sm font-medium animate-in fade-in slide-in-from-top-4"
-    >
-      {message}
-    </div>
-  );
+  const toast =
+    message &&
+    createPortal(
+      <div
+        role="status"
+        className="fixed top-16 right-4 z-[55] bg-foreground text-background px-4 py-2.5 rounded-xl shadow-2xl text-sm font-medium animate-in fade-in slide-in-from-top-4"
+      >
+        {message}
+      </div>,
+      document.body,
+    );
 
   return { showToast, toast };
 }

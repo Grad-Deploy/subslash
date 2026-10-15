@@ -1,3 +1,4 @@
+import { josa } from "../../ask/josa";
 import { CUSTOM_ICON_COLORS } from "../../custom-icon";
 import type { Widen } from "../types";
 import { MONTHS_SHORT, one } from "../english";
@@ -29,7 +30,7 @@ export const ko = {
     titleBundle: "결합 상품과 겹쳐요",
     titleSame: "이미 등록된 구독이에요",
     bodyBundle: (names: string) =>
-      `${names}을(를) 이 구독으로 이미 받고 있어요. 따로 결제하면 두 번 내는 것일 수 있어요. 다른 계정으로 쓰고 있다면 등록해도 돼요.`,
+      `${names}${josa(names, "을", "를")} 이 구독으로 이미 받고 있어요. 따로 결제하면 두 번 내는 것일 수 있어요. 다른 계정으로 쓰고 있다면 등록해도 돼요.`,
     bodySame: "다른 계정으로 따로 내고 있다면 또 등록해도 돼요.",
     cancel: "등록 안 할게요",
     anyway: "그래도 등록",
@@ -157,9 +158,9 @@ export const ko = {
   bundle: {
     label: "결합 상품",
     includes: (names: string) =>
-      `${names}을(를) 이 구독 하나로 받아요. 따로 구독 중인 게 있으면 두 번 내고 있을 수 있어요.`,
+      `${names}${josa(names, "을", "를")} 이 구독 하나로 받아요. 따로 구독 중인 게 있으면 두 번 내고 있을 수 있어요.`,
     soldAs: (names: string) =>
-      `${names}(으)로 결제하고 있다면 그 결합 상품을 골라 등록해 주세요. 결합 상품은 결제 메일이 Gmail로 오지 않을 수 있어요.`,
+      `${names}${josa(names, "으로", "로")} 결제하고 있다면 그 결합 상품을 골라 등록해 주세요. 결합 상품은 결제 메일이 Gmail로 오지 않을 수 있어요.`,
   },
 };
 

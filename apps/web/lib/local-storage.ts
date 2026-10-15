@@ -31,3 +31,27 @@ export function removeLocal(key: string): void {
     // 저장소를 못 쓰면 지울 것도 없다.
   }
 }
+
+/**
+ * 기기 저장소에 둔 값이 바뀐 것을 듣고 알리는 통로. `storage` 이벤트는 **다른** 탭에만 오므로, 같은 탭에서 바꾼
+ * 것은 `notify`가 보내는 이벤트(`event`)로 듣는다. `subscribe`는 `useSyncExternalStore`에 그대로 넘긴다.
+ * `key`를 주면 다른 탭의 변경 중 그 키의 것만 듣는다.
+ */
+export function localChannel(event: string, key?: string) {
+  return {
+    subscribe(onChange: () => void): () => void {
+      const onStorage = (e: StorageEvent) => {
+        if (key === undefined || e.key === key) onChange();
+      };
+      window.addEventListener(event, onChange);
+      window.addEventListener("storage", onStorage);
+      return () => {
+        window.removeEventListener(event, onChange);
+        window.removeEventListener("storage", onStorage);
+      };
+    },
+    notify(): void {
+      window.dispatchEvent(new Event(event));
+    },
+  };
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { readLocal, writeLocal } from "@lib/local-storage";
+import { localChannel, readLocal, writeLocal } from "@lib/local-storage";
 import { useCallback, useSyncExternalStore } from "react";
 
 /**
@@ -11,7 +11,7 @@ export const RECEIPT_THEMES = ["classic", "color", "pass", "tag", "chat"] as con
 export type ReceiptTheme = (typeof RECEIPT_THEMES)[number];
 
 const KEY = "subslash-receipt-theme";
-const CHANGE_EVENT = "subslash-receipt-theme-change";
+const channel = localChannel("subslash-receipt-theme-change");
 let inMemory: ReceiptTheme | null = null;
 
 export function isReceiptTheme(value: unknown): value is ReceiptTheme {
@@ -24,23 +24,14 @@ function read(): ReceiptTheme {
   return isReceiptTheme(saved) ? saved : "classic";
 }
 
-function subscribe(onChange: () => void): () => void {
-  window.addEventListener(CHANGE_EVENT, onChange);
-  window.addEventListener("storage", onChange);
-  return () => {
-    window.removeEventListener(CHANGE_EVENT, onChange);
-    window.removeEventListener("storage", onChange);
-  };
-}
-
 /** 고른 디자인. 서버 렌더링과 하이드레이션은 기본으로 그리고, 그 뒤 기기에 남긴 값으로 다시 그린다. */
 export function useReceiptTheme(): [ReceiptTheme, (theme: ReceiptTheme) => void] {
-  const theme = useSyncExternalStore(subscribe, read, () => "classic" as const);
+  const theme = useSyncExternalStore(channel.subscribe, read, () => "classic" as const);
   const choose = useCallback((next: ReceiptTheme) => {
     inMemory = next;
     // 남기지 못해도 이번에 고른 것으로 그린다.
     writeLocal(KEY, next);
-    window.dispatchEvent(new Event(CHANGE_EVENT));
+    channel.notify();
   }, []);
   return [theme, choose];
 }

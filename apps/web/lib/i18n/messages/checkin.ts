@@ -1,3 +1,4 @@
+import { josa } from "../../ask/josa";
 import { METRIC_SPECS, type ValueMetric } from "@subslash/shared";
 import type { Widen } from "../types";
 import { one } from "../english";
@@ -96,10 +97,11 @@ export const ko = {
     once: (name: string, amount: string) => `이번 달 ${name} 1회를 ${amount}에 이용하셨습니다.`,
     perUse: (name: string, cost: string) => `이번 달 ${name} 1회당 ${cost}을 지출하셨습니다.`,
     daysNone: (name: string, monthly: string) =>
-      `최근 30일 동안 ${name}을(를) 하루도 안 썼어요. ${monthly}을 그냥 냈어요.`,
-    daysSome: (name: string, cost: string) => `${name}을(를) 쓴 날 하루에 ${cost}씩 냈어요.`,
+      `최근 30일 동안 ${name}${josa(name, "을", "를")} 하루도 안 썼어요. ${monthly}을 그냥 냈어요.`,
+    daysSome: (name: string, cost: string) =>
+      `${name}${josa(name, "을", "를")} 쓴 날 하루에 ${cost}씩 냈어요.`,
     hoursNone: (name: string, monthly: string) =>
-      `최근 30일 동안 ${name}을(를) 안 썼어요. ${monthly}을 그냥 냈어요.`,
+      `최근 30일 동안 ${name}${josa(name, "을", "를")} 안 썼어요. ${monthly}을 그냥 냈어요.`,
     hoursSome: (name: string, cost: string) => `${name} 한 시간에 ${cost}씩 냈어요.`,
     benefitOver: (monthly: string, benefit: string) =>
       `회비 ${monthly}보다 많은 ${benefit}을 혜택으로 돌려받았어요.`,
@@ -162,8 +164,8 @@ export const ko = {
     red: "쉬어가도 될 구독",
     perUse: "1회당",
     unusedNote: (monthly: string) =>
-      `최근 30일 동안 안 썼어요. 쉬어가면 한 달 ${monthly}를 아껴요.`,
-    redNote: (monthly: string) => `쉬어가면 한 달 ${monthly}를 아껴요.`,
+      `최근 30일 동안 안 썼어요. 쉬어가면 한 달 ${monthly}을 아껴요.`,
+    redNote: (monthly: string) => `쉬어가면 한 달 ${monthly}을 아껴요.`,
     remainingNote: (n: number) => `${n}번 더 쓰면 본전이에요.`,
     doneNote: "낸 돈 이상으로 쓰고 있어요.",
     summary: (count: number, monthly: string) => `최근 30일 ${count}회 · 한 달 ${monthly}`,

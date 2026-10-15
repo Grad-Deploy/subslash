@@ -219,6 +219,10 @@ describe("리포트에 물어보기 — 문장", () => {
     expect(`음악${josa("음악", "으로", "로")}`).toBe("음악으로");
     expect(`클라우드${josa("클라우드", "으로", "로")}`).toBe("클라우드로");
     expect(`ChatGPT Plus${josa("ChatGPT Plus", "은", "는")}`).toBe("ChatGPT Plus은(는)");
+    // 끝의 닫는 괄호·따옴표는 건너뛰고 그 앞 글자로 고른다.
+    expect(josa("쿠팡 와우 (쿠팡플레이)", "을", "를")).toBe("를");
+    expect(josa("'티빙'", "을", "를")).toBe("을");
+    expect(josa("Apple TV+ (애플)", "을", "를")).toBe("을");
   });
 
   it("사용자에게 보이는 계산 출처에 코드 이름을 적지 않는다", () => {
