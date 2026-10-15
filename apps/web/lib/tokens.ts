@@ -90,6 +90,27 @@ export function passwordFingerprint(passwordHash: string): string {
     .slice(0, 22);
 }
 
+/**
+ * 서버가 내려 보냈다가 그대로 돌려받는 값(쿠키 등)에 서명을 붙인다. 쿠키는 httpOnly여도 그 브라우저의 주인은 고칠 수
+ * 있으므로, 서버가 적은 값만 믿으려면 서명이 있어야 한다. 용도(`purpose`)를 함께 서명해 다른 곳의 값으로 쓰지 못하게 한다.
+ */
+export function signValue(purpose: string, value: string): string {
+  const mac = createHmac("sha256", linkSecret()).update(`${purpose}:${value}`).digest("base64url");
+  return `${value}.${mac}`;
+}
+
+/** `signValue`로 서명한 값. 서명이 없거나 맞지 않으면 null. */
+export function readSignedValue(purpose: string, signed: string): string | null {
+  const dot = signed.lastIndexOf(".");
+  if (dot <= 0) return null;
+  const value = signed.slice(0, dot);
+  const given = Buffer.from(signed.slice(dot + 1));
+  const want = Buffer.from(
+    createHmac("sha256", linkSecret()).update(`${purpose}:${value}`).digest("base64url"),
+  );
+  return given.length === want.length && timingSafeEqual(given, want) ? value : null;
+}
+
 export function signLink(payload: Omit<LinkPayload, "exp">, ttlSeconds: number): string {
   const body: LinkPayload = {
     ...payload,

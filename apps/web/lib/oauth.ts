@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "crypto";
 import type { OAuthErrorCode } from "./oauth-messages";
 import { isAppReturnScheme } from "./app-return";
 import { OAUTH_PROVIDER_IDS, isOAuthProviderId, type OAuthProviderId } from "./oauth-providers";
+import { canSignLinks, readSignedValue, signValue } from "./tokens";
 
 export type { OAuthErrorCode } from "./oauth-messages";
 export {
@@ -144,17 +145,39 @@ export function safeNextPath(value: unknown): string {
     return "/dashboard";
   }
   if (value.includes("\\") || value.length > 200) return "/dashboard";
+  // 주소 해석은 탭·줄바꿈을 지우므로 "/\t/evil.com"은 "//evil.com"(다른 사이트)이 된다. 제어 문자·공백을 받지 않고,
+  // 해석한 결과도 같은 사이트인지 본다.
+  if (/[\u0000-\u0020\u007f]/.test(value)) return "/dashboard";
+  if (new URL(value, "https://subslash.invalid").origin !== "https://subslash.invalid")
+    return "/dashboard";
   return value;
 }
 
+/** 흐름 쿠키의 서명 용도. */
+const FLOW_PURPOSE = "oauth-flow";
+
+/**
+ * 흐름 쿠키. 서명 키가 있으면 서명한다 — 쿠키는 그 브라우저의 주인이 고칠 수 있어, 서명이 없으면 자기 쿠키의
+ * `link.accountId`를 남의 계정 ID로 바꿔 자기 구글 계정을 그 계정에 이을 수 있었다.
+ */
 export function encodeFlow(flow: OAuthFlow): string {
-  return Buffer.from(JSON.stringify(flow)).toString("base64url");
+  const encoded = Buffer.from(JSON.stringify(flow)).toString("base64url");
+  return canSignLinks() ? signValue(FLOW_PURPOSE, encoded) : encoded;
 }
 
+/**
+ * 흐름 쿠키를 읽는다. 서명 키가 있으면 서명이 맞는 것만 받는다. 키가 없는 배포는 서명하지 못하므로 받되, 계정을
+ * 정하는 `link`는 버린다(그런 배포에서는 로그인 방법 잇기를 시작할 수도 없다).
+ */
 export function decodeFlow(raw: string | undefined): OAuthFlow | null {
   if (!raw) return null;
+  const signed = canSignLinks();
+  const encoded = signed ? readSignedValue(FLOW_PURPOSE, raw) : raw;
+  if (!encoded) return null;
   try {
-    const value = JSON.parse(Buffer.from(raw, "base64url").toString("utf8")) as Partial<OAuthFlow>;
+    const value = JSON.parse(
+      Buffer.from(encoded, "base64url").toString("utf8"),
+    ) as Partial<OAuthFlow>;
     if (!isOAuthProviderId(value.provider) || typeof value.state !== "string") return null;
     return {
       provider: value.provider,
@@ -164,7 +187,7 @@ export function decodeFlow(raw: string | undefined): OAuthFlow | null {
       over14: value.over14 === true,
       next: safeNextPath(value.next),
       link:
-        value.link && typeof value.link.accountId === "string" && value.link.accountId
+        signed && value.link && typeof value.link.accountId === "string" && value.link.accountId
           ? { accountId: value.link.accountId, fromApp: value.link.fromApp === true }
           : null,
       appReturn: isAppReturnScheme(value.appReturn) ? value.appReturn : null,

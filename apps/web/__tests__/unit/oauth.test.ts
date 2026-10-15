@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   authorizeUrl,
   decodeFlow,
@@ -76,10 +76,22 @@ describe("safeNextPath", () => {
     expect(safeNextPath("https://evil.com")).toBe("/dashboard");
     expect(safeNextPath("/\\evil.com")).toBe("/dashboard");
     expect(safeNextPath(undefined)).toBe("/dashboard");
+    // 주소 해석은 탭·줄바꿈을 지워 "//evil.com"이 된다.
+    expect(safeNextPath("/\t/evil.com")).toBe("/dashboard");
+    expect(safeNextPath("/\n/evil.com")).toBe("/dashboard");
+    expect(safeNextPath("/subs detail")).toBe("/dashboard");
+    expect(safeNextPath("/subs/detail?id=a")).toBe("/subs/detail?id=a");
   });
 });
 
 describe("흐름 쿠키", () => {
+  beforeEach(() => {
+    process.env.EMAIL_LINK_SECRET = "oauth-unit-secret";
+  });
+  afterEach(() => {
+    delete process.env.EMAIL_LINK_SECRET;
+  });
+
   it("적은 대로 읽고, 망가졌으면 null", () => {
     expect(decodeFlow(encodeFlow(FLOW))).toEqual(FLOW);
     const linking = { ...FLOW, link: { accountId: "acc-1", fromApp: true } };
@@ -92,6 +104,23 @@ describe("흐름 쿠키", () => {
     expect(decodeFlow(encodeFlow({ ...FLOW, link: { accountId: "" } as never }))?.link).toBeNull();
     expect(decodeFlow("not-json")).toBeNull();
     expect(decodeFlow(encodeFlow({ ...FLOW, provider: "apple" as never }))).toBeNull();
+  });
+
+  it("서명하지 않았거나 고친 쿠키는 받지 않는다", () => {
+    const forged = { ...FLOW, link: { accountId: "someone-else", fromApp: true } };
+    const body = Buffer.from(JSON.stringify(forged)).toString("base64url");
+    // 서명 없이 만든 쿠키(예전 모양)
+    expect(decodeFlow(body)).toBeNull();
+    // 서명은 그대로 두고 내용만 바꾼 쿠키
+    const signature = encodeFlow(FLOW).split(".")[1];
+    expect(decodeFlow(`${body}.${signature}`)).toBeNull();
+  });
+
+  it("서명 키가 없는 배포는 쿠키를 받되 계정을 정하는 link는 버린다", () => {
+    delete process.env.EMAIL_LINK_SECRET;
+    delete process.env.CRON_SECRET;
+    const linking = { ...FLOW, link: { accountId: "acc-1", fromApp: true } };
+    expect(decodeFlow(encodeFlow(linking))).toEqual({ ...linking, link: null });
   });
 });
 
