@@ -37,8 +37,12 @@ afterEach(() => {
 
 describe("POST /api/help-ask", () => {
   it("닫혀 있으면 AI를 부르지 않는다", async () => {
+    // 시작일(AI_ASK_STARTS_ON) 전날
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-15T23:59:00+09:00"));
     vi.stubEnv("NEXT_PUBLIC_AI_ASK_TEST_OPEN", "");
     expect((await ask("이 앱 뭐야")).status).toBe(503);
+    vi.useRealTimers();
     expect(upstream).not.toHaveBeenCalled();
   });
 
