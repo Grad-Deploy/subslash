@@ -10,7 +10,7 @@ import {
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { askProviderConfig, type AskProviderConfig } from "./provider";
-import { MAX_ASK_QUESTION, isValidAskHistory, type AskTurn } from "./tools";
+import { MAX_ASK_QUESTION, isContextTurn, isValidAskHistory, type AskTurn } from "./tools";
 
 /**
  * AI에게 묻는 API(`/api/ask`·`/api/help-ask`)가 같이 쓰는 제한. 질문은 표·로그에 남기지 않는다.
@@ -44,7 +44,8 @@ export async function readAskRequest(
   } | null;
   const question = questionFrom(body);
   if (typeof question !== "string") return question;
-  const history = isValidAskHistory(body?.history) ? body.history : [];
+  // 예전 앱은 못 알아들은 턴도 보낸다 — 서버도 같은 기준으로 뺀다.
+  const history = isValidAskHistory(body?.history) ? body.history.filter(isContextTurn) : [];
   return { question, history };
 }
 
