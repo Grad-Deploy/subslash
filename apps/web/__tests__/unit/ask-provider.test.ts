@@ -36,6 +36,42 @@ describe("리포트에 물어보기 — AI 호출", () => {
     });
   });
 
+  it("Anthropic 형식의 다른 서버는 https 주소만 받고, 틀린 주소면 Anthropic으로 바꾸지 않고 닫는다", async () => {
+    const base = { ASK_PROVIDER: "anthropic", ASK_MODEL: "m", ANTHROPIC_API_KEY: "k" };
+    expect(
+      askProviderConfig({ ...base, ASK_ANTHROPIC_BASE_URL: "https://llm.example/v1-proxy/" }),
+    ).toEqual({
+      provider: "anthropic",
+      model: "m",
+      apiKey: "k",
+      baseUrl: "https://llm.example/v1-proxy",
+    });
+    expect(askProviderConfig({ ...base, ASK_ANTHROPIC_BASE_URL: "http://llm.example" })).toBeNull();
+    expect(askProviderConfig({ ...base, ASK_ANTHROPIC_BASE_URL: "llm.example" })).toBeNull();
+    expect(askProviderConfig({ ...base, ASK_ANTHROPIC_BASE_URL: " " })).toEqual({
+      provider: "anthropic",
+      model: "m",
+      apiKey: "k",
+    });
+
+    const fetcher = fakeFetch({ content: [], usage: {} });
+    await pickTool(
+      "질문",
+      "시스템",
+      [],
+      { ...ANTHROPIC, baseUrl: "https://llm.example/llm" },
+      fetcher,
+    );
+    const [url, init] = fetcher.mock.calls[0];
+    expect(url).toBe("https://llm.example/llm/v1/messages");
+    expect((init.headers as Record<string, string>).authorization).toBe("Bearer k");
+    const official = fakeFetch({ content: [], usage: {} });
+    await pickTool("질문", "시스템", [], ANTHROPIC, official);
+    expect(
+      (official.mock.calls[0][1].headers as Record<string, string>).authorization,
+    ).toBeUndefined();
+  });
+
   it("앞선 턴이 없으면 질문 그대로, 있으면 앞선 질문과 고른 호출을 위에 적는다", () => {
     expect(askUserMessage("한 달에 얼마?")).toBe("한 달에 얼마?");
     const message = askUserMessage("넷플릭스는?", [
@@ -75,6 +111,62 @@ describe("리포트에 물어보기 — AI 호출", () => {
     expect(settleCall("deleteAll", {})).toEqual({ call: { tool: "unsupported" }, rejected: true });
     expect(settleCall("spendTotal", { period: "week" }).rejected).toBe(true);
     expect(settleCall(undefined, undefined).rejected).toBe(true);
+  });
+
+  it("OpenAI 형식: 자체 서버 주소로 질문만 보내고, 문자열 인자를 풀어 확인한다", async () => {
+    const env = {
+      ASK_PROVIDER: "openai",
+      ASK_MODEL: "local/qwen",
+      OPENAI_API_KEY: "k",
+      ASK_OPENAI_BASE_URL: "https://llm.example/llm/v1",
+    };
+    const config = askProviderConfig(env);
+    expect(config).toEqual({
+      provider: "openai",
+      model: "local/qwen",
+      apiKey: "k",
+      baseUrl: "https://llm.example/llm/v1",
+    });
+    expect(askProviderConfig({ ...env, ASK_OPENAI_BASE_URL: "http://llm.example" })).toBeNull();
+    expect(askProviderConfig({ ...env, OPENAI_API_KEY: "" })).toBeNull();
+
+    const fetcher = fakeFetch({
+      choices: [
+        {
+          message: {
+            tool_calls: [
+              {
+                type: "function",
+                function: { name: "costPerUseRank", arguments: '{"order":"worst","limit":3}' },
+              },
+            ],
+          },
+        },
+      ],
+      usage: { prompt_tokens: 800, completion_tokens: 30 },
+    });
+    const pick = await pickAskCall("돈 값 못하는 구독 3개만", config!, fetcher);
+    expect(pick).toEqual({
+      call: { tool: "costPerUseRank", args: { order: "worst", limit: 3 } },
+      rejected: false,
+      usage: { inputTokens: 800, outputTokens: 30 },
+    });
+    const [url, init] = fetcher.mock.calls[0];
+    expect(url).toBe("https://llm.example/llm/v1/chat/completions");
+    expect((init.headers as Record<string, string>).authorization).toBe("Bearer k");
+    const sent = JSON.parse(String(init.body));
+    expect(sent.messages[1]).toEqual({ role: "user", content: "돈 값 못하는 구독 3개만" });
+    expect(sent.tool_choice).toBe("auto");
+
+    // 글로만 답했거나 인자가 JSON이 아니면 unsupported
+    const text = fakeFetch({ choices: [{ message: { content: "약 4만 원이에요" } }] });
+    expect((await pickAskCall("한 달 얼마", config!, text)).call).toEqual({ tool: "unsupported" });
+    const broken = fakeFetch({
+      choices: [
+        { message: { tool_calls: [{ function: { name: "spendTotal", arguments: "{period" } }] } },
+      ],
+    });
+    expect((await pickAskCall("한 달 얼마", config!, broken)).rejected).toBe(true);
   });
 
   it("Anthropic: 질문만 보내고 도구 호출만 받는다", async () => {

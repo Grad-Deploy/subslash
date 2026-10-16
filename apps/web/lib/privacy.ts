@@ -17,7 +17,7 @@ export const PRIVACY_OFFICER: { name: string; email: string } | null = {
 };
 
 /** 이 방침이 효력을 갖는 날. 내용을 바꾸면 함께 바꾼다. */
-export const PRIVACY_EFFECTIVE_DATE = "2026년 10월 14일";
+export const PRIVACY_EFFECTIVE_DATE = "2026년 10월 16일";
 
 /**
  * 결제 알림 메일·캘린더 구독 주소를 그만둔 날. 방침의 '(종료)' 항목이 쓴다 — 예전에는 시행일을 그대로 써서,
@@ -51,7 +51,7 @@ export function isGmailAutoImportOpen(now: Date = new Date()): boolean {
  * 외부 AI 회사로 나가므로(구독 기록은 나가지 않는다 — lib/ask) 방침에 처리 위탁과 그 회사를 먼저 게시한 뒤에 정한다.
  * null이거나 그날 전이면 API·화면 모두 닫힌다. 날짜가 와도 서버에 모델·키(`ASK_PROVIDER`·`ASK_MODEL`·키)가 없으면 닫힌 채다.
  */
-export const AI_ASK_STARTS_ON: string | null = null;
+export const AI_ASK_STARTS_ON: string | null = "2026-10-16";
 
 /** AI에게 묻는 기능이 열렸는지. 테스트 서버는 Gmail 자동 가져오기처럼 스위치로 연다. */
 export function isAiAskOpen(now: Date = new Date()): boolean {

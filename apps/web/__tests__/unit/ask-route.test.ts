@@ -47,8 +47,12 @@ afterEach(() => {
 
 describe("POST /api/ask", () => {
   it("열리지 않았거나 모델·키가 없으면 AI를 부르지 않는다", async () => {
+    // 시작일(AI_ASK_STARTS_ON) 전날
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-15T23:59:00+09:00"));
     vi.stubEnv("NEXT_PUBLIC_AI_ASK_TEST_OPEN", "");
     expect((await ask("안 쓰는 구독")).status).toBe(503);
+    vi.useRealTimers();
     vi.stubEnv("NEXT_PUBLIC_AI_ASK_TEST_OPEN", "true");
     vi.stubEnv("ANTHROPIC_API_KEY", "");
     expect((await ask("안 쓰는 구독")).status).toBe(503);
