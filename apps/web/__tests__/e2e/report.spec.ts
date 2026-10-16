@@ -93,30 +93,34 @@ test.describe("구독 리포트 (E2E)", () => {
     await expect(tab).toHaveClass(/text-primary/, { timeout: 30_000 });
   });
 
-  test("AI가 닫혀 있어도 물어보기 칸이 있고, 추천 질문과 기기 규칙으로만 답하며 서버로 보내지 않는다", async ({
+  test("추천 질문은 서버로 보내지 않고, 기기가 모르는 질문은 질문 문장만 AI로 보내 고른 계산으로 답한다", async ({
     page,
   }) => {
-    test.skip(process.env.NEXT_PUBLIC_AI_ASK_TEST_OPEN === "true", "AI가 닫힌 서버에서만 확인한다");
-    const asked: string[] = [];
-    page.on("request", (req) => {
-      if (req.url().includes("/api/ask")) asked.push(req.url());
+    // AI 서버 대신 정해 둔 호출을 돌려준다 — 이 테스트는 무엇을 보내고 받은 호출로 어떻게 답하는지만 본다.
+    const sent: unknown[] = [];
+    await page.route("**/api/ask", async (route) => {
+      sent.push(route.request().postDataJSON());
+      await route.fulfill({
+        json: { call: { tool: "spendTotal", args: { period: "year" } }, cached: false },
+      });
     });
     await seed(page, { subscriptions: [NETFLIX, MELON], usageLogs: [], accounts: [] });
     await page.goto("/report");
 
     const ask = page.getByRole("region", { name: "리포트에 물어보기" });
-    await expect(ask.getByText(/서버나 AI로 보내지 않아요/)).toBeVisible({ timeout: 30_000 });
+    await expect(ask.getByText(/질문 문장만 AI로 보내요/)).toBeVisible({ timeout: 30_000 });
 
     // 추천 질문 버튼은 정해 둔 계산으로 바로 답한다.
     await ask.getByRole("button", { name: "한 달에 구독비 얼마 나가?" }).click();
     await expect(ask.getByText(/28,990/).first()).toBeVisible();
+    expect(sent).toEqual([]);
 
-    // 기기 규칙이 모르는 질문은 서버로 보내지 않고 버튼을 다시 보여 준다.
-    await ask.getByRole("textbox", { name: "리포트에 물어볼 질문" }).fill("오늘 날씨 어때?");
+    // 서비스 이름이 든 질문은 기기 규칙이 답하지 않고 AI에 넘긴다 — 보내는 것은 질문(과 앞선 턴의 질문·호출)뿐이다.
+    await ask.getByRole("textbox").fill("넷플릭스랑 멜론 합치면 1년에?");
     await ask.getByRole("button", { name: "묻기", exact: true }).click();
-    await expect(ask.getByText(/아직 알아듣지 못해요/)).toBeVisible();
-    await expect(ask.getByRole("button", { name: "겹치는 구독 있어?" })).toBeVisible();
-
-    expect(asked).toEqual([]);
+    await expect(ask.getByText(/347,880/).first()).toBeVisible();
+    expect(sent).toHaveLength(1);
+    expect(JSON.stringify(sent[0])).not.toContain("17000");
+    expect(sent[0]).toMatchObject({ question: "넷플릭스랑 멜론 합치면 1년에?" });
   });
 });

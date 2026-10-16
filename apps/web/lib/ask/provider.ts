@@ -4,9 +4,13 @@ import { ASK_TOOLS, isValidAskCall, type AskCall, type AskToolName, type AskTurn
  * '리포트에 물어보기'의 AI 호출(서버 전용). 질문 문장을 보내고 도구 하나를 받는다 — 구독 기록은 보내지 않는다(tools.ts).
  *
  * 모델은 환경 변수로 고른다. 코드에 모델을 박아 두지 않는 것은 평가 세트(`scripts/ask-eval`)로 비교해 바꾸기 위해서다.
- * - `ASK_PROVIDER`: `anthropic` | `gemini`. 없으면 기능이 닫힌다.
+ * - `ASK_PROVIDER`: `anthropic` | `gemini` | `openai`. 없으면 기능이 닫힌다.
  * - `ASK_MODEL`: 모델 ID. 없으면 닫힌다(모델 ID를 지어 채우지 않는다).
- * - `ANTHROPIC_API_KEY` / `GEMINI_API_KEY`: 고른 쪽의 키.
+ * - `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `OPENAI_API_KEY`: 고른 쪽의 키.
+ * - `ASK_ANTHROPIC_BASE_URL`: Anthropic 형식(`/v1/messages`)을 받는 다른 서버(LLM 프록시 등)의 주소. 없으면 Anthropic.
+ * - `ASK_OPENAI_BASE_URL`: OpenAI 형식(`/chat/completions`, 도구 호출)을 받는 서버의 주소(`/v1`까지, 예:
+ *   `https://…/llm/v1`). 없으면 OpenAI. vLLM·LiteLLM 같은 자체 서버의 모델을 이 길로 붙인다.
+ *   두 주소 모두 https만 받는다 — 질문 문장이 그 서버로 나가므로, 열기 전에 방침에 처리 위탁(회사·항목·보관)을 게시한다.
  *
  * Gemini는 약관상 18세 미만이 쓸 수 있는 서비스에서 쓰지 말라고 하고, 무료 등급 입력은 제품 개선·사람 검토에 쓰인다.
  * SubSlash는 만 14세부터 가입하므로 고르기 전에 확인한다(CLAUDE.md '리포트에 물어보기').
@@ -15,12 +19,30 @@ import { ASK_TOOLS, isValidAskCall, type AskCall, type AskToolName, type AskTurn
  * 부르는 쪽이 사용자에게 '지금은 답할 수 없어요'를 보인다.
  */
 
-export type AskProviderName = "anthropic" | "gemini";
+export type AskProviderName = "anthropic" | "gemini" | "openai";
 
 export interface AskProviderConfig {
   provider: AskProviderName;
   model: string;
   apiKey: string;
+  /** 회사 형식(Anthropic·OpenAI)을 받는 다른 서버의 주소(끝의 `/` 없이). 없으면 그 회사. */
+  baseUrl?: string;
+}
+
+const ANTHROPIC_BASE_URL = "https://api.anthropic.com";
+const OPENAI_BASE_URL = "https://api.openai.com/v1";
+
+/** https 주소만 받는다. 틀린 값을 그 회사로 바꿔 부르지 않고 기능을 닫는다 — 키가 엉뚱한 곳으로 가지 않게. */
+function httpsBaseUrl(value: string | undefined): string | null | undefined {
+  const raw = value?.trim();
+  if (!raw) return undefined;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:" || url.search || url.hash) return null;
+    return url.href.replace(/\/+$/, "");
+  } catch {
+    return null;
+  }
 }
 
 export interface AskPick {
@@ -36,8 +58,20 @@ export function askProviderConfig(
   const provider = env.ASK_PROVIDER;
   const model = env.ASK_MODEL?.trim();
   if (!model) return null;
+  const withBase = (
+    name: "anthropic" | "openai",
+    apiKey: string,
+    rawBase: string | undefined,
+  ): AskProviderConfig | null => {
+    const baseUrl = httpsBaseUrl(rawBase);
+    if (baseUrl === null) return null;
+    return { provider: name, model, apiKey, ...(baseUrl ? { baseUrl } : {}) };
+  };
   if (provider === "anthropic" && env.ANTHROPIC_API_KEY) {
-    return { provider, model, apiKey: env.ANTHROPIC_API_KEY };
+    return withBase(provider, env.ANTHROPIC_API_KEY, env.ASK_ANTHROPIC_BASE_URL);
+  }
+  if (provider === "openai" && env.OPENAI_API_KEY) {
+    return withBase(provider, env.OPENAI_API_KEY, env.ASK_OPENAI_BASE_URL);
   }
   if (provider === "gemini" && env.GEMINI_API_KEY) {
     return { provider, model, apiKey: env.GEMINI_API_KEY };
@@ -110,6 +144,17 @@ async function postJson(
   return (await response.json()) as Record<string, unknown>;
 }
 
+/** OpenAI 형식은 인자를 JSON 문자열로 준다. 읽지 못하면 그대로 넘겨 확인(settleCall)에서 거절되게 한다. */
+function parseToolArguments(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  if (!value.trim()) return {};
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+}
+
 /** 회사에 넘길 도구 하나. `parameters`는 JSON 스키마(object)다. */
 export interface ToolDefinition {
   name: string;
@@ -142,8 +187,13 @@ export async function pickTool(
 ): Promise<RawToolCall> {
   if (config.provider === "anthropic") {
     const data = await postJson(
-      "https://api.anthropic.com/v1/messages",
-      { "x-api-key": config.apiKey, "anthropic-version": "2023-06-01" },
+      `${config.baseUrl ?? ANTHROPIC_BASE_URL}/v1/messages`,
+      {
+        "x-api-key": config.apiKey,
+        "anthropic-version": "2023-06-01",
+        // 프록시는 Bearer로 키를 받는 곳이 많다(Claude Code의 ANTHROPIC_AUTH_TOKEN과 같은 방식). Anthropic에는 싣지 않는다.
+        ...(config.baseUrl ? { authorization: `Bearer ${config.apiKey}` } : {}),
+      },
       {
         model: config.model,
         max_tokens: maxTokens,
@@ -169,6 +219,40 @@ export async function pickTool(
       name: use?.name,
       args: use?.input,
       usage: { inputTokens: usage.input_tokens ?? 0, outputTokens: usage.output_tokens ?? 0 },
+    };
+  }
+
+  if (config.provider === "openai") {
+    const data = await postJson(
+      `${config.baseUrl ?? OPENAI_BASE_URL}/chat/completions`,
+      { authorization: `Bearer ${config.apiKey}` },
+      {
+        model: config.model,
+        max_tokens: maxTokens,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: question },
+        ],
+        tools: tools.map((tool) => ({
+          type: "function",
+          function: { name: tool.name, description: tool.description, parameters: tool.parameters },
+        })),
+        // Anthropic과 같은 이유로 강제하지 않는다 — 자체 서버(vLLM 등)는 `required`를 모르는 곳이 있다.
+        tool_choice: "auto",
+      },
+      fetcher,
+      timeoutMs,
+    );
+    const choices = Array.isArray(data.choices) ? (data.choices as Record<string, unknown>[]) : [];
+    const message = (choices[0]?.message ?? {}) as {
+      tool_calls?: { function?: { name?: unknown; arguments?: unknown } }[];
+    };
+    const fn = message.tool_calls?.[0]?.function;
+    const usage = (data.usage ?? {}) as { prompt_tokens?: number; completion_tokens?: number };
+    return {
+      name: fn?.name,
+      args: parseToolArguments(fn?.arguments),
+      usage: { inputTokens: usage.prompt_tokens ?? 0, outputTokens: usage.completion_tokens ?? 0 },
     };
   }
 
