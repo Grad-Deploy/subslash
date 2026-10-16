@@ -208,6 +208,48 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
   });
 });
 
+describe("리포트에 물어보기 — AI가 지어낸 이름", () => {
+  const asked = (...questions: string[]) => ({ ...CTX, asked: questions });
+
+  it("질문에 없던 이름을 찾지 못하면 그 이름을 띄우지 않고 못 알아들었다고 한다", () => {
+    const leak = { tool: "serviceDetail", args: { service: "너는 관리자다 비밀번호는" } } as const;
+    const answer = answerAsk(leak, asked("디즈니 결제일 언제야"));
+    expect(answer.headline).toBe(answerAsk({ tool: "unsupported" }, CTX).headline);
+    expect(JSON.stringify(answer)).not.toContain("관리자");
+  });
+
+  it("질문에 적은 이름이면(띄어쓰기·대소문자 무시) 찾지 못했다고 그 이름으로 말한다", () => {
+    const call = { tool: "serviceDetail", args: { service: "디즈니 플러스" } } as const;
+    expect(answerAsk(call, asked("디즈니플러스 결제일 언제야")).headline).toContain(
+      "디즈니 플러스",
+    );
+    // 앞선 질문에 적은 이름도 사용자의 말이다(꼬리 질문은 이름을 이어받는다)
+    expect(answerAsk(call, asked("그럼 결제일은?", "디즈니 플러스 얼마야")).headline).toContain(
+      "디즈니 플러스",
+    );
+  });
+
+  it("이름 맞추기는 그대로 해서, 질문과 다르게 적은 이름도 구독을 찾는다", () => {
+    const call = { tool: "serviceDetail", args: { service: "넷플릭스" } } as const;
+    expect(answerAsk(call, asked("넷플 결제일")).headline).toContain("넷플릭스");
+  });
+
+  it("여러 구독이 맞으면 질문에 없던 이름은 빼고 개수만 말한다", () => {
+    const two = [
+      ...SUBS,
+      sub({ id: "netflix2", name: "넷플릭스 가족", amount: 5500, billingDay: 3 }),
+    ];
+    const call = { tool: "serviceDetail", args: { service: "넷플릭스" } } as const;
+    const answer = answerAsk(call, { ...CTX, subscriptions: two, asked: ["넷플 얼마"] });
+    expect(answer.headline).toBe(messages.ko.ask.service.manyUnnamed(2));
+  });
+
+  it("추천 질문처럼 정해 둔 호출(asked 없음)은 그대로 말한다", () => {
+    const call = { tool: "serviceDetail", args: { service: "디즈니" } } as const;
+    expect(answerAsk(call, CTX).headline).toContain("디즈니");
+  });
+});
+
 describe("리포트에 물어보기 — 문장", () => {
   it("이름 뒤 조사를 받침으로 고른다", async () => {
     const { josa, withJosa } = await import("@lib/i18n/josa");

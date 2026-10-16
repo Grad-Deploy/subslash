@@ -53,6 +53,19 @@ export interface AskContext {
   t: Messages;
   /** 지금 언어. 서비스·구독 이름을 이 언어로 쓴다(lib/service-name). 주지 않으면 한국어다. */
   locale?: Locale;
+  /**
+   * 사용자가 이 대화에서 적은 질문(지금 질문과 앞선 질문). AI가 고른 서비스 이름(`args.service`)은 이 안에 있을 때만
+   * 답 문장에 그대로 쓴다 — 질문에 없던 말을 AI가 지어 넣게 꾀어 화면에 띄우는 길(시스템 프롬프트·욕설)을 막는다.
+   * 이름 맞추기는 그대로 하므로 줄임말·다른 언어 이름도 찾는다. 추천 질문 버튼처럼 정해 둔 호출이면 주지 않는다.
+   */
+  asked?: readonly string[];
+}
+
+/** AI가 고른 서비스 이름이 사용자가 적은 말에 있는지. `asked`가 없으면(정해 둔 호출) 믿는다. */
+function isAskedName(query: string, asked: readonly string[] | undefined): boolean {
+  if (!asked) return true;
+  const wanted = compactName(query);
+  return wanted !== "" && asked.some((text) => compactName(text).includes(wanted));
 }
 
 function answer(
@@ -290,12 +303,15 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const s = k.service;
       const query = String(args.service);
       const matches = matchSubscriptions(query, active);
+      const asked = isAskedName(query, ctx.asked);
       if (matches.length === 0) {
+        // 질문에 없던 이름을 찾지 못했으면 AI가 질문을 엉뚱하게 읽은 것이다 — 그 이름을 띄우지 않고 못 알아들었다고 한다.
+        if (!asked) return answerAsk({ tool: "unsupported" }, ctx);
         return answer(s.notFound(query), s.source, [], [s.notFoundNote]);
       }
       if (matches.length > 1) {
         return answer(
-          s.many(query, matches.length),
+          asked ? s.many(query, matches.length) : s.manyUnnamed(matches.length),
           s.source,
           matches.map((sub) => ({ label: nameOf(sub), value: "" })),
         );

@@ -1,5 +1,11 @@
 import { apiUrl, readApiError } from "@lib/api";
-import { MAX_ASK_HISTORY, isValidAskCall, type AskCall, type AskTurn } from "./tools";
+import {
+  MAX_ASK_HISTORY,
+  isContextTurn,
+  isValidAskCall,
+  type AskCall,
+  type AskTurn,
+} from "./tools";
 
 /**
  * 질문을 서버에 보내고 AI가 고른 도구를 받는다. 로그인이 필요 없어 `apiFetch`가 아니라 `fetch`로 부른다. 받은 호출도
@@ -11,7 +17,7 @@ export async function askReport(
   question: string,
   history: readonly AskTurn[] = [],
 ): Promise<AskCall> {
-  const recent = history.slice(-MAX_ASK_HISTORY);
+  const recent = history.filter(isContextTurn).slice(-MAX_ASK_HISTORY);
   const response = await fetch(apiUrl("/api/ask"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
