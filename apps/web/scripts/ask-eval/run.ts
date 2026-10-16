@@ -4,6 +4,8 @@
  *
  *   ASK_PROVIDER=anthropic ASK_MODEL=… ANTHROPIC_API_KEY=… pnpm --filter @subslash/web ask:eval
  *   ASK_PROVIDER=gemini    ASK_MODEL=… GEMINI_API_KEY=…    pnpm --filter @subslash/web ask:eval
+ *   ASK_PROVIDER=anthropic ASK_ANTHROPIC_BASE_URL=https://… ASK_MODEL=… ANTHROPIC_API_KEY=… …   (Anthropic 형식의 다른 서버)
+ *   ASK_PROVIDER=openai    ASK_OPENAI_BASE_URL=https://…/v1 ASK_MODEL=… OPENAI_API_KEY=… …      (OpenAI 형식의 자체 서버)
  *   …                                                      pnpm --filter @subslash/web ask:eval -- help
  *
  * 끝에 `help`를 붙이면 도움말 AI(lib/help/eval-set)를 잰다. 이때 기기 검색만 썼을 때의 정답률도 함께 내어, AI를 붙인
