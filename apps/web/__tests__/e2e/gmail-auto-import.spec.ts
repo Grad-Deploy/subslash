@@ -20,6 +20,12 @@ const TVING = {
   createdAt: "2026-01-01T00:00:00.000Z",
 };
 
+/**
+ * 화면의 오늘. 후보의 결제일(`receiptDate`)은 고정된 날짜라, 실제 오늘로 돌리면 35일이 지난 날부터 '오래된 메일'
+ * (`STALE_AFTER_DAYS`)이 되어 체크가 풀린 채 나온다 — 2026년 10월 16일부터 '1개 구독 일괄 등록'이 사라져 실패했다.
+ */
+const NOW = new Date("2026-09-20T12:00:00+09:00");
+
 const discovery = (overrides: Record<string, unknown>) => ({
   amount: 17000,
   currency: "KRW",
@@ -36,6 +42,7 @@ const discovery = (overrides: Record<string, unknown>) => ({
 });
 
 async function seed(page: Page) {
+  await page.clock.setFixedTime(NOW);
   await page.addInitScript(
     ({ key, value }) => {
       if (!localStorage.getItem(key)) localStorage.setItem(key, value);
