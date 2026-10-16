@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import {
+  AI_ASK_STARTS_ON,
   ANONYMOUS_STATS_ENDED_ON,
   ANONYMOUS_STATS_STARTS_ON,
   DEVICE_USAGE_STARTS_ON,
@@ -148,6 +149,22 @@ export function PrivacyEn() {
             </Item>
           </div>
         )}
+        {AI_ASK_STARTS_ON && (
+          <Item title={`Asking AI (optional, from ${englishDate(AI_ASK_STARTS_ON)})`}>
+            When you type a question into &lsquo;Ask your report&rsquo; on the Report screen, or tap
+            &lsquo;Ask AI to find it&rsquo; in Help, we send that question (when you follow up,
+            together with up to 3 earlier questions in the same conversation and the calculation
+            chosen for each) to an AI server operated by Dankook University, which chooses which
+            calculation or help article to answer with. We do not send your subscription list,
+            amounts, or account information; the numbers are calculated by this device from its own
+            records. Suggested question buttons and questions the device understands on its own are
+            not sent to the server. The SubSlash server does not record questions in tables or logs;
+            to avoid calling the AI again for the same question, it keeps the question and the
+            chosen calculation in server memory for up to one day. To limit requests, it counts
+            requests per IP address in memory. Purpose: choosing the calculation or help article
+            that fits your question.
+          </Item>
+        )}
         <Item title="Sign-up and login (optional)">
           We store your username, email, password (only as an irreversible hash; the original is not
           stored), email confirmation time, and sign-up and last login times. Whether you are 14 or
@@ -234,6 +251,13 @@ export function PrivacyEn() {
               Multi-device usage measurement: records older than 40 days are deleted automatically.
               Turning off measurement on a device immediately deletes that device&rsquo;s records,
               and deleting your account immediately deletes the records of all devices.
+            </li>
+          )}
+          {AI_ASK_STARTS_ON && (
+            <li>
+              Asking AI: questions are not stored. The question and chosen calculation kept in
+              server memory disappear after one day or when the server restarts, and Dankook
+              University&rsquo;s AI server does not store questions either.
             </li>
           )}
           <li>
@@ -325,6 +349,16 @@ export function PrivacyEn() {
                   <td className="px-3 py-2">
                     Each company&rsquo;s processing location (Google: outside Korea)
                   </td>
+                </tr>
+              )}
+              {AI_ASK_STARTS_ON && (
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-medium">Dankook University</td>
+                  <td className="px-3 py-2">
+                    If you use &lsquo;Asking AI&rsquo;, receives the question and chooses the
+                    calculation or help article to answer with — does not store questions
+                  </td>
+                  <td className="px-3 py-2">A server operated by Dankook University</td>
                 </tr>
               )}
               <tr className="border-t">

@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import {
+  AI_ASK_STARTS_ON,
   ANONYMOUS_STATS_ENDED_ON,
   ANONYMOUS_STATS_STARTS_ON,
   DEVICE_USAGE_STARTS_ON,
@@ -138,6 +139,21 @@ export function PrivacyKo() {
             </Item>
           </div>
         )}
+        {/*
+          질문 문장이 외부 AI 서버로 나가므로 시작일을 정하면 먼저 게시된다(lib/privacy.ts의 AI_ASK_STARTS_ON, lib/ask).
+        */}
+        {AI_ASK_STARTS_ON && (
+          <Item title={`AI에게 묻기 (선택, ${koreanDate(AI_ASK_STARTS_ON)}부터)`}>
+            리포트의 &lsquo;리포트에 물어보기&rsquo;에 질문을 직접 적거나 도움말에서 &lsquo;AI에게
+            찾아 달라고 하기&rsquo;를 누르면, 그 질문 문장(이어 묻는 경우 같은 대화의 앞선 질문 최대
+            3개와 그때 고른 계산 포함)을 단국대학교가 운영하는 AI 서버로 보내 어떤 계산이나 도움말
+            항목으로 답할지 고르게 합니다. 구독 목록·금액·계정 정보는 보내지 않고, 숫자는 이 기기가
+            자기 기록으로 계산합니다. 추천 질문 버튼과 기기가 알아듣는 질문은 서버로 보내지
+            않습니다. SubSlash 서버는 질문을 표나 로그에 남기지 않으며, 같은 질문에 AI를 다시 부르지
+            않도록 질문과 고른 계산을 서버 메모리에 최대 하루 둡니다. 요청 수를 제한하려고 IP
+            주소마다 횟수를 메모리에 셉니다. 목적: 적은 질문에 맞는 계산·도움말 고르기.
+          </Item>
+        )}
         <Item title="회원가입·로그인 (선택)">
           아이디, 이메일, 비밀번호(되돌릴 수 없는 해시로만 저장하며 원문은 저장하지 않음), 이메일
           확인 시각, 가입·마지막 로그인 시각을 저장합니다. 가입할 때 묻는 만 14세 이상 여부는
@@ -207,6 +223,13 @@ export function PrivacyKo() {
             <li>
               여러 기기 사용 측정: 40일이 지난 기록은 자동으로 지웁니다. 기기에서 측정을 끄면 그
               기기의 기록을, 회원 탈퇴하면 모든 기기의 기록을 곧바로 지웁니다.
+            </li>
+          )}
+          {AI_ASK_STARTS_ON && (
+            <li>
+              AI에게 묻기: 질문은 저장하지 않습니다. 서버 메모리에 둔 질문과 고른 계산은 하루가
+              지나거나 서버가 다시 시작되면 사라지고, 단국대학교의 AI 서버도 질문을 저장하지
+              않습니다.
             </li>
           )}
           <li>익명 구독 통계: 그만둔 뒤 남은 기록을 저장하던 표째 지웁니다.</li>
@@ -289,6 +312,16 @@ export function PrivacyKo() {
                     SubSlash에 알려 줌(SubSlash가 보내는 개인정보는 없음)
                   </td>
                   <td className="px-3 py-2">각 회사의 처리 위치(Google은 국외)</td>
+                </tr>
+              )}
+              {AI_ASK_STARTS_ON && (
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-medium">단국대학교</td>
+                  <td className="px-3 py-2">
+                    &lsquo;AI에게 묻기&rsquo;를 쓴 경우, 질문 문장을 받아 답할 계산·도움말 항목을
+                    고름 — 질문을 저장하지 않음
+                  </td>
+                  <td className="px-3 py-2">단국대학교가 운영하는 서버</td>
                 </tr>
               )}
               <tr className="border-t">
