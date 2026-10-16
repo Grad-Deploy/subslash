@@ -90,7 +90,15 @@ export function AskReport({
       const call = preset ?? refineCall(local ?? (await askReport(trimmed, history)), trimmed, now);
       settle({
         call,
-        answer: answerAsk(call, { subscriptions, usageLogs, rate, now, t: tRef.current, locale }),
+        answer: answerAsk(call, {
+          subscriptions,
+          usageLogs,
+          rate,
+          now,
+          t: tRef.current,
+          locale,
+          asked: preset ? undefined : [trimmed, ...history.map((turn) => turn.question)],
+        }),
       });
     } catch (e) {
       settle({ error: e instanceof Error ? e.message : tRef.current.reportPage.ask.unavailable });
