@@ -84,14 +84,70 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
     expect(parseDays("곧 결제될 거", NOW)).toBeNull();
   });
 
-  it("AI가 고른 기간을 질문에 적힌 기간으로 맞추고, 기간이 없으면 그대로 둔다", () => {
+  it("AI가 고른 기간을 질문에 적힌 기간으로 맞추고, 기간이 없으면 31일로 둔다", () => {
     const call: AskCall = { tool: "upcomingCharges", args: { days: 30 } };
     expect(refineCall(call, "월말까지 뭐 나가?", NOW)).toEqual({
       tool: "upcomingCharges",
       args: { days: 19 },
     });
-    expect(refineCall(call, "곧 나갈 결제", NOW)).toBe(call);
+    // "곧"처럼 기간이 없으면 프롬프트의 규칙대로 31일 — AI가 7일로 좁히면 8~31일 뒤의 결제·체험 종료가 빠진다
+    expect(refineCall(call, "곧 나갈 결제", NOW)).toEqual({
+      tool: "upcomingCharges",
+      args: { days: 31 },
+    });
+    const trial: AskCall = { tool: "trialsEnding", args: { days: 7 } };
+    expect(refineCall(trial, "공짜 체험 언제 끝나", NOW).args).toEqual({ days: 31 });
+    // 읽지 못한 기간 낱말이 있으면 AI 값 그대로다
+    expect(refineCall(trial, "week's free trial ending soon?", NOW)).toBe(trial);
     const other: AskCall = { tool: "spendTotal", args: { period: "month" } };
     expect(refineCall(other, "월말까지", NOW)).toBe(other);
+  });
+
+  it("순위는 질문이 개수를 말했을 때만 AI가 고른 개수를 둔다", () => {
+    const one: AskCall = { tool: "costPerUseRank", args: { order: "worst", limit: 1 } };
+    expect(refineCall(one, "제일 아까운 구독 뭐야?", NOW)).toEqual({
+      tool: "costPerUseRank",
+      args: { order: "worst" },
+    });
+    const three: AskCall = { tool: "costPerUseRank", args: { order: "worst", limit: 3 } };
+    expect(refineCall(three, "아까운 구독 3개만", NOW)).toBe(three);
+    expect(refineCall(three, "top three wasteful subs", NOW)).toBe(three);
+    // 낱말 안의 글자는 개수가 아니다(money의 one, 1회당의 1, 넷플릭스의 넷)
+    for (const q of [
+      "Which subscription feels like a waste of money?",
+      "1회당 제일 싼 구독",
+      "넷플릭스랑 제일 아까운 거",
+    ]) {
+      expect(refineCall(one, q, NOW), q).toEqual({
+        tool: "costPerUseRank",
+        args: { order: "worst" },
+      });
+    }
+  });
+
+  it("기간이 붙은 '얼마'·순위·해지는 한 달 지출로 읽지 않는다", () => {
+    for (const q of [
+      "7일 안에 떨어질 구독료 총액?",
+      "This week, how much will I pay for subscriptions?",
+      "14일 안에 구독료 나가는 거?",
+      "돈이 제일 덜 나가는 구독 top3 뭐야?",
+    ]) {
+      expect(localAskCall(q, { now: NOW })?.tool, q).not.toBe("spendTotal");
+    }
+    expect(localAskCall("12개월 동안 낸 구독비 합계", { now: NOW })).toEqual({
+      tool: "spendTotal",
+      args: { period: "year" },
+    });
+    // "한 해 동안 쓴"의 '안 쓴'은 안 쓰는 구독이 아니다
+    expect(localAskCall("이 앱에서 한 해 동안 쓴 구독 돈 전체는?", { now: NOW })?.tool).not.toBe(
+      "lowUsage",
+    );
+    expect(
+      localAskCall("this year how much did i save by canceling my subscriptions", { now: NOW }),
+    ).toEqual({ tool: "savedSoFar", args: { period: "year" } });
+    expect(localAskCall("free trial over by end of week?", { now: NOW })).toEqual({
+      tool: "trialsEnding",
+      args: { days: 7 },
+    });
   });
 });

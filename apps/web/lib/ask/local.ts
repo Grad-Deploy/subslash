@@ -63,16 +63,31 @@ export function parseDays(question: string, now: Date): number | null {
     return daysToMonthEnd(now);
   }
   if (/다음\s*주까지|이주\s*(?:안|내|동안)|next week/.test(q)) return 14;
-  if (/이번\s*주|일주일|한\s*주|this week/.test(q)) return 7;
+  if (/이번\s*주|일주일|한\s*주|주말까지|this week|end of (?:the )?week|by the weekend/.test(q))
+    return 7;
   if (/모레/.test(q)) return 2;
   if (/내일|오늘|tomorrow|today/.test(q)) return 1;
   return null;
 }
 
-/** 기간을 받는 도구는 질문에 적힌 기간으로 일수를 맞춘다. 적히지 않았으면 AI가 고른 값 그대로다. */
+/** 개수를 말하는 말. 없으면 AI가 붙인 개수(`limit`)를 지운다. */
+const COUNT_WORDS =
+  /(?:한|두|세|네|다섯|몇)\s*(?:개|가지)|하나만|\d+\s*(?:개|가지|위|등)|top\s*\d|\btop\b|\b(?:two|three|four|five|few)\b|\d+\s*(?:subs|subscriptions|services|ones)\b/;
+
+/**
+ * AI가 고른 호출을 질문에 적힌 대로 맞춘다. AI는 오늘을 모르고, 질문에 없는 값을 채우기도 한다.
+ * - 기간을 받는 도구: 적힌 기간으로 일수를 맞춘다. 기간을 말하는 낱말이 아예 없으면("곧", "언제") 프롬프트의
+ *   규칙대로 31일이다 — AI가 7일로 좁히면 8~31일 뒤에 끝나는 체험이 빠졌다. 읽지 못한 기간 낱말이 있으면 AI 값 그대로.
+ * - 순위: 개수를 말하지 않았는데 AI가 1·5개로 정했으면 지운다(화면의 기본 개수로 보인다).
+ */
 export function refineCall(call: AskCall, question: string, now: Date): AskCall {
+  const q = normalize(question);
+  if (call.tool === "costPerUseRank") {
+    if (call.args?.limit === undefined || COUNT_WORDS.test(q)) return call;
+    return { ...call, args: { order: call.args.order } };
+  }
   if (call.tool !== "upcomingCharges" && call.tool !== "trialsEnding") return call;
-  const days = parseDays(question, now);
+  const days = parseDays(question, now) ?? (PERIOD_WORDS.test(q) ? null : 31);
   if (days === null || call.args?.days === days) return call;
   return { ...call, args: { ...call.args, days } };
 }
@@ -120,8 +135,11 @@ function mentionsService(q: string, subscriptions: readonly Subscription[]): boo
   );
 }
 
+/** 기간을 말하는 낱말. `parseDays`가 읽지 못한 기간이 있는지 볼 때 쓴다. */
+const PERIOD_WORDS = /\d|주|week|달|month|내일|모레|오늘|today|tomorrow/;
+
 const asksAmount = /얼마|총액|합계|총합|합쳐|합치|다\s*합|금액|how much|total/;
-const yearly = /1년|일년|한\s*해|연간|연\s*단위|올해|1\s*년|year|annual/;
+const yearly = /1년|일년|한\s*해|연간|연\s*단위|올해|1\s*년|12\s*개월|열두\s*달|year|annual/;
 const monthly = /한\s*달|1달|월\s*(?:에|마다|고정|구독)|매달|매월|달에|월간|month/;
 
 /**
@@ -149,11 +167,14 @@ export function localAskCall(
   // 무료 체험이 끝나는 구독
   if (/무료\s*체험|체험|trial/.test(q)) {
     if (!/끝|종료|만료|end/.test(q)) return null;
-    return { tool: "trialsEnding", args: { days: parseDays(q, options.now) ?? 31 } };
+    const days = parseDays(q, options.now);
+    // 기간을 적었는데 읽지 못했으면("week's trial") 31일로 넓히지 않고 AI에 맡긴다
+    if (days === null && PERIOD_WORDS.test(q)) return null;
+    return { tool: "trialsEnding", args: { days: days ?? 31 } };
   }
 
   // 지킨 돈(해지로 아낀 돈). 기간이 적히지 않았으면("얼마 아꼈어?") 이번 달인지 올해인지 정하지 않고 AI에 맡긴다.
-  if (/아낀|아꼈|절약|지킨|굳은|saved|saving/.test(q)) {
+  if (/아낀|아꼈|절약|지킨|굳은|sav(?:e|ed|ing)\b/.test(q)) {
     const isYear = yearly.test(q);
     const isMonth = /이번\s*달|한\s*달|this month/.test(q);
     if (isYear === isMonth) return null;
@@ -164,7 +185,8 @@ export function localAskCall(
   if (/겹치|중복|두\s*번\s*내|overlap|duplicate/.test(q)) return { tool: "overlaps" };
 
   // 거의 안 쓰는 구독
-  if (/안\s*쓰는|안쓰는|거의\s*안|쓰지\s*않는|안\s*쓴|놀고\s*있는|unused|not using/.test(q)) {
+  // '안'은 낱말 앞에서만 본다 — "한 해 동안 쓴"의 '안 쓴'을 '안 쓰는 구독'으로 읽었다
+  if (/(?:^|\s)안\s*(?:쓰는|쓴)|거의\s*안|쓰지\s*않는|놀고\s*있는|unused|not using/.test(q)) {
     return { tool: "lowUsage" };
   }
 
@@ -188,9 +210,11 @@ export function localAskCall(
     return { tool: "spendByCategory", args: { category: categories[0] } };
   }
 
-  // 전체 지출
+  // 전체 지출. 기간(며칠·이번 주)이 붙은 '얼마'는 결제 예정이고, 순위·해지·절약이 섞이면 뜻이 여럿이라 AI에 맡긴다.
   if (/구독/.test(q) || /subscription/.test(q)) {
     if (!asksAmount.test(q) && !/나가|내고|쓰고|spend/.test(q)) return null;
+    if (parseDays(q, options.now) !== null) return null;
+    if (/해지|취소|제일|가장|덜|top|cancel|least|most|cheap/.test(q)) return null;
     const isYear = yearly.test(q);
     const isMonth = monthly.test(q);
     if (isYear && isMonth) return null;

@@ -250,7 +250,9 @@ async function generate() {
 
   mkdirSync(CANDIDATES_DIR, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const file = join(CANDIDATES_DIR, `${config.provider}-${config.model}-${stamp}.json`);
+  // 모델 ID에 '/'가 든 경우(`local/qwen3-coder-next`) 폴더로 읽히지 않게 평가 결과 파일처럼 바꾼다.
+  const model = config.model.replace(/[^\w.-]/g, "_");
+  const file = join(CANDIDATES_DIR, `${config.provider}-${model}-${stamp}.json`);
   writeFileSync(file, `${JSON.stringify(rows, null, 2)}\n`);
   console.log(`\n${rows.length}개를 썼다(겹쳐서 버린 것 ${skipped}개): ${file}`);
   console.log("줄마다 keep을 true/false로 정한 뒤 `ask:train accept <파일>`로 넣는다.");
