@@ -162,7 +162,10 @@ export interface ToolDefinition {
   parameters: JsonSchema;
 }
 
-/** 회사가 고른 도구(확인 전). 이름·인자가 없으면 글로만 답한 것이다. */
+/**
+ * 회사가 고른 도구(확인 전). 이름·인자가 없으면 글로만 답했거나 도구를 둘 이상 불렀다 — 질문 하나에 도구 하나라서,
+ * 정상 질문 뒤에 다른 지시를 붙여 도구를 여럿 부르게 한 응답은 어느 것도 쓰지 않는다(부르는 쪽이 거절한다).
+ */
 export interface RawToolCall {
   name: unknown;
   args: unknown;
@@ -213,7 +216,8 @@ export async function pickTool(
       timeoutMs,
     );
     const content = Array.isArray(data.content) ? (data.content as Record<string, unknown>[]) : [];
-    const use = content.find((block) => block.type === "tool_use");
+    const uses = content.filter((block) => block.type === "tool_use");
+    const use = uses.length === 1 ? uses[0] : undefined;
     const usage = (data.usage ?? {}) as { input_tokens?: number; output_tokens?: number };
     return {
       name: use?.name,
@@ -247,7 +251,7 @@ export async function pickTool(
     const message = (choices[0]?.message ?? {}) as {
       tool_calls?: { function?: { name?: unknown; arguments?: unknown } }[];
     };
-    const fn = message.tool_calls?.[0]?.function;
+    const fn = message.tool_calls?.length === 1 ? message.tool_calls[0].function : undefined;
     const usage = (data.usage ?? {}) as { prompt_tokens?: number; completion_tokens?: number };
     return {
       name: fn?.name,
@@ -289,7 +293,8 @@ export async function pickTool(
     ?.parts ?? []) as {
     functionCall?: { name?: unknown; args?: unknown };
   }[];
-  const fn = parts.find((part) => part.functionCall)?.functionCall;
+  const calls = parts.filter((part) => part.functionCall);
+  const fn = calls.length === 1 ? calls[0].functionCall : undefined;
   const usage = (data.usageMetadata ?? {}) as {
     promptTokenCount?: number;
     candidatesTokenCount?: number;
@@ -315,12 +320,14 @@ const ASK_TOOL_DEFINITIONS: ToolDefinition[] = TOOL_NAMES.map((name) => ({
  * 있고 여기 들어오지 않는다(AskTurn).
  */
 export function askUserMessage(question: string, history: readonly AskTurn[] = []): string {
-  if (history.length === 0) return question;
+  // 줄바꿈으로 '앞선 질문' 같은 머리말을 흉내 내지 못하게 한 줄로 만든다(앞선 질문은 JSON 문자열이라 이미 한 줄이다).
+  const flat = question.replace(/\s+/g, " ").trim();
+  if (history.length === 0) return flat;
   const lines = history.map((turn, i) => {
     const args = turn.call.args ? ` ${JSON.stringify(turn.call.args)}` : "";
     return `${i + 1}. ${JSON.stringify(turn.question)} → ${turn.call.tool}${args}`;
   });
-  return `앞선 질문(꼬리 질문을 알아듣는 데만 쓴다):\n${lines.join("\n")}\n\n지금 질문: ${question}`;
+  return `앞선 질문(꼬리 질문을 알아듣는 데만 쓴다):\n${lines.join("\n")}\n\n지금 질문: ${flat}`;
 }
 
 export async function pickAskCall(

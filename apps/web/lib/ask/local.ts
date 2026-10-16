@@ -85,6 +85,14 @@ const FOLLOW_UP =
 /** 지시를 바꾸려는 말. 규칙으로 답하지 않고 AI(→ unsupported)에 맡긴다. */
 const STEERING = /무시|시스템|프롬프트|지시|관리자|모드|도구|ignore|system|prompt|admin/;
 
+/**
+ * 지시를 바꾸려는 것이 분명한 말. 이런 질문은 AI에 보내지 않고 기기·서버 입구에서 곧바로 unsupported다 — 보내면 횟수와
+ * 비용을 쓰고, 탈옥 문구를 모델에 시험해 볼 기회를 준다. 위의 `STEERING`("모드"·"도구"·"시스템")은 평범한 질문에도
+ * 나와 거절하지 않고 AI에 맡기므로, 여기에는 정상 질문에 나올 일이 없는 표현만 둔다.
+ */
+const INJECTION =
+  /jailbreak|탈옥|developer\s*mode|개발자\s*모드|ignore\s+(?:all\s+|any\s+|the\s+)?(?:previous|prior|above|earlier)\s+(?:instructions?|prompts?|rules?)|(?:이전|앞|위|기존)(?:의|에)?\s*(?:지시|명령|지침|규칙|프롬프트)\S*\s*(?:다\s*)?(?:무시|잊)|(?:시스템|system)\s*(?:프롬프트|prompt)|前の指示|(?:忽略|无视)(?:之前|以上|上面|前面)/;
+
 const CATEGORY_WORDS: [RegExp, AskCategory][] = [
   [/ott|영상|동영상|스트리밍|드라마|영화/, "ott"],
   [/음악|뮤직|music/, "music"],
@@ -117,13 +125,14 @@ const yearly = /1년|일년|한\s*해|연간|연\s*단위|올해|1\s*년|year|an
 const monthly = /한\s*달|1달|월\s*(?:에|마다|고정|구독)|매달|매월|달에|월간|month/;
 
 /**
- * 규칙으로 고를 수 있으면 그 호출, 아니면 null. `hasHistory`면 짧은 꼬리 질문을 규칙으로 읽지 않는다.
+ * 규칙으로 고를 수 있으면 그 호출, 아니면 null. 탈옥 문구(`INJECTION`)는 unsupported다. `hasHistory`면 짧은 꼬리 질문을 규칙으로 읽지 않는다.
  */
 export function localAskCall(
   question: string,
   options: { now: Date; subscriptions?: readonly Subscription[]; hasHistory?: boolean },
 ): AskCall | null {
   const q = normalize(question);
+  if (INJECTION.test(q)) return { tool: "unsupported" };
   if (q.length < 4 || q.length > 60) return null;
   if (STEERING.test(q)) return null;
   if (options.hasHistory && FOLLOW_UP.test(q)) return null;

@@ -92,6 +92,7 @@ export const ko = {
       source: "등록한 구독 이름",
       notFound: (query: string) => `'${query}'로 등록한 구독을 찾지 못했어요.`,
       notFoundNote: "이름을 바꿔 물어보세요.",
+      manyUnnamed: (count: number) => `맞는 구독이 ${count}개예요. 이름을 더 정확히 적어 주세요.`,
       many: (query: string, count: number) =>
         `'${query}'에 맞는 구독이 ${count}개예요. 이름을 더 정확히 적어 주세요.`,
       plansSource: "서비스 요금제 목록",
@@ -227,6 +228,8 @@ export const en: Widen<typeof ko> = {
       source: "Names of your subscriptions",
       notFound: (query) => `Couldn't find a subscription matching '${query}'.`,
       notFoundNote: "Try asking with a different name.",
+      manyUnnamed: (count) =>
+        `${count} subscriptions match. Please be more specific about the name.`,
       many: (query, count) =>
         `${count} subscriptions match '${query}'. Please be more specific about the name.`,
       plansSource: "The service's plan list",
@@ -356,6 +359,7 @@ export const zh: Widen<typeof ko> = {
       source: "你的订阅名称",
       notFound: (query) => `找不到与“${query}”相符的订阅。`,
       notFoundNote: "换个名称再问问看。",
+      manyUnnamed: (count) => `有 ${count} 个订阅相符。请把名称说得更具体些。`,
       many: (query, count) => `有 ${count} 个订阅与“${query}”相符。请把名称说得更具体些。`,
       plansSource: "该服务的套餐列表",
       noPlans: (name) => `${name} 没有可比较的套餐列表。`,
@@ -481,6 +485,8 @@ export const ja: Widen<typeof ko> = {
       source: "あなたのサブスクの名前",
       notFound: (query) => `「${query}」に合うサブスクが見つかりませんでした。`,
       notFoundNote: "別の名前で聞いてみてください。",
+      manyUnnamed: (count) =>
+        `合うサブスクが ${count} 件あります。名前をもう少し詳しく教えてください。`,
       many: (query, count) =>
         `「${query}」に合うサブスクが ${count} 件あります。名前をもう少し詳しく教えてください。`,
       plansSource: "サービスのプラン一覧",
@@ -608,6 +614,7 @@ export const vi: Widen<typeof ko> = {
       source: "Tên các gói đăng ký của bạn",
       notFound: (query) => `Không tìm thấy gói nào khớp với “${query}”.`,
       notFoundNote: "Hãy thử hỏi bằng tên khác.",
+      manyUnnamed: (count) => `Có ${count} gói khớp. Hãy nói tên cụ thể hơn.`,
       many: (query, count) => `Có ${count} gói khớp với “${query}”. Hãy nói tên cụ thể hơn.`,
       plansSource: "Danh sách gói cước của dịch vụ",
       noPlans: (name) => `${name} không có danh sách gói cước để so sánh.`,
@@ -742,6 +749,7 @@ export const fr: Widen<typeof ko> = {
       source: "Noms de vos abonnements",
       notFound: (query) => `Aucun abonnement ne correspond à « ${query} ».`,
       notFoundNote: "Essayez avec un autre nom.",
+      manyUnnamed: (count) => `${count} abonnements correspondent. Précisez le nom.`,
       many: (query, count) => `${count} abonnements correspondent à « ${query} ». Précisez le nom.`,
       plansSource: "Liste des formules du service",
       noPlans: (name) => `${name} n'a pas de liste de formules à comparer.`,
@@ -877,6 +885,7 @@ export const es: Widen<typeof ko> = {
       source: "Nombres de tus suscripciones",
       notFound: (query) => `No se encontró una suscripción que coincida con «${query}».`,
       notFoundNote: "Prueba a preguntar con otro nombre.",
+      manyUnnamed: (count) => `${count} suscripciones coinciden. Concreta un poco más el nombre.`,
       many: (query, count) =>
         `${count} suscripciones coinciden con «${query}». Concreta un poco más el nombre.`,
       plansSource: "Lista de planes del servicio",
@@ -1011,6 +1020,7 @@ export const de: Widen<typeof ko> = {
       source: "Namen deiner Abos",
       notFound: (query) => `Kein Abo passt zu „${query}“.`,
       notFoundNote: "Frag mit einem anderen Namen.",
+      manyUnnamed: (count) => `${count} Abos passen. Bitte nenn den Namen genauer.`,
       many: (query, count) => `${count} Abos passen zu „${query}“. Bitte nenn den Namen genauer.`,
       plansSource: "Tarifliste des Dienstes",
       noPlans: (name) => `${name} hat keine Tarifliste zum Vergleichen.`,
@@ -1145,6 +1155,7 @@ export const pt: Widen<typeof ko> = {
       source: "Nomes das suas assinaturas",
       notFound: (query) => `Não encontramos uma assinatura que corresponda a “${query}”.`,
       notFoundNote: "Tente perguntar com outro nome.",
+      manyUnnamed: (count) => `${count} assinaturas correspondem. Seja mais específico no nome.`,
       many: (query, count) =>
         `${count} assinaturas correspondem a “${query}”. Seja mais específico no nome.`,
       plansSource: "Lista de planos do serviço",
