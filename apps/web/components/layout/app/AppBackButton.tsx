@@ -11,6 +11,16 @@ const TAB_ROOTS = ["/dashboard", "/subs", "/report", "/settings"];
 const EXIT_WINDOW_MS = 2000;
 
 /**
+ * 앞 화면이 있는지. 네이티브가 주는 `canGoBack`(WebView.canGoBack)은 next/link·`router.push`가 쌓은 기록이 있어도
+ * false라, 구독 관리 → 구독 상세에서 뒤로가기를 누르면 구독 관리가 아니라 늘 대시보드로 갔다. 웹뷰의 Navigation
+ * API는 그 기록을 세므로 먼저 본다(없는 웹뷰만 네이티브 값).
+ */
+function canGoBackInPage(nativeCanGoBack: boolean): boolean {
+  const navigation = (window as { navigation?: { canGoBack?: boolean } }).navigation;
+  return typeof navigation?.canGoBack === "boolean" ? navigation.canGoBack : nativeCanGoBack;
+}
+
+/**
  * 안드로이드 뒤로가기(앱 전용). `@capacitor/app`이 없으면 운영체제가 뒤로가기를 받아 앱 화면을 그냥
  * 닫아 버린다 — 시트를 열어 둔 채로 눌러도, 다른 탭에서 눌러도 앱이 꺼졌다.
  *
@@ -58,7 +68,7 @@ export function AppBackButton() {
             hideTimerRef.current = setTimeout(() => setHintVisible(false), EXIT_WINDOW_MS);
             return;
           }
-          if (canGoBack) window.history.back();
+          if (canGoBackInPage(canGoBack)) window.history.back();
           else router.replace("/dashboard");
         });
         if (cancelled) void handle.remove();
