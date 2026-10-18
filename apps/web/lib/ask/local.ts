@@ -99,6 +99,12 @@ const FOLLOW_UP =
   /^(?:그럼|그러면|그거|그건|그것|걔|거기|반대로|아까|그 중|그중|then|what about|and )|(?:은|는)\?*$/;
 /** 지시를 바꾸려는 말. 규칙으로 답하지 않고 AI(→ unsupported)에 맡긴다. */
 const STEERING = /무시|시스템|프롬프트|지시|관리자|모드|도구|ignore|system|prompt|admin/;
+/**
+ * 내 기록으로 답할 수 없는 말: 다른 사람의 구독을 묻거나, 앞으로 어떻게 답하라고 가르치는 말. 규칙은 '구독'·'금액'만 보고
+ * 내 지출 합계로 답해, "다른 사용자들이 많이 구독하는 서비스와 금액"에 내 합계를 남들의 것처럼 보였다. AI(→ unsupported)에 맡긴다.
+ */
+const NOT_MY_RECORDS =
+  /다른\s*(?:사용자|사람|유저|이용자)|남들|사람들|other\s+(?:users|people)|everyone|학습|기억해|피드백|(?:으?로|처럼)\s*답(?:하|해)|remember|from now on/;
 
 /**
  * 지시를 바꾸려는 것이 분명한 말. 이런 질문은 AI에 보내지 않고 기기·서버 입구에서 곧바로 unsupported다 — 보내면 횟수와
@@ -152,7 +158,7 @@ export function localAskCall(
   const q = normalize(question);
   if (INJECTION.test(q)) return { tool: "unsupported" };
   if (q.length < 4 || q.length > 60) return null;
-  if (STEERING.test(q)) return null;
+  if (STEERING.test(q) || NOT_MY_RECORDS.test(q)) return null;
   if (options.hasHistory && FOLLOW_UP.test(q)) return null;
   if (mentionsService(q, options.subscriptions ?? [])) return null;
   // 비교·순위·요금제·사용법은 규칙으로 읽지 않는다(뜻이 여럿이다).
