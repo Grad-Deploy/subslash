@@ -6,6 +6,7 @@ import { pruneDeviceUsage } from "@lib/device-usage-server";
 import { pruneAbandonedAccounts } from "@lib/account-verification";
 import { pruneExpiredSessions } from "@lib/auth-server";
 import { logError } from "@lib/log";
+import { checkTursoUsage } from "@lib/turso-usage";
 
 /**
  * 하루 한 번 서버 기록을 치운다(vercel.json의 `crons`).
@@ -61,8 +62,15 @@ export async function GET(request: NextRequest) {
       return null;
     });
 
+    // Turso 사용량이 한도에 가까우면 운영자에게 알린다(설정이 없으면 보지 않음, lib/turso-usage).
+    const tursoUsage = await checkTursoUsage().catch((error: unknown) => {
+      logError("cron/notify turso usage check failed", error);
+      return { status: "error" as const, reason: "exception" };
+    });
+
     return NextResponse.json({
       success: true,
+      tursoUsage,
       sessionsPruned,
       prunedAccounts,
       prunedUsage,
