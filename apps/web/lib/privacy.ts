@@ -17,7 +17,7 @@ export const PRIVACY_OFFICER: { name: string; email: string } | null = {
 };
 
 /** 이 방침이 효력을 갖는 날. 내용을 바꾸면 함께 바꾼다. */
-export const PRIVACY_EFFECTIVE_DATE = "2026년 10월 16일";
+export const PRIVACY_EFFECTIVE_DATE = "2026년 10월 18일";
 
 /**
  * 결제 알림 메일·캘린더 구독 주소를 그만둔 날. 방침의 '(종료)' 항목이 쓴다 — 예전에는 시행일을 그대로 써서,
@@ -52,6 +52,16 @@ export function isGmailAutoImportOpen(now: Date = new Date()): boolean {
  * null이거나 그날 전이면 API·화면 모두 닫힌다. 날짜가 와도 서버에 모델·키(`ASK_PROVIDER`·`ASK_MODEL`·키)가 없으면 닫힌 채다.
  */
 export const AI_ASK_STARTS_ON: string | null = "2026-10-16";
+
+/**
+ * 로그인한 계정의 AI 질문 횟수를 하루 단위로 DB에 세기 시작하는 날(YYYY-MM-DD, 한국 시간 0시). 지금은 서버 메모리에
+ * 세어(lib/ask/guard) 인스턴스가 여럿이거나 배포하면 하루 한도가 정확하지 않고, 남은 횟수를 보여 줄 수 없다. 계정마다
+ * 날짜·기능·횟수를 새로 저장하는 변경이라 방침에 먼저 게시했다(2026년 10월 18일 게시, 7일 뒤 시작).
+ *
+ * **아직 구현하지 않았다.** 이 날짜 전에 저장(질문 문장 없이 계정 ID·날짜·기능·횟수), 하루 크론의 지난 날 삭제, 회원
+ * 탈퇴 시 삭제를 넣어야 방침과 맞는다. 미루려면 이 날짜를 늦추고 PRIVACY_EFFECTIVE_DATE를 함께 바꾼다.
+ */
+export const AI_ASK_DAILY_COUNT_STARTS_ON: string | null = "2026-10-25";
 
 /** AI에게 묻는 기능이 열렸는지. 테스트 서버는 Gmail 자동 가져오기처럼 스위치로 연다. */
 export function isAiAskOpen(now: Date = new Date()): boolean {

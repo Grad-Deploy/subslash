@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import {
+  AI_ASK_DAILY_COUNT_STARTS_ON,
   AI_ASK_STARTS_ON,
   ANONYMOUS_STATS_ENDED_ON,
   ANONYMOUS_STATS_STARTS_ON,
@@ -155,6 +156,15 @@ export function PrivacyKo() {
             않습니다). 목적: 적은 질문에 맞는 계산·도움말 고르기.
           </Item>
         )}
+        {/* 저장 항목이 늘어나는 변경이라 시행 전에 알린다(lib/privacy.ts의 AI_ASK_DAILY_COUNT_STARTS_ON). */}
+        {AI_ASK_STARTS_ON && AI_ASK_DAILY_COUNT_STARTS_ON && (
+          <Item title={`AI 질문 횟수 (로그인 시, ${koreanDate(AI_ASK_DAILY_COUNT_STARTS_ON)}부터)`}>
+            로그인한 상태로 &lsquo;AI에게 묻기&rsquo;를 쓰면, 하루 질문 한도를 지키고 남은 횟수를
+            알려 드리려고 계정 ID, 날짜(한국 시간), 기능(리포트에 물어보기·도움말), 그날 AI에 보낸
+            질문 횟수를 저장합니다. 질문 문장은 저장하지 않습니다. 로그인하지 않았으면 지금처럼 IP
+            주소마다 메모리에서만 셉니다. 목적: 계정마다 하루 질문 횟수 제한과 남은 횟수 안내.
+          </Item>
+        )}
         <Item title="회원가입·로그인 (선택)">
           아이디, 이메일, 비밀번호(되돌릴 수 없는 해시로만 저장하며 원문은 저장하지 않음), 이메일
           확인 시각, 가입·마지막 로그인 시각을 저장합니다. 가입할 때 묻는 만 14세 이상 여부는
@@ -231,6 +241,12 @@ export function PrivacyKo() {
               AI에게 묻기: 질문은 저장하지 않습니다. 서버 메모리에 둔 질문과 고른 계산은 하루가
               지나거나 서버가 다시 시작되면 사라지고, 단국대학교의 AI 서버도 질문을 저장하지
               않습니다.
+            </li>
+          )}
+          {AI_ASK_STARTS_ON && AI_ASK_DAILY_COUNT_STARTS_ON && (
+            <li>
+              AI 질문 횟수: 그날이 지나면 다음 날 하루 한 번 자동으로 지워 이틀을 넘겨 두지 않고,
+              회원 탈퇴하면 곧바로 지웁니다.
             </li>
           )}
           <li>익명 구독 통계: 그만둔 뒤 남은 기록을 저장하던 표째 지웁니다.</li>
