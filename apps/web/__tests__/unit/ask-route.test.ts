@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetAllRateLimits } from "@lib/rate-limit";
+import { NextRequest } from "next/server";
+import { getAccountBySessionToken } from "@lib/auth-server";
 import { POST, resetAskCache } from "@/api/ask/route";
+
+vi.mock("@lib/auth-server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@lib/auth-server")>()),
+  getAccountBySessionToken: vi.fn(async () => null),
+}));
+const accountFor = vi.mocked(getAccountBySessionToken);
 
 const ENV = {
   NEXT_PUBLIC_AI_ASK_TEST_OPEN: "true",
@@ -16,6 +24,21 @@ function ask(question: unknown, ip = "1.2.3.4", history?: unknown) {
       headers: { "content-type": "application/json", "x-forwarded-for": ip },
       body: JSON.stringify(history === undefined ? { question } : { question, history }),
     }) as never,
+  );
+}
+
+/** 로그인한 앱처럼 세션 토큰을 헤더로 싣고 묻는다. */
+function askAs(token: string, question: string, ip = "1.2.3.4") {
+  return POST(
+    new NextRequest("http://localhost/api/ask", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-forwarded-for": ip,
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ question }),
+    }),
   );
 }
 
@@ -111,6 +134,28 @@ describe("POST /api/ask", () => {
     expect(Number(blocked.headers.get("Retry-After"))).toBeGreaterThan(0);
     // 다른 사람은 막지 않는다.
     expect((await ask("질문 10", "5.6.7.8")).status).toBe(200);
+  });
+
+  it("로그인했으면 IP가 아니라 계정마다 센다 — 같은 IP를 쓰는 사람끼리 막지 않는다", async () => {
+    accountFor.mockImplementation(async (token) =>
+      token === "a" || token === "b" ? ({ id: `acct-${token}` } as never) : null,
+    );
+    // 같은 IP(학교 와이파이)의 비로그인 사용자가 IP 한도를 다 썼다
+    for (let i = 0; i < 10; i++) expect((await ask(`손님 ${i}`)).status).toBe(200);
+    expect((await ask("손님 10")).status).toBe(429);
+    // 같은 IP의 로그인 사용자는 자기 계정 한도로 묻는다
+    for (let i = 0; i < 10; i++) expect((await askAs("a", `계정 ${i}`)).status).toBe(200);
+    // 계정 한도를 다 쓰면 IP를 바꿔도 막힌다
+    expect((await askAs("a", "계정 10", "9.9.9.9")).status).toBe(429);
+    // 다른 계정은 따로 센다
+    expect((await askAs("b", "계정 10")).status).toBe(200);
+    // 끝난 세션은 로그인하지 않은 것으로 보고 IP로 센다
+    expect((await askAs("expired", "끝난 세션")).status).toBe(429);
+    // 세션을 읽지 못하면 질문을 막지 않고 IP로 센다
+    accountFor.mockRejectedValueOnce(new Error("db down"));
+    expect((await askAs("a", "DB 오류", "8.8.8.8")).status).toBe(200);
+    accountFor.mockReset();
+    accountFor.mockResolvedValue(null);
   });
 
   it("AI 회사가 실패하면 502로 알리고 답을 저장하지 않는다", async () => {
