@@ -58,6 +58,8 @@ export function AskReport({
   const [question, setQuestion] = useState("");
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [busy, setBusy] = useState(false);
+  /** 로그인한 계정의 오늘 남은 AI 질문 횟수. 서버가 알려 준 뒤에만 보인다. */
+  const [remaining, setRemaining] = useState<number>();
   const nextId = useRef(0);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -87,7 +89,13 @@ export function AskReport({
         settle({ miss: true });
         return;
       }
-      const call = preset ?? refineCall(local ?? (await askReport(trimmed, history)), trimmed, now);
+      let picked = local;
+      if (!picked) {
+        const reply = await askReport(trimmed, history);
+        if (reply.remaining !== undefined) setRemaining(reply.remaining);
+        picked = reply.call;
+      }
+      const call = preset ?? refineCall(picked, trimmed, now);
       settle({
         call,
         answer: answerAsk(call, {
@@ -188,6 +196,9 @@ export function AskReport({
         </button>
       </form>
       <p className="text-[11px] text-muted-foreground">{aiOpen ? a.privacy : a.privacyLocal}</p>
+      {aiOpen && remaining !== undefined && (
+        <p className="text-[11px] font-semibold text-muted-foreground">{a.remaining(remaining)}</p>
+      )}
       {aiOpen && turns.length > 0 && (
         <p className="text-[11px] text-muted-foreground">{a.contextNote}</p>
       )}

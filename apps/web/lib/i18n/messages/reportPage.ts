@@ -58,6 +58,7 @@ export const ko = {
       followupPlaceholder: "이어서 물어보기 (예: 그럼 1년이면?)",
       contextNote:
         "이어서 물으면 같은 대화의 앞선 질문 3개까지 함께 보내 꼬리 질문을 알아들어요. 답과 숫자는 보내지 않아요.",
+      remaining: (count: number) => `오늘 남은 AI 질문 ${count}번`,
       youAsked: "물어본 질문",
       privacy:
         "질문 문장만 AI로 보내요. 내 구독 목록과 금액은 보내지 않아요. 이름·연락처 같은 개인정보는 적지 마세요.",
@@ -119,6 +120,8 @@ export const en: Widen<typeof ko> = {
       followupPlaceholder: "Ask a follow-up (e.g. what about a year?)",
       contextNote:
         "Follow-ups send up to 3 earlier questions from this chat so the AI understands them. Answers and numbers aren't sent.",
+      remaining: (count: number) =>
+        `${count} AI ${count === 1 ? "question" : "questions"} left today`,
       youAsked: "You asked",
       privacy:
         "Only the question text goes to the AI. Your subscription list and amounts aren't sent. Don't include personal details such as your name or contacts.",
@@ -182,6 +185,7 @@ export const zh: Widen<typeof ko> = {
       followupPlaceholder: "继续提问（例如：那一年呢？）",
       contextNote:
         "继续提问时，会一并发送本次对话中最多 3 个之前的问题，以便理解追问。不会发送回答和数字。",
+      remaining: (count: number) => `今天还可以向 AI 提问 ${count} 次`,
       youAsked: "你的问题",
       privacy:
         "只有问题文字会发送给 AI，订阅列表和金额不会发送。请不要写入姓名、联系方式等个人信息。",
@@ -242,6 +246,7 @@ export const ja: Widen<typeof ko> = {
       followupPlaceholder: "続けて聞く（例：じゃあ1年だと？）",
       contextNote:
         "続けて聞くと、この会話の前の質問を最大 3 件いっしょに送り、続きの質問を理解します。答えと数字は送りません。",
+      remaining: (count: number) => `今日 AI に聞けるのはあと ${count} 回`,
       youAsked: "聞いた質問",
       privacy:
         "AI には質問の文章だけが送られ、サブスクの一覧や金額は送られません。名前や連絡先などの個人情報は書かないでください。",
@@ -302,6 +307,7 @@ export const vi: Widen<typeof ko> = {
       followupPlaceholder: "Hỏi tiếp (ví dụ: còn một năm thì sao?)",
       contextNote:
         "Khi hỏi tiếp, tối đa 3 câu hỏi trước trong cuộc trò chuyện này được gửi kèm để AI hiểu câu hỏi nối tiếp. Câu trả lời và con số không được gửi.",
+      remaining: (count: number) => `Hôm nay còn ${count} câu hỏi AI`,
       youAsked: "Bạn đã hỏi",
       privacy:
         "Chỉ nội dung câu hỏi được gửi đến AI. Danh sách và số tiền đăng ký không được gửi. Đừng ghi thông tin cá nhân như tên hay số liên lạc.",
@@ -364,6 +370,8 @@ export const fr: Widen<typeof ko> = {
       followupPlaceholder: "Poser une question de suite (ex. : et sur un an ?)",
       contextNote:
         "Pour une question de suite, jusqu'à 3 questions précédentes de cette conversation sont envoyées pour que l'IA comprenne. Les réponses et les chiffres ne sont pas envoyés.",
+      remaining: (count: number) =>
+        `${count} ${rpPl(count, "question IA restante", "questions IA restantes")} aujourd'hui`,
       youAsked: "Votre question",
       privacy:
         "Seul le texte de la question est envoyé à l'IA. Votre liste d'abonnements et vos montants ne le sont pas. N'y mettez pas de données personnelles comme votre nom ou vos coordonnées.",
@@ -426,6 +434,8 @@ export const es: Widen<typeof ko> = {
       followupPlaceholder: "Seguir preguntando (p. ej.: ¿y en un año?)",
       contextNote:
         "Al seguir preguntando se envían hasta 3 preguntas anteriores de esta conversación para que la IA entienda. No se envían respuestas ni cifras.",
+      remaining: (count: number) =>
+        `${count} ${rpPl(count, "pregunta de IA restante", "preguntas de IA restantes")} hoy`,
       youAsked: "Preguntaste",
       privacy:
         "Solo el texto de la pregunta va a la IA. Tu lista de suscripciones y los importes no se envían. No incluyas datos personales como tu nombre o contacto.",
@@ -488,6 +498,7 @@ export const de: Widen<typeof ko> = {
       followupPlaceholder: "Nachfragen (z. B. und für ein Jahr?)",
       contextNote:
         "Bei Nachfragen werden bis zu 3 frühere Fragen aus diesem Chat mitgeschickt, damit die KI sie versteht. Antworten und Zahlen werden nicht gesendet.",
+      remaining: (count: number) => `Heute noch ${count} ${rpPl(count, "KI-Frage", "KI-Fragen")}`,
       youAsked: "Deine Frage",
       privacy:
         "Nur der Fragetext geht an die KI. Deine Abo-Liste und Beträge werden nicht gesendet. Schreib keine persönlichen Daten wie Namen oder Kontaktdaten hinein.",
@@ -551,6 +562,8 @@ export const pt: Widen<typeof ko> = {
       followupPlaceholder: "Continuar perguntando (ex.: e em um ano?)",
       contextNote:
         "Ao continuar, até 3 perguntas anteriores desta conversa vão junto para a IA entender. Respostas e números não são enviados.",
+      remaining: (count: number) =>
+        `${count} ${rpPl(count, "pergunta de IA restante", "perguntas de IA restantes")} hoje`,
       youAsked: "Você perguntou",
       privacy:
         "Só o texto da pergunta vai para a IA. Sua lista de assinaturas e os valores não são enviados. Não inclua dados pessoais como nome ou contato.",

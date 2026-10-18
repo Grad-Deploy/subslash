@@ -170,6 +170,11 @@ const MIGRATIONS: Migration[] = [
     file: "0018_drop_anonymous_stats.sql",
     check: (schema) => droppedState(schema, RETIRED_STATS_TABLES),
   },
+  {
+    id: "0019",
+    file: "0019_ask_daily_counts.sql",
+    check: (schema) => tablesState(schema, ["ask_daily_counts"], ["accounts"]),
+  },
 ];
 
 const STATE_LABEL: Record<State, string> = {

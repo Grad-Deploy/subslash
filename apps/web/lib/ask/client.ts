@@ -17,7 +17,7 @@ import {
 export async function askReport(
   question: string,
   history: readonly AskTurn[] = [],
-): Promise<AskCall> {
+): Promise<{ call: AskCall; remaining?: number }> {
   const recent = history.filter(isContextTurn).slice(-MAX_ASK_HISTORY);
   const response = await apiFetch("/api/ask", {
     method: "POST",
@@ -25,6 +25,13 @@ export async function askReport(
     body: JSON.stringify(recent.length > 0 ? { question, history: recent } : { question }),
   });
   if (!response.ok) throw new Error(await readApiError(response, "지금은 답할 수 없어요."));
-  const { call } = (await response.json()) as { call?: unknown };
-  return isValidAskCall(call) ? call : { tool: "unsupported" };
+  const { call, remaining } = (await response.json()) as { call?: unknown; remaining?: unknown };
+  return {
+    call: isValidAskCall(call) ? call : { tool: "unsupported" },
+    // 로그인한 계정의 오늘 남은 AI 질문 횟수(lib/ask/guard). 서버가 세지 않은 답에는 없다.
+    remaining:
+      typeof remaining === "number" && Number.isInteger(remaining) && remaining >= 0
+        ? remaining
+        : undefined,
+  };
 }
