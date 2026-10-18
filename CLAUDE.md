@@ -278,6 +278,14 @@ parser의 `senderDomains`)는 따로 검색해 상한에 밀리지 않게 한다
 안드로이드는 세션 토큰이 든 Preferences(`CapacitorStorage.xml`)를 Google 클라우드 백업에서 뺀다
 (`res/xml/data_extraction_rules.xml`) — Preferences에 새 비밀값을 두면 이 규칙이 함께 지킨다.
 
+## 운영 알림
+
+따로 관리자 화면을 두지 않는다 — 서버에 볼 기록이 거의 없고, 운영자가 계정 기록을 여는 것은 방침의 저장 목적에 없다.
+오류는 Vercel 알림 규칙이 알린다(팀 기본 규칙 + `/api/*` 5xx·함수 사용량 이상을 medium부터 보는 규칙, `vercel alerts rules ls --all`).
+Turso는 한도에 가까워져도 알리지 않고 넘으면 쿼리를 거절하므로, 하루 크론이 플랫폼 API로 사용량을 읽어 운영자에게
+메일을 보낸다(`lib/turso-usage`, 환경 변수는 `.env.example`). 한도는 응답에서 읽지 않고 환경 변수로 적는다 — 확인하지
+못한 한도로 비율을 셈하면 '여유 있음'이 거짓이 된다. 사용자 기록은 읽지도 보내지도 않는다.
+
 ## 구독 리포트와 익명 통계
 
 하단 탭의 세 번째는 '리포트'(`/report`)다. 예전 '절약 현황'은 해지한 구독이 없으면 빈 화면이라, 해지
