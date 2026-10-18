@@ -1,7 +1,8 @@
 import { timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { isDeviceUsageOpen } from "@lib/privacy";
+import { isAiAskDailyCountOpen, isDeviceUsageOpen } from "@lib/privacy";
+import { pruneAskDailyCounts } from "@lib/ask/daily-count";
 import { pruneDeviceUsage } from "@lib/device-usage-server";
 import { pruneAbandonedAccounts } from "@lib/account-verification";
 import { pruneExpiredSessions } from "@lib/auth-server";
@@ -62,6 +63,17 @@ export async function GET(request: NextRequest) {
       return null;
     });
 
+    // 지난 날의 AI 질문 횟수(방침: 다음 날 지워 이틀을 넘기지 않는다). 열기 전에는 표가 없을 수 있다.
+    const askCountsPruned = isAiAskDailyCountOpen(now)
+      ? await pruneAskDailyCounts(now).then(
+          () => true,
+          (error: unknown) => {
+            logError("cron/notify ask count prune failed", error);
+            return false;
+          },
+        )
+      : null;
+
     // Turso 사용량이 한도에 가까우면 운영자에게 알린다(설정이 없으면 보지 않음, lib/turso-usage).
     const tursoUsage = await checkTursoUsage().catch((error: unknown) => {
       logError("cron/notify turso usage check failed", error);
@@ -74,6 +86,7 @@ export async function GET(request: NextRequest) {
       sessionsPruned,
       prunedAccounts,
       prunedUsage,
+      askCountsPruned,
       timestamp: now.toISOString(),
     });
   } catch (error) {

@@ -56,12 +56,23 @@ export const AI_ASK_STARTS_ON: string | null = "2026-10-16";
 /**
  * 로그인한 계정의 AI 질문 횟수를 하루 단위로 DB에 세기 시작하는 날(YYYY-MM-DD, 한국 시간 0시). 지금은 서버 메모리에
  * 세어(lib/ask/guard) 인스턴스가 여럿이거나 배포하면 하루 한도가 정확하지 않고, 남은 횟수를 보여 줄 수 없다. 계정마다
- * 날짜·기능·횟수를 새로 저장하는 변경이라 방침에 먼저 게시했다(2026년 10월 18일 게시, 7일 뒤 시작).
- *
- * **아직 구현하지 않았다.** 이 날짜 전에 저장(질문 문장 없이 계정 ID·날짜·기능·횟수), 하루 크론의 지난 날 삭제, 회원
- * 탈퇴 시 삭제를 넣어야 방침과 맞는다. 미루려면 이 날짜를 늦추고 PRIVACY_EFFECTIVE_DATE를 함께 바꾼다.
+ * 날짜·기능·횟수를 새로 저장하는 변경이라 방침에 먼저 게시했다(2026년 10월 18일 게시, 7일 뒤 시작). 저장은
+ * lib/ask/daily-count, 지난 날 삭제는 하루 크론, 탈퇴 시 삭제는 계정을 지우는 경로가 한다. **열기 전에 두 배포 DB에
+ * `drizzle/0019_ask_daily_counts.sql`을 적용한다.** null이거나 그날 전이면 지금처럼 메모리로 센다.
  */
 export const AI_ASK_DAILY_COUNT_STARTS_ON: string | null = "2026-10-25";
+
+/** 로그인한 계정의 AI 질문 횟수를 DB에 세는지. 테스트 서버만 스위치로 연다. */
+export function isAiAskDailyCountOpen(now: Date = new Date()): boolean {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_AI_ASK_DAILY_COUNT_TEST_OPEN === "true"
+  ) {
+    return true;
+  }
+  if (!AI_ASK_DAILY_COUNT_STARTS_ON) return false;
+  return now.getTime() >= new Date(`${AI_ASK_DAILY_COUNT_STARTS_ON}T00:00:00+09:00`).getTime();
+}
 
 /** AI에게 묻는 기능이 열렸는지. 테스트 서버는 Gmail 자동 가져오기처럼 스위치로 연다. */
 export function isAiAskOpen(now: Date = new Date()): boolean {

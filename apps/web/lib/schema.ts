@@ -354,3 +354,30 @@ export const usageIntervals = sqliteTable(
 
 export type UsageDeviceRow = typeof usageDevices.$inferSelect;
 export type UsageIntervalRow = typeof usageIntervals.$inferSelect;
+
+/**
+ * 로그인한 계정이 그날 AI에 보낸 질문 횟수(lib/ask/daily-count). 서버 메모리로 세면 인스턴스가 여럿이거나 배포하면 하루
+ * 한도가 정확하지 않고 남은 횟수를 보여 줄 수 없다. 질문 문장은 두지 않는다. 그날이 지나면 하루 크론이 지우고, 계정을
+ * 지우는 경로가 직접 지운다(ON DELETE CASCADE는 PRAGMA foreign_keys가 켜져야 동작한다). 방침의 'AI 질문 횟수' 항목.
+ */
+export const askDailyCounts = sqliteTable(
+  "ask_daily_counts",
+  {
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** 한국 날짜(YYYY-MM-DD). */
+    day: text("day").notNull(),
+    /** 기능: "ask"(리포트에 물어보기)·"help-ask"(도움말 AI). */
+    scope: text("scope").notNull(),
+    count: integer("count").notNull(),
+  },
+  (table) => ({
+    accountDayScopeIdx: uniqueIndex("ask_daily_counts_account_day_scope_idx").on(
+      table.accountId,
+      table.day,
+      table.scope,
+    ),
+    dayIdx: index("ask_daily_counts_day_idx").on(table.day),
+  }),
+);
