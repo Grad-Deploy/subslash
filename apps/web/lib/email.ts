@@ -97,7 +97,7 @@ export async function sendEmail(params: {
  * 메일 HTML에 사용자가 적은 글자를 넣을 때. 구독 이름은 브라우저가 올려 보낸
  * 값이라, 그대로 넣으면 이름에 쓴 태그와 링크가 SubSlash 메일 안에서 살아난다.
  */
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
