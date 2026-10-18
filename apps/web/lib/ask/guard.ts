@@ -1,5 +1,7 @@
 import { DAY_MS } from "@subslash/shared";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
 import { isAiAskOpen } from "@lib/privacy";
 import { logError } from "@lib/log";
 import {
@@ -16,15 +18,34 @@ import { MAX_ASK_QUESTION, isContextTurn, isValidAskHistory, type AskTurn } from
  * AI에게 묻는 API(`/api/ask`·`/api/help-ask`)가 같이 쓰는 제한. 질문은 표·로그에 남기지 않는다.
  *
  * - 질문 길이를 자른다.
- * - IP마다 10분 10번·하루 50번. 메모리에 세므로 대량 공격은 Vercel 방화벽이 맡는다(lib/rate-limit). 기능마다 따로 센다.
+ * - 10분 10번·하루 50번. 로그인했으면 계정마다, 아니면 IP마다 센다 — 학교 와이파이·통신사망처럼 수백 명이 한 IP로
+ *   나가는 곳에서는 IP 한도를 그 사람들이 나눠 써, 몇 번 만에 막혔다. 계정은 AI로 보내지 않고 셈에만 쓴다. 메모리에
+ *   세므로 대량 공격은 Vercel 방화벽이 맡는다(lib/rate-limit). 기능마다 따로 센다.
  * - 같은 질문의 결과를 인스턴스 메모리에 하루 둔다 — AI를 덜 부르기 위해서다(한도, 동시에 몰릴 때 멈춤). 캐시에서 답한
  *   것은 횟수에 세지 않는다.
  *
  * 두 API의 흐름(열림 확인 → 캐시 → 횟수 → AI → 오류 응답)은 `aiAskConfig`·`answerWithAi`로 같이 쓴다 — 따로 두면
  * 한쪽에만 고친 순서(예: 캐시에서 답한 것을 횟수에 세는지)가 두 기능에서 다르게 동작한다.
  */
-const PER_IP_SHORT: RateLimitRule = { limit: 10, windowMs: 10 * 60 * 1000 };
-const PER_IP_DAY: RateLimitRule = { limit: 50, windowMs: DAY_MS };
+const PER_SHORT: RateLimitRule = { limit: 10, windowMs: 10 * 60 * 1000 };
+const PER_DAY: RateLimitRule = { limit: 50, windowMs: DAY_MS };
+
+/**
+ * 횟수를 세는 주인: 로그인한 계정, 아니면 IP. 세션을 읽지 못하면(DB 오류) IP로 센다 — 질문을 막지 않는다. 세션이 끝난
+ * 토큰은 로그인하지 않은 것으로 본다.
+ */
+async function requester(request: Request): Promise<string> {
+  const ip = `ip:${clientIp(request.headers)}`;
+  const token = "cookies" in request ? readSessionToken(request as NextRequest) : undefined;
+  if (!token) return ip;
+  try {
+    const account = await getAccountBySessionToken(token);
+    return account ? `account:${account.id}` : ip;
+  } catch (error) {
+    logError("ask/guard session lookup failed", error);
+    return ip;
+  }
+}
 
 export async function readQuestion(request: Request): Promise<string | NextResponse> {
   const body = (await request.json().catch(() => null)) as { question?: unknown } | null;
@@ -62,22 +83,22 @@ function questionFrom(body: { question?: unknown } | null): string | NextRespons
 }
 
 /** 막혔으면 429 응답, 아니면 한 번 세고 null. */
-export function limitAiRequest(request: Request, scope: string): NextResponse | null {
-  const ip = clientIp(request.headers);
-  const shortKey = `${scope}:ip:${ip}`;
-  const dayKey = `${scope}:ip-day:${ip}`;
-  const wait = Math.max(
-    retryAfterSeconds(shortKey, PER_IP_SHORT),
-    retryAfterSeconds(dayKey, PER_IP_DAY),
-  );
+export async function limitAiRequest(
+  request: Request,
+  scope: string,
+): Promise<NextResponse | null> {
+  const who = await requester(request);
+  const shortKey = `${scope}:${who}`;
+  const dayKey = `${scope}:day:${who}`;
+  const wait = Math.max(retryAfterSeconds(shortKey, PER_SHORT), retryAfterSeconds(dayKey, PER_DAY));
   if (wait > 0) {
     return tooManyRequestsResponse(
       wait,
       "질문이 많아 잠시 쉬어 갈게요. 조금 뒤에 다시 물어봐 주세요.",
     );
   }
-  hit(shortKey, PER_IP_SHORT);
-  hit(dayKey, PER_IP_DAY);
+  hit(shortKey, PER_SHORT);
+  hit(dayKey, PER_DAY);
   return null;
 }
 
@@ -137,7 +158,7 @@ export async function answerWithAi<T>(options: {
   const cached = cache.get(cacheKey);
   if (cached !== undefined) return NextResponse.json({ [field]: cached, cached: true });
 
-  const blocked = limitAiRequest(request, scope);
+  const blocked = await limitAiRequest(request, scope);
   if (blocked) return blocked;
 
   try {

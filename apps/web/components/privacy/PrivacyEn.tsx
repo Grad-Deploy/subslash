@@ -161,7 +161,8 @@ export function PrivacyEn() {
             not sent to the server. The SubSlash server does not record questions in tables or logs;
             to avoid calling the AI again for the same question, it keeps the question and the
             chosen calculation in server memory for up to one day. To limit requests, it counts
-            requests per IP address in memory. Purpose: choosing the calculation or help article
+            requests in memory per account if you are logged in, or per IP address otherwise (your
+            account is not sent to the AI server). Purpose: choosing the calculation or help article
             that fits your question.
           </Item>
         )}
