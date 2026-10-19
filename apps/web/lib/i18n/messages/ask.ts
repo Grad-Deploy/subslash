@@ -57,6 +57,7 @@ export const ko = {
       skipped: "체크인하지 않았거나 횟수로 재지 않는 구독은 순위에서 빠졌어요.",
     },
     low: {
+      total: (amount: string) => `합치면 한 달 ${amount}이에요.`,
       source: "최근 30일 체크인 평가",
       unknown: (count: number) =>
         `최근 30일 체크인이 없는 ${count}개는 쓰는지 몰라서 넣지 않았어요.`,
@@ -116,6 +117,21 @@ export const ko = {
       unset: "결제 월 미설정",
       checkIn: "최근 30일 체크인",
       noRecord: "기록 없음",
+    },
+    catalog: {
+      source: "서비스 목록 요금",
+      plans: (name: string, count: number) =>
+        `구독하지 않는 서비스예요. ${name} 요금제 ${count}개의 목록 요금이에요.`,
+      monthly: (name: string, price: string) =>
+        `구독하지 않는 서비스예요. ${name}의 목록 요금은 한 달 ${price}예요.`,
+      unknown: (name: string) => `구독하지 않는 서비스예요. ${name}의 요금은 확인한 것이 없어요.`,
+      many: (query: string, count: number) =>
+        `'${query}'에 맞는 서비스가 ${count}개예요. 이름을 더 정확히 적어 주세요.`,
+      perMonth: (price: string) => `한 달 ${price}`,
+      perYear: (price: string) => `1년 ${price}`,
+      incomplete: "결제한 곳·약정에 따라 목록에 없는 요금도 있어요.",
+      tax: (rate: number) => `결제할 때 세금 ${rate}%가 더해져요.`,
+      note: "한국에서 확인한 요금이라 지금 요금과 다를 수 있어요.",
     },
     saved: {
       none: "아직 해지한 구독이 없어요.",
@@ -193,6 +209,7 @@ export const en: Widen<typeof ko> = {
         "Subscriptions without a check-in, or not measured by uses, are left out of the ranking.",
     },
     low: {
+      total: (amount) => `Together that's ${amount} a month.`,
       source: "Evaluation of the last 30 days of check-ins",
       unknown: (count) =>
         `${count} with no check-in in the last 30 days ${one(count) ? "was" : "were"} left out because we don't know if you use ${one(count) ? "it" : "them"}.`,
@@ -256,6 +273,21 @@ export const en: Widen<typeof ko> = {
       unset: "Billing month not set",
       checkIn: "Check-in, last 30 days",
       noRecord: "No record",
+    },
+    catalog: {
+      source: "Service list prices",
+      plans: (name, count) =>
+        `You're not subscribed to ${name}. Here are the listed prices for its ${count} ${Number(count) === 1 ? "plan" : "plans"}.`,
+      monthly: (name, price) =>
+        `You're not subscribed to ${name}. Its listed price is ${price} a month.`,
+      unknown: (name) => `You're not subscribed to ${name}, and we haven't confirmed its price.`,
+      many: (query, count) =>
+        `${count} services match '${query}'. Please be more specific about the name.`,
+      perMonth: (price) => `${price} a month`,
+      perYear: (price) => `${price} a year`,
+      incomplete: "Prices can differ by where you pay or by contract, so some aren't listed.",
+      tax: (rate) => `${rate}% tax is added at checkout.`,
+      note: "These prices were checked in Korea and may have changed.",
     },
     saved: {
       none: "You haven't cancelled any subscriptions yet.",
@@ -332,6 +364,7 @@ export const zh: Widen<typeof ko> = {
       skipped: "没有签到或不是按次数衡量的订阅不在排行中。",
     },
     low: {
+      total: (amount) => `合计每月 ${amount}。`,
       source: "最近 30 天签到的评价",
       unknown: (count) => `${count} 个最近 30 天没有签到的订阅，因为不知道是否在用，所以未计入。`,
       none: "从最近的签到看，没有几乎不用的订阅。",
@@ -387,6 +420,18 @@ export const zh: Widen<typeof ko> = {
       unset: "未设置扣款月份",
       checkIn: "签到（最近 30 天）",
       noRecord: "没有记录",
+    },
+    catalog: {
+      source: "服务列表价格",
+      plans: (name, count) => `你没有订阅${name}。以下是 ${count} 个套餐的列表价格。`,
+      monthly: (name, price) => `你没有订阅${name}。列表价格为每月 ${price}。`,
+      unknown: (name) => `你没有订阅${name}，我们也没有确认它的价格。`,
+      many: (query, count) => `有 ${count} 个服务与“${query}”相符。请把名称写得更准确些。`,
+      perMonth: (price) => `每月 ${price}`,
+      perYear: (price) => `每年 ${price}`,
+      incomplete: "价格可能因付款渠道或合约而不同，未必都在列表中。",
+      tax: (rate) => `结账时会加收 ${rate}% 的税。`,
+      note: "这些价格是在韩国确认的，可能已有变动。",
     },
     saved: {
       none: "你还没有退订任何订阅。",
@@ -459,6 +504,7 @@ export const ja: Widen<typeof ko> = {
       skipped: "チェックインがないサブスクや回数で測らないサブスクはランキングから除いています。",
     },
     low: {
+      total: (amount) => `合わせて月 ${amount} です。`,
       source: "直近 30 日のチェックインの評価",
       unknown: (count) =>
         `直近 30 日にチェックインがない ${count} 件は、使っているかわからないので除きました。`,
@@ -518,6 +564,19 @@ export const ja: Widen<typeof ko> = {
       unset: "支払月が未設定",
       checkIn: "チェックイン（直近 30 日）",
       noRecord: "記録なし",
+    },
+    catalog: {
+      source: "サービス一覧の料金",
+      plans: (name, count) => `${name}は契約していません。${count} 件のプランの掲載料金です。`,
+      monthly: (name, price) => `${name}は契約していません。掲載料金は月 ${price} です。`,
+      unknown: (name) => `${name}は契約しておらず、料金も確認できていません。`,
+      many: (query, count) =>
+        `「${query}」に合うサービスが ${count} 件あります。名前をもう少し正確に書いてください。`,
+      perMonth: (price) => `月 ${price}`,
+      perYear: (price) => `年 ${price}`,
+      incomplete: "支払い先や契約によって、一覧にない料金もあります。",
+      tax: (rate) => `支払い時に ${rate}% の税金が加算されます。`,
+      note: "韓国で確認した料金のため、現在と異なる場合があります。",
     },
     saved: {
       none: "まだ解約したサブスクがありません。",
@@ -591,6 +650,7 @@ export const vi: Widen<typeof ko> = {
       skipped: "Gói chưa check-in hoặc không đo theo số lần không có trong xếp hạng.",
     },
     low: {
+      total: (amount) => `Tổng cộng ${amount} mỗi tháng.`,
       source: "Đánh giá check-in 30 ngày gần nhất",
       unknown: (count) =>
         `${count} gói không có check-in trong 30 ngày gần nhất bị bỏ qua vì không biết bạn có dùng không.`,
@@ -648,6 +708,20 @@ export const vi: Widen<typeof ko> = {
       unset: "Chưa đặt tháng thanh toán",
       checkIn: "Check-in, 30 ngày gần nhất",
       noRecord: "Không có dữ liệu",
+    },
+    catalog: {
+      source: "Giá trong danh sách dịch vụ",
+      plans: (name, count) => `Bạn không đăng ký ${name}. Đây là giá niêm yết của ${count} gói.`,
+      monthly: (name, price) => `Bạn không đăng ký ${name}. Giá niêm yết là ${price} mỗi tháng.`,
+      unknown: (name) =>
+        `Bạn không đăng ký ${name} và chúng tôi chưa xác nhận giá của dịch vụ này.`,
+      many: (query, count) => `Có ${count} dịch vụ khớp với “${query}”. Hãy ghi tên chính xác hơn.`,
+      perMonth: (price) => `${price} mỗi tháng`,
+      perYear: (price) => `${price} mỗi năm`,
+      incomplete:
+        "Giá có thể khác tùy nơi thanh toán hoặc hợp đồng, nên có giá không có trong danh sách.",
+      tax: (rate) => `Khi thanh toán sẽ cộng thêm ${rate}% thuế.`,
+      note: "Giá này được xác nhận tại Hàn Quốc và có thể đã thay đổi.",
     },
     saved: {
       none: "Bạn chưa hủy gói nào.",
@@ -726,6 +800,7 @@ export const fr: Widen<typeof ko> = {
         "Les abonnements sans check-in ou non mesurés en utilisations sont exclus du classement.",
     },
     low: {
+      total: (amount) => `Au total, ${amount} par mois.`,
       source: "Évaluation des check-ins des 30 derniers jours",
       unknown: (count) =>
         `${count} sans check-in sur les 30 derniers jours ${akPl(count, "a été écarté", "ont été écartés")}, car nous ne savons pas si vous ${akPl(count, "l'utilisez", "les utilisez")}.`,
@@ -788,6 +863,21 @@ export const fr: Widen<typeof ko> = {
       unset: "Mois de paiement non défini",
       checkIn: "Check-in, 30 derniers jours",
       noRecord: "Aucune donnée",
+    },
+    catalog: {
+      source: "Prix de la liste des services",
+      plans: (name, count) =>
+        `Vous n'êtes pas abonné à ${name}. Voici les prix affichés de ses ${count} formule${akPl(count, "", "s")}.`,
+      monthly: (name, price) =>
+        `Vous n'êtes pas abonné à ${name}. Son prix affiché est de ${price} par mois.`,
+      unknown: (name) => `Vous n'êtes pas abonné à ${name}, et nous n'avons pas confirmé son prix.`,
+      many: (query, count) => `${count} services correspondent à « ${query} ». Précisez le nom.`,
+      perMonth: (price) => `${price} par mois`,
+      perYear: (price) => `${price} par an`,
+      incomplete:
+        "Les prix peuvent varier selon le lieu de paiement ou l'engagement ; certains ne sont pas listés.",
+      tax: (rate) => `${rate} % de taxe s'ajoutent au paiement.`,
+      note: "Ces prix ont été vérifiés en Corée et ont pu changer.",
     },
     saved: {
       none: "Vous n'avez encore résilié aucun abonnement.",
@@ -866,6 +956,7 @@ export const es: Widen<typeof ko> = {
         "Las suscripciones sin registro o que no se miden por usos quedan fuera del ranking.",
     },
     low: {
+      total: (amount) => `En total, ${amount} al mes.`,
       source: "Evaluación de los registros de los últimos 30 días",
       unknown: (count) =>
         `${count} sin registro en los últimos 30 días se ${akPl(count, "dejó", "dejaron")} fuera porque no sabemos si ${akPl(count, "la usas", "las usas")}.`,
@@ -927,6 +1018,22 @@ export const es: Widen<typeof ko> = {
       unset: "Mes de cobro sin definir",
       checkIn: "Registro, últimos 30 días",
       noRecord: "Sin registro",
+    },
+    catalog: {
+      source: "Precios de la lista de servicios",
+      plans: (name, count) =>
+        `No estás suscrito a ${name}. Estos son los precios publicados de ${akPl(count, "su plan", `sus ${count} planes`)}.`,
+      monthly: (name, price) =>
+        `No estás suscrito a ${name}. Su precio publicado es ${price} al mes.`,
+      unknown: (name) => `No estás suscrito a ${name} y no hemos confirmado su precio.`,
+      many: (query, count) =>
+        `${count} servicios coinciden con «${query}». Escribe el nombre con más precisión.`,
+      perMonth: (price) => `${price} al mes`,
+      perYear: (price) => `${price} al año`,
+      incomplete:
+        "El precio puede variar según dónde pagues o el contrato, así que algunos no aparecen.",
+      tax: (rate) => `Al pagar se suma un ${rate} % de impuestos.`,
+      note: "Estos precios se comprobaron en Corea y pueden haber cambiado.",
     },
     saved: {
       none: "Aún no has cancelado ninguna suscripción.",
@@ -1004,6 +1111,7 @@ export const de: Widen<typeof ko> = {
       skipped: "Abos ohne Eintrag oder nicht nach Nutzungen gemessen fehlen im Ranking.",
     },
     low: {
+      total: (amount) => `Zusammen sind das ${amount} im Monat.`,
       source: "Bewertung der Einträge der letzten 30 Tage",
       unknown: (count) =>
         `${count} ohne Eintrag in den letzten 30 Tagen ${akPl(count, "wurde", "wurden")} ausgelassen, weil wir nicht wissen, ob du ${akPl(count, "es", "sie")} nutzt.`,
@@ -1065,6 +1173,22 @@ export const de: Widen<typeof ko> = {
       unset: "Abbuchungsmonat nicht festgelegt",
       checkIn: "Eintrag, letzte 30 Tage",
       noRecord: "Kein Eintrag",
+    },
+    catalog: {
+      source: "Preise aus der Dienstliste",
+      plans: (name, count) =>
+        `Du hast ${name} nicht abonniert. Hier ${akPl(count, "ist der Listenpreis des Tarifs", `sind die Listenpreise der ${count} Tarife`)}.`,
+      monthly: (name, price) =>
+        `Du hast ${name} nicht abonniert. Der Listenpreis ist ${price} im Monat.`,
+      unknown: (name) =>
+        `Du hast ${name} nicht abonniert, und wir haben den Preis nicht bestätigt.`,
+      many: (query, count) => `${count} Dienste passen zu „${query}“. Gib den Namen genauer an.`,
+      perMonth: (price) => `${price} im Monat`,
+      perYear: (price) => `${price} im Jahr`,
+      incomplete:
+        "Je nach Zahlungsweg oder Vertrag gibt es auch Preise, die nicht aufgeführt sind.",
+      tax: (rate) => `Beim Bezahlen kommen ${rate} % Steuern hinzu.`,
+      note: "Diese Preise wurden in Korea geprüft und können sich geändert haben.",
     },
     saved: {
       none: "Du hast noch keine Abos gekündigt.",
@@ -1142,6 +1266,7 @@ export const pt: Widen<typeof ko> = {
       skipped: "Assinaturas sem registro ou não medidas por usos ficam fora do ranking.",
     },
     low: {
+      total: (amount) => `Somando, ${amount} por mês.`,
       source: "Avaliação dos registros dos últimos 30 dias",
       unknown: (count) =>
         `${count} sem registro nos últimos 30 dias ${akPl(count, "ficou", "ficaram")} de fora porque não sabemos se você ${akPl(count, "a usa", "as usa")}.`,
@@ -1203,6 +1328,21 @@ export const pt: Widen<typeof ko> = {
       unset: "Mês de cobrança não definido",
       checkIn: "Registro, últimos 30 dias",
       noRecord: "Sem registro",
+    },
+    catalog: {
+      source: "Preços da lista de serviços",
+      plans: (name, count) =>
+        `Você não assina ${name}. Estes são os preços de tabela ${akPl(count, "do plano", `dos ${count} planos`)}.`,
+      monthly: (name, price) => `Você não assina ${name}. O preço de tabela é ${price} por mês.`,
+      unknown: (name) => `Você não assina ${name} e não confirmamos o preço.`,
+      many: (query, count) =>
+        `${count} serviços correspondem a “${query}”. Escreva o nome com mais precisão.`,
+      perMonth: (price) => `${price} por mês`,
+      perYear: (price) => `${price} por ano`,
+      incomplete:
+        "O preço pode variar conforme onde você paga ou o contrato, então alguns não estão listados.",
+      tax: (rate) => `Na hora de pagar, são somados ${rate}% de impostos.`,
+      note: "Esses preços foram verificados na Coreia e podem ter mudado.",
     },
     saved: {
       none: "Você ainda não cancelou nenhuma assinatura.",
