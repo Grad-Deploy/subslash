@@ -9,6 +9,7 @@ import { deleteGmailImportData } from "./gmail-auto-import";
 import { deleteCalendarSyncPlan } from "./calendar-sync";
 import { deleteAllDeviceUsage } from "./device-usage-server";
 import { deleteOAuthData } from "./oauth-cleanup";
+import { deleteAskDailyCounts } from "./ask/daily-count";
 import { hasPassword } from "./password";
 
 /**
@@ -141,6 +142,7 @@ export async function deleteAccount(accountId: string): Promise<boolean> {
   await deleteCalendarSyncPlan(accountId);
   await deleteAllDeviceUsage(accountId);
   await deleteOAuthData(accountId);
+  await deleteAskDailyCounts(accountId);
   const deleted = await db
     .delete(accounts)
     .where(eq(accounts.id, accountId))

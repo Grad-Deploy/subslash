@@ -198,4 +198,6 @@ export const KNOWN_TEXT_VI: KnownTextRender[] = [
     `Trường “${nameIn(BACKUP_FIELDS, field)}” của ${nameIn(BACKUP_LISTS, list)} thứ ${index} không hợp lệ.`,
   (index) => `ID của gói đăng ký thứ ${index} trùng với gói khác.`,
   () => "Cài đặt tỷ giá không hợp lệ.",
+  () => "Hãy kiểm tra định dạng email.",
+  () => "Email này đã được xác nhận.",
 ];

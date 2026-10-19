@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  POPULAR_SERVICES,
   sumMyAnnualKRW,
   sumMyMonthlyKRW,
   type Subscription,
@@ -107,6 +108,17 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
     ).toContain("등록한 구독이 없어요");
   });
 
+  it("분류별 지출을 1년으로 물으면 1년 합계와 구독마다 1년 금액으로 답한다", () => {
+    const ott = PAYING.filter((s) => s.category === "ott");
+    const result = answerAsk(
+      { tool: "spendByCategory", args: { category: "ott", period: "year" } },
+      CTX,
+    );
+    expect(result.headline).toContain(`1년 ${won(sumMyAnnualKRW(ott, 1400))}`);
+    expect(result.source).toBe(messages.ko.ask.category.sourceYear);
+    expect(result.rows[0]).toEqual({ label: "넷플릭스", value: won(17000 * 12) });
+  });
+
   it("1회 단가 순위는 리포트와 같고, worst와 best가 반대 순서다", () => {
     const worst = answerAsk({ tool: "costPerUseRank", args: { order: "worst", limit: 3 } }, CTX);
     const best = answerAsk({ tool: "costPerUseRank", args: { order: "best", limit: 3 } }, CTX);
@@ -151,9 +163,39 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
       { ...CTX, subscriptions: both },
     );
     expect(result.headline).toContain("2개");
+    expect(answerAsk({ tool: "serviceDetail", args: { service: "슬랙" } }, CTX).headline).toContain(
+      "찾지 못했어요",
+    );
+  });
+
+  it("구독하지 않은 서비스는 서비스 목록의 확인한 요금으로 답한다", () => {
+    const disney = answerAsk({ tool: "serviceDetail", args: { service: "디플" } }, CTX);
+    expect(disney.headline).toContain("구독하지 않는 서비스예요. 디즈니플러스 요금제 2개");
+    expect(disney.rows).toEqual([
+      { label: "스탠다드", value: `한 달 ${won(9900)}` },
+      { label: "프리미엄", value: `한 달 ${won(13900)}` },
+    ]);
+    expect(disney.notes.join()).toContain("한국에서 확인한 요금");
+    // 해지한 구독도 지금은 구독 중이 아니다
+    expect(answerAsk({ tool: "serviceDetail", args: { service: "왓챠" } }, CTX).headline).toContain(
+      "구독하지 않는 서비스예요. 왓챠",
+    );
+    // 더 싼 요금제를 물어도 내 요금제가 없으니 목록의 요금제를 모두 보인다
     expect(
-      answerAsk({ tool: "serviceDetail", args: { service: "디즈니" } }, CTX).headline,
-    ).toContain("찾지 못했어요");
+      answerAsk({ tool: "cheaperPlan", args: { service: "디즈니플러스" } }, CTX).rows,
+    ).toHaveLength(2);
+    // 확인한 요금이 없는 서비스는 모른다고 한다(제1원칙)
+    const unknown = POPULAR_SERVICES.find((p) => p.defaultAmount === null && !p.plans?.length);
+    if (unknown) {
+      const result = answerAsk({ tool: "serviceDetail", args: { service: unknown.nameKo } }, CTX);
+      expect(result.headline).toContain("확인한 것이 없어요");
+      expect(result.headline).not.toMatch(/₩|\$/);
+    }
+  });
+
+  it("안 쓰는 구독은 구독마다의 금액과 함께 합계를 말한다", () => {
+    const result = answerAsk({ tool: "lowUsage" }, CTX);
+    expect(result.headline).toContain(`합치면 한 달 ${won(7900)}`);
   });
 
   it("더 싼 요금제는 서비스 목록의 요금으로만 말한다", () => {
@@ -219,13 +261,11 @@ describe("리포트에 물어보기 — AI가 지어낸 이름", () => {
   });
 
   it("질문에 적은 이름이면(띄어쓰기·대소문자 무시) 찾지 못했다고 그 이름으로 말한다", () => {
-    const call = { tool: "serviceDetail", args: { service: "디즈니 플러스" } } as const;
-    expect(answerAsk(call, asked("디즈니플러스 결제일 언제야")).headline).toContain(
-      "디즈니 플러스",
-    );
+    const call = { tool: "serviceDetail", args: { service: "슬랙 프로" } } as const;
+    expect(answerAsk(call, asked("슬랙프로 결제일 언제야")).headline).toContain("슬랙 프로");
     // 앞선 질문에 적은 이름도 사용자의 말이다(꼬리 질문은 이름을 이어받는다)
-    expect(answerAsk(call, asked("그럼 결제일은?", "디즈니 플러스 얼마야")).headline).toContain(
-      "디즈니 플러스",
+    expect(answerAsk(call, asked("그럼 결제일은?", "슬랙 프로 얼마야")).headline).toContain(
+      "슬랙 프로",
     );
   });
 

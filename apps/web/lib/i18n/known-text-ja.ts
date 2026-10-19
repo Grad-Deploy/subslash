@@ -201,4 +201,6 @@ export const KNOWN_TEXT_JA: KnownTextRender[] = [
     `${nameIn(BACKUP_LISTS, list)}の ${index} 番目の項目の「${nameIn(BACKUP_FIELDS, field)}」が正しくありません。`,
   (index) => `${index} 番目のサブスクの ID がほかのサブスクと重複しています。`,
   () => "為替レートの設定が正しくありません。",
+  () => "メールアドレスの形式を確認してください。",
+  () => "このメールアドレスはすでに確認済みです。",
 ];

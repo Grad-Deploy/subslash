@@ -192,4 +192,6 @@ export const KNOWN_TEXT_ZH: KnownTextRender[] = [
     `${nameIn(BACKUP_LISTS, list)} 第 ${index} 项的“${nameIn(BACKUP_FIELDS, field)}”不正确。`,
   (index) => `第 ${index} 个订阅的 ID 与其他订阅重复。`,
   () => "汇率设置不正确。",
+  () => "请检查邮箱格式。",
+  () => "该邮箱已确认。",
 ];

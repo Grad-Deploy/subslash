@@ -9,6 +9,7 @@ import { deleteGmailImportData } from "./gmail-auto-import";
 import { deleteCalendarSyncPlan } from "./calendar-sync";
 import { deleteAllDeviceUsage } from "./device-usage-server";
 import { deleteOAuthData } from "./oauth-cleanup";
+import { deleteAskDailyCounts } from "./ask/daily-count";
 import { logError } from "./log";
 
 /**
@@ -248,6 +249,7 @@ export async function deleteUnverifiedAccount(accountId: string): Promise<boolea
   await deleteCalendarSyncPlan(accountId);
   await deleteAllDeviceUsage(accountId);
   await deleteOAuthData(accountId);
+  await deleteAskDailyCounts(accountId);
   return true;
 }
 

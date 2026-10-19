@@ -371,6 +371,10 @@ const EN: [RegExp, KnownTextRender][] = [
     (index) => `Subscription #${index} has the same ID as another subscription.`,
   ],
   [/^환율 설정이 올바르지 않습니다\.$/, () => "The exchange rate setting isn't valid."],
+
+  // 확인 메일 다시 보내기(api/auth/verification-email)
+  [/^이메일 형식을 확인해주세요\.$/, () => "Check the email format."],
+  [/^이미 확인된 이메일입니다\.$/, () => "This email is already confirmed."],
 ];
 
 /**

@@ -127,8 +127,16 @@ export function settleCall(name: unknown, args: unknown): { call: AskCall; rejec
     tool: name,
     ...(args && typeof args === "object" && Object.keys(args).length > 0 ? { args } : {}),
   };
-  if (isValidAskCall(candidate)) return { call: candidate, rejected: false };
-  return { call: { tool: "unsupported" }, rejected: true };
+  if (!isValidAskCall(candidate)) return { call: { tool: "unsupported" }, rejected: true };
+  // 분류별 지출의 한 달은 기본값이라 지운다. 이 인자가 생기기 전에 설치한 앱은 모르는 인자가 붙은 호출을 버려(isValidAskCall)
+  // "OTT에 얼마 써?"에도 답하지 못한다. 1년은 지우면 한 달로 답하게 되므로 그대로 둔다.
+  if (candidate.tool === "spendByCategory" && candidate.args?.period === "month") {
+    return {
+      call: { tool: "spendByCategory", args: { category: candidate.args.category } },
+      rejected: false,
+    };
+  }
+  return { call: candidate, rejected: false };
 }
 
 async function postJson(

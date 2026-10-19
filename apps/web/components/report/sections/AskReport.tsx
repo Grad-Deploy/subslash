@@ -58,6 +58,8 @@ export function AskReport({
   const [question, setQuestion] = useState("");
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [busy, setBusy] = useState(false);
+  /** 로그인한 계정의 오늘 남은 AI 질문 횟수. 서버가 알려 준 뒤에만 보인다. */
+  const [remaining, setRemaining] = useState<number>();
   const nextId = useRef(0);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -82,12 +84,24 @@ export function AskReport({
     try {
       // 뜻이 하나뿐인 흔한 질문은 기기의 규칙으로 고르고 서버로 보내지 않는다. 기간은 오늘을 아는 기기가 다시 맞춘다.
       const local =
-        preset ?? localAskCall(trimmed, { now, subscriptions, hasHistory: history.length > 0 });
+        preset ??
+        localAskCall(trimmed, {
+          now,
+          subscriptions,
+          hasHistory: history.length > 0,
+          previous: history.at(-1)?.call,
+        });
       if (!local && !aiOpen) {
         settle({ miss: true });
         return;
       }
-      const call = preset ?? refineCall(local ?? (await askReport(trimmed, history)), trimmed, now);
+      let picked = local;
+      if (!picked) {
+        const reply = await askReport(trimmed, history);
+        if (reply.remaining !== undefined) setRemaining(reply.remaining);
+        picked = reply.call;
+      }
+      const call = preset ?? refineCall(picked, trimmed, now);
       settle({
         call,
         answer: answerAsk(call, {
@@ -188,6 +202,9 @@ export function AskReport({
         </button>
       </form>
       <p className="text-[11px] text-muted-foreground">{aiOpen ? a.privacy : a.privacyLocal}</p>
+      {aiOpen && remaining !== undefined && (
+        <p className="text-[11px] font-semibold text-muted-foreground">{a.remaining(remaining)}</p>
+      )}
       {aiOpen && turns.length > 0 && (
         <p className="text-[11px] text-muted-foreground">{a.contextNote}</p>
       )}
