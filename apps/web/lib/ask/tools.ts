@@ -45,9 +45,13 @@ export const ASK_TOOLS = {
   },
   spendByCategory: {
     description:
-      "한 분류(OTT·음악·클라우드·쇼핑 멤버십·AI·기타)에 쓰는 한 달 돈과 전체에서의 비율.",
-    params: { category: { type: "enum", values: ASK_CATEGORIES, required: true } },
-    computedBy: "sumMyMonthlyKRW(분류로 거른 구독)",
+      "한 분류(OTT·음악·클라우드·쇼핑 멤버십·AI·기타)에 쓰는 돈과 전체에서의 비율. 기간을 말하지 않으면 한 달이고, 1년을 물을 때만 period를 year로 넣는다.",
+    params: {
+      category: { type: "enum", values: ASK_CATEGORIES, required: true },
+      // 없으면 한 달이다. 서버는 month를 지워 보낸다 — 이 인자를 모르는 예전 앱은 모르는 인자가 붙은 호출을 버린다.
+      period: { type: "enum", values: ASK_PERIODS, required: false },
+    },
+    computedBy: "sumMyMonthlyKRW / sumMyAnnualKRW(분류로 거른 구독)",
   },
   costPerUseRank: {
     description:

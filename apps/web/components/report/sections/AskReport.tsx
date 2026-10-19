@@ -84,7 +84,13 @@ export function AskReport({
     try {
       // 뜻이 하나뿐인 흔한 질문은 기기의 규칙으로 고르고 서버로 보내지 않는다. 기간은 오늘을 아는 기기가 다시 맞춘다.
       const local =
-        preset ?? localAskCall(trimmed, { now, subscriptions, hasHistory: history.length > 0 });
+        preset ??
+        localAskCall(trimmed, {
+          now,
+          subscriptions,
+          hasHistory: history.length > 0,
+          previous: history.at(-1)?.call,
+        });
       if (!local && !aiOpen) {
         settle({ miss: true });
         return;

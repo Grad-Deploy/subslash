@@ -101,8 +101,34 @@ describe("POST /api/ask", () => {
     const monthly = [
       { question: "한 달 구독료 얼마야?", call: { tool: "spendTotal", args: { period: "month" } } },
     ];
-    expect((await ask("그럼 1년이면?", "1.2.3.4", monthly)).status).toBe(200);
+    expect((await ask("그럼 제일 아까운 건?", "1.2.3.4", monthly)).status).toBe(200);
     expect(upstream).toHaveBeenCalledTimes(1);
+  });
+
+  it("기간만 바꾸는 꼬리 질문은 앞선 호출을 이어받아 규칙으로 답한다", async () => {
+    const ott = [
+      { question: "OTT에 얼마?", call: { tool: "spendByCategory", args: { category: "ott" } } },
+    ];
+    expect(await (await ask("연간으로 따지면?", "1.2.3.4", ott)).json()).toEqual({
+      call: { tool: "spendByCategory", args: { category: "ott", period: "year" } },
+      cached: false,
+    });
+    // 앞선 턴 없이 기간만 물으면 구독비 합계다
+    expect(await (await ask("일 년이면?")).json()).toEqual({
+      call: { tool: "spendTotal", args: { period: "year" } },
+      cached: false,
+    });
+    expect(upstream).not.toHaveBeenCalled();
+  });
+
+  it("분류별 지출의 한 달은 인자를 지워 보낸다 — 예전 앱은 모르는 인자가 붙은 호출을 버린다", async () => {
+    upstream.mockResolvedValueOnce(
+      toolUse("spendByCategory", { category: "music", period: "month" }),
+    );
+    expect(await (await ask("노래 듣는 데 드는 돈")).json()).toEqual({
+      call: { tool: "spendByCategory", args: { category: "music" } },
+      cached: false,
+    });
   });
 
   it("고른 도구를 돌려주고, 같은 질문은 AI를 다시 부르지 않는다", async () => {
@@ -169,21 +195,21 @@ describe("POST /api/ask", () => {
   });
 
   it("앞선 턴은 질문과 고른 호출만 AI에 함께 보내고, 꼬리 질문의 캐시는 앞선 턴마다 따로 둔다", async () => {
-    upstream.mockResolvedValue(toolUse("spendTotal", { period: "year" }));
+    upstream.mockResolvedValue(toolUse("costPerUseRank", { order: "worst" }));
     const monthly = [
       { question: "한 달에 얼마?", call: { tool: "spendTotal", args: { period: "month" } } },
     ];
-    expect((await ask("그럼 1년이면?", "1.2.3.4", monthly)).status).toBe(200);
+    expect((await ask("그럼 제일 아까운 건?", "1.2.3.4", monthly)).status).toBe(200);
     expect(sentMessage(0)).toContain('"한 달에 얼마?" → spendTotal {"period":"month"}');
-    expect(sentMessage(0)).toContain("지금 질문: 그럼 1년이면?");
+    expect(sentMessage(0)).toContain("지금 질문: 그럼 제일 아까운 건?");
 
     // 같은 꼬리 질문이라도 앞선 턴이 다르면 다른 질문이다.
     const ott = [
       { question: "OTT에 얼마?", call: { tool: "spendByCategory", args: { category: "ott" } } },
     ];
-    await ask("그럼 1년이면?", "1.2.3.4", ott);
+    await ask("그럼 제일 아까운 건?", "1.2.3.4", ott);
     expect(upstream).toHaveBeenCalledTimes(2);
-    await ask("그럼 1년이면?", "1.2.3.4", monthly);
+    await ask("그럼 제일 아까운 건?", "1.2.3.4", monthly);
     expect(upstream).toHaveBeenCalledTimes(2);
   });
 
@@ -205,7 +231,7 @@ describe("POST /api/ask", () => {
       { question: "알림은 어떻게 켜?", call: { tool: "help" } },
       { question: "한 달에 얼마?", call: { tool: "spendTotal", args: { period: "month" } } },
     ];
-    await ask("그럼 1년이면?", "1.2.3.4", turns);
+    await ask("그럼 제일 아까운 건?", "1.2.3.4", turns);
     expect(sentMessage(0)).toContain('1. "한 달에 얼마?" → spendTotal');
     expect(sentMessage(0)).not.toContain("투자 상담사");
     expect(sentMessage(0)).not.toContain("알림");

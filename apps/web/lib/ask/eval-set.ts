@@ -325,6 +325,24 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
     tag: "followup",
   },
   {
+    q: "이거 1년으로 환산하면 얼마나 돼?",
+    history: [
+      {
+        question: "OTT에 얼마 내고 있어?",
+        call: { tool: "spendByCategory", args: { category: "ott" } },
+      },
+    ],
+    expect: { tool: "spendByCategory", args: { category: "ott", period: "year" } },
+    tag: "followup",
+  },
+  // 앞선 턴 없이 기간만 물으면 구독비 합계다
+  { q: "1년이면?", expect: { tool: "spendTotal", args: { period: "year" } }, tag: "followup" },
+  {
+    q: "AI 툴에 1년에 얼마 나가?",
+    expect: { tool: "spendByCategory", args: { category: "ai", period: "year" } },
+    tag: "args",
+  },
+  {
     q: "음악은?",
     history: [
       {

@@ -107,6 +107,17 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
     ).toContain("등록한 구독이 없어요");
   });
 
+  it("분류별 지출을 1년으로 물으면 1년 합계와 구독마다 1년 금액으로 답한다", () => {
+    const ott = PAYING.filter((s) => s.category === "ott");
+    const result = answerAsk(
+      { tool: "spendByCategory", args: { category: "ott", period: "year" } },
+      CTX,
+    );
+    expect(result.headline).toContain(`1년 ${won(sumMyAnnualKRW(ott, 1400))}`);
+    expect(result.source).toBe(messages.ko.ask.category.sourceYear);
+    expect(result.rows[0]).toEqual({ label: "넷플릭스", value: won(17000 * 12) });
+  });
+
   it("1회 단가 순위는 리포트와 같고, worst와 best가 반대 순서다", () => {
     const worst = answerAsk({ tool: "costPerUseRank", args: { order: "worst", limit: 3 } }, CTX);
     const best = answerAsk({ tool: "costPerUseRank", args: { order: "best", limit: 3 } }, CTX);
