@@ -47,6 +47,11 @@ export interface AskAnswer {
   source: string;
   /** 도움말로 넘겨야 하는 질문. */
   goHelp?: boolean;
+  /**
+   * 같은 것을 다른 기간으로 보는 버튼. 기간을 적지 않은 "해지해서 얼마 아꼈어?"를 이번 달로 답하고, 올해를 물은 것이었으면
+   * 눌러 바꾸게 한다 — 기간을 짐작해 답했다는 것을 숨기지 않는다.
+   */
+  switchTo?: { label: string; call: AskCall };
 }
 
 export interface AskContext {
@@ -392,12 +397,17 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const summary = month
         ? sumMyMonthDefendedKRW(killed, ctx.now.getFullYear(), ctx.now.getMonth() + 1, ctx.rate)
         : sumMyYearDefendedKRW(killed, ctx.now.getFullYear(), ctx.rate);
-      return answer(
-        month ? sv.month(formatKRW(summary.amount)) : sv.year(formatKRW(summary.amount)),
-        month ? sv.sourceMonth : sv.sourceYear,
-        [],
-        summary.unknownCount > 0 ? [sv.unknown(summary.unknownCount)] : [],
-      );
+      return {
+        ...answer(
+          month ? sv.month(formatKRW(summary.amount)) : sv.year(formatKRW(summary.amount)),
+          month ? sv.sourceMonth : sv.sourceYear,
+          [],
+          summary.unknownCount > 0 ? [sv.unknown(summary.unknownCount)] : [],
+        ),
+        switchTo: month
+          ? { label: sv.switchYear, call: { tool: "savedSoFar", args: { period: "year" } } }
+          : { label: sv.switchMonth, call: { tool: "savedSoFar", args: { period: "month" } } },
+      };
     }
 
     case "compareLastMonth": {
