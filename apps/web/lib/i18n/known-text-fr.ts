@@ -209,4 +209,6 @@ export const KNOWN_TEXT_FR: KnownTextRender[] = [
     `Le champ « ${nameIn(BACKUP_FIELDS, field)} » de ${nameIn(BACKUP_LISTS, list)} n° ${index} n'est pas valide.`,
   (index) => `L'abonnement n° ${index} a le même ID qu'un autre abonnement.`,
   () => "Le réglage du taux de change n'est pas valide.",
+  () => "Vérifiez le format de l'adresse e-mail.",
+  () => "Cette adresse e-mail est déjà confirmée.",
 ];
