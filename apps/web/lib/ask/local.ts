@@ -153,15 +153,84 @@ const asksAmount = /얼마|총액|합계|총합|합쳐|합치|다\s*합|금액|h
 const yearly = /1년|일년|한\s*해|연간|연\s*단위|올해|1\s*년|12\s*개월|열두\s*달|year|annual/;
 const monthly = /한\s*달|1달|월\s*(?:에|마다|고정|구독)|매달|매월|달에|월간|month/;
 
+// ── 기간만 바꾸는 꼬리 질문 ──────────────────────────────────────
+
+/** 꼬리 질문의 앞뒤에 붙는 말. 떼고 나서 기간 말만 남아야 기간만 바꾸는 질문이다. */
+const FOLLOW_UP_HEAD = /^(?:그럼|그러면|그렇다면|그건|and|then|so|what about|how about)\s*/;
+const FOLLOW_UP_TAIL =
+  /\s*(?:으로|로)?\s*(?:하면|치면|따지면|계산하면|보면)$|\s*(?:기준)?\s*(?:이라면|라면|이면|면|으로는|로는|으론|론|은|는|치는|이야|야)$/;
+/** 기간 말 전체가 1년·한 달인지. 다른 말이 섞이면(“1년 동안 안 쓴 구독은?”) 기간만 바꾸는 질문이 아니다. */
+const WHOLE_YEAR =
+  /^(?:1\s*년|일\s*년|한\s*해|연간|연\s*단위|1\s*년\s*치|일\s*년\s*치|12\s*개월|열두\s*달|올해|(?:a|per|for a|for the|this|one|the)\s+year|yearly|annually|annual)$/;
+const WHOLE_MONTH =
+  /^(?:한\s*달|1\s*달|한\s*달\s*치|월|월간|매달|매월|이번\s*달|(?:a|per|for a|for the|this|one|the)\s+month|monthly)$/;
+/** 일수로 읽는 기간 말 전체(결제 예정·체험 종료의 꼬리 질문). 읽는 것은 `parseDays`가 한다. */
+const WHOLE_DAYS =
+  /^(?:\d{1,2}\s*일|\d\s*주|이번\s*주|다음\s*주(?:까지)?|일주일|한\s*주|내일|모레|오늘|월말|이번\s*달\s*(?:말|안)|(?:next|within|in)\s+\d{1,2}\s+days?|\d\s+weeks?|this week|next week|tomorrow|today|end of (?:the )?month)(?:\s*(?:안|내|이내|동안|까지))?$/;
+
+/**
+ * 앞선 호출에서 기간만 바꾸는 꼬리 질문("그럼 1년이면?", "한 달로는?", "2주면?")이면 앞선 호출을 이어받아 기간만 고친다.
+ * 아니면 null — 다른 말이 섞였거나, 앞선 도구가 그 기간을 받지 않으면(순위에 "1년이면?") AI에 맡긴다. 늘 AI를 거치면
+ * AI가 닫혀 있을 때는 아예 답하지 못했고, 예전 앱은 이 인자를 몰라 1년을 물어도 한 달로 답했다.
+ */
+export function periodFollowUp(question: string, previous: AskCall, now: Date): AskCall | null {
+  const phrase = normalize(question)
+    .replace(/[?？!！.。~]+$/, "")
+    .replace(FOLLOW_UP_HEAD, "")
+    .replace(FOLLOW_UP_TAIL, "")
+    .trim();
+  if (!phrase) return null;
+  const period = WHOLE_YEAR.test(phrase) ? "year" : WHOLE_MONTH.test(phrase) ? "month" : null;
+  switch (previous.tool) {
+    case "spendTotal":
+    case "savedSoFar":
+      return period ? { tool: previous.tool, args: { period } } : null;
+    case "spendByCategory": {
+      if (!period) return null;
+      const category = previous.args?.category;
+      if (typeof category !== "string") return null;
+      // 한 달은 인자를 두지 않는다(기본값). 예전 앱도 그대로 받는다.
+      return {
+        tool: "spendByCategory",
+        args: period === "year" ? { category, period } : { category },
+      };
+    }
+    case "upcomingCharges":
+    case "trialsEnding": {
+      if (!WHOLE_DAYS.test(phrase)) return null;
+      const days = parseDays(phrase, now);
+      return days === null ? null : { tool: previous.tool, args: { days } };
+    }
+    default:
+      return null;
+  }
+}
+
 /**
  * 규칙으로 고를 수 있으면 그 호출, 아니면 null. 탈옥 문구(`INJECTION`)는 unsupported다. `hasHistory`면 짧은 꼬리 질문을 규칙으로 읽지 않는다.
+ * 다만 기간만 바꾸는 꼬리 질문은 `previous`(앞선 턴의 호출)를 이어받아 규칙으로 답하고, 앞선 턴 없이 기간만 물으면
+ * ("1년이면?") 구독비 합계다 — AI는 이 말을 '내일까지 결제'(1일)로 읽기도 했다.
  */
 export function localAskCall(
   question: string,
-  options: { now: Date; subscriptions?: readonly Subscription[]; hasHistory?: boolean },
+  options: {
+    now: Date;
+    subscriptions?: readonly Subscription[];
+    hasHistory?: boolean;
+    previous?: AskCall;
+  },
 ): AskCall | null {
   const q = normalize(question);
   if (INJECTION.test(q)) return { tool: "unsupported" };
+  if (q.length <= 30) {
+    const previous =
+      options.previous ??
+      (options.hasHistory
+        ? undefined
+        : ({ tool: "spendTotal", args: { period: "month" } } as const));
+    const followUp = previous && periodFollowUp(q, previous, options.now);
+    if (followUp) return followUp;
+  }
   if (q.length < 4 || q.length > 60) return null;
   if (STEERING.test(q) || NOT_MY_RECORDS.test(q)) return null;
   if (options.hasHistory && FOLLOW_UP.test(q)) return null;
@@ -218,7 +287,12 @@ export function localAskCall(
   if (categories.length > 1) return null;
   if (categories.length === 1) {
     if (!asksAmount.test(q) && !/쓰고|쓰는|내는|나가/.test(q)) return null;
-    return { tool: "spendByCategory", args: { category: categories[0] } };
+    const isYear = yearly.test(q);
+    if (isYear && monthly.test(q)) return null;
+    return {
+      tool: "spendByCategory",
+      args: isYear ? { category: categories[0], period: "year" } : { category: categories[0] },
+    };
   }
 
   // 전체 지출. 기간(며칠·이번 주)이 붙은 '얼마'는 결제 예정이고, 순위·해지·절약이 섞이면 뜻이 여럿이라 AI에 맡긴다.

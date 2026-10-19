@@ -174,4 +174,68 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
       args: { days: 7 },
     });
   });
+
+  it("기간만 바꾸는 꼬리 질문은 앞선 호출을 이어받아 기간만 고친다", () => {
+    const month: AskCall = { tool: "spendTotal", args: { period: "month" } };
+    const opts = (previous: AskCall) => ({ now: NOW, hasHistory: true, previous });
+    for (const q of ["일 년 기준이면?", "연간으로 보면", "그러면 12개월 치는?", "and per year?"]) {
+      expect(localAskCall(q, opts(month)), q).toEqual({
+        tool: "spendTotal",
+        args: { period: "year" },
+      });
+    }
+    expect(
+      localAskCall("한 달로 치면?", opts({ tool: "spendTotal", args: { period: "year" } })),
+    ).toEqual(month);
+    // 분류는 그대로 두고 기간만 바꾼다. 한 달은 인자를 두지 않는다.
+    const music: AskCall = { tool: "spendByCategory", args: { category: "music", period: "year" } };
+    expect(localAskCall("월간으로는?", opts(music))).toEqual({
+      tool: "spendByCategory",
+      args: { category: "music" },
+    });
+    expect(
+      localAskCall("그럼 올해는?", opts({ tool: "savedSoFar", args: { period: "month" } })),
+    ).toEqual({ tool: "savedSoFar", args: { period: "year" } });
+    const week: AskCall = { tool: "upcomingCharges", args: { days: 7 } };
+    expect(localAskCall("3주면?", opts(week))).toEqual({
+      tool: "upcomingCharges",
+      args: { days: 21 },
+    });
+    expect(localAskCall("내일까지는?", opts(week))).toEqual({
+      tool: "upcomingCharges",
+      args: { days: 1 },
+    });
+  });
+
+  it("기간 말에 다른 말이 섞였거나 앞선 도구가 그 기간을 받지 않으면 이어받지 않는다", () => {
+    const month: AskCall = { tool: "spendTotal", args: { period: "month" } };
+    const opts = (previous: AskCall) => ({ now: NOW, hasHistory: true, previous });
+    expect(localAskCall("1년 동안 안 쓴 건?", opts(month))?.tool).not.toBe("spendTotal");
+    expect(
+      localAskCall("1년이면?", opts({ tool: "costPerUseRank", args: { order: "worst" } })),
+    ).toBeNull();
+    expect(
+      localAskCall("1년이면?", opts({ tool: "upcomingCharges", args: { days: 7 } })),
+    ).toBeNull();
+    // 앞선 턴이 있는데 그 호출을 모르면(예전 서버 경로) 합계로 짐작하지 않는다
+    expect(localAskCall("1년이면?", { now: NOW, hasHistory: true })).toBeNull();
+  });
+
+  it("앞선 턴 없이 기간만 물으면 구독비 합계로 읽는다", () => {
+    expect(localAskCall("일년 치면?", { now: NOW })).toEqual({
+      tool: "spendTotal",
+      args: { period: "year" },
+    });
+    expect(localAskCall("what about a month?", { now: NOW })).toEqual({
+      tool: "spendTotal",
+      args: { period: "month" },
+    });
+  });
+
+  it("분류별 지출을 1년으로 물으면 기간을 함께 고른다", () => {
+    expect(localAskCall("음악에 1년 동안 쓰는 돈 얼마?", { now: NOW })).toEqual({
+      tool: "spendByCategory",
+      args: { category: "music", period: "year" },
+    });
+  });
 });

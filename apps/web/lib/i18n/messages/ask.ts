@@ -39,6 +39,9 @@ export const ko = {
       some: (label: string, count: number, amount: string, share: number) =>
         `${label} ${count}개에 한 달 ${amount}을 내요. 전체 구독비의 ${share}%예요.`,
       source: "분류별 내 몫 한 달 합계",
+      someYear: (label: string, count: number, amount: string, share: number) =>
+        `${label} ${count}개에 1년 ${amount}을 내요. 전체 구독비의 ${share}%예요.`,
+      sourceYear: "분류별 내 몫 1년 합계",
     },
     rank: {
       none: "1회 단가를 계산할 체크인이 없어요.",
@@ -172,6 +175,9 @@ export const en: Widen<typeof ko> = {
       some: (label, count, amount, share) =>
         `You pay ${amount} a month for ${count} in ${label}. That's ${share}% of your total.`,
       source: "Your share by category, monthly total",
+      someYear: (label, count, amount, share) =>
+        `You pay ${amount} a year for ${count} in ${label}. That's ${share}% of your total.`,
+      sourceYear: "Your share by category, yearly total",
     },
     rank: {
       none: "There are no check-ins to work out a cost per use from.",
@@ -310,6 +316,9 @@ export const zh: Widen<typeof ko> = {
       some: (label, count, amount, share) =>
         `你每月在${label}的 ${count} 个订阅上支付 ${amount}，占总额的 ${share}%。`,
       source: "按类别的我的份额，每月合计",
+      someYear: (label, count, amount, share) =>
+        `你每年在${label}的 ${count} 个订阅上支付 ${amount}，占总额的 ${share}%。`,
+      sourceYear: "按类别的我的份额，每年合计",
     },
     rank: {
       none: "没有可以计算单次成本的签到。",
@@ -434,6 +443,9 @@ export const ja: Widen<typeof ko> = {
       some: (label, count, amount, share) =>
         `${label}の ${count} 件に毎月 ${amount} 払っています。全体の ${share}% です。`,
       source: "カテゴリ別の自分の負担分、月の合計",
+      someYear: (label, count, amount, share) =>
+        `${label}の ${count} 件に年間 ${amount} 払っています。全体の ${share}% です。`,
+      sourceYear: "カテゴリ別の自分の負担分、年の合計",
     },
     rank: {
       none: "1 回あたりの単価を計算できるチェックインがありません。",
@@ -563,6 +575,9 @@ export const vi: Widen<typeof ko> = {
       some: (label, count, amount, share) =>
         `Bạn trả ${amount} mỗi tháng cho ${count} gói ${label}, chiếm ${share}% tổng.`,
       source: "Phần của bạn theo danh mục, tổng mỗi tháng",
+      someYear: (label, count, amount, share) =>
+        `Bạn trả ${amount} mỗi năm cho ${count} gói ${label}, chiếm ${share}% tổng.`,
+      sourceYear: "Phần của bạn theo danh mục, tổng mỗi năm",
     },
     rank: {
       none: "Không có check-in nào để tính chi phí mỗi lần dùng.",
@@ -693,6 +708,9 @@ export const fr: Widen<typeof ko> = {
       some: (label, count, amount, share) =>
         `Vous payez ${amount} par mois pour ${count} abonnement${akPl(count, "", "s")} dans ${label}, soit ${share} % de votre total.`,
       source: "Votre part par catégorie, total mensuel",
+      someYear: (label, count, amount, share) =>
+        `Vous payez ${amount} par an pour ${count} abonnement${akPl(count, "", "s")} dans ${label}, soit ${share} % de votre total.`,
+      sourceYear: "Votre part par catégorie, total annuel",
     },
     rank: {
       none: "Aucun check-in ne permet de calculer un coût par utilisation.",
@@ -830,6 +848,9 @@ export const es: Widen<typeof ko> = {
       some: (label, count, amount, share) =>
         `Pagas ${amount} al mes por ${count} en ${label}. Es el ${share} % de tu total.`,
       source: "Tu parte por categoría, total mensual",
+      someYear: (label, count, amount, share) =>
+        `Pagas ${amount} al año por ${count} en ${label}. Es el ${share} % de tu total.`,
+      sourceYear: "Tu parte por categoría, total anual",
     },
     rank: {
       none: "No hay registros para calcular un coste por uso.",
@@ -966,6 +987,9 @@ export const de: Widen<typeof ko> = {
       some: (label, count, amount, share) =>
         `Du zahlst ${amount} im Monat für ${count} in ${label}. Das sind ${share} % deiner Gesamtsumme.`,
       source: "Dein Anteil nach Kategorie, Monatssumme",
+      someYear: (label, count, amount, share) =>
+        `Du zahlst ${amount} im Jahr für ${count} in ${label}. Das sind ${share} % deiner Gesamtsumme.`,
+      sourceYear: "Dein Anteil nach Kategorie, Jahressumme",
     },
     rank: {
       none: "Es gibt keine Einträge, aus denen sich Kosten pro Nutzung berechnen lassen.",
@@ -1101,6 +1125,9 @@ export const pt: Widen<typeof ko> = {
       some: (label, count, amount, share) =>
         `Você paga ${amount} por mês por ${count} em ${label}. Isso é ${share}% do seu total.`,
       source: "Sua parte por categoria, total mensal",
+      someYear: (label, count, amount, share) =>
+        `Você paga ${amount} por ano por ${count} em ${label}. Isso é ${share}% do seu total.`,
+      sourceYear: "Sua parte por categoria, total anual",
     },
     rank: {
       none: "Não há registros para calcular o custo por uso.",

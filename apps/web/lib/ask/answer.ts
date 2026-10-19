@@ -3,6 +3,7 @@ import {
   formatKRW,
   getDaysUntilBillingFor,
   getDaysUntilTrialEnd,
+  getMyAnnualAmountKRW,
   getMyMonthlyAmountKRW,
   getNextBillingDateFor,
   getPlanAlternatives,
@@ -166,16 +167,24 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       if (inCategory.length === 0) {
         return answer(k.category.none(label), k.category.source);
       }
-      const part = sumMyMonthlyKRW(inCategory, ctx.rate);
-      const total = sumMyMonthlyKRW(subs, ctx.rate);
+      const year = args.period === "year";
+      const sum = year ? sumMyAnnualKRW : sumMyMonthlyKRW;
+      const amountOf = year ? getMyAnnualAmountKRW : getMyMonthlyAmountKRW;
+      const part = sum(inCategory, ctx.rate);
+      const total = sum(subs, ctx.rate);
       const share = total > 0 ? Math.round((part / total) * 100) : 0;
       return answer(
-        k.category.some(label, inCategory.length, formatKRW(part), share),
-        k.category.source,
+        (year ? k.category.someYear : k.category.some)(
+          label,
+          inCategory.length,
+          formatKRW(part),
+          share,
+        ),
+        year ? k.category.sourceYear : k.category.source,
         inCategory
-          .map((sub) => ({ sub, monthly: getMyMonthlyAmountKRW(sub, ctx.rate) }))
-          .sort((a, b) => b.monthly - a.monthly)
-          .map(({ sub, monthly }) => ({ label: nameOf(sub), value: formatKRW(monthly) })),
+          .map((sub) => ({ sub, amount: amountOf(sub, ctx.rate) }))
+          .sort((a, b) => b.amount - a.amount)
+          .map(({ sub, amount }) => ({ label: nameOf(sub), value: formatKRW(amount) })),
         trialNote,
       );
     }
