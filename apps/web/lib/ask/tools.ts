@@ -11,6 +11,7 @@
  */
 
 import type { SubscriptionCategory } from "@subslash/shared";
+import { isPromptAttack } from "./attack";
 
 export const ASK_CATEGORIES = [
   "ott",
@@ -172,10 +173,13 @@ export const MAX_ASK_HISTORY = 3;
 
 /**
  * 앞선 턴으로 쓸 수 있는 턴인지. 못 알아들었거나(unsupported) 도움말로 넘긴(help) 턴은 이어 물을 바탕이 아니다 — 엉뚱한
- * 질문이나 지시를 바꾸려던 질문이 다음 질문의 문맥에 섞여 "아까 말한 대로 해"의 발판이 되지 않게 뺀다.
+ * 질문이나 지시를 바꾸려던 질문이 다음 질문의 문맥에 섞여 "아까 말한 대로 해"의 발판이 되지 않게 뺀다. 호출은 멀쩡한데
+ * 질문이 공격 문구인 턴도 뺀다 — 앱은 그런 턴을 보내지 않지만, 요청을 지어 보내면 공격 문구를 앞선 턴에 숨길 수 있다.
  */
 export function isContextTurn(turn: AskTurn): boolean {
-  return turn.call.tool !== "unsupported" && turn.call.tool !== "help";
+  return (
+    turn.call.tool !== "unsupported" && turn.call.tool !== "help" && !isPromptAttack(turn.question)
+  );
 }
 /** 앞선 질문 하나의 길이(질문 칸과 같다). */
 export const MAX_ASK_QUESTION = 200;
