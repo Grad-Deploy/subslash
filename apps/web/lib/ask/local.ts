@@ -1,4 +1,5 @@
 import { POPULAR_SERVICES, type Subscription } from "@subslash/shared";
+import { isPromptAttack } from "./attack";
 import { ALIAS_NAMES, compactName } from "./fuzzy";
 import { matchPresets, matchSubscriptions } from "./service-match";
 import type { ASK_CATEGORIES, AskCall } from "./tools";
@@ -121,14 +122,6 @@ export function isMixedLanguage(question: string): boolean {
     )
   );
 }
-
-/**
- * 지시를 바꾸려는 것이 분명한 말. 이런 질문은 AI에 보내지 않고 기기·서버 입구에서 곧바로 unsupported다 — 보내면 횟수와
- * 비용을 쓰고, 탈옥 문구를 모델에 시험해 볼 기회를 준다. 위의 `STEERING`("모드"·"도구"·"시스템")은 평범한 질문에도
- * 나와 거절하지 않고 AI에 맡기므로, 여기에는 정상 질문에 나올 일이 없는 표현만 둔다.
- */
-const INJECTION =
-  /jailbreak|탈옥|developer\s*mode|개발자\s*모드|ignore\s+(?:all\s+|any\s+|the\s+)?(?:previous|prior|above|earlier)\s+(?:instructions?|prompts?|rules?)|(?:이전|앞|위|기존)(?:의|에)?\s*(?:지시|명령|지침|규칙|프롬프트)\S*\s*(?:다\s*)?(?:무시|잊)|(?:시스템|system)\s*(?:프롬프트|prompt)|前の指示|(?:忽略|无视)(?:之前|以上|上面|前面)/;
 
 // '스트리밍'은 음악에도 붙어("음악 스트리밍") OTT 낱말에 두지 않고, 다른 분류 낱말이 없을 때만 OTT로 본다(localAskCall).
 const CATEGORY_WORDS: [RegExp, AskCategory][] = [
@@ -340,7 +333,7 @@ export function periodFollowUp(question: string, previous: AskCall, now: Date): 
 }
 
 /**
- * 규칙으로 고를 수 있으면 그 호출, 아니면 null. 탈옥 문구(`INJECTION`)는 unsupported다. `hasHistory`면 짧은 꼬리 질문을 규칙으로 읽지 않는다.
+ * 규칙으로 고를 수 있으면 그 호출, 아니면 null. 공격 문구(`isPromptAttack`, lib/ask/attack)는 unsupported다. `hasHistory`면 짧은 꼬리 질문을 규칙으로 읽지 않는다.
  * 다만 기간만 바꾸는 꼬리 질문은 `previous`(앞선 턴의 호출)를 이어받아 규칙으로 답하고, 앞선 턴 없이 기간만 물으면
  * ("1년이면?") 구독비 합계다 — AI는 이 말을 '내일까지 결제'(1일)로 읽기도 했다.
  */
@@ -354,7 +347,7 @@ export function localAskCall(
   },
 ): AskCall | null {
   const q = normalize(question);
-  if (INJECTION.test(q) || isMixedLanguage(q) || SMALL_TALK.test(q)) {
+  if (isPromptAttack(question) || isMixedLanguage(q) || SMALL_TALK.test(q)) {
     return { tool: "unsupported" };
   }
   if (q.length <= 30) {
