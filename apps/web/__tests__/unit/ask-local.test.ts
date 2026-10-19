@@ -106,6 +106,23 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
     expect(refineCall(trial, "공짜 체험 언제 끝나", NOW).args).toEqual({ days: 31 });
     // 읽지 못한 기간 낱말이 있으면 AI 값 그대로다
     expect(refineCall(trial, "week's free trial ending soon?", NOW)).toBe(trial);
+    // 다른 화면 언어의 기간 낱말도 읽지 못한 기간이다 — 31일로 덮지 않는다
+    const week: AskCall = { tool: "upcomingCharges", args: { days: 7 } };
+    for (const q of [
+      "这个星期会扣什么钱？",
+      "今週中に払うものは？",
+      "Trong tuần tới tôi phải trả gì?",
+      "Qu'est-ce qui sera débité dans la semaine ?",
+      "¿Qué me cobran en los próximos días?",
+      "Was wird in den nächsten Tagen abgebucht?",
+      "O que vai ser cobrado nesta semana?",
+    ]) {
+      expect(refineCall(week, q, NOW), q).toBe(week);
+    }
+    // 기간 없는 질문은 언어와 관계없이 31일이다
+    expect(refineCall(week, "Quels prélèvements arrivent bientôt ?", NOW).args).toEqual({
+      days: 31,
+    });
     const other: AskCall = { tool: "spendTotal", args: { period: "month" } };
     expect(refineCall(other, "월말까지", NOW)).toBe(other);
   });

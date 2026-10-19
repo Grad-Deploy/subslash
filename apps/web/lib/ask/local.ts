@@ -141,8 +141,13 @@ function mentionsService(q: string, subscriptions: readonly Subscription[]): boo
   );
 }
 
-/** 기간을 말하는 낱말. `parseDays`가 읽지 못한 기간이 있는지 볼 때 쓴다. */
-const PERIOD_WORDS = /\d|주|week|달|month|내일|모레|오늘|today|tomorrow/;
+/**
+ * 기간을 말하는 낱말. `parseDays`가 읽지 못한 기간이 있는지 볼 때 쓴다. `parseDays`는 한국어·영어만 읽으므로 다른 화면
+ * 언어의 주·달·날 낱말도 여기에 둔다 — 없으면 "这周有要扣款的吗？"를 기간 없는 질문으로 읽어, AI가 고른 7일을 31일로
+ * 덮었다. 걸리면 AI 값을 그대로 둘 뿐이라 넓게 잡는다.
+ */
+const PERIOD_WORDS =
+  /\d|주|week|달|month|내일|모레|오늘|today|tomorrow|[周週星期礼拜月天日]|今日|明日|あした|きょう|tuần|tháng|ngày|hôm nay|(?<!\p{L})(?:semaines?|mois|jours?|aujourd'hui|demain|semanas?|mes(?:es)?|mês|días?|dias?|hoy|mañana|hoje|amanhã|wochen?|monate?|tagen?|heute|morgen)(?!\p{L})/u;
 
 const asksAmount = /얼마|총액|합계|총합|합쳐|합치|다\s*합|금액|how much|total/;
 const yearly = /1년|일년|한\s*해|연간|연\s*단위|올해|1\s*년|12\s*개월|열두\s*달|year|annual/;
