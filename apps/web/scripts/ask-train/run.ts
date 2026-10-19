@@ -77,6 +77,11 @@ function specs(locale: Locale): Spec[] {
       meaning: `${label} 구독에 한 달에 쓰는 돈. 서비스 이름 하나만 적지 말고 분류를 묻는다`,
     })),
     {
+      call: { tool: "spendByCategory", args: { category: "ott", period: "year" } },
+      meaning:
+        "OTT(동영상 스트리밍) 구독에 1년 동안 쓰는 돈. 서비스 이름 하나만 적지 말고 분류를 묻는다. '1년'·'연간' 같은 기간을 꼭 넣는다",
+    },
+    {
       call: { tool: "costPerUseRank", args: { order: "worst" } },
       meaning: "쓰는 것에 비해 돈이 가장 아까운(1회당 비용이 가장 비싼) 구독. 개수는 말하지 않는다",
     },
@@ -123,6 +128,13 @@ function specs(locale: Locale): Spec[] {
       call: { tool: "serviceDetail" as const, args: { service: pickName(i) } },
       meaning: `'${pickName(i)}'의 다음 결제일이나 내가 내는 금액이나 이번 달 사용 횟수. 서비스 이름 '${pickName(i)}'를 글자 그대로 넣는다`,
     })),
+    // 줄임말로 요금만 묻는 질문 — 구독하지 않은 서비스라도 앱이 서비스 목록의 요금으로 답한다(lib/ask/answer).
+    ...(locale === "ko" ? ["넷플", "아클", "밀리"] : ["Netflix", "Spotify", "Claude"]).map(
+      (name) => ({
+        call: { tool: "serviceDetail" as const, args: { service: name } },
+        meaning: `'${name}'의 요금이 얼마인지만 묻는 짧은 질문. 서비스 이름 '${name}'를 글자 그대로 넣고 다른 서비스는 넣지 않는다`,
+      }),
+    ),
     {
       call: { tool: "savedSoFar", args: { period: "month" } },
       meaning: "이번 달에 구독을 해지해서 아낀 돈. '이번 달'이라는 기간을 꼭 넣는다",
@@ -220,6 +232,8 @@ async function generate() {
         const raw = await pickTool(message, SYSTEM, [SUBMIT_TOOL], config, fetch, {
           maxTokens: 2000,
           timeoutMs: 60_000,
+          // 같은 뜻을 여러 표현으로 써야 하므로 묻기(0)와 달리 올린다.
+          temperature: 0.9,
         });
         const questions = (raw.args as { questions?: unknown } | undefined)?.questions;
         if (!Array.isArray(questions)) throw new Error("질문 목록이 오지 않았다");

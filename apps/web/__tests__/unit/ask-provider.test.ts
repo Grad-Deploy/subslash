@@ -157,6 +157,8 @@ describe("리포트에 물어보기 — AI 호출", () => {
     const sent = JSON.parse(String(init.body));
     expect(sent.messages[1]).toEqual({ role: "user", content: "돈 값 못하는 구독 3개만" });
     expect(sent.tool_choice).toBe("auto");
+    // 같은 질문에 늘 같은 도구를 고르게 한다
+    expect(sent.temperature).toBe(0);
 
     // 글로만 답했거나 인자가 JSON이 아니면 unsupported
     const text = fakeFetch({ choices: [{ message: { content: "약 4만 원이에요" } }] });
@@ -205,6 +207,9 @@ describe("리포트에 물어보기 — AI 호출", () => {
     await pickTool("질문", "시스템", [], GEMINI, gemini, { maxTokens: 2000 });
     const sent = JSON.parse(String(gemini.mock.calls[0][1].body));
     expect(sent.generationConfig.maxOutputTokens).toBe(2000);
+    expect(sent.generationConfig.temperature).toBe(0);
+    // Anthropic에는 싣지 않는다(받는지 확인하지 못했다)
+    expect(JSON.parse(String(anthropic.mock.calls[0][1].body))).not.toHaveProperty("temperature");
   });
 
   it("Gemini: 함수 호출만 받게 하고 결과를 같은 모양으로 돌려준다", async () => {

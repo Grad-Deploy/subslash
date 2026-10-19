@@ -134,6 +134,8 @@ export const ko = {
       note: "한국에서 확인한 요금이라 지금 요금과 다를 수 있어요.",
     },
     saved: {
+      switchYear: "올해로 보기",
+      switchMonth: "이번 달로 보기",
       none: "아직 해지한 구독이 없어요.",
       source: "해지 기록",
       month: (amount: string) => `해지해서 이번 달 ${amount}을 지켰어요.`,
@@ -290,6 +292,8 @@ export const en: Widen<typeof ko> = {
       note: "These prices were checked in Korea and may have changed.",
     },
     saved: {
+      switchYear: "Show this year",
+      switchMonth: "Show this month",
       none: "You haven't cancelled any subscriptions yet.",
       source: "Cancellation records",
       month: (amount) => `Cancelling kept ${amount} this month.`,
@@ -434,6 +438,8 @@ export const zh: Widen<typeof ko> = {
       note: "这些价格是在韩国确认的，可能已有变动。",
     },
     saved: {
+      switchYear: "看今年",
+      switchMonth: "看本月",
       none: "你还没有退订任何订阅。",
       source: "退订记录",
       month: (amount) => `本月通过退订守住了 ${amount}。`,
@@ -579,6 +585,8 @@ export const ja: Widen<typeof ko> = {
       note: "韓国で確認した料金のため、現在と異なる場合があります。",
     },
     saved: {
+      switchYear: "今年で見る",
+      switchMonth: "今月で見る",
       none: "まだ解約したサブスクがありません。",
       source: "解約の記録",
       month: (amount) => `今月は解約で ${amount} を守りました。`,
@@ -724,6 +732,8 @@ export const vi: Widen<typeof ko> = {
       note: "Giá này được xác nhận tại Hàn Quốc và có thể đã thay đổi.",
     },
     saved: {
+      switchYear: "Xem năm nay",
+      switchMonth: "Xem tháng này",
       none: "Bạn chưa hủy gói nào.",
       source: "Bản ghi hủy",
       month: (amount) => `Tháng này bạn giữ lại ${amount} nhờ hủy.`,
@@ -880,6 +890,8 @@ export const fr: Widen<typeof ko> = {
       note: "Ces prix ont été vérifiés en Corée et ont pu changer.",
     },
     saved: {
+      switchYear: "Voir cette année",
+      switchMonth: "Voir ce mois-ci",
       none: "Vous n'avez encore résilié aucun abonnement.",
       source: "Historique de résiliation",
       month: (amount) => `Les résiliations vous ont fait économiser ${amount} ce mois-ci.`,
@@ -1036,6 +1048,8 @@ export const es: Widen<typeof ko> = {
       note: "Estos precios se comprobaron en Corea y pueden haber cambiado.",
     },
     saved: {
+      switchYear: "Ver este año",
+      switchMonth: "Ver este mes",
       none: "Aún no has cancelado ninguna suscripción.",
       source: "Registros de cancelación",
       month: (amount) => `Este mes cancelar te ahorró ${amount}.`,
@@ -1191,6 +1205,8 @@ export const de: Widen<typeof ko> = {
       note: "Diese Preise wurden in Korea geprüft und können sich geändert haben.",
     },
     saved: {
+      switchYear: "Dieses Jahr anzeigen",
+      switchMonth: "Diesen Monat anzeigen",
       none: "Du hast noch keine Abos gekündigt.",
       source: "Kündigungseinträge",
       month: (amount) => `Durch Kündigen hast du diesen Monat ${amount} gespart.`,
@@ -1345,6 +1361,8 @@ export const pt: Widen<typeof ko> = {
       note: "Esses preços foram verificados na Coreia e podem ter mudado.",
     },
     saved: {
+      switchYear: "Ver este ano",
+      switchMonth: "Ver este mês",
       none: "Você ainda não cancelou nenhuma assinatura.",
       source: "Registros de cancelamento",
       month: (amount) => `Cancelar economizou ${amount} este mês.`,

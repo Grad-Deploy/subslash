@@ -20,6 +20,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ASK_EVAL_SET, isExpectedCall } from "../../lib/ask/eval-set";
+import { localAskCall, refineCall } from "../../lib/ask/local";
 import { askProviderConfig, pickAskCall } from "../../lib/ask/provider";
 import type { AskCall } from "../../lib/ask/tools";
 import { allFaqs } from "../../lib/help/faq";
@@ -147,8 +148,34 @@ async function main() {
       })()
     : undefined;
 
+  // 사용자가 받는 답은 AI 혼자 고른 호출이 아니다 — 기기 규칙(localAskCall)이 먼저 답하고, AI가 고른 기간은 기기가 다시
+  // 센다(refineCall). 위 정답률은 모델·프롬프트를 견주는 숫자이고, 기기 규칙을 넓혔을 때 나아졌는지는 이 숫자로 본다.
+  // 오늘은 기기 규칙 테스트(ask-local.test)와 같은 날로 둔다 — "월말까지"처럼 오늘에 따라 정답이 바뀌는 질문이 있다.
+  const evalToday = new Date(2026, 9, 13, 12);
+  const onDevice = helpMode
+    ? undefined
+    : (() => {
+        let ruled = 0;
+        let right = 0;
+        for (const item of ASK_EVAL_SET) {
+          const history = item.history ?? [];
+          const local = localAskCall(item.q, {
+            now: evalToday,
+            hasHistory: history.length > 0,
+            previous: history.at(-1)?.call,
+          });
+          if (local) ruled++;
+          const got = results.find((r) => r.q === item.q)?.got;
+          const ai = got && !Array.isArray(got) ? got : { tool: "unsupported" as const };
+          if (isExpectedCall(item, refineCall(local ?? ai, item.q, evalToday))) right++;
+        }
+        const pct = (n: number) => Math.round((n / ASK_EVAL_SET.length) * 1000) / 10;
+        return { accuracy: pct(right), answeredByRule: pct(ruled) };
+      })();
+
   const summary = {
     mode: helpMode ? "help" : "ask",
+    ...(onDevice ? { onDevice } : {}),
     ...(searchOnly ? { searchOnly } : {}),
     provider: config.provider,
     model: config.model,
