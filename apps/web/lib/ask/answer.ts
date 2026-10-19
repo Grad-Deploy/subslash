@@ -1,5 +1,6 @@
 import {
   findBundleOverlaps,
+  formatCurrency,
   formatKRW,
   getDaysUntilBillingFor,
   getDaysUntilTrialEnd,
@@ -9,21 +10,24 @@ import {
   getPlanAlternatives,
   isInTrial,
   metricOfLog,
+  planCurrency,
   sumMyAnnualKRW,
   sumMyMonthDefendedKRW,
   sumMyMonthlyKRW,
   sumMyYearDefendedKRW,
+  type ServicePreset,
   type Subscription,
   type UsageLog,
 } from "@subslash/shared";
 import { buildValueRows } from "../../components/report/valueRows";
 import { latestFreshLog } from "@lib/checkins";
-import { planName, serviceIdName, subscriptionName } from "@lib/service-name";
+import { planName, presetName, serviceIdName, subscriptionName } from "@lib/service-name";
 import type { Locale } from "@lib/i18n/config";
 import { describeQuantityText } from "@lib/i18n/check-in-text";
 import type { Messages } from "@lib/i18n/messages";
 import type { AskCall } from "./tools";
-import { compactName, expandAlias, isChosungOnly, isTypoOf, toChosung } from "./fuzzy";
+import { compactName } from "./fuzzy";
+import { matchPresets, matchSubscriptions } from "./service-match";
 
 /**
  * '리포트에 물어보기'의 답을 기기에서 만든다. AI가 고른 호출(`AskCall`)을 받아 이 기기의 기록으로 계산하고, 도구마다
@@ -83,38 +87,7 @@ function paying(ctx: AskContext): Subscription[] {
   return ctx.subscriptions.filter((sub) => sub.status === "active" && !isInTrial(sub, ctx.now));
 }
 
-/**
- * 사용자가 적은 서비스 이름("넷플", "쿠팡와우", "유튭", "ㄴㅍㄹㅅ", "넷플릭쓰")을 이 기기의 구독과 맞춘다. 순서대로 보고,
- * 앞 단계에서 맞은 것이 있으면 거기서 멈춘다 — 느슨한 비교일수록 엉뚱한 구독이 끼기 쉽다.
- *
- * 1. 구독 이름이 적은 말을 품거나 그 반대(줄임말 표의 이름으로 바꾼 말도 본다)
- * 2. 초성만 적었으면 초성끼리
- * 3. 오타(lib/ask/fuzzy의 `isTypoOf`)
- *
- * 둘 이상 맞으면 모두 돌려준다 — 하나를 골라 답하면 다른 구독의 숫자를 그 서비스의 것처럼 말하게 된다.
- */
-export function matchSubscriptions(query: string, subscriptions: Subscription[]): Subscription[] {
-  const wanted = compactName(query);
-  if (wanted.length < 2) return [];
-  const alias = expandAlias(query);
-  // 영어로 물으면("Netflix") 한국어 이름으로 등록한 구독(넷플릭스)도, 한국어로 물으면("넷플") 영어 화면에서 등록한
-  // 구독(Netflix)도 맞춘다 — 서비스 목록의 두 언어 이름으로 견준다.
-  const namesOf = (sub: Subscription) =>
-    [sub.name, subscriptionName(sub, "ko"), subscriptionName(sub, "en")].map(compactName);
-
-  const contains = subscriptions.filter((sub) =>
-    namesOf(sub).some((name) => [wanted, alias].some((q) => name.includes(q) || q.includes(name))),
-  );
-  if (contains.length > 0) return contains;
-
-  if (isChosungOnly(wanted)) {
-    return subscriptions.filter((sub) =>
-      namesOf(sub).some((name) => toChosung(name).includes(wanted)),
-    );
-  }
-
-  return subscriptions.filter((sub) => namesOf(sub).some((name) => isTypoOf(wanted, name)));
-}
+export { matchSubscriptions };
 
 function startOfMonth(now: Date): Date {
   return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -143,6 +116,41 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
   const subs = paying(ctx);
   const trialCount = active.length - subs.length;
   const trialNote = trialCount > 0 ? [k.trialNote(trialCount)] : [];
+
+  /**
+   * 구독하지 않은 서비스의 요금. 서비스 목록에 확인해 둔 요금만 말하고, 확인하지 못한 서비스(`defaultAmount: null`이고
+   * 요금제도 없음)는 모른다고 한다. 요금제가 여럿이면 하나를 고르지 않고 모두 보인다. 한국에서 확인한 값이라고 적는다.
+   */
+  const catalogAnswer = (preset: ServicePreset): AskAnswer => {
+    const c = k.catalog;
+    const name = presetName(preset, locale);
+    const notes = [
+      ...(preset.plansIncomplete ? [c.incomplete] : []),
+      ...(preset.taxRate ? [c.tax(preset.taxRate)] : []),
+      c.note,
+    ];
+    if (preset.plans && preset.plans.length > 0) {
+      return answer(
+        c.plans(name, preset.plans.length),
+        c.source,
+        preset.plans.map((plan) => {
+          const price = formatCurrency(plan.amount, planCurrency(preset, plan));
+          return {
+            label: planName(plan.name, locale),
+            value: plan.billingCycle === "yearly" ? c.perYear(price) : c.perMonth(price),
+          };
+        }),
+        notes,
+      );
+    }
+    if (preset.defaultAmount === null) return answer(c.unknown(name), c.source);
+    return answer(
+      c.monthly(name, formatCurrency(preset.defaultAmount, preset.currency)),
+      c.source,
+      [],
+      notes,
+    );
+  };
 
   switch (call.tool) {
     case "spendTotal": {
@@ -220,8 +228,9 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const unknown = subs.filter((sub) => !latestFreshLog(ctx.usageLogs, sub.id, ctx.now)).length;
       const notes = unknown > 0 ? [k.low.unknown(unknown)] : [];
       if (red.length === 0) return answer(k.low.none, k.low.source, [], notes);
+      // "안 쓰는 구독에 얼마 나가?"에 구독마다의 금액만 늘어놓지 않고 합계를 함께 말한다.
       return answer(
-        k.low.some(red.length),
+        `${k.low.some(red.length)} ${k.low.total(formatKRW(sumMyMonthlyKRW(red, ctx.rate)))}`,
         k.low.source,
         red.map((sub) => ({
           label: nameOf(sub),
@@ -314,6 +323,16 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const matches = matchSubscriptions(query, active);
       const asked = isAskedName(query, ctx.asked);
       if (matches.length === 0) {
+        // 구독하지 않은 서비스면 서비스 목록의 확인한 요금으로 답한다("디즈니플러스 얼마야?").
+        const presets = matchPresets(query);
+        if (presets.length === 1) return catalogAnswer(presets[0]);
+        if (presets.length > 1 && asked) {
+          return answer(
+            k.catalog.many(query, presets.length),
+            k.catalog.source,
+            presets.map((preset) => ({ label: presetName(preset, locale), value: "" })),
+          );
+        }
         // 질문에 없던 이름을 찾지 못했으면 AI가 질문을 엉뚱하게 읽은 것이다 — 그 이름을 띄우지 않고 못 알아들었다고 한다.
         if (!asked) return answerAsk({ tool: "unsupported" }, ctx);
         return answer(s.notFound(query), s.source, [], [s.notFoundNote]);

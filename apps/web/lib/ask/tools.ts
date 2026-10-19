@@ -88,7 +88,8 @@ export const ASK_TOOLS = {
     computedBy: "getPlanAlternatives",
   },
   serviceDetail: {
-    description: "한 서비스의 다음 결제일·내 몫 금액·최근 체크인.",
+    description:
+      "한 서비스의 다음 결제일·내 몫 금액·최근 체크인. 구독하지 않은 서비스의 요금을 물어도 이것이다(앱이 서비스 목록의 요금으로 답한다).",
     params: { service: { type: "text", maxLength: 30, required: true } },
     computedBy: "getNextBillingDateFor · getMyMonthlyShareAmount · 체크인 기록",
   },

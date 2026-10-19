@@ -1,5 +1,6 @@
 import { POPULAR_SERVICES, type Subscription } from "@subslash/shared";
-import { compactName } from "./fuzzy";
+import { ALIAS_NAMES, compactName } from "./fuzzy";
+import { matchPresets, matchSubscriptions } from "./service-match";
 import type { ASK_CATEGORIES, AskCall } from "./tools";
 
 type AskCategory = (typeof ASK_CATEGORIES)[number];
@@ -122,12 +123,44 @@ const CATEGORY_WORDS: [RegExp, AskCategory][] = [
   [/\bai\b|인공지능|ai\s*툴|ai\s*구독/, "ai"],
 ];
 
+/** 요금을 묻는 말. 이 뒤에는 어미·'알려 줘' 같은 군말만 와야 한다. */
+const PRICE_WORD = /^(.*?)\s*(얼마|요금|가격|구독료|구독비|월정액|이용료)(.*)$/;
+const PRICE_TAIL =
+  /^(?:\s*(?:은|는|이|가|이야|야|예요|에요|이에요|임|지|냐|니|나|인가요|인가|정도|좀|얼마|해|돼|나와|알려\s*줘|알려\s*주세요|알려\s*줄래|궁금해))*\s*$/;
+/** 이름 뒤에 붙는 조사·한 달 말. 떼고 남은 것이 서비스 이름이어야 한다. */
+const NAME_TAIL =
+  /\s*(?:구독\s*(?:하면|하려면|할\s*때|시)?)?\s*(?:은|는|이|가|의)?\s*(?:한\s*달에?|1\s*달에?|매달|매월|월)?\s*$/;
+/** 여러 서비스나 기간을 함께 묻는 말 — 한 서비스의 요금 질문이 아니다("넷플 티빙 합쳐서 얼마", "넷플 1년에 얼마"). */
+const NOT_ONE_SERVICE =
+  /랑|하고|이랑|합쳐|합치|전부|모두|다\s|및|,|\+\s|\band\b|\d+\s*(?:년|개월|주|일)|올해|연간|일\s*년|한\s*해|ott|음악|클라우드|쇼핑|전체|총/;
+
+/**
+ * 서비스 하나의 요금만 묻는 질문("밀리 얼마야?", "아클 요금", "ㄴㅍㄹㅅ 가격 알려줘")이면 그 서비스의 정보(`serviceDetail`).
+ * 이름은 적은 말 그대로 넘기고 맞추기는 답이 한다(구독 중이면 내 구독, 아니면 서비스 목록의 요금). 이름이 이 기기의 구독
+ * 하나에도, 서비스 목록의 서비스 하나에도 맞지 않으면 null — AI에 맡긴다. AI는 "밀리 얼마"를 '결제 예정'으로 읽기도 했다.
+ */
+function servicePriceCall(q: string, subscriptions: readonly Subscription[]): AskCall | null {
+  const m = PRICE_WORD.exec(q.replace(/[?？!！.。~]+$/, "").trim());
+  if (!m || !PRICE_TAIL.test(m[3])) return null;
+  const raw = m[1].replace(/^(?:지금|요즘|혹시)\s*/, "").trim();
+  // 조사를 뗀 이름을 먼저 보고, 안 맞으면 뗀 글자가 이름의 일부였을 수 있어("잼민이") 떼기 전 이름도 본다.
+  for (const name of new Set([raw.replace(NAME_TAIL, "").trim(), raw])) {
+    if (name.length < 2 || name.length > 20 || NOT_ONE_SERVICE.test(name)) continue;
+    const known =
+      matchSubscriptions(name, [...subscriptions]).length > 0 || matchPresets(name).length === 1;
+    if (known) return { tool: "serviceDetail", args: { service: name } };
+  }
+  return null;
+}
+
 /** 질문에 서비스 이름이 들어 있는지(서비스 목록과 이 기기의 구독). 들어 있으면 그 서비스를 묻는 질문일 수 있다. */
 function mentionsService(q: string, subscriptions: readonly Subscription[]): boolean {
   const compact = compactName(q);
   const names = [
     ...POPULAR_SERVICES.flatMap((preset) => [preset.nameKo, preset.nameEn]),
     ...subscriptions.map((sub) => sub.name),
+    // 줄임말("클로드", "아클")도 서비스 이름이다 — 빠지면 "클로드 구독료 얼마야"를 전체 구독비로 답했다.
+    ...ALIAS_NAMES,
   ]
     .filter((name): name is string => Boolean(name))
     .map(compactName)
@@ -234,6 +267,8 @@ export function localAskCall(
   if (q.length < 4 || q.length > 60) return null;
   if (STEERING.test(q) || NOT_MY_RECORDS.test(q)) return null;
   if (options.hasHistory && FOLLOW_UP.test(q)) return null;
+  const priceOf = servicePriceCall(q, options.subscriptions ?? []);
+  if (priceOf) return priceOf;
   if (mentionsService(q, options.subscriptions ?? [])) return null;
   // 비교·순위·요금제·사용법은 규칙으로 읽지 않는다(뜻이 여럿이다).
   if (
