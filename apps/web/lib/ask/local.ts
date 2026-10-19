@@ -334,7 +334,7 @@ export function localAskCall(
   if (/구독/.test(q) || /subscription/.test(q)) {
     if (!asksAmount.test(q) && !/나가|내고|쓰고|spend/.test(q)) return null;
     if (parseDays(q, options.now) !== null) return null;
-    if (/해지|취소|제일|가장|덜|top|cancel|least|most|cheap/.test(q)) return null;
+    if (/해지|취소|끊|제일|가장|덜|top|cancel|least|most|cheap/.test(q)) return null;
     const isYear = yearly.test(q);
     const isMonth = monthly.test(q);
     if (isYear && isMonth) return null;
