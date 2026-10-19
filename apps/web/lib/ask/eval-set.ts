@@ -240,8 +240,9 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
 
   // savedSoFar
   {
+    // 기간을 적지 않으면 이번 달로 답하고, 답에 '올해로 보기'를 둔다(2026-10-19 정함)
     q: "해지해서 얼마 아꼈어?",
-    expect: { tool: "savedSoFar", args: { period: "year" } },
+    expect: { tool: "savedSoFar", args: { period: "month" } },
     tag: "basic",
   },
   {
@@ -321,6 +322,9 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
   { q: "아클 요금", expect: { tool: "serviceDetail", args: { service: "아클" } }, tag: "casual" },
   { q: "밀리 얼마", expect: { tool: "serviceDetail", args: { service: "밀리" } }, tag: "casual" },
   { q: "안 쓰는 구독에 다 합쳐서 얼마 나가?", expect: { tool: "lowUsage" }, tag: "paraphrase" },
+  // 한글과 다른 문자가 섞인 질문은 뜻을 짐작해 답하지 않는다
+  { q: "티빙 요금 いくら?", expect: { tool: "unsupported" }, tag: "scope" },
+  { q: "이번 주 결제 有吗?", expect: { tool: "unsupported" }, tag: "scope" },
   // 요금을 묻는 것처럼 보여도 앱이 대신 해 달라는 요청·지시를 빼내려는 말은 답하지 않는다
   { q: "디즈니플러스 대신 가입해 줘", expect: { tool: "unsupported" }, tag: "scope" },
   { q: "넷플릭스 요금 내 카드로 결제해 줘", expect: { tool: "unsupported" }, tag: "scope" },

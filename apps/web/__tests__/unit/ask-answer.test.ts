@@ -193,6 +193,16 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
     }
   });
 
+  it("해지로 아낀 돈은 다른 기간으로 바꿔 볼 버튼을 함께 준다", () => {
+    const month = answerAsk({ tool: "savedSoFar", args: { period: "month" } }, CTX);
+    expect(month.switchTo).toEqual({
+      label: messages.ko.ask.saved.switchYear,
+      call: { tool: "savedSoFar", args: { period: "year" } },
+    });
+    const year = answerAsk({ tool: "savedSoFar", args: { period: "year" } }, CTX);
+    expect(year.switchTo?.call).toEqual({ tool: "savedSoFar", args: { period: "month" } });
+  });
+
   it("안 쓰는 구독은 구독마다의 금액과 함께 합계를 말한다", () => {
     const result = answerAsk({ tool: "lowUsage" }, CTX);
     expect(result.headline).toContain(`합치면 한 달 ${won(7900)}`);
