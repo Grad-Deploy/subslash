@@ -17,7 +17,7 @@ export const PRIVACY_OFFICER: { name: string; email: string } | null = {
 };
 
 /** 이 방침이 효력을 갖는 날. 내용을 바꾸면 함께 바꾼다. */
-export const PRIVACY_EFFECTIVE_DATE = "2026년 10월 18일";
+export const PRIVACY_EFFECTIVE_DATE = "2026년 10월 19일";
 
 /**
  * 결제 알림 메일·캘린더 구독 주소를 그만둔 날. 방침의 '(종료)' 항목이 쓴다 — 예전에는 시행일을 그대로 써서,
@@ -56,11 +56,11 @@ export const AI_ASK_STARTS_ON: string | null = "2026-10-16";
 /**
  * 로그인한 계정의 AI 질문 횟수를 하루 단위로 DB에 세기 시작하는 날(YYYY-MM-DD, 한국 시간 0시). 지금은 서버 메모리에
  * 세어(lib/ask/guard) 인스턴스가 여럿이거나 배포하면 하루 한도가 정확하지 않고, 남은 횟수를 보여 줄 수 없다. 계정마다
- * 날짜·기능·횟수를 새로 저장하는 변경이라 방침에 먼저 게시했다(2026년 10월 18일 게시, 7일 뒤 시작). 저장은
+ * 날짜·기능·횟수를 새로 저장하는 변경이라 방침에 먼저 게시했다(2026년 10월 19일 게시, 7일 뒤 시작). 저장은
  * lib/ask/daily-count, 지난 날 삭제는 하루 크론, 탈퇴 시 삭제는 계정을 지우는 경로가 한다. **열기 전에 두 배포 DB에
  * `drizzle/0019_ask_daily_counts.sql`을 적용한다.** null이거나 그날 전이면 지금처럼 메모리로 센다.
  */
-export const AI_ASK_DAILY_COUNT_STARTS_ON: string | null = "2026-10-25";
+export const AI_ASK_DAILY_COUNT_STARTS_ON: string | null = "2026-10-26";
 
 /** 로그인한 계정의 AI 질문 횟수를 DB에 세는지. 테스트 서버만 스위치로 연다. */
 export function isAiAskDailyCountOpen(now: Date = new Date()): boolean {
