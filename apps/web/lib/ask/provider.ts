@@ -197,8 +197,17 @@ export async function pickTool(
   /**
    * 출력 토큰 상한과 기다리는 시간. 질문 하나를 고르는 데는 200토큰·10초면 되고, 학습 질문을 여러 개 만드는
    * 스크립트(scripts/ask-train)만 늘린다 — 긴 출력은 10초를 넘겨 통째로 실패한다.
+   *
+   * `temperature`는 0이다 — 같은 질문에 늘 같은 도구를 고르게 한다. 정하지 않았더니 같은 평가 세트의 정답률이 실행마다
+   * 90.6~95.6%로 흔들렸다(오늘 맞은 질문이 내일 틀린다). 학습 질문을 만드는 스크립트만 여러 표현이 나오게 올린다.
+   * Anthropic에는 싣지 않는다 — 최근 모델은 강제 도구 선택처럼 받지 않는 인자를 400으로 거절하는데, 이 값을 받는지는
+   * 확인하지 못했다.
    */
-  { maxTokens = 200, timeoutMs = 10_000 }: { maxTokens?: number; timeoutMs?: number } = {},
+  {
+    maxTokens = 200,
+    timeoutMs = 10_000,
+    temperature = 0,
+  }: { maxTokens?: number; timeoutMs?: number; temperature?: number } = {},
 ): Promise<RawToolCall> {
   if (config.provider === "anthropic") {
     const data = await postJson(
@@ -245,6 +254,7 @@ export async function pickTool(
       {
         model: config.model,
         max_tokens: maxTokens,
+        temperature,
         messages: [
           { role: "system", content: system },
           { role: "user", content: question },
@@ -293,7 +303,7 @@ export async function pickTool(
         },
       ],
       toolConfig: { functionCallingConfig: { mode: "ANY" } },
-      generationConfig: { maxOutputTokens: maxTokens },
+      generationConfig: { maxOutputTokens: maxTokens, temperature },
     },
     fetcher,
     timeoutMs,

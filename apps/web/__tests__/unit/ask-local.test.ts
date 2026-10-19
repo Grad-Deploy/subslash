@@ -156,6 +156,8 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
       "This week, how much will I pay for subscriptions?",
       "14일 안에 구독료 나가는 거?",
       "돈이 제일 덜 나가는 구독 top3 뭐야?",
+      // '끊다'는 해지다 — 아낀 돈을 묻는 말을 지금 내는 돈으로 답하지 않는다
+      "구독 끊고 나서 남은 금액 얼마야?",
     ]) {
       expect(localAskCall(q, { now: NOW })?.tool, q).not.toBe("spendTotal");
     }
