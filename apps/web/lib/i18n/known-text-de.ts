@@ -203,4 +203,6 @@ export const KNOWN_TEXT_DE: KnownTextRender[] = [
     `Das Feld „${nameIn(BACKUP_FIELDS, field)}“ im ${nameIn(BACKUP_LISTS, list)} Nr. ${index} ist ungültig.`,
   (index) => `Abo Nr. ${index} hat dieselbe ID wie ein anderes Abo.`,
   () => "Die Wechselkurs-Einstellung ist ungültig.",
+  () => "Prüfe das Format der E-Mail-Adresse.",
+  () => "Diese E-Mail-Adresse ist bereits bestätigt.",
 ];

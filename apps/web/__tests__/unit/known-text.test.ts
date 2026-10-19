@@ -95,6 +95,9 @@ const SERVER_MESSAGES = [
   describeResetOutcome({ status: "not_sent", reason: "not_configured" }, "a@b.co"),
   describeResetOutcome({ status: "not_sent", reason: "failed" }, "a@b.co"),
   "이 이메일로 가입한 계정이 없습니다.",
+  // 확인 메일 다시 보내기(app/api/auth/verification-email)
+  "이메일 형식을 확인해주세요.",
+  "이미 확인된 이메일입니다.",
   // 비밀번호 변경·탈퇴·로그인 방법(app/api/auth/password·account·oauth/link)
   "로그인이 필요합니다.",
   "지금 비밀번호를 입력해주세요.",

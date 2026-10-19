@@ -74,3 +74,4 @@ apps/mobile/android/app/src/main/res/xml/config.xml
 credentials.json
 apps/web/scripts/ask-eval/results/
 apps/web/scripts/ask-train/candidates/
+graphify-out/
