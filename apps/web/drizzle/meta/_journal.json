@@ -134,6 +134,13 @@
       "when": 1791979477433,
       "tag": "0018_drop_anonymous_stats",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1792305228633,
+      "tag": "0019_ask_daily_counts",
+      "breakpoints": true
     }
   ]
 }

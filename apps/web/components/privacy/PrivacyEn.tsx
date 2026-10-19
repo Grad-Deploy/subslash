@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import {
+  AI_ASK_DAILY_COUNT_STARTS_ON,
   AI_ASK_STARTS_ON,
   ANONYMOUS_STATS_ENDED_ON,
   ANONYMOUS_STATS_STARTS_ON,
@@ -166,6 +167,18 @@ export function PrivacyEn() {
             that fits your question.
           </Item>
         )}
+        {AI_ASK_STARTS_ON && AI_ASK_DAILY_COUNT_STARTS_ON && (
+          <Item
+            title={`AI question count (when logged in, from ${englishDate(AI_ASK_DAILY_COUNT_STARTS_ON)})`}
+          >
+            When you use &lsquo;Asking AI&rsquo; while logged in, we store your account ID, the date
+            (Korea time), the feature (Ask your report or Help), and the number of questions sent to
+            the AI that day, so we can keep to the daily question limit and tell you how many you
+            have left. We do not store the questions themselves. If you are not logged in, requests
+            are still counted per IP address in memory only. Purpose: limiting daily questions per
+            account and showing how many remain.
+          </Item>
+        )}
         <Item title="Sign-up and login (optional)">
           We store your username, email, password (only as an irreversible hash; the original is not
           stored), email confirmation time, and sign-up and last login times. Whether you are 14 or
@@ -259,6 +272,13 @@ export function PrivacyEn() {
               Asking AI: questions are not stored. The question and chosen calculation kept in
               server memory disappear after one day or when the server restarts, and Dankook
               University&rsquo;s AI server does not store questions either.
+            </li>
+          )}
+          {AI_ASK_STARTS_ON && AI_ASK_DAILY_COUNT_STARTS_ON && (
+            <li>
+              AI question count: deleted automatically once a day after the day has passed, so it is
+              never kept for more than two days, and deleted immediately when you delete your
+              account.
             </li>
           )}
           <li>

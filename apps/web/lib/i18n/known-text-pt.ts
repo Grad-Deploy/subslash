@@ -202,4 +202,6 @@ export const KNOWN_TEXT_PT: KnownTextRender[] = [
     `O campo “${nameIn(BACKUP_FIELDS, field)}” ${nameIn(BACKUP_LISTS, list)} nº ${index} não é válido.`,
   (index) => `A assinatura nº ${index} tem o mesmo ID de outra assinatura.`,
   () => "A configuração da taxa de câmbio não é válida.",
+  () => "Confira o formato do e-mail.",
+  () => "Este e-mail já foi confirmado.",
 ];

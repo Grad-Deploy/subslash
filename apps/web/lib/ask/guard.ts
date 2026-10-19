@@ -2,7 +2,7 @@ import { DAY_MS } from "@subslash/shared";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getAccountBySessionToken, readSessionToken } from "@lib/auth-server";
-import { isAiAskOpen } from "@lib/privacy";
+import { isAiAskDailyCountOpen, isAiAskOpen } from "@lib/privacy";
 import { logError } from "@lib/log";
 import {
   clientIp,
@@ -11,6 +11,7 @@ import {
   tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
+import { secondsUntilKoreaMidnight, takeAskQuota } from "./daily-count";
 import { askProviderConfig, type AskProviderConfig } from "./provider";
 import { MAX_ASK_QUESTION, isContextTurn, isValidAskHistory, type AskTurn } from "./tools";
 
@@ -21,6 +22,8 @@ import { MAX_ASK_QUESTION, isContextTurn, isValidAskHistory, type AskTurn } from
  * - 10분 10번·하루 50번. 로그인했으면 계정마다, 아니면 IP마다 센다 — 학교 와이파이·통신사망처럼 수백 명이 한 IP로
  *   나가는 곳에서는 IP 한도를 그 사람들이 나눠 써, 몇 번 만에 막혔다. 계정은 AI로 보내지 않고 셈에만 쓴다. 메모리에
  *   세므로 대량 공격은 Vercel 방화벽이 맡는다(lib/rate-limit). 기능마다 따로 센다.
+ * - 로그인한 계정의 하루 횟수는 `AI_ASK_DAILY_COUNT_STARTS_ON`부터 DB에 센다(lib/ask/daily-count) — 메모리로는 인스턴스가
+ *   여럿이거나 배포하면 정확하지 않고, 남은 횟수(`remaining`)를 알려 줄 수 없다. DB가 실패하면 질문을 막지 않고 메모리로 센다.
  * - 같은 질문의 결과를 인스턴스 메모리에 하루 둔다 — AI를 덜 부르기 위해서다(한도, 동시에 몰릴 때 멈춤). 캐시에서 답한
  *   것은 횟수에 세지 않는다.
  *
@@ -34,18 +37,21 @@ const PER_DAY: RateLimitRule = { limit: 50, windowMs: DAY_MS };
  * 횟수를 세는 주인: 로그인한 계정, 아니면 IP. 세션을 읽지 못하면(DB 오류) IP로 센다 — 질문을 막지 않는다. 세션이 끝난
  * 토큰은 로그인하지 않은 것으로 본다.
  */
-async function requester(request: Request): Promise<string> {
-  const ip = `ip:${clientIp(request.headers)}`;
+async function requester(request: Request): Promise<{ key: string; accountId?: string }> {
+  const ip = { key: `ip:${clientIp(request.headers)}` };
   const token = "cookies" in request ? readSessionToken(request as NextRequest) : undefined;
   if (!token) return ip;
   try {
     const account = await getAccountBySessionToken(token);
-    return account ? `account:${account.id}` : ip;
+    return account ? { key: `account:${account.id}`, accountId: account.id } : ip;
   } catch (error) {
     logError("ask/guard session lookup failed", error);
     return ip;
   }
 }
+
+const tooMany = (wait: number) =>
+  tooManyRequestsResponse(wait, "질문이 많아 잠시 쉬어 갈게요. 조금 뒤에 다시 물어봐 주세요.");
 
 export async function readQuestion(request: Request): Promise<string | NextResponse> {
   const body = (await request.json().catch(() => null)) as { question?: unknown } | null;
@@ -82,24 +88,39 @@ function questionFrom(body: { question?: unknown } | null): string | NextRespons
   return question;
 }
 
-/** 막혔으면 429 응답, 아니면 한 번 세고 null. */
+/**
+ * 막혔으면 `blocked`(429 응답), 아니면 한 번 센다. DB에 센 로그인 계정이면 오늘 남은 횟수(`remaining`)를 함께 준다.
+ */
 export async function limitAiRequest(
   request: Request,
   scope: string,
-): Promise<NextResponse | null> {
+  now: Date = new Date(),
+): Promise<{ blocked: NextResponse } | { remaining?: number }> {
   const who = await requester(request);
-  const shortKey = `${scope}:${who}`;
-  const dayKey = `${scope}:day:${who}`;
-  const wait = Math.max(retryAfterSeconds(shortKey, PER_SHORT), retryAfterSeconds(dayKey, PER_DAY));
-  if (wait > 0) {
-    return tooManyRequestsResponse(
-      wait,
-      "질문이 많아 잠시 쉬어 갈게요. 조금 뒤에 다시 물어봐 주세요.",
+  const shortKey = `${scope}:${who.key}`;
+  const dayKey = `${scope}:day:${who.key}`;
+  const shortWait = retryAfterSeconds(shortKey, PER_SHORT);
+  if (shortWait > 0) return { blocked: tooMany(shortWait) };
+
+  if (who.accountId && isAiAskDailyCountOpen(now)) {
+    const quota = await takeAskQuota(who.accountId, scope, PER_DAY.limit, now).catch(
+      (error: unknown) => {
+        logError("ask/guard daily count failed", error);
+        return null;
+      },
     );
+    if (quota) {
+      if (!quota.allowed) return { blocked: tooMany(secondsUntilKoreaMidnight(now)) };
+      hit(shortKey, PER_SHORT);
+      return { remaining: quota.remaining };
+    }
   }
+
+  const dayWait = retryAfterSeconds(dayKey, PER_DAY);
+  if (dayWait > 0) return { blocked: tooMany(dayWait) };
   hit(shortKey, PER_SHORT);
   hit(dayKey, PER_DAY);
-  return null;
+  return {};
 }
 
 const CACHE_MS = DAY_MS;
@@ -158,13 +179,14 @@ export async function answerWithAi<T>(options: {
   const cached = cache.get(cacheKey);
   if (cached !== undefined) return NextResponse.json({ [field]: cached, cached: true });
 
-  const blocked = await limitAiRequest(request, scope);
-  if (blocked) return blocked;
+  const limit = await limitAiRequest(request, scope);
+  if ("blocked" in limit) return limit.blocked;
 
   try {
     const { value, rejected } = await pick();
     if (!rejected) cache.set(cacheKey, value);
-    return NextResponse.json({ [field]: value, cached: false });
+    // 남은 횟수는 DB에 센 로그인 계정에만 있다 — 캐시·기기 규칙으로 답한 것은 세지 않으므로 싣지 않는다.
+    return NextResponse.json({ [field]: value, cached: false, remaining: limit.remaining });
   } catch (error) {
     logError(`api/${scope}`, error);
     return NextResponse.json(
