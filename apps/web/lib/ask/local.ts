@@ -232,6 +232,17 @@ function rankCall(q: string): AskCall | null {
 const ACTION_REQUEST =
   /대신\s*(?:해지|결제|가입|취소|해\s*줄|해\s*줘|해줘|해\s*주)|(?:해지|결제|가입|취소)\s*(?:해\s*줘|해줘|해\s*주세요|해\s*줄래|해\s*줄\s*수)/;
 
+/**
+ * 구독 밖의 돈(카드값·카드 명세·한도). 앱은 등록한 구독만 알아, 이걸 구독비 합계로 답하면 카드값 전체인 것처럼 읽힌다
+ * ("이번 달 카드값 전체 얼마야"에 구독비를 답했다).
+ */
+const NOT_SUBSCRIPTION_MONEY =
+  /카드\s*(?:값|대금|명세|청구\s*(?:금액|액)|사용\s*(?:금액|액)|한도|실적)|통장\s*잔고|잔액/;
+
+/** 인사·뜻 없는 짧은 말("ㅎㅇ", "안녕"). 물어볼 수 있는 것을 보여 준다(unsupported) — 사용법(help)이 아니다. */
+const SMALL_TALK =
+  /^(?:ㅎㅇ|ㅎ2|하이|ㅂㅇ|안녕(?:하세요)?|반가워(?:요)?|ㅇㅇ|ㄴㄴ|ㅋ+|ㅎ+|ㅠ+|ㅜ+|hi|hello|hey|yo)[\s!?.~]*$/;
+
 /** 앱 사용법 질문: 어떻게·어디서를 묻고 앱 기능 낱말이 함께 있다. 도움말(`help`)로 넘긴다. */
 const HELP_HOW =
   /어떻게\s*(?:해|하|켜|추가|등록|설정|바꿔|바꾸|고쳐|고치|되어|돼|되)|어디서|어디에\s*있|방법\s*(?:있|알려|이)|하는\s*법|고칠\s*수/;
@@ -343,7 +354,9 @@ export function localAskCall(
   },
 ): AskCall | null {
   const q = normalize(question);
-  if (INJECTION.test(q) || isMixedLanguage(q)) return { tool: "unsupported" };
+  if (INJECTION.test(q) || isMixedLanguage(q) || SMALL_TALK.test(q)) {
+    return { tool: "unsupported" };
+  }
   if (q.length <= 30) {
     const previous =
       options.previous ??
@@ -356,7 +369,7 @@ export function localAskCall(
   if (q.length < 4 || q.length > 60) return null;
   if (STEERING.test(q) || NOT_MY_RECORDS.test(q)) return null;
   if (options.hasHistory && FOLLOW_UP.test(q)) return null;
-  if (ACTION_REQUEST.test(q)) return { tool: "unsupported" };
+  if (ACTION_REQUEST.test(q) || NOT_SUBSCRIPTION_MONEY.test(q)) return { tool: "unsupported" };
   const subscriptions = options.subscriptions ?? [];
   const ofService = serviceCall(q, subscriptions);
   if (ofService) return ofService;
@@ -405,7 +418,8 @@ export function localAskCall(
   ) {
     const isYear = yearly.test(q);
     const isMonth = /이번\s*달|한\s*달|this month/.test(q);
-    if (isYear === isMonth) return null;
+    if (isYear && isMonth) return null;
+    // 기간을 적지 않았으면 이번 달로 답한다. 답에 '올해로 보기'를 둬 올해를 물은 것이었으면 바꾸게 한다(answer의 switchTo).
     return { tool: "savedSoFar", args: { period: isYear ? "year" : "month" } };
   }
 

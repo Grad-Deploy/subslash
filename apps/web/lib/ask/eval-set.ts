@@ -240,8 +240,9 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
 
   // savedSoFar
   {
+    // 기간을 적지 않으면 이번 달로 답하고, 답에 '올해로 보기'를 둔다(2026-10-19 정함)
     q: "해지해서 얼마 아꼈어?",
-    expect: { tool: "savedSoFar", args: { period: "year" } },
+    expect: { tool: "savedSoFar", args: { period: "month" } },
     tag: "basic",
   },
   {

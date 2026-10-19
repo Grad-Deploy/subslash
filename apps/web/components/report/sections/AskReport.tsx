@@ -175,7 +175,14 @@ export function AskReport({
                   </>
                 )}
                 {turn.error && <p className="text-destructive">{known(turn.error)}</p>}
-                {turn.answer && <AnswerBody answer={turn.answer} question={turn.question} />}
+                {turn.answer && (
+                  <AnswerBody
+                    answer={turn.answer}
+                    question={turn.question}
+                    busy={busy}
+                    onSwitch={(label, call) => void ask(label, call)}
+                  />
+                )}
               </div>
             </li>
           ))}
@@ -238,7 +245,17 @@ function Suggestions({
   );
 }
 
-function AnswerBody({ answer, question }: { answer: AskAnswer; question: string }) {
+function AnswerBody({
+  answer,
+  question,
+  busy,
+  onSwitch,
+}: {
+  answer: AskAnswer;
+  question: string;
+  busy: boolean;
+  onSwitch: (label: string, call: AskCall) => void;
+}) {
   const a = useT().reportPage.ask;
   return (
     <>
@@ -269,6 +286,16 @@ function AnswerBody({ answer, question }: { answer: AskAnswer; question: string 
         >
           {a.goHelp}
         </Link>
+      )}
+      {answer.switchTo && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => answer.switchTo && onSwitch(answer.switchTo.label, answer.switchTo.call)}
+          className="rounded-full border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-muted disabled:opacity-50"
+        >
+          {answer.switchTo.label}
+        </button>
       )}
       <p className="text-[11px] text-muted-foreground">{a.source(answer.source)}</p>
     </>
