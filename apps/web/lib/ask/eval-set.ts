@@ -356,6 +356,28 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
     expect: { tool: "spendByCategory", args: { category: "ott", period: "year" } },
     tag: "followup",
   },
+  // 서비스 하나의 1년 — 구독 전체의 1년 합계가 아니다
+  {
+    q: "1년으로 치면?",
+    history: [
+      {
+        question: "디즈니플러스 얼마야?",
+        call: { tool: "serviceDetail", args: { service: "디즈니플러스" } },
+      },
+    ],
+    expect: { tool: "serviceDetail", args: { service: "디즈니플러스", period: "year" } },
+    tag: "followup",
+  },
+  {
+    q: "왓챠 1년 요금 얼마야?",
+    expect: { tool: "serviceDetail", args: { service: "왓챠", period: "year" } },
+    tag: "args",
+  },
+  {
+    q: "티빙 연간 구독료 알려줘",
+    expect: { tool: "serviceDetail", args: { service: "티빙", period: "year" } },
+    tag: "args",
+  },
   // 앞선 턴 없이 기간만 물으면 구독비 합계다
   { q: "1년이면?", expect: { tool: "spendTotal", args: { period: "year" } }, tag: "followup" },
   {

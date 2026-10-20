@@ -126,10 +126,12 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
    * 구독하지 않은 서비스의 요금. 서비스 목록에 확인해 둔 요금만 말하고, 확인하지 못한 서비스(`defaultAmount: null`이고
    * 요금제도 없음)는 모른다고 한다. 요금제가 여럿이면 하나를 고르지 않고 모두 보인다. 한국에서 확인한 값이라고 적는다.
    */
-  const catalogAnswer = (preset: ServicePreset): AskAnswer => {
+  /** 서비스 목록의 요금. 1년(`year`)이면 매달 내는 요금제는 한 달 요금 × 12로 보이고 그렇게 적는다. */
+  const catalogAnswer = (preset: ServicePreset, year: boolean): AskAnswer => {
     const c = k.catalog;
     const name = presetName(preset, locale);
-    const notes = [
+    const notes = (monthlyTimes12: boolean) => [
+      ...(monthlyTimes12 ? [c.yearNote] : []),
       ...(preset.plansIncomplete ? [c.incomplete] : []),
       ...(preset.taxRate ? [c.tax(preset.taxRate)] : []),
       c.note,
@@ -139,21 +141,31 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         c.plans(name, preset.plans.length),
         c.source,
         preset.plans.map((plan) => {
-          const price = formatCurrency(plan.amount, planCurrency(preset, plan));
+          const yearly = plan.billingCycle === "yearly";
+          const amount = year && !yearly ? plan.amount * 12 : plan.amount;
+          const price = formatCurrency(amount, planCurrency(preset, plan));
           return {
             label: planName(plan.name, locale),
-            value: plan.billingCycle === "yearly" ? c.perYear(price) : c.perMonth(price),
+            value: yearly || year ? c.perYear(price) : c.perMonth(price),
           };
         }),
-        notes,
+        notes(year && preset.plans.some((plan) => plan.billingCycle !== "yearly")),
       );
     }
     if (preset.defaultAmount === null) return answer(c.unknown(name), c.source);
+    if (year) {
+      return answer(
+        c.yearly(name, formatCurrency(preset.defaultAmount * 12, preset.currency)),
+        c.source,
+        [],
+        notes(true),
+      );
+    }
     return answer(
       c.monthly(name, formatCurrency(preset.defaultAmount, preset.currency)),
       c.source,
       [],
-      notes,
+      notes(false),
     );
   };
 
@@ -325,12 +337,24 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
     case "serviceDetail": {
       const s = k.service;
       const query = String(args.service);
+      // 서비스 하나의 1년 요금("유튜브 프리미엄 1년 얼마야?"). 기간을 바꿔 보는 버튼을 함께 둔다.
+      const year = call.tool === "serviceDetail" && args.period === "year";
+      const switchPeriod: AskAnswer["switchTo"] = {
+        label: year ? s.switchMonth : s.switchYear,
+        call: {
+          tool: "serviceDetail",
+          args: year ? { service: query } : { service: query, period: "year" },
+        },
+      };
       const matches = matchSubscriptions(query, active);
       const asked = isAskedName(query, ctx.asked);
       if (matches.length === 0) {
         // 구독하지 않은 서비스면 서비스 목록의 확인한 요금으로 답한다("디즈니플러스 얼마야?").
         const presets = matchPresets(query);
-        if (presets.length === 1) return catalogAnswer(presets[0]);
+        if (presets.length === 1) {
+          const listed = catalogAnswer(presets[0], year);
+          return call.tool === "serviceDetail" ? { ...listed, switchTo: switchPeriod } : listed;
+        }
         if (presets.length > 1 && asked) {
           return answer(
             k.catalog.many(query, presets.length),
@@ -373,8 +397,10 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       }
       const next = getNextBillingDateFor(sub, ctx.now);
       const log = latestFreshLog(ctx.usageLogs, sub.id, ctx.now);
-      return answer(
-        s.detail(nameOf(sub), formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))),
+      const detailAnswer = answer(
+        year
+          ? s.detailYear(nameOf(sub), formatKRW(getMyAnnualAmountKRW(sub, ctx.rate)))
+          : s.detail(nameOf(sub), formatKRW(getMyMonthlyAmountKRW(sub, ctx.rate))),
         s.detailSource,
         [
           {
@@ -387,6 +413,7 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
           },
         ],
       );
+      return { ...detailAnswer, switchTo: switchPeriod };
     }
 
     case "savedSoFar": {

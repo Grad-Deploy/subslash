@@ -193,6 +193,49 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
     }
   });
 
+  it("서비스 하나의 1년을 물으면 그 서비스의 1년 금액으로 답하고, 기간을 바꿔 볼 버튼을 준다", () => {
+    const year = answerAsk(
+      { tool: "serviceDetail", args: { service: "넷플릭스", period: "year" } },
+      CTX,
+    );
+    expect(year.headline).toBe(`넷플릭스: 1년 ${won(17000 * 12)}`);
+    expect(year.switchTo).toEqual({
+      label: messages.ko.ask.service.switchMonth,
+      call: { tool: "serviceDetail", args: { service: "넷플릭스" } },
+    });
+    // 나눠 내는 구독은 내 몫의 1년이다
+    expect(
+      answerAsk({ tool: "serviceDetail", args: { service: "티빙", period: "year" } }, CTX).headline,
+    ).toBe(`티빙: 1년 ${won((9500 / 2) * 12)}`);
+    const month = answerAsk({ tool: "serviceDetail", args: { service: "넷플릭스" } }, CTX);
+    expect(month.headline).toBe(`넷플릭스: 한 달 ${won(17000)}`);
+    expect(month.switchTo?.call).toEqual({
+      tool: "serviceDetail",
+      args: { service: "넷플릭스", period: "year" },
+    });
+
+    // 구독하지 않은 서비스는 목록 요금의 1년이고, 매달 내는 요금제는 × 12로 셈했다고 적는다
+    const disney = answerAsk(
+      { tool: "serviceDetail", args: { service: "디즈니플러스", period: "year" } },
+      CTX,
+    );
+    expect(disney.rows).toEqual([
+      { label: "스탠다드", value: `1년 ${won(9900 * 12)}` },
+      { label: "프리미엄", value: `1년 ${won(13900 * 12)}` },
+    ]);
+    expect(disney.notes).toContain(messages.ko.ask.catalog.yearNote);
+    const single = POPULAR_SERVICES.find(
+      (p) => p.currency === "KRW" && typeof p.defaultAmount === "number" && !p.plans?.length,
+    );
+    if (single && typeof single.defaultAmount === "number") {
+      const result = answerAsk(
+        { tool: "serviceDetail", args: { service: single.nameKo, period: "year" } },
+        CTX,
+      );
+      expect(result.headline).toContain(`1년 ${won(single.defaultAmount * 12)}`);
+    }
+  });
+
   it("해지로 아낀 돈은 다른 기간으로 바꿔 볼 버튼을 함께 준다", () => {
     const month = answerAsk({ tool: "savedSoFar", args: { period: "month" } }, CTX);
     expect(month.switchTo).toEqual({
