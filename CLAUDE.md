@@ -356,7 +356,7 @@ DB는 정보 종류별로 나누지 않는다. 같은 서버가 모든 접속 �
 
 `/api/ask`는 로그인 없이 되고, 질문을 표·로그에 남기지 않는다. 같은 질문의 도구는 인스턴스 메모리에 하루 둬 AI를 덜
 부르고, 10분 10번·하루 50번으로 제한한다(`lib/ask/guard`, 도움말 AI와 같은 규칙·따로 셈). 로그인했으면 계정마다, 아니면 IP마다 센다 —
-학교 와이파이처럼 여럿이 한 IP를 쓰는 곳에서 서로 막지 않게. 그래서 화면은 `apiFetch`로 보낸다(계정은 AI로 보내지 않는다). 로그인한 계정의 하루 횟수는 `AI_ASK_DAILY_COUNT_STARTS_ON`(2026-10-26, 방침에 10월 19일 먼저 게시)부터 DB(`ask_daily_counts`, `lib/ask/daily-count`)에 센다 — 계정 ID·한국 날짜·기능·횟수만 두고, 한도 확인과 셈을 한 문장으로 해 막힌 요청은 행을 쓰지 않는다. 답에 오늘 남은 횟수(`remaining`)를 실어 화면이 보인다. 하루 크론이 지난 날을 지우고 계정을 지우는 경로가 `deleteAskDailyCounts`를 부른다. DB가 실패하면 질문을 막지 않고 메모리로 센다. **열기 전에 두 배포 DB에 `drizzle/0019_ask_daily_counts.sql`을 적용한다.** 모델은 환경 변수(`ASK_PROVIDER`·`ASK_MODEL`·키)로 고르고 코드에
+학교 와이파이처럼 여럿이 한 IP를 쓰는 곳에서 서로 막지 않게. 그래서 화면은 `apiFetch`로 보낸다(계정은 AI로 보내지 않는다). 로그인한 계정의 하루 횟수는 `AI_ASK_DAILY_COUNT_STARTS_ON`(2026-10-20, 방침에 10월 19일 먼저 게시)부터 DB(`ask_daily_counts`, `lib/ask/daily-count`)에 센다 — 계정 ID·한국 날짜·기능·횟수만 두고, 한도 확인과 셈을 한 문장으로 해 막힌 요청은 행을 쓰지 않는다. 답에 오늘 남은 횟수(`remaining`)를 실어 화면이 보인다. 하루 크론이 지난 날을 지우고 계정을 지우는 경로가 `deleteAskDailyCounts`를 부른다. DB가 실패하면 질문을 막지 않고 메모리로 센다. **열기 전에 두 배포 DB에 `drizzle/0019_ask_daily_counts.sql`을 적용한다.** 모델은 환경 변수(`ASK_PROVIDER`·`ASK_MODEL`·키)로 고르고 코드에
 기본 모델을 두지 않는다. 열리는 조건은 `AI_ASK_STARTS_ON`(`lib/privacy.ts`, null이면 닫힘)과 서버 설정 둘 다다 —
 질문 문장이 외부 AI 회사로 나가므로 **열기 전에 방침에 처리 위탁(회사·항목·보관)을 게시한다.** AI가 닫혀 있어도 칸은 보이고
 아무것도 서버로 보내지 않는다 — 추천 질문 버튼은 정해 둔 호출(`lib/ask/suggestions`의 `SUGGESTED_CALLS`, 버튼 문구와 같은 순서)로

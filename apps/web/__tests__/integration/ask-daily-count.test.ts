@@ -114,7 +114,7 @@ describe("AI 질문 횟수(DB)", () => {
     vi.stubEnv("NEXT_PUBLIC_AI_ASK_DAILY_COUNT_TEST_OPEN", "");
     const token = await makeAccount("a");
     expect(
-      await limitAiRequest(askRequest(token), "ask", new Date("2026-10-24T03:00:00Z")),
+      await limitAiRequest(askRequest(token), "ask", new Date("2026-10-19T03:00:00Z")),
     ).toEqual({});
     expect(await rows()).toEqual([]);
   });
