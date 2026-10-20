@@ -152,6 +152,17 @@ const NAME_TAIL =
 const NOT_ONE_SERVICE =
   /랑|하고|이랑|합쳐|합치|전부|모두|다\s|및|,|\+\s|\band\b|(?:이)?나\s|같은|\s등(?:\s|의)|\d+\s*(?:년|개월|주|일)|올해|연간|일\s*년|한\s*해|ott|음악|클라우드|쇼핑|전체|총/;
 
+/**
+ * 서비스 하나의 1년을 묻는 말("유튜브 프리미엄 1년 얼마야?", "배민 1년은?"). 떼고 남은 것이 이름이어야 한다. '올해'는 넣지
+ * 않는다 — "넷플 올해 얼마 냈어"는 1년 요금이 아니라 올해 낸 돈을 묻는 말일 수 있다.
+ */
+const SERVICE_YEAR =
+  /s*(?:1s*년|일s*년|한s*해|연간|12s*개월|열두s*달)s*(?:치|동안|간)?s*(?:으로|로|에는|에|은|는|이면|면|기준(?:으로)?|이면은)?s*/;
+/** 1년으로 답할 수 있는 `DETAIL_WORD`(금액). 결제일·쓴 횟수에 1년이 붙으면 앱이 모르는 것(앱은 최근 30일만 안다)이라 AI에 맡긴다. */
+const AMOUNT_DETAIL = /얼마|요금|가격|구독료|구독비|이용료|비용|결제s*금액|결제액|몇s*원/;
+/** 이름 뒤에 남는 조사·물음 끝. "배민 1년은?"에서 1년을 떼면 "배민"만 남아야 한다. */
+const NAME_ONLY_TAIL = /s*(?:은|는|이|가|의|이면|면|이야|야|이에요|예요|요)?s*$/;
+
 /** 서비스 이름·줄임말 그대로인지(띄어쓰기·대소문자 무시). */
 function isExactName(text: string, subscriptions: readonly Subscription[]): boolean {
   const wanted = compactName(text);
@@ -194,6 +205,21 @@ function serviceCall(q: string, subscriptions: readonly Subscription[]): AskCall
     const head = text.slice(0, cheaper.index).split(/\s*(?:요금제|요금|지금|중에)/)[0];
     const name = serviceNameIn(head, subscriptions);
     return name ? { tool: "cheaperPlan", args: { service: name } } : null;
+  }
+  const year = SERVICE_YEAR.exec(text);
+  if (year) {
+    // 1년을 떼고 서비스 하나의 금액을 묻는지 본다. 금액 낱말 없이 "배민 1년은?"이면 남은 것이 이름 그대로여야 한다.
+    const before = text.slice(0, year.index).trim();
+    const after = text.slice(year.index + year[0].length).trim();
+    const amount = AMOUNT_DETAIL.exec(after);
+    const asks = amount
+      ? DETAIL_WORD.exec(after)?.index === amount.index &&
+        !/결제일|청구일|몇s*번|횟수/.test(after) &&
+        /^(?:구독\s*(?:하면|하려면|할\s*때|시)?)?$/.test(after.slice(0, amount.index).trim())
+      : NAME_ONLY_TAIL.test(after) && after.replace(NAME_ONLY_TAIL, "") === "";
+    if (!asks || !before) return null;
+    const name = serviceNameIn(before, subscriptions);
+    return name ? { tool: "serviceDetail", args: { service: name, period: "year" } } : null;
   }
   const detail = DETAIL_WORD.exec(text);
   if (!detail) return null;
@@ -321,6 +347,15 @@ export function periodFollowUp(question: string, previous: AskCall, now: Date): 
         args: period === "year" ? { category, period } : { category },
       };
     }
+    case "serviceDetail": {
+      // "유튜브 프리미엄 얼마야?" → "1년은?": 그 서비스의 1년이다. 구독 전체의 1년 합계가 아니다.
+      const service = previous.args?.service;
+      if (!period || typeof service !== "string") return null;
+      return {
+        tool: "serviceDetail",
+        args: period === "year" ? { service, period } : { service },
+      };
+    }
     case "upcomingCharges":
     case "trialsEnding": {
       if (!WHOLE_DAYS.test(phrase)) return null;
@@ -361,10 +396,12 @@ export function localAskCall(
   }
   if (q.length < 4 || q.length > 60) return null;
   if (STEERING.test(q) || NOT_MY_RECORDS.test(q)) return null;
-  if (options.hasHistory && FOLLOW_UP.test(q)) return null;
-  if (ACTION_REQUEST.test(q) || NOT_SUBSCRIPTION_MONEY.test(q)) return { tool: "unsupported" };
   const subscriptions = options.subscriptions ?? [];
   const ofService = serviceCall(q, subscriptions);
+  // 서비스 이름과 1년을 함께 적은 질문("배민 1년은?")은 '은/는'으로 끝나도 앞선 턴 없이 뜻이 하나다.
+  if (ofService?.args?.period === "year") return ofService;
+  if (options.hasHistory && FOLLOW_UP.test(q)) return null;
+  if (ACTION_REQUEST.test(q) || NOT_SUBSCRIPTION_MONEY.test(q)) return { tool: "unsupported" };
   if (ofService) return ofService;
   // 분류를 묻는 질문은 예로 서비스 이름을 들기도 한다("쿠팡 와우 같은 쇼핑 멤버십") — 그때는 서비스 질문으로 보지 않는다.
   const categories = CATEGORY_WORDS.filter(([pattern]) => pattern.test(q)).map(([, c]) => c);

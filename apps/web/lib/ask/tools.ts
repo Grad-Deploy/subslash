@@ -90,8 +90,12 @@ export const ASK_TOOLS = {
   },
   serviceDetail: {
     description:
-      "한 서비스의 다음 결제일·내 몫 금액·최근 체크인. 구독하지 않은 서비스의 요금을 물어도 이것이다(앱이 서비스 목록의 요금으로 답한다).",
-    params: { service: { type: "text", maxLength: 30, required: true } },
+      "한 서비스의 다음 결제일·내 몫 금액·최근 체크인. 구독하지 않은 서비스의 요금을 물어도 이것이다(앱이 서비스 목록의 요금으로 답한다). 금액은 한 달이고, 그 서비스의 1년 요금을 물을 때만 period를 year로 넣는다.",
+    params: {
+      service: { type: "text", maxLength: 30, required: true },
+      // 없으면 한 달이다. 서버는 month를 지워 보낸다 — 이 인자를 모르는 예전 앱은 모르는 인자가 붙은 호출을 버린다.
+      period: { type: "enum", values: ASK_PERIODS, required: false },
+    },
     computedBy: "getNextBillingDateFor · getMyMonthlyShareAmount · 체크인 기록",
   },
   savedSoFar: {
