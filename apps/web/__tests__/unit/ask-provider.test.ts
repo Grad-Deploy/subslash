@@ -108,6 +108,15 @@ describe("리포트에 물어보기 — AI 호출", () => {
       rejected: false,
     });
     expect(settleCall("lowUsage", {})).toEqual({ call: { tool: "lowUsage" }, rejected: false });
+    // 서비스 하나의 한 달은 기본값이라 지운다 — 예전 앱은 모르는 인자가 붙은 호출을 버린다
+    expect(settleCall("serviceDetail", { service: "배민", period: "month" })).toEqual({
+      call: { tool: "serviceDetail", args: { service: "배민" } },
+      rejected: false,
+    });
+    expect(settleCall("serviceDetail", { service: "배민", period: "year" }).call.args).toEqual({
+      service: "배민",
+      period: "year",
+    });
     expect(settleCall("deleteAll", {})).toEqual({ call: { tool: "unsupported" }, rejected: true });
     expect(settleCall("spendTotal", { period: "week" }).rejected).toBe(true);
     expect(settleCall(undefined, undefined).rejected).toBe(true);

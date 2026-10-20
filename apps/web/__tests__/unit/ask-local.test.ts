@@ -344,10 +344,55 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
     }
   });
 
+  it("서비스 하나의 1년을 물으면 그 서비스의 1년이다 — 구독 전체의 1년 합계가 아니다", () => {
+    for (const [q, service] of [
+      ["유튜브 프리미엄 1년 구독 비용 얼마야?", "유튜브 프리미엄"],
+      ["유튜브 프리미엄 1년은?", "유튜브 프리미엄"],
+      ["배민 1년은?", "배민"],
+      ["넷플 1년에 얼마야", "넷플"],
+      ["배민클럽 연간 요금", "배민클럽"],
+    ]) {
+      expect(localAskCall(q, { now: NOW }), q).toEqual({
+        tool: "serviceDetail",
+        args: { service, period: "year" },
+      });
+    }
+    // 앞선 턴이 있어도 서비스 이름과 1년을 함께 적었으면 그 서비스다
+    const previous = { tool: "spendTotal", args: { period: "month" } } as const;
+    expect(localAskCall("배민 1년은?", { now: NOW, hasHistory: true, previous })).toEqual({
+      tool: "serviceDetail",
+      args: { service: "배민", period: "year" },
+    });
+    // 1년 동안 쓴 횟수·결제일, 올해 낸 돈, 여러 서비스는 서비스 하나의 1년 요금이 아니다
+    for (const q of [
+      "넷플릭스 1년 동안 몇 번 썼어?",
+      "넷플 올해 얼마 냈어",
+      "넷플릭스 티빙 1년 얼마",
+    ]) {
+      expect(localAskCall(q, { now: NOW })?.args?.period, q).not.toBe("year");
+    }
+  });
+
+  it("서비스 요금을 물은 뒤 '1년은?'이면 그 서비스의 1년이다", () => {
+    const previous = { tool: "serviceDetail", args: { service: "유튜브 프리미엄" } } as const;
+    for (const q of ["1년은?", "그럼 1년이면?", "연간으로는?"]) {
+      expect(localAskCall(q, { now: NOW, hasHistory: true, previous }), q).toEqual({
+        tool: "serviceDetail",
+        args: { service: "유튜브 프리미엄", period: "year" },
+      });
+    }
+    expect(
+      localAskCall("한 달은?", {
+        now: NOW,
+        hasHistory: true,
+        previous: { tool: "serviceDetail", args: { service: "배민", period: "year" } },
+      }),
+    ).toEqual({ tool: "serviceDetail", args: { service: "배민" } });
+  });
+
   it("여러 서비스·기간·분류를 함께 물으면 한 서비스의 요금으로 읽지 않는다", () => {
     for (const q of [
       "넷플이랑 티빙 합쳐서 얼마",
-      "넷플 1년에 얼마야",
       "OTT 요금 얼마",
       "전체 구독료 얼마",
       "아무거나 얼마야",
