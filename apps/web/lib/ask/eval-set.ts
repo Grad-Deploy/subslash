@@ -101,8 +101,9 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
     tag: "casual",
   },
   {
+    // 이름을 댄 서비스만 더한다 — OTT 전체가 아니다(2026-10-23 정답을 spendByCategory에서 바꿈)
     q: "넷플 티빙 웨이브 합쳐서 얼마",
-    expect: { tool: "spendByCategory", args: { category: "ott" } },
+    expect: { tool: "serviceSum", args: { services: "넷플, 티빙, 웨이브" } },
     tag: "casual",
   },
 
@@ -284,6 +285,39 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
   {
     q: "공짜 기간 끝나가는 구독 있어?",
     expect: { tool: "trialsEnding", args: { days: 31 } },
+    tag: "paraphrase",
+  },
+
+  // serviceSum — 이름을 댄 서비스 여러 개의 합계
+  {
+    q: "넷플릭스랑 유튜브 프리미엄 합치면 얼마야",
+    expect: { tool: "serviceSum", args: { services: "넷플릭스, 유튜브 프리미엄" } },
+    tag: "basic",
+  },
+  {
+    q: "티빙하고 웨이브 1년에 얼마",
+    expect: { tool: "serviceSum", args: { services: "티빙, 웨이브", period: "year" } },
+    tag: "args",
+  },
+  // 서비스 하나를 해지하면 앞으로 아낄 돈 — 그 서비스의 1년 요금
+  {
+    q: "디즈니플러스 끊으면 1년에 얼마 아껴?",
+    expect: { tool: "serviceDetail", args: { service: "디즈니플러스", period: "year" } },
+    tag: "paraphrase",
+  },
+  {
+    q: "멜론 해지하면 얼마나 절약돼?",
+    expect: { tool: "serviceDetail", args: { service: "멜론", period: "year" } },
+    tag: "basic",
+  },
+  {
+    q: "스포티파이 그만두면 얼마 굳어",
+    expect: { tool: "serviceDetail", args: { service: "스포티파이", period: "year" } },
+    tag: "casual",
+  },
+  {
+    q: "구독비 하루에 얼마꼴?",
+    expect: { tool: "spendTotal", args: { period: "month" } },
     tag: "paraphrase",
   },
 

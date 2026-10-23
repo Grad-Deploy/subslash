@@ -24,7 +24,7 @@ import { planName, presetName, serviceIdName, subscriptionName } from "@lib/serv
 import type { Locale } from "@lib/i18n/config";
 import { describeQuantityText } from "@lib/i18n/check-in-text";
 import type { Messages } from "@lib/i18n/messages";
-import type { AskCall } from "./tools";
+import { splitServiceNames, type AskCall } from "./tools";
 import { compactName } from "./fuzzy";
 import { matchPresets, matchSubscriptions } from "./service-match";
 
@@ -76,6 +76,9 @@ function isAskedName(query: string, asked: readonly string[] | undefined): boole
   const wanted = compactName(query);
   return wanted !== "" && asked.some((text) => compactName(text).includes(wanted));
 }
+
+/** 하루치를 묻는 말("하루에 구독비 얼마꼴이야?"). 한 달 합계에 하루치를 함께 적는다. */
+const PER_DAY = /하루|일당|매일|per day|a day|daily/i;
 
 function answer(
   headline: string,
@@ -173,14 +176,71 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       if (active.length === 0) return noSubscriptions();
       const year = args.period === "year";
       const total = year ? sumMyAnnualKRW(subs, ctx.rate) : sumMyMonthlyKRW(subs, ctx.rate);
+      // "하루에 구독비 얼마꼴이야?"에 한 달 합계만 말하면 묻는 기간과 다른 숫자다. 하루치를 함께 적는다.
+      const perDay = !year && PER_DAY.test(ctx.asked?.[0] ?? "");
       return answer(
         year
           ? k.spend.year(subs.length, formatKRW(total))
           : k.spend.month(subs.length, formatKRW(total)),
         year ? k.spend.sourceYear : k.spend.sourceMonth,
         [],
-        trialNote,
+        [...(perDay ? [k.spend.perDay(formatKRW(Math.round(total / 30)))] : []), ...trialNote],
       );
+    }
+
+    case "serviceSum": {
+      // 이름을 댄 서비스만 더한다("넷플이랑 티빙 합쳐서 얼마"). 예전에는 OTT 전체(쿠팡 와우·유튜브까지)를 더했다.
+      // 이름이 여러 구독에 맞으면 하나를 골라 더하지 않고, 구독하지 않는 이름은 빼고 그렇게 적는다.
+      if (active.length === 0) return noSubscriptions();
+      const sm = k.sum;
+      const year = args.period === "year";
+      const names = splitServiceNames(String(args.services)).filter((name) =>
+        isAskedName(name, ctx.asked),
+      );
+      if (names.length === 0) return answerAsk({ tool: "unsupported" }, ctx);
+      const counted = new Map<string, Subscription>();
+      const notSubscribed: string[] = [];
+      const ambiguous: string[] = [];
+      for (const name of names) {
+        const matches = matchSubscriptions(name, active);
+        if (matches.length === 0) notSubscribed.push(name);
+        else if (matches.length > 1) ambiguous.push(sm.many(name, matches.length));
+        else counted.set(matches[0].id, matches[0]);
+      }
+      const found = [...counted.values()];
+      const payingNow = found.filter((sub) => !isInTrial(sub, ctx.now));
+      const trials = found.length - payingNow.length;
+      const notes = [
+        ...(notSubscribed.length > 0 ? [sm.notSubscribed(notSubscribed.join(sm.join))] : []),
+        ...ambiguous,
+        ...(trials > 0 ? [k.trialNote(trials)] : []),
+      ];
+      if (payingNow.length === 0) return answer(sm.none, sm.source, [], notes);
+      const total = year
+        ? sumMyAnnualKRW(payingNow, ctx.rate)
+        : sumMyMonthlyKRW(payingNow, ctx.rate);
+      const amountOf = year ? getMyAnnualAmountKRW : getMyMonthlyAmountKRW;
+      const label = payingNow.map(nameOf).join(sm.join);
+      return {
+        ...answer(
+          year ? sm.year(label, formatKRW(total)) : sm.month(label, formatKRW(total)),
+          sm.source,
+          payingNow.map((sub) => ({
+            label: nameOf(sub),
+            value: formatKRW(amountOf(sub, ctx.rate)),
+          })),
+          notes,
+        ),
+        switchTo: {
+          label: year ? k.service.switchMonth : k.service.switchYear,
+          call: {
+            tool: "serviceSum",
+            args: year
+              ? { services: String(args.services) }
+              : { services: String(args.services), period: "year" },
+          },
+        },
+      };
     }
 
     case "spendByCategory": {

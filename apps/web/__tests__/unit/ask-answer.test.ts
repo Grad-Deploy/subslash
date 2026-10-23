@@ -294,6 +294,42 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
     expect(low.rows).toHaveLength(1);
   });
 
+  it("여러 서비스의 합계는 이름을 댄 구독만 더하고, 구독하지 않는 이름과 체험 중인 구독은 빼고 적는다", () => {
+    const result = answerAsk(
+      { tool: "serviceSum", args: { services: "넷플릭스, 티빙, 디즈니플러스, 쿠팡플레이" } },
+      { ...CTX, asked: ["넷플릭스 티빙 디즈니플러스 쿠팡플레이 합쳐서 얼마"] },
+    );
+    // 티빙은 둘이 나눠 내 내 몫 4,750원이다.
+    expect(result.headline).toContain(won(17000 + 4750));
+    expect(result.rows.map((row) => row.label)).toEqual(["넷플릭스", "티빙"]);
+    expect(result.notes.join()).toContain("디즈니플러스");
+    expect(result.notes.join()).toContain("무료 체험 중인 1개");
+    const year = answerAsk(
+      { tool: "serviceSum", args: { services: "넷플릭스, 티빙", period: "year" } },
+      CTX,
+    );
+    expect(year.headline).toContain(won((17000 + 4750) * 12));
+    // 질문에 없던 이름을 AI가 넣었으면 그 이름은 쓰지 않는다
+    expect(
+      answerAsk(
+        { tool: "serviceSum", args: { services: "넷플릭스, 왓챠" } },
+        { ...CTX, asked: ["넷플이랑 티빙 얼마"] },
+      ).headline,
+    ).not.toContain("왓챠");
+  });
+
+  it("하루치를 물으면 한 달 합계에 하루치를 함께 적는다", () => {
+    const total = sumMyMonthlyKRW(PAYING, 1400);
+    const result = answerAsk(
+      { tool: "spendTotal", args: { period: "month" } },
+      { ...CTX, asked: ["하루에 구독비 얼마꼴이야?"] },
+    );
+    expect(result.notes.join()).toContain(won(Math.round(total / 30)));
+    expect(
+      answerAsk({ tool: "spendTotal", args: { period: "month" } }, CTX).notes.join(),
+    ).not.toContain("하루");
+  });
+
   it("안 쓰는 구독은 구독마다의 금액과 함께 합계를 말한다", () => {
     const result = answerAsk({ tool: "lowUsage" }, CTX);
     expect(result.headline).toContain(`합치면 한 달 ${won(7900)}`);

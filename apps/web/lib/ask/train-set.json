@@ -2679,5 +2679,57 @@
       }
     },
     "locale": "ko"
+  },
+  {
+    "q": "넷플이랑 티빙 합쳐서 얼마",
+    "call": {
+      "tool": "serviceSum",
+      "args": {
+        "services": "넷플, 티빙"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "왓챠, 라프텔 둘 다 해서 한 달에 얼마야",
+    "call": {
+      "tool": "serviceSum",
+      "args": {
+        "services": "왓챠, 라프텔"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "카톡 이모티콘 플러스 해지하면 얼마 아껴?",
+    "call": {
+      "tool": "serviceDetail",
+      "args": {
+        "service": "카톡 이모티콘 플러스",
+        "period": "year"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "넷플릭스 끊으면 얼마 아낄 수 있어",
+    "call": {
+      "tool": "serviceDetail",
+      "args": {
+        "service": "넷플릭스",
+        "period": "year"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "하루에 구독비 얼마꼴이야?",
+    "call": {
+      "tool": "spendTotal",
+      "args": {
+        "period": "month"
+      }
+    },
+    "locale": "ko"
   }
 ]
