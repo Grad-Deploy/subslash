@@ -198,6 +198,12 @@ function serviceNameIn(text: string, subscriptions: readonly Subscription[]): st
  */
 function serviceCall(q: string, subscriptions: readonly Subscription[]): AskCall | null {
   const text = q.replace(/[?？!！.。~]+$/, "").trim();
+  // "카톡 이모티콘 플러스 해지하면 얼마 아껴?"는 앞으로 아낄 돈이다 — 이미 지킨 돈(savedSoFar)이 아니라 그 서비스의 1년 요금.
+  const cancelSave = /환불|위약금|수수료|위약/.test(text) ? null : CANCEL_SAVE.exec(text);
+  if (cancelSave) {
+    const name = serviceNameIn(text.slice(0, cancelSave.index), subscriptions);
+    return name ? { tool: "serviceDetail", args: { service: name, period: "year" } } : null;
+  }
   if (NOT_DETAIL.test(text)) return null;
   const cheaper = CHEAPER_WORD.exec(text);
   if (cheaper) {
@@ -225,6 +231,41 @@ function serviceCall(q: string, subscriptions: readonly Subscription[]): AskCall
   if (!detail) return null;
   const name = serviceNameIn(text.slice(0, detail.index), subscriptions);
   return name ? { tool: "serviceDetail", args: { service: name } } : null;
+}
+
+/** 서비스 하나를 해지하면 얼마를 아끼는지(앞으로). */
+const CANCEL_SAVE =
+  /\s*(?:을|를|은|는)?\s*(?:해지|취소|끊|그만\s*두|안\s*하)\s*(?:하면|으면|면|한다면|하면은|하고\s*나면)?.{0,10}(?:얼마|아껴|아낄|아끼|절약|굳|세이브)/;
+
+/** 여러 서비스를 잇는 말. 이름 안의 띄어쓰기("쿠팡 와우")는 나누지 않으므로 '와'·'과'는 뒤에 띄어쓰기가 있을 때만 본다. */
+const SERVICE_JOINER = /\s*(?:,|，|、|\+|&|이랑|랑|하고|및|그리고|(?<=\S)(?:와|과)\s)\s*/;
+
+/**
+ * 이름을 댄 서비스 여러 개의 합계("넷플이랑 티빙 합쳐서 얼마"). 이름이 둘 이상이고 모두 서비스 이름이어야 한다. 예전에는
+ * AI가 이것을 OTT 전체(spendByCategory)로 읽어, 두 개를 물었는데 쿠팡 와우·유튜브까지 더한 숫자를 답했다.
+ */
+function serviceSumCall(q: string, subscriptions: readonly Subscription[]): AskCall | null {
+  const text = q.replace(/[?？!！.。~]+$/, "").trim();
+  const amount = asksAmount.exec(text);
+  if (!amount || NOT_SPEND.test(text)) return null;
+  const sumWord = /합쳐|합치|합해|합하|다\s*해서|더하면|모두|전부|둘\s*다|셋\s*다/.exec(text);
+  const end = sumWord && sumWord.index < amount.index ? sumWord.index : amount.index;
+  const head = text.slice(0, end).trim();
+  let parts = head.split(SERVICE_JOINER).filter(Boolean);
+  if (parts.length < 2) parts = head.split(/\s+/);
+  if (parts.length < 2 || parts.length > 5) return null;
+  const names: string[] = [];
+  for (const part of parts) {
+    // "웨이브 1년에"처럼 기간이 붙은 마지막 이름에서 기간을 뗀다.
+    const name = serviceNameIn(part.replace(SERVICE_YEAR, " ").trim(), subscriptions);
+    if (!name) return null;
+    names.push(name);
+  }
+  const year = yearly.test(text) && !monthly.test(text);
+  return {
+    tool: "serviceSum",
+    args: year ? { services: names.join(", "), period: "year" } : { services: names.join(", ") },
+  };
 }
 
 /** 1회당 비용 순위를 묻는 말. 아까운 쪽(worst)과 가성비 좋은 쪽(best). 요금이 싼 구독("가장 싼 구독")은 순위가 아니다. */
@@ -436,6 +477,8 @@ export function localAskCall(
   if (options.hasHistory && FOLLOW_UP.test(q)) return null;
   if (ACTION_REQUEST.test(q) || NOT_SUBSCRIPTION_MONEY.test(q)) return { tool: "unsupported" };
   if (ofService) return ofService;
+  const sum = serviceSumCall(q, subscriptions);
+  if (sum) return sum;
   if (USAGE_RANK.test(q) && !MONEY_WORD.test(q) && !mentionsService(q, subscriptions)) {
     return { tool: "unsupported" };
   }

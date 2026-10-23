@@ -376,6 +376,34 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
     }
   });
 
+  it("이름을 댄 서비스 여럿의 합계는 그 서비스들만 더한다 — 분류 전체가 아니다", () => {
+    expect(localAskCall("넷플이랑 티빙 합쳐서 얼마", { now: NOW })).toEqual({
+      tool: "serviceSum",
+      args: { services: "넷플, 티빙" },
+    });
+    expect(localAskCall("티빙하고 웨이브 1년에 얼마", { now: NOW })).toEqual({
+      tool: "serviceSum",
+      args: { services: "티빙, 웨이브", period: "year" },
+    });
+    // 이름 안의 띄어쓰기는 나누지 않는다
+    expect(localAskCall("쿠팡 와우랑 넷플릭스 얼마", { now: NOW })?.args?.services).toBe(
+      "쿠팡 와우, 넷플릭스",
+    );
+    // 분류를 말하면 분류별 지출이다
+    expect(localAskCall("OTT 전부 합쳐서 얼마", { now: NOW })?.tool).toBe("spendByCategory");
+  });
+
+  it("서비스 하나를 해지하면 아낄 돈은 그 서비스의 1년 요금이다 — 이미 지킨 돈이 아니다", () => {
+    expect(localAskCall("티빙 해지하면 얼마 아껴?", { now: NOW })).toEqual({
+      tool: "serviceDetail",
+      args: { service: "티빙", period: "year" },
+    });
+    // 환불·위약금은 앱이 모른다
+    expect(localAskCall("넷플릭스 해지하면 환불 얼마 받아?", { now: NOW })?.tool).not.toBe(
+      "serviceDetail",
+    );
+  });
+
   it("서비스 요금을 물은 뒤 '1년은?'이면 그 서비스의 1년이다", () => {
     const previous = { tool: "serviceDetail", args: { service: "유튜브 프리미엄" } } as const;
     for (const q of ["1년은?", "그럼 1년이면?", "연간으로는?"]) {

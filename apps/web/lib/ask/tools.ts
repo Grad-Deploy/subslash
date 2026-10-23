@@ -47,6 +47,15 @@ export const ASK_TOOLS = {
     params: { period: { type: "enum", values: ASK_PERIODS, required: true } },
     computedBy: "sumMyMonthlyKRW / sumMyAnnualKRW",
   },
+  serviceSum: {
+    description:
+      '이름을 댄 서비스 여러 개의 합계("넷플이랑 티빙 합쳐서 얼마"). services에 이름을 쉼표로 나눠 적은 그대로 넣는다. 분류 전체(OTT 전부)가 아니다. "챗지피티 클로드 이런 거"처럼 이름을 예로 들어 그런 것 전부를 물으면 분류(spendByCategory)다. 기간을 말하지 않으면 한 달이다.',
+    params: {
+      services: { type: "text", maxLength: 80, required: true },
+      period: { type: "enum", values: ASK_PERIODS, required: false },
+    },
+    computedBy: "sumMyMonthlyKRW / sumMyAnnualKRW(이름이 맞는 구독만)",
+  },
   spendByCategory: {
     description:
       "한 분류(OTT·음악·클라우드·쇼핑 멤버십·AI·기타)에 쓰는 돈과 전체에서의 비율. 기간을 말하지 않으면 한 달이고, 1년을 물을 때만 period를 year로 넣는다.",
@@ -138,6 +147,18 @@ export const ASK_TOOLS = {
 } as const satisfies Record<string, ToolSpec>;
 
 export type AskToolName = keyof typeof ASK_TOOLS;
+
+/** serviceSum의 이름 목록. 쉼표(、，도)로 나눈다 — 이름 안의 띄어쓰기("쿠팡 와우")는 나누지 않는다. */
+export function splitServiceNames(services: string): string[] {
+  return [
+    ...new Set(
+      services
+        .split(/[,，、]/)
+        .map((name) => name.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
 
 export interface AskCall {
   tool: AskToolName;

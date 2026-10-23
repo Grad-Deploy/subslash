@@ -1,4 +1,11 @@
-import { ASK_TOOLS, isValidAskCall, type AskCall, type AskToolName, type AskTurn } from "./tools";
+import {
+  ASK_TOOLS,
+  isValidAskCall,
+  splitServiceNames,
+  type AskCall,
+  type AskToolName,
+  type AskTurn,
+} from "./tools";
 
 /**
  * '리포트에 물어보기'의 AI 호출(서버 전용). 질문 문장을 보내고 도구 하나를 받는다 — 구독 기록은 보내지 않는다(tools.ts).
@@ -143,6 +150,15 @@ export function settleCall(name: unknown, args: unknown): { call: AskCall; rejec
       Object.entries(candidate.args).filter(([key]) => key !== "period"),
     );
     return { call: { tool: candidate.tool, args: rest }, rejected: false };
+  }
+  // 여러 서비스 합계의 이름은 쉼표 하나와 공백 하나로 맞춘다("넷플,티빙" → "넷플, 티빙") — 캐시·평가가 같은 호출로 본다.
+  if (candidate.tool === "serviceSum" && typeof candidate.args?.services === "string") {
+    const services = splitServiceNames(candidate.args.services).join(", ");
+    if (!services) return { call: { tool: "unsupported" }, rejected: true };
+    return {
+      call: { tool: candidate.tool, args: { ...candidate.args, services } },
+      rejected: false,
+    };
   }
   return { call: candidate, rejected: false };
 }
