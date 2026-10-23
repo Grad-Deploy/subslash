@@ -28,7 +28,7 @@ export const ko = {
 
   title: "데이터 백업",
   intro:
-    "기록은 이 기기에만 있어요. 브라우저를 지우거나 기기를 바꾸기 전에 백업하거나 로그인하세요.",
+    "기록은 이 기기에만 있어요. 앱이나 브라우저 데이터를 지우거나 기기를 바꾸기 전에 백업하거나 로그인하세요.",
   exportFile: "백업 파일 저장",
   restoreFile: "백업에서 복원",
   chooseFile: "백업 파일 선택",
@@ -115,7 +115,7 @@ export const en: Widen<typeof ko> = {
 
   title: "Data backup",
   intro:
-    "Your records live only on this device. Back them up or log in before clearing your browser or changing devices.",
+    "Your records live only on this device. Back them up or log in before clearing the app's or browser's data or changing devices.",
   exportFile: "Save backup file",
   restoreFile: "Restore from backup",
   chooseFile: "Choose backup file",
@@ -203,7 +203,7 @@ export const zh: Widen<typeof ko> = {
   },
   lastSaved: (savedAt, line) => `最后保存 ${savedAt} · ${line}`,
   title: "数据备份",
-  intro: "你的记录只在这台设备上。清除浏览器或更换设备前，请先备份或登录。",
+  intro: "你的记录只在这台设备上。清除应用或浏览器数据、或更换设备前，请先备份或登录。",
   exportFile: "保存备份文件",
   restoreFile: "从备份恢复",
   chooseFile: "选择备份文件",
@@ -284,7 +284,7 @@ export const ja: Widen<typeof ko> = {
   lastSaved: (savedAt, line) => `最終保存 ${savedAt} · ${line}`,
   title: "データのバックアップ",
   intro:
-    "記録はこの端末の中にだけあります。ブラウザを消去したり端末を替えたりする前に、バックアップするかログインしてください。",
+    "記録はこの端末の中にだけあります。アプリやブラウザのデータを消去したり端末を替えたりする前に、バックアップするかログインしてください。",
   exportFile: "バックアップファイルを保存",
   restoreFile: "バックアップから復元",
   chooseFile: "バックアップファイルを選ぶ",
@@ -368,7 +368,7 @@ export const vi: Widen<typeof ko> = {
   lastSaved: (savedAt, line) => `Lưu lần cuối ${savedAt} · ${line}`,
   title: "Sao lưu dữ liệu",
   intro:
-    "Dữ liệu chỉ nằm trên thiết bị này. Hãy sao lưu hoặc đăng nhập trước khi xóa trình duyệt hay đổi thiết bị.",
+    "Dữ liệu chỉ nằm trên thiết bị này. Hãy sao lưu hoặc đăng nhập trước khi xóa dữ liệu ứng dụng hay trình duyệt, hoặc đổi thiết bị.",
   exportFile: "Lưu tệp sao lưu",
   restoreFile: "Khôi phục từ bản sao lưu",
   chooseFile: "Chọn tệp sao lưu",
@@ -453,7 +453,7 @@ export const fr: Widen<typeof ko> = {
   lastSaved: (savedAt, line) => `Dernier enregistrement ${savedAt} · ${line}`,
   title: "Sauvegarde des données",
   intro:
-    "Vos données ne sont que sur cet appareil. Sauvegardez-les ou connectez-vous avant de vider le navigateur ou de changer d'appareil.",
+    "Vos données ne sont que sur cet appareil. Sauvegardez-les ou connectez-vous avant d'effacer les données de l'app ou du navigateur, ou de changer d'appareil.",
   exportFile: "Enregistrer une sauvegarde",
   restoreFile: "Restaurer une sauvegarde",
   chooseFile: "Choisir un fichier de sauvegarde",
@@ -544,7 +544,7 @@ export const es: Widen<typeof ko> = {
   lastSaved: (savedAt, line) => `Último guardado ${savedAt} · ${line}`,
   title: "Copia de seguridad",
   intro:
-    "Tus registros solo están en este dispositivo. Haz una copia o inicia sesión antes de borrar el navegador o cambiar de dispositivo.",
+    "Tus registros solo están en este dispositivo. Haz una copia o inicia sesión antes de borrar los datos de la app o del navegador, o de cambiar de dispositivo.",
   exportFile: "Guardar copia",
   restoreFile: "Restaurar copia",
   chooseFile: "Elegir archivo de copia",
@@ -633,7 +633,7 @@ export const de: Widen<typeof ko> = {
   lastSaved: (savedAt, line) => `Zuletzt gespeichert ${savedAt} · ${line}`,
   title: "Datensicherung",
   intro:
-    "Deine Daten liegen nur auf diesem Gerät. Sichere sie oder melde dich an, bevor du den Browser leerst oder das Gerät wechselst.",
+    "Deine Daten liegen nur auf diesem Gerät. Sichere sie oder melde dich an, bevor du die Daten der App oder des Browsers löschst oder das Gerät wechselst.",
   exportFile: "Sicherungsdatei speichern",
   restoreFile: "Aus Sicherung wiederherstellen",
   chooseFile: "Sicherungsdatei wählen",
@@ -721,7 +721,7 @@ export const pt: Widen<typeof ko> = {
   lastSaved: (savedAt, line) => `Último salvamento ${savedAt} · ${line}`,
   title: "Backup de dados",
   intro:
-    "Seus registros ficam só neste dispositivo. Faça backup ou entre na conta antes de limpar o navegador ou trocar de dispositivo.",
+    "Seus registros ficam só neste dispositivo. Faça backup ou entre na conta antes de limpar os dados do app ou do navegador, ou de trocar de dispositivo.",
   exportFile: "Salvar backup",
   restoreFile: "Restaurar backup",
   chooseFile: "Escolher arquivo de backup",

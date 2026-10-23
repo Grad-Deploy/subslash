@@ -282,6 +282,10 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
   { q: "다음 달 넷플릭스 가격 오른대?", expect: { tool: "unsupported" }, tag: "scope" },
   { q: "오늘 날씨 어때", expect: { tool: "unsupported" }, tag: "scope" },
   { q: "ㅎㅇ", expect: { tool: "unsupported" }, tag: "scope" },
+  // 사용량만 묻는 말은 가성비 순위가 아니다 — 구독마다 재는 단위가 달라 사용량끼리 견주지 못한다.
+  { q: "가장 많이 쓰는 구독은?", expect: { tool: "unsupported" }, tag: "scope" },
+  { q: "내가 제일 자주 쓰는 구독 뭐야", expect: { tool: "unsupported" }, tag: "scope" },
+  { q: "사용 시간 제일 긴 구독 알려줘", expect: { tool: "unsupported" }, tag: "scope" },
   {
     q: "넷플릭스 해지해줘",
     expect: { tool: "unsupported" },

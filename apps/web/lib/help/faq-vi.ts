@@ -21,6 +21,10 @@ export const FAQ_VI: typeof FAQ_EN = {
     q: "Chi phí mỗi lần dùng được tính thế nào?",
     a: "Lấy phần tiền hằng tháng của bạn chia cho số lần dùng trong 30 ngày qua. Với gói dùng chung, chỉ tính phần của bạn; gói trả theo năm được quy ra số tiền mỗi tháng trước. Gói chưa check-in thì chưa có số lần dùng, nên chúng tôi không tự bịa ra chi phí mà hiển thị “Chưa check-in”.",
   },
+  "exchange-rate": {
+    q: "Gói đăng ký trả bằng đô la được quy đổi sang won thế nào? Tôi có thể đổi tỷ giá không?",
+    a: "Gói đăng ký bằng đô la được quy đổi sang won theo tỷ giá hiển thị ở mục “Tỷ giá” trong Cài đặt. Khi để tự động, tỷ giá tự theo tỷ giá tham chiếu của ECB (cập nhật mỗi ngày làm việc một lần); nếu bạn tự nhập trong “Đổi tỷ giá”, giá trị đó sẽ được dùng tiếp. Biên lai đăng ký và bản tổng kết cuối năm, vốn hiển thị các khoản đã thanh toán, dùng tỷ giá tham chiếu của ngày thanh toán chứ không phải tỷ giá hôm nay. Tỷ giá tham chiếu không phải tỷ giá mà công ty thẻ đã tính, nên số tiền có thể hơi khác với sao kê thẻ. Mục “Tỷ giá” chỉ hiện khi bạn có gói đăng ký bằng đô la đang dùng.",
+  },
   "checkin-auto": {
     q: "Có thể điền số lần check-in mà không tự đếm không?",
     a: "Trong ứng dụng Android, bật “Kết nối dữ liệu sử dụng điện thoại” trong Cài đặt; khi dữ liệu dùng các ứng dụng đăng ký trên điện thoại này đã đủ 30 ngày, ứng dụng sẽ tự check-in. Trên web ở PC, mở màn hình đọc dữ liệu từ liên kết trong cửa sổ check-in của gói Claude, ChatGPT, Cursor hoặc Google AI, rồi chọn thư mục dữ liệu của công cụ lập trình AI hoặc tệp xuất trò chuyện claude.ai; số ngày đã dùng sẽ được đếm và điền vào cửa sổ check-in. Tệp không được gửi lên máy chủ và chỉ được lưu khi bạn xác nhận. Cách nào cũng chỉ đếm những gì có trên thiết bị hoặc trong tệp đó, nên có thể thấp hơn mức dùng thực tế.",

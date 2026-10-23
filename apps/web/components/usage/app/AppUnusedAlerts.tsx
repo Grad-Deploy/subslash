@@ -157,10 +157,12 @@ export function AppUnusedAlerts({
               <p className="text-xs leading-relaxed text-muted-foreground">{alert.reason}</p>
             </div>
           </div>
+          {/* 버튼 문구가 긴 언어(독일어 "Ich habe auf einem anderen Gerät geschaut")에서는 한 줄에 들어가지 않는다.
+              Button의 whitespace-nowrap을 풀어 줄을 바꾸게 한다 — 그대로 두면 화면 밖으로 밀려 페이지가 가로로 넓어졌다. */}
           <div className="flex gap-2">
             <Button
               size="sm"
-              className="flex-1 text-xs font-bold"
+              className="h-auto min-h-8 min-w-0 flex-1 py-1.5 text-xs font-bold whitespace-normal"
               variant={alert.kind === "unused" ? "default" : "outline"}
               onClick={() => onCancelGuide(alert.usage.sub.id)}
             >
@@ -169,7 +171,7 @@ export function AppUnusedAlerts({
             <Button
               size="sm"
               variant="ghost"
-              className="flex-1 text-xs"
+              className="h-auto min-h-8 min-w-0 flex-1 py-1.5 text-xs whitespace-normal"
               onClick={() => snoozeSub(alert.usage.sub)}
             >
               {alert.kind === "unused" ? al.otherDevice : al.fine}

@@ -21,6 +21,10 @@ export const FAQ_DE: typeof FAQ_EN = {
     q: "Wie werden die Kosten pro Nutzung berechnet?",
     a: "Dein monatlicher Anteil wird durch die Anzahl der Nutzungen der letzten 30 Tage geteilt. Bei geteilten Abos zählt nur dein Anteil, und Jahresabos werden zuerst auf einen Monatsbetrag umgerechnet. Abos ohne Eintrag haben keine Nutzungszahl, daher erfinden wir keine Kosten und zeigen „Noch kein Eintrag“.",
   },
+  "exchange-rate": {
+    q: "Wie werden in Dollar bezahlte Abos in Won umgerechnet? Kann ich den Wechselkurs ändern?",
+    a: "Dollar-Abos werden mit dem Kurs umgerechnet, der in den Einstellungen unter „Wechselkurs“ steht. Bei „automatisch“ folgt er dem EZB-Referenzkurs (einmal pro Werktag aktualisiert); trägst du unter „Kurs ändern“ selbst einen ein, wird dieser Wert weiter verwendet. Abo-Belege und der Jahresrückblick, die vergangene Zahlungen zeigen, rechnen mit dem Referenzkurs des jeweiligen Zahlungstags statt mit dem heutigen. Der Referenzkurs ist nicht der Kurs, den deine Kartenfirma berechnet hat, daher können die Beträge leicht von deiner Kartenabrechnung abweichen. Der Bereich „Wechselkurs“ erscheint nur, solange du ein aktives Dollar-Abo hast.",
+  },
   "checkin-auto": {
     q: "Kann ich Check-ins ausfüllen lassen, ohne selbst zu zählen?",
     a: "In der Android-App schaltest du in den Einstellungen „Handynutzung verbinden“ ein; sobald 30 Tage Nutzung der Abo-Apps auf diesem Handy zusammengekommen sind, checkt die App selbst ein. Im Web am PC öffnest du über den Link im Check-in-Fenster eines Claude-, ChatGPT-, Cursor- oder Google-AI-Abos die Seite zum Lesen der Daten und wählst den Datenordner eines KI-Coding-Tools oder eine claude.ai-Chatexportdatei. Die Nutzungstage werden gezählt und ins Check-in-Fenster eingetragen. Dateien werden an keinen Server gesendet, und gespeichert wird erst, wenn du bestätigst. In beiden Fällen zählt nur, was auf diesem Gerät bzw. in dieser Datei festgehalten ist – es kann also weniger sein als deine tatsächliche Nutzung.",

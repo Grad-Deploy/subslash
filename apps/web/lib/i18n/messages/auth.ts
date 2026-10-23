@@ -5,7 +5,8 @@ export const ko = {
   browseWithoutLogin: "로그인 없이 계속 둘러보기 →",
   login: {
     title: "로그인",
-    intro: "구독 기록은 이 브라우저에 저장됩니다. 로그인하면 원할 때 계정에 저장해 둘 수 있습니다.",
+    intro:
+      "구독 기록은 이 기기에 저장됩니다. 로그인하면 계정에도 저장되고 다른 기기와 자동으로 맞춰집니다.",
     identifier: "아이디 또는 이메일",
     identifierPlaceholder: "아이디 또는 you@example.com",
     password: "비밀번호",
@@ -19,9 +20,10 @@ export const ko = {
   },
   signup: {
     title: "회원가입",
-    intro: "구독 기록은 이 브라우저에 저장되고, 원할 때만 계정에 저장할 수 있습니다.",
+    intro:
+      "구독 기록은 이 기기에 저장됩니다. 가입하면 계정에도 저장되고 다른 기기와 자동으로 맞춰집니다.",
     optionalTitle: "계정 없이도 그대로 쓸 수 있습니다.",
-    optionalBody: "SubSlash의 기본 경험은 브라우저 안에서 완결되며, 로그인은 선택 기능입니다.",
+    optionalBody: "SubSlash의 기본 경험은 이 기기 안에서 완결되며, 로그인은 선택 기능입니다.",
     syncNote:
       "로그인하면 구독 기록이 계정에 저장되고, 로그인한 다른 기기와 자동으로 맞춰져요. 끄려면 ‘내 정보 › 데이터 백업’에서 끌 수 있어요.",
     passwordNote:
@@ -82,7 +84,7 @@ export const en: Widen<typeof ko> = {
   login: {
     title: "Log in",
     intro:
-      "Your subscription records are saved in this browser. Log in to save them to your account whenever you want.",
+      "Your subscription records are saved on this device. Log in and they're also saved to your account and kept in sync across your devices.",
     identifier: "Username or email",
     identifierPlaceholder: "username or you@example.com",
     password: "Password",
@@ -97,9 +99,9 @@ export const en: Widen<typeof ko> = {
   signup: {
     title: "Sign up",
     intro:
-      "Your subscription records are saved in this browser, and you can save them to an account only when you want.",
+      "Your subscription records are saved on this device. Sign up and they're also saved to your account and kept in sync across your devices.",
     optionalTitle: "You can use SubSlash without an account.",
-    optionalBody: "Everything works right in your browser; logging in is optional.",
+    optionalBody: "Everything works right on this device; logging in is optional.",
     syncNote:
       "When you log in, your records are saved to your account and kept in sync with your other logged-in devices. You can turn this off in ‘My account › Data backup’.",
     passwordNote:
@@ -159,7 +161,7 @@ export const zh: Widen<typeof ko> = {
   browseWithoutLogin: "不登录，继续浏览 →",
   login: {
     title: "登录",
-    intro: "你的订阅记录保存在这个浏览器中。登录后可以随时保存到账户。",
+    intro: "你的订阅记录保存在这台设备上。登录后也会保存到账户，并在你的各台设备间自动同步。",
     identifier: "用户名或邮箱",
     identifierPlaceholder: "用户名或 you@example.com",
     password: "密码",
@@ -173,9 +175,9 @@ export const zh: Widen<typeof ko> = {
   },
   signup: {
     title: "注册",
-    intro: "你的订阅记录保存在这个浏览器中，只有在你想要时才会保存到账户。",
+    intro: "你的订阅记录保存在这台设备上。注册后也会保存到账户，并在你的各台设备间自动同步。",
     optionalTitle: "不注册也能使用 SubSlash。",
-    optionalBody: "所有功能都能直接在浏览器中使用，登录是可选的。",
+    optionalBody: "所有功能都能直接在这台设备上使用，登录是可选的。",
     syncNote:
       "登录后，你的记录会保存到账户，并与其他已登录的设备同步。可以在“我的信息 › 数据备份”中关闭。",
     passwordNote: "密码只以无法还原的形式保存（加盐 scrypt 哈希）。连我们也看不到你的密码。",
@@ -233,7 +235,7 @@ export const ja: Widen<typeof ko> = {
   login: {
     title: "ログイン",
     intro:
-      "サブスクの記録はこのブラウザに保存されています。ログインすると好きなときにアカウントに保存できます。",
+      "サブスクの記録はこの端末に保存されています。ログインするとアカウントにも保存され、ほかの端末と自動で同期されます。",
     identifier: "ユーザー名またはメールアドレス",
     identifierPlaceholder: "ユーザー名または you@example.com",
     password: "パスワード",
@@ -248,9 +250,10 @@ export const ja: Widen<typeof ko> = {
   },
   signup: {
     title: "会員登録",
-    intro: "サブスクの記録はこのブラウザに保存され、望むときだけアカウントに保存できます。",
+    intro:
+      "サブスクの記録はこの端末に保存されています。登録するとアカウントにも保存され、ほかの端末と自動で同期されます。",
     optionalTitle: "アカウントがなくても SubSlash を使えます。",
-    optionalBody: "すべての機能がブラウザですぐに使えます。ログインは任意です。",
+    optionalBody: "すべての機能がこの端末ですぐに使えます。ログインは任意です。",
     syncNote:
       "ログインすると記録はアカウントに保存され、ログインしているほかの端末と同期されます。「マイ情報 › データのバックアップ」でオフにできます。",
     passwordNote:
@@ -310,7 +313,7 @@ export const vi: Widen<typeof ko> = {
   login: {
     title: "Đăng nhập",
     intro:
-      "Dữ liệu đăng ký được lưu trong trình duyệt này. Đăng nhập để lưu vào tài khoản bất cứ khi nào bạn muốn.",
+      "Dữ liệu đăng ký được lưu trên thiết bị này. Khi đăng nhập, dữ liệu cũng được lưu vào tài khoản và tự động đồng bộ giữa các thiết bị của bạn.",
     identifier: "Tên người dùng hoặc email",
     identifierPlaceholder: "tên người dùng hoặc you@example.com",
     password: "Mật khẩu",
@@ -324,9 +327,10 @@ export const vi: Widen<typeof ko> = {
   },
   signup: {
     title: "Đăng ký",
-    intro: "Dữ liệu đăng ký được lưu trong trình duyệt này, và chỉ lưu vào tài khoản khi bạn muốn.",
+    intro:
+      "Dữ liệu đăng ký được lưu trên thiết bị này. Khi đăng ký, dữ liệu cũng được lưu vào tài khoản và tự động đồng bộ giữa các thiết bị của bạn.",
     optionalTitle: "Không cần tài khoản vẫn dùng được SubSlash.",
-    optionalBody: "Mọi tính năng đều dùng ngay trong trình duyệt; đăng nhập là tùy chọn.",
+    optionalBody: "Mọi tính năng đều dùng ngay trên thiết bị này; đăng nhập là tùy chọn.",
     syncNote:
       "Khi đăng nhập, dữ liệu được lưu vào tài khoản và đồng bộ với các thiết bị khác đã đăng nhập. Bạn có thể tắt trong “Thông tin của tôi › Sao lưu dữ liệu”.",
     passwordNote:
@@ -386,7 +390,7 @@ export const fr: Widen<typeof ko> = {
   login: {
     title: "Connexion",
     intro:
-      "Vos abonnements sont enregistrés dans ce navigateur. Connectez-vous pour les sauvegarder dans votre compte quand vous le souhaitez.",
+      "Vos abonnements sont enregistrés sur cet appareil. Une fois connecté, ils sont aussi enregistrés dans votre compte et synchronisés automatiquement entre vos appareils.",
     identifier: "Identifiant ou e-mail",
     identifierPlaceholder: "identifiant ou you@example.com",
     password: "Mot de passe",
@@ -401,9 +405,9 @@ export const fr: Widen<typeof ko> = {
   signup: {
     title: "Inscription",
     intro:
-      "Vos abonnements sont enregistrés dans ce navigateur, et ne vont dans un compte que si vous le voulez.",
+      "Vos abonnements sont enregistrés sur cet appareil. Une fois inscrit, ils sont aussi enregistrés dans votre compte et synchronisés automatiquement entre vos appareils.",
     optionalTitle: "Vous pouvez utiliser SubSlash sans compte.",
-    optionalBody: "Tout fonctionne directement dans le navigateur ; la connexion est facultative.",
+    optionalBody: "Tout fonctionne directement sur cet appareil ; la connexion est facultative.",
     syncNote:
       "Une fois connecté, vos données sont enregistrées dans votre compte et synchronisées avec vos autres appareils connectés. Vous pouvez désactiver cela dans « Mon compte › Sauvegarde des données ».",
     passwordNote:
@@ -463,7 +467,7 @@ export const es: Widen<typeof ko> = {
   login: {
     title: "Iniciar sesión",
     intro:
-      "Tus suscripciones se guardan en este navegador. Inicia sesión para guardarlas en tu cuenta cuando quieras.",
+      "Tus suscripciones se guardan en este dispositivo. Al iniciar sesión, también se guardan en tu cuenta y se sincronizan automáticamente entre tus dispositivos.",
     identifier: "Usuario o correo",
     identifierPlaceholder: "usuario o you@example.com",
     password: "Contraseña",
@@ -478,9 +482,9 @@ export const es: Widen<typeof ko> = {
   signup: {
     title: "Registrarse",
     intro:
-      "Tus suscripciones se guardan en este navegador y solo pasan a una cuenta cuando tú quieras.",
+      "Tus suscripciones se guardan en este dispositivo. Al registrarte, también se guardan en tu cuenta y se sincronizan automáticamente entre tus dispositivos.",
     optionalTitle: "Puedes usar SubSlash sin cuenta.",
-    optionalBody: "Todo funciona directamente en el navegador; iniciar sesión es opcional.",
+    optionalBody: "Todo funciona directamente en este dispositivo; iniciar sesión es opcional.",
     syncNote:
       "Al iniciar sesión, tus registros se guardan en tu cuenta y se sincronizan con tus otros dispositivos. Puedes desactivarlo en «Mi cuenta › Copia de seguridad».",
     passwordNote:
@@ -540,7 +544,7 @@ export const de: Widen<typeof ko> = {
   login: {
     title: "Anmelden",
     intro:
-      "Deine Abos sind in diesem Browser gespeichert. Melde dich an, um sie jederzeit in deinem Konto zu sichern.",
+      "Deine Abos sind auf diesem Gerät gespeichert. Wenn du dich anmeldest, werden sie auch in deinem Konto gespeichert und automatisch zwischen deinen Geräten abgeglichen.",
     identifier: "Benutzername oder E-Mail",
     identifierPlaceholder: "Benutzername oder you@example.com",
     password: "Passwort",
@@ -556,9 +560,9 @@ export const de: Widen<typeof ko> = {
   signup: {
     title: "Registrieren",
     intro:
-      "Deine Abos sind in diesem Browser gespeichert und kommen nur in ein Konto, wenn du es willst.",
+      "Deine Abos sind auf diesem Gerät gespeichert. Wenn du dich registrierst, werden sie auch in deinem Konto gespeichert und automatisch zwischen deinen Geräten abgeglichen.",
     optionalTitle: "Du kannst SubSlash ohne Konto nutzen.",
-    optionalBody: "Alles funktioniert direkt im Browser; die Anmeldung ist freiwillig.",
+    optionalBody: "Alles funktioniert direkt auf diesem Gerät; die Anmeldung ist freiwillig.",
     syncNote:
       "Wenn du dich anmeldest, werden deine Daten im Konto gespeichert und mit deinen anderen angemeldeten Geräten abgeglichen. Das kannst du unter „Mein Konto › Datensicherung“ ausschalten.",
     passwordNote:
@@ -620,7 +624,7 @@ export const pt: Widen<typeof ko> = {
   login: {
     title: "Entrar",
     intro:
-      "Suas assinaturas estão salvas neste navegador. Entre para salvá-las na sua conta quando quiser.",
+      "Suas assinaturas ficam salvas neste dispositivo. Ao entrar, elas também são salvas na sua conta e sincronizadas automaticamente entre seus dispositivos.",
     identifier: "Usuário ou e-mail",
     identifierPlaceholder: "usuário ou you@example.com",
     password: "Senha",
@@ -635,9 +639,9 @@ export const pt: Widen<typeof ko> = {
   signup: {
     title: "Cadastrar",
     intro:
-      "Suas assinaturas ficam salvas neste navegador e só vão para uma conta quando você quiser.",
+      "Suas assinaturas ficam salvas neste dispositivo. Ao criar a conta, elas também são salvas nela e sincronizadas automaticamente entre seus dispositivos.",
     optionalTitle: "Você pode usar o SubSlash sem conta.",
-    optionalBody: "Tudo funciona direto no navegador; entrar é opcional.",
+    optionalBody: "Tudo funciona direto neste dispositivo; entrar é opcional.",
     syncNote:
       "Ao entrar, seus registros são salvos na conta e sincronizados com seus outros dispositivos conectados. Você pode desligar isso em “Minha conta › Backup de dados”.",
     passwordNote:
