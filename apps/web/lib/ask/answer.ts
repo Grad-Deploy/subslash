@@ -203,8 +203,11 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const ambiguous: string[] = [];
       for (const name of names) {
         const matches = matchSubscriptions(name, active);
-        if (matches.length === 0) notSubscribed.push(name);
-        else if (matches.length > 1) ambiguous.push(sm.many(name, matches.length));
+        if (matches.length === 0) {
+          // 서비스 목록의 서비스면 화면 언어의 이름으로 적는다(영어 화면에 "웨이브" 대신 "Wavve").
+          const presets = matchPresets(name);
+          notSubscribed.push(presets.length === 1 ? presetName(presets[0], locale) : name);
+        } else if (matches.length > 1) ambiguous.push(sm.many(name, matches.length));
         else counted.set(matches[0].id, matches[0]);
       }
       const found = [...counted.values()];
