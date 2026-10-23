@@ -668,6 +668,18 @@ ${amountLine}
     expect(dollars.amount).toBe(20);
   });
 
+  it("통화를 앞에 적는 해외승인 문자도 달러로 읽는다", () => {
+    const parsed = parsePaymentSms(
+      "[신한카드] 해외승인 홍*동 USD 20.00 10/17 OPENAI *CHATGPT SUBSCR",
+    );
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].currency).toBe("USD");
+    expect(parsed[0].amount).toBe(20);
+    // "20.00"을 날짜로 읽지 않는다.
+    expect(parsed[0].billingDay).toBe(17);
+    expect(parsePaymentSms("해외승인 USD 1,234.56 10/05 ADOBE")[0].amount).toBe(1234.56);
+  });
+
   it("서비스 이름이 없어도 금액이 있으면 후보로 남긴다", () => {
     const parsed = parsePaymentSms(`결제금액 : 17,000원
 결제일시 : 2026.09.05`)[0];

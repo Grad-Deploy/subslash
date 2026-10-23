@@ -89,7 +89,7 @@ export function AccountMenu() {
                   {account ? account.username : t.signedOut}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {account ? account.email : t.storedInBrowser}
+                  {account ? account.email : t.storedOnDevice}
                 </p>
               </div>
               <div className="my-1 h-px bg-border" role="separator" />

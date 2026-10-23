@@ -21,6 +21,10 @@ export const FAQ_ES: typeof FAQ_EN = {
     q: "¿Cómo se calcula el coste por uso?",
     a: "Tu parte mensual se divide entre las veces que la usaste en los últimos 30 días. En las suscripciones compartidas solo cuenta tu parte, y las anuales se pasan primero a un importe mensual. Las suscripciones sin registro no tienen número de usos, así que no inventamos un coste y mostramos «Aún sin registro».",
   },
+  "exchange-rate": {
+    q: "¿Cómo se convierten a wones las suscripciones que se pagan en dólares? ¿Puedo cambiar el tipo de cambio?",
+    a: "Las suscripciones en dólares se convierten a wones con el tipo que aparece en «Tipo de cambio» en Ajustes. En automático, sigue el tipo de referencia del BCE (se actualiza una vez cada día hábil); si escribes uno tú en «Cambiar tipo», se sigue usando ese valor. Los recibos de suscripción y el resumen de fin de año, que muestran pagos pasados, usan el tipo de referencia del día de cada pago y no el de hoy. El tipo de referencia no es el que aplicó tu tarjeta, así que los importes pueden diferir un poco del extracto. La sección «Tipo de cambio» solo aparece si tienes una suscripción en dólares activa.",
+  },
   "checkin-auto": {
     q: "¿Se pueden rellenar los check-ins sin contar yo mismo?",
     a: "En la app de Android, activa «Conectar el uso del móvil» en Ajustes y, cuando se acumulen 30 días de uso de las apps de suscripción en este móvil, hará el check-in por ti. En la web desde un PC, abre la pantalla de lectura de registros con el enlace de la ventana de check-in de una suscripción a Claude, ChatGPT, Cursor o Google AI, y elige la carpeta de registros de una herramienta de programación con IA o un archivo de exportación de chats de claude.ai: se cuentan los días de uso y se rellenan en la ventana de check-in. Los archivos no se envían a ningún servidor y no se guarda nada hasta que confirmes. En ambos casos solo se cuenta lo que quedó en ese dispositivo o archivo, así que puede ser menos que tu uso real.",
