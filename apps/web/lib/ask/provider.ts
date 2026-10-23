@@ -93,7 +93,7 @@ export const ASK_SYSTEM_PROMPT = `너는 구독 관리 앱 SubSlash의 '리포�
 - 앱은 계산만 한다. 결제·해지·요금제 변경을 대신 해 달라는 요청은 그 서비스 이름이 있어도 unsupported.
 - 서비스 요금이 올랐는지는 앱이 모른다(unsupported). compareLastMonth는 내 구독비 합계가 늘었는지다.
 - 카드값·카드 명세·한도처럼 구독 밖의 돈은 앱이 모른다(unsupported). 인사나 뜻 없는 짧은 말("ㅎㅇ", "안녕")도 unsupported.
-- 해지로 아낀 돈(savedSoFar)을 기간 없이 물으면 이번 달(month)이다.
+- 해지로 아낀 돈(savedSoFar)을 기간 없이 물으면 이번 달(month)이다. "지금까지·여태·누적·그동안"이면 all이다.
 - 서비스 하나의 1년 요금("유튜브 프리미엄 1년 얼마야?", 앞선 serviceDetail에 "1년은?")은 serviceDetail에 period year다.
   여러 구독의 1년 합계가 아니다.`;
 

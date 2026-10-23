@@ -243,7 +243,42 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
       call: { tool: "savedSoFar", args: { period: "year" } },
     });
     const year = answerAsk({ tool: "savedSoFar", args: { period: "year" } }, CTX);
-    expect(year.switchTo?.call).toEqual({ tool: "savedSoFar", args: { period: "month" } });
+    expect(year.switchTo?.call).toEqual({ tool: "savedSoFar", args: { period: "all" } });
+    const all = answerAsk({ tool: "savedSoFar", args: { period: "all" } }, CTX);
+    expect(all.switchTo?.call).toEqual({ tool: "savedSoFar", args: { period: "month" } });
+  });
+
+  it("해지로 아낀 돈은 절약 현황과 같은 숫자다 — 오지 않은 결제일과 확인하지 않은 해지는 세지 않는다", () => {
+    // 8월 1일에 해지, 결제가 멈춘 것을 확인했다. 매달 1일 결제라 8·9·10월 1일 세 번을 막았다(10월 5일 기준).
+    const verified = sub({
+      id: "verified",
+      name: "왓챠",
+      amount: 7900,
+      billingDay: 1,
+      status: "killed",
+      killedAt: new Date(2026, 6, 31).toISOString(),
+      killVerifiedAt: new Date(2026, 7, 2).toISOString(),
+    });
+    // 9월 20일에 해지했지만 결제가 멈췄는지 아직 답하지 않았다(첫 결제일 10월 3일이 지났다).
+    const pending = sub({
+      id: "pending",
+      name: "웨이브",
+      amount: 7900,
+      billingDay: 3,
+      status: "killed",
+      killedAt: new Date(2026, 8, 20).toISOString(),
+    });
+    const ctx = { ...CTX, subscriptions: [verified, pending] };
+    const all = answerAsk({ tool: "savedSoFar", args: { period: "all" } }, ctx);
+    expect(all.headline).toContain(won(7900 * 3));
+    expect(all.notes.join()).toContain(`확인하지 않은 1개(${won(7900)})`);
+    // 올해도 남은 11·12월을 세지 않는다 — 예전에는 그 달까지 더해 "올해 지켰어요"라고 했다.
+    expect(answerAsk({ tool: "savedSoFar", args: { period: "year" } }, ctx).headline).toContain(
+      won(7900 * 3),
+    );
+    expect(answerAsk({ tool: "savedSoFar", args: { period: "month" } }, ctx).headline).toContain(
+      won(7900),
+    );
   });
 
   it("안 쓰는 구독은 구독마다의 금액과 함께 합계를 말한다", () => {

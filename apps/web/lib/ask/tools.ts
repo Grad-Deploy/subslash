@@ -23,6 +23,8 @@ export const ASK_CATEGORIES = [
 ] as const satisfies readonly SubscriptionCategory[];
 
 export const ASK_PERIODS = ["month", "year"] as const;
+/** 지킨 돈의 기간. `all`은 지금까지 — 대시보드·절약 현황의 '해지로 지킨 돈'과 같은 숫자다. */
+export const ASK_SAVED_PERIODS = ["month", "year", "all"] as const;
 export const ASK_ORDERS = ["worst", "best"] as const;
 
 type ParamSpec =
@@ -99,9 +101,11 @@ export const ASK_TOOLS = {
     computedBy: "getNextBillingDateFor · getMyMonthlyShareAmount · 체크인 기록",
   },
   savedSoFar: {
-    description: "해지해서 지킨 돈. 이번 달 또는 올해.",
-    params: { period: { type: "enum", values: ASK_PERIODS, required: true } },
-    computedBy: "sumMyMonthDefendedKRW / sumMyYearDefendedKRW",
+    description:
+      "해지해서 지킨 돈. 이번 달(month)·올해(year)·지금까지(all). 결제일이 지났고 결제가 멈춘 것을 확인한 돈만 센다.",
+    // all을 모르는 예전 앱은 그 호출을 버려 답하지 못한다 — 화면과 다른 숫자를 말하는 것보다 낫다.
+    params: { period: { type: "enum", values: ASK_SAVED_PERIODS, required: true } },
+    computedBy: "getSavingsTiers(절약 현황·대시보드의 '해지로 지킨 돈'과 같은 함수)",
   },
   compareLastMonth: {
     description:
