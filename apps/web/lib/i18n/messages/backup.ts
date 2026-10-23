@@ -203,7 +203,7 @@ export const zh: Widen<typeof ko> = {
   },
   lastSaved: (savedAt, line) => `最后保存 ${savedAt} · ${line}`,
   title: "数据备份",
-  intro: "你的记录只在这台设备上。清除应用或浏览器数据、或更换设备前，请先备份或登录。",
+  intro: "你的记录只在这台设备上。在清除应用或浏览器数据，或更换设备之前，请先备份或登录。",
   exportFile: "保存备份文件",
   restoreFile: "从备份恢复",
   chooseFile: "选择备份文件",
@@ -453,7 +453,7 @@ export const fr: Widen<typeof ko> = {
   lastSaved: (savedAt, line) => `Dernier enregistrement ${savedAt} · ${line}`,
   title: "Sauvegarde des données",
   intro:
-    "Vos données ne sont que sur cet appareil. Sauvegardez-les ou connectez-vous avant d'effacer les données de l'app ou du navigateur, ou de changer d'appareil.",
+    "Vos données ne sont que sur cet appareil. Sauvegardez-les ou connectez-vous avant d'effacer les données de l'appli ou du navigateur, ou de changer d'appareil.",
   exportFile: "Enregistrer une sauvegarde",
   restoreFile: "Restaurer une sauvegarde",
   chooseFile: "Choisir un fichier de sauvegarde",
