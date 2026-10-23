@@ -351,6 +351,9 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
       ["배민 1년은?", "배민"],
       ["넷플 1년에 얼마야", "넷플"],
       ["배민클럽 연간 요금", "배민클럽"],
+      // 띄어 쓴 기간·금액 말도 읽는다(정규식의 \s가 빠져 '1 년'·'결제 금액'을 읽지 못했다)
+      ["넷플 1 년 얼마야", "넷플"],
+      ["유튜브 프리미엄 1년 결제 금액", "유튜브 프리미엄"],
     ]) {
       expect(localAskCall(q, { now: NOW }), q).toEqual({
         tool: "serviceDetail",
@@ -371,6 +374,34 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
     ]) {
       expect(localAskCall(q, { now: NOW })?.args?.period, q).not.toBe("year");
     }
+  });
+
+  it("이름을 댄 서비스 여럿의 합계는 그 서비스들만 더한다 — 분류 전체가 아니다", () => {
+    expect(localAskCall("넷플이랑 티빙 합쳐서 얼마", { now: NOW })).toEqual({
+      tool: "serviceSum",
+      args: { services: "넷플, 티빙" },
+    });
+    expect(localAskCall("티빙하고 웨이브 1년에 얼마", { now: NOW })).toEqual({
+      tool: "serviceSum",
+      args: { services: "티빙, 웨이브", period: "year" },
+    });
+    // 이름 안의 띄어쓰기는 나누지 않는다
+    expect(localAskCall("쿠팡 와우랑 넷플릭스 얼마", { now: NOW })?.args?.services).toBe(
+      "쿠팡 와우, 넷플릭스",
+    );
+    // 분류를 말하면 분류별 지출이다
+    expect(localAskCall("OTT 전부 합쳐서 얼마", { now: NOW })?.tool).toBe("spendByCategory");
+  });
+
+  it("서비스 하나를 해지하면 아낄 돈은 그 서비스의 1년 요금이다 — 이미 지킨 돈이 아니다", () => {
+    expect(localAskCall("티빙 해지하면 얼마 아껴?", { now: NOW })).toEqual({
+      tool: "serviceDetail",
+      args: { service: "티빙", period: "year" },
+    });
+    // 환불·위약금은 앱이 모른다
+    expect(localAskCall("넷플릭스 해지하면 환불 얼마 받아?", { now: NOW })?.tool).not.toBe(
+      "serviceDetail",
+    );
   });
 
   it("서비스 요금을 물은 뒤 '1년은?'이면 그 서비스의 1년이다", () => {

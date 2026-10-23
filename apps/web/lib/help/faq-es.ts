@@ -23,7 +23,7 @@ export const FAQ_ES: typeof FAQ_EN = {
   },
   "exchange-rate": {
     q: "¿Cómo se convierten a wones las suscripciones que se pagan en dólares? ¿Puedo cambiar el tipo de cambio?",
-    a: "Las suscripciones en dólares se convierten a wones con el tipo que aparece en «Tipo de cambio» en Ajustes. En automático, sigue el tipo de referencia del BCE (se actualiza una vez cada día hábil); si escribes uno tú en «Cambiar tipo», se sigue usando ese valor. Los recibos de suscripción y el resumen de fin de año, que muestran pagos pasados, usan el tipo de referencia del día de cada pago y no el de hoy. El tipo de referencia no es el que aplicó tu tarjeta, así que los importes pueden diferir un poco del extracto. La sección «Tipo de cambio» solo aparece si tienes una suscripción en dólares activa.",
+    a: "Las suscripciones en dólares se convierten a wones con el tipo que aparece en «Tipo de cambio» en Ajustes. En automático, sigue el tipo de referencia del BCE (se actualiza una vez cada día hábil); si escribes uno tú en «Cambiar tipo», se sigue usando ese valor. Los recibos de suscripción y el resumen de fin de año, que muestran pagos pasados, usan el tipo de referencia del día de cada pago y no el de hoy. El tipo de referencia no es el que aplicó el emisor de tu tarjeta, así que los importes pueden diferir un poco del extracto. La sección «Tipo de cambio» solo aparece si tienes una suscripción en dólares activa.",
   },
   "checkin-auto": {
     q: "¿Se pueden rellenar los check-ins sin contar yo mismo?",
