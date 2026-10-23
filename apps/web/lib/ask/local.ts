@@ -157,11 +157,11 @@ const NOT_ONE_SERVICE =
  * 않는다 — "넷플 올해 얼마 냈어"는 1년 요금이 아니라 올해 낸 돈을 묻는 말일 수 있다.
  */
 const SERVICE_YEAR =
-  /s*(?:1s*년|일s*년|한s*해|연간|12s*개월|열두s*달)s*(?:치|동안|간)?s*(?:으로|로|에는|에|은|는|이면|면|기준(?:으로)?|이면은)?s*/;
+  /\s*(?:1\s*년|일\s*년|한\s*해|연간|12\s*개월|열두\s*달)\s*(?:치|동안|간)?\s*(?:으로|로|에는|에|은|는|이면|면|기준(?:으로)?|이면은)?\s*/;
 /** 1년으로 답할 수 있는 `DETAIL_WORD`(금액). 결제일·쓴 횟수에 1년이 붙으면 앱이 모르는 것(앱은 최근 30일만 안다)이라 AI에 맡긴다. */
-const AMOUNT_DETAIL = /얼마|요금|가격|구독료|구독비|이용료|비용|결제s*금액|결제액|몇s*원/;
+const AMOUNT_DETAIL = /얼마|요금|가격|구독료|구독비|이용료|비용|결제\s*금액|결제액|몇\s*원/;
 /** 이름 뒤에 남는 조사·물음 끝. "배민 1년은?"에서 1년을 떼면 "배민"만 남아야 한다. */
-const NAME_ONLY_TAIL = /s*(?:은|는|이|가|의|이면|면|이야|야|이에요|예요|요)?s*$/;
+const NAME_ONLY_TAIL = /\s*(?:은|는|이|가|의|이면|면|이야|야|이에요|예요|요)?\s*$/;
 
 /** 서비스 이름·줄임말 그대로인지(띄어쓰기·대소문자 무시). */
 function isExactName(text: string, subscriptions: readonly Subscription[]): boolean {
@@ -214,7 +214,7 @@ function serviceCall(q: string, subscriptions: readonly Subscription[]): AskCall
     const amount = AMOUNT_DETAIL.exec(after);
     const asks = amount
       ? DETAIL_WORD.exec(after)?.index === amount.index &&
-        !/결제일|청구일|몇s*번|횟수/.test(after) &&
+        !/결제일|청구일|몇\s*번|횟수/.test(after) &&
         /^(?:구독\s*(?:하면|하려면|할\s*때|시)?)?$/.test(after.slice(0, amount.index).trim())
       : NAME_ONLY_TAIL.test(after) && after.replace(NAME_ONLY_TAIL, "") === "";
     if (!asks || !before) return null;
