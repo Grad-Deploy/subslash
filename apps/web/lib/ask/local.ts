@@ -314,6 +314,9 @@ const NOT_SPEND =
   /인상|올랐|오르|오른|내린|소식|평균|왜|이유|알림|비교|보통|예산|추천|줄었|늘었|증가|감소|변화/;
 const yearly = /1년|일년|한\s*해|연간|연\s*단위|올해|1\s*년|12\s*개월|열두\s*달|year|annual/;
 const monthly = /한\s*달|1달|월\s*(?:에|마다|고정|구독)|매달|매월|달에|월간|month/;
+/** 기간을 정하지 않고 쌓인 것 전부(지킨 돈의 `all`). 대시보드·절약 현황의 '해지로 지킨 돈'이 이 숫자다. */
+const allTime =
+  /지금까지|여태(?:껏|까지)?|여지껏|이제까지|그동안|누적|통틀어|전체\s*기간|처음부터|so far|in total|all time|to date/;
 
 // ── 기간만 바꾸는 꼬리 질문 ──────────────────────────────────────
 
@@ -326,6 +329,9 @@ const WHOLE_YEAR =
   /^(?:1\s*년|일\s*년|한\s*해|연간|연\s*단위|1\s*년\s*치|일\s*년\s*치|12\s*개월|열두\s*달|올해|(?:a|per|for a|for the|this|one|the)\s+year|yearly|annually|annual)$/;
 const WHOLE_MONTH =
   /^(?:한\s*달|1\s*달|한\s*달\s*치|월|월간|매달|매월|이번\s*달|(?:a|per|for a|for the|this|one|the)\s+month|monthly)$/;
+/** 기간 말 전체가 '지금까지'인지. 지킨 돈(savedSoFar)만 이 기간을 받는다. */
+const WHOLE_ALL_TIME =
+  /^(?:지금까지|여태(?:껏|까지)?|이제까지|그동안|누적|전체|통틀어|so far|in total|all time)$/;
 /** 일수로 읽는 기간 말 전체(결제 예정·체험 종료의 꼬리 질문). 읽는 것은 `parseDays`가 한다. */
 const WHOLE_DAYS =
   /^(?:\d{1,2}\s*일|\d\s*주|이번\s*주|다음\s*주(?:까지)?|일주일|한\s*주|내일|모레|오늘|월말|이번\s*달\s*(?:말|안)|(?:next|within|in)\s+\d{1,2}\s+days?|\d\s+weeks?|this week|next week|tomorrow|today|end of (?:the )?month)(?:\s*(?:안|내|이내|동안|까지))?$/;
@@ -345,7 +351,9 @@ export function periodFollowUp(question: string, previous: AskCall, now: Date): 
   const period = WHOLE_YEAR.test(phrase) ? "year" : WHOLE_MONTH.test(phrase) ? "month" : null;
   switch (previous.tool) {
     case "spendTotal":
+      return period ? { tool: previous.tool, args: { period } } : null;
     case "savedSoFar":
+      if (WHOLE_ALL_TIME.test(phrase)) return { tool: previous.tool, args: { period: "all" } };
       return period ? { tool: previous.tool, args: { period } } : null;
     case "spendByCategory": {
       if (!period) return null;
@@ -461,7 +469,10 @@ export function localAskCall(
   ) {
     const isYear = yearly.test(q);
     const isMonth = /이번\s*달|한\s*달|this month/.test(q);
-    if (isYear && isMonth) return null;
+    const isAll = allTime.test(q);
+    if (Number(isYear) + Number(isMonth) + Number(isAll) > 1) return null;
+    // "지금까지 아낀 돈"을 이번 달로 답하면 대시보드의 '해지로 지킨 돈'과 다른 숫자가 됐다.
+    if (isAll) return { tool: "savedSoFar", args: { period: "all" } };
     // 기간을 적지 않았으면 이번 달로 답한다. 답에 '올해로 보기'를 둬 올해를 물은 것이었으면 바꾸게 한다(answer의 switchTo).
     return { tool: "savedSoFar", args: { period: isYear ? "year" : "month" } };
   }

@@ -8,13 +8,12 @@ import {
   getMyMonthlyAmountKRW,
   getNextBillingDateFor,
   getPlanAlternatives,
+  getSavingsTiers,
   isInTrial,
   metricOfLog,
   planCurrency,
   sumMyAnnualKRW,
-  sumMyMonthDefendedKRW,
   sumMyMonthlyKRW,
-  sumMyYearDefendedKRW,
   type ServicePreset,
   type Subscription,
   type UsageLog,
@@ -420,20 +419,38 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const sv = k.saved;
       const killed = ctx.subscriptions.filter((sub) => sub.status === "killed");
       if (killed.length === 0) return answer(sv.none, sv.source);
-      const month = args.period === "month";
-      const summary = month
-        ? sumMyMonthDefendedKRW(killed, ctx.now.getFullYear(), ctx.now.getMonth() + 1, ctx.rate)
-        : sumMyYearDefendedKRW(killed, ctx.now.getFullYear(), ctx.rate);
+      // 절약 현황·대시보드의 '해지로 지킨 돈'과 같은 함수로 센다. 예전에는 올해의 남은 결제일과 결제가 멈췄는지 확인하지
+      // 않은 해지까지 더해, "올해 ₩71,100을 지켰어요"라고 말하는 옆 화면이 "지금까지 지킨 돈 ₩39,500"이었다.
+      const period = args.period === "year" || args.period === "all" ? args.period : "month";
+      const now = ctx.now;
+      const from =
+        period === "month"
+          ? new Date(now.getFullYear(), now.getMonth(), 1)
+          : period === "year"
+            ? new Date(now.getFullYear(), 0, 1)
+            : undefined;
+      const tiers = getSavingsTiers(killed, now, ctx.rate, { from, to: now });
+      const amount = formatKRW(tiers.confirmed);
+      const notes = [
+        ...(tiers.pending > 0 ? [sv.pending(formatKRW(tiers.pending), tiers.pendingCount)] : []),
+        ...(tiers.unknownCount > 0 ? [sv.unknown(tiers.unknownCount)] : []),
+      ];
+      const next = period === "month" ? "year" : period === "year" ? "all" : "month";
       return {
         ...answer(
-          month ? sv.month(formatKRW(summary.amount)) : sv.year(formatKRW(summary.amount)),
-          month ? sv.sourceMonth : sv.sourceYear,
+          period === "month"
+            ? sv.month(amount)
+            : period === "year"
+              ? sv.year(amount)
+              : sv.all(amount),
+          period === "month" ? sv.sourceMonth : period === "year" ? sv.sourceYear : sv.sourceAll,
           [],
-          summary.unknownCount > 0 ? [sv.unknown(summary.unknownCount)] : [],
+          notes,
         ),
-        switchTo: month
-          ? { label: sv.switchYear, call: { tool: "savedSoFar", args: { period: "year" } } }
-          : { label: sv.switchMonth, call: { tool: "savedSoFar", args: { period: "month" } } },
+        switchTo: {
+          label: next === "year" ? sv.switchYear : next === "all" ? sv.switchAll : sv.switchMonth,
+          call: { tool: "savedSoFar", args: { period: next } },
+        },
       };
     }
 

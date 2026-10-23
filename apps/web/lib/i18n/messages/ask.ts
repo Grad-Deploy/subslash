@@ -148,6 +148,11 @@ export const ko = {
       year: (amount: string) => `해지해서 올해 ${amount}을 지켰어요.`,
       sourceMonth: "이번 달 지킨 돈",
       sourceYear: "올해 지킨 돈",
+      switchAll: "지금까지로 보기",
+      all: (amount: string) => `해지해서 지금까지 ${amount}을 지켰어요.`,
+      sourceAll: "지금까지 지킨 돈",
+      pending: (amount: string, count: number) =>
+        `해지 뒤 결제가 멈췄는지 아직 확인하지 않은 ${count}개(${amount})는 넣지 않았어요.`,
       unknown: (count: number) => `결제 월이나 해지 날을 몰라 ${count}개는 넣지 못했어요.`,
     },
     compare: {
@@ -312,6 +317,13 @@ export const en: Widen<typeof ko> = {
       year: (amount) => `Cancelling kept ${amount} this year.`,
       sourceMonth: "Money kept this month",
       sourceYear: "Money kept this year",
+      switchAll: "Show all time",
+      all: (amount) => `Cancelling has kept ${amount} so far.`,
+      sourceAll: "Money kept so far",
+      pending: (amount, count) =>
+        count === 1
+          ? `1 cancellation (${amount}) isn't counted yet because you haven't confirmed billing stopped.`
+          : `${count} cancellations (${amount}) aren't counted yet because you haven't confirmed billing stopped.`,
       unknown: (count) =>
         `${count} couldn't be included because the billing month or cancellation date is unknown.`,
     },
@@ -463,6 +475,10 @@ export const zh: Widen<typeof ko> = {
       year: (amount) => `今年通过退订守住了 ${amount}。`,
       sourceMonth: "本月守住的钱",
       sourceYear: "今年守住的钱",
+      switchAll: "看至今",
+      all: (amount) => `至今通过退订守住了 ${amount}。`,
+      sourceAll: "至今守住的钱",
+      pending: (amount, count) => `还有 ${count} 个退订（${amount}）尚未确认已停止扣款，未计入。`,
       unknown: (count) => `${count} 个因扣款月份或退订日期不明，未计入。`,
     },
     compare: {
@@ -615,6 +631,11 @@ export const ja: Widen<typeof ko> = {
       year: (amount) => `今年は解約で ${amount} を守りました。`,
       sourceMonth: "今月守ったお金",
       sourceYear: "今年守ったお金",
+      switchAll: "これまでで見る",
+      all: (amount) => `これまでに解約で ${amount} を守りました。`,
+      sourceAll: "これまでに守ったお金",
+      pending: (amount, count) =>
+        `解約後に支払いが止まったかまだ確認していない ${count} 件（${amount}）は含めていません。`,
       unknown: (count) => `${count} 件は支払月か解約日がわからないので含められませんでした。`,
     },
     compare: {
@@ -767,6 +788,11 @@ export const vi: Widen<typeof ko> = {
       year: (amount) => `Năm nay bạn giữ lại ${amount} nhờ hủy.`,
       sourceMonth: "Tiền giữ lại tháng này",
       sourceYear: "Tiền giữ lại năm nay",
+      switchAll: "Xem từ trước đến nay",
+      all: (amount) => `Từ trước đến nay bạn giữ lại ${amount} nhờ hủy.`,
+      sourceAll: "Tiền giữ lại từ trước đến nay",
+      pending: (amount, count) =>
+        `${count} gói (${amount}) chưa được tính vì bạn chưa xác nhận đã ngừng bị trừ tiền.`,
       unknown: (count) =>
         `${count} gói không được tính vì không rõ tháng thanh toán hoặc ngày hủy.`,
     },
@@ -931,6 +957,11 @@ export const fr: Widen<typeof ko> = {
       year: (amount) => `Les résiliations vous ont fait économiser ${amount} cette année.`,
       sourceMonth: "Argent économisé ce mois-ci",
       sourceYear: "Argent économisé cette année",
+      switchAll: "Voir depuis le début",
+      all: (amount) => `Les résiliations vous ont fait économiser ${amount} jusqu'ici.`,
+      sourceAll: "Argent économisé jusqu'ici",
+      pending: (amount, count) =>
+        `${count} résiliation(s) (${amount}) ne sont pas comptées : l'arrêt des prélèvements n'est pas encore confirmé.`,
       unknown: (count) =>
         `${count} n'ont pas pu être inclus : mois de paiement ou date de résiliation inconnus.`,
     },
@@ -1095,6 +1126,11 @@ export const es: Widen<typeof ko> = {
       year: (amount) => `Este año cancelar te ahorró ${amount}.`,
       sourceMonth: "Dinero ahorrado este mes",
       sourceYear: "Dinero ahorrado este año",
+      switchAll: "Ver desde el principio",
+      all: (amount) => `Hasta ahora cancelar te ahorró ${amount}.`,
+      sourceAll: "Dinero ahorrado hasta ahora",
+      pending: (amount, count) =>
+        `${count} cancelación(es) (${amount}) aún no se cuentan porque no has confirmado que dejaron de cobrarte.`,
       unknown: (count) =>
         `${count} no se pudieron incluir porque se desconoce el mes de cobro o la fecha de cancelación.`,
     },
@@ -1258,6 +1294,11 @@ export const de: Widen<typeof ko> = {
       year: (amount) => `Durch Kündigen hast du dieses Jahr ${amount} gespart.`,
       sourceMonth: "Diesen Monat gespartes Geld",
       sourceYear: "Dieses Jahr gespartes Geld",
+      switchAll: "Bisher anzeigen",
+      all: (amount) => `Durch Kündigen hast du bisher ${amount} gespart.`,
+      sourceAll: "Bisher gespartes Geld",
+      pending: (amount, count) =>
+        `${count} Kündigung(en) (${amount}) zählen noch nicht, weil du noch nicht bestätigt hast, dass keine Abbuchung mehr kam.`,
       unknown: (count) =>
         `${count} konnten nicht einbezogen werden, weil Abbuchungsmonat oder Kündigungsdatum unbekannt ist.`,
     },
@@ -1419,6 +1460,11 @@ export const pt: Widen<typeof ko> = {
       year: (amount) => `Cancelar economizou ${amount} este ano.`,
       sourceMonth: "Dinheiro economizado este mês",
       sourceYear: "Dinheiro economizado este ano",
+      switchAll: "Ver desde o início",
+      all: (amount) => `Até agora, cancelar economizou ${amount}.`,
+      sourceAll: "Dinheiro economizado até agora",
+      pending: (amount, count) =>
+        `${count} cancelamento(s) (${amount}) ainda não entram porque você não confirmou que a cobrança parou.`,
       unknown: (count) =>
         `${count} não puderam entrar porque o mês de cobrança ou a data de cancelamento é desconhecida.`,
     },

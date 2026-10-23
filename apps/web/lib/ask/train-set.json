@@ -2529,5 +2529,45 @@
       "tool": "unsupported"
     },
     "locale": "ko"
+  },
+  {
+    "q": "지금까지 아낀 돈",
+    "call": {
+      "tool": "savedSoFar",
+      "args": {
+        "period": "all"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "여태까지 구독 해지로 절약한 금액",
+    "call": {
+      "tool": "savedSoFar",
+      "args": {
+        "period": "all"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "누적으로 지킨 돈 얼마야",
+    "call": {
+      "tool": "savedSoFar",
+      "args": {
+        "period": "all"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "그동안 해지해서 아낀 돈 총 얼마?",
+    "call": {
+      "tool": "savedSoFar",
+      "args": {
+        "period": "all"
+      }
+    },
+    "locale": "ko"
   }
 ]

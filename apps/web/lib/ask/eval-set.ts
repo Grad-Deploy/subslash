@@ -255,6 +255,28 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
     expect: { tool: "savedSoFar", args: { period: "year" } },
     tag: "paraphrase",
   },
+  {
+    // '지금까지'는 대시보드·절약 현황의 '해지로 지킨 돈'과 같은 숫자다(2026-10-23 정함)
+    q: "지금까지 구독 끊어서 굳은 돈",
+    expect: { tool: "savedSoFar", args: { period: "all" } },
+    tag: "basic",
+  },
+  {
+    q: "여태 해지로 얼마나 아꼈어?",
+    expect: { tool: "savedSoFar", args: { period: "all" } },
+    tag: "casual",
+  },
+  {
+    q: "지금까지는?",
+    history: [
+      {
+        question: "해지해서 얼마 아꼈어?",
+        call: { tool: "savedSoFar", args: { period: "month" } },
+      },
+    ],
+    expect: { tool: "savedSoFar", args: { period: "all" } },
+    tag: "followup",
+  },
 
   // compareLastMonth
   { q: "지난달보다 늘었어?", expect: { tool: "compareLastMonth" }, tag: "basic" },
