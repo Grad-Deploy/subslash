@@ -236,6 +236,28 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       );
     }
 
+    case "priceRank": {
+      // 쓴 만큼이 아니라 요금 순위다("제일 비싼 구독"). 금액은 지출 합계와 같은 내 몫 한 달치다.
+      if (active.length === 0) return noSubscriptions();
+      if (subs.length === 0) return answer(k.price.none, k.price.source, [], trialNote);
+      const high = args.order !== "low";
+      const ranked = subs
+        .map((sub) => ({ sub, amount: getMyMonthlyAmountKRW(sub, ctx.rate) }))
+        .sort((a, b) => (high ? b.amount - a.amount : a.amount - b.amount));
+      const limit = typeof args.limit === "number" ? args.limit : 3;
+      const top = ranked.slice(0, limit);
+      const first = top[0];
+      return answer(
+        (high ? k.price.high : k.price.low)(nameOf(first.sub), formatKRW(first.amount)),
+        k.price.source,
+        top.map(({ sub, amount }) => ({ label: nameOf(sub), value: formatKRW(amount) })),
+        [
+          ...(top.some(({ sub }) => sub.billingCycle === "yearly") ? [k.price.yearlyNote] : []),
+          ...trialNote,
+        ],
+      );
+    }
+
     case "lowUsage": {
       if (active.length === 0) return noSubscriptions();
       const red = subs.filter(

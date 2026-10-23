@@ -2569,5 +2569,115 @@
       }
     },
     "locale": "ko"
+  },
+  {
+    "q": "제일 비싼 구독 뭐야",
+    "call": {
+      "tool": "priceRank",
+      "args": {
+        "order": "high"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "가장 싼 구독은?",
+    "call": {
+      "tool": "priceRank",
+      "args": {
+        "order": "low"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "돈 제일 많이 나가는 구독",
+    "call": {
+      "tool": "priceRank",
+      "args": {
+        "order": "high"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "티빙 언제 결제돼",
+    "call": {
+      "tool": "serviceDetail",
+      "args": {
+        "service": "티빙"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "웨이브 결제는 언제야",
+    "call": {
+      "tool": "serviceDetail",
+      "args": {
+        "service": "웨이브"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "구독 몇 개야?",
+    "call": {
+      "tool": "spendTotal",
+      "args": {
+        "period": "month"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "구독 중인 거 총 몇 개야",
+    "call": {
+      "tool": "spendTotal",
+      "args": {
+        "period": "month"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "본전 뽑는 구독 알려줘",
+    "call": {
+      "tool": "costPerUseRank",
+      "args": {
+        "order": "best"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "본전도 못 뽑는 구독",
+    "call": {
+      "tool": "costPerUseRank",
+      "args": {
+        "order": "worst"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "공짜 기간 끝나는 거",
+    "call": {
+      "tool": "trialsEnding",
+      "args": {
+        "days": 31
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "무료로 쓰다가 유료로 바뀌는 구독 있어?",
+    "call": {
+      "tool": "trialsEnding",
+      "args": {
+        "days": 31
+      }
+    },
+    "locale": "ko"
   }
 ]

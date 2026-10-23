@@ -26,6 +26,7 @@ export const ASK_PERIODS = ["month", "year"] as const;
 /** 지킨 돈의 기간. `all`은 지금까지 — 대시보드·절약 현황의 '해지로 지킨 돈'과 같은 숫자다. */
 export const ASK_SAVED_PERIODS = ["month", "year", "all"] as const;
 export const ASK_ORDERS = ["worst", "best"] as const;
+export const ASK_PRICE_ORDERS = ["high", "low"] as const;
 
 type ParamSpec =
   | { type: "enum"; values: readonly string[]; required: boolean }
@@ -64,6 +65,15 @@ export const ASK_TOOLS = {
       limit: { type: "int", min: 1, max: 5, required: false },
     },
     computedBy: "리포트 1회 단가 순위(components/report/valueRows)",
+  },
+  priceRank: {
+    description:
+      '요금(내 몫 한 달 금액)이 비싼·싼 순서. 쓴 만큼과 상관없는 금액 순위다("제일 비싼 구독"). high는 비싼 것부터, low는 싼 것부터.',
+    params: {
+      order: { type: "enum", values: ASK_PRICE_ORDERS, required: true },
+      limit: { type: "int", min: 1, max: 5, required: false },
+    },
+    computedBy: "getMyMonthlyAmountKRW(지출 합계와 같은 내 몫, 무료 체험 중인 구독은 뺀다)",
   },
   lowUsage: {
     description: "최근 30일 동안 거의 쓰지 않은 구독(체크인 기준 빨강).",

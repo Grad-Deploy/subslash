@@ -56,6 +56,15 @@ export const ko = {
       perUse: (amount: string) => `1회 ${amount}`,
       skipped: "체크인하지 않았거나 횟수로 재지 않는 구독은 순위에서 빠졌어요.",
     },
+    price: {
+      none: "결제 중인 구독이 없어요.",
+      source: "내 몫 한 달 금액",
+      high: (name: string, amount: string) =>
+        `가장 비싼 구독은 ${withJosa(name, "이에요", "예요")}. 한 달 ${amount}.`,
+      low: (name: string, amount: string) =>
+        `가장 싼 구독은 ${withJosa(name, "이에요", "예요")}. 한 달 ${amount}.`,
+      yearlyNote: "1년에 한 번 내는 구독은 한 달치로 나눠 견줬어요.",
+    },
     low: {
       total: (amount: string) => `합치면 한 달 ${amount}이에요.`,
       source: "최근 30일 체크인 평가",
@@ -220,6 +229,13 @@ export const en: Widen<typeof ko> = {
       perUse: (amount) => `${amount} per use`,
       skipped:
         "Subscriptions without a check-in, or not measured by uses, are left out of the ranking.",
+    },
+    price: {
+      none: "You have no paid subscriptions.",
+      source: "Your share per month",
+      high: (name, amount) => `Your most expensive subscription is ${name}: ${amount} a month.`,
+      low: (name, amount) => `Your cheapest subscription is ${name}: ${amount} a month.`,
+      yearlyNote: "Yearly subscriptions were divided into a monthly amount to compare.",
     },
     low: {
       total: (amount) => `Together that's ${amount} a month.`,
@@ -391,6 +407,13 @@ export const zh: Widen<typeof ko> = {
       perUse: (amount) => `每次 ${amount}`,
       skipped: "没有签到或不是按次数衡量的订阅不在排行中。",
     },
+    price: {
+      none: "没有正在付费的订阅。",
+      source: "我承担的每月金额",
+      high: (name, amount) => `最贵的订阅是 ${name}，每月 ${amount}。`,
+      low: (name, amount) => `最便宜的订阅是 ${name}，每月 ${amount}。`,
+      yearlyNote: "按年付费的订阅已折算成每月金额来比较。",
+    },
     low: {
       total: (amount) => `合计每月 ${amount}。`,
       source: "最近 30 天签到的评价",
@@ -541,6 +564,13 @@ export const ja: Widen<typeof ko> = {
       perZero: "0 回（一度も使っていません）",
       perUse: (amount) => `1 回 ${amount}`,
       skipped: "チェックインがないサブスクや回数で測らないサブスクはランキングから除いています。",
+    },
+    price: {
+      none: "支払い中のサブスクがありません。",
+      source: "自分の負担分（月額）",
+      high: (name, amount) => `いちばん高いサブスクは ${name} です。月 ${amount}。`,
+      low: (name, amount) => `いちばん安いサブスクは ${name} です。月 ${amount}。`,
+      yearlyNote: "年払いのサブスクは月額に割って比べました。",
     },
     low: {
       total: (amount) => `合わせて月 ${amount} です。`,
@@ -699,6 +729,13 @@ export const vi: Widen<typeof ko> = {
       perZero: "0 lần (chưa dùng lần nào)",
       perUse: (amount) => `${amount} mỗi lần`,
       skipped: "Gói chưa check-in hoặc không đo theo số lần không có trong xếp hạng.",
+    },
+    price: {
+      none: "Bạn không có gói trả phí nào.",
+      source: "Phần bạn trả mỗi tháng",
+      high: (name, amount) => `Gói đắt nhất là ${name}: ${amount} mỗi tháng.`,
+      low: (name, amount) => `Gói rẻ nhất là ${name}: ${amount} mỗi tháng.`,
+      yearlyNote: "Gói trả theo năm được chia ra theo tháng để so sánh.",
     },
     low: {
       total: (amount) => `Tổng cộng ${amount} mỗi tháng.`,
@@ -861,6 +898,13 @@ export const fr: Widen<typeof ko> = {
       perUse: (amount) => `${amount} par utilisation`,
       skipped:
         "Les abonnements sans check-in ou non mesurés en utilisations sont exclus du classement.",
+    },
+    price: {
+      none: "Vous n'avez aucun abonnement payant.",
+      source: "Votre part par mois",
+      high: (name, amount) => `Votre abonnement le plus cher est ${name} : ${amount} par mois.`,
+      low: (name, amount) => `Votre abonnement le moins cher est ${name} : ${amount} par mois.`,
+      yearlyNote: "Les abonnements annuels ont été ramenés à un montant mensuel pour comparer.",
     },
     low: {
       total: (amount) => `Au total, ${amount} par mois.`,
@@ -1031,6 +1075,13 @@ export const es: Widen<typeof ko> = {
       skipped:
         "Las suscripciones sin registro o que no se miden por usos quedan fuera del ranking.",
     },
+    price: {
+      none: "No tienes suscripciones de pago.",
+      source: "Tu parte al mes",
+      high: (name, amount) => `Tu suscripción más cara es ${name}: ${amount} al mes.`,
+      low: (name, amount) => `Tu suscripción más barata es ${name}: ${amount} al mes.`,
+      yearlyNote: "Las suscripciones anuales se dividieron en un importe mensual para comparar.",
+    },
     low: {
       total: (amount) => `En total, ${amount} al mes.`,
       source: "Evaluación de los registros de los últimos 30 días",
@@ -1199,6 +1250,13 @@ export const de: Widen<typeof ko> = {
       perUse: (amount) => `${amount} pro Nutzung`,
       skipped: "Abos ohne Eintrag oder nicht nach Nutzungen gemessen fehlen im Ranking.",
     },
+    price: {
+      none: "Du hast keine kostenpflichtigen Abos.",
+      source: "Dein Anteil pro Monat",
+      high: (name, amount) => `Dein teuerstes Abo ist ${name}: ${amount} im Monat.`,
+      low: (name, amount) => `Dein günstigstes Abo ist ${name}: ${amount} im Monat.`,
+      yearlyNote: "Jahresabos wurden zum Vergleich auf einen Monatsbetrag umgerechnet.",
+    },
     low: {
       total: (amount) => `Zusammen sind das ${amount} im Monat.`,
       source: "Bewertung der Einträge der letzten 30 Tage",
@@ -1366,6 +1424,13 @@ export const pt: Widen<typeof ko> = {
       perZero: "0 usos (nenhuma vez)",
       perUse: (amount) => `${amount} por uso`,
       skipped: "Assinaturas sem registro ou não medidas por usos ficam fora do ranking.",
+    },
+    price: {
+      none: "Você não tem assinaturas pagas.",
+      source: "Sua parte por mês",
+      high: (name, amount) => `Sua assinatura mais cara é ${name}: ${amount} por mês.`,
+      low: (name, amount) => `Sua assinatura mais barata é ${name}: ${amount} por mês.`,
+      yearlyNote: "Assinaturas anuais foram divididas em um valor mensal para comparar.",
     },
     low: {
       total: (amount) => `Somando, ${amount} por mês.`,
