@@ -281,6 +281,19 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
     );
   });
 
+  it("요금 순위는 쓴 만큼이 아니라 내 몫 한 달 금액으로 줄 세우고, 무료 체험 중인 구독은 뺀다", () => {
+    const high = answerAsk({ tool: "priceRank", args: { order: "high" } }, CTX);
+    expect(high.headline).toContain("ChatGPT Plus");
+    expect(high.headline).toContain(won(29000));
+    expect(high.rows.map((row) => row.label)).toEqual(["ChatGPT Plus", "넷플릭스", "멜론"]);
+    expect(high.notes.join()).toContain("무료 체험 중인 1개");
+    // 둘이 나눠 내는 티빙(9,500원)은 내 몫 4,750원이라 가장 싸다.
+    const low = answerAsk({ tool: "priceRank", args: { order: "low", limit: 1 } }, CTX);
+    expect(low.headline).toContain("티빙");
+    expect(low.headline).toContain(won(4750));
+    expect(low.rows).toHaveLength(1);
+  });
+
   it("안 쓰는 구독은 구독마다의 금액과 함께 합계를 말한다", () => {
     const result = answerAsk({ tool: "lowUsage" }, CTX);
     expect(result.headline).toContain(`합치면 한 달 ${won(7900)}`);

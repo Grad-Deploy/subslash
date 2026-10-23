@@ -106,6 +106,34 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
     tag: "casual",
   },
 
+  // priceRank — 쓴 만큼이 아니라 요금 순위(2026-10-23 더함)
+  {
+    q: "구독 중에 제일 비싼 거 뭐야",
+    expect: { tool: "priceRank", args: { order: "high" } },
+    tag: "basic",
+  },
+  {
+    q: "제일 저렴한 구독 알려줘",
+    expect: { tool: "priceRank", args: { order: "low" } },
+    tag: "basic",
+  },
+  {
+    q: "돈 가장 많이 나가는 구독 3개",
+    expect: { tool: "priceRank", args: { order: "high", limit: 3 } },
+    tag: "args",
+  },
+  { q: "젤 비싼 구독 머임", expect: { tool: "priceRank", args: { order: "high" } }, tag: "casual" },
+  {
+    q: "구독 지금 몇 개 하고 있어?",
+    expect: { tool: "spendTotal", args: { period: "month" } },
+    tag: "paraphrase",
+  },
+  {
+    q: "내 구독 총 몇 개야",
+    expect: { tool: "spendTotal", args: { period: "month" } },
+    tag: "casual",
+  },
+
   // costPerUseRank
   {
     q: "제일 아까운 구독 뭐야?",
@@ -236,6 +264,27 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
     q: "쿠팡와우 결제일",
     expect: { tool: "serviceDetail", args: { service: "쿠팡와우" } },
     tag: "casual",
+  },
+
+  {
+    q: "넷플릭스 결제 언제야?",
+    expect: { tool: "serviceDetail", args: { service: "넷플릭스" } },
+    tag: "basic",
+  },
+  {
+    q: "유튜브 프리미엄 언제 빠져나가?",
+    expect: { tool: "serviceDetail", args: { service: "유튜브 프리미엄" } },
+    tag: "paraphrase",
+  },
+  {
+    q: "본전도 못 뽑는 구독 뭐야",
+    expect: { tool: "costPerUseRank", args: { order: "worst" } },
+    tag: "casual",
+  },
+  {
+    q: "공짜 기간 끝나가는 구독 있어?",
+    expect: { tool: "trialsEnding", args: { days: 31 } },
+    tag: "paraphrase",
   },
 
   // savedSoFar
