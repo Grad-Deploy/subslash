@@ -258,6 +258,16 @@ const ACTION_REQUEST =
 const NOT_SUBSCRIPTION_MONEY =
   /카드\s*(?:값|대금|명세|청구\s*(?:금액|액)|사용\s*(?:금액|액)|한도|실적)|통장\s*잔고|잔액/;
 
+/**
+ * 구독 여럿 중 무엇을 가장 많이·자주·오래 쓰는지(사용량 순위). 앱은 답하지 못한다 — 구독마다 재는 단위(횟수·시간·쓴 날)가
+ * 달라 사용량끼리 견주지 못한다. AI는 이 말을 가성비 순위(costPerUseRank)로 읽어 "가장 많이 쓰는 구독은?"에 "가성비가 가장
+ * 좋은 구독은 넷플릭스"라고 다른 질문의 답을 했다. 돈을 묻는 말("돈이 제일 많이 나가는")은 사용량이 아니라 빼고, 서비스
+ * 하나의 사용("넷플릭스 몇 번 봤어")은 이 앞에서 serviceDetail로 읽는다.
+ */
+const USAGE_RANK =
+  /(?:가장|제일|젤)\s*(?:많이|자주|오래)\s*(?:쓰|쓴|사용|이용|보는|본|듣|들은)|(?:사용|이용)\s*(?:량|시간|횟수)\s*(?:이|가)?\s*(?:가장|제일|젤)\s*(?:많|긴|길|높)/;
+const MONEY_WORD = /돈|비용|요금|구독\s*(?:비|료)|얼마|[0-9]\s*원|나가/;
+
 /** 인사·뜻 없는 짧은 말("ㅎㅇ", "안녕"). 물어볼 수 있는 것을 보여 준다(unsupported) — 사용법(help)이 아니다. */
 const SMALL_TALK =
   /^(?:ㅎㅇ|ㅎ2|하이|ㅂㅇ|안녕(?:하세요)?|반가워(?:요)?|ㅇㅇ|ㄴㄴ|ㅋ+|ㅎ+|ㅠ+|ㅜ+|hi|hello|hey|yo)[\s!?.~]*$/;
@@ -403,6 +413,9 @@ export function localAskCall(
   if (options.hasHistory && FOLLOW_UP.test(q)) return null;
   if (ACTION_REQUEST.test(q) || NOT_SUBSCRIPTION_MONEY.test(q)) return { tool: "unsupported" };
   if (ofService) return ofService;
+  if (USAGE_RANK.test(q) && !MONEY_WORD.test(q) && !mentionsService(q, subscriptions)) {
+    return { tool: "unsupported" };
+  }
   // 분류를 묻는 질문은 예로 서비스 이름을 들기도 한다("쿠팡 와우 같은 쇼핑 멤버십") — 그때는 서비스 질문으로 보지 않는다.
   const categories = CATEGORY_WORDS.filter(([pattern]) => pattern.test(q)).map(([, c]) => c);
   if (categories.length === 0 && /스트리밍/.test(q)) categories.push("ott");

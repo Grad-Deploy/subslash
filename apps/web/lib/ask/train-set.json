@@ -2487,5 +2487,47 @@
       }
     },
     "locale": "ko"
+  },
+  {
+    "q": "제일 많이 쓰는 구독 알려줘",
+    "call": {
+      "tool": "unsupported"
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "내가 가장 자주 보는 구독은?",
+    "call": {
+      "tool": "unsupported"
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "가장 오래 쓰는 구독 뭐야",
+    "call": {
+      "tool": "unsupported"
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "사용량 제일 많은 구독은 뭐야",
+    "call": {
+      "tool": "unsupported"
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "이용 횟수 가장 높은 구독 알려줘",
+    "call": {
+      "tool": "unsupported"
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "젤 많이 쓴 구독 뭐임",
+    "call": {
+      "tool": "unsupported"
+    },
+    "locale": "ko"
   }
 ]
