@@ -358,6 +358,11 @@ describe("리포트에 물어보기 — 문장", () => {
     expect(josa("쿠팡 와우 (쿠팡플레이)", "을", "를")).toBe("를");
     expect(josa("'티빙'", "을", "를")).toBe("을");
     expect(josa("Apple TV+ (애플)", "을", "를")).toBe("을");
+    // 끝의 '+'는 '플러스'로 읽는다.
+    expect(withJosa("티빙 더블 (티빙 + 디즈니+)", "으로", "로")).toBe(
+      "티빙 더블 (티빙 + 디즈니+)로",
+    );
+    expect(withJosa("Apple TV+", "은", "는")).toBe("Apple TV+는");
   });
 
   it("사용자에게 보이는 계산 출처에 코드 이름을 적지 않는다", () => {
