@@ -27,6 +27,10 @@ export const FAQ_EN: Record<string, { q: string; a: string | ((options: FaqOptio
       q: "How is the cost per use calculated?",
       a: "Your monthly share is divided by the number of times you used it in the last 30 days. For subscriptions split with others only your share counts, and yearly subscriptions are divided into a monthly amount first. Subscriptions you haven't checked in on don't have a usage count, so we don't make up a cost and show “No check-in yet”.",
     },
+    "exchange-rate": {
+      q: "How are subscriptions paid in dollars converted to won? Can I change the exchange rate?",
+      a: "Dollar subscriptions are converted to won at the rate shown under “Exchange rate” in Settings. On automatic, it follows the ECB reference rate (updated once each business day); if you enter one yourself under “Change rate”, that value keeps being used. Subscription receipts and the year-end review, which show past payments, use the reference rate on the day of each payment rather than today's rate. The reference rate isn't the rate your card company charged, so amounts can differ a little from your card statement. The “Exchange rate” section only appears while you have an active dollar subscription.",
+    },
     "checkin-auto": {
       q: "Can check-in numbers be filled in without counting myself?",
       a: "In the Android app, turn on “Connect phone usage” in Settings and, once 30 days of usage from subscription apps on this phone have built up, it checks in for you. On the web on a PC, open the records screen from the link in the check-in window of a Claude, ChatGPT, Cursor or Google AI subscription, then choose an AI coding tool's record folder or a claude.ai chat export file. The days used are counted and filled into the check-in window. Files aren't sent to a server, and nothing is saved until you confirm. Either way, only what was recorded on that device or in that file is counted, so it can be lower than your real use.",

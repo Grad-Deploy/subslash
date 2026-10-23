@@ -24,6 +24,13 @@ export const HELP_EVAL_SET: readonly HelpEvalCase[] = [
     tag: "paraphrase",
   },
   { q: "클로드 쓴 날 자동으로 세는 법", expect: ["checkin-auto"], tag: "casual" },
+  { q: "달러 구독 환율은 어떻게 바꿔요?", expect: ["exchange-rate"], tag: "basic" },
+  {
+    q: "클로드 요금이 원화로 카드 명세서랑 다르게 나와요",
+    expect: ["exchange-rate"],
+    tag: "paraphrase",
+  },
+  { q: "환율 바꾸기", expect: ["exchange-rate"], tag: "casual" },
   { q: "내 기록은 서버에 저장돼?", expect: ["where-stored"], tag: "basic" },
   { q: "데이터 어디 저장됨", expect: ["where-stored"], tag: "casual" },
   { q: "폰 바꾸면 기록 날아가?", expect: ["lose-records"], tag: "casual" },
