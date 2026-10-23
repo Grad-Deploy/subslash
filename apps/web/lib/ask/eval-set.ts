@@ -101,8 +101,37 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
     tag: "casual",
   },
   {
+    // 이름을 댄 서비스만 더한다 — OTT 전체가 아니다(2026-10-23 정답을 spendByCategory에서 바꿈)
     q: "넷플 티빙 웨이브 합쳐서 얼마",
-    expect: { tool: "spendByCategory", args: { category: "ott" } },
+    expect: { tool: "serviceSum", args: { services: "넷플, 티빙, 웨이브" } },
+    tag: "casual",
+  },
+
+  // priceRank — 쓴 만큼이 아니라 요금 순위(2026-10-23 더함)
+  {
+    q: "구독 중에 제일 비싼 거 뭐야",
+    expect: { tool: "priceRank", args: { order: "high" } },
+    tag: "basic",
+  },
+  {
+    q: "제일 저렴한 구독 알려줘",
+    expect: { tool: "priceRank", args: { order: "low" } },
+    tag: "basic",
+  },
+  {
+    q: "돈 가장 많이 나가는 구독 3개",
+    expect: { tool: "priceRank", args: { order: "high", limit: 3 } },
+    tag: "args",
+  },
+  { q: "젤 비싼 구독 머임", expect: { tool: "priceRank", args: { order: "high" } }, tag: "casual" },
+  {
+    q: "구독 지금 몇 개 하고 있어?",
+    expect: { tool: "spendTotal", args: { period: "month" } },
+    tag: "paraphrase",
+  },
+  {
+    q: "내 구독 총 몇 개야",
+    expect: { tool: "spendTotal", args: { period: "month" } },
     tag: "casual",
   },
 
@@ -238,6 +267,60 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
     tag: "casual",
   },
 
+  {
+    q: "넷플릭스 결제 언제야?",
+    expect: { tool: "serviceDetail", args: { service: "넷플릭스" } },
+    tag: "basic",
+  },
+  {
+    q: "유튜브 프리미엄 언제 빠져나가?",
+    expect: { tool: "serviceDetail", args: { service: "유튜브 프리미엄" } },
+    tag: "paraphrase",
+  },
+  {
+    q: "본전도 못 뽑는 구독 뭐야",
+    expect: { tool: "costPerUseRank", args: { order: "worst" } },
+    tag: "casual",
+  },
+  {
+    q: "공짜 기간 끝나가는 구독 있어?",
+    expect: { tool: "trialsEnding", args: { days: 31 } },
+    tag: "paraphrase",
+  },
+
+  // serviceSum — 이름을 댄 서비스 여러 개의 합계
+  {
+    q: "넷플릭스랑 유튜브 프리미엄 합치면 얼마야",
+    expect: { tool: "serviceSum", args: { services: "넷플릭스, 유튜브 프리미엄" } },
+    tag: "basic",
+  },
+  {
+    q: "티빙하고 웨이브 1년에 얼마",
+    expect: { tool: "serviceSum", args: { services: "티빙, 웨이브", period: "year" } },
+    tag: "args",
+  },
+  // 서비스 하나를 해지하면 앞으로 아낄 돈 — 그 서비스의 1년 요금
+  {
+    q: "디즈니플러스 끊으면 1년에 얼마 아껴?",
+    expect: { tool: "serviceDetail", args: { service: "디즈니플러스", period: "year" } },
+    tag: "paraphrase",
+  },
+  {
+    q: "멜론 해지하면 얼마나 절약돼?",
+    expect: { tool: "serviceDetail", args: { service: "멜론", period: "year" } },
+    tag: "basic",
+  },
+  {
+    q: "스포티파이 그만두면 얼마 굳어",
+    expect: { tool: "serviceDetail", args: { service: "스포티파이", period: "year" } },
+    tag: "casual",
+  },
+  {
+    q: "구독비 하루에 얼마꼴?",
+    expect: { tool: "spendTotal", args: { period: "month" } },
+    tag: "paraphrase",
+  },
+
   // savedSoFar
   {
     // 기간을 적지 않으면 이번 달로 답하고, 답에 '올해로 보기'를 둔다(2026-10-19 정함)
@@ -254,6 +337,28 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
     q: "올해 구독 정리해서 절약한 금액",
     expect: { tool: "savedSoFar", args: { period: "year" } },
     tag: "paraphrase",
+  },
+  {
+    // '지금까지'는 대시보드·절약 현황의 '해지로 지킨 돈'과 같은 숫자다(2026-10-23 정함)
+    q: "지금까지 구독 끊어서 굳은 돈",
+    expect: { tool: "savedSoFar", args: { period: "all" } },
+    tag: "basic",
+  },
+  {
+    q: "여태 해지로 얼마나 아꼈어?",
+    expect: { tool: "savedSoFar", args: { period: "all" } },
+    tag: "casual",
+  },
+  {
+    q: "지금까지는?",
+    history: [
+      {
+        question: "해지해서 얼마 아꼈어?",
+        call: { tool: "savedSoFar", args: { period: "month" } },
+      },
+    ],
+    expect: { tool: "savedSoFar", args: { period: "all" } },
+    tag: "followup",
   },
 
   // compareLastMonth

@@ -134,7 +134,7 @@ const CATEGORY_WORDS: [RegExp, AskCategory][] = [
 
 /** 서비스 하나에 대해 묻는 말(요금·결제일·쓴 횟수). 이 낱말 앞이 서비스 이름이어야 한다. */
 const DETAIL_WORD =
-  /얼마|요금제?|가격|구독료|구독비|월정액|이용료|비용|결제\s*금액|결제액|몇\s*원|다음\s*(?:결제|청구|요금)|결제일|청구일|결제\s*(?:날짜|일정)|빠지는\s*날|몇\s*번|(?:사용|이용)\s*횟수/;
+  /얼마|요금제?|가격|구독료|구독비|월정액|이용료|비용|결제\s*금액|결제액|몇\s*원|다음\s*(?:결제|청구|요금)|결제일|청구일|결제\s*(?:날짜|일정)|빠지는\s*날|몇\s*번|(?:사용|이용)\s*횟수|언제\s*(?:결제|청구|빠져|빠지|나가|돈\s*나가)|(?:결제|청구)\s*(?:가|는|되는\s*날은?)?\s*언제/;
 /** 서비스의 더 싼 요금제를 묻는 말. */
 const CHEAPER_WORD =
   /더\s*(?:싼|싸|저렴)|싸게|저렴한|싼\s*(?:거|게|요금제)|최저가|(?:제일|가장)\s*(?:싼|저렴)|낮추|낮은\s*요금제|다운그레이드/;
@@ -157,11 +157,11 @@ const NOT_ONE_SERVICE =
  * 않는다 — "넷플 올해 얼마 냈어"는 1년 요금이 아니라 올해 낸 돈을 묻는 말일 수 있다.
  */
 const SERVICE_YEAR =
-  /s*(?:1s*년|일s*년|한s*해|연간|12s*개월|열두s*달)s*(?:치|동안|간)?s*(?:으로|로|에는|에|은|는|이면|면|기준(?:으로)?|이면은)?s*/;
+  /\s*(?:1\s*년|일\s*년|한\s*해|연간|12\s*개월|열두\s*달)\s*(?:치|동안|간)?\s*(?:으로|로|에는|에|은|는|이면|면|기준(?:으로)?|이면은)?\s*/;
 /** 1년으로 답할 수 있는 `DETAIL_WORD`(금액). 결제일·쓴 횟수에 1년이 붙으면 앱이 모르는 것(앱은 최근 30일만 안다)이라 AI에 맡긴다. */
-const AMOUNT_DETAIL = /얼마|요금|가격|구독료|구독비|이용료|비용|결제s*금액|결제액|몇s*원/;
+const AMOUNT_DETAIL = /얼마|요금|가격|구독료|구독비|이용료|비용|결제\s*금액|결제액|몇\s*원/;
 /** 이름 뒤에 남는 조사·물음 끝. "배민 1년은?"에서 1년을 떼면 "배민"만 남아야 한다. */
-const NAME_ONLY_TAIL = /s*(?:은|는|이|가|의|이면|면|이야|야|이에요|예요|요)?s*$/;
+const NAME_ONLY_TAIL = /\s*(?:은|는|이|가|의|이면|면|이야|야|이에요|예요|요)?\s*$/;
 
 /** 서비스 이름·줄임말 그대로인지(띄어쓰기·대소문자 무시). */
 function isExactName(text: string, subscriptions: readonly Subscription[]): boolean {
@@ -198,6 +198,12 @@ function serviceNameIn(text: string, subscriptions: readonly Subscription[]): st
  */
 function serviceCall(q: string, subscriptions: readonly Subscription[]): AskCall | null {
   const text = q.replace(/[?？!！.。~]+$/, "").trim();
+  // "카톡 이모티콘 플러스 해지하면 얼마 아껴?"는 앞으로 아낄 돈이다 — 이미 지킨 돈(savedSoFar)이 아니라 그 서비스의 1년 요금.
+  const cancelSave = /환불|위약금|수수료|위약/.test(text) ? null : CANCEL_SAVE.exec(text);
+  if (cancelSave) {
+    const name = serviceNameIn(text.slice(0, cancelSave.index), subscriptions);
+    return name ? { tool: "serviceDetail", args: { service: name, period: "year" } } : null;
+  }
   if (NOT_DETAIL.test(text)) return null;
   const cheaper = CHEAPER_WORD.exec(text);
   if (cheaper) {
@@ -214,7 +220,7 @@ function serviceCall(q: string, subscriptions: readonly Subscription[]): AskCall
     const amount = AMOUNT_DETAIL.exec(after);
     const asks = amount
       ? DETAIL_WORD.exec(after)?.index === amount.index &&
-        !/결제일|청구일|몇s*번|횟수/.test(after) &&
+        !/결제일|청구일|몇\s*번|횟수/.test(after) &&
         /^(?:구독\s*(?:하면|하려면|할\s*때|시)?)?$/.test(after.slice(0, amount.index).trim())
       : NAME_ONLY_TAIL.test(after) && after.replace(NAME_ONLY_TAIL, "") === "";
     if (!asks || !before) return null;
@@ -227,11 +233,46 @@ function serviceCall(q: string, subscriptions: readonly Subscription[]): AskCall
   return name ? { tool: "serviceDetail", args: { service: name } } : null;
 }
 
+/** 서비스 하나를 해지하면 얼마를 아끼는지(앞으로). */
+const CANCEL_SAVE =
+  /\s*(?:을|를|은|는)?\s*(?:해지|취소|끊|그만\s*두|안\s*하)\s*(?:하면|으면|면|한다면|하면은|하고\s*나면)?.{0,10}(?:얼마|아껴|아낄|아끼|절약|굳|세이브)/;
+
+/** 여러 서비스를 잇는 말. 이름 안의 띄어쓰기("쿠팡 와우")는 나누지 않으므로 '와'·'과'는 뒤에 띄어쓰기가 있을 때만 본다. */
+const SERVICE_JOINER = /\s*(?:,|，|、|\+|&|이랑|랑|하고|및|그리고|(?<=\S)(?:와|과)\s)\s*/;
+
+/**
+ * 이름을 댄 서비스 여러 개의 합계("넷플이랑 티빙 합쳐서 얼마"). 이름이 둘 이상이고 모두 서비스 이름이어야 한다. 예전에는
+ * AI가 이것을 OTT 전체(spendByCategory)로 읽어, 두 개를 물었는데 쿠팡 와우·유튜브까지 더한 숫자를 답했다.
+ */
+function serviceSumCall(q: string, subscriptions: readonly Subscription[]): AskCall | null {
+  const text = q.replace(/[?？!！.。~]+$/, "").trim();
+  const amount = asksAmount.exec(text);
+  if (!amount || NOT_SPEND.test(text)) return null;
+  const sumWord = /합쳐|합치|합해|합하|다\s*해서|더하면|모두|전부|둘\s*다|셋\s*다/.exec(text);
+  const end = sumWord && sumWord.index < amount.index ? sumWord.index : amount.index;
+  const head = text.slice(0, end).trim();
+  let parts = head.split(SERVICE_JOINER).filter(Boolean);
+  if (parts.length < 2) parts = head.split(/\s+/);
+  if (parts.length < 2 || parts.length > 5) return null;
+  const names: string[] = [];
+  for (const part of parts) {
+    // "웨이브 1년에"처럼 기간이 붙은 마지막 이름에서 기간을 뗀다.
+    const name = serviceNameIn(part.replace(SERVICE_YEAR, " ").trim(), subscriptions);
+    if (!name) return null;
+    names.push(name);
+  }
+  const year = yearly.test(text) && !monthly.test(text);
+  return {
+    tool: "serviceSum",
+    args: year ? { services: names.join(", "), period: "year" } : { services: names.join(", ") },
+  };
+}
+
 /** 1회당 비용 순위를 묻는 말. 아까운 쪽(worst)과 가성비 좋은 쪽(best). 요금이 싼 구독("가장 싼 구독")은 순위가 아니다. */
 const RANK_WORST =
-  /아까운|아깝|아까웠|손해|후회|가성비\s*(?:가|이)?\s*(?:제일|가장)?\s*(?:떨어|나쁜|안\s*좋|최악|낮)|(?:쓰는|사용|쓴)\s*(?:거|것|만큼|빈도|량)?.{0,10}(?:비해|대비|낮은데|적은데).{0,12}(?:비싼|많이\s*(?:들|나가)|안\s*좋)|한\s*번\s*쓸\s*때.{0,6}비싼|(?:1회|한\s*번)\s*(?:당|단가).{0,6}(?:비싼|높)|적게\s*쓰는데|비용\s*대비\s*사용량.{0,8}안\s*좋/;
+  /아까운|아깝|아까웠|손해|후회|가성비\s*(?:가|이)?\s*(?:제일|가장)?\s*(?:떨어|나쁜|안\s*좋|최악|낮)|(?:쓰는|사용|쓴)\s*(?:거|것|만큼|빈도|량)?.{0,10}(?:비해|대비|낮은데|적은데).{0,12}(?:비싼|많이\s*(?:들|나가)|안\s*좋)|한\s*번\s*쓸\s*때.{0,6}비싼|(?:1회|한\s*번)\s*(?:당|단가).{0,6}(?:비싼|높)|적게\s*쓰는데|비용\s*대비\s*사용량.{0,8}안\s*좋|본전\s*(?:도|을)?\s*못/;
 const RANK_BEST =
-  /가성비\s*(?:가|이)?\s*(?:제일|가장)?\s*(?:좋|최고)|(?:제일|가장)\s*가성비|(?:1회|한\s*번)\s*(?:당|단가).{0,8}(?:낮|싼|저렴)|비용\s*효율|경제적/;
+  /가성비\s*(?:가|이)?\s*(?:제일|가장)?\s*(?:좋|최고)|(?:제일|가장)\s*가성비|(?:1회|한\s*번)\s*(?:당|단가).{0,8}(?:낮|싼|저렴)|비용\s*효율|경제적|본전\s*(?:을\s*)?(?:뽑|건지)/;
 const KOREAN_COUNT: Record<string, number> = { 한: 1, 두: 2, 세: 3, 네: 4, 다섯: 5 };
 
 /** 순위 질문이면 그 호출. 개수를 말했을 때만 limit을 둔다(1~5). 안 쓰는 구독·요금제가 섞이면 null. */
@@ -267,6 +308,21 @@ const NOT_SUBSCRIPTION_MONEY =
 const USAGE_RANK =
   /(?:가장|제일|젤)\s*(?:많이|자주|오래)\s*(?:쓰|쓴|사용|이용|보는|본|듣|들은)|(?:사용|이용)\s*(?:량|시간|횟수)\s*(?:이|가)?\s*(?:가장|제일|젤)\s*(?:많|긴|길|높)/;
 const MONEY_WORD = /돈|비용|요금|구독\s*(?:비|료)|얼마|[0-9]\s*원|나가/;
+
+/**
+ * 요금이 비싼·싼 구독(priceRank). 쓴 만큼에 비해서가 아니라 금액 그대로다 — AI는 "제일 비싼 구독 뭐야"를 가성비 순위로
+ * 읽어 "가장 아까운 구독은 티빙"이라고 다른 질문의 답을 했다. 한 번 쓸 때·가성비·쓰는 것 대비는 1회 단가 순위(rankCall)고,
+ * 요금제는 서비스 하나의 더 싼 요금제(serviceCall)다.
+ */
+const PRICE_HIGH =
+  /(?:제일|가장|젤)\s*(?:비싼|비싸|요금\s*(?:이\s*)?(?:높|센|비싼)|돈\s*(?:이\s*)?(?:많이\s*)?(?:나가|드는|들어가))|(?:돈|요금)\s*(?:이\s*)?(?:제일|가장|젤)\s*(?:많이\s*)?(?:나가|드는|들어가|비싼|높|센)/;
+const PRICE_LOW = /(?:제일|가장|젤)\s*(?:싼|싸|저렴|요금\s*(?:이\s*)?(?:낮|싼|적))/;
+const NOT_PRICE = /쓸\s*때|1회|한\s*번|단가|가성비|비해|대비|사용|쓰는|쓴|요금제|날|언제|요일|날짜/;
+
+/** 구독이 몇 개인지. 지출 합계의 답("구독 5개에 한 달 ₩55,280을 내요")이 개수를 말한다. 결제 예정·체험·해지의 개수는 아니다. */
+const SUB_COUNT =
+  /구독\s*(?:중인\s*(?:거|것|서비스)?|하는\s*(?:거|것|서비스)?)?\s*(?:이|은|을|가|는)?\s*(?:지금\s*)?(?:총|전부|모두|다)?\s*몇\s*(?:개|가지)|how many subscriptions/;
+const NOT_SUB_COUNT = /결제|청구|체험|해지|취소|끊|안\s*쓰|겹|중복|이번\s*주|다음\s*주|며칠|\d/;
 
 /** 인사·뜻 없는 짧은 말("ㅎㅇ", "안녕"). 물어볼 수 있는 것을 보여 준다(unsupported) — 사용법(help)이 아니다. */
 const SMALL_TALK =
@@ -314,6 +370,9 @@ const NOT_SPEND =
   /인상|올랐|오르|오른|내린|소식|평균|왜|이유|알림|비교|보통|예산|추천|줄었|늘었|증가|감소|변화/;
 const yearly = /1년|일년|한\s*해|연간|연\s*단위|올해|1\s*년|12\s*개월|열두\s*달|year|annual/;
 const monthly = /한\s*달|1달|월\s*(?:에|마다|고정|구독)|매달|매월|달에|월간|month/;
+/** 기간을 정하지 않고 쌓인 것 전부(지킨 돈의 `all`). 대시보드·절약 현황의 '해지로 지킨 돈'이 이 숫자다. */
+const allTime =
+  /지금까지|여태(?:껏|까지)?|여지껏|이제까지|그동안|누적|통틀어|전체\s*기간|처음부터|so far|in total|all time|to date/;
 
 // ── 기간만 바꾸는 꼬리 질문 ──────────────────────────────────────
 
@@ -326,6 +385,9 @@ const WHOLE_YEAR =
   /^(?:1\s*년|일\s*년|한\s*해|연간|연\s*단위|1\s*년\s*치|일\s*년\s*치|12\s*개월|열두\s*달|올해|(?:a|per|for a|for the|this|one|the)\s+year|yearly|annually|annual)$/;
 const WHOLE_MONTH =
   /^(?:한\s*달|1\s*달|한\s*달\s*치|월|월간|매달|매월|이번\s*달|(?:a|per|for a|for the|this|one|the)\s+month|monthly)$/;
+/** 기간 말 전체가 '지금까지'인지. 지킨 돈(savedSoFar)만 이 기간을 받는다. */
+const WHOLE_ALL_TIME =
+  /^(?:지금까지|여태(?:껏|까지)?|이제까지|그동안|누적|전체|통틀어|so far|in total|all time)$/;
 /** 일수로 읽는 기간 말 전체(결제 예정·체험 종료의 꼬리 질문). 읽는 것은 `parseDays`가 한다. */
 const WHOLE_DAYS =
   /^(?:\d{1,2}\s*일|\d\s*주|이번\s*주|다음\s*주(?:까지)?|일주일|한\s*주|내일|모레|오늘|월말|이번\s*달\s*(?:말|안)|(?:next|within|in)\s+\d{1,2}\s+days?|\d\s+weeks?|this week|next week|tomorrow|today|end of (?:the )?month)(?:\s*(?:안|내|이내|동안|까지))?$/;
@@ -345,7 +407,9 @@ export function periodFollowUp(question: string, previous: AskCall, now: Date): 
   const period = WHOLE_YEAR.test(phrase) ? "year" : WHOLE_MONTH.test(phrase) ? "month" : null;
   switch (previous.tool) {
     case "spendTotal":
+      return period ? { tool: previous.tool, args: { period } } : null;
     case "savedSoFar":
+      if (WHOLE_ALL_TIME.test(phrase)) return { tool: previous.tool, args: { period: "all" } };
       return period ? { tool: previous.tool, args: { period } } : null;
     case "spendByCategory": {
       if (!period) return null;
@@ -413,6 +477,8 @@ export function localAskCall(
   if (options.hasHistory && FOLLOW_UP.test(q)) return null;
   if (ACTION_REQUEST.test(q) || NOT_SUBSCRIPTION_MONEY.test(q)) return { tool: "unsupported" };
   if (ofService) return ofService;
+  const sum = serviceSumCall(q, subscriptions);
+  if (sum) return sum;
   if (USAGE_RANK.test(q) && !MONEY_WORD.test(q) && !mentionsService(q, subscriptions)) {
     return { tool: "unsupported" };
   }
@@ -427,6 +493,23 @@ export function localAskCall(
   // 1회당 비용 순위
   const rank = rankCall(q);
   if (rank) return rank;
+  // 요금 순위. 분류를 함께 물으면("OTT 중에 제일 비싼") 분류를 받지 않으므로 AI에 맡긴다.
+  if (!NOT_PRICE.test(q) && categories.length === 0) {
+    const high = PRICE_HIGH.test(q);
+    const low = PRICE_LOW.test(q);
+    if (high !== low) {
+      const m = /(\d+)\s*(?:개|가지|위)|top\s*(\d+)|(한|두|세|네|다섯)\s*(?:개|가지)/.exec(q);
+      const count = m ? Number(m[1] ?? m[2]) || KOREAN_COUNT[m[3]] : undefined;
+      if (count === undefined || (count >= 1 && count <= 5)) {
+        const order = high ? "high" : "low";
+        return { tool: "priceRank", args: count ? { order, limit: count } : { order } };
+      }
+    }
+  }
+  // 구독 개수
+  if (SUB_COUNT.test(q) && !NOT_SUB_COUNT.test(q) && categories.length === 0) {
+    return { tool: "spendTotal", args: { period: "month" } };
+  }
   // 지난달과 비교. 앱에는 달별 기록이 없어 답은 이번 달에 등록·해지한 구독으로 한다(answer의 compareLastMonth).
   if (
     /지난\s*달|저번\s*달|전월/.test(q) &&
@@ -446,8 +529,14 @@ export function localAskCall(
   }
 
   // 무료 체험이 끝나는 구독
-  if (/무료\s*체험|체험|trial/.test(q)) {
-    if (!/끝|종료|만료|end/.test(q)) return null;
+  if (/무료\s*체험|체험|trial|공짜\s*(?:기간|로|인|였)|무료\s*(?:기간|로)/.test(q)) {
+    // "공짜로 쓰다가 곧 돈 나가는 거"도 체험이 끝나는 것을 묻는 말이다.
+    if (
+      !/끝|종료|만료|end|돈\s*(?:이\s*)?(?:나가|내|빠져)|유료|결제\s*(?:가\s*)?(?:시작|되|돼)/.test(
+        q,
+      )
+    )
+      return null;
     const days = parseDays(q, options.now);
     // 기간을 적었는데 읽지 못했으면("week's trial") 31일로 넓히지 않고 AI에 맡긴다
     if (days === null && PERIOD_WORDS.test(q)) return null;
@@ -461,7 +550,10 @@ export function localAskCall(
   ) {
     const isYear = yearly.test(q);
     const isMonth = /이번\s*달|한\s*달|this month/.test(q);
-    if (isYear && isMonth) return null;
+    const isAll = allTime.test(q);
+    if (Number(isYear) + Number(isMonth) + Number(isAll) > 1) return null;
+    // "지금까지 아낀 돈"을 이번 달로 답하면 대시보드의 '해지로 지킨 돈'과 다른 숫자가 됐다.
+    if (isAll) return { tool: "savedSoFar", args: { period: "all" } };
     // 기간을 적지 않았으면 이번 달로 답한다. 답에 '올해로 보기'를 둬 올해를 물은 것이었으면 바꾸게 한다(answer의 switchTo).
     return { tool: "savedSoFar", args: { period: isYear ? "year" : "month" } };
   }

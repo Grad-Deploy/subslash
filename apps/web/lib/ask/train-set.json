@@ -2529,5 +2529,207 @@
       "tool": "unsupported"
     },
     "locale": "ko"
+  },
+  {
+    "q": "지금까지 아낀 돈",
+    "call": {
+      "tool": "savedSoFar",
+      "args": {
+        "period": "all"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "여태까지 구독 해지로 절약한 금액",
+    "call": {
+      "tool": "savedSoFar",
+      "args": {
+        "period": "all"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "누적으로 지킨 돈 얼마야",
+    "call": {
+      "tool": "savedSoFar",
+      "args": {
+        "period": "all"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "그동안 해지해서 아낀 돈 총 얼마?",
+    "call": {
+      "tool": "savedSoFar",
+      "args": {
+        "period": "all"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "제일 비싼 구독 뭐야",
+    "call": {
+      "tool": "priceRank",
+      "args": {
+        "order": "high"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "가장 싼 구독은?",
+    "call": {
+      "tool": "priceRank",
+      "args": {
+        "order": "low"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "돈 제일 많이 나가는 구독",
+    "call": {
+      "tool": "priceRank",
+      "args": {
+        "order": "high"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "티빙 언제 결제돼",
+    "call": {
+      "tool": "serviceDetail",
+      "args": {
+        "service": "티빙"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "웨이브 결제는 언제야",
+    "call": {
+      "tool": "serviceDetail",
+      "args": {
+        "service": "웨이브"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "구독 몇 개야?",
+    "call": {
+      "tool": "spendTotal",
+      "args": {
+        "period": "month"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "구독 중인 거 총 몇 개야",
+    "call": {
+      "tool": "spendTotal",
+      "args": {
+        "period": "month"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "본전 뽑는 구독 알려줘",
+    "call": {
+      "tool": "costPerUseRank",
+      "args": {
+        "order": "best"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "본전도 못 뽑는 구독",
+    "call": {
+      "tool": "costPerUseRank",
+      "args": {
+        "order": "worst"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "공짜 기간 끝나는 거",
+    "call": {
+      "tool": "trialsEnding",
+      "args": {
+        "days": 31
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "무료로 쓰다가 유료로 바뀌는 구독 있어?",
+    "call": {
+      "tool": "trialsEnding",
+      "args": {
+        "days": 31
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "넷플이랑 티빙 합쳐서 얼마",
+    "call": {
+      "tool": "serviceSum",
+      "args": {
+        "services": "넷플, 티빙"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "왓챠, 라프텔 둘 다 해서 한 달에 얼마야",
+    "call": {
+      "tool": "serviceSum",
+      "args": {
+        "services": "왓챠, 라프텔"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "카톡 이모티콘 플러스 해지하면 얼마 아껴?",
+    "call": {
+      "tool": "serviceDetail",
+      "args": {
+        "service": "카톡 이모티콘 플러스",
+        "period": "year"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "넷플릭스 끊으면 얼마 아낄 수 있어",
+    "call": {
+      "tool": "serviceDetail",
+      "args": {
+        "service": "넷플릭스",
+        "period": "year"
+      }
+    },
+    "locale": "ko"
+  },
+  {
+    "q": "하루에 구독비 얼마꼴이야?",
+    "call": {
+      "tool": "spendTotal",
+      "args": {
+        "period": "month"
+      }
+    },
+    "locale": "ko"
   }
 ]

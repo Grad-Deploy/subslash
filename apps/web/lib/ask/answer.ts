@@ -8,13 +8,12 @@ import {
   getMyMonthlyAmountKRW,
   getNextBillingDateFor,
   getPlanAlternatives,
+  getSavingsTiers,
   isInTrial,
   metricOfLog,
   planCurrency,
   sumMyAnnualKRW,
-  sumMyMonthDefendedKRW,
   sumMyMonthlyKRW,
-  sumMyYearDefendedKRW,
   type ServicePreset,
   type Subscription,
   type UsageLog,
@@ -25,7 +24,7 @@ import { planName, presetName, serviceIdName, subscriptionName } from "@lib/serv
 import type { Locale } from "@lib/i18n/config";
 import { describeQuantityText } from "@lib/i18n/check-in-text";
 import type { Messages } from "@lib/i18n/messages";
-import type { AskCall } from "./tools";
+import { splitServiceNames, type AskCall } from "./tools";
 import { compactName } from "./fuzzy";
 import { matchPresets, matchSubscriptions } from "./service-match";
 
@@ -77,6 +76,9 @@ function isAskedName(query: string, asked: readonly string[] | undefined): boole
   const wanted = compactName(query);
   return wanted !== "" && asked.some((text) => compactName(text).includes(wanted));
 }
+
+/** 하루치를 묻는 말("하루에 구독비 얼마꼴이야?"). 한 달 합계에 하루치를 함께 적는다. */
+const PER_DAY = /하루|일당|매일|per day|a day|daily/i;
 
 function answer(
   headline: string,
@@ -174,14 +176,74 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       if (active.length === 0) return noSubscriptions();
       const year = args.period === "year";
       const total = year ? sumMyAnnualKRW(subs, ctx.rate) : sumMyMonthlyKRW(subs, ctx.rate);
+      // "하루에 구독비 얼마꼴이야?"에 한 달 합계만 말하면 묻는 기간과 다른 숫자다. 하루치를 함께 적는다.
+      const perDay = !year && PER_DAY.test(ctx.asked?.[0] ?? "");
       return answer(
         year
           ? k.spend.year(subs.length, formatKRW(total))
           : k.spend.month(subs.length, formatKRW(total)),
         year ? k.spend.sourceYear : k.spend.sourceMonth,
         [],
-        trialNote,
+        [...(perDay ? [k.spend.perDay(formatKRW(Math.round(total / 30)))] : []), ...trialNote],
       );
+    }
+
+    case "serviceSum": {
+      // 이름을 댄 서비스만 더한다("넷플이랑 티빙 합쳐서 얼마"). 예전에는 OTT 전체(쿠팡 와우·유튜브까지)를 더했다.
+      // 이름이 여러 구독에 맞으면 하나를 골라 더하지 않고, 구독하지 않는 이름은 빼고 그렇게 적는다.
+      if (active.length === 0) return noSubscriptions();
+      const sm = k.sum;
+      const year = args.period === "year";
+      const names = splitServiceNames(String(args.services)).filter((name) =>
+        isAskedName(name, ctx.asked),
+      );
+      if (names.length === 0) return answerAsk({ tool: "unsupported" }, ctx);
+      const counted = new Map<string, Subscription>();
+      const notSubscribed: string[] = [];
+      const ambiguous: string[] = [];
+      for (const name of names) {
+        const matches = matchSubscriptions(name, active);
+        if (matches.length === 0) {
+          // 서비스 목록의 서비스면 화면 언어의 이름으로 적는다(영어 화면에 "웨이브" 대신 "Wavve").
+          const presets = matchPresets(name);
+          notSubscribed.push(presets.length === 1 ? presetName(presets[0], locale) : name);
+        } else if (matches.length > 1) ambiguous.push(sm.many(name, matches.length));
+        else counted.set(matches[0].id, matches[0]);
+      }
+      const found = [...counted.values()];
+      const payingNow = found.filter((sub) => !isInTrial(sub, ctx.now));
+      const trials = found.length - payingNow.length;
+      const notes = [
+        ...(notSubscribed.length > 0 ? [sm.notSubscribed(notSubscribed.join(sm.join))] : []),
+        ...ambiguous,
+        ...(trials > 0 ? [k.trialNote(trials)] : []),
+      ];
+      if (payingNow.length === 0) return answer(sm.none, sm.source, [], notes);
+      const total = year
+        ? sumMyAnnualKRW(payingNow, ctx.rate)
+        : sumMyMonthlyKRW(payingNow, ctx.rate);
+      const amountOf = year ? getMyAnnualAmountKRW : getMyMonthlyAmountKRW;
+      const label = payingNow.map(nameOf).join(sm.join);
+      return {
+        ...answer(
+          year ? sm.year(label, formatKRW(total)) : sm.month(label, formatKRW(total)),
+          sm.source,
+          payingNow.map((sub) => ({
+            label: nameOf(sub),
+            value: formatKRW(amountOf(sub, ctx.rate)),
+          })),
+          notes,
+        ),
+        switchTo: {
+          label: year ? k.service.switchMonth : k.service.switchYear,
+          call: {
+            tool: "serviceSum",
+            args: year
+              ? { services: String(args.services) }
+              : { services: String(args.services), period: "year" },
+          },
+        },
+      };
     }
 
     case "spendByCategory": {
@@ -234,6 +296,28 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         k.rank.source,
         top.map((row) => ({ label: nameOf(row.sub), value: per(row) })),
         rows.length < subs.length ? [k.rank.skipped] : [],
+      );
+    }
+
+    case "priceRank": {
+      // 쓴 만큼이 아니라 요금 순위다("제일 비싼 구독"). 금액은 지출 합계와 같은 내 몫 한 달치다.
+      if (active.length === 0) return noSubscriptions();
+      if (subs.length === 0) return answer(k.price.none, k.price.source, [], trialNote);
+      const high = args.order !== "low";
+      const ranked = subs
+        .map((sub) => ({ sub, amount: getMyMonthlyAmountKRW(sub, ctx.rate) }))
+        .sort((a, b) => (high ? b.amount - a.amount : a.amount - b.amount));
+      const limit = typeof args.limit === "number" ? args.limit : 3;
+      const top = ranked.slice(0, limit);
+      const first = top[0];
+      return answer(
+        (high ? k.price.high : k.price.low)(nameOf(first.sub), formatKRW(first.amount)),
+        k.price.source,
+        top.map(({ sub, amount }) => ({ label: nameOf(sub), value: formatKRW(amount) })),
+        [
+          ...(top.some(({ sub }) => sub.billingCycle === "yearly") ? [k.price.yearlyNote] : []),
+          ...trialNote,
+        ],
       );
     }
 
@@ -420,20 +504,38 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const sv = k.saved;
       const killed = ctx.subscriptions.filter((sub) => sub.status === "killed");
       if (killed.length === 0) return answer(sv.none, sv.source);
-      const month = args.period === "month";
-      const summary = month
-        ? sumMyMonthDefendedKRW(killed, ctx.now.getFullYear(), ctx.now.getMonth() + 1, ctx.rate)
-        : sumMyYearDefendedKRW(killed, ctx.now.getFullYear(), ctx.rate);
+      // 절약 현황·대시보드의 '해지로 지킨 돈'과 같은 함수로 센다. 예전에는 올해의 남은 결제일과 결제가 멈췄는지 확인하지
+      // 않은 해지까지 더해, "올해 ₩71,100을 지켰어요"라고 말하는 옆 화면이 "지금까지 지킨 돈 ₩39,500"이었다.
+      const period = args.period === "year" || args.period === "all" ? args.period : "month";
+      const now = ctx.now;
+      const from =
+        period === "month"
+          ? new Date(now.getFullYear(), now.getMonth(), 1)
+          : period === "year"
+            ? new Date(now.getFullYear(), 0, 1)
+            : undefined;
+      const tiers = getSavingsTiers(killed, now, ctx.rate, { from, to: now });
+      const amount = formatKRW(tiers.confirmed);
+      const notes = [
+        ...(tiers.pending > 0 ? [sv.pending(formatKRW(tiers.pending), tiers.pendingCount)] : []),
+        ...(tiers.unknownCount > 0 ? [sv.unknown(tiers.unknownCount)] : []),
+      ];
+      const next = period === "month" ? "year" : period === "year" ? "all" : "month";
       return {
         ...answer(
-          month ? sv.month(formatKRW(summary.amount)) : sv.year(formatKRW(summary.amount)),
-          month ? sv.sourceMonth : sv.sourceYear,
+          period === "month"
+            ? sv.month(amount)
+            : period === "year"
+              ? sv.year(amount)
+              : sv.all(amount),
+          period === "month" ? sv.sourceMonth : period === "year" ? sv.sourceYear : sv.sourceAll,
           [],
-          summary.unknownCount > 0 ? [sv.unknown(summary.unknownCount)] : [],
+          notes,
         ),
-        switchTo: month
-          ? { label: sv.switchYear, call: { tool: "savedSoFar", args: { period: "year" } } }
-          : { label: sv.switchMonth, call: { tool: "savedSoFar", args: { period: "month" } } },
+        switchTo: {
+          label: next === "year" ? sv.switchYear : next === "all" ? sv.switchAll : sv.switchMonth,
+          call: { tool: "savedSoFar", args: { period: next } },
+        },
       };
     }
 

@@ -328,7 +328,7 @@ export const vi: Widen<typeof ko> = {
   signup: {
     title: "Đăng ký",
     intro:
-      "Dữ liệu đăng ký được lưu trên thiết bị này. Khi đăng ký, dữ liệu cũng được lưu vào tài khoản và tự động đồng bộ giữa các thiết bị của bạn.",
+      "Dữ liệu đăng ký được lưu trên thiết bị này. Khi tạo tài khoản, dữ liệu cũng được lưu vào tài khoản và tự động đồng bộ giữa các thiết bị của bạn.",
     optionalTitle: "Không cần tài khoản vẫn dùng được SubSlash.",
     optionalBody: "Mọi tính năng đều dùng ngay trên thiết bị này; đăng nhập là tùy chọn.",
     syncNote:
@@ -390,7 +390,7 @@ export const fr: Widen<typeof ko> = {
   login: {
     title: "Connexion",
     intro:
-      "Vos abonnements sont enregistrés sur cet appareil. Une fois connecté, ils sont aussi enregistrés dans votre compte et synchronisés automatiquement entre vos appareils.",
+      "Vos abonnements sont enregistrés sur cet appareil. Si vous vous connectez, ils sont aussi enregistrés dans votre compte et synchronisés automatiquement entre vos appareils.",
     identifier: "Identifiant ou e-mail",
     identifierPlaceholder: "identifiant ou you@example.com",
     password: "Mot de passe",
@@ -405,7 +405,7 @@ export const fr: Widen<typeof ko> = {
   signup: {
     title: "Inscription",
     intro:
-      "Vos abonnements sont enregistrés sur cet appareil. Une fois inscrit, ils sont aussi enregistrés dans votre compte et synchronisés automatiquement entre vos appareils.",
+      "Vos abonnements sont enregistrés sur cet appareil. Si vous créez un compte, ils y sont aussi enregistrés et synchronisés automatiquement entre vos appareils.",
     optionalTitle: "Vous pouvez utiliser SubSlash sans compte.",
     optionalBody: "Tout fonctionne directement sur cet appareil ; la connexion est facultative.",
     syncNote:
@@ -544,7 +544,7 @@ export const de: Widen<typeof ko> = {
   login: {
     title: "Anmelden",
     intro:
-      "Deine Abos sind auf diesem Gerät gespeichert. Wenn du dich anmeldest, werden sie auch in deinem Konto gespeichert und automatisch zwischen deinen Geräten abgeglichen.",
+      "Deine Abos sind auf diesem Gerät gespeichert. Wenn du dich anmeldest, werden sie auch in deinem Konto gespeichert und automatisch zwischen deinen Geräten synchronisiert.",
     identifier: "Benutzername oder E-Mail",
     identifierPlaceholder: "Benutzername oder you@example.com",
     password: "Passwort",
@@ -560,7 +560,7 @@ export const de: Widen<typeof ko> = {
   signup: {
     title: "Registrieren",
     intro:
-      "Deine Abos sind auf diesem Gerät gespeichert. Wenn du dich registrierst, werden sie auch in deinem Konto gespeichert und automatisch zwischen deinen Geräten abgeglichen.",
+      "Deine Abos sind auf diesem Gerät gespeichert. Wenn du dich registrierst, werden sie auch in deinem Konto gespeichert und automatisch zwischen deinen Geräten synchronisiert.",
     optionalTitle: "Du kannst SubSlash ohne Konto nutzen.",
     optionalBody: "Alles funktioniert direkt auf diesem Gerät; die Anmeldung ist freiwillig.",
     syncNote:
