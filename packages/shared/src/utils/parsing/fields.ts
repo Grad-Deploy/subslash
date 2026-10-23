@@ -47,7 +47,10 @@ export function extractAmount(
   // "9,900원부터", "starting at $20"은 안내 가격이지 이 메일의 결제액이 아니다. 광고 문구의
   // 가격을 결제액으로 읽으면, 쓰지도 않는 요금제가 지출에 잡힌다.
   const amountScanText = normalized
-    .replace(/(?:₩\s*[0-9,]+|[0-9,]+\s*원|\$\s*[0-9.]+|[0-9.]+\s*USD)\s*(?:부터|~)/gi, " ")
+    .replace(
+      /(?:₩\s*[0-9,]+|[0-9,]+\s*원|\$\s*[0-9.]+|[0-9.]+\s*USD|USD\s*[0-9.,]+)\s*(?:부터|~)/gi,
+      " ",
+    )
     .replace(
       /(?:starting\s*(?:at|from)|정가|할인가)\s*(?:₩\s*[0-9,]+|\$\s*[0-9.]+|[0-9,]+\s*원)/gi,
       " ",
@@ -55,11 +58,15 @@ export function extractAmount(
 
   // KRW patterns: 17,000원, 17000원, ₩17,000
   const krwMatch = amountScanText.match(/(?:₩\s*([0-9,]+)|([0-9,]+)\s*원)/i);
-  // USD patterns: $20, $0.99, 20.00 USD, 20 USD
-  const usdMatch = amountScanText.match(/(?:\$\s*([0-9.]+)|([0-9.]+)\s*USD)/i);
+  // USD patterns: $20, $0.99, 20.00 USD, 20 USD, USD 20.00
+  // 카드사 해외승인 문자는 통화를 앞에 적는다("[신한카드] 해외승인 USD 20.00") — 뒤에 적는 것만 보면
+  // 그 문자에서 결제를 찾지 못했다.
+  const usdMatch = amountScanText.match(
+    /(?:\$\s*([0-9.]+)|([0-9.]+)\s*USD|USD\s*([0-9][0-9,]*(?:\.[0-9]+)?))/i,
+  );
 
   if (usdMatch) {
-    const parsedVal = parseFloat((usdMatch[1] || usdMatch[2]).replace(/,/g, ""));
+    const parsedVal = parseFloat((usdMatch[1] || usdMatch[2] || usdMatch[3]).replace(/,/g, ""));
     if (!isNaN(parsedVal) && parsedVal > 0) return { amount: parsedVal, currency: "USD" };
   } else if (labeledNumberMatch) {
     // 라벨이 가리키는 값이라, 본문 아무 곳의 숫자(적립금·할인액)보다 믿을 만하다.
@@ -110,7 +117,10 @@ export function extractBillingDate(
     takeDate(String(received.month), String(received.day));
   } else {
     // Strip currency amounts so numbers like "$20.00" are not mistaken for MM.DD
-    const dateScanText = normalized.replace(/\$\s*[0-9.]+/g, "").replace(/[0-9.]+\s*USD/gi, "");
+    const dateScanText = normalized
+      .replace(/\$\s*[0-9.]+/g, "")
+      .replace(/[0-9.]+\s*USD/gi, "")
+      .replace(/USD\s*[0-9.,]+/gi, "");
 
     // 연도가 붙은 날짜를 먼저 읽는다. "2026.09.05"를 월·일만 훑으면 연도 끝과 월이 "6.09"로
     // 붙어 9일이 된다 — 실제 결제일(5일)과 나흘이 어긋난다.
