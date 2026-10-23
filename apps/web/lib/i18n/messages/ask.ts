@@ -33,6 +33,16 @@ export const ko = {
       year: (count: number, amount: string) => `구독 ${count}개에 1년 ${amount}을 내요.`,
       sourceMonth: "내 몫 한 달 합계",
       sourceYear: "내 몫 1년 합계",
+      perDay: (amount: string) => `하루로 나누면 약 ${amount}꼴이에요(한 달을 30일로 셈).`,
+    },
+    sum: {
+      join: "·",
+      month: (names: string, amount: string) => `${names}에 한 달 ${amount}을 내요.`,
+      year: (names: string, amount: string) => `${names}에 1년 ${amount}을 내요.`,
+      none: "말한 서비스 중 구독 중인 것이 없어요.",
+      source: "말한 구독의 내 몫 합계",
+      notSubscribed: (names: string) => `구독하지 않아 빼고 셌어요: ${names}`,
+      many: (name: string, count: number) => `‘${name}’에 맞는 구독이 ${count}개라 빼고 셌어요.`,
     },
     category: {
       none: (label: string) => `${withJosa(label, "으로", "로")} 등록한 구독이 없어요.`,
@@ -55,6 +65,15 @@ export const ko = {
       perZero: "0회 (한 번도 안 씀)",
       perUse: (amount: string) => `1회 ${amount}`,
       skipped: "체크인하지 않았거나 횟수로 재지 않는 구독은 순위에서 빠졌어요.",
+    },
+    price: {
+      none: "결제 중인 구독이 없어요.",
+      source: "내 몫 한 달 금액",
+      high: (name: string, amount: string) =>
+        `가장 비싼 구독은 ${withJosa(name, "이에요", "예요")}. 한 달 ${amount}.`,
+      low: (name: string, amount: string) =>
+        `가장 싼 구독은 ${withJosa(name, "이에요", "예요")}. 한 달 ${amount}.`,
+      yearlyNote: "1년에 한 번 내는 구독은 한 달치로 나눠 견줬어요.",
     },
     low: {
       total: (amount: string) => `합치면 한 달 ${amount}이에요.`,
@@ -148,6 +167,11 @@ export const ko = {
       year: (amount: string) => `해지해서 올해 ${amount}을 지켰어요.`,
       sourceMonth: "이번 달 지킨 돈",
       sourceYear: "올해 지킨 돈",
+      switchAll: "지금까지로 보기",
+      all: (amount: string) => `해지해서 지금까지 ${amount}을 지켰어요.`,
+      sourceAll: "지금까지 지킨 돈",
+      pending: (amount: string, count: number) =>
+        `해지 뒤 결제가 멈췄는지 아직 확인하지 않은 ${count}개(${amount})는 넣지 않았어요.`,
       unknown: (count: number) => `결제 월이나 해지 날을 몰라 ${count}개는 넣지 못했어요.`,
     },
     compare: {
@@ -193,6 +217,16 @@ export const en: Widen<typeof ko> = {
         `You pay ${amount} a year for ${count} ${one(count) ? "subscription" : "subscriptions"}.`,
       sourceMonth: "Your share, monthly total",
       sourceYear: "Your share, yearly total",
+      perDay: (amount) => `That's about ${amount} a day (counting a month as 30 days).`,
+    },
+    sum: {
+      join: ", ",
+      month: (names, amount) => `You pay ${amount} a month for ${names}.`,
+      year: (names, amount) => `You pay ${amount} a year for ${names}.`,
+      none: "None of the services you named are subscriptions you have.",
+      source: "Your share for the subscriptions you named",
+      notSubscribed: (names) => `Left out because you don't subscribe: ${names}`,
+      many: (name, count) => `Left out “${name}” because ${count} subscriptions match it.`,
     },
     category: {
       none: (label) => `You have no subscriptions in ${label}.`,
@@ -215,6 +249,13 @@ export const en: Widen<typeof ko> = {
       perUse: (amount) => `${amount} per use`,
       skipped:
         "Subscriptions without a check-in, or not measured by uses, are left out of the ranking.",
+    },
+    price: {
+      none: "You have no paid subscriptions.",
+      source: "Your share per month",
+      high: (name, amount) => `Your most expensive subscription is ${name}: ${amount} a month.`,
+      low: (name, amount) => `Your cheapest subscription is ${name}: ${amount} a month.`,
+      yearlyNote: "Yearly subscriptions were divided into a monthly amount to compare.",
     },
     low: {
       total: (amount) => `Together that's ${amount} a month.`,
@@ -312,6 +353,13 @@ export const en: Widen<typeof ko> = {
       year: (amount) => `Cancelling kept ${amount} this year.`,
       sourceMonth: "Money kept this month",
       sourceYear: "Money kept this year",
+      switchAll: "Show all time",
+      all: (amount) => `Cancelling has kept ${amount} so far.`,
+      sourceAll: "Money kept so far",
+      pending: (amount, count) =>
+        count === 1
+          ? `1 cancellation (${amount}) isn't counted yet because you haven't confirmed billing stopped.`
+          : `${count} cancellations (${amount}) aren't counted yet because you haven't confirmed billing stopped.`,
       unknown: (count) =>
         `${count} couldn't be included because the billing month or cancellation date is unknown.`,
     },
@@ -358,6 +406,16 @@ export const zh: Widen<typeof ko> = {
       year: (count, amount) => `你每年为 ${count} 个订阅支付 ${amount}。`,
       sourceMonth: "我的份额，每月合计",
       sourceYear: "我的份额，每年合计",
+      perDay: (amount) => `平均每天约 ${amount}（按每月 30 天计算）。`,
+    },
+    sum: {
+      join: "、",
+      month: (names, amount) => `${names} 每月共 ${amount}。`,
+      year: (names, amount) => `${names} 每年共 ${amount}。`,
+      none: "你说的服务中没有正在订阅的。",
+      source: "所说订阅的我承担金额合计",
+      notSubscribed: (names) => `未订阅，未计入：${names}`,
+      many: (name, count) => `“${name}”匹配到 ${count} 个订阅，未计入。`,
     },
     category: {
       none: (label) => `你在${label}中没有订阅。`,
@@ -378,6 +436,13 @@ export const zh: Widen<typeof ko> = {
       perZero: "使用 0 次（一次都没用）",
       perUse: (amount) => `每次 ${amount}`,
       skipped: "没有签到或不是按次数衡量的订阅不在排行中。",
+    },
+    price: {
+      none: "没有正在付费的订阅。",
+      source: "我承担的每月金额",
+      high: (name, amount) => `最贵的订阅是 ${name}，每月 ${amount}。`,
+      low: (name, amount) => `最便宜的订阅是 ${name}，每月 ${amount}。`,
+      yearlyNote: "按年付费的订阅已折算成每月金额来比较。",
     },
     low: {
       total: (amount) => `合计每月 ${amount}。`,
@@ -463,6 +528,10 @@ export const zh: Widen<typeof ko> = {
       year: (amount) => `今年通过退订守住了 ${amount}。`,
       sourceMonth: "本月守住的钱",
       sourceYear: "今年守住的钱",
+      switchAll: "看至今",
+      all: (amount) => `至今通过退订守住了 ${amount}。`,
+      sourceAll: "至今守住的钱",
+      pending: (amount, count) => `还有 ${count} 个退订（${amount}）尚未确认已停止扣款，未计入。`,
       unknown: (count) => `${count} 个因扣款月份或退订日期不明，未计入。`,
     },
     compare: {
@@ -505,6 +574,16 @@ export const ja: Widen<typeof ko> = {
       year: (count, amount) => `サブスク ${count} 件に年間 ${amount} 払っています。`,
       sourceMonth: "自分の負担分、月の合計",
       sourceYear: "自分の負担分、年の合計",
+      perDay: (amount) => `1日あたり約 ${amount} です（1か月を30日として計算）。`,
+    },
+    sum: {
+      join: "・",
+      month: (names, amount) => `${names} で月 ${amount} 払っています。`,
+      year: (names, amount) => `${names} で年 ${amount} 払っています。`,
+      none: "挙げたサービスの中に契約中のものがありません。",
+      source: "挙げたサブスクの自分の負担分の合計",
+      notSubscribed: (names) => `契約していないので除きました：${names}`,
+      many: (name, count) => `「${name}」に当てはまるサブスクが ${count} 件あるので除きました。`,
     },
     category: {
       none: (label) => `${label}のサブスクはありません。`,
@@ -525,6 +604,13 @@ export const ja: Widen<typeof ko> = {
       perZero: "0 回（一度も使っていません）",
       perUse: (amount) => `1 回 ${amount}`,
       skipped: "チェックインがないサブスクや回数で測らないサブスクはランキングから除いています。",
+    },
+    price: {
+      none: "支払い中のサブスクがありません。",
+      source: "自分の負担分（月額）",
+      high: (name, amount) => `いちばん高いサブスクは ${name} です。月 ${amount}。`,
+      low: (name, amount) => `いちばん安いサブスクは ${name} です。月 ${amount}。`,
+      yearlyNote: "年払いのサブスクは月額に割って比べました。",
     },
     low: {
       total: (amount) => `合わせて月 ${amount} です。`,
@@ -615,6 +701,11 @@ export const ja: Widen<typeof ko> = {
       year: (amount) => `今年は解約で ${amount} を守りました。`,
       sourceMonth: "今月守ったお金",
       sourceYear: "今年守ったお金",
+      switchAll: "これまでで見る",
+      all: (amount) => `これまでに解約で ${amount} を守りました。`,
+      sourceAll: "これまでに守ったお金",
+      pending: (amount, count) =>
+        `解約後に支払いが止まったかまだ確認していない ${count} 件（${amount}）は含めていません。`,
       unknown: (count) => `${count} 件は支払月か解約日がわからないので含められませんでした。`,
     },
     compare: {
@@ -658,6 +749,16 @@ export const vi: Widen<typeof ko> = {
       year: (count, amount) => `Bạn trả ${amount} mỗi năm cho ${count} gói đăng ký.`,
       sourceMonth: "Phần của bạn, tổng mỗi tháng",
       sourceYear: "Phần của bạn, tổng mỗi năm",
+      perDay: (amount) => `Tính ra khoảng ${amount} mỗi ngày (một tháng tính 30 ngày).`,
+    },
+    sum: {
+      join: ", ",
+      month: (names, amount) => `Bạn trả ${amount} mỗi tháng cho ${names}.`,
+      year: (names, amount) => `Bạn trả ${amount} mỗi năm cho ${names}.`,
+      none: "Không có dịch vụ nào bạn nêu đang được đăng ký.",
+      source: "Tổng phần bạn trả cho các gói đã nêu",
+      notSubscribed: (names) => `Không tính vì bạn không đăng ký: ${names}`,
+      many: (name, count) => `Không tính “${name}” vì có ${count} gói khớp.`,
     },
     category: {
       none: (label) => `Bạn không có gói nào trong ${label}.`,
@@ -678,6 +779,13 @@ export const vi: Widen<typeof ko> = {
       perZero: "0 lần (chưa dùng lần nào)",
       perUse: (amount) => `${amount} mỗi lần`,
       skipped: "Gói chưa check-in hoặc không đo theo số lần không có trong xếp hạng.",
+    },
+    price: {
+      none: "Bạn không có gói trả phí nào.",
+      source: "Phần bạn trả mỗi tháng",
+      high: (name, amount) => `Gói đắt nhất là ${name}: ${amount} mỗi tháng.`,
+      low: (name, amount) => `Gói rẻ nhất là ${name}: ${amount} mỗi tháng.`,
+      yearlyNote: "Gói trả theo năm được chia ra theo tháng để so sánh.",
     },
     low: {
       total: (amount) => `Tổng cộng ${amount} mỗi tháng.`,
@@ -767,6 +875,11 @@ export const vi: Widen<typeof ko> = {
       year: (amount) => `Năm nay bạn giữ lại ${amount} nhờ hủy.`,
       sourceMonth: "Tiền giữ lại tháng này",
       sourceYear: "Tiền giữ lại năm nay",
+      switchAll: "Xem từ trước đến nay",
+      all: (amount) => `Từ trước đến nay bạn giữ lại ${amount} nhờ hủy.`,
+      sourceAll: "Tiền giữ lại từ trước đến nay",
+      pending: (amount, count) =>
+        `${count} gói (${amount}) chưa được tính vì bạn chưa xác nhận đã ngừng bị trừ tiền.`,
       unknown: (count) =>
         `${count} gói không được tính vì không rõ tháng thanh toán hoặc ngày hủy.`,
     },
@@ -813,6 +926,17 @@ export const fr: Widen<typeof ko> = {
         `Vous payez ${amount} par an pour ${count} abonnement${akPl(count, "", "s")}.`,
       sourceMonth: "Votre part, total mensuel",
       sourceYear: "Votre part, total annuel",
+      perDay: (amount) =>
+        `Cela fait environ ${amount} par jour (sur une base de 30 jours par mois).`,
+    },
+    sum: {
+      join: ", ",
+      month: (names, amount) => `Vous payez ${amount} par mois pour ${names}.`,
+      year: (names, amount) => `Vous payez ${amount} par an pour ${names}.`,
+      none: "Aucun des services cités ne fait partie de vos abonnements.",
+      source: "Votre part pour les abonnements cités",
+      notSubscribed: (names) => `Non comptés car vous n'y êtes pas abonné : ${names}`,
+      many: (name, count) => `« ${name} » non compté : ${count} abonnements correspondent.`,
     },
     category: {
       none: (label) => `Vous n'avez aucun abonnement dans ${label}.`,
@@ -835,6 +959,13 @@ export const fr: Widen<typeof ko> = {
       perUse: (amount) => `${amount} par utilisation`,
       skipped:
         "Les abonnements sans check-in ou non mesurés en utilisations sont exclus du classement.",
+    },
+    price: {
+      none: "Vous n'avez aucun abonnement payant.",
+      source: "Votre part par mois",
+      high: (name, amount) => `Votre abonnement le plus cher est ${name} : ${amount} par mois.`,
+      low: (name, amount) => `Votre abonnement le moins cher est ${name} : ${amount} par mois.`,
+      yearlyNote: "Les abonnements annuels ont été ramenés à un montant mensuel pour comparer.",
     },
     low: {
       total: (amount) => `Au total, ${amount} par mois.`,
@@ -931,6 +1062,11 @@ export const fr: Widen<typeof ko> = {
       year: (amount) => `Les résiliations vous ont fait économiser ${amount} cette année.`,
       sourceMonth: "Argent économisé ce mois-ci",
       sourceYear: "Argent économisé cette année",
+      switchAll: "Voir depuis le début",
+      all: (amount) => `Les résiliations vous ont fait économiser ${amount} jusqu'ici.`,
+      sourceAll: "Argent économisé jusqu'ici",
+      pending: (amount, count) =>
+        `${count} résiliation(s) (${amount}) ne sont pas comptées : l'arrêt des prélèvements n'est pas encore confirmé.`,
       unknown: (count) =>
         `${count} n'ont pas pu être inclus : mois de paiement ou date de résiliation inconnus.`,
     },
@@ -977,6 +1113,16 @@ export const es: Widen<typeof ko> = {
         `Pagas ${amount} al año por ${count} suscripci${akPl(count, "ón", "ones")}.`,
       sourceMonth: "Tu parte, total mensual",
       sourceYear: "Tu parte, total anual",
+      perDay: (amount) => `Son unos ${amount} al día (contando el mes como 30 días).`,
+    },
+    sum: {
+      join: ", ",
+      month: (names, amount) => `Pagas ${amount} al mes por ${names}.`,
+      year: (names, amount) => `Pagas ${amount} al año por ${names}.`,
+      none: "Ninguno de los servicios que nombraste es una suscripción tuya.",
+      source: "Tu parte de las suscripciones nombradas",
+      notSubscribed: (names) => `No se cuentan porque no estás suscrito: ${names}`,
+      many: (name, count) => `No se cuenta «${name}» porque coinciden ${count} suscripciones.`,
     },
     category: {
       none: (label) => `No tienes suscripciones en ${label}.`,
@@ -999,6 +1145,13 @@ export const es: Widen<typeof ko> = {
       perUse: (amount) => `${amount} por uso`,
       skipped:
         "Las suscripciones sin registro o que no se miden por usos quedan fuera del ranking.",
+    },
+    price: {
+      none: "No tienes suscripciones de pago.",
+      source: "Tu parte al mes",
+      high: (name, amount) => `Tu suscripción más cara es ${name}: ${amount} al mes.`,
+      low: (name, amount) => `Tu suscripción más barata es ${name}: ${amount} al mes.`,
+      yearlyNote: "Las suscripciones anuales se dividieron en un importe mensual para comparar.",
     },
     low: {
       total: (amount) => `En total, ${amount} al mes.`,
@@ -1095,6 +1248,11 @@ export const es: Widen<typeof ko> = {
       year: (amount) => `Este año cancelar te ahorró ${amount}.`,
       sourceMonth: "Dinero ahorrado este mes",
       sourceYear: "Dinero ahorrado este año",
+      switchAll: "Ver desde el principio",
+      all: (amount) => `Hasta ahora cancelar te ahorró ${amount}.`,
+      sourceAll: "Dinero ahorrado hasta ahora",
+      pending: (amount, count) =>
+        `${count} cancelación(es) (${amount}) aún no se cuentan porque no has confirmado que dejaron de cobrarte.`,
       unknown: (count) =>
         `${count} no se pudieron incluir porque se desconoce el mes de cobro o la fecha de cancelación.`,
     },
@@ -1141,6 +1299,16 @@ export const de: Widen<typeof ko> = {
         `Du zahlst ${amount} im Jahr für ${count} ${akPl(count, "Abo", "Abos")}.`,
       sourceMonth: "Dein Anteil, Monatssumme",
       sourceYear: "Dein Anteil, Jahressumme",
+      perDay: (amount) => `Das sind etwa ${amount} pro Tag (ein Monat mit 30 Tagen gerechnet).`,
+    },
+    sum: {
+      join: ", ",
+      month: (names, amount) => `Du zahlst ${amount} im Monat für ${names}.`,
+      year: (names, amount) => `Du zahlst ${amount} im Jahr für ${names}.`,
+      none: "Keiner der genannten Dienste ist eines deiner Abos.",
+      source: "Dein Anteil für die genannten Abos",
+      notSubscribed: (names) => `Nicht mitgezählt, weil du sie nicht abonniert hast: ${names}`,
+      many: (name, count) => `„${name}“ nicht mitgezählt, weil ${count} Abos passen.`,
     },
     category: {
       none: (label) => `Du hast keine Abos in ${label}.`,
@@ -1162,6 +1330,13 @@ export const de: Widen<typeof ko> = {
       perZero: "0 Nutzungen (kein einziges Mal)",
       perUse: (amount) => `${amount} pro Nutzung`,
       skipped: "Abos ohne Eintrag oder nicht nach Nutzungen gemessen fehlen im Ranking.",
+    },
+    price: {
+      none: "Du hast keine kostenpflichtigen Abos.",
+      source: "Dein Anteil pro Monat",
+      high: (name, amount) => `Dein teuerstes Abo ist ${name}: ${amount} im Monat.`,
+      low: (name, amount) => `Dein günstigstes Abo ist ${name}: ${amount} im Monat.`,
+      yearlyNote: "Jahresabos wurden zum Vergleich auf einen Monatsbetrag umgerechnet.",
     },
     low: {
       total: (amount) => `Zusammen sind das ${amount} im Monat.`,
@@ -1258,6 +1433,11 @@ export const de: Widen<typeof ko> = {
       year: (amount) => `Durch Kündigen hast du dieses Jahr ${amount} gespart.`,
       sourceMonth: "Diesen Monat gespartes Geld",
       sourceYear: "Dieses Jahr gespartes Geld",
+      switchAll: "Bisher anzeigen",
+      all: (amount) => `Durch Kündigen hast du bisher ${amount} gespart.`,
+      sourceAll: "Bisher gespartes Geld",
+      pending: (amount, count) =>
+        `${count} Kündigung(en) (${amount}) zählen noch nicht, weil du noch nicht bestätigt hast, dass keine Abbuchung mehr kam.`,
       unknown: (count) =>
         `${count} konnten nicht einbezogen werden, weil Abbuchungsmonat oder Kündigungsdatum unbekannt ist.`,
     },
@@ -1304,6 +1484,16 @@ export const pt: Widen<typeof ko> = {
         `Você paga ${amount} por ano por ${count} assinatura${akPl(count, "", "s")}.`,
       sourceMonth: "Sua parte, total mensal",
       sourceYear: "Sua parte, total anual",
+      perDay: (amount) => `Dá cerca de ${amount} por dia (contando o mês como 30 dias).`,
+    },
+    sum: {
+      join: ", ",
+      month: (names, amount) => `Você paga ${amount} por mês por ${names}.`,
+      year: (names, amount) => `Você paga ${amount} por ano por ${names}.`,
+      none: "Nenhum dos serviços citados é uma assinatura sua.",
+      source: "Sua parte nas assinaturas citadas",
+      notSubscribed: (names) => `Não contados porque você não assina: ${names}`,
+      many: (name, count) => `“${name}” não contado porque ${count} assinaturas correspondem.`,
     },
     category: {
       none: (label) => `Você não tem assinaturas em ${label}.`,
@@ -1325,6 +1515,13 @@ export const pt: Widen<typeof ko> = {
       perZero: "0 usos (nenhuma vez)",
       perUse: (amount) => `${amount} por uso`,
       skipped: "Assinaturas sem registro ou não medidas por usos ficam fora do ranking.",
+    },
+    price: {
+      none: "Você não tem assinaturas pagas.",
+      source: "Sua parte por mês",
+      high: (name, amount) => `Sua assinatura mais cara é ${name}: ${amount} por mês.`,
+      low: (name, amount) => `Sua assinatura mais barata é ${name}: ${amount} por mês.`,
+      yearlyNote: "Assinaturas anuais foram divididas em um valor mensal para comparar.",
     },
     low: {
       total: (amount) => `Somando, ${amount} por mês.`,
@@ -1419,6 +1616,11 @@ export const pt: Widen<typeof ko> = {
       year: (amount) => `Cancelar economizou ${amount} este ano.`,
       sourceMonth: "Dinheiro economizado este mês",
       sourceYear: "Dinheiro economizado este ano",
+      switchAll: "Ver desde o início",
+      all: (amount) => `Até agora, cancelar economizou ${amount}.`,
+      sourceAll: "Dinheiro economizado até agora",
+      pending: (amount, count) =>
+        `${count} cancelamento(s) (${amount}) ainda não entram porque você não confirmou que a cobrança parou.`,
       unknown: (count) =>
         `${count} não puderam entrar porque o mês de cobrança ou a data de cancelamento é desconhecida.`,
     },

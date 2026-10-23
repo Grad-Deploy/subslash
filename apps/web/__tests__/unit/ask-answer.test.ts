@@ -243,7 +243,91 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
       call: { tool: "savedSoFar", args: { period: "year" } },
     });
     const year = answerAsk({ tool: "savedSoFar", args: { period: "year" } }, CTX);
-    expect(year.switchTo?.call).toEqual({ tool: "savedSoFar", args: { period: "month" } });
+    expect(year.switchTo?.call).toEqual({ tool: "savedSoFar", args: { period: "all" } });
+    const all = answerAsk({ tool: "savedSoFar", args: { period: "all" } }, CTX);
+    expect(all.switchTo?.call).toEqual({ tool: "savedSoFar", args: { period: "month" } });
+  });
+
+  it("해지로 아낀 돈은 절약 현황과 같은 숫자다 — 오지 않은 결제일과 확인하지 않은 해지는 세지 않는다", () => {
+    // 8월 1일에 해지, 결제가 멈춘 것을 확인했다. 매달 1일 결제라 8·9·10월 1일 세 번을 막았다(10월 5일 기준).
+    const verified = sub({
+      id: "verified",
+      name: "왓챠",
+      amount: 7900,
+      billingDay: 1,
+      status: "killed",
+      killedAt: new Date(2026, 6, 31).toISOString(),
+      killVerifiedAt: new Date(2026, 7, 2).toISOString(),
+    });
+    // 9월 20일에 해지했지만 결제가 멈췄는지 아직 답하지 않았다(첫 결제일 10월 3일이 지났다).
+    const pending = sub({
+      id: "pending",
+      name: "웨이브",
+      amount: 7900,
+      billingDay: 3,
+      status: "killed",
+      killedAt: new Date(2026, 8, 20).toISOString(),
+    });
+    const ctx = { ...CTX, subscriptions: [verified, pending] };
+    const all = answerAsk({ tool: "savedSoFar", args: { period: "all" } }, ctx);
+    expect(all.headline).toContain(won(7900 * 3));
+    expect(all.notes.join()).toContain(`확인하지 않은 1개(${won(7900)})`);
+    // 올해도 남은 11·12월을 세지 않는다 — 예전에는 그 달까지 더해 "올해 지켰어요"라고 했다.
+    expect(answerAsk({ tool: "savedSoFar", args: { period: "year" } }, ctx).headline).toContain(
+      won(7900 * 3),
+    );
+    expect(answerAsk({ tool: "savedSoFar", args: { period: "month" } }, ctx).headline).toContain(
+      won(7900),
+    );
+  });
+
+  it("요금 순위는 쓴 만큼이 아니라 내 몫 한 달 금액으로 줄 세우고, 무료 체험 중인 구독은 뺀다", () => {
+    const high = answerAsk({ tool: "priceRank", args: { order: "high" } }, CTX);
+    expect(high.headline).toContain("ChatGPT Plus");
+    expect(high.headline).toContain(won(29000));
+    expect(high.rows.map((row) => row.label)).toEqual(["ChatGPT Plus", "넷플릭스", "멜론"]);
+    expect(high.notes.join()).toContain("무료 체험 중인 1개");
+    // 둘이 나눠 내는 티빙(9,500원)은 내 몫 4,750원이라 가장 싸다.
+    const low = answerAsk({ tool: "priceRank", args: { order: "low", limit: 1 } }, CTX);
+    expect(low.headline).toContain("티빙");
+    expect(low.headline).toContain(won(4750));
+    expect(low.rows).toHaveLength(1);
+  });
+
+  it("여러 서비스의 합계는 이름을 댄 구독만 더하고, 구독하지 않는 이름과 체험 중인 구독은 빼고 적는다", () => {
+    const result = answerAsk(
+      { tool: "serviceSum", args: { services: "넷플릭스, 티빙, 디즈니플러스, 쿠팡플레이" } },
+      { ...CTX, asked: ["넷플릭스 티빙 디즈니플러스 쿠팡플레이 합쳐서 얼마"] },
+    );
+    // 티빙은 둘이 나눠 내 내 몫 4,750원이다.
+    expect(result.headline).toContain(won(17000 + 4750));
+    expect(result.rows.map((row) => row.label)).toEqual(["넷플릭스", "티빙"]);
+    expect(result.notes.join()).toContain("디즈니플러스");
+    expect(result.notes.join()).toContain("무료 체험 중인 1개");
+    const year = answerAsk(
+      { tool: "serviceSum", args: { services: "넷플릭스, 티빙", period: "year" } },
+      CTX,
+    );
+    expect(year.headline).toContain(won((17000 + 4750) * 12));
+    // 질문에 없던 이름을 AI가 넣었으면 그 이름은 쓰지 않는다
+    expect(
+      answerAsk(
+        { tool: "serviceSum", args: { services: "넷플릭스, 왓챠" } },
+        { ...CTX, asked: ["넷플이랑 티빙 얼마"] },
+      ).headline,
+    ).not.toContain("왓챠");
+  });
+
+  it("하루치를 물으면 한 달 합계에 하루치를 함께 적는다", () => {
+    const total = sumMyMonthlyKRW(PAYING, 1400);
+    const result = answerAsk(
+      { tool: "spendTotal", args: { period: "month" } },
+      { ...CTX, asked: ["하루에 구독비 얼마꼴이야?"] },
+    );
+    expect(result.notes.join()).toContain(won(Math.round(total / 30)));
+    expect(
+      answerAsk({ tool: "spendTotal", args: { period: "month" } }, CTX).notes.join(),
+    ).not.toContain("하루");
   });
 
   it("안 쓰는 구독은 구독마다의 금액과 함께 합계를 말한다", () => {

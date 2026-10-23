@@ -23,7 +23,10 @@ export const ASK_CATEGORIES = [
 ] as const satisfies readonly SubscriptionCategory[];
 
 export const ASK_PERIODS = ["month", "year"] as const;
+/** 지킨 돈의 기간. `all`은 지금까지 — 대시보드·절약 현황의 '해지로 지킨 돈'과 같은 숫자다. */
+export const ASK_SAVED_PERIODS = ["month", "year", "all"] as const;
 export const ASK_ORDERS = ["worst", "best"] as const;
+export const ASK_PRICE_ORDERS = ["high", "low"] as const;
 
 type ParamSpec =
   | { type: "enum"; values: readonly string[]; required: boolean }
@@ -44,6 +47,15 @@ export const ASK_TOOLS = {
     params: { period: { type: "enum", values: ASK_PERIODS, required: true } },
     computedBy: "sumMyMonthlyKRW / sumMyAnnualKRW",
   },
+  serviceSum: {
+    description:
+      '이름을 댄 서비스 여러 개의 합계("넷플이랑 티빙 합쳐서 얼마"). services에 이름을 쉼표로 나눠 적은 그대로 넣는다. 분류 전체(OTT 전부)가 아니다. "챗지피티 클로드 이런 거"처럼 이름을 예로 들어 그런 것 전부를 물으면 분류(spendByCategory)다. 기간을 말하지 않으면 한 달이다.',
+    params: {
+      services: { type: "text", maxLength: 80, required: true },
+      period: { type: "enum", values: ASK_PERIODS, required: false },
+    },
+    computedBy: "sumMyMonthlyKRW / sumMyAnnualKRW(이름이 맞는 구독만)",
+  },
   spendByCategory: {
     description:
       "한 분류(OTT·음악·클라우드·쇼핑 멤버십·AI·기타)에 쓰는 돈과 전체에서의 비율. 기간을 말하지 않으면 한 달이고, 1년을 물을 때만 period를 year로 넣는다.",
@@ -62,6 +74,15 @@ export const ASK_TOOLS = {
       limit: { type: "int", min: 1, max: 5, required: false },
     },
     computedBy: "리포트 1회 단가 순위(components/report/valueRows)",
+  },
+  priceRank: {
+    description:
+      '요금(내 몫 한 달 금액)이 비싼·싼 순서. 쓴 만큼과 상관없는 금액 순위다("제일 비싼 구독"). high는 비싼 것부터, low는 싼 것부터.',
+    params: {
+      order: { type: "enum", values: ASK_PRICE_ORDERS, required: true },
+      limit: { type: "int", min: 1, max: 5, required: false },
+    },
+    computedBy: "getMyMonthlyAmountKRW(지출 합계와 같은 내 몫, 무료 체험 중인 구독은 뺀다)",
   },
   lowUsage: {
     description: "최근 30일 동안 거의 쓰지 않은 구독(체크인 기준 빨강).",
@@ -99,9 +120,11 @@ export const ASK_TOOLS = {
     computedBy: "getNextBillingDateFor · getMyMonthlyShareAmount · 체크인 기록",
   },
   savedSoFar: {
-    description: "해지해서 지킨 돈. 이번 달 또는 올해.",
-    params: { period: { type: "enum", values: ASK_PERIODS, required: true } },
-    computedBy: "sumMyMonthDefendedKRW / sumMyYearDefendedKRW",
+    description:
+      "해지해서 지킨 돈. 이번 달(month)·올해(year)·지금까지(all). 결제일이 지났고 결제가 멈춘 것을 확인한 돈만 센다.",
+    // all을 모르는 예전 앱은 그 호출을 버려 답하지 못한다 — 화면과 다른 숫자를 말하는 것보다 낫다.
+    params: { period: { type: "enum", values: ASK_SAVED_PERIODS, required: true } },
+    computedBy: "getSavingsTiers(절약 현황·대시보드의 '해지로 지킨 돈'과 같은 함수)",
   },
   compareLastMonth: {
     description:
@@ -124,6 +147,18 @@ export const ASK_TOOLS = {
 } as const satisfies Record<string, ToolSpec>;
 
 export type AskToolName = keyof typeof ASK_TOOLS;
+
+/** serviceSum의 이름 목록. 쉼표(、，도)로 나눈다 — 이름 안의 띄어쓰기("쿠팡 와우")는 나누지 않는다. */
+export function splitServiceNames(services: string): string[] {
+  return [
+    ...new Set(
+      services
+        .split(/[,，、]/)
+        .map((name) => name.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
 
 export interface AskCall {
   tool: AskToolName;
