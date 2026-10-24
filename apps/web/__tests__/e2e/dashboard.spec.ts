@@ -126,4 +126,22 @@ test.describe("Dashboard (E2E)", () => {
     });
     await expect(page.getByText("샘플로 체험하는 중입니다.")).toHaveCount(0);
   });
+
+  test("체험 중에 등록하면 체험이 끝나고 실제 기록에 들어간다는 것을 등록 창이 먼저 알린다", async ({
+    page,
+  }) => {
+    // 알리지 않았더니 샘플을 둘러보다 연습 삼아 등록한 구독이 조용히 실제 기록에 들어갔다(운영 QA 2026-10-24).
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await page.getByRole("button", { name: /샘플로 둘러보기/ }).click();
+    await expect(page.getByRole("heading", { name: "오늘의 구독 점검" })).toBeVisible({
+      timeout: 30_000,
+    });
+
+    await page.getByRole("button", { name: "+ 새 구독 등록" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByRole("note")).toContainText("등록하면 체험이 끝나고");
+    await dialog.getByRole("button", { name: "목록에 없는 서비스 직접 입력" }).click();
+    await expect(dialog.getByRole("button", { name: "체험 끝내고 내 기록에 등록" })).toBeVisible();
+  });
 });
