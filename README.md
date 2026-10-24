@@ -1,5 +1,7 @@
 # SubSlash — 구독, 끊을 용기
 
+<p align="right"><b>한국어</b> | <a href="README.en.md">English</a></p>
+
 <p align="center">
   <img src="docs/images/feature-graphic.png" alt="SubSlash — 한 번 쓸 때 얼마인지 보고, 결제 전에 정리하세요" width="720">
 </p>
