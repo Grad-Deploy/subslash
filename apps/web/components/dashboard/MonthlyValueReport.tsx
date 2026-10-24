@@ -121,7 +121,9 @@ export function MonthlyValueReport({
         <div className="mt-5 pt-4 border-t flex flex-col gap-3">
           {summary.wasteSuggestion && (
             <div className="text-sm font-medium bg-secondary/50 p-3 rounded-lg flex gap-2 items-center leading-relaxed">
-              <span>{describeWasteSuggestion(t, summary.wasteSuggestion)}</span>
+              <span>
+                {describeWasteSuggestion(t, summary.wasteSuggestion, (name) => names.sub({ name }))}
+              </span>
             </div>
           )}
 

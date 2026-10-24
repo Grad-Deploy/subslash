@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Subscription, UsageLog } from "@subslash/shared";
 import { getMonthlyValueSummary } from "@subslash/shared";
 import { messages } from "@lib/i18n/messages";
+import { subscriptionName } from "@lib/service-name";
 import {
   describeWastedItem,
   describeWasteSuggestion,
@@ -51,8 +52,11 @@ describe("월간 가성비 리포트 문장", () => {
   });
 
   it("절약 제안은 하나면 이름을, 여럿이면 이름 없이 말한다", () => {
-    const one = describeWasteSuggestion(messages.en, summary.wasteSuggestion!);
-    expect(one).toContain("Pause 넷플릭스");
+    const one = describeWasteSuggestion(messages.en, summary.wasteSuggestion!, (name) =>
+      subscriptionName({ name }, "en"),
+    );
+    // 저장된 이름(넷플릭스)이 아니라 화면 언어의 이름이다 — "Pause 구글 원"이 영어 화면에 나왔다(운영 QA 2026-10-24).
+    expect(one).toContain("Pause Netflix");
     expect(one).toContain("₩17,000");
     expect(describeWasteSuggestion(messages.ko, summary.wasteSuggestion!)).toContain(
       "넷플릭스를 잠시 쉬어가면",

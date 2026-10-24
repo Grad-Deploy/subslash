@@ -7,7 +7,7 @@ import type { Subscription, UsageLog } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { useIsClient } from "@hooks/useIsClient";
 import { cn } from "@lib/utils";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { ExchangeRateNote } from "../../settings/ExchangeRateNote";
 import { useOverlayLock } from "@hooks/useOverlayLock";
 import { AppSavingsLink } from "../../savings/app/AppSavingsLink";
@@ -135,12 +135,13 @@ function ReceiptSheet({
 }) {
   const isClient = useIsClient();
   const t = useT();
+  const names = useServiceNames();
 
   useOverlayLock(open, onClose);
 
   if (!open || !isClient) return null;
   const { summary } = data;
-  const { cancel, checkIn } = sheetActions(t, summary);
+  const { cancel, checkIn } = sheetActions(t, summary, names.sub);
   return createPortal(
     <div className="fixed inset-0 z-50 flex h-[100dvh] items-end px-safe">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />

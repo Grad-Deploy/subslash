@@ -21,11 +21,18 @@ export function describeWastedItem(t: Messages, item: ValueReportItem): string {
     : t.report.diet(describeCheckInText(t, log, item.sub.currency));
 }
 
-/** 절약 기회를 일상 소비재로 환산한 한 문장. */
-export function describeWasteSuggestion(t: Messages, suggestion: WasteSuggestion): string {
+/**
+ * 절약 기회를 일상 소비재로 환산한 한 문장. 구독 이름은 저장된 이름이라 `nameOf`(화면에서는 `useServiceNames().sub`)로
+ * 화면 언어의 이름으로 바꾼다 — 그대로 넣었더니 영어 화면에 "Pause 구글 원 this month"가 나왔다.
+ */
+export function describeWasteSuggestion(
+  t: Messages,
+  suggestion: WasteSuggestion,
+  nameOf: (name: string) => string = (name) => name,
+): string {
   const item = t.value.metaphor[suggestion.item](suggestion.count);
   const amount = formatKRW(suggestion.amountKRW);
   return suggestion.name !== null
-    ? t.report.suggestOne(suggestion.name, item, amount)
+    ? t.report.suggestOne(nameOf(suggestion.name), item, amount)
     : t.report.suggestMany(item, amount);
 }

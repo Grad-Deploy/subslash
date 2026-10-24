@@ -165,7 +165,7 @@ export function SavingsBreakdownChart({
       {/* Highlight note */}
       {topContributor && topContributor.percentage > 0 && (
         <div className="pt-2 border-t flex items-center justify-between text-xs text-muted-foreground">
-          <span>{b.top(topContributor.name, topContributor.percentage)}</span>
+          <span>{b.top(names.sub(topContributor), topContributor.percentage)}</span>
           <span className="font-semibold text-foreground">{b.total(formatKRW(activeTotal))}</span>
         </div>
       )}
