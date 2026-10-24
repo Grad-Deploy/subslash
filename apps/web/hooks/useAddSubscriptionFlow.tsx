@@ -46,6 +46,9 @@ export function useAddSubscriptionFlow({
   reminder: ReminderPrompt;
 }) {
   const { subscriptions, usageLogs, addSubscription } = useStore();
+  // 샘플 체험 중이면 등록이 체험을 끝내고 실제 기록에 들어간다(store의 addSubscription). 창 안에서 알리고 버튼 문구를
+  // 바꾼다 — 알리지 않았더니 샘플을 둘러보다 연습 삼아 등록한 구독이 조용히 실제 기록(로그인했으면 계정)에 들어갔다.
+  const inDemo = useStore((state) => Boolean(state.demo));
   const t = useT();
   const names = useServiceNames();
   const tRef = useLatestT();
@@ -99,14 +102,20 @@ export function useAddSubscriptionFlow({
         return;
       }
     }
+    const endedDemo = inDemo;
     const added = addSubscription(data);
     if (AppAddCheckIn) {
-      setFirstEverCheckIn(usageLogs.length === 0);
+      // 체험 중의 샘플 기록은 끝나며 사라지므로 첫 체크인인지는 실제 기록으로 본다.
+      setFirstEverCheckIn(!endedDemo && usageLogs.length === 0);
       setAddedSub(added);
       return;
     }
     close();
-    showToast(tRef.current.form.dialog.added(data.name));
+    showToast(
+      endedDemo
+        ? tRef.current.form.demoAdded(data.name)
+        : tRef.current.form.dialog.added(data.name),
+    );
   };
 
   // 앱: 등록 직후 등록 창 자리에 그릴 사용 횟수 묻기.
@@ -146,8 +155,17 @@ export function useAddSubscriptionFlow({
               <DialogDescription>{t.form.dialog.description}</DialogDescription>
             </DialogHeader>
             <div className="py-2">
+              {inDemo && (
+                <p
+                  role="note"
+                  className="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-900 dark:text-amber-200"
+                >
+                  {t.form.demoNotice}
+                </p>
+              )}
               <SubForm
                 key={formKey}
+                submitLabel={inDemo ? t.form.demoSubmit : undefined}
                 popularServices={POPULAR_SERVICES}
                 initialData={
                   options.preset

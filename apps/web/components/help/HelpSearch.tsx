@@ -66,12 +66,18 @@ export function HelpSearch({ faqs, aiOpen }: { faqs: Faq[]; aiOpen: boolean }) {
       {trimmed && (
         <div className="space-y-2" role="status" aria-live="polite">
           {aiAnswers ? (
-            <FaqAnswers
-              label={aiAnswers.length > 0 ? h.aiFound : h.aiNone}
-              icon
-              faqs={aiAnswers}
-              empty={h.aiEmpty}
-            />
+            <>
+              <FaqAnswers
+                label={aiAnswers.length > 0 ? h.aiFound : h.aiNone}
+                icon
+                faqs={aiAnswers}
+                empty={h.aiEmpty}
+              />
+              {/* AI가 고르지 못해도 기기가 찾은 질문은 남긴다 — 지웠더니 답이 들어 있던 항목까지 사라졌다. */}
+              {aiAnswers.length === 0 && hits.length > 0 && (
+                <FaqAnswers label={h.similar} faqs={hits.map((hit) => hit.faq)} />
+              )}
+            </>
           ) : hits.length > 0 ? (
             <FaqAnswers
               label={confident ? h.closest : h.similar}
