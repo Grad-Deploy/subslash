@@ -153,6 +153,7 @@ export const ko = {
     diet: (cost: string) => `지출 다이어트 추천 (회당 ${cost})`,
     achieved: (cost: string) => `본전 달성 완료! (회당 ${cost})`,
     baseline: "본전 기준선",
+    progress: (percent: number) => `본전의 ${percent}%`,
   },
   bar: {
     label: "1회 이용당 비용",
@@ -272,7 +273,7 @@ export const ko = {
   /** 체크인 링크(/check-in)로 열었는데 체크인할 수 없을 때. */
   link: {
     invalidTitle: "잘못된 체크인 링크예요",
-    invalidBody: "메일의 버튼을 다시 누르거나 대시보드에서 체크인하세요.",
+    invalidBody: "체크인은 대시보드나 내 구독에서 할 수 있어요.",
     missingTitle: "이 기기에는 이 구독이 없어요",
     missingBody: "등록한 기기에서 링크를 열거나, 로그인해 기기끼리 기록을 맞추세요.",
     killedTitle: "이미 해지한 구독입니다",
@@ -416,6 +417,7 @@ export const en: Widen<typeof ko> = {
     diet: (cost) => `Trim suggested (${cost} per use)`,
     achieved: (cost) => `Broken even! (${cost} per use)`,
     baseline: "Break-even line",
+    progress: (percent) => `${percent}% of break-even`,
   },
   bar: {
     label: "Cost per use",
@@ -538,7 +540,7 @@ export const en: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "This check-in link isn't valid",
-    invalidBody: "Tap the button in the email again, or check in from the dashboard.",
+    invalidBody: "You can check in from the dashboard or your subscriptions.",
     missingTitle: "This subscription isn't on this device",
     missingBody:
       "Open the link on the device where you added it, or log in to keep your devices in sync.",
@@ -696,6 +698,7 @@ export const zh: Widen<typeof ko> = {
     diet: (cost) => `建议精简（每次 ${cost}）`,
     achieved: (cost) => `已经够本！（每次 ${cost}）`,
     baseline: "够本线",
+    progress: (percent) => `达到够本的 ${percent}%`,
   },
   bar: { label: "单次成本", footer: (count, monthly) => `共 ${count} 次 · 按每月 ${monthly} 计算` },
   appResult: {
@@ -807,7 +810,7 @@ export const zh: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "这个签到链接无效",
-    invalidBody: "请再点一次邮件中的按钮，或在仪表板上签到。",
+    invalidBody: "可以在仪表板或我的订阅中签到。",
     missingTitle: "这台设备上没有这个订阅",
     missingBody: "请在添加它的设备上打开链接，或登录让各设备保持同步。",
     killedTitle: "这个订阅已经退订",
@@ -946,6 +949,7 @@ export const ja: Widen<typeof ko> = {
     diet: (cost) => `スリム化のおすすめ（1 回 ${cost}）`,
     achieved: (cost) => `元が取れました！（1 回 ${cost}）`,
     baseline: "元が取れるライン",
+    progress: (percent) => `元が取れるまで ${percent}%`,
   },
   bar: {
     label: "1 回あたりの単価",
@@ -1068,7 +1072,7 @@ export const ja: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "このチェックインのリンクは無効です",
-    invalidBody: "メールのボタンをもう一度押すか、ダッシュボードでチェックインしてください。",
+    invalidBody: "チェックインはダッシュボードかサブスク一覧からできます。",
     missingTitle: "この端末にはこのサブスクがありません",
     missingBody: "追加した端末でリンクを開くか、ログインして端末どうしをそろえてください。",
     killedTitle: "このサブスクはすでに解約しています",
@@ -1206,6 +1210,7 @@ export const vi: Widen<typeof ko> = {
     diet: (cost) => `Nên cắt bớt (${cost} mỗi lần)`,
     achieved: (cost) => `Đã đủ bù! (${cost} mỗi lần)`,
     baseline: "Ngưỡng đủ bù",
+    progress: (percent) => `Đạt ${percent}% mức đủ bù`,
   },
   bar: {
     label: "Chi phí mỗi lần dùng",
@@ -1328,7 +1333,7 @@ export const vi: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "Đường dẫn check-in này không hợp lệ",
-    invalidBody: "Hãy nhấn lại nút trong email, hoặc check-in trên bảng điều khiển.",
+    invalidBody: "Bạn có thể check-in từ bảng điều khiển hoặc danh sách gói đăng ký.",
     missingTitle: "Thiết bị này không có gói này",
     missingBody:
       "Hãy mở đường dẫn trên thiết bị đã thêm gói, hoặc đăng nhập để đồng bộ các thiết bị.",
@@ -1480,6 +1485,7 @@ export const fr: Widen<typeof ko> = {
     diet: (cost) => `Réduction conseillée (${cost} par utilisation)`,
     achieved: (cost) => `Rentabilisé ! (${cost} par utilisation)`,
     baseline: "Seuil de rentabilité",
+    progress: (percent) => `${percent} % du seuil de rentabilité`,
   },
   bar: {
     label: "Coût par utilisation",
@@ -1608,7 +1614,7 @@ export const fr: Widen<typeof ko> = {
   link: {
     invalidTitle: "Ce lien de check-in n'est pas valide",
     invalidBody:
-      "Touchez à nouveau le bouton de l'e-mail, ou faites le check-in depuis le tableau de bord.",
+      "Vous pouvez enregistrer votre usage depuis le tableau de bord ou vos abonnements.",
     missingTitle: "Cet appareil n'a pas cet abonnement",
     missingBody:
       "Ouvrez le lien sur l'appareil où vous l'avez ajouté, ou connectez-vous pour synchroniser vos appareils.",
@@ -1756,6 +1762,7 @@ export const es: Widen<typeof ko> = {
     diet: (cost) => `Recorte sugerido (${cost} por uso)`,
     achieved: (cost) => `¡Amortizada! (${cost} por uso)`,
     baseline: "Línea de amortización",
+    progress: (percent) => `${percent} % de la amortización`,
   },
   bar: {
     label: "Coste por uso",
@@ -1879,7 +1886,7 @@ export const es: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "Este enlace de registro no es válido",
-    invalidBody: "Vuelve a pulsar el botón del correo o registra desde el panel.",
+    invalidBody: "Puedes registrar el uso desde el panel o tus suscripciones.",
     missingTitle: "Este dispositivo no tiene esta suscripción",
     missingBody:
       "Abre el enlace en el dispositivo donde la añadiste, o inicia sesión para sincronizar tus dispositivos.",
@@ -2033,6 +2040,7 @@ export const de: Widen<typeof ko> = {
     diet: (cost) => `Kürzen empfohlen (${cost} pro Nutzung)`,
     achieved: (cost) => `Hat sich gelohnt! (${cost} pro Nutzung)`,
     baseline: "Lohnt-sich-Linie",
+    progress: (percent) => `${percent} % bis es sich lohnt`,
   },
   bar: {
     label: "Kosten pro Nutzung",
@@ -2155,8 +2163,7 @@ export const de: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "Dieser Eintragslink ist ungültig",
-    invalidBody:
-      "Tippe noch einmal auf den Button in der E-Mail oder trag es in der Übersicht ein.",
+    invalidBody: "Du kannst über das Dashboard oder deine Abos einchecken.",
     missingTitle: "Dieses Gerät hat dieses Abo nicht",
     missingBody:
       "Öffne den Link auf dem Gerät, auf dem du es hinzugefügt hast, oder melde dich an, um deine Geräte abzugleichen.",
@@ -2304,6 +2311,7 @@ export const pt: Widen<typeof ko> = {
     diet: (cost) => `Corte sugerido (${cost} por uso)`,
     achieved: (cost) => `Compensou! (${cost} por uso)`,
     baseline: "Linha de compensação",
+    progress: (percent) => `${percent}% da compensação`,
   },
   bar: {
     label: "Custo por uso",
@@ -2425,7 +2433,7 @@ export const pt: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "Este link de registro não é válido",
-    invalidBody: "Toque de novo no botão do e-mail ou registre pelo painel.",
+    invalidBody: "Você pode registrar o uso pelo painel ou pelas suas assinaturas.",
     missingTitle: "Este dispositivo não tem esta assinatura",
     missingBody:
       "Abra o link no dispositivo onde você adicionou, ou entre para sincronizar seus dispositivos.",

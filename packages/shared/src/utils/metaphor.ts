@@ -132,20 +132,22 @@ export interface BreakEvenInfo {
 /**
  * 본전 도달 기준을 계산한다.
  *
- * 기본 breakEvenTarget은 8회(기존 getRiskLevel의 green 기준).
- * 8회 이상이면 1회당 단가가 금액의 12.5% 이하 — "돈값을 한다"고 본다.
+ * 기본 breakEvenTarget은 4회 — getRiskLevel이 초록으로 보는 첫 횟수다(1회당 단가가 금액의 25% 이하). 리포트의
+ * '잘 씀' 기준(OTT 4회)과도 같다. 예전에는 8회였고 단계도 따로 셌다. 그래서 체크인 결과 창의 배지는 3회를 노랑
+ * '주의'로, 바로 아래 게이지는 같은 3회를 3/8=38%의 빨강 '지출 다이어트 추천'으로 보였다. 단계는 본전의 50% 미만
+ * 빨강·100% 미만 노랑·100% 이상 초록이고, 4회 기준이면 횟수마다 getRiskLevel과 같다(1회 이하 빨강, 2~3회 노랑).
  */
 export function getBreakEvenInfo(
   _amount: number,
   usageCount: number,
-  breakEvenTarget: number = 8,
+  breakEvenTarget: number = 4,
 ): BreakEvenInfo {
   const target = Math.max(1, breakEvenTarget);
   const progress = target > 0 ? (usageCount / target) * 100 : 0;
 
   let level: BreakEvenInfo["level"];
-  if (progress <= 40) level = "danger";
-  else if (progress <= 80) level = "warning";
+  if (progress < 50) level = "danger";
+  else if (progress < 100) level = "warning";
   else level = "safe";
 
   return {

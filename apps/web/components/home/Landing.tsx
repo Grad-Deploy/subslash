@@ -61,10 +61,16 @@ const heroDelay = (i: number) => ({ "--hero-delay": `${80 + i * 110}ms` }) as Re
  */
 export function LandingOpening({
   activeCount,
+  signedIn = false,
   onDemo,
 }: {
   /** 구독 중인 구독 수. 0이면 처음 온 사람으로 본다. */
   activeCount: number;
+  /**
+   * 로그인했는지. 로그인했으면 '가입 없이 이 브라우저에 저장돼요'를 쓰지 않는다 — 기록은 계정과 맞춰지고, 기기마다
+   * 동기화를 끌 수 있어 '계정에 저장돼요'라고 단정할 수도 없으니 그 줄을 두지 않는다.
+   */
+  signedIn?: boolean;
   onDemo: () => void;
 }) {
   const t = useT();
@@ -140,9 +146,11 @@ export function LandingOpening({
             </button>
           </div>
           <AppDownloadPending className="hero-in mt-3" />
-          <p className="hero-in mt-4 text-sm text-muted-foreground" style={heroDelay(5)}>
-            {o.noSignup}
-          </p>
+          {!signedIn && (
+            <p className="hero-in mt-4 text-sm text-muted-foreground" style={heroDelay(5)}>
+              {o.noSignup}
+            </p>
+          )}
         </div>
       </div>
     </section>
