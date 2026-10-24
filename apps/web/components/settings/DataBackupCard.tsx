@@ -276,7 +276,9 @@ export function DataBackupCard({ onMessage }: DataBackupCardProps) {
         <h3 id="data-backup-heading" className="font-bold text-sm sm:text-base">
           {t.title}
         </h3>
-        <p className="text-xs text-muted-foreground leading-relaxed">{t.intro}</p>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {syncOn ? t.introSynced : account ? t.introSyncOff : t.intro}
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2">

@@ -146,6 +146,24 @@ test.describe("계정 자동 동기화 (E2E)", () => {
     await expect(subCard(laptop, "넷플릭스")).toBeVisible();
   });
 
+  test("자동 동기화 중인 기기에는 '기록은 이 기기에만 있어요'라고 하지 않는다", async ({
+    browser,
+  }) => {
+    // 로그인해 동기화하는 중인데 백업 칸이 "이 기기에만 있어요… 로그인하세요"라고 했다(운영 QA 2026-10-24).
+    const server = fakeAccountServer();
+    const phone = await device(browser, server, [subscription("netflix", "넷플릭스")]);
+    await phone.goto("/subs");
+    await expect.poll(server.names).toEqual(["넷플릭스"]);
+
+    await phone.goto("/me");
+    await expect(
+      phone.getByText("로그인한 기기끼리 자동으로 맞춰져요", { exact: false }),
+    ).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(phone.getByText("기록은 이 기기에만 있어요")).toHaveCount(0);
+  });
+
   test("계정에 빈 기록만 있으면 묻지 않고 이 기기의 기록을 올린다", async ({ browser }) => {
     // 다른 기기가 먼저 빈 기록을 올려 둔 계정. 예전에는 '어느 기록을 쓸까요'가 떴고, 창을 닫으면
     // 자동 동기화가 꺼져 앱의 구독이 웹에 끝내 오지 않았다.
