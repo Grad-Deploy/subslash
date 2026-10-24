@@ -16,7 +16,7 @@
 
 ### 소개 영상
 
-https://github.com/user-attachments/assets/0236c964-fc1e-4c15-ba16-9012d489e57e
+https://github.com/user-attachments/assets/2f4b0acb-9ba4-45f0-8dd7-224c0053856b
 
 영상이 보이지 않으면 [여기서 내려받아 보세요 (MP4, 8MB)](docs/media/subslash-intro.mp4).
 
