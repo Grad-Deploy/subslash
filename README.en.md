@@ -16,9 +16,9 @@ watch" — and once you've decided to cancel, helps you all the way through canc
 
 ### Intro video
 
-https://github.com/user-attachments/assets/13b3e1eb-1b84-4701-82f9-5f3ca86a270a
+https://github.com/user-attachments/assets/2f4b0acb-9ba4-45f0-8dd7-224c0053856b
 
-If the video doesn't show, [download it here (MP4, 9 MB)](docs/media/subslash-intro.mp4).
+If the video doesn't show, [download it here (MP4, 8 MB)](docs/media/subslash-intro.mp4).
 
 > Every screen in this README is a capture of the Android app taken with sample data (October 23, 2026).
 
