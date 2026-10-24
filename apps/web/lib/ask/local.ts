@@ -368,7 +368,14 @@ const asksAmount =
 /** 지출을 묻지만 앱이 모르는 것(요금 변경·평균·이유)이나 다른 기능(알림·비교)이 섞인 말. */
 const NOT_SPEND =
   /인상|올랐|오르|오른|내린|소식|평균|왜|이유|알림|비교|보통|예산|추천|줄었|늘었|증가|감소|변화/;
-const yearly = /1년|일년|한\s*해|연간|연\s*단위|올해|1\s*년|12\s*개월|열두\s*달|year|annual/;
+// '일 년'(띄어 씀)이 빠져 "일 년 뒤엔 얼마"를 한 달 합계로 답했다. WHOLE_YEAR는 처음부터 `일\s*년`을 본다.
+const yearly = /1년|일\s*년|한\s*해|연간|연\s*단위|올해|1\s*년|12\s*개월|열두\s*달|year|annual/;
+/**
+ * 무엇을 빼고 나머지를 묻는 말. 앱에는 '무엇을 뺀 합계'를 셀 도구가 없어 AI에 맡긴다 — 분류·서비스 이름만 보고 읽으면
+ * "OTT 빼고 나머지 구독은 1년에 얼마야?"를 뺀 쪽인 OTT의 합계로 답했다.
+ */
+const EXCLUDING =
+  /빼고|빼면|뺀\s|제외|말고|외에|외의|나머지|except|excluding|other than|besides|apart from/;
 const monthly = /한\s*달|1달|월\s*(?:에|마다|고정|구독)|매달|매월|달에|월간|month/;
 /** 기간을 정하지 않고 쌓인 것 전부(지킨 돈의 `all`). 대시보드·절약 현황의 '해지로 지킨 돈'이 이 숫자다. */
 const allTime =
@@ -469,7 +476,7 @@ export function localAskCall(
     if (followUp) return followUp;
   }
   if (q.length < 4 || q.length > 60) return null;
-  if (STEERING.test(q) || NOT_MY_RECORDS.test(q)) return null;
+  if (STEERING.test(q) || NOT_MY_RECORDS.test(q) || EXCLUDING.test(q)) return null;
   const subscriptions = options.subscriptions ?? [];
   const ofService = serviceCall(q, subscriptions);
   // 서비스 이름과 1년을 함께 적은 질문("배민 1년은?")은 '은/는'으로 끝나도 앞선 턴 없이 뜻이 하나다.
