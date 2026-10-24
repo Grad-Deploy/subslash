@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { spaceCurrencySymbol, type Subscription, type UsageLog } from "@subslash/shared";
 import { messages } from "@lib/i18n/messages";
+import { subscriptionName } from "@lib/service-name";
 import {
   buildValueReceipt,
   receiptDate,
@@ -147,6 +148,13 @@ describe("해지 순서와 아래 버튼", () => {
     const { cancel, checkIn } = sheetActions(messages.ko, summary);
     expect(cancel).toEqual({ id: "b", label: "구독b부터 해지 안내", rest: ["c", "a"] });
     expect(checkIn).toEqual({ id: "d", label: "구독d 체크인" });
+  });
+
+  it("버튼의 구독 이름은 화면 언어의 이름으로 바꿔 적는다", () => {
+    const netflix = { ...sub("n", 17000), name: "넷플릭스" };
+    const { summary } = buildValueReceipt([netflix], [log("n", 0, "red")], RATE, NOW);
+    const { cancel } = sheetActions(messages.en, summary, (s) => subscriptionName(s, "en"));
+    expect(cancel?.label).toBe("Cancel guide for Netflix");
   });
 
   it("할 일이 없으면 버튼도 없다", () => {

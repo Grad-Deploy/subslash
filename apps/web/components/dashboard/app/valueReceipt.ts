@@ -144,9 +144,13 @@ export function receiptDate(now: Date): string {
   return formatDotDate(now);
 }
 
-/** 계산서 맨 아래 한 줄. 체크인이 하나도 없으면 체크인을 권한다. */
-export function receiptFooter(t: Messages, summary: ValueReceipt["summary"]): string {
-  if (summary.wasteSuggestion) return describeWasteSuggestion(t, summary.wasteSuggestion);
+/** 계산서 맨 아래 한 줄. 체크인이 하나도 없으면 체크인을 권한다. `nameOf`는 구독 이름을 화면 언어로 바꾼다. */
+export function receiptFooter(
+  t: Messages,
+  summary: ValueReceipt["summary"],
+  nameOf?: (name: string) => string,
+): string {
+  if (summary.wasteSuggestion) return describeWasteSuggestion(t, summary.wasteSuggestion, nameOf);
   return summary.worthItItems.length === 0 && summary.wastedItems.length === 0
     ? t.receipt.footerNoCheckIn
     : t.receipt.footerMore;
@@ -164,11 +168,12 @@ export interface SheetCancelAction extends SheetAction {
 
 /**
  * 계산서 아래 고정 버튼. 금액이 큰 구독부터 연다(나머지는 계산서의 각 줄을 눌러 연다). 여럿이면
- * '…부터'라고 적어 이어서 묻는다는 것을 알린다.
+ * '…부터'라고 적어 이어서 묻는다는 것을 알린다. `nameOf`는 구독 이름을 화면 언어로 바꾼다.
  */
 export function sheetActions(
   t: Messages,
   summary: ValueReceipt["summary"],
+  nameOf: (sub: Subscription) => string = (sub) => sub.name,
 ): {
   cancel: SheetCancelAction | null;
   checkIn: SheetAction | null;
@@ -181,14 +186,14 @@ export function sheetActions(
     cancel: waste
       ? {
           id: waste.sub.id,
-          label: t.receipt.cancelFrom(waste.sub.name, summary.wastedItems.length > 1),
+          label: t.receipt.cancelFrom(nameOf(waste.sub), summary.wastedItems.length > 1),
           rest: wasteOrder(summary.wastedItems, waste.sub.id),
         }
       : null,
     checkIn: check
       ? {
           id: check.sub.id,
-          label: t.receipt.checkInFrom(check.sub.name, summary.unknownItems.length > 1),
+          label: t.receipt.checkInFrom(nameOf(check.sub), summary.unknownItems.length > 1),
         }
       : null,
   };

@@ -221,7 +221,7 @@ export function ValueReceiptPaper({
       <AppSavingsLink variant="receipt" />
 
       <p className="mt-3 text-center text-[11.5px] leading-relaxed text-muted-foreground">
-        {receiptFooter(t, summary)}
+        {receiptFooter(t, summary, (name) => names.sub({ name }))}
       </p>
     </div>
   );
