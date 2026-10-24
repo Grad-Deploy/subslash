@@ -46,16 +46,18 @@ export function CostEfficiencyGauge({
   return (
     <div className="flex flex-col gap-2 w-full max-w-[400px]">
       <div className="flex items-center gap-3">
-        <span className={`text-sm font-bold min-w-[40px] ${levelColors[breakEvenInfo.level]}`}>
-          {breakEvenInfo.progressPercent}%
+        {/* 무엇의 퍼센트인지 적는다 — 숫자만 있을 때는 '38%'가 무엇인지 알 수 없었다. */}
+        <span
+          className={`shrink-0 text-sm font-bold tabular-nums ${levelColors[breakEvenInfo.level]}`}
+        >
+          {g.progress(breakEvenInfo.progressPercent)}
         </span>
+        {/* 막대 끝이 본전(100%)이다. 예전에는 본전선을 막대의 80% 자리에 그려 숫자와 맞지 않았다. */}
         <div className="relative flex-1 h-3 bg-secondary rounded-full overflow-hidden">
           <div
             className={`h-full transition-all duration-500 ${barColors[breakEvenInfo.level]}`}
             style={{ width: `${displayProgress}%` }}
           />
-          {/* Break-even marker at 80% position visually representing the target */}
-          <div className="absolute top-0 bottom-0 left-[80%] w-[2px] bg-border border-l border-dashed border-primary-foreground/50 z-10" />
         </div>
       </div>
 

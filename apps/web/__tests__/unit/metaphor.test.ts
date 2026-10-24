@@ -3,7 +3,9 @@ import { messages } from "@lib/i18n/messages";
 import { describeBreakEven, describeUsageMetaphor } from "@lib/i18n/check-in-outcome";
 import {
   getUsageMetaphor,
+  calculateCostPerUse,
   getBreakEvenInfo,
+  getRiskLevel,
   getMonthlyValueSummary,
   getLowUsageBillingFigures,
   Subscription,
@@ -67,6 +69,16 @@ describe("Metaphor and Value Calculation Utils", () => {
       expect(info.progressPercent).toBe(63);
       expect(info.level).toBe("warning");
       expect(describeBreakEven(messages.ko, info)).toContain("3회 더 이용하면 달성");
+    });
+
+    it("기본 본전은 4회이고, 단계는 체크인 배지(getRiskLevel)와 횟수마다 같다", () => {
+      // 게이지만 8회로 따로 세어 3회를 배지는 노랑, 게이지는 빨강(38%)으로 보였다(운영 QA 2026-10-24).
+      const BADGE_TO_GAUGE = { red: "danger", yellow: "warning", green: "safe" } as const;
+      for (let count = 0; count <= 10; count++) {
+        const badge = getRiskLevel(calculateCostPerUse(17000, count), 17000, count);
+        expect(getBreakEvenInfo(17000, count).level, `${count}회`).toBe(BADGE_TO_GAUGE[badge]);
+      }
+      expect(getBreakEvenInfo(17000, 3).breakEvenUsage).toBe(4);
     });
 
     it("8회 이상 사용 시 100% 이상 및 달성 단계 반환", () => {

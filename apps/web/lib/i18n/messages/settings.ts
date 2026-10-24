@@ -11,7 +11,7 @@ export const ko = {
   language: {
     title: "언어 · Language",
     system: "기기 설정 따라",
-    note: "서비스 목록·요금·개인정보처리방침은 한국 기준이고, 아직 영어로 옮기지 않은 화면은 한국어로 보여요.",
+    note: "서비스 목록·요금·개인정보처리방침은 한국 기준이에요. 다른 언어 화면에서도 해지 안내와 요금 설명은 한국어 원문으로 보여요.",
   },
   exchangeRate: {
     section: "환율",
@@ -109,7 +109,7 @@ export const en: Widen<typeof ko> = {
   language: {
     title: "Language",
     system: "Follow device",
-    note: "The service list, prices and privacy policy are for Korea, and screens not yet translated still appear in Korean.",
+    note: "The service list, prices and privacy policy are for Korea; cancellation guides and price notes stay in the original Korean.",
   },
   exchangeRate: {
     section: "Exchange rate",
