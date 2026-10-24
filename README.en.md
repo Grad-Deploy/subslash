@@ -16,7 +16,7 @@ watch" — and once you've decided to cancel, helps you all the way through canc
 
 ### Intro video
 
-https://github.com/user-attachments/assets/0236c964-fc1e-4c15-ba16-9012d489e57e
+https://github.com/user-attachments/assets/2f4b0acb-9ba4-45f0-8dd7-224c0053856b
 
 If the video doesn't show, [download it here (MP4, 8 MB)](docs/media/subslash-intro.mp4).
 
