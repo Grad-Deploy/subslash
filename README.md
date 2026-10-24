@@ -1,5 +1,7 @@
 # SubSlash — 구독, 끊을 용기
 
+<p align="right"><b>한국어</b> | <a href="README.en.md">English</a></p>
+
 <p align="center">
   <img src="docs/images/feature-graphic.png" alt="SubSlash — 한 번 쓸 때 얼마인지 보고, 결제 전에 정리하세요" width="720">
 </p>
@@ -14,7 +16,9 @@
 
 ### 소개 영상
 
-**[▶ SubSlash 소개 영상 보기 (MP4, 9MB)](docs/media/subslash-intro.mp4)** — 무엇을 하는 서비스인지 짧게 보여 줍니다.
+https://github.com/user-attachments/assets/13b3e1eb-1b84-4701-82f9-5f3ca86a270a
+
+영상이 보이지 않으면 [여기서 내려받아 보세요 (MP4, 9MB)](docs/media/subslash-intro.mp4).
 
 > 이 README의 화면은 모두 샘플 데이터로 찍은 안드로이드 앱 캡처입니다(2026년 10월 23일).
 
