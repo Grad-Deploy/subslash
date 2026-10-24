@@ -67,6 +67,13 @@ export const ko = {
     /** 한국어가 아닌 화면에서 서비스 목록 요금 옆의 표시(KoreanPriceNote). 목록 요금은 한국에서 확인한 값이라 언어를 바꿔도 옮기지 않는다. */
     koreanPrice: "요금은 한국에서 확인한 값이에요. 다르게 낸다면 실제로 내는 금액을 적어 주세요.",
   },
+  /** 없는 주소(app/not-found). Next.js 기본 화면은 영어 한 줄뿐이고 돌아갈 길이 없었다. */
+  notFound: {
+    title: "페이지를 찾을 수 없어요",
+    body: "주소가 바뀌었거나 없는 페이지예요. 구독 기록은 그대로 있어요.",
+    home: "처음으로",
+    dashboard: "대시보드로",
+  },
   app: {
     sheetClose: "닫기",
     exitHint: "한 번 더 누르면 앱이 종료돼요",
@@ -136,6 +143,12 @@ export const en: Widen<typeof ko> = {
     koreanPrice:
       "Prices are as checked for Korea. If you pay a different amount, enter what you actually pay.",
   },
+  notFound: {
+    title: "Page not found",
+    body: "The address changed or the page doesn't exist. Your subscription records are untouched.",
+    home: "Home",
+    dashboard: "Go to dashboard",
+  },
   app: {
     sheetClose: "Close",
     exitHint: "Press back again to exit the app",
@@ -203,6 +216,12 @@ export const zh: Widen<typeof ko> = {
     sourceText: "原文（韩语），未翻译：我们保留了在服务上确认过的原样内容。",
     koreanPrice: "价格为在韩国确认的金额。如果你支付的金额不同，请填写实际支付的金额。",
   },
+  notFound: {
+    title: "找不到页面",
+    body: "地址已更改或页面不存在。你的订阅记录不受影响。",
+    home: "返回首页",
+    dashboard: "前往仪表板",
+  },
   app: { sheetClose: "关闭", exitHint: "再按一次返回键退出应用" },
 };
 
@@ -267,6 +286,12 @@ export const ja: Widen<typeof ko> = {
     sourceText: "原文（韓国語）・未翻訳: サービスで確認したとおりの内容をそのまま載せています。",
     koreanPrice:
       "料金は韓国で確認した金額です。支払い額が違う場合は、実際に支払っている金額を入力してください。",
+  },
+  notFound: {
+    title: "ページが見つかりません",
+    body: "アドレスが変わったか、存在しないページです。サブスクの記録はそのままです。",
+    home: "トップへ",
+    dashboard: "ダッシュボードへ",
   },
   app: { sheetClose: "閉じる", exitHint: "もう一度戻るを押すとアプリを終了します" },
 };
@@ -333,6 +358,12 @@ export const vi: Widen<typeof ko> = {
       "Bản gốc (tiếng Hàn), chưa dịch: chúng tôi giữ nguyên nội dung đã kiểm tra trên dịch vụ.",
     koreanPrice:
       "Giá là mức đã kiểm tra tại Hàn Quốc. Nếu bạn trả số tiền khác, hãy nhập số tiền bạn thực sự trả.",
+  },
+  notFound: {
+    title: "Không tìm thấy trang",
+    body: "Địa chỉ đã thay đổi hoặc trang không tồn tại. Dữ liệu gói đăng ký của bạn vẫn còn nguyên.",
+    home: "Trang chủ",
+    dashboard: "Đến bảng điều khiển",
   },
   app: { sheetClose: "Đóng", exitHint: "Nhấn quay lại lần nữa để thoát ứng dụng" },
 };
@@ -401,6 +432,12 @@ export const fr: Widen<typeof ko> = {
       "Texte original (coréen), non traduit : nous le gardons tel que nous l'avons vérifié sur le service.",
     koreanPrice:
       "Les prix sont ceux vérifiés pour la Corée. Si vous payez un autre montant, saisissez ce que vous payez réellement.",
+  },
+  notFound: {
+    title: "Page introuvable",
+    body: "L'adresse a changé ou la page n'existe pas. Vos abonnements enregistrés sont intacts.",
+    home: "Accueil",
+    dashboard: "Aller au tableau de bord",
   },
   app: {
     sheetClose: "Fermer",
@@ -472,6 +509,12 @@ export const es: Widen<typeof ko> = {
     koreanPrice:
       "Los precios son los comprobados para Corea. Si pagas otro importe, introduce lo que pagas realmente.",
   },
+  notFound: {
+    title: "Página no encontrada",
+    body: "La dirección cambió o la página no existe. Tus suscripciones guardadas siguen intactas.",
+    home: "Inicio",
+    dashboard: "Ir al panel",
+  },
   app: { sheetClose: "Cerrar", exitHint: "Pulsa atrás otra vez para salir de la app" },
 };
 
@@ -540,6 +583,12 @@ export const de: Widen<typeof ko> = {
     koreanPrice:
       "Die Preise wurden für Korea geprüft. Wenn du einen anderen Betrag zahlst, gib ein, was du tatsächlich zahlst.",
   },
+  notFound: {
+    title: "Seite nicht gefunden",
+    body: "Die Adresse hat sich geändert oder die Seite gibt es nicht. Deine Abo-Daten bleiben unverändert.",
+    home: "Startseite",
+    dashboard: "Zum Dashboard",
+  },
   app: { sheetClose: "Schließen", exitHint: "Noch einmal Zurück drücken, um die App zu beenden" },
 };
 
@@ -606,6 +655,12 @@ export const pt: Widen<typeof ko> = {
       "Texto original (coreano), sem tradução: mantemos exatamente como conferimos no serviço.",
     koreanPrice:
       "Os preços são os conferidos para a Coreia. Se você paga outro valor, informe o que paga de fato.",
+  },
+  notFound: {
+    title: "Página não encontrada",
+    body: "O endereço mudou ou a página não existe. Seus registros de assinaturas continuam intactos.",
+    home: "Início",
+    dashboard: "Ir para o painel",
   },
   app: { sheetClose: "Fechar", exitHint: "Toque em voltar de novo para sair do app" },
 };
