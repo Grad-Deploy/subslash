@@ -115,12 +115,15 @@ test.describe("구독 리포트 (E2E)", () => {
     await expect(ask.getByText(/28,990/).first()).toBeVisible();
     expect(sent).toEqual([]);
 
-    // 서비스 이름이 든 질문은 기기 규칙이 답하지 않고 AI에 넘긴다 — 보내는 것은 질문(과 앞선 턴의 질문·호출)뿐이다.
-    await ask.getByRole("textbox").fill("넷플릭스랑 멜론 합치면 1년에?");
+    // 기기 규칙이 모르는 질문은 AI에 넘긴다 — 보내는 것은 질문(과 앞선 턴의 질문·호출)뿐이다.
+    // 규칙이 넓어지면 여기 질문이 기기에서 답해져 서버로 가지 않으니, 그때는 규칙이 모르는 질문으로 바꾼다
+    // (이름을 댄 서비스들의 합계를 규칙이 답하게 된 뒤 "넷플릭스랑 멜론 합치면 1년에?"가 그랬다).
+    const question = "적금 대신 이 돈 모으면 어떨까?";
+    await ask.getByRole("textbox").fill(question);
     await ask.getByRole("button", { name: "묻기", exact: true }).click();
     await expect(ask.getByText(/347,880/).first()).toBeVisible();
     expect(sent).toHaveLength(1);
     expect(JSON.stringify(sent[0])).not.toContain("17000");
-    expect(sent[0]).toMatchObject({ question: "넷플릭스랑 멜론 합치면 1년에?" });
+    expect(sent[0]).toMatchObject({ question });
   });
 });
