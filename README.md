@@ -1,5 +1,9 @@
 # SubSlash — 구독, 끊을 용기
 
+<p align="center">
+  <img src="docs/images/feature-graphic.png" alt="SubSlash — 한 번 쓸 때 얼마인지 보고, 결제 전에 정리하세요" width="720">
+</p>
+
 > 매달 빠져나가는 구독료, 정말 그만한 가치가 있을까요?
 
 **SubSlash**는 구독료를 "한 달 17,000원"이 아니라 **"한 번 볼 때 4,250원"** 처럼 1회 사용 단가로 보여 주고,
@@ -7,6 +11,12 @@
 
 - 웹: [www.subslash.me](https://www.subslash.me) — 회원가입 없이 바로 쓸 수 있습니다.
 - 안드로이드 앱: 지금은 비공개 테스트 중입니다. 공개 출시하면 이곳에 스토어 주소를 적습니다.
+
+### 소개 영상
+
+**[▶ SubSlash 소개 영상 보기 (MP4, 9MB)](docs/media/subslash-intro.mp4)** — 무엇을 하는 서비스인지 짧게 보여 줍니다.
+
+> 이 README의 화면은 모두 샘플 데이터로 찍은 안드로이드 앱 캡처입니다(2026년 10월 23일).
 
 ## 이런 분께 맞아요
 
@@ -29,6 +39,14 @@
   물어봅니다. 묻기만 하고 마음대로 등록하지 않습니다.
 - **샘플로 둘러보기** — 등록 전에 샘플 구독으로 화면을 먼저 볼 수 있습니다. 샘플은 내 기록에 섞이지 않습니다.
 
+<p align="center">
+  <img src="docs/images/add-subscription.png" alt="구독 추가 방법 고르기" width="24%">
+  <img src="docs/images/service-picker.png" alt="서비스 고르기" width="24%">
+  <img src="docs/images/add-form-plan.png" alt="등록 폼에서 요금제 고르기" width="24%">
+  <img src="docs/images/gmail-import.png" alt="Gmail로 구독 찾기" width="24%">
+</p>
+<p align="center"><sub>구독 추가 · 서비스 고르기 · 요금제 고르기 · Gmail로 찾기</sub></p>
+
 ### 2. 얼마나 썼는지 체크인하기
 
 "지난 30일 동안 몇 번 썼나요?"에 답하면 1회 단가가 나오고, 가성비가 좋은지(초록)·애매한지(노랑)·아까운지(빨강)
@@ -44,6 +62,12 @@
 - **Claude·ChatGPT 같은 AI 구독**은 PC의 Claude Code·Codex·Cursor·Antigravity 기록이나 claude.ai 대화 내보내기
   파일로 쓴 날을 세고, 같은 사용량을 API로 냈다면 얼마였을지도 보여 줍니다. 파일은 브라우저 안에서만 읽습니다.
 
+<p align="center">
+  <img src="docs/images/check-in.png" alt="최근 30일 사용 횟수 체크인" width="32%">
+  <img src="docs/images/report-usage-time.png" alt="구독별 사용 시간 그래프" width="32%">
+</p>
+<p align="center"><sub>체크인 · 폰 기록으로 본 구독별 사용 시간</sub></p>
+
 ### 3. 대시보드에서 할 일 확인하기
 
 대시보드는 지금 신경 써야 할 구독부터 보여 줍니다.
@@ -54,6 +78,13 @@
   뺍니다.
 - **곧 결제돼요 / 체크인할 때가 됐어요** — 결제일이 다가오는 구독, 오래 체크인하지 않은 구독을 알려 줍니다.
 
+<p align="center">
+  <img src="docs/images/dashboard.png" alt="대시보드 — 오늘의 구독 점검" width="32%">
+  <img src="docs/images/dashboard-bill.png" alt="대시보드의 이달 가성비 계산서" width="32%">
+  <img src="docs/images/billing-calendar.png" alt="결제 캘린더" width="32%">
+</p>
+<p align="center"><sub>오늘의 구독 점검 · 이달 가성비 계산서 · 결제 캘린더</sub></p>
+
 ### 4. 해지하기
 
 해지하기로 했다면 서비스별 해지 방법을 단계별로 안내합니다. 링크가 해지 화면으로 바로 가는지, 서비스 첫 화면까지만
@@ -61,6 +92,12 @@
 두었다면 "이 계정으로 로그인해야 해지 버튼이 보여요"라고 알려 줍니다.
 
 해지를 기록하면 그만큼 아끼게 된 돈이 **'지킨 돈'** 에 쌓이고, 친구에게 공유할 수 있습니다.
+
+<p align="center">
+  <img src="docs/images/cancel-guide.png" alt="서비스별 해지 가이드" width="32%">
+  <img src="docs/images/savings.png" alt="해지로 지킨 돈" width="32%">
+</p>
+<p align="center"><sub>해지 가이드 · 지킨 돈</sub></p>
 
 ### 5. 리포트 보기
 
@@ -73,6 +110,13 @@
 
 을 볼 수 있습니다. **리포트에 물어보기** 칸에 "OTT에 얼마 써?", "넷플릭스랑 멜론 합치면 1년에?"처럼 물으면 바로
 답해 줍니다.
+
+<p align="center">
+  <img src="docs/images/report.png" alt="구독 리포트" width="32%">
+  <img src="docs/images/ask-report.png" alt="리포트에 물어보기" width="32%">
+  <img src="docs/images/receipt.png" alt="구독 영수증" width="32%">
+</p>
+<p align="center"><sub>구독 리포트 · 리포트에 물어보기 · 구독 영수증</sub></p>
 
 ### 결제일 알림
 
