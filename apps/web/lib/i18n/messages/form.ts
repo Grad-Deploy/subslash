@@ -11,6 +11,11 @@ const colorLabel = (id: (typeof CUSTOM_ICON_COLORS)[number]["id"]): string =>
 export const ko = {
   submit: "구독 등록하기",
   save: "저장",
+  // 샘플 체험 중의 등록. 등록하면 체험이 끝나고 실제 기록에 들어간다(store의 addSubscription) — 모르고 누르지 않게 알린다.
+  demoNotice:
+    "샘플 체험 중이에요. 등록하면 체험이 끝나고, 이 구독은 샘플이 아니라 내 기록에 저장돼요.",
+  demoSubmit: "체험 끝내고 내 기록에 등록",
+  demoAdded: (name: string) => `${name} 등록 완료 · 체험을 끝냈어요`,
   more: (items: string) => `자세히 입력 (선택) · ${items}`,
   moreItems: {
     sharing: "공유 인원",
@@ -167,6 +172,10 @@ export const ko = {
 export const en: Widen<typeof ko> = {
   submit: "Add subscription",
   save: "Save",
+  demoNotice:
+    "You're in the sample demo. Adding this ends the demo and saves it to your own records, not the samples.",
+  demoSubmit: "End demo and add to my records",
+  demoAdded: (name) => `${name} added · demo ended`,
   more: (items) => `More details (optional) · ${items}`,
   moreItems: {
     sharing: "people sharing",
@@ -328,6 +337,9 @@ const fmPl = (n: number, one: string, many: string) => (Number(n) === 1 ? one : 
 export const zh: Widen<typeof ko> = {
   submit: "添加订阅",
   save: "保存",
+  demoNotice: "正在体验示例。添加后体验将结束，这项订阅会保存到你自己的记录，而不是示例。",
+  demoSubmit: "结束体验并添加到我的记录",
+  demoAdded: (name) => `已添加${name} · 体验已结束`,
   more: (items) => `更多信息（可选）· ${items}`,
   moreItems: {
     sharing: "共用人数",
@@ -476,6 +488,10 @@ export const zh: Widen<typeof ko> = {
 export const ja: Widen<typeof ko> = {
   submit: "サブスクを追加",
   save: "保存",
+  demoNotice:
+    "サンプル体験中です。追加すると体験が終わり、このサブスクはサンプルではなく自分の記録に保存されます。",
+  demoSubmit: "体験を終えて自分の記録に追加",
+  demoAdded: (name) => `${name}を追加しました · 体験を終了しました`,
   more: (items) => `詳しい情報（任意）· ${items}`,
   moreItems: {
     sharing: "共有人数",
@@ -633,6 +649,10 @@ export const ja: Widen<typeof ko> = {
 export const vi: Widen<typeof ko> = {
   submit: "Thêm gói đăng ký",
   save: "Lưu",
+  demoNotice:
+    "Bạn đang dùng thử dữ liệu mẫu. Khi thêm, chế độ dùng thử sẽ kết thúc và gói này được lưu vào dữ liệu của bạn, không phải dữ liệu mẫu.",
+  demoSubmit: "Kết thúc dùng thử và thêm vào dữ liệu của tôi",
+  demoAdded: (name) => `Đã thêm ${name} · đã kết thúc dùng thử`,
   more: (items) => `Thông tin thêm (tùy chọn) · ${items}`,
   moreItems: {
     sharing: "số người dùng chung",
@@ -788,6 +808,10 @@ export const vi: Widen<typeof ko> = {
 export const fr: Widen<typeof ko> = {
   submit: "Ajouter l'abonnement",
   save: "Enregistrer",
+  demoNotice:
+    "Vous êtes dans la démo. L'ajout met fin à la démo et enregistre cet abonnement dans vos propres données, pas dans les exemples.",
+  demoSubmit: "Quitter la démo et ajouter à mes données",
+  demoAdded: (name) => `${name} ajouté · démo terminée`,
   more: (items) => `Plus de détails (facultatif) · ${items}`,
   moreItems: {
     sharing: "personnes qui partagent",
@@ -948,6 +972,10 @@ export const fr: Widen<typeof ko> = {
 export const es: Widen<typeof ko> = {
   submit: "Añadir suscripción",
   save: "Guardar",
+  demoNotice:
+    "Estás en la demo de ejemplo. Al añadirla, la demo termina y esta suscripción se guarda en tus propios registros, no en los ejemplos.",
+  demoSubmit: "Salir de la demo y añadir a mis registros",
+  demoAdded: (name) => `${name} añadida · demo terminada`,
   more: (items) => `Más detalles (opcional) · ${items}`,
   moreItems: {
     sharing: "personas que comparten",
@@ -1108,6 +1136,10 @@ export const es: Widen<typeof ko> = {
 export const de: Widen<typeof ko> = {
   submit: "Abo hinzufügen",
   save: "Speichern",
+  demoNotice:
+    "Du bist in der Beispiel-Demo. Beim Hinzufügen endet die Demo und das Abo wird in deinen eigenen Daten gespeichert, nicht bei den Beispielen.",
+  demoSubmit: "Demo beenden und zu meinen Daten hinzufügen",
+  demoAdded: (name) => `${name} hinzugefügt · Demo beendet`,
   more: (items) => `Weitere Angaben (optional) · ${items}`,
   moreItems: {
     sharing: "Personen, die teilen",
@@ -1267,6 +1299,10 @@ export const de: Widen<typeof ko> = {
 export const pt: Widen<typeof ko> = {
   submit: "Adicionar assinatura",
   save: "Salvar",
+  demoNotice:
+    "Você está na demonstração. Ao adicionar, a demonstração termina e esta assinatura é salva nos seus próprios registros, não nos exemplos.",
+  demoSubmit: "Sair da demonstração e adicionar aos meus registros",
+  demoAdded: (name) => `${name} adicionada · demonstração encerrada`,
   more: (items) => `Mais detalhes (opcional) · ${items}`,
   moreItems: {
     sharing: "pessoas que dividem",
