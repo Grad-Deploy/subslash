@@ -16,9 +16,9 @@
 
 ### 소개 영상
 
-https://github.com/user-attachments/assets/13b3e1eb-1b84-4701-82f9-5f3ca86a270a
+https://github.com/user-attachments/assets/0236c964-fc1e-4c15-ba16-9012d489e57e
 
-영상이 보이지 않으면 [여기서 내려받아 보세요 (MP4, 9MB)](docs/media/subslash-intro.mp4).
+영상이 보이지 않으면 [여기서 내려받아 보세요 (MP4, 8MB)](docs/media/subslash-intro.mp4).
 
 > 이 README의 화면은 모두 샘플 데이터로 찍은 안드로이드 앱 캡처입니다(2026년 10월 23일).
 
