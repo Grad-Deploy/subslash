@@ -303,6 +303,30 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
     });
   });
 
+  it("무엇을 빼고 나머지를 물으면 규칙으로 읽지 않는다 — 뺀 것의 합계로 답하지 않는다", () => {
+    // "OTT 빼고 나머지"를 OTT 합계로 답했다(운영 QA 2026-10-24).
+    for (const q of [
+      "OTT 빼고 나머지 구독은 1년에 얼마야?",
+      "음악 말고 다른 건 일 년에 얼마씩 나가?",
+      "영상 쪽 말고 나머지 합치면 연간 얼마?",
+      "넷플릭스 제외하고 구독비 얼마야?",
+      "AI 툴 외에 구독료 합계는?",
+    ]) {
+      expect(localAskCall(q, { now: NOW }), q).toBeNull();
+    }
+  });
+
+  it("띄어 쓴 '일 년'도 1년이다", () => {
+    // "일 년 뒤엔 얼마"를 한 달 합계로 답했다(운영 QA 2026-10-24).
+    expect(
+      localAskCall("지금 구독을 그대로 유지하면 일 년 뒤엔 얼마나 쓴 셈이야?", { now: NOW }),
+    ).toEqual({ tool: "spendTotal", args: { period: "year" } });
+    expect(localAskCall("음악에 일 년 동안 쓰는 돈 얼마?", { now: NOW })).toEqual({
+      tool: "spendByCategory",
+      args: { category: "music", period: "year" },
+    });
+  });
+
   it("서비스 하나의 요금만 물으면 줄임말·초성도 그 서비스의 정보로 읽는다", () => {
     const subs = [
       { id: "m", name: "밀리의 서재" },
