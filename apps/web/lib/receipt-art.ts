@@ -3,6 +3,7 @@ import type { Messages } from "@lib/i18n/messages";
 import {
   describeReceiptLine,
   formatReceiptPeriodText,
+  receiptEmptyText,
   receiptFootnotes,
   receiptNumber,
   receiptPeriodSuffix,
@@ -96,9 +97,9 @@ export function receiptArt(
     lines: receipt.lines.map((line) => ({
       name: line.name,
       amount: formatKRW(line.amountKRW),
-      meta: describeReceiptLine(t, line, period),
+      meta: describeReceiptLine(t, line, period, options),
     })),
-    empty: receipt.lines.length === 0 ? v.empty : null,
+    empty: receipt.lines.length === 0 ? receiptEmptyText(t, options) : null,
     extras,
     notes: receiptFootnotes(t, receipt, options),
     from: `${pad(startMonth)}.01`,

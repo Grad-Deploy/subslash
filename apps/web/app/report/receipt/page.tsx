@@ -174,7 +174,7 @@ function ReceiptFromQuery() {
       { maskNames },
       { masked: s.maskedName, maskedKilled: s.maskedKilled },
     );
-    const body = formatReceiptShareText(tRef.current, shown);
+    const body = formatReceiptShareText(tRef.current, shown.receipt, shown.render);
     // 앱의 공유 창은 주소 칸을 따로 넘기지 않으므로 글 끝에 링크를 적는다(절약 공유와 같다).
     const text = link.url ? `${body}\n\n${link.url}` : body;
     const shared = await shareText({
@@ -282,6 +282,12 @@ function ReceiptFromQuery() {
         />
         {v.page.maskNames}
       </label>
+      {/* 가려도 구독이 하나면 합계가 곧 그 구독의 금액이다. */}
+      {maskNames && receipt.lines.length === 1 && (
+        <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+          {v.page.maskSingleHint}
+        </p>
+      )}
       <p className="text-xs text-muted-foreground">{v.page.privacy}</p>
 
       <ConfirmDialog

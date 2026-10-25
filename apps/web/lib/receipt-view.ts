@@ -20,7 +20,12 @@ export function formatReceiptPeriodText(t: Messages, period: ReceiptPeriod): str
 }
 
 /** 줄 아래의 작은 글 — 결제일, 나눠 냄, 해지, 그 기간의 체크인. */
-export function describeReceiptLine(t: Messages, line: ReceiptLine, period: ReceiptPeriod): string {
+export function describeReceiptLine(
+  t: Messages,
+  line: ReceiptLine,
+  period: ReceiptPeriod,
+  { unverified = false }: ReceiptRenderOptions = {},
+): string {
   const l = t.receiptView.line;
   const parts: string[] = [];
   const upcoming = new Set(line.upcomingDates);
@@ -47,6 +52,8 @@ export function describeReceiptLine(t: Messages, line: ReceiptLine, period: Rece
   if (line.billingCycle === "yearly") parts.push(l.yearly);
   if (line.shared) parts.push(l.shared(formatKRW(line.billedKRW)));
   if (line.killedOn) parts.push(l.killedOn(formatChargeDate(line.killedOn)));
+  // 공유받은 영수증은 체크인을 싣지 않았으므로 아무 말도 하지 않는다(ReceiptRenderOptions).
+  if (unverified) return parts.join(" · ");
   if (line.usage) {
     parts.push(
       line.usage.count === 0
@@ -70,9 +77,19 @@ export function receiptPeriodSuffix(t: Messages, receipt: Receipt): string {
 export interface ReceiptRenderOptions {
   /**
    * 공유 링크로 받은 영수증이다. 링크는 누구나 지어 만들 수 있으므로, 화면 밖 문구가 잘리는 캡처에서도 남게 영수증 안 맨
-   * 앞에 '확인되지 않은 내용'이라고 적는다(lib/receipt-share).
+   * 앞에 '확인되지 않은 내용'이라고 적는다(lib/receipt-share). 체크인은 링크에 싣지 않으므로 줄마다 '체크인 없음'이라고
+   * 적지 않는다 — 안 한 것이 아니라 모른다.
    */
   unverified?: boolean;
+  /** 가려서 공유한 영수증: 구독별 줄 대신 구독 수와 결제 건수를 적는다. 줄이 없다고 '결제된 구독이 없어요'라고 하지 않는다. */
+  hidden?: { subscriptions: number; charges: number };
+}
+
+/** 줄이 없을 때 그 자리에 적는 말. 가린 영수증이면 몇 개를 가렸는지다. */
+export function receiptEmptyText(t: Messages, { hidden }: ReceiptRenderOptions = {}): string {
+  return hidden
+    ? t.receiptView.shared.hiddenSummary(hidden.subscriptions, hidden.charges)
+    : t.receiptView.empty;
 }
 
 /** 영수증 밑의 알림. 빠진 것이 있으면 몇 개가 왜 빠졌는지 말한다. */
@@ -146,7 +163,11 @@ export function receiptHref(period: ReceiptPeriod): string {
  * 공유·복사용 글 영수증. 화면과 같은 숫자만 적고, 카드 명세서가 아니라는 말을 끝에 붙인다 — 받은
  * 사람이 은행 기록으로 읽지 않게.
  */
-export function formatReceiptShareText(t: Messages, receipt: Receipt): string {
+export function formatReceiptShareText(
+  t: Messages,
+  receipt: Receipt,
+  options: ReceiptRenderOptions = {},
+): string {
   const s = t.receiptView.share;
   const suffix = receipt.isComplete
     ? ""
@@ -154,7 +175,7 @@ export function formatReceiptShareText(t: Messages, receipt: Receipt): string {
       ? s.upcomingInTitle
       : s.todayInTitle;
   const lines = [s.title(formatReceiptPeriodText(t, receipt.period), suffix), "-".repeat(28)];
-  if (receipt.lines.length === 0) lines.push(t.receiptView.empty);
+  if (receipt.lines.length === 0) lines.push(receiptEmptyText(t, options));
   for (const line of receipt.lines) {
     const count = line.chargeDates.length > 1 ? ` ×${line.chargeDates.length}` : "";
     const upcoming = line.upcomingDates.length > 0 ? s.upcomingMark : "";
