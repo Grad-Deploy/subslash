@@ -512,7 +512,8 @@ export function PrivacyEn() {
       <Section title="10. Privacy officer">
         {PRIVACY_OFFICER ? (
           <p>
-            {PRIVACY_OFFICER.name} ·{" "}
+            {/* 이름은 한글 그대로다. 화면 낭독기가 한국어로 읽도록 언어를 단다. */}
+            <span lang="ko">{PRIVACY_OFFICER.name}</span> ·{" "}
             <a href={`mailto:${PRIVACY_OFFICER.email}`} className="underline underline-offset-4">
               {PRIVACY_OFFICER.email}
             </a>

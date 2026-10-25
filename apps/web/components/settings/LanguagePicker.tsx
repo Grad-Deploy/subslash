@@ -12,9 +12,14 @@ import { LOCALE_INFO, LOCALES } from "@lib/i18n/config";
 export function LanguagePicker() {
   const t = useT().settings.language;
   const [preference, setPreference] = useLocalePreference();
-  const options: { value: LocalePreference; label: string }[] = [
+  // 언어 이름은 그 언어로 적으므로('한국어', '日本語') 화면 낭독기가 그 언어로 읽게 lang을 단다.
+  const options: { value: LocalePreference; label: string; lang?: string }[] = [
     { value: null, label: t.system },
-    ...LOCALES.map((locale) => ({ value: locale, label: LOCALE_INFO[locale].nativeName })),
+    ...LOCALES.map((locale) => ({
+      value: locale,
+      label: LOCALE_INFO[locale].nativeName,
+      lang: LOCALE_INFO[locale].intl,
+    })),
   ];
 
   return (
@@ -27,7 +32,7 @@ export function LanguagePicker() {
         aria-labelledby="language-heading"
         className="divide-y overflow-hidden rounded-2xl border bg-card"
       >
-        {options.map(({ value, label }) => {
+        {options.map(({ value, label, lang }) => {
           const selected = preference === value;
           return (
             <button
@@ -41,7 +46,9 @@ export function LanguagePicker() {
                 selected && "font-bold",
               )}
             >
-              <span className="flex-1">{label}</span>
+              <span lang={lang} className="flex-1">
+                {label}
+              </span>
               {selected && <Check className="size-4" aria-hidden />}
             </button>
           );
