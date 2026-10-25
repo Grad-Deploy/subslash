@@ -5,8 +5,10 @@ import {
   describeReceiptLine,
   formatReceiptPeriodText,
   receiptFootnotes,
+  receiptEmptyText,
   receiptNumber,
   receiptPeriodSuffix,
+  type ReceiptRenderOptions,
 } from "@lib/receipt-view";
 
 /**
@@ -19,12 +21,12 @@ import {
 export function ReceiptPaper({
   receipt,
   issuedAt,
-  unverified = false,
+  render = {},
 }: {
   receipt: Receipt;
   issuedAt: Date;
-  /** 공유 링크로 받은 영수증이면 '확인되지 않은 내용'을 맨 앞 알림으로 적는다(ReceiptRenderOptions). */
-  unverified?: boolean;
+  /** 공유 링크로 받은 영수증이면 '확인되지 않은 내용'·가린 줄의 요약을 그린다(ReceiptRenderOptions). */
+  render?: ReceiptRenderOptions;
 }) {
   const t = useT();
   const v = t.receiptView;
@@ -51,7 +53,7 @@ export function ReceiptPaper({
       <hr className="my-4 border-t border-dashed border-zinc-400" />
 
       {receipt.lines.length === 0 ? (
-        <p className="py-4 text-center text-sm text-zinc-500">{v.empty}</p>
+        <p className="py-4 text-center text-sm text-zinc-500">{receiptEmptyText(t, render)}</p>
       ) : (
         <ul className="space-y-3">
           {receipt.lines.map((line) => (
@@ -63,7 +65,7 @@ export function ReceiptPaper({
                 </span>
               </div>
               <p className="text-[11px] leading-snug text-zinc-500">
-                {describeReceiptLine(t, line, receipt.period)}
+                {describeReceiptLine(t, line, receipt.period, render)}
               </p>
             </li>
           ))}
@@ -106,7 +108,7 @@ export function ReceiptPaper({
       <hr className="my-4 border-t border-dashed border-zinc-400" />
 
       <ul className="space-y-0.5 text-[10px] leading-snug text-zinc-500">
-        {receiptFootnotes(t, receipt, { unverified }).map((note) => (
+        {receiptFootnotes(t, receipt, render).map((note) => (
           <li key={note}>· {note}</li>
         ))}
       </ul>

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { deflateRawSync, inflateRawSync } from "node:zlib";
-import { POPULAR_SERVICES, type Receipt, type ReceiptLine } from "@subslash/shared";
+import {
+  POPULAR_SERVICES,
+  buildReceipt,
+  type Receipt,
+  type ReceiptLine,
+  type Subscription,
+} from "@subslash/shared";
 import {
   MAX_SHARE_LINES,
   decodeReceiptShare,
@@ -8,10 +14,12 @@ import {
   looksLikeContact,
   shareableReceipt,
 } from "@lib/receipt-share";
-import { receiptFootnotes } from "@lib/receipt-view";
+import { describeReceiptLine, formatReceiptShareText, receiptFootnotes } from "@lib/receipt-view";
 import { messages } from "@lib/i18n/messages";
 
+const NOW = new Date("2026-10-25T12:00:00.000Z");
 const labels = { masked: (n: number) => `구독 ${n}`, maskedKilled: (n: number) => `해지 ${n}` };
+const decode = (hash: string) => decodeReceiptShare(hash, labels, NOW);
 
 const line = (over: Partial<ReceiptLine> = {}): ReceiptLine => ({
   subscriptionId: "sub-netflix",
@@ -29,16 +37,18 @@ const line = (over: Partial<ReceiptLine> = {}): ReceiptLine => ({
   ...over,
 });
 
+/** buildReceipt처럼 합계·건수를 줄에서 센 영수증. */
 function receipt(lines: ReceiptLine[] = defaultLines()): Receipt {
+  const sum = (pick: (l: ReceiptLine) => number) => lines.reduce((s, l) => s + pick(l), 0);
   return {
     period: { kind: "month", year: 2026, month: 9 },
     isComplete: true,
     lines,
-    totalKRW: 20725,
-    billedTotalKRW: 31900,
-    chargeCount: 2,
-    upcomingCount: 0,
-    evidencedCount: 0,
+    totalKRW: sum((l) => l.amountKRW),
+    billedTotalKRW: sum((l) => l.billedKRW),
+    chargeCount: sum((l) => l.chargeDates.length),
+    upcomingCount: sum((l) => l.upcomingDates.length),
+    evidencedCount: sum((l) => l.evidencedDates.length),
     priciestPerUse: lines[0] ?? null,
     defendedKRW: 9900,
     defendedUnknownCount: 1,
@@ -50,10 +60,11 @@ function receipt(lines: ReceiptLine[] = defaultLines()): Receipt {
 
 function defaultLines(): ReceiptLine[] {
   return [
-    line(),
+    line({ name: "Claude Pro", amountKRW: 29811, billedKRW: 29811 }),
     line({
       subscriptionId: "sub-yt",
       name: "유튜브 프리미엄",
+      chargeDates: ["2026-09-12"],
       amountKRW: 3725,
       billedKRW: 14900,
       shared: true,
@@ -65,28 +76,29 @@ function defaultLines(): ReceiptLine[] {
 const issuedAt = new Date("2026-10-01T00:00:00.000Z");
 
 /** 링크 안의 날 값(JSON)을 꺼낸다 — 링크에 무엇이 실렸는지 보려고. */
-function rawWire(hash: string): unknown {
+function rawWire(hash: string): Record<string, unknown> {
   const value = new URLSearchParams(hash.replace(/^#/, "")).get("r")!;
-  const [prefix, data] = [
-    value.slice(0, value.indexOf(".") + 1),
-    value.slice(value.indexOf(".") + 1),
-  ];
-  const bytes = Buffer.from(data, "base64url");
-  return JSON.parse((prefix.endsWith("z.") ? inflateRawSync(bytes) : bytes).toString("utf8"));
+  const dot = value.indexOf(".");
+  const bytes = Buffer.from(value.slice(dot + 1), "base64url");
+  const json = value.slice(0, dot).endsWith("z") ? inflateRawSync(bytes) : bytes;
+  return JSON.parse(json.toString("utf8")) as Record<string, unknown>;
 }
 
 const plainLink = (wire: unknown) =>
-  `r=2.${Buffer.from(JSON.stringify(wire)).toString("base64url")}`;
+  `r=${String((wire as { v?: unknown }).v)}.${Buffer.from(JSON.stringify(wire)).toString("base64url")}`;
 
+/** 고치지 않은 3판 링크의 값. */
 const baseWire = () => ({
-  v: 2,
+  v: 3,
   p: { kind: "month", year: 2026, month: 9 },
   c: 1,
-  l: [["넷플릭스", ["2026-09-03"], [], [], 17000, "monthly", null]],
-  t: 17000,
-  n: [1, 0, 0],
+  l: [
+    ["넷플릭스", ["2026-09-03", "2026-09-28"], ["2026-09-28"], [], 34000, "monthly", null],
+  ] as unknown[][],
+  t: 34000,
+  n: [2, 1, 0],
   d: [0, 0],
-  k: [],
+  k: [] as unknown[],
   fx: [0, 0],
   x: [0, 0, 0],
   i: issuedAt.toISOString(),
@@ -96,49 +108,77 @@ const baseWire = () => ({
 describe("영수증 공유 링크", () => {
   it("영수증을 링크로 옮겼다 그대로 되살린다", async () => {
     const hash = await encodeReceiptShare({ receipt: receipt(), issuedAt, theme: "pass" });
-    expect(hash).toMatch(/^r=2z?\.[A-Za-z0-9_-]+$/);
-    const shared = await decodeReceiptShare(`#${hash}`, labels);
+    expect(hash).toMatch(/^r=3z?\.[A-Za-z0-9_-]+$/);
+    const shared = await decode(`#${hash}`);
     expect(shared?.theme).toBe("pass");
     expect(shared?.issuedAt.toISOString()).toBe(issuedAt.toISOString());
+    expect(shared?.render).toEqual({ unverified: true });
     const back = shared!.receipt;
     expect(back.lines.map((l) => [l.name, l.amountKRW])).toEqual([
-      ["넷플릭스", 17000],
+      ["Claude Pro", 29811],
       ["유튜브 프리미엄", 3725],
     ]);
-    expect(back.totalKRW).toBe(20725);
+    expect(back.totalKRW).toBe(33536);
     expect(back.killed.map((k) => [k.name, k.killedOn])).toEqual([["티빙", "2026-09-10"]]);
-    expect(back.defendedUnknownCount).toBe(1);
   });
 
   it("사용 횟수·1회 단가·나눠 내는 금액·구독 ID·아이콘 주소는 링크에 싣지 않는다", async () => {
     const hash = (await encodeReceiptShare({ receipt: receipt(), issuedAt, theme: "classic" }))!;
     const raw = JSON.stringify(rawWire(hash));
-    for (const secret of ["4250", "14900", "31900", "sub-", "tracker.example", "checkedAt"]) {
+    for (const secret of ["4250", "14900", "sub-", "tracker.example", "checkedAt"]) {
       expect(raw).not.toContain(secret);
     }
-    const back = (await decodeReceiptShare(hash, labels))!.receipt;
+    const back = (await decode(hash))!.receipt;
     expect(back.priciestPerUse).toBeNull();
-    expect(back.billedTotalKRW).toBe(back.totalKRW);
     for (const l of back.lines) {
       expect(l).toMatchObject({ usage: null, shared: false, billedKRW: l.amountKRW });
       expect(l.iconUrl).toBeUndefined();
     }
   });
 
-  it("이름을 가리면 원본을 싣지 않고 받는 쪽 언어로 '구독 1'이라고 그린다", async () => {
-    const hash = (await encodeReceiptShare(
-      { receipt: receipt(), issuedAt, theme: "classic" },
-      { maskNames: true },
-    ))!;
-    const raw = JSON.stringify(rawWire(hash));
-    for (const name of ["넷플릭스", "유튜브", "티빙"]) expect(raw).not.toContain(name);
-    const back = (await decodeReceiptShare(hash, labels))!.receipt;
-    expect(back.lines.map((l) => l.name)).toEqual(["구독 1", "구독 2"]);
-    expect(back.killed.map((k) => k.name)).toEqual(["해지 1"]);
-    // 함께 보내는 글도 같은 영수증으로 만든다
-    const shown = shareableReceipt(receipt(), { maskNames: true }, labels);
-    expect(shown.lines.map((l) => l.name)).toEqual(["구독 1", "구독 2"]);
-    expect(shown.lines.every((l) => l.usage === null && !l.shared)).toBe(true);
+  describe("가림 모드", () => {
+    it("구독별 이름·금액·결제일과 해지 목록을 싣지 않고 구독 수·건수·합계만 싣는다", async () => {
+      const hash = (await encodeReceiptShare(
+        { receipt: receipt(), issuedAt, theme: "classic" },
+        { maskNames: true },
+      ))!;
+      const wire = rawWire(hash);
+      expect(wire).toMatchObject({ v: 3, l: [], k: [], h: 2, t: 33536, n: [2, 0, 0] });
+      const raw = JSON.stringify(wire);
+      for (const secret of [
+        "Claude",
+        "유튜브",
+        "티빙",
+        "29811",
+        "3725",
+        "2026-09-03",
+        "2026-09-12",
+      ]) {
+        expect(raw).not.toContain(secret);
+      }
+      const shared = (await decode(hash))!;
+      expect(shared.receipt.lines).toEqual([]);
+      expect(shared.receipt.totalKRW).toBe(33536);
+      expect(shared.render).toEqual({ unverified: true, hidden: { subscriptions: 2, charges: 2 } });
+    });
+
+    it("함께 보내는 글도 같은 것만 적고, 줄이 없다고 '결제된 구독이 없어요'라고 하지 않는다", () => {
+      const t = messages.ko;
+      const shown = shareableReceipt(receipt(), { maskNames: true }, labels);
+      expect(shown.receipt.lines).toEqual([]);
+      const text = formatReceiptShareText(t, shown.receipt, shown.render);
+      expect(text).toContain(t.receiptView.shared.hiddenSummary(2, 2));
+      expect(text).not.toContain(t.receiptView.empty);
+      expect(text).not.toMatch(/Claude|유튜브|29,811/);
+    });
+
+    it("가림 표시가 있는데 줄이 실렸거나 구독 수가 상한을 넘으면 받지 않는다", async () => {
+      const masked = { ...baseWire(), h: 1 };
+      expect(await decode(plainLink({ ...masked, l: [], t: 34000 }))).not.toBeNull();
+      expect(await decode(plainLink(masked))).toBeNull();
+      expect(await decode(plainLink({ ...masked, l: [], h: MAX_SHARE_LINES + 1 }))).toBeNull();
+      expect(await decode(plainLink({ ...masked, l: [], h: 1.5 }))).toBeNull();
+    });
   });
 
   it("주소·이메일·전화번호처럼 보이는 이름은 보낼 때 가리고, 받을 때는 그리지 않는다", async () => {
@@ -156,12 +196,11 @@ describe("영수증 공유 링크", () => {
         theme: "classic",
       }))!;
       expect(JSON.stringify(rawWire(hash))).not.toContain(name);
-      const back = (await decodeReceiptShare(hash, labels))!.receipt;
-      expect(back.lines[0].name).toBe("구독 1");
+      expect((await decode(hash))!.receipt.lines[0].name).toBe("구독 1");
 
       const forged = baseWire();
       forged.l[0][0] = name;
-      expect(await decodeReceiptShare(plainLink(forged), labels), name).toBeNull();
+      expect(await decode(plainLink(forged)), name).toBeNull();
     }
   });
 
@@ -169,6 +208,155 @@ describe("영수증 공유 링크", () => {
     const names = POPULAR_SERVICES.flatMap((s) => [s.name, s.nameKo, s.nameEn ?? s.nameKo]);
     expect(names.filter(looksLikeContact)).toEqual([]);
     expect(Math.max(...names.map((n) => n.length))).toBeLessThanOrEqual(60);
+  });
+
+  describe("고친 링크", () => {
+    const wrap = (edit: (wire: ReturnType<typeof baseWire>) => unknown) =>
+      decode(plainLink(edit(baseWire()) as { v: unknown }));
+
+    it("고치지 않은 링크는 그린다", async () => {
+      expect(await wrap((w) => w)).not.toBeNull();
+    });
+
+    it("합계·건수가 줄에서 다시 센 값과 다르면 받지 않는다", async () => {
+      expect(await wrap((w) => ({ ...w, t: 1 }))).toBeNull();
+      expect(await wrap((w) => ({ ...w, n: [99, 1, 0] }))).toBeNull();
+      expect(await wrap((w) => ({ ...w, n: [2, 0, 0] }))).toBeNull();
+      expect(await wrap((w) => ({ ...w, n: [2, 1, 1] }))).toBeNull();
+    });
+
+    it("달력에 없거나 영수증 기간 밖의 날짜는 받지 않는다", async () => {
+      const withDates = (
+        charge: string[],
+        upcoming: string[] = [],
+        killedOn: string | null = null,
+      ) =>
+        wrap((w) => ({
+          ...w,
+          l: [["넷플릭스", charge, upcoming, [], 34000, "monthly", killedOn]],
+          n: [charge.length, upcoming.length, 0],
+        }));
+      expect(await withDates(["2026-09-03"])).not.toBeNull();
+      expect(await withDates(["2026-13-45"])).toBeNull();
+      expect(await withDates(["2026-09-31"])).toBeNull();
+      expect(await withDates(["2026-02-29"])).toBeNull();
+      expect(await withDates(["2019-01-01"])).toBeNull();
+      expect(await withDates(["2026-10-01"])).toBeNull();
+      // 결제 예정은 결제일 가운데 있어야 한다
+      expect(await withDates(["2026-09-03"], ["2026-09-20"])).toBeNull();
+      expect(await withDates(["2026-09-03"], [], "2026-08-31")).toBeNull();
+      expect(await wrap((w) => ({ ...w, k: [["티빙", "2026-10-02"]] }))).toBeNull();
+    });
+
+    it("금액·발행일이 범위 밖이면 받지 않는다", async () => {
+      const amount = (value: number) =>
+        wrap((w) => ({
+          ...w,
+          l: [["넷플릭스", ["2026-09-03"], [], [], value, "monthly", null]],
+          t: value,
+          n: [1, 0, 0],
+        }));
+      // 나눠 내는 몫은 소수일 수 있다
+      expect(await amount(5666.666666666667)).not.toBeNull();
+      expect(await amount(100_000_001)).toBeNull();
+      expect(await amount(-1)).toBeNull();
+      expect(await wrap((w) => ({ ...w, i: "2026-08-20T00:00:00.000Z" }))).toBeNull();
+      // 시간대가 달라 받는 쪽에서는 기간 시작 몇 시간 전으로 보이는 것은 받는다
+      const hourBefore = new Date(new Date(2026, 8, 1).getTime() - 60 * 60 * 1000).toISOString();
+      expect(await wrap((w) => ({ ...w, i: hourBefore }))).not.toBeNull();
+      expect(await wrap((w) => ({ ...w, i: "9999-12-31T00:00:00.000Z" }))).toBeNull();
+      expect(await wrap((w) => ({ ...w, d: [2e9, 0] }))).toBeNull();
+    });
+
+    it("칸 모양이 틀리면 받지 않는다", async () => {
+      expect(await wrap((w) => ({ ...w, th: 'pass" onload="x' }))).toBeNull();
+      expect(await wrap((w) => ({ ...w, p: { kind: "month", year: 2026, month: 13 } }))).toBeNull();
+      expect(
+        await wrap((w) => ({ ...w, l: [[{ a: 1 }, ["2026-09-03"], [], [], 1, "monthly", null]] })),
+      ).toBeNull();
+      expect(
+        await wrap((w) => ({
+          ...w,
+          l: [["x".repeat(61), ["2026-09-03"], [], [], 1, "monthly", null]],
+        })),
+      ).toBeNull();
+      expect(await wrap((w) => [w])).toBeNull();
+    });
+
+    it("1판, 판 번호가 접두사와 다른 것, 너무 긴 링크는 받지 않는다", async () => {
+      expect(await decode("r=1z.AAAA")).toBeNull();
+      expect(await decode(plainLink({ ...baseWire(), v: 1 }))).toBeNull();
+      const inner3 = Buffer.from(JSON.stringify(baseWire())).toString("base64url");
+      expect(await decode(`r=2.${inner3}`)).toBeNull();
+      expect(await decode(`r=3.${"A".repeat(20_000)}`)).toBeNull();
+    });
+  });
+
+  it("아직 내보내지 않은 v60 앱이 만든 2판 링크도 같은 검사로 읽는다", async () => {
+    const v2 = {
+      ...baseWire(),
+      v: 2,
+      l: [[null, ["2026-09-03"], [], [], 34000, "monthly", null]],
+      n: [1, 0, 0],
+    };
+    const shared = await decode(plainLink(v2));
+    expect(shared?.receipt.lines[0].name).toBe("구독 1");
+    expect(await decode(plainLink({ ...v2, t: 1 }))).toBeNull();
+    // 2판에는 가림 요약이 없다
+    expect(
+      (await decode(plainLink({ ...v2, l: [], n: [0, 0, 0], t: 0, h: 3 })))?.render.hidden,
+    ).toBeUndefined();
+  });
+
+  it("buildReceipt가 만든 영수증은 고친 링크로 보지 않는다 — 나눠 낸 소수 몫·달러·연간·결제 예정·해지", async () => {
+    const now = new Date(2026, 8, 27, 9, 0);
+    const base = {
+      currency: "KRW" as const,
+      billingDay: 10,
+      billingCycle: "monthly" as const,
+      category: "ott" as const,
+      status: "active" as const,
+      createdAt: new Date(2026, 0, 1).toISOString(),
+    };
+    const subs: Subscription[] = [
+      { ...base, id: "a", name: "넷플릭스", amount: 17000, sharingCount: 3 },
+      {
+        ...base,
+        id: "b",
+        name: "Claude Pro",
+        amount: 20,
+        currency: "USD",
+        taxRate: 10,
+        billingDay: 3,
+      },
+      { ...base, id: "c", name: "왓챠", amount: 7900, billingDay: 30 },
+      { ...base, id: "d", name: "굿노트", amount: 13000, billingCycle: "yearly", billingMonth: 3 },
+      {
+        ...base,
+        id: "e",
+        name: "티빙",
+        amount: 9500,
+        status: "killed",
+        killedAt: new Date(2026, 8, 15).toISOString(),
+      },
+    ];
+    for (const period of [
+      { kind: "month", year: 2026, month: 9 },
+      { kind: "year", year: 2026 },
+    ] as const) {
+      const built = buildReceipt(subs, [], period, 1387.5, now);
+      expect(built.lines.length).toBeGreaterThan(1);
+      for (const maskNames of [false, true]) {
+        const hash = (await encodeReceiptShare(
+          { receipt: built, issuedAt: now, theme: "classic" },
+          { maskNames },
+        ))!;
+        const back = await decodeReceiptShare(hash, labels, now);
+        expect(back, `${period.kind} 가림=${maskNames}`).not.toBeNull();
+        expect(back!.receipt.totalKRW).toBe(built.totalKRW);
+        expect(back!.receipt.chargeCount).toBe(built.chargeCount);
+      }
+    }
   });
 
   it("받는 쪽 상한을 넘는 영수증은 링크를 만들지 않는다", async () => {
@@ -180,50 +368,22 @@ describe("영수증 공유 링크", () => {
     ).toBeNull();
     const forged = baseWire();
     forged.l = Array.from({ length: MAX_SHARE_LINES + 1 }, () => forged.l[0]);
-    expect(await decodeReceiptShare(plainLink(forged), labels)).toBeNull();
+    expect(await decode(plainLink(forged))).toBeNull();
   });
 
   it("작게 압축해 크게 풀리는 링크는 상한에서 멈춘다", async () => {
     const bomb = deflateRawSync(Buffer.alloc(5 * 1024 * 1024, 0x20)).toString("base64url");
     expect(bomb.length).toBeLessThan(10_000);
-    expect(await decodeReceiptShare(`r=2z.${bomb}`, labels)).toBeNull();
+    expect(await decode(`r=3z.${bomb}`)).toBeNull();
   });
 
   it("틀리거나 잘린 링크는 그리지 않는다", async () => {
     const hash = (await encodeReceiptShare({ receipt: receipt(), issuedAt, theme: "classic" }))!;
-    expect(await decodeReceiptShare("", labels)).toBeNull();
-    expect(await decodeReceiptShare("#r=", labels)).toBeNull();
-    expect(await decodeReceiptShare("#r=9.abc", labels)).toBeNull();
-    expect(await decodeReceiptShare(hash.slice(0, hash.length - 20), labels)).toBeNull();
-    expect(await decodeReceiptShare("#r=2.<script>", labels)).toBeNull();
-    // 예전 형식(1판)은 배포된 적이 없어 받지 않는다
-    expect(await decodeReceiptShare(hash.replace("r=2", "r=1"), labels)).toBeNull();
-  });
-
-  it("칸 모양이 틀리면 하나라도 받지 않는다", async () => {
-    const wrap = (wire: unknown) => decodeReceiptShare(plainLink(wire), labels);
-    const base = baseWire();
-    expect(await wrap(base)).not.toBeNull();
-    expect(await wrap({ ...base, th: "evil" })).toBeNull();
-    expect(await wrap({ ...base, v: 1 })).toBeNull();
-    expect(await wrap({ ...base, p: { kind: "month", year: 2026, month: 13 } })).toBeNull();
-    expect(await wrap({ ...base, t: -1 })).toBeNull();
-    expect(
-      await wrap({
-        ...base,
-        l: [["넷플릭스", ["javascript:alert(1)"], [], [], 1, "monthly", null]],
-      }),
-    ).toBeNull();
-    expect(
-      await wrap({ ...base, l: [["x".repeat(61), [], [], [], 1, "monthly", null]] }),
-    ).toBeNull();
-    expect(
-      await wrap({
-        ...base,
-        l: [["넷플릭스", Array(41).fill("2026-09-03"), [], [], 1, "monthly", null]],
-      }),
-    ).toBeNull();
-    expect(await wrap([base])).toBeNull();
+    expect(await decode("")).toBeNull();
+    expect(await decode("#r=")).toBeNull();
+    expect(await decode("#r=9.abc")).toBeNull();
+    expect(await decode(hash.slice(0, hash.length - 20))).toBeNull();
+    expect(await decode("#r=3.<script>")).toBeNull();
   });
 
   it("아무렇게나 바꾼 링크에도 예외를 던지지 않는다", async () => {
@@ -233,28 +393,30 @@ describe("영수증 공유 링크", () => {
     const pick = <T>(items: T[]) => items[Math.floor(rand() * items.length)];
     for (let round = 0; round < 300; round++) {
       const wire = JSON.parse(JSON.stringify(baseWire())) as Record<string, unknown>;
-      const key = pick(Object.keys(wire));
-      wire[key] = pick(junk);
+      wire[pick(Object.keys(wire).filter((k) => k !== "v"))] = pick(junk);
       // 바꾼 값이 우연히 맞는 모양일 수도 있다(해지 목록을 빈 배열로). 그럴 때는 온전한 영수증이어야 한다.
-      const shared = await decodeReceiptShare(plainLink(wire), labels);
+      const shared = await decode(plainLink(wire as { v: unknown }));
       if (shared) {
         expect(Array.isArray(shared.receipt.lines)).toBe(true);
         expect(Number.isFinite(shared.receipt.totalKRW)).toBe(true);
-        expect(Number.isNaN(shared.issuedAt.getTime())).toBe(false);
       }
       const bytes = Buffer.from(
         Array.from({ length: 1 + Math.floor(rand() * 200) }, () => Math.floor(rand() * 256)),
       );
-      await expect(
-        decodeReceiptShare(`r=2z.${bytes.toString("base64url")}`, labels),
-      ).resolves.toBeNull();
+      await expect(decode(`r=3z.${bytes.toString("base64url")}`)).resolves.toBeNull();
     }
   });
 
-  it("공유받은 영수증은 알림 맨 앞에 '확인되지 않은 내용'을 적는다", () => {
+  it("공유받은 영수증은 '확인되지 않은 내용'을 맨 앞에 적고 '체크인 없음'이라고 하지 않는다", () => {
     const t = messages.ko;
     const notes = receiptFootnotes(t, receipt(), { unverified: true });
     expect(notes[0]).toBe(t.receiptView.shared.unverifiedMark);
     expect(receiptFootnotes(t, receipt())).not.toContain(t.receiptView.shared.unverifiedMark);
+    const noUsage = line({ usage: null });
+    const period = { kind: "month", year: 2026, month: 9 } as const;
+    expect(describeReceiptLine(t, noUsage, period)).toContain(t.receiptView.line.noCheckIn);
+    expect(describeReceiptLine(t, noUsage, period, { unverified: true })).not.toContain(
+      t.receiptView.line.noCheckIn,
+    );
   });
 });
