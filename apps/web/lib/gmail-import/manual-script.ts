@@ -194,12 +194,112 @@ const MANUAL_TEXT: Record<
   },
 };
 
+/**
+ * 한국어가 아닌 화면에서 받은 스크립트의 머리말. 코드 주석은 한국어로만 쓰므로, 그 언어로는 이 머리말만 읽힌다
+ * (`withoutKoreanComments`). 검색어(SEARCH_QUERIES)의 한국어 낱말은 한국어 영수증을 찾는 값이라 그대로 둔다.
+ */
+const MANUAL_HEADER: Record<Exclude<AppsScriptLocale, "ko">, string[]> = {
+  en: [
+    "SubSlash — import from Gmail payment emails",
+    "",
+    "Runs only inside your Google account. Found emails are not sent to the SubSlash server;",
+    "they ride after the # in the 'Import to SubSlash' button link and are read only in your browser.",
+    "The only permission is reading mail (gmail.readonly), so it can't send or delete mail.",
+    "If a payment email is missed, add a word from its subject to SEARCH_QUERIES and deploy again.",
+    "The Korean words in SEARCH_QUERIES match Korean receipts — keep them.",
+  ],
+  zh: [
+    "SubSlash — 从 Gmail 付款邮件导入",
+    "",
+    "只在你的 Google 账户内运行。找到的邮件不会发送到 SubSlash 服务器，",
+    "而是放在“导入到 SubSlash”按钮链接的 # 之后，只在你的浏览器中读取。",
+    "唯一的权限是读取邮件（gmail.readonly），无法发送或删除邮件。",
+    "如有遗漏的付款邮件，请把邮件标题中的词加入 SEARCH_QUERIES 后重新部署。",
+    "SEARCH_QUERIES 中的韩语词用于匹配韩国的收据，请保留。",
+  ],
+  ja: [
+    "SubSlash — Gmail の支払いメールから取り込む",
+    "",
+    "自分の Google アカウントの中だけで動きます。見つけたメールは SubSlash のサーバーに送らず、",
+    "「SubSlash に取り込む」ボタンのリンクの # の後ろに入れて、自分のブラウザだけで読みます。",
+    "権限はメールの読み取り（gmail.readonly）だけなので、メールの送信や削除はできません。",
+    "取りこぼした支払いメールがあれば、件名の単語を SEARCH_QUERIES に足して再デプロイしてください。",
+    "SEARCH_QUERIES の韓国語の単語は韓国の領収書を探すためのものなので、残してください。",
+  ],
+  vi: [
+    "SubSlash — nhập từ email thanh toán trên Gmail",
+    "",
+    "Chỉ chạy trong tài khoản Google của bạn. Email tìm thấy không được gửi đến máy chủ SubSlash;",
+    "chúng nằm sau dấu # trong liên kết nút 'Nhập vào SubSlash' và chỉ được đọc trong trình duyệt của bạn.",
+    "Quyền duy nhất là đọc thư (gmail.readonly), nên không thể gửi hay xóa thư.",
+    "Nếu sót email thanh toán, hãy thêm một từ trong tiêu đề vào SEARCH_QUERIES rồi triển khai lại.",
+    "Các từ tiếng Hàn trong SEARCH_QUERIES dùng để tìm hóa đơn Hàn Quốc — hãy giữ lại.",
+  ],
+  fr: [
+    "SubSlash — importer depuis les e-mails de paiement Gmail",
+    "",
+    "S'exécute uniquement dans votre compte Google. Les e-mails trouvés ne sont pas envoyés au serveur SubSlash ;",
+    "ils passent après le # du lien du bouton « Importer dans SubSlash » et ne sont lus que dans votre navigateur.",
+    "La seule autorisation est la lecture des e-mails (gmail.readonly) : impossible d'en envoyer ou d'en supprimer.",
+    "S'il manque un e-mail de paiement, ajoutez un mot de son objet à SEARCH_QUERIES puis redéployez.",
+    "Les mots coréens de SEARCH_QUERIES servent aux reçus coréens — gardez-les.",
+  ],
+  es: [
+    "SubSlash — importar desde los correos de pago de Gmail",
+    "",
+    "Se ejecuta solo dentro de tu cuenta de Google. Los correos encontrados no se envían al servidor de SubSlash;",
+    "viajan tras el # del enlace del botón «Importar a SubSlash» y solo se leen en tu navegador.",
+    "El único permiso es leer el correo (gmail.readonly), así que no puede enviar ni borrar correos.",
+    "Si falta algún correo de pago, añade una palabra de su asunto a SEARCH_QUERIES y vuelve a implementar.",
+    "Las palabras en coreano de SEARCH_QUERIES sirven para recibos coreanos; no las quites.",
+  ],
+  de: [
+    "SubSlash — Import aus Gmail-Zahlungsmails",
+    "",
+    "Läuft nur in deinem Google-Konto. Gefundene Mails werden nicht an den SubSlash-Server gesendet;",
+    "sie stehen hinter dem # im Link der Schaltfläche „Nach SubSlash importieren“ und werden nur in deinem Browser gelesen.",
+    "Die einzige Berechtigung ist das Lesen von Mails (gmail.readonly), Senden oder Löschen ist nicht möglich.",
+    "Fehlt eine Zahlungsmail, füge ein Wort aus ihrem Betreff zu SEARCH_QUERIES hinzu und stelle neu bereit.",
+    "Die koreanischen Wörter in SEARCH_QUERIES finden koreanische Belege — lass sie stehen.",
+  ],
+  pt: [
+    "SubSlash — importar dos e-mails de pagamento do Gmail",
+    "",
+    "Roda só dentro da sua conta Google. Os e-mails encontrados não são enviados ao servidor do SubSlash;",
+    "eles vão depois do # no link do botão 'Importar para o SubSlash' e só são lidos no seu navegador.",
+    "A única permissão é ler e-mails (gmail.readonly), então não dá para enviar nem apagar e-mails.",
+    "Se faltar algum e-mail de pagamento, adicione uma palavra do assunto em SEARCH_QUERIES e implante de novo.",
+    "As palavras em coreano em SEARCH_QUERIES servem para recibos coreanos — mantenha-as.",
+  ],
+};
+
+/**
+ * 한국어 주석을 걷어 낸 코드. 첫 블록 주석(머리말)은 그 언어의 머리말로 바꾸고, 나머지 블록 주석과 한 줄 주석 가운데
+ * 한글이 든 것은 지운다 — 영어 화면에서 받은 스크립트가 한국어 설명으로 가득했다. 코드 줄은 건드리지 않는다.
+ */
+function withoutKoreanComments(code: string, lang: Exclude<AppsScriptLocale, "ko">): string {
+  const header = `/**\n${MANUAL_HEADER[lang].map((line) => (line ? ` * ${line}` : " *")).join("\n")}\n */`;
+  let first = true;
+  return code
+    .replace(/\/\*\*[\s\S]*?\*\//g, (block) => {
+      if (first) {
+        first = false;
+        return header;
+      }
+      return /[가-힣]/.test(block) ? "" : block;
+    })
+    .split("\n")
+    .filter((line) => !(/^\s*\/\//.test(line) && /[가-힣]/.test(line)))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
 /** 사용자가 Apps Script 편집기에 붙여 넣을 코드. 가져오기 주소는 지금 보고 있는 SubSlash다. */
 export function gmailAppsScript(importUrl: string, lang: AppsScriptLocale = "ko"): string {
-  return (
+  const code =
     MANUAL_SCRIPT.replace("__IMPORT_URL__", () => JSON.stringify(importUrl)).replace(
       "__TEXT__",
       () => JSON.stringify(MANUAL_TEXT[lang]),
-    ) + MAIL_HELPERS
-  );
+    ) + MAIL_HELPERS;
+  return lang === "ko" ? code : withoutKoreanComments(code, lang);
 }

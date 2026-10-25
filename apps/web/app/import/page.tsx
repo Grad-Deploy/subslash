@@ -88,6 +88,8 @@ function Guide() {
 
           <ol className="list-decimal space-y-2 pl-5">
             <li>
+              {/* 영어 "Create a "처럼 링크 앞에 오는 말. 한국어는 비어 있다. */}
+              {p.step1Before}
               <a
                 href="https://script.new"
                 target="_blank"
