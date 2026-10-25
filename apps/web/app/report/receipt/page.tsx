@@ -22,11 +22,17 @@ import { useLatestT, useServiceNames, useT } from "@lib/i18n";
 import { renderReceiptImage } from "@lib/receipt-image";
 import { ReceiptThemePicker, ReceiptThemePreview } from "@components/report/ReceiptThemePreview";
 import { useReceiptTheme } from "@lib/receipt-theme";
-import { RECEIPT_SHARE_PATH, encodeReceiptShare } from "@lib/receipt-share";
+import { RECEIPT_SHARE_PATH, encodeReceiptShare, shareableReceipt } from "@lib/receipt-share";
+import { readLocal, writeLocal } from "@lib/local-storage";
+import { IS_APP_BUILD } from "@lib/platform";
+import { ConfirmDialog } from "@components/ui/confirm-dialog";
 import { Button } from "@components/ui/button";
 import { Spinner, PageSpinner } from "@components/ui/spinner";
 import { CopyFallbackDialog } from "@components/ui/copy-fallback-dialog";
 import { cn } from "@lib/utils";
+
+/** 이 기기에서 영수증 링크를 처음 보낼 때의 확인을 마쳤는지. 기기의 것이라 기록·백업·동기화에 넣지 않는다. */
+const SHARE_ACK_KEY = "subslash-receipt-share-ack";
 
 /** 이보다 이른 해는 이 앱에 기록이 있을 수 없다(연말 결산과 같은 값). */
 const EARLIEST_YEAR = 2020;
@@ -75,6 +81,8 @@ function ReceiptFromQuery() {
   const [message, setMessage] = useState<string | null>(null);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   const [theme, setTheme] = useReceiptTheme();
+  const [maskNames, setMaskNames] = useState(false);
+  const [confirmShare, setConfirmShare] = useState(false);
 
   const period: ReceiptPeriod = useMemo(() => {
     const parsed = parseReceiptPeriod(params);
@@ -107,18 +115,23 @@ function ReceiptFromQuery() {
   }, [subscriptions, usageLogs, period, rate, now, rateOn, names]);
 
   // 공유 링크는 미리 만들어 둔다 — 누른 뒤에 압축을 기다리면 브라우저가 공유 창을 사용자 동작으로 보지 않을 수 있다.
-  // 만든 링크는 어느 영수증·디자인의 것인지와 함께 두어, 바뀐 뒤에 옛 링크를 보내지 않는다.
-  const shareKey = useMemo(() => ({ receipt, theme }), [receipt, theme]);
-  const [shareLink, setShareLink] = useState<{ key: typeof shareKey; url: string } | null>(null);
+  // 만든 링크는 어느 영수증·디자인·가림의 것인지와 함께 두어, 바뀐 뒤에 옛 링크를 보내지 않는다. url이 null이면 받는 쪽
+  // 상한을 넘는 영수증이라 글로만 공유한다.
+  const shareKey = useMemo(() => ({ receipt, theme, maskNames }), [receipt, theme, maskNames]);
+  const [shareLink, setShareLink] = useState<{
+    key: typeof shareKey;
+    url: string | null;
+  } | null>(null);
   useEffect(() => {
     let cancelled = false;
-    void encodeReceiptShare({ receipt, issuedAt: now, theme }).then((hash) => {
-      if (!cancelled) setShareLink({ key: shareKey, url: webUrl(`${RECEIPT_SHARE_PATH}#${hash}`) });
+    void encodeReceiptShare({ receipt, issuedAt: now, theme }, { maskNames }).then((hash) => {
+      if (cancelled) return;
+      setShareLink({ key: shareKey, url: hash ? webUrl(`${RECEIPT_SHARE_PATH}#${hash}`) : null });
     });
     return () => {
       cancelled = true;
     };
-  }, [shareKey, receipt, theme, now]);
+  }, [shareKey, receipt, theme, maskNames, now]);
 
   if (!mounted || ratesLoading) return <PageSpinner />;
 
@@ -150,20 +163,34 @@ function ReceiptFromQuery() {
   };
 
   // 링크는 영수증만 보여 주는 화면이다. 지금 영수증·디자인의 링크가 준비되기 전에는 공유 버튼을 잠근다.
-  const readyLink = shareLink?.key === shareKey ? shareLink.url : null;
+  const link = shareLink?.key === shareKey ? shareLink : null;
 
   const shareAsText = async () => {
-    if (!readyLink) return;
+    if (!link) return;
+    // 글도 링크에 실린 것과 같은 영수증으로 만든다 — 이름을 가렸으면 글에서도 가린다.
+    const s = tRef.current.receiptView.shared;
+    const shown = shareableReceipt(
+      receipt,
+      { maskNames },
+      { masked: s.maskedName, maskedKilled: s.maskedKilled },
+    );
+    const body = formatReceiptShareText(tRef.current, shown);
     // 앱의 공유 창은 주소 칸을 따로 넘기지 않으므로 글 끝에 링크를 적는다(절약 공유와 같다).
-    const text = `${formatReceiptShareText(tRef.current, receipt)}\n\n${readyLink}`;
+    const text = link.url ? `${body}\n\n${link.url}` : body;
     const shared = await shareText({
       title: v.paperLabel(formatReceiptPeriodText(tRef.current, period)),
       text,
-      url: readyLink,
+      url: link.url ?? undefined,
     });
     if (shared) return;
     if (await copyText(text)) flash(tRef.current.receiptView.page.textCopied);
     else setCopyFallback(text);
+  };
+
+  // 보낸 링크는 취소할 수 없으므로 이 기기에서 처음 링크를 보낼 때 한 번 묻는다.
+  const onShare = () => {
+    if (link?.url && readLocal(SHARE_ACK_KEY) !== "1") setConfirmShare(true);
+    else void shareAsText();
   };
 
   return (
@@ -241,12 +268,34 @@ function ReceiptFromQuery() {
           {busy ? <Spinner className="size-4" /> : <Download className="size-4" aria-hidden />}
           {v.page.saveImage}
         </Button>
-        <Button disabled={!readyLink} onClick={() => void shareAsText()}>
+        <Button disabled={!link} onClick={onShare}>
           <Share2 className="size-4" aria-hidden />
           {v.page.share}
         </Button>
       </div>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={maskNames}
+          onChange={(event) => setMaskNames(event.target.checked)}
+          className="size-4"
+        />
+        {v.page.maskNames}
+      </label>
       <p className="text-xs text-muted-foreground">{v.page.privacy}</p>
+
+      <ConfirmDialog
+        isOpen={confirmShare}
+        onClose={() => setConfirmShare(false)}
+        onConfirm={() => {
+          writeLocal(SHARE_ACK_KEY, "1");
+          void shareAsText();
+        }}
+        title={v.page.confirmTitle}
+        description={v.page.confirmBody}
+        confirmText={v.page.confirmOk}
+        centered={IS_APP_BUILD}
+      />
 
       {period.kind === "year" && (
         <Link

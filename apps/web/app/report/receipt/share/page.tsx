@@ -10,7 +10,8 @@ import { PageSpinner } from "@components/ui/spinner";
 
 /**
  * 공유받은 구독 영수증. 영수증은 주소의 `#` 뒤에만 있다(lib/receipt-share) — 서버는 이 화면의 껍데기만 주고 내용을 모른다.
- * 받는 사람의 기록과 섞지 않고, 링크에 담긴 값을 그대로 그린다.
+ * 받는 사람의 기록과 섞지 않고, 링크에 담긴 값을 그대로 그린다. 링크는 누구나 지어 만들 수 있으므로 화면과 그림 모두에
+ * '확인되지 않은 내용'이라고 적고, 이 화면에서는 아무것도 입력받지 않는다.
  */
 export default function SharedReceiptPage() {
   const t = useT();
@@ -18,10 +19,15 @@ export default function SharedReceiptPage() {
   // undefined: 읽는 중, null: 읽지 못함
   const [shared, setShared] = useState<SharedReceipt | null | undefined>(undefined);
 
+  // 가린 이름('구독 1')은 화면 언어로 붙인다. 첫 화면은 한국어로 그린 뒤 기기 언어로 바뀌므로 언어가 바뀌면 다시 푼다.
+  const { maskedName, maskedKilled } = s;
   useEffect(() => {
     let cancelled = false;
     const read = () => {
-      void decodeReceiptShare(window.location.hash).then((value) => {
+      void decodeReceiptShare(window.location.hash, {
+        masked: maskedName,
+        maskedKilled,
+      }).then((value) => {
         if (!cancelled) setShared(value);
       });
     };
@@ -31,7 +37,7 @@ export default function SharedReceiptPage() {
       cancelled = true;
       window.removeEventListener("hashchange", read);
     };
-  }, []);
+  }, [maskedName, maskedKilled]);
 
   if (shared === undefined) return <PageSpinner />;
 
@@ -47,12 +53,18 @@ export default function SharedReceiptPage() {
 
       {shared ? (
         <>
+          <p
+            role="note"
+            className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-medium text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
+          >
+            {s.note}
+          </p>
           <ReceiptThemePreview
             receipt={shared.receipt}
             issuedAt={shared.issuedAt}
             theme={shared.theme}
+            unverified
           />
-          <p className="text-xs text-muted-foreground">{s.note}</p>
         </>
       ) : (
         <p role="alert" className="rounded-2xl border p-4 text-sm text-muted-foreground">
