@@ -163,7 +163,7 @@ export const en: Widen<typeof ko> = {
     undated: (count) =>
       `${count} without a billing month couldn't be placed because the date is unknown — `,
     undatedLink: "Set the billing month of yearly subscriptions",
-    dayHeading: (month, day) => `Charged on ${monthLong(month)} ${day}`,
+    dayHeading: (month, day) => `Billing on ${monthLong(month)} ${day}`,
     total: "Total",
     converted: " (converted at your rate)",
     sheet: "Billing calendar",
@@ -508,7 +508,7 @@ export const fr: Widen<typeof ko> = {
     undated: (count) =>
       `${count} sans mois de paiement n'ont pas pu être placés, la date étant inconnue — `,
     undatedLink: "Définir le mois de paiement des abonnements annuels",
-    dayHeading: (month, day) => `Prélevé le ${day} ${monthName("fr", month)}`,
+    dayHeading: (month, day) => `Prélèvement le ${day} ${monthName("fr", month)}`,
     total: "Total",
     converted: " (converti à votre taux)",
     sheet: "Calendrier des paiements",
@@ -604,7 +604,7 @@ export const es: Widen<typeof ko> = {
     undated: (count) =>
       `${count} sin mes de cobro no se pudieron ubicar porque se desconoce la fecha — `,
     undatedLink: "Fija el mes de cobro de las suscripciones anuales",
-    dayHeading: (month, day) => `Cobrado el ${day} de ${monthName("es", month)}`,
+    dayHeading: (month, day) => `Cobro el ${day} de ${monthName("es", month)}`,
     total: "Total",
     converted: " (convertido a tu tipo de cambio)",
     sheet: "Calendario de cobros",
@@ -796,7 +796,7 @@ export const pt: Widen<typeof ko> = {
     undated: (count) =>
       `${count} sem mês de cobrança não puderam ser posicionadas porque a data é desconhecida — `,
     undatedLink: "Definir o mês de cobrança das assinaturas anuais",
-    dayHeading: (month, day) => `Cobrado em ${day} de ${monthName("pt", month)}`,
+    dayHeading: (month, day) => `Cobrança em ${day} de ${monthName("pt", month)}`,
     total: "Total",
     converted: " (convertido pela sua taxa)",
     sheet: "Calendário de cobranças",

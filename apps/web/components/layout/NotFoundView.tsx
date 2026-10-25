@@ -11,7 +11,8 @@ import { useT } from "@lib/i18n";
 export function NotFoundView() {
   const n = useT().shell.notFound;
   return (
-    <div className="py-16 text-center space-y-3">
+    // 탭 제목: 주소가 제각각이라 LocaleEffects가 이 표시를 보고 '페이지를 찾을 수 없어요'로 맞춘다.
+    <div data-page-title="notFound" className="py-16 text-center space-y-3">
       <SearchX className="mx-auto size-10 text-muted-foreground" aria-hidden />
       <p className="text-sm font-bold text-muted-foreground tabular-nums">404</p>
       <h1 className="text-xl font-black tracking-tight">{n.title}</h1>

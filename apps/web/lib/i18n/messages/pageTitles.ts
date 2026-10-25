@@ -7,7 +7,21 @@ import type { Widen } from "../types";
  */
 export const ko = {
   site: "SubSlash - 구독, 끊을 용기",
+  /** 없는 주소(app/not-found). 주소가 제각각이라 표에 둘 수 없어 따로 둔다. */
+  notFound: "페이지를 찾을 수 없어요 · SubSlash",
   paths: {
+    "/dashboard": "대시보드 · SubSlash",
+    "/subs": "내 구독 · SubSlash",
+    "/subs/detail": "내 구독 · SubSlash",
+    "/report": "구독 리포트 · SubSlash",
+    "/report/receipt": "구독 영수증 · SubSlash",
+    "/report/receipt/share": "공유받은 구독 영수증 · SubSlash",
+    "/savings": "절약 & 방어 자산 현황 · SubSlash",
+    "/savings/review": "연말 결산 · SubSlash",
+    "/savings/share": "구독 디톡스 인증서 · SubSlash",
+    "/settings": "설정 · SubSlash",
+    "/help": "도움말 · SubSlash",
+    "/pc-usage": "PC의 AI 코딩 도구 사용 · SubSlash",
     "/forgot-password": "비밀번호 재설정 · SubSlash",
     "/import": "Gmail에서 구독 찾기 · SubSlash",
     "/login": "로그인 · SubSlash",
@@ -24,7 +38,21 @@ export const ko = {
 
 export const en: Widen<typeof ko> = {
   site: "SubSlash - The nerve to cut subscriptions",
+  /** 없는 주소(app/not-found). 주소가 제각각이라 표에 둘 수 없어 따로 둔다. */
+  notFound: "Page not found · SubSlash",
   paths: {
+    "/dashboard": "Dashboard · SubSlash",
+    "/subs": "My subscriptions · SubSlash",
+    "/subs/detail": "My subscriptions · SubSlash",
+    "/report": "Subscription report · SubSlash",
+    "/report/receipt": "Subscription receipt · SubSlash",
+    "/report/receipt/share": "A shared subscription receipt · SubSlash",
+    "/savings": "Savings & protected money · SubSlash",
+    "/savings/review": "Year in review · SubSlash",
+    "/savings/share": "Subscription detox certificate · SubSlash",
+    "/settings": "Settings · SubSlash",
+    "/help": "Help · SubSlash",
+    "/pc-usage": "AI coding tool use on your PC · SubSlash",
     "/forgot-password": "Reset password · SubSlash",
     "/import": "Find subscriptions in Gmail · SubSlash",
     "/login": "Log in · SubSlash",
@@ -41,7 +69,21 @@ export const en: Widen<typeof ko> = {
 
 export const zh: Widen<typeof ko> = {
   site: "SubSlash - 敢于砍掉订阅",
+  /** 없는 주소(app/not-found). 주소가 제각각이라 표에 둘 수 없어 따로 둔다. */
+  notFound: "找不到页面 · SubSlash",
   paths: {
+    "/dashboard": "仪表板 · SubSlash",
+    "/subs": "我的订阅 · SubSlash",
+    "/subs/detail": "我的订阅 · SubSlash",
+    "/report": "订阅报告 · SubSlash",
+    "/report/receipt": "订阅小票 · SubSlash",
+    "/report/receipt/share": "收到的订阅小票 · SubSlash",
+    "/savings": "节省与守住的钱 · SubSlash",
+    "/savings/review": "年度总结 · SubSlash",
+    "/savings/share": "订阅瘦身证书 · SubSlash",
+    "/settings": "设置 · SubSlash",
+    "/help": "帮助 · SubSlash",
+    "/pc-usage": "这台电脑上的 AI 编程工具使用 · SubSlash",
     "/forgot-password": "重置密码 · SubSlash",
     "/import": "在 Gmail 中查找订阅 · SubSlash",
     "/login": "登录 · SubSlash",
@@ -58,7 +100,21 @@ export const zh: Widen<typeof ko> = {
 
 export const ja: Widen<typeof ko> = {
   site: "SubSlash - サブスクを断ち切る勇気",
+  /** 없는 주소(app/not-found). 주소가 제각각이라 표에 둘 수 없어 따로 둔다. */
+  notFound: "ページが見つかりません · SubSlash",
   paths: {
+    "/dashboard": "ダッシュボード · SubSlash",
+    "/subs": "マイサブスク · SubSlash",
+    "/subs/detail": "マイサブスク · SubSlash",
+    "/report": "サブスクレポート · SubSlash",
+    "/report/receipt": "サブスクのレシート · SubSlash",
+    "/report/receipt/share": "共有されたサブスクのレシート · SubSlash",
+    "/savings": "節約と守ったお金 · SubSlash",
+    "/savings/review": "年間まとめ · SubSlash",
+    "/savings/share": "サブスク・デトックス認定証 · SubSlash",
+    "/settings": "設定 · SubSlash",
+    "/help": "ヘルプ · SubSlash",
+    "/pc-usage": "この PC での AI コーディングツールの利用 · SubSlash",
     "/forgot-password": "パスワードの再設定 · SubSlash",
     "/import": "Gmail でサブスクを探す · SubSlash",
     "/login": "ログイン · SubSlash",
@@ -75,7 +131,21 @@ export const ja: Widen<typeof ko> = {
 
 export const vi: Widen<typeof ko> = {
   site: "SubSlash - Dũng khí cắt bớt gói đăng ký",
+  /** 없는 주소(app/not-found). 주소가 제각각이라 표에 둘 수 없어 따로 둔다. */
+  notFound: "Không tìm thấy trang · SubSlash",
   paths: {
+    "/dashboard": "Bảng điều khiển · SubSlash",
+    "/subs": "Gói đăng ký của tôi · SubSlash",
+    "/subs/detail": "Gói đăng ký của tôi · SubSlash",
+    "/report": "Báo cáo gói đăng ký · SubSlash",
+    "/report/receipt": "Hóa đơn gói đăng ký · SubSlash",
+    "/report/receipt/share": "Hóa đơn đăng ký được chia sẻ · SubSlash",
+    "/savings": "Tiết kiệm & tiền giữ được · SubSlash",
+    "/savings/review": "Tổng kết năm · SubSlash",
+    "/savings/share": "Chứng nhận cai nghiện gói đăng ký · SubSlash",
+    "/settings": "Cài đặt · SubSlash",
+    "/help": "Trợ giúp · SubSlash",
+    "/pc-usage": "Dùng công cụ lập trình AI trên PC này · SubSlash",
     "/forgot-password": "Đặt lại mật khẩu · SubSlash",
     "/import": "Tìm gói đăng ký trong Gmail · SubSlash",
     "/login": "Đăng nhập · SubSlash",
@@ -92,7 +162,21 @@ export const vi: Widen<typeof ko> = {
 
 export const fr: Widen<typeof ko> = {
   site: "SubSlash - Le courage de couper ses abonnements",
+  /** 없는 주소(app/not-found). 주소가 제각각이라 표에 둘 수 없어 따로 둔다. */
+  notFound: "Page introuvable · SubSlash",
   paths: {
+    "/dashboard": "Tableau de bord · SubSlash",
+    "/subs": "Mes abonnements · SubSlash",
+    "/subs/detail": "Mes abonnements · SubSlash",
+    "/report": "Rapport d'abonnements · SubSlash",
+    "/report/receipt": "Ticket d'abonnements · SubSlash",
+    "/report/receipt/share": "Ticket d'abonnements partagé · SubSlash",
+    "/savings": "Économies et argent préservé · SubSlash",
+    "/savings/review": "Bilan de l'année · SubSlash",
+    "/savings/share": "Certificat de détox d'abonnements · SubSlash",
+    "/settings": "Réglages · SubSlash",
+    "/help": "Aide · SubSlash",
+    "/pc-usage": "Utilisation d'outils de code IA sur ce PC · SubSlash",
     "/forgot-password": "Réinitialiser le mot de passe · SubSlash",
     "/import": "Trouver des abonnements dans Gmail · SubSlash",
     "/login": "Connexion · SubSlash",
@@ -109,7 +193,21 @@ export const fr: Widen<typeof ko> = {
 
 export const es: Widen<typeof ko> = {
   site: "SubSlash - El valor de recortar suscripciones",
+  /** 없는 주소(app/not-found). 주소가 제각각이라 표에 둘 수 없어 따로 둔다. */
+  notFound: "Página no encontrada · SubSlash",
   paths: {
+    "/dashboard": "Panel · SubSlash",
+    "/subs": "Mis suscripciones · SubSlash",
+    "/subs/detail": "Mis suscripciones · SubSlash",
+    "/report": "Informe de suscripciones · SubSlash",
+    "/report/receipt": "Ticket de suscripciones · SubSlash",
+    "/report/receipt/share": "Ticket de suscripciones compartido · SubSlash",
+    "/savings": "Ahorro y dinero protegido · SubSlash",
+    "/savings/review": "Resumen del año · SubSlash",
+    "/savings/share": "Certificado de desintoxicación de suscripciones · SubSlash",
+    "/settings": "Ajustes · SubSlash",
+    "/help": "Ayuda · SubSlash",
+    "/pc-usage": "Uso de herramientas de código con IA en este PC · SubSlash",
     "/forgot-password": "Restablecer contraseña · SubSlash",
     "/import": "Buscar suscripciones en Gmail · SubSlash",
     "/login": "Iniciar sesión · SubSlash",
@@ -126,7 +224,21 @@ export const es: Widen<typeof ko> = {
 
 export const de: Widen<typeof ko> = {
   site: "SubSlash - Der Mut, Abos zu kündigen",
+  /** 없는 주소(app/not-found). 주소가 제각각이라 표에 둘 수 없어 따로 둔다. */
+  notFound: "Seite nicht gefunden · SubSlash",
   paths: {
+    "/dashboard": "Übersicht · SubSlash",
+    "/subs": "Meine Abos · SubSlash",
+    "/subs/detail": "Meine Abos · SubSlash",
+    "/report": "Abo-Bericht · SubSlash",
+    "/report/receipt": "Abo-Beleg · SubSlash",
+    "/report/receipt/share": "Geteilter Abo-Beleg · SubSlash",
+    "/savings": "Ersparnis & geschütztes Geld · SubSlash",
+    "/savings/review": "Jahresrückblick · SubSlash",
+    "/savings/share": "Abo-Detox-Zertifikat · SubSlash",
+    "/settings": "Einstellungen · SubSlash",
+    "/help": "Hilfe · SubSlash",
+    "/pc-usage": "Nutzung von KI-Coding-Tools auf diesem PC · SubSlash",
     "/forgot-password": "Passwort zurücksetzen · SubSlash",
     "/import": "Abos in Gmail finden · SubSlash",
     "/login": "Anmelden · SubSlash",
@@ -143,7 +255,21 @@ export const de: Widen<typeof ko> = {
 
 export const pt: Widen<typeof ko> = {
   site: "SubSlash - A coragem de cortar assinaturas",
+  /** 없는 주소(app/not-found). 주소가 제각각이라 표에 둘 수 없어 따로 둔다. */
+  notFound: "Página não encontrada · SubSlash",
   paths: {
+    "/dashboard": "Painel · SubSlash",
+    "/subs": "Minhas assinaturas · SubSlash",
+    "/subs/detail": "Minhas assinaturas · SubSlash",
+    "/report": "Relatório de assinaturas · SubSlash",
+    "/report/receipt": "Recibo de assinaturas · SubSlash",
+    "/report/receipt/share": "Recibo de assinaturas compartilhado · SubSlash",
+    "/savings": "Economia e dinheiro protegido · SubSlash",
+    "/savings/review": "Resumo do ano · SubSlash",
+    "/savings/share": "Certificado de detox de assinaturas · SubSlash",
+    "/settings": "Configurações · SubSlash",
+    "/help": "Ajuda · SubSlash",
+    "/pc-usage": "Uso de ferramentas de código com IA neste PC · SubSlash",
     "/forgot-password": "Redefinir senha · SubSlash",
     "/import": "Encontrar assinaturas no Gmail · SubSlash",
     "/login": "Entrar · SubSlash",

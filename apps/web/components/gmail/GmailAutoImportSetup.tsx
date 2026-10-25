@@ -176,6 +176,7 @@ export function GmailAutoImportSetup() {
                 <div className="space-y-3">
                   <ol className="list-decimal space-y-2 pl-5">
                     <li>
+                      {t.importing.page.step1Before}
                       <a
                         href="https://script.new"
                         target="_blank"

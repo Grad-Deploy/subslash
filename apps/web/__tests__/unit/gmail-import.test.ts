@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { AppsScriptLocale } from "@lib/i18n/config";
 import { gzipSync } from "node:zlib";
 import { KNOWN_RECEIPT_SENDER_DOMAINS, parseReceiptEmails } from "@subslash/shared";
 import {
@@ -103,7 +104,7 @@ function gmailRest(options: { rateLimited?: number } = {}) {
 function runScript(
   messages: typeof MESSAGES,
   importUrl = "https://subslash.me/import",
-  lang: "ko" | "en" = "ko",
+  lang: AppsScriptLocale = "ko",
 ) {
   const html: string[] = [];
   const blob = (bytes: Buffer) => ({
@@ -185,6 +186,24 @@ describe("Gmail Apps Script → /import", () => {
     const none = runScript([], undefined, "en");
     expect(none).toContain("No payment emails found");
     expect(none).not.toMatch(/[가-힣]/);
+  });
+
+  it("한국어가 아닌 화면에서 받은 스크립트는 한국어 주석 없이 그 언어의 머리말로 시작하고 그대로 돈다", () => {
+    for (const lang of ["en", "zh", "ja", "vi", "fr", "es", "de", "pt"] as const) {
+      const script = gmailAppsScript("https://subslash.me/import", lang);
+      expect(script.startsWith("/**\n * SubSlash — "), lang).toBe(true);
+      // 남는 한글은 한국어 영수증을 찾는 검색어와, 웹 앱과 함께 쓰는 메일 읽기 함수의 오류 문구뿐이다.
+      const hangulLines = script
+        .split("\n")
+        .filter((line) => /[가-힣]/.test(line))
+        .filter((line) => !/newer_than:400d|throw new Error\(/.test(line));
+      expect(hangulLines, lang).toEqual([]);
+      expect(linkFrom(runScript(MESSAGES, undefined, lang)), lang).toContain("#gmail=");
+    }
+    // 한국어는 원래 주석을 그대로 둔다
+    expect(gmailAppsScript("https://subslash.me/import")).toContain(
+      "SubSlash — Gmail 결제 메일 가져오기",
+    );
   });
 
   it("찾은 메일이 없으면 링크 대신 검색어를 고치라고 안내한다", () => {
