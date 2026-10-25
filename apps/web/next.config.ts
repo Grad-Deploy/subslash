@@ -60,6 +60,20 @@ const nextConfig: NextConfig = {
                 },
               ],
             },
+            {
+              // 영수증 공유 화면은 남이 지어 보낸 링크의 값을 그린다(lib/receipt-share). 지금은 모든 칸을 글자로만 그리지만,
+              // 어느 칸이 실수로 그림 주소가 되어도 바깥 주소를 부르지 못하게(받는 사람의 접속을 알리는 추적 그림) 막는다.
+              // 위 규칙의 같은 헤더를 덮으므로 frame-ancestors도 함께 적는다. script-src는 Next가 페이지마다 넣는
+              // 스크립트에 nonce가 필요한데, 정적으로 담는 앱 화면과 맞지 않아 걸지 않는다.
+              source: "/report/receipt/share",
+              headers: [
+                {
+                  key: "Content-Security-Policy",
+                  value:
+                    "frame-ancestors 'none'; img-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'self'",
+                },
+              ],
+            },
           ];
         },
         async redirects() {

@@ -16,7 +16,16 @@ import {
  * 대신 글자 색도 함께 고정해 어느 테마에서나 대비가 같다. 이미지로 저장하는 그림(lib/receipt-image)과
  * 같은 문구를 쓴다.
  */
-export function ReceiptPaper({ receipt, issuedAt }: { receipt: Receipt; issuedAt: Date }) {
+export function ReceiptPaper({
+  receipt,
+  issuedAt,
+  unverified = false,
+}: {
+  receipt: Receipt;
+  issuedAt: Date;
+  /** 공유 링크로 받은 영수증이면 '확인되지 않은 내용'을 맨 앞 알림으로 적는다(ReceiptRenderOptions). */
+  unverified?: boolean;
+}) {
   const t = useT();
   const v = t.receiptView;
   const period = formatReceiptPeriodText(t, receipt.period);
@@ -97,7 +106,7 @@ export function ReceiptPaper({ receipt, issuedAt }: { receipt: Receipt; issuedAt
       <hr className="my-4 border-t border-dashed border-zinc-400" />
 
       <ul className="space-y-0.5 text-[10px] leading-snug text-zinc-500">
-        {receiptFootnotes(t, receipt).map((note) => (
+        {receiptFootnotes(t, receipt, { unverified }).map((note) => (
           <li key={note}>· {note}</li>
         ))}
       </ul>
