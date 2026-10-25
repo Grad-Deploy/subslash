@@ -80,7 +80,7 @@ export function ReceiptPaper({
 
       <dl className="space-y-1.5">
         <div className="flex items-baseline justify-between">
-          <dt className="text-sm font-bold">{receiptTotalLabel(t, receipt)}</dt>
+          <dt className="text-sm font-bold">{receiptTotalLabel(t, receipt, render)}</dt>
           <dd className="text-lg font-extrabold tabular-nums">{receiptTotalText(t, receipt)}</dd>
         </div>
         {receipt.billedTotalKRW !== receipt.totalKRW && (
