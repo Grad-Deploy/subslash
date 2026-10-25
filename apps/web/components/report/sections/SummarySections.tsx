@@ -1,15 +1,10 @@
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { ReceiptText } from "lucide-react";
 import { formatKRW, type findBundleOverlaps } from "@subslash/shared";
 import { IS_APP_BUILD } from "@lib/platform";
 import { receiptHref } from "@lib/receipt-view";
 import { useServiceNames, useT } from "@lib/i18n";
-
-// 요약 칸의 금액을 칸에 맞춰 줄인다(앱 전용). 웹은 지금처럼 자른다.
-const AppFitText = IS_APP_BUILD
-  ? dynamic(() => import("../app/AppFitText").then((m) => m.AppFitText), { ssr: false })
-  : null;
+import { FitText } from "@components/ui/fit-text";
 
 /**
  * 달 영수증과 올해 결산 영수증으로 가는 칸. 달은 영수증 화면이 처음 여는 달과 같다(`defaultReceiptMonth` — 지난달,
@@ -39,7 +34,8 @@ export function ReceiptLinks({
           className="flex items-center gap-2 rounded-2xl border p-3 hover:bg-muted/50"
         >
           <ReceiptText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="min-w-0 text-sm font-semibold">{link.label}</span>
+          {/* 좁은 칸에서 '결산 영수 / 증'처럼 낱말 가운데서 끊지 않는다. */}
+          <span className="min-w-0 break-keep text-sm font-semibold">{link.label}</span>
         </Link>
       ))}
     </section>
@@ -50,11 +46,8 @@ function SummaryTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border px-3 py-3">
       <p className="text-xs text-muted-foreground">{label}</p>
-      {AppFitText ? (
-        <AppFitText text={value} className="font-black leading-7 tabular-nums" />
-      ) : (
-        <p className="truncate text-lg font-black tabular-nums">{value}</p>
-      )}
+      {/* 좁은 칸에서는 금액을 자르지 않고 글자를 줄인다(웹·앱). */}
+      <FitText text={value} className="font-black leading-7 tabular-nums" />
     </div>
   );
 }

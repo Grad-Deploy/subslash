@@ -21,7 +21,11 @@ export function LocaleEffects() {
   }, [locale]);
   useEffect(() => {
     const path = (pathname ?? "/").replace(/\/+$/, "") || "/";
-    const title = (titles.paths as Record<string, string>)[path] ?? titles.site;
+    // 없는 주소는 표에 둘 수 없어 404 화면이 단 표시(NotFoundView)로 가린다.
+    const notFound = document.querySelector('[data-page-title="notFound"]') !== null;
+    const title = notFound
+      ? titles.notFound
+      : ((titles.paths as Record<string, string>)[path] ?? titles.site);
     const apply = () => {
       if (document.title !== title) document.title = title;
     };
