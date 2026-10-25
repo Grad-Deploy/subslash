@@ -281,6 +281,30 @@ describe("Gmail 자동 가져오기", () => {
     }
   });
 
+  it("같은 서비스의 서로 다른 결제 메일이 동시에 들어와도 이전 결제 내역이 사라지지 않고 합쳐진다", async () => {
+    process.env.NEXT_PUBLIC_GMAIL_CHARGE_HISTORY_TEST_OPEN = "true";
+    try {
+      const { cookie } = await loggedIn("sean");
+      const token = await issueToken(cookie);
+
+      const responses = await Promise.all([
+        ingest(token, [NETFLIX, { ...NETFLIX, date: daysAgo(33) }]),
+        ingest(token, [
+          { ...NETFLIX, date: daysAgo(63), body: "결제 금액 : 13,500원" },
+          { ...NETFLIX, date: daysAgo(93), body: "결제 금액 : 9,500원" },
+        ]),
+      ]);
+      expect(responses.map((r) => r.status)).toEqual([200, 200]);
+
+      const foundList = await discoveries(cookie);
+      expect(foundList).toHaveLength(1);
+      const history = foundList[0].chargeHistory as Array<{ date: string; amount: number }>;
+      expect(history.map((charge) => charge.amount)).toEqual([9500, 13500, 17000, 17000]);
+    } finally {
+      delete process.env.NEXT_PUBLIC_GMAIL_CHARGE_HISTORY_TEST_OPEN;
+    }
+  });
+
   it("받은 후보를 지우고, 다른 계정의 후보는 읽지도 지우지도 못한다", async () => {
     const sean = await loggedIn("sean");
     const other = await loggedIn("other");

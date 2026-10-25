@@ -36,11 +36,12 @@ import {
  * 이 들어있어도 그것은 한 칸의 데이터로 저장될 뿐 명령이 되지 않는다.
  */
 /**
- * 가입 시도는 IP당 한 시간에 20번까지. 중복 확인이 '이미 가입된 이메일입니다'를 알려 주므로, 막지
- * 않으면 남의 주소를 대량으로 넣어 누가 SubSlash를 쓰는지 알아낼 수 있다(구독 관리 앱을 쓴다는
- * 것 자체가 개인정보다). 사람이 가입하다 틀리는 횟수로는 닿지 않는 값이다.
+ * 가입 시도는 한 IP에서 한 시간에 100번까지. 중복 확인이 '이미 가입된 이메일입니다'를 알려 주므로,
+ * 막지 않으면 남의 주소를 대량으로 넣어 누가 SubSlash를 쓰는지 알아낼 수 있다(구독 관리 앱을 쓴다는
+ * 것 자체가 개인정보다). 학교·전시장 공용 와이파이(NAT)에서 수십 명이 함께 가입하며 오타를 고치는
+ * 상황은 넉넉히 통과시키되, 주소를 대량으로 찔러보는 시도는 막는 값이다.
  */
-const ATTEMPTS_PER_IP: RateLimitRule = { limit: 20, windowMs: HOUR_MS };
+const ATTEMPTS_PER_IP: RateLimitRule = { limit: 100, windowMs: HOUR_MS };
 
 export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
@@ -111,18 +112,17 @@ export async function POST(request: NextRequest) {
     // 평문 비밀번호는 여기서 해시로 바뀌고, 그 뒤로는 어디에도 남지 않는다.
     const passwordHash = await hashPassword(value.password);
 
-    const db = getDb();
-    const inserted = await db
-      .insert(accounts)
-      .values({
-        username: value.username,
-        email: value.email,
-        passwordHash,
-      })
-      .returning();
-
-    const account = inserted[0];
-    const session = await createSession(account.id);
+    const { account, session } = await getDb().transaction(async (tx) => {
+      const [created] = await tx
+        .insert(accounts)
+        .values({
+          username: value.username,
+          email: value.email,
+          passwordHash,
+        })
+        .returning();
+      return { account: created, session: await createSession(created.id, tx) };
+    });
 
     // 확인 메일은 가입이 끝난 뒤에 보낸다. 보내지 못해도 가입은 되돌리지 않고,
     // 보냈는지를 그대로 알린다 — 오지 않을 메일을 기다리게 하지 않기 위해서다.

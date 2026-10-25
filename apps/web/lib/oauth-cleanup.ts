@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { getDb } from "./db";
+import { getDb, type DbExecutor } from "./db";
 import { accountIdentities, oauthAppClaims } from "./schema";
 
 /**
@@ -7,8 +7,14 @@ import { accountIdentities, oauthAppClaims } from "./schema";
  * foreign_keys가 켜져 있을 때만 동작하므로 직접 지운다. 계정을 지우는 경로(회원 탈퇴, '제가 가입하지
  * 않았어요')가 모두 부른다 — 그래서 다른 모듈을 끌어오지 않는 따로 된 파일이다.
  */
-export async function deleteOAuthData(accountId: string): Promise<void> {
-  const db = getDb();
-  await db.delete(accountIdentities).where(eq(accountIdentities.accountId, accountId));
-  await db.delete(oauthAppClaims).where(eq(oauthAppClaims.accountId, accountId));
+export async function deleteOAuthData(accountId: string, tx?: DbExecutor): Promise<void> {
+  if (tx) {
+    await tx.delete(accountIdentities).where(eq(accountIdentities.accountId, accountId));
+    await tx.delete(oauthAppClaims).where(eq(oauthAppClaims.accountId, accountId));
+    return;
+  }
+  await getDb().transaction(async (innerTx) => {
+    await innerTx.delete(accountIdentities).where(eq(accountIdentities.accountId, accountId));
+    await innerTx.delete(oauthAppClaims).where(eq(oauthAppClaims.accountId, accountId));
+  });
 }

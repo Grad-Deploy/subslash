@@ -6,7 +6,7 @@ import {
   type Currency,
   localDateKey,
 } from "@subslash/shared";
-import { getDb } from "./db";
+import { getDb, type DbExecutor } from "./db";
 import { calendarSyncPlans } from "./schema";
 import { generateSyncToken, hashSyncToken } from "./tokens";
 import { billingRRule, calendarEligible, eventDescription, type CalendarEntry } from "./ics";
@@ -223,8 +223,11 @@ export async function claimCalendarSyncPlan(
 }
 
 /** 맡겨 둔 계획을 지운다. 연결 끊기·회원 탈퇴가 부른다. */
-export async function deleteCalendarSyncPlan(accountId: string): Promise<void> {
-  await getDb().delete(calendarSyncPlans).where(eq(calendarSyncPlans.accountId, accountId));
+export async function deleteCalendarSyncPlan(
+  accountId: string,
+  db: DbExecutor = getDb(),
+): Promise<void> {
+  await db.delete(calendarSyncPlans).where(eq(calendarSyncPlans.accountId, accountId));
 }
 
 /** 테스트가 쓰는, 아직 안 지워진 계획 수. */

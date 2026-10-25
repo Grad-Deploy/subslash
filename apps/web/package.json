@@ -21,7 +21,9 @@
     "storage:web-app": "tsx scripts/storage-quota-web-app/write.ts",
     "ask:eval": "tsx scripts/ask-eval/run.ts",
     "ask:train": "tsx scripts/ask-train/run.ts",
-    "landing:screens": "tsx scripts/landing-screens/capture.ts"
+    "landing:screens": "tsx scripts/landing-screens/capture.ts",
+    "rehearsal:quota": "tsx scripts/rehearsal/run.ts --quota-only",
+    "rehearsal:dry": "tsx scripts/rehearsal/run.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.0.0",

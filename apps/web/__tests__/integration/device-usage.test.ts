@@ -141,6 +141,18 @@ describe("/api/usage", () => {
     expect(await getDb().select().from(usageIntervals)).toHaveLength(1);
   });
 
+  it("같은 새 기기로 여러 요청이 동시에 올라와도 충돌 없이 모두 성공하고 한 기기로 합쳐진다", async () => {
+    const { cookie } = await login("concurrent");
+    const now = Date.now();
+    const intervals = [{ serviceId: "netflix", start: now - 2 * HOUR, end: now - HOUR }];
+    const responses = await Promise.all(
+      Array.from({ length: 5 }, () => upload(cookie, PHONE, now - 3 * HOUR, now, intervals)),
+    );
+    expect(responses.map((r) => r.status)).toEqual([200, 200, 200, 200, 200]);
+    expect(await getDb().select().from(usageDevices)).toHaveLength(1);
+    expect(await getDb().select().from(usageIntervals)).toHaveLength(1);
+  });
+
   it("서비스 목록에 없는 앱과 기간 밖 구간은 버린다", async () => {
     const { cookie } = await login("filter");
     const now = Date.now();

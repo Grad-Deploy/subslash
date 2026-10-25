@@ -208,6 +208,27 @@ describe("회원가입", () => {
     );
     expect(res.status).toBe(409);
   });
+
+  it("학교·전시장 공용 와이파이(같은 공인 IP)에서 25번 연속 가입 시도가 들어와도 429로 막히지 않는다", async () => {
+    await signupRoute(json("http://localhost/api/auth/signup", VALID_SIGNUP));
+    // scrypt 해싱을 건너뛰는 중복 확인 단계까지 한 공인 IP(203.0.113.77)로 25번 연속 시도한다.
+    for (let i = 0; i < 25; i++) {
+      const res = await signupRoute(
+        request("http://localhost/api/auth/signup", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-forwarded-for": "203.0.113.77",
+          },
+          body: JSON.stringify({
+            ...VALID_SIGNUP,
+            email: `visitor_${i}@gmail.com`,
+          }),
+        }),
+      );
+      expect(res.status).toBe(409);
+    }
+  });
 });
 
 describe("가입 이메일 도메인", () => {

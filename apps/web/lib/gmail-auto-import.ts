@@ -1,13 +1,14 @@
 import { createHash } from "crypto";
 import { and, count, eq, inArray, lt, sql } from "drizzle-orm";
 import {
+  MAX_CHARGE_HISTORY,
   mergeChargeHistory,
   parseReceiptEmails,
   type ChargeRecord,
   type DiscoveredSubscription,
   DAY_MS,
 } from "@subslash/shared";
-import { getDb } from "./db";
+import { getDb, type DbExecutor } from "./db";
 import { accounts, gmailDiscoveries, gmailImportLinks, type GmailDiscovery } from "./schema";
 import { canSignLinks, generateSyncToken, hashSyncToken, signLink, verifyLink } from "./tokens";
 import { readReceiptEmails } from "./gmail-import";
@@ -124,14 +125,16 @@ export async function readImportLink(accountId: string): Promise<ImportLinkStatu
  * 연결과 받아 가지 않은 후보를 지운다. 연결 끊기와 회원 탈퇴가 쓴다. 스키마의 ON DELETE
  * CASCADE는 PRAGMA foreign_keys가 켜져 있을 때만 동작하므로 직접 지운다.
  */
-export async function deleteGmailImportData(accountId: string): Promise<boolean> {
-  const db = getDb();
-  await db.delete(gmailDiscoveries).where(eq(gmailDiscoveries.accountId, accountId));
-  const deleted = await db
-    .delete(gmailImportLinks)
-    .where(eq(gmailImportLinks.accountId, accountId))
-    .returning({ accountId: gmailImportLinks.accountId });
-  return deleted.length > 0;
+export async function deleteGmailImportData(accountId: string, tx?: DbExecutor): Promise<boolean> {
+  const run = async (db: DbExecutor) => {
+    await db.delete(gmailDiscoveries).where(eq(gmailDiscoveries.accountId, accountId));
+    const deleted = await db
+      .delete(gmailImportLinks)
+      .where(eq(gmailImportLinks.accountId, accountId))
+      .returning({ accountId: gmailImportLinks.accountId });
+    return deleted.length > 0;
+  };
+  return tx ? run(tx) : getDb().transaction(run);
 }
 
 export type IngestResult =
@@ -170,16 +173,6 @@ export async function ingestReceiptEmails(
   const { accountId } = link;
   const createdAt = now.toISOString();
 
-  // 오래 받아 가지 않은 후보부터 정리한다.
-  await db
-    .delete(gmailDiscoveries)
-    .where(
-      and(
-        eq(gmailDiscoveries.accountId, accountId),
-        lt(gmailDiscoveries.createdAt, new Date(now.getTime() - PENDING_TTL_MS).toISOString()),
-      ),
-    );
-
   // 방침에 게시한 날부터만 이전 결제 메일(받은 날·금액)을 저장한다.
   const keepHistory = isGmailChargeHistoryOpen(now);
   const candidates = parseReceiptEmails(emails, { now, timeZone: USER_TIME_ZONE }).flatMap(
@@ -209,72 +202,102 @@ export async function ingestReceiptEmails(
     },
   );
 
-  // 이미 있는 서비스는 갱신이라 자리를 차지하지 않는다. 새 서비스는 남은 자리만큼만 받는다.
-  const existing = await db
-    .select({
-      dedupeKey: gmailDiscoveries.dedupeKey,
-      chargeHistory: gmailDiscoveries.chargeHistory,
-    })
-    .from(gmailDiscoveries)
-    .where(eq(gmailDiscoveries.accountId, accountId));
-  const existingKeys = new Set(existing.map((row) => row.dedupeKey));
-  const existingHistory = new Map(
-    existing.map((row) => [row.dedupeKey, readChargeHistory(row.chargeHistory)]),
-  );
-  let room = MAX_PENDING - existingKeys.size;
-  const accepted = candidates.filter((row) => {
-    if (existingKeys.has(row.dedupeKey)) return true;
-    if (room <= 0) return false;
-    room -= 1;
-    return true;
+  // 후보 정리·조회·병합·저장을 한 트랜잭션으로 묶고, 같은 서비스의 결제 기록(chargeHistory)은
+  // ON CONFLICT DO UPDATE 문장 안에서 SQLite JSON 함수로 합쳐 동시 수집에서도 기록이 빠지지 않게 한다.
+  const newer = sql`excluded.receipt_date >= ${gmailDiscoveries.receiptDate}`;
+  const mergedChargeHistorySql = sql<string | null>`CASE
+    WHEN excluded.charge_history IS NULL THEN ${gmailDiscoveries.chargeHistory}
+    ELSE (
+      SELECT json_group_array(json(elem) ORDER BY d ASC)
+      FROM (
+        SELECT elem, d FROM (
+          SELECT value AS elem, json_extract(value, '$.date') AS d, 1 AS p
+          FROM json_each(CASE WHEN json_valid(${gmailDiscoveries.chargeHistory}) THEN ${gmailDiscoveries.chargeHistory} ELSE '[]' END)
+          UNION ALL
+          SELECT value AS elem, json_extract(value, '$.date') AS d, 2 AS p
+          FROM json_each(CASE WHEN json_valid(excluded.charge_history) THEN excluded.charge_history ELSE '[]' END)
+        )
+        GROUP BY d
+        HAVING p = max(p)
+        ORDER BY d DESC
+        LIMIT ${MAX_CHARGE_HISTORY}
+      )
+    )
+  END`;
+
+  const acceptedCount = await db.transaction(async (tx) => {
+    // 오래 받아 가지 않은 후보부터 정리한다.
+    await tx
+      .delete(gmailDiscoveries)
+      .where(
+        and(
+          eq(gmailDiscoveries.accountId, accountId),
+          lt(gmailDiscoveries.createdAt, new Date(now.getTime() - PENDING_TTL_MS).toISOString()),
+        ),
+      );
+
+    // 이미 있는 서비스는 갱신이라 자리를 차지하지 않는다. 새 서비스는 남은 자리만큼만 받는다.
+    const existing = await tx
+      .select({
+        dedupeKey: gmailDiscoveries.dedupeKey,
+        chargeHistory: gmailDiscoveries.chargeHistory,
+      })
+      .from(gmailDiscoveries)
+      .where(eq(gmailDiscoveries.accountId, accountId));
+    const existingKeys = new Set(existing.map((row) => row.dedupeKey));
+    const existingHistory = new Map(
+      existing.map((row) => [row.dedupeKey, readChargeHistory(row.chargeHistory)]),
+    );
+    let room = MAX_PENDING - existingKeys.size;
+    const accepted = candidates.filter((row) => {
+      if (existingKeys.has(row.dedupeKey)) return true;
+      if (room <= 0) return false;
+      room -= 1;
+      existingKeys.add(row.dedupeKey);
+      return true;
+    });
+
+    for (const { chargeHistory, ...row } of accepted) {
+      // 결제 기록은 옛 영수증이 늦게 와도(1년 치를 나중에 보내는 scanOlder) 합친다.
+      const merged = chargeHistory
+        ? mergeChargeHistory(existingHistory.get(row.dedupeKey), chargeHistory)
+        : null;
+      if (merged) existingHistory.set(row.dedupeKey, merged);
+      const history = merged ? JSON.stringify(merged) : null;
+
+      await tx
+        .insert(gmailDiscoveries)
+        .values({ ...row, chargeHistory: history })
+        .onConflictDoUpdate({
+          target: [gmailDiscoveries.accountId, gmailDiscoveries.dedupeKey],
+          set: {
+            // 같은 메일을 두 번 보내거나 옛 메일이 늦게 와도 더 최근 결과를 덮지 않는다.
+            amount: sql`CASE WHEN ${newer} THEN excluded.amount ELSE ${gmailDiscoveries.amount} END`,
+            billingDay: sql`CASE WHEN ${newer} THEN excluded.billing_day ELSE ${gmailDiscoveries.billingDay} END`,
+            billingCycle: sql`CASE WHEN ${newer} THEN excluded.billing_cycle ELSE ${gmailDiscoveries.billingCycle} END`,
+            billingMonth: sql`CASE WHEN ${newer} THEN excluded.billing_month ELSE ${gmailDiscoveries.billingMonth} END`,
+            category: sql`CASE WHEN ${newer} THEN excluded.category ELSE ${gmailDiscoveries.category} END`,
+            presetId: sql`CASE WHEN ${newer} THEN excluded.preset_id ELSE ${gmailDiscoveries.presetId} END`,
+            paymentMethod: sql`CASE WHEN ${newer} THEN excluded.payment_method ELSE ${gmailDiscoveries.paymentMethod} END`,
+            receiptDate: sql`CASE WHEN ${newer} THEN excluded.receipt_date ELSE ${gmailDiscoveries.receiptDate} END`,
+            sender: sql`CASE WHEN ${newer} THEN excluded.sender ELSE ${gmailDiscoveries.sender} END`,
+            tier: sql`CASE WHEN ${newer} THEN excluded.tier ELSE ${gmailDiscoveries.tier} END`,
+            createdAt: sql`CASE WHEN ${newer} THEN excluded.created_at ELSE ${gmailDiscoveries.createdAt} END`,
+            chargeHistory: mergedChargeHistorySql,
+          },
+          setWhere: sql`${newer} OR excluded.charge_history IS NOT NULL`,
+        });
+    }
+
+    await tx
+      .update(gmailImportLinks)
+      .set({ lastIngestAt: createdAt, lastEmailCount: emails.length })
+      .where(eq(gmailImportLinks.accountId, accountId));
+
+    return accepted.length;
   });
 
-  for (const { chargeHistory, ...row } of accepted) {
-    // 결제 기록은 옛 영수증이 늦게 와도(1년 치를 나중에 보내는 scanOlder) 합친다. 아래의 덮어쓰기는 더
-    // 최근 영수증일 때만 일어나므로, 합친 기록은 따로 적는다.
-    const history = chargeHistory
-      ? JSON.stringify(mergeChargeHistory(existingHistory.get(row.dedupeKey), chargeHistory))
-      : null;
-    await db
-      .insert(gmailDiscoveries)
-      .values({ ...row, chargeHistory: history })
-      .onConflictDoUpdate({
-        target: [gmailDiscoveries.accountId, gmailDiscoveries.dedupeKey],
-        set: {
-          amount: row.amount,
-          billingDay: row.billingDay,
-          billingCycle: row.billingCycle,
-          billingMonth: row.billingMonth,
-          category: row.category,
-          presetId: row.presetId,
-          paymentMethod: row.paymentMethod,
-          receiptDate: row.receiptDate,
-          sender: row.sender,
-          tier: row.tier,
-          createdAt: row.createdAt,
-        },
-        // 같은 메일을 두 번 보내거나 옛 메일이 늦게 와도 더 최근 결과를 덮지 않는다.
-        setWhere: sql`excluded.receipt_date >= ${gmailDiscoveries.receiptDate}`,
-      });
-    if (history !== null && existingKeys.has(row.dedupeKey)) {
-      await db
-        .update(gmailDiscoveries)
-        .set({ chargeHistory: history })
-        .where(
-          and(
-            eq(gmailDiscoveries.accountId, accountId),
-            eq(gmailDiscoveries.dedupeKey, row.dedupeKey),
-          ),
-        );
-    }
-  }
-
-  await db
-    .update(gmailImportLinks)
-    .set({ lastIngestAt: createdAt, lastEmailCount: emails.length })
-    .where(eq(gmailImportLinks.accountId, accountId));
-
-  return { ok: true, received: emails.length, candidates: accepted.length };
+  return { ok: true, received: emails.length, candidates: acceptedCount };
 }
 
 function toDto(row: GmailDiscovery): DiscoveryDto {

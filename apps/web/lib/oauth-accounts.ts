@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "crypto";
 import { and, eq, gt, lt } from "drizzle-orm";
-import { getDb } from "./db";
+import { getDb, type DbExecutor } from "./db";
 import { accountIdentities, accounts, oauthAppClaims, type Account } from "./schema";
 import { NO_PASSWORD, hasPassword } from "./password";
 import { signLink, verifyLink } from "./tokens";
@@ -67,22 +67,38 @@ export async function resolveOAuthAccount(
   const now = new Date().toISOString();
   let account: Account | null = null;
   // 아이디는 사람이 고르지 않았으므로 제공자 첫 글자 + 무작위로 만든다. '내 정보'에서 보인다.
+  // 계정과 제공자 연결(accountIdentities)을 한 트랜잭션으로 묶어, 연결 삽입이 실패하면
+  // 빈 계정이 고아로 남지 않고 함께 롤백되게 한다.
   for (let attempt = 0; attempt < 5 && !account; attempt++) {
     try {
-      const inserted = await db
-        .insert(accounts)
-        .values({
-          username: generateUsername(provider),
-          email,
-          passwordHash: NO_PASSWORD,
-          emailVerifiedAt: profile.emailVerified ? now : null,
-          lastLoginAt: now,
-        })
-        .returning();
-      account = inserted[0];
+      account = await db.transaction(async (tx) => {
+        const [inserted] = await tx
+          .insert(accounts)
+          .values({
+            username: generateUsername(provider),
+            email,
+            passwordHash: NO_PASSWORD,
+            emailVerifiedAt: profile.emailVerified ? now : null,
+            lastLoginAt: now,
+          })
+          .returning();
+        await tx
+          .insert(accountIdentities)
+          .values({ accountId: inserted.id, provider, subjectHash: hash, createdAt: now });
+        return inserted;
+      });
     } catch (error) {
-      // 아이디가 겹쳤으면 다시 뽑는다. 이메일이 그사이 가입됐으면 거절한다.
+      // 아이디가 겹쳤으면 다시 뽑는다. 같은 제공자 계정이나 이메일이 그사이 가입됐으면 이어받거나 거절한다.
       if (!isUniqueViolation(error)) throw error;
+      const racedLinked = await db
+        .select({ account: accounts })
+        .from(accountIdentities)
+        .innerJoin(accounts, eq(accountIdentities.accountId, accounts.id))
+        .where(
+          and(eq(accountIdentities.provider, provider), eq(accountIdentities.subjectHash, hash)),
+        )
+        .limit(1);
+      if (racedLinked[0]) return { account: racedLinked[0].account, created: false };
       const raced = await db
         .select({ id: accounts.id })
         .from(accounts)
@@ -92,17 +108,6 @@ export async function resolveOAuthAccount(
     }
   }
   if (!account) throw new OAuthError("server");
-
-  try {
-    await db
-      .insert(accountIdentities)
-      .values({ accountId: account.id, provider, subjectHash: hash, createdAt: now });
-  } catch (error) {
-    // 같은 제공자 계정으로 두 창에서 동시에 가입했다. 방금 만든 빈 계정은 지운다.
-    await db.delete(accounts).where(eq(accounts.id, account.id));
-    if (isUniqueViolation(error)) return resolveOAuthAccount(provider, profile, flow);
-    throw error;
-  }
 
   if (!profile.emailVerified) {
     // 보내지 못해도 가입은 되돌리지 않는다. '내 정보'에서 다시 보낼 수 있다.
@@ -124,8 +129,10 @@ export function generateUsername(provider: OAuthProviderId): string {
 }
 
 /** 계정에 이어 둔 제공자. '내 정보'가 보여 준다. */
-export async function linkedProviders(accountId: string): Promise<OAuthProviderId[]> {
-  const db = getDb();
+export async function linkedProviders(
+  accountId: string,
+  db: DbExecutor = getDb(),
+): Promise<OAuthProviderId[]> {
   const rows = await db
     .select({ provider: accountIdentities.provider })
     .from(accountIdentities)
@@ -134,13 +141,13 @@ export async function linkedProviders(accountId: string): Promise<OAuthProviderI
 }
 
 /** 계정이 로그인하는 방법. `password`(비밀번호가 있으면)와 이어 둔 제공자. */
-async function loginMethodIds(accountId: string): Promise<string[]> {
-  const [row] = await getDb()
+async function loginMethodIds(accountId: string, db: DbExecutor = getDb()): Promise<string[]> {
+  const [row] = await db
     .select({ passwordHash: accounts.passwordHash })
     .from(accounts)
     .where(eq(accounts.id, accountId))
     .limit(1);
-  const providers = await linkedProviders(accountId);
+  const providers = await linkedProviders(accountId, db);
   return [...(row && hasPassword(row.passwordHash) ? ["password"] : []), ...providers];
 }
 
@@ -242,20 +249,25 @@ export type UnlinkResult = "ok" | "not-linked" | "last-method";
 /**
  * 제공자 연결을 끊는다. 로그인할 방법(비밀번호나 다른 제공자)이 남지 않으면 끊지 않는다 — 비밀번호
  * 없이 간편 로그인으로만 가입한 계정이 하나뿐인 연결을 끊으면 다시 들어올 길이 없다.
+ *
+ * 두 창에서 동시에 서로 다른 제공자 연결을 끊어 로그인 수단이 0개가 되는 경합(TOCTOU)을 막기 위해
+ * 남은 수단 확인과 삭제를 하나의 트랜잭션으로 묶는다.
  */
 export async function unlinkOAuthIdentity(
   accountId: string,
   provider: OAuthProviderId,
 ): Promise<UnlinkResult> {
-  const methods = await loginMethodIds(accountId);
-  if (!methods.includes(provider)) return "not-linked";
-  if (methods.length < 2) return "last-method";
-  await getDb()
-    .delete(accountIdentities)
-    .where(
-      and(eq(accountIdentities.accountId, accountId), eq(accountIdentities.provider, provider)),
-    );
-  return "ok";
+  return getDb().transaction(async (tx) => {
+    const methods = await loginMethodIds(accountId, tx);
+    if (!methods.includes(provider)) return "not-linked";
+    if (methods.length < 2) return "last-method";
+    await tx
+      .delete(accountIdentities)
+      .where(
+        and(eq(accountIdentities.accountId, accountId), eq(accountIdentities.provider, provider)),
+      );
+    return "ok";
+  });
 }
 
 function claimCutoff(): string {

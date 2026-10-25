@@ -81,16 +81,17 @@ export async function verificationWaitSeconds(email: string, now = new Date()): 
 
 /** 계정 메일을 실제로 보낸 뒤 부른다. 한도 계산에 쓰고, 24시간이 지난 기록은 지운다. */
 export async function recordAccountMailSent(email: string, now = new Date()): Promise<void> {
-  const db = getDb();
-  await db.insert(verificationMailLog).values({ email, sentAt: now.toISOString() });
-  await db
-    .delete(verificationMailLog)
-    .where(
-      and(
-        eq(verificationMailLog.email, email),
-        lt(verificationMailLog.sentAt, new Date(now.getTime() - DAY_MS).toISOString()),
-      ),
-    );
+  await getDb().transaction(async (tx) => {
+    await tx.insert(verificationMailLog).values({ email, sentAt: now.toISOString() });
+    await tx
+      .delete(verificationMailLog)
+      .where(
+        and(
+          eq(verificationMailLog.email, email),
+          lt(verificationMailLog.sentAt, new Date(now.getTime() - DAY_MS).toISOString()),
+        ),
+      );
+  });
 }
 
 /** 계정의 주소로 확인 메일을 보낸다. 예외를 던지지 않는다 — 가입을 실패로 만들지 않기 위해서다. */
@@ -231,26 +232,34 @@ export async function pruneAbandonedAccounts(now: Date = new Date()): Promise<nu
  *
  * 확인된 계정은 주인이 '맞아요'라고 답한 것이다. 그 뒤에 남아 있던 옛 링크로
  * 지워지게 두지 않는다.
+ *
+ * 스키마의 ON DELETE CASCADE는 PRAGMA foreign_keys가 켜져 있을 때만 동작하므로 딸린 행을
+ * 직접 먼저 지운 뒤 부모 계정을 지우고, 전체를 하나의 트랜잭션으로 묶어 중간에 실패하더라도
+ * 고아 레코드(Orphan)나 반쪽짜리 삭제가 남지 않게 한다.
  */
 export async function deleteUnverifiedAccount(accountId: string): Promise<boolean> {
-  const db = getDb();
-  const deleted = await db
-    .delete(accounts)
-    .where(and(eq(accounts.id, accountId), isNull(accounts.emailVerifiedAt)))
-    .returning({ id: accounts.id });
-  if (deleted.length === 0) return false;
+  return getDb().transaction(async (tx) => {
+    const [target] = await tx
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(and(eq(accounts.id, accountId), isNull(accounts.emailVerifiedAt)))
+      .limit(1);
+    if (!target) return false;
 
-  // 스키마의 ON DELETE CASCADE는 PRAGMA foreign_keys가 켜져 있을 때만 동작한다.
-  // 알림 미러를 지울 때처럼 딸린 행을 직접 지운다. 계정에 저장한 기록도 함께 지운다 —
-  // 주소의 주인이 모르는 가입이라고 한 계정의 기록을 서버에 남겨 둘 이유가 없다.
-  await db.delete(sessions).where(eq(sessions.accountId, accountId));
-  await db.delete(accountSnapshots).where(eq(accountSnapshots.accountId, accountId));
-  await deleteGmailImportData(accountId);
-  await deleteCalendarSyncPlan(accountId);
-  await deleteAllDeviceUsage(accountId);
-  await deleteOAuthData(accountId);
-  await deleteAskDailyCounts(accountId);
-  return true;
+    await tx.delete(sessions).where(eq(sessions.accountId, accountId));
+    await tx.delete(accountSnapshots).where(eq(accountSnapshots.accountId, accountId));
+    await deleteGmailImportData(accountId, tx);
+    await deleteCalendarSyncPlan(accountId, tx);
+    await deleteAllDeviceUsage(accountId, tx);
+    await deleteOAuthData(accountId, tx);
+    await deleteAskDailyCounts(accountId, tx);
+
+    const deleted = await tx
+      .delete(accounts)
+      .where(and(eq(accounts.id, accountId), isNull(accounts.emailVerifiedAt)))
+      .returning({ id: accounts.id });
+    return deleted.length > 0;
+  });
 }
 
 export async function findAccountByEmail(email: string): Promise<Account | null> {
