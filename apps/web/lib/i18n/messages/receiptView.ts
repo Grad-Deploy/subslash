@@ -69,9 +69,12 @@ export const ko = {
     },
     shared: {
       badge: "공유받은 구독 영수증",
-      note: "보낸 사람의 기기 기록으로 만든 영수증이에요. 링크에 담긴 내용을 그대로 보여 줘요.",
+      note: "보낸 사람이 직접 기록한 내용을 링크에 담은 거예요. SubSlash가 확인하지 않았고, 증빙으로 쓸 수 없어요.",
       invalid: "영수증을 읽지 못했어요. 링크가 잘렸거나 바뀌었을 수 있어요.",
       cta: "SubSlash로 내 구독 영수증 만들기",
+      unverifiedMark: "공유 링크로 받은 영수증이에요. SubSlash가 내용을 확인하지 않았어요.",
+      maskedName: (n: number) => `구독 ${n}`,
+      maskedKilled: (n: number) => `해지한 구독 ${n}`,
     },
     page: {
       back: "← 리포트",
@@ -83,7 +86,12 @@ export const ko = {
       saveImage: "이미지로 저장",
       share: "공유하기",
       privacy:
-        "영수증은 이 기기의 기록으로 만들어요. 공유하면 영수증 내용(서비스 이름·금액)이 링크에 담겨, 링크를 받은 사람은 누구나 볼 수 있어요. 링크의 내용은 서버에 저장하지 않아요.",
+        "영수증은 이 기기의 기록으로 만들어요. 공유하면 영수증 내용(서비스 이름·금액)이 링크에 담겨, 링크를 받은 사람은 누구나 볼 수 있고 보낸 링크는 취소할 수 없어요. 사용 횟수와 나눠 내는 금액은 담지 않고, 링크의 내용은 서버에 저장하지 않아요.",
+      maskNames: "서비스 이름 가리고 공유하기",
+      confirmTitle: "영수증 링크를 보낼까요?",
+      confirmBody:
+        "영수증 내용이 링크에 담겨요. 링크를 받은 사람은 누구나 볼 수 있고, 다시 전달될 수도 있어요. 보낸 링크는 취소할 수 없어요.",
+      confirmOk: "공유하기",
       yearDetail: (year: number) => `${year}년 결산 자세히 보기`,
       imageSaved: "영수증 이미지를 저장했어요",
       imageFailed: "이미지를 만들지 못했어요. 글로 공유해 보세요.",
@@ -181,9 +189,12 @@ export const en: Widen<typeof ko> = {
     },
     shared: {
       badge: "A shared subscription receipt",
-      note: "This receipt was made from the sender's device records. It shows exactly what's in the link.",
+      note: "This is what the sender recorded, carried in the link. SubSlash hasn't checked it, and it can't be used as proof.",
       invalid: "Couldn't read this receipt. The link may have been cut off or changed.",
       cta: "Make my own receipt with SubSlash",
+      unverifiedMark: "Receipt received via a shared link. SubSlash hasn't checked its contents.",
+      maskedName: (n) => `Subscription ${n}`,
+      maskedKilled: (n) => `Canceled subscription ${n}`,
     },
     page: {
       back: "← Report",
@@ -195,7 +206,12 @@ export const en: Widen<typeof ko> = {
       saveImage: "Save as image",
       share: "Share",
       privacy:
-        "The receipt is made from this device's records. When you share it, its contents (service names and amounts) go into the link, and anyone with the link can see them. The link's contents aren't stored on our server.",
+        "The receipt is made from this device's records. When you share it, its contents (service names and amounts) go into the link: anyone with the link can see them, and a sent link can't be taken back. Usage counts and shared-plan amounts aren't included, and the link's contents aren't stored on our server.",
+      maskNames: "Hide service names when sharing",
+      confirmTitle: "Send a receipt link?",
+      confirmBody:
+        "The receipt's contents go into the link. Anyone with the link can see them, and it may be forwarded. A sent link can't be taken back.",
+      confirmOk: "Share",
       yearDetail: (year) => `See the ${year} year in review`,
       imageSaved: "Saved the receipt image",
       imageFailed: "Couldn't make the image. Try sharing it as text.",
@@ -283,9 +299,12 @@ export const zh: Widen<typeof ko> = {
     },
     shared: {
       badge: "收到的订阅小票",
-      note: "这张小票由发送者设备上的记录生成，按链接里的内容原样显示。",
+      note: "这是发送者自己记录的内容，放在链接里。SubSlash 没有核实，不能作为凭证。",
       invalid: "无法读取这张小票。链接可能被截断或改动了。",
       cta: "用 SubSlash 生成我的订阅小票",
+      unverifiedMark: "通过分享链接收到的小票。SubSlash 未核实其内容。",
+      maskedName: (n) => `订阅 ${n}`,
+      maskedKilled: (n) => `已取消的订阅 ${n}`,
     },
     page: {
       back: "← 报告",
@@ -297,7 +316,12 @@ export const zh: Widen<typeof ko> = {
       saveImage: "保存为图片",
       share: "分享",
       privacy:
-        "小票由这台设备上的记录生成。分享时，小票内容（服务名称和金额）会放进链接里，拿到链接的任何人都能看到。链接内容不会保存在服务器上。",
+        "小票由这台设备上的记录生成。分享时，小票内容（服务名称和金额）会放进链接里：拿到链接的任何人都能看到，发出的链接无法撤回。不包含使用次数和分摊金额，链接内容也不会保存在服务器上。",
+      maskNames: "分享时隐藏服务名称",
+      confirmTitle: "要发送小票链接吗？",
+      confirmBody:
+        "小票内容会放进链接里。拿到链接的任何人都能看到，也可能被转发。发出的链接无法撤回。",
+      confirmOk: "分享",
       yearDetail: (year) => `查看 ${year} 年度总结`,
       imageSaved: "已保存小票图片",
       imageFailed: "无法生成图片。请尝试以文字分享。",
@@ -379,9 +403,12 @@ export const ja: Widen<typeof ko> = {
     },
     shared: {
       badge: "共有されたサブスクのレシート",
-      note: "送った人の端末の記録から作ったレシートです。リンクに入っている内容をそのまま表示しています。",
+      note: "送った人が自分で記録した内容をリンクに入れたものです。SubSlashは確認しておらず、証明には使えません。",
       invalid: "レシートを読み込めませんでした。リンクが途中で切れたか、変わった可能性があります。",
       cta: "SubSlashで自分のレシートを作る",
+      unverifiedMark: "共有リンクで受け取ったレシートです。SubSlashは内容を確認していません。",
+      maskedName: (n) => `サブスク ${n}`,
+      maskedKilled: (n) => `解約したサブスク ${n}`,
     },
     page: {
       back: "← レポート",
@@ -393,7 +420,12 @@ export const ja: Widen<typeof ko> = {
       saveImage: "画像で保存",
       share: "共有",
       privacy:
-        "レシートはこの端末の記録から作ります。共有すると、レシートの内容（サービス名・金額）がリンクに入り、リンクを受け取った人は誰でも見られます。リンクの内容はサーバーに保存しません。",
+        "レシートはこの端末の記録から作ります。共有すると、レシートの内容（サービス名・金額）がリンクに入り、リンクを受け取った人は誰でも見られます。送ったリンクは取り消せません。利用回数や分担額は入れず、リンクの内容はサーバーに保存しません。",
+      maskNames: "サービス名を隠して共有する",
+      confirmTitle: "レシートのリンクを送りますか？",
+      confirmBody:
+        "レシートの内容がリンクに入ります。リンクを受け取った人は誰でも見られ、転送されることもあります。送ったリンクは取り消せません。",
+      confirmOk: "共有する",
       yearDetail: (year) => `${year}年の年間まとめを見る`,
       imageSaved: "レシートの画像を保存しました",
       imageFailed: "画像を作れませんでした。テキストで共有してみてください。",
@@ -482,9 +514,12 @@ export const vi: Widen<typeof ko> = {
     },
     shared: {
       badge: "Hóa đơn đăng ký được chia sẻ",
-      note: "Hóa đơn này được tạo từ dữ liệu trên thiết bị của người gửi và hiển thị đúng nội dung trong liên kết.",
+      note: "Đây là nội dung người gửi tự ghi lại, được đưa vào liên kết. SubSlash chưa kiểm tra và không thể dùng làm bằng chứng.",
       invalid: "Không đọc được hóa đơn này. Liên kết có thể đã bị cắt hoặc bị thay đổi.",
       cta: "Tạo hóa đơn của tôi với SubSlash",
+      unverifiedMark: "Hóa đơn nhận qua liên kết chia sẻ. SubSlash chưa kiểm tra nội dung.",
+      maskedName: (n) => `Gói đăng ký ${n}`,
+      maskedKilled: (n) => `Gói đã hủy ${n}`,
     },
     page: {
       back: "← Báo cáo",
@@ -496,7 +531,12 @@ export const vi: Widen<typeof ko> = {
       saveImage: "Lưu thành ảnh",
       share: "Chia sẻ",
       privacy:
-        "Hóa đơn được tạo từ dữ liệu trên thiết bị này. Khi bạn chia sẻ, nội dung hóa đơn (tên dịch vụ và số tiền) được đưa vào liên kết, và bất kỳ ai có liên kết đều xem được. Nội dung liên kết không được lưu trên máy chủ.",
+        "Hóa đơn được tạo từ dữ liệu trên thiết bị này. Khi chia sẻ, nội dung hóa đơn (tên dịch vụ và số tiền) được đưa vào liên kết: bất kỳ ai có liên kết đều xem được, và liên kết đã gửi không thể thu hồi. Số lần sử dụng và số tiền chia sẻ không được đưa vào, và nội dung liên kết không được lưu trên máy chủ.",
+      maskNames: "Ẩn tên dịch vụ khi chia sẻ",
+      confirmTitle: "Gửi liên kết hóa đơn?",
+      confirmBody:
+        "Nội dung hóa đơn được đưa vào liên kết. Bất kỳ ai có liên kết đều xem được và có thể chuyển tiếp. Liên kết đã gửi không thể thu hồi.",
+      confirmOk: "Chia sẻ",
       yearDetail: (year) => `Xem tổng kết năm ${year}`,
       imageSaved: "Đã lưu ảnh hóa đơn",
       imageFailed: "Không tạo được ảnh. Hãy thử chia sẻ dạng văn bản.",
@@ -589,9 +629,12 @@ export const fr: Widen<typeof ko> = {
     },
     shared: {
       badge: "Ticket d'abonnements partagé",
-      note: "Ce ticket a été créé à partir des données de l'appareil de l'expéditeur. Il affiche tel quel le contenu du lien.",
+      note: "Il s'agit de ce que l'expéditeur a lui-même enregistré, placé dans le lien. SubSlash ne l'a pas vérifié et il ne peut pas servir de justificatif.",
       invalid: "Impossible de lire ce ticket. Le lien a peut-être été coupé ou modifié.",
       cta: "Créer mon ticket avec SubSlash",
+      unverifiedMark: "Ticket reçu par un lien partagé. SubSlash n'a pas vérifié son contenu.",
+      maskedName: (n) => `Abonnement ${n}`,
+      maskedKilled: (n) => `Abonnement résilié ${n}`,
     },
     page: {
       back: "← Rapport",
@@ -603,7 +646,12 @@ export const fr: Widen<typeof ko> = {
       saveImage: "Enregistrer en image",
       share: "Partager",
       privacy:
-        "Le ticket est créé à partir des données de cet appareil. Si vous le partagez, son contenu (noms des services et montants) est placé dans le lien, et toute personne qui a le lien peut le voir. Le contenu du lien n'est pas enregistré sur notre serveur.",
+        "Le ticket est créé à partir des données de cet appareil. Si vous le partagez, son contenu (noms des services et montants) est placé dans le lien : toute personne qui a le lien peut le voir, et un lien envoyé ne peut pas être retiré. Le nombre d'utilisations et les montants partagés ne sont pas inclus, et le contenu du lien n'est pas enregistré sur notre serveur.",
+      maskNames: "Masquer les noms des services au partage",
+      confirmTitle: "Envoyer un lien vers le ticket ?",
+      confirmBody:
+        "Le contenu du ticket est placé dans le lien. Toute personne qui a le lien peut le voir, et il peut être transféré. Un lien envoyé ne peut pas être retiré.",
+      confirmOk: "Partager",
       yearDetail: (year) => `Voir le bilan ${year}`,
       imageSaved: "Image du ticket enregistrée",
       imageFailed: "Impossible de créer l'image. Essayez de partager en texte.",
@@ -693,9 +741,13 @@ export const es: Widen<typeof ko> = {
     },
     shared: {
       badge: "Ticket de suscripciones compartido",
-      note: "Este ticket se creó con los datos del dispositivo de quien lo envió. Muestra tal cual lo que hay en el enlace.",
+      note: "Es lo que registró quien lo envió, guardado en el enlace. SubSlash no lo ha comprobado y no sirve como justificante.",
       invalid: "No se pudo leer este ticket. Puede que el enlace esté cortado o modificado.",
       cta: "Crear mi ticket con SubSlash",
+      unverifiedMark:
+        "Ticket recibido por un enlace compartido. SubSlash no ha comprobado su contenido.",
+      maskedName: (n) => `Suscripción ${n}`,
+      maskedKilled: (n) => `Suscripción cancelada ${n}`,
     },
     page: {
       back: "← Informe",
@@ -707,7 +759,12 @@ export const es: Widen<typeof ko> = {
       saveImage: "Guardar como imagen",
       share: "Compartir",
       privacy:
-        "El ticket se crea con los datos de este dispositivo. Al compartirlo, su contenido (nombres de servicios e importes) va dentro del enlace, y cualquiera que tenga el enlace puede verlo. El contenido del enlace no se guarda en nuestro servidor.",
+        "El ticket se crea con los datos de este dispositivo. Al compartirlo, su contenido (nombres de servicios e importes) va dentro del enlace: cualquiera que tenga el enlace puede verlo y un enlace enviado no se puede retirar. No se incluyen los usos ni los importes compartidos, y el contenido del enlace no se guarda en nuestro servidor.",
+      maskNames: "Ocultar los nombres de los servicios al compartir",
+      confirmTitle: "¿Enviar un enlace al ticket?",
+      confirmBody:
+        "El contenido del ticket va dentro del enlace. Cualquiera que tenga el enlace puede verlo y puede reenviarse. Un enlace enviado no se puede retirar.",
+      confirmOk: "Compartir",
       yearDetail: (year) => `Ver el resumen de ${year}`,
       imageSaved: "Imagen del ticket guardada",
       imageFailed: "No se pudo crear la imagen. Prueba a compartirlo como texto.",
@@ -800,10 +857,14 @@ export const de: Widen<typeof ko> = {
     },
     shared: {
       badge: "Geteilter Abo-Beleg",
-      note: "Dieser Beleg wurde aus den Daten auf dem Gerät des Absenders erstellt. Er zeigt genau das, was im Link steht.",
+      note: "Das hat der Absender selbst erfasst und in den Link gepackt. SubSlash hat es nicht geprüft, und es taugt nicht als Nachweis.",
       invalid:
         "Dieser Beleg konnte nicht gelesen werden. Der Link wurde vielleicht abgeschnitten oder verändert.",
       cta: "Eigenen Beleg mit SubSlash erstellen",
+      unverifiedMark:
+        "Über einen geteilten Link erhaltener Beleg. SubSlash hat den Inhalt nicht geprüft.",
+      maskedName: (n) => `Abo ${n}`,
+      maskedKilled: (n) => `Gekündigtes Abo ${n}`,
     },
     page: {
       back: "← Bericht",
@@ -815,7 +876,12 @@ export const de: Widen<typeof ko> = {
       saveImage: "Als Bild speichern",
       share: "Teilen",
       privacy:
-        "Der Beleg wird aus den Daten dieses Geräts erstellt. Wenn du ihn teilst, steht sein Inhalt (Namen der Dienste und Beträge) im Link, und jeder mit dem Link kann ihn sehen. Der Inhalt des Links wird nicht auf unserem Server gespeichert.",
+        "Der Beleg wird aus den Daten dieses Geräts erstellt. Wenn du ihn teilst, steht sein Inhalt (Namen der Dienste und Beträge) im Link: Jeder mit dem Link kann ihn sehen, und ein gesendeter Link lässt sich nicht zurückholen. Nutzungszahlen und geteilte Beträge sind nicht enthalten, und der Inhalt des Links wird nicht auf unserem Server gespeichert.",
+      maskNames: "Namen der Dienste beim Teilen ausblenden",
+      confirmTitle: "Link zum Beleg senden?",
+      confirmBody:
+        "Der Inhalt des Belegs steht im Link. Jeder mit dem Link kann ihn sehen, und er kann weitergeleitet werden. Ein gesendeter Link lässt sich nicht zurückholen.",
+      confirmOk: "Teilen",
       yearDetail: (year) => `Jahresrückblick ${year} ansehen`,
       imageSaved: "Belegbild gespeichert",
       imageFailed: "Das Bild konnte nicht erstellt werden. Versuch es als Text zu teilen.",
@@ -908,9 +974,13 @@ export const pt: Widen<typeof ko> = {
     },
     shared: {
       badge: "Recibo de assinaturas compartilhado",
-      note: "Este recibo foi feito com os dados do dispositivo de quem enviou. Ele mostra exatamente o que está no link.",
+      note: "Isto é o que quem enviou registrou, guardado no link. O SubSlash não verificou e não serve como comprovante.",
       invalid: "Não foi possível ler este recibo. O link pode ter sido cortado ou alterado.",
       cta: "Criar meu recibo com o SubSlash",
+      unverifiedMark:
+        "Recibo recebido por um link compartilhado. O SubSlash não verificou o conteúdo.",
+      maskedName: (n) => `Assinatura ${n}`,
+      maskedKilled: (n) => `Assinatura cancelada ${n}`,
     },
     page: {
       back: "← Relatório",
@@ -922,7 +992,12 @@ export const pt: Widen<typeof ko> = {
       saveImage: "Salvar como imagem",
       share: "Compartilhar",
       privacy:
-        "O recibo é feito com os dados deste dispositivo. Ao compartilhar, o conteúdo do recibo (nomes dos serviços e valores) vai dentro do link, e qualquer pessoa com o link pode vê-lo. O conteúdo do link não é salvo no nosso servidor.",
+        "O recibo é feito com os dados deste dispositivo. Ao compartilhar, o conteúdo do recibo (nomes dos serviços e valores) vai dentro do link: qualquer pessoa com o link pode vê-lo, e um link enviado não pode ser desfeito. Usos e valores divididos não são incluídos, e o conteúdo do link não é salvo no nosso servidor.",
+      maskNames: "Ocultar os nomes dos serviços ao compartilhar",
+      confirmTitle: "Enviar um link do recibo?",
+      confirmBody:
+        "O conteúdo do recibo vai dentro do link. Qualquer pessoa com o link pode vê-lo, e ele pode ser encaminhado. Um link enviado não pode ser desfeito.",
+      confirmOk: "Compartilhar",
       yearDetail: (year) => `Ver o resumo de ${year}`,
       imageSaved: "Imagem do recibo salva",
       imageFailed: "Não foi possível criar a imagem. Tente compartilhar como texto.",

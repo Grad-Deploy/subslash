@@ -67,10 +67,22 @@ export function receiptPeriodSuffix(t: Messages, receipt: Receipt): string {
   return receipt.upcomingCount > 0 ? s.withUpcoming : s.untilToday;
 }
 
+export interface ReceiptRenderOptions {
+  /**
+   * 공유 링크로 받은 영수증이다. 링크는 누구나 지어 만들 수 있으므로, 화면 밖 문구가 잘리는 캡처에서도 남게 영수증 안 맨
+   * 앞에 '확인되지 않은 내용'이라고 적는다(lib/receipt-share).
+   */
+  unverified?: boolean;
+}
+
 /** 영수증 밑의 알림. 빠진 것이 있으면 몇 개가 왜 빠졌는지 말한다. */
-export function receiptFootnotes(t: Messages, receipt: Receipt): string[] {
+export function receiptFootnotes(
+  t: Messages,
+  receipt: Receipt,
+  { unverified = false }: ReceiptRenderOptions = {},
+): string[] {
   const n = t.receiptView.notes;
-  const notes = [n.base];
+  const notes = unverified ? [t.receiptView.shared.unverifiedMark, n.base] : [n.base];
   if (receipt.evidencedCount > 0) {
     const sharedEvidence = receipt.lines.some(
       (line) => line.shared && line.evidencedDates.length > 0,

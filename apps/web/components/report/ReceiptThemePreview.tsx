@@ -60,10 +60,13 @@ export function ReceiptThemePreview({
   receipt,
   issuedAt,
   theme,
+  unverified = false,
 }: {
   receipt: Receipt;
   issuedAt: Date;
   theme: ReceiptTheme;
+  /** 공유 링크로 받은 영수증이면 그림 안에도 '확인되지 않은 내용'을 적는다. */
+  unverified?: boolean;
 }) {
   const t = useT();
   const tRef = useLatestT();
@@ -75,7 +78,7 @@ export function ReceiptThemePreview({
     if (theme === "classic") return;
     let url: string | null = null;
     let cancelled = false;
-    renderReceiptImage(receipt, issuedAt, tRef.current, theme)
+    renderReceiptImage(receipt, issuedAt, tRef.current, theme, { unverified })
       .then((blob) => {
         if (cancelled) return;
         url = URL.createObjectURL(blob);
@@ -89,12 +92,12 @@ export function ReceiptThemePreview({
       if (url) URL.revokeObjectURL(url);
     };
     // locale: 언어를 바꾸면 그림의 문구도 다시 그린다.
-  }, [receipt, issuedAt, theme, tRef, locale]);
+  }, [receipt, issuedAt, theme, tRef, locale, unverified]);
 
   if (theme === "classic") {
     return (
       <div className="drop-shadow-md">
-        <ReceiptPaper receipt={receipt} issuedAt={issuedAt} />
+        <ReceiptPaper receipt={receipt} issuedAt={issuedAt} unverified={unverified} />
       </div>
     );
   }
@@ -104,7 +107,7 @@ export function ReceiptThemePreview({
   return (
     <div>
       <div className="sr-only">
-        <ReceiptPaper receipt={receipt} issuedAt={issuedAt} />
+        <ReceiptPaper receipt={receipt} issuedAt={issuedAt} unverified={unverified} />
       </div>
       {ready ? (
         // eslint-disable-next-line @next/next/no-img-element -- 기기에서 그린 그림(blob:)이라 next/image로 줄일 것이 없다.
