@@ -3,6 +3,7 @@ import type { Messages } from "@lib/i18n/messages";
 import {
   describeReceiptLine,
   formatReceiptPeriodText,
+  receiptEmptyText,
   receiptFootnotes,
   receiptNumber,
   receiptPeriodSuffix,
@@ -143,14 +144,18 @@ async function renderClassic(
 
   // 줄
   if (receipt.lines.length === 0) {
-    text(v.empty, { size: 14, color: MUTED, align: "center" });
+    text(receiptEmptyText(t, options), { size: 14, color: MUTED, align: "center" });
     y += 22;
   }
   for (const line of receipt.lines) {
     // 이름과 그 아래 설명은 붙여 쓰고, 다음 구독과는 띄운다.
     row(line.name, formatKRW(line.amountKRW), 15, 600, INK, 18);
     measure.font = font(11);
-    for (const detail of wrap(measure, describeReceiptLine(t, line, receipt.period), inner)) {
+    for (const detail of wrap(
+      measure,
+      describeReceiptLine(t, line, receipt.period, options),
+      inner,
+    )) {
       text(detail, { size: 11, color: MUTED });
       y += 15;
     }
