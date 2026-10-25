@@ -16,9 +16,12 @@ import {
   computeTursoDelta,
   createTelemetry,
   fetchTursoQuotaSnapshot,
+  formatCleanupReport,
   parseRehearsalArgs,
   percentile,
+  recordCleanupResult,
   recordResponse,
+  totalQuotaRequests,
   verifySecurityHeaders,
   type RehearsalOptions,
   type RunTelemetry,
@@ -228,6 +231,7 @@ async function runVirtualUser(
   const email = `rehearsal.${vuId}.${tag}@gmail.com`;
   const password = `Rehearsal-2026!${tag}`;
   let cookie: string | null = null;
+  let accountCreated = false;
 
   try {
     if (abortController.signal.aborted || telemetry.totalRequests >= options.maxRequests) return;
@@ -250,6 +254,9 @@ async function runVirtualUser(
       [201],
       abortController,
     );
+    if (signupRes.status === 201) {
+      accountCreated = true;
+    }
     cookie = extractSessionCookie(signupRes);
     if (!cookie || abortController.signal.aborted) return;
 
@@ -308,20 +315,22 @@ async function runVirtualUser(
     }
   } finally {
     // 중단되더라도 만든 임시 계정은 반드시 스스로 지워 운영 DB에 찌꺼기를 남기지 않는다.
-    if (cookie) {
-      try {
-        const start = performance.now();
-        const delRes = await fetch(`${options.baseUrl}/api/auth/account`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json", Cookie: cookie },
-          body: JSON.stringify({ password }),
-        });
-        await delRes.text();
-        telemetry.totalRequests += 1;
-        telemetry.statusCounts[delRes.status] = (telemetry.statusCounts[delRes.status] ?? 0) + 1;
-        telemetry.latenciesMs.push(performance.now() - start);
-      } catch {
-        // 정리 실패는 본 결과만 남긴다.
+    // 부하 응답시간·오류율 통계가 왜곡되지 않게 본 통계와는 분리해 기록하고, 실패하면 이메일만 경고로 남긴다.
+    if (accountCreated) {
+      if (!cookie) {
+        recordCleanupResult(telemetry, email, false);
+      } else {
+        try {
+          const delRes = await fetch(`${options.baseUrl}/api/auth/account`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json", Cookie: cookie },
+            body: JSON.stringify({ password }),
+          });
+          await delRes.text();
+          recordCleanupResult(telemetry, email, delRes.ok);
+        } catch {
+          recordCleanupResult(telemetry, email, false);
+        }
       }
     }
   }
@@ -395,16 +404,22 @@ async function main() {
   console.error(
     `  • 응답 지연(ms)   : p50=${percentile(telemetry.latenciesMs, 50)}ms, p95=${percentile(telemetry.latenciesMs, 95)}ms, max=${percentile(telemetry.latenciesMs, 100)}ms`,
   );
+  const cleanupReport = formatCleanupReport(telemetry.cleanup);
+  console.error(`  • ${cleanupReport.summaryLine}`);
+  if (cleanupReport.warningLine) {
+    console.error(`  ${cleanupReport.warningLine}`);
+  }
 
   const afterSnap = await fetchTursoQuotaSnapshot();
   if (beforeSnap && afterSnap) {
     printTursoSnapshot("실행 후(After) Turso 스냅샷", afterSnap);
-    const delta = computeTursoDelta(beforeSnap, afterSnap, telemetry.totalRequests);
+    const quotaDenominator = totalQuotaRequests(telemetry);
+    const delta = computeTursoDelta(beforeSnap, afterSnap, quotaDenominator);
     console.error("\n📉 [이번 실행의 Turso 쿼터 소모량(Δ) 및 전시장 20명 추정치]");
     console.error(`  • 이번 실행 행 쓰기 소모(Δ Rows Written): +${fmt(delta.rowsWrittenDelta)}행`);
     console.error(`  • 이번 실행 행 읽기 소모(Δ Rows Read)   : +${fmt(delta.rowsReadDelta)}행`);
     console.error(
-      `  • 요청 1건당 평균 소모                   : 쓰기 ${delta.rowsWrittenPerRequest.toFixed(2)}행 / 읽기 ${delta.rowsReadPerRequest.toFixed(2)}행`,
+      `  • 요청·정리 시도 1건당 평균 소모(추정, 분모 ${quotaDenominator}건: 부하 ${telemetry.totalRequests} + 정리 시도 ${telemetry.cleanup.attempted}): 쓰기 ${delta.rowsWrittenPerRequest.toFixed(2)}행 / 읽기 ${delta.rowsReadPerRequest.toFixed(2)}행`,
     );
     console.error(
       `  • 전시장 방문객 20명(약 300 요청) 예상 쓰기: 약 +${fmt(delta.projected20UsersRowsWritten)}행`,

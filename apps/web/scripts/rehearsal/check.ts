@@ -11,7 +11,7 @@
  *   1. 응답에 Turso `BLOCKED` 또는 `SQLITE_BUSY` 문구 감지 시 즉시 중단
  *   2. HTTP 402(쿼터/결제 한도) 또는 429(속도 제한) 1건이라도 발생 시 즉시 중단
  *   3. HTTP 5xx 오류가 3건 이상 버스트로 발생 시 즉시 중단
- *   4. 최소 10건 이후 누적 오류율이 5%를 초과하면 즉시 중단
+ *   4. 최소 10건 이후 누적 실패 2건 이상이면서 오류율이 5%를 초과하면 즉시 중단
  */
 import { readOrganizationUsage, readPlanQuotas, type TursoUsage } from "../../lib/turso-usage";
 
@@ -21,6 +21,7 @@ export const HARD_LIMITS = {
   maxRequestsPerRun: 400,
   maxErrorRate: 0.05,
   minSamplesForErrorRate: 10,
+  minFailedForErrorRate: 2,
   max5xxBurst: 3,
 } as const;
 
@@ -95,6 +96,13 @@ export function parseRehearsalArgs(
 export type AbortReason =
   "turso_blocked" | "http_402_or_429" | "http_5xx_burst" | "error_rate_exceeded";
 
+export interface CleanupTelemetry {
+  attempted: number;
+  succeeded: number;
+  failed: number;
+  failedAccounts: string[];
+}
+
 export interface RunTelemetry {
   totalRequests: number;
   failedRequests: number;
@@ -103,6 +111,7 @@ export interface RunTelemetry {
   latenciesMs: number[];
   lastStatus?: number;
   lastBodySnippet?: string;
+  cleanup: CleanupTelemetry;
 }
 
 export function createTelemetry(): RunTelemetry {
@@ -112,6 +121,56 @@ export function createTelemetry(): RunTelemetry {
     statusCounts: {},
     server5xxCount: 0,
     latenciesMs: [],
+    cleanup: {
+      attempted: 0,
+      succeeded: 0,
+      failed: 0,
+      failedAccounts: [],
+    },
+  };
+}
+
+/**
+ * 임시 테스트 계정 정리(`DELETE /api/auth/account`) 결과를 본 부하 통계(`totalRequests`, `latenciesMs`,
+ * `failedRequests`)와 분리해 기록한다. 이메일만 남기고 비밀번호·세션 쿠키 등 비밀 정보는 받지 않는다.
+ */
+export function recordCleanupResult(
+  telemetry: RunTelemetry,
+  email: string,
+  succeeded: boolean,
+): void {
+  telemetry.cleanup.attempted += 1;
+  if (succeeded) {
+    telemetry.cleanup.succeeded += 1;
+  } else {
+    telemetry.cleanup.failed += 1;
+    telemetry.cleanup.failedAccounts.push(email);
+  }
+}
+
+/**
+ * Turso 쿼터 소모량(Δ)의 요청당 평균을 구할 때 분모로 쓰는 요청·정리 시도 합계(부하 요청 수 + 계정 정리 시도 수).
+ * `afterSnap`을 정리 단계 뒤에 측정하므로 정리 시도를 분모에 더하되, 네트워크 예외나 쿠키 누락으로 실패한 정리가
+ * 서버(DB)에 실제로 도달했는지는 클라이언트에서 알 수 없으므로 확인된 서버 처리 건수가 아닌 추정 분모다.
+ */
+export function totalQuotaRequests(telemetry: RunTelemetry): number {
+  return telemetry.totalRequests + telemetry.cleanup.attempted;
+}
+
+/**
+ * 계정 정리 요약 및 실패 시 남은 계정(이메일) 경고 문구를 만든다.
+ */
+export function formatCleanupReport(cleanup: CleanupTelemetry): {
+  summaryLine: string;
+  warningLine: string | null;
+} {
+  const summaryLine = `임시 계정 정리    : 시도 ${cleanup.attempted}건 / 성공 ${cleanup.succeeded}건 / 실패 ${cleanup.failed}건`;
+  if (cleanup.failed === 0) {
+    return { summaryLine, warningLine: null };
+  }
+  return {
+    summaryLine,
+    warningLine: `⚠️ [경고] 삭제되지 않은 테스트 계정 ${cleanup.failed}건이 DB에 남아 있을 수 있습니다: ${cleanup.failedAccounts.join(", ")}`,
   };
 }
 
@@ -153,6 +212,7 @@ export function evaluateAbortCondition(
 
   if (
     totalRequests >= HARD_LIMITS.minSamplesForErrorRate &&
+    failedRequests >= HARD_LIMITS.minFailedForErrorRate &&
     failedRequests / totalRequests > HARD_LIMITS.maxErrorRate
   ) {
     const pct = ((failedRequests / totalRequests) * 100).toFixed(1);

@@ -4,10 +4,13 @@ import {
   computeTursoDelta,
   createTelemetry,
   fetchTursoQuotaSnapshot,
+  formatCleanupReport,
   parseRehearsalArgs,
   percentile,
+  recordCleanupResult,
   recordResponse,
   REQUIRED_SECURITY_HEADERS,
+  totalQuotaRequests,
   verifySecurityHeaders,
   type TursoQuotaSnapshot,
 } from "../../scripts/rehearsal/check";
@@ -98,16 +101,53 @@ describe("전시장 리허설 가드레일 및 보안 헤더 점검", () => {
       detail: expect.stringContaining("3건"),
     });
 
-    // 4. 최소 10건 이후 누적 오류율 5% 초과 중단 (9건 성공 + 1건 400 실패 = 10% > 5%)
+    // 4. 최소 10건 이후 단일 실패(1건)는 계속 진행하고, 최소 2건 실패부터 오류율 5% 초과 시 중단한다
     const tRate = createTelemetry();
     for (let i = 0; i < 9; i++) {
       expect(recordResponse(tRate, 200, 10, "ok").abort).toBe(false);
     }
+    // 10번째 요청이 첫 실패(1/10 = 10%)여도 단일 실패(failedRequests = 1 < 2)이므로 중단하지 않는다.
+    expect(recordResponse(tRate, 400, 10, "bad request")).toEqual({ abort: false });
+
+    // 11번째 요청에서 두 번째 실패(2/11 = 18.2% > 5%, failedRequests = 2 >= 2)가 발생하면 즉시 중단한다.
     expect(recordResponse(tRate, 400, 10, "bad request")).toEqual({
       abort: true,
       reason: "error_rate_exceeded",
-      detail: expect.stringContaining("10.0%"),
+      detail: expect.stringContaining("18.2%"),
     });
+  });
+
+  it("임시 계정 정리 결과를 일반 부하 통계와 분리해 기록하고, 실패 시 이메일 경고와 쿼터 분모를 보존한다", () => {
+    const telemetry = createTelemetry();
+    recordResponse(telemetry, 200, 25, "ok");
+    recordResponse(telemetry, 201, 40, "created");
+
+    recordCleanupResult(telemetry, "rehearsal.1.aaa@gmail.com", true);
+    recordCleanupResult(telemetry, "rehearsal.2.bbb@gmail.com", false);
+
+    // 정리 요청은 일반 부하 통계(요청 수·실패 수·응답시간)를 오염시키지 않는다.
+    expect(telemetry.totalRequests).toBe(2);
+    expect(telemetry.failedRequests).toBe(0);
+    expect(telemetry.latenciesMs).toEqual([25, 40]);
+
+    // 정리 시도·성공·실패 건수와 실패 계정 이메일을 기록하고 경고 문구를 만든다.
+    expect(telemetry.cleanup).toEqual({
+      attempted: 2,
+      succeeded: 1,
+      failed: 1,
+      failedAccounts: ["rehearsal.2.bbb@gmail.com"],
+    });
+    const report = formatCleanupReport(telemetry.cleanup);
+    expect(report.summaryLine).toContain("시도 2건 / 성공 1건 / 실패 1건");
+    expect(report.warningLine).toContain("rehearsal.2.bbb@gmail.com");
+
+    // 모두 성공하면 경고 문구는 null이다.
+    const cleanTelemetry = createTelemetry();
+    recordCleanupResult(cleanTelemetry, "rehearsal.1.ok@gmail.com", true);
+    expect(formatCleanupReport(cleanTelemetry.cleanup).warningLine).toBeNull();
+
+    // Turso 쿼터 소모량 계산의 추정 분모는 부하 요청(2건) + 정리 시도(2건) = 4건이다.
+    expect(totalQuotaRequests(telemetry)).toBe(4);
   });
 
   it("실행 전·후 데이터베이스 사용량 기록으로 소모량과 전시장 20명 예상치를 계산한다", async () => {

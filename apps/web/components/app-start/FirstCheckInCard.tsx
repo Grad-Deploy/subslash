@@ -3,23 +3,40 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import {
-  calculateCostPerUse,
+  asksFreeTier,
+  clampQuantity,
   formatCurrency,
   getMyMonthlyShareAmount,
-  getRiskLevel,
+  metricForSubscription,
+  metricRiskLevel,
+  storagePlanFit,
   type RiskLevel,
   type Subscription,
-  metricForSubscription,
 } from "@subslash/shared";
 import { useT, useServiceNames } from "@lib/i18n";
-import { ServiceLogo } from "@components/subscription/ServiceLogo";
-import { RiskBadge } from "@components/dashboard/RiskBadge";
-import { useStoredFlag } from "@hooks/useStoredFlag";
-import { AppUsageCountPicker } from "@components/subscription/app/AppUsageCountPicker";
+import { ServiceLogo } from "../subscription/ServiceLogo";
+import { RiskBadge } from "../dashboard/RiskBadge";
+import { useStoredFlag } from "../../hooks/useStoredFlag";
+import { AppUsageCountPicker } from "../subscription/app/AppUsageCountPicker";
 
 interface FirstCheckInCardProps {
   subscription: Subscription;
   onSubmit: (count: number) => void;
+}
+
+/**
+ * 첫 체크인 카드의 실시간 프리뷰 위험도. 스토어 `buildCheckInLog`가 저장할 때 쓰는 것과 같은
+ * 지표(`metricForSubscription`)·수량 범위(`clampQuantity`)·내 몫(`getMyMonthlyShareAmount`)·
+ * 저장 공간 요금제 적합도(`storagePlanFit`)·무료 요금제 응답(`asksFreeTier` + `freeTierAnswer`)으로 계산한다.
+ */
+export function previewFirstCheckInRisk(subscription: Subscription, count: number): RiskLevel {
+  const metric = metricForSubscription(subscription);
+  const monthly = getMyMonthlyShareAmount(subscription);
+  const quantity = clampQuantity(metric, count);
+  const fit = metric === "storage" ? storagePlanFit(subscription, quantity) : null;
+  const freeTier =
+    metric === "days" && asksFreeTier(subscription) ? (subscription.freeTierAnswer ?? null) : null;
+  return metricRiskLevel(metric, monthly, quantity, fit, freeTier);
 }
 
 /**
@@ -34,7 +51,7 @@ export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardPro
 
   const monthly = getMyMonthlyShareAmount(subscription);
   const risk: RiskLevel | null =
-    count === null ? null : getRiskLevel(calculateCostPerUse(monthly, count), monthly, count);
+    count === null ? null : previewFirstCheckInRisk(subscription, count);
 
   const [hintSeen, markHintSeen] = useStoredFlag(`subslash_app_hint_${risk ?? "none"}`, true);
   const showHint = risk !== null && !hintSeen;
