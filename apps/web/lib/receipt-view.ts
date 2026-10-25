@@ -85,17 +85,20 @@ export interface ReceiptRenderOptions {
    * 적지 않는다 — 안 한 것이 아니라 모른다.
    */
   unverified?: boolean;
-  /** 가려서 공유한 영수증: 구독별 줄 대신 구독 수와 결제 건수를 적는다. 줄이 없다고 '결제된 구독이 없어요'라고 하지 않는다. */
-  hidden?: { subscriptions: number; charges: number };
+  /**
+   * 가려서 공유한 영수증: 합계만 보인다. 구독 수·결제 건수·지킨 돈과 개수가 든 알림도 적지 않는다(개수만으로도 무엇을
+   * 내는지 좁혀진다). 줄 자리에는 가렸다는 말을 적는다 — 비워 두면 '결제된 구독이 없어요'로 읽힌다.
+   */
+  hidden?: boolean;
 }
 
-/** 줄이 없을 때 그 자리에 적는 말. 가린 영수증이면 몇 개를 가렸는지다. */
+/** 줄이 없을 때 그 자리에 적는 말. 가린 영수증이면 가렸다는 말이다. */
 export function receiptEmptyText(
   t: Messages,
   receipt: Receipt,
   { hidden }: ReceiptRenderOptions = {},
 ): string {
-  if (hidden) return t.receiptView.shared.hiddenSummary(hidden.subscriptions, hidden.charges);
+  if (hidden) return t.receiptView.shared.hiddenSummary;
   return isReceiptUnknown(receipt)
     ? t.receiptView.unknownEmpty(formatReceiptPeriodText(t, receipt.period))
     : t.receiptView.empty;
@@ -118,15 +121,24 @@ export function receiptTotalText(t: Messages, receipt: Receipt): string {
   return isReceiptUnknown(receipt) ? t.receiptView.unknownValue : formatKRW(receipt.totalKRW);
 }
 
-/** 합계 이름. 모르는 영수증에는 '0건'을 붙이지 않는다. */
-export function receiptTotalLabel(t: Messages, receipt: Receipt): string {
-  return isReceiptUnknown(receipt)
+/** 합계 이름. 모르는·가린 영수증에는 건수를 붙이지 않는다. */
+export function receiptTotalLabel(
+  t: Messages,
+  receipt: Receipt,
+  { hidden }: ReceiptRenderOptions = {},
+): string {
+  return hidden || isReceiptUnknown(receipt)
     ? t.receiptView.share.total
     : t.receiptView.total(receipt.chargeCount);
 }
 
-/** 건수(탑승권의 '건수' 칸). 모르는 영수증은 '모름'. */
-export function receiptCountText(t: Messages, receipt: Receipt): string {
+/** 건수(탑승권의 '건수' 칸). 가린 영수증은 '가림', 모르는 영수증은 '모름'. */
+export function receiptCountText(
+  t: Messages,
+  receipt: Receipt,
+  { hidden }: ReceiptRenderOptions = {},
+): string {
+  if (hidden) return t.receiptView.shared.hiddenValue;
   return isReceiptUnknown(receipt)
     ? t.receiptView.unknownValue
     : t.receiptView.art.countValue(receipt.chargeCount);
@@ -154,10 +166,17 @@ export function defaultReceiptMonth(
 export function receiptFootnotes(
   t: Messages,
   receipt: Receipt,
-  { unverified = false }: ReceiptRenderOptions = {},
+  { unverified = false, hidden = false }: ReceiptRenderOptions = {},
 ): string[] {
   const n = t.receiptView.notes;
   const notes = unverified ? [t.receiptView.shared.unverifiedMark, n.base] : [n.base];
+  // 가린 영수증은 합계가 무엇까지인지(오늘까지·결제 예정 포함)만 적는다. 나머지 알림은 개수를 말한다.
+  if (hidden) {
+    if (!receipt.isComplete) {
+      notes.push(receipt.upcomingCount > 0 ? n.incompleteUpcoming : n.incompleteToday);
+    }
+    return notes;
+  }
   if (receipt.evidencedCount > 0) {
     const sharedEvidence = receipt.lines.some(
       (line) => line.shared && line.evidencedDates.length > 0,

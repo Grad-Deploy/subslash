@@ -16,6 +16,7 @@ import {
 } from "@lib/receipt-share";
 import { describeReceiptLine, formatReceiptShareText, receiptFootnotes } from "@lib/receipt-view";
 import { messages } from "@lib/i18n/messages";
+import { receiptArt } from "@lib/receipt-art";
 
 const NOW = new Date("2026-10-25T12:00:00.000Z");
 const labels = { masked: (n: number) => `구독 ${n}`, maskedKilled: (n: number) => `해지 ${n}` };
@@ -137,39 +138,90 @@ describe("영수증 공유 링크", () => {
   });
 
   describe("가림 모드", () => {
-    it("구독별 이름·금액·결제일과 해지 목록을 싣지 않고 구독 수·건수·합계만 싣는다", async () => {
+    it("합계만 싣는다 — 구독별 줄·해지 목록·지킨 돈·구독 수·건수·환율·빠진 구독 수는 싣지 않는다", async () => {
       const hash = (await encodeReceiptShare(
         { receipt: receipt(), issuedAt, theme: "classic" },
         { maskNames: true },
       ))!;
       const wire = rawWire(hash);
-      expect(wire).toMatchObject({ v: 3, l: [], k: [], h: 2, t: 33536, n: [2, 0, 0] });
+      expect(wire).toMatchObject({
+        v: 3,
+        l: [],
+        k: [],
+        h: 0,
+        t: 33536,
+        n: [0, 0, 0],
+        d: [0, 0],
+        fx: [0, 0],
+        x: [0, 0, 0],
+      });
       const raw = JSON.stringify(wire);
-      for (const secret of [
-        "Claude",
-        "유튜브",
-        "티빙",
-        "29811",
-        "3725",
-        "2026-09-03",
-        "2026-09-12",
-      ]) {
+      for (const secret of ["Claude", "유튜브", "티빙", "29811", "3725", "9900", "2026-09-03"]) {
         expect(raw).not.toContain(secret);
       }
       const shared = (await decode(hash))!;
-      expect(shared.receipt.lines).toEqual([]);
-      expect(shared.receipt.totalKRW).toBe(33536);
-      expect(shared.render).toEqual({ unverified: true, hidden: { subscriptions: 2, charges: 2 } });
+      expect(shared.receipt).toMatchObject({
+        lines: [],
+        killed: [],
+        totalKRW: 33536,
+        chargeCount: 0,
+        defendedKRW: 0,
+      });
+      expect(shared.render).toEqual({ unverified: true, hidden: true });
     });
 
-    it("함께 보내는 글도 같은 것만 적고, 줄이 없다고 '결제된 구독이 없어요'라고 하지 않는다", () => {
+    it("결제 예정이 있었는지는 남긴다 — 합계가 '결제 예정 포함'인지가 달라진다", async () => {
+      const withUpcoming = receipt([
+        line({ chargeDates: ["2026-09-03", "2026-09-28"], upcomingDates: ["2026-09-28"] }),
+      ]);
+      const hash = (await encodeReceiptShare(
+        { receipt: { ...withUpcoming, isComplete: false }, issuedAt, theme: "classic" },
+        { maskNames: true },
+      ))!;
+      expect(rawWire(hash)).toMatchObject({ n: [0, 1, 0] });
+      const shared = (await decode(hash))!;
+      expect(shared.receipt.upcomingCount).toBe(1);
+      expect(receiptFootnotes(messages.ko, shared.receipt, shared.render)).toContain(
+        messages.ko.receiptView.notes.incompleteUpcoming,
+      );
+    });
+
+    it("받는 쪽 그림·글도 합계만 적는다", async () => {
       const t = messages.ko;
       const shown = shareableReceipt(receipt(), { maskNames: true }, labels);
-      expect(shown.receipt.lines).toEqual([]);
       const text = formatReceiptShareText(t, shown.receipt, shown.render);
-      expect(text).toContain(t.receiptView.shared.hiddenSummary(2, 2));
+      expect(text).toContain(t.receiptView.shared.hiddenSummary);
+      expect(text).toContain("₩33,536");
       expect(text).not.toContain(t.receiptView.empty);
-      expect(text).not.toMatch(/Claude|유튜브|29,811/);
+      expect(text).not.toMatch(/Claude|유튜브|29,811|지킨 돈|d+건|d+개/);
+
+      const art = receiptArt(t, shown.receipt, issuedAt, shown.render);
+      expect(art.totalLabel).toBe(t.receiptView.share.total);
+      expect(art.countText).toBe(t.receiptView.shared.hiddenValue);
+      expect(art.extras).toEqual([]);
+      expect(art.notes).toEqual([t.receiptView.shared.unverifiedMark, t.receiptView.notes.base]);
+    });
+
+    it("구독 수를 실은 예전 가림 링크도 받는 쪽에서는 합계만 보인다", async () => {
+      const old = {
+        ...baseWire(),
+        l: [],
+        h: 3,
+        n: [3, 1, 0],
+        d: [9900, 1],
+        fx: [2, 0],
+        x: [0, 1, 0],
+      };
+      const shared = (await decode(plainLink(old)))!;
+      expect(shared.receipt).toMatchObject({
+        chargeCount: 0,
+        upcomingCount: 1,
+        defendedKRW: 0,
+        defendedUnknownCount: 0,
+        fx: { historical: 0, current: 0 },
+        excluded: { undated: 0, beforeRegistration: 0, trial: 0 },
+      });
+      expect(shared.render).toEqual({ unverified: true, hidden: true });
     });
 
     it("가림 표시가 있는데 줄이 실렸거나 구독 수가 상한을 넘으면 받지 않는다", async () => {
@@ -354,7 +406,8 @@ describe("영수증 공유 링크", () => {
         const back = await decodeReceiptShare(hash, labels, now);
         expect(back, `${period.kind} 가림=${maskNames}`).not.toBeNull();
         expect(back!.receipt.totalKRW).toBe(built.totalKRW);
-        expect(back!.receipt.chargeCount).toBe(built.chargeCount);
+        // 가리면 건수는 싣지 않는다(합계만)
+        expect(back!.receipt.chargeCount).toBe(maskNames ? 0 : built.chargeCount);
       }
     }
   });

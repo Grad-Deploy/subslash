@@ -97,9 +97,9 @@ export function receiptArt(
     issuedDate,
     issuedLine: v.issued(number, issuedDate),
     total: receiptTotalText(t, receipt),
-    totalLabel: receiptTotalLabel(t, receipt),
+    totalLabel: receiptTotalLabel(t, receipt, options),
     count: receipt.chargeCount,
-    countText: receiptCountText(t, receipt),
+    countText: receiptCountText(t, receipt, options),
     lines: receipt.lines.map((line) => ({
       name: line.name,
       amount: formatKRW(line.amountKRW),

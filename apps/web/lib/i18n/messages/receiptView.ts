@@ -78,8 +78,8 @@ export const ko = {
       unverifiedMark: "공유 링크로 받은 영수증이에요. SubSlash가 내용을 확인하지 않았어요.",
       maskedName: (n: number) => `구독 ${n}`,
       maskedKilled: (n: number) => `해지한 구독 ${n}`,
-      hiddenSummary: (subscriptions: number, charges: number) =>
-        `구독 ${subscriptions}개 · 결제 ${charges}건 (서비스 이름과 구독별 금액은 가렸어요)`,
+      hiddenSummary: "구독별 내역은 가렸어요. 합계만 보여요.",
+      hiddenValue: "가림",
       reopen: "영수증은 주소창에 남기지 않아요. 받은 링크를 다시 열어 주세요.",
     },
     page: {
@@ -206,8 +206,8 @@ export const en: Widen<typeof ko> = {
       unverifiedMark: "Receipt received via a shared link. SubSlash hasn't checked its contents.",
       maskedName: (n) => `Subscription ${n}`,
       maskedKilled: (n) => `Canceled subscription ${n}`,
-      hiddenSummary: (subscriptions, charges) =>
-        `${subscriptions} subscription${subscriptions === 1 ? "" : "s"} · ${charges} charge${charges === 1 ? "" : "s"} (service names and per-subscription amounts hidden)`,
+      hiddenSummary: "Per-subscription details are hidden. Only the total is shown.",
+      hiddenValue: "Hidden",
       reopen: "The receipt isn't kept in the address bar. Open the link you received again.",
     },
     page: {
@@ -324,8 +324,8 @@ export const zh: Widen<typeof ko> = {
       unverifiedMark: "通过分享链接收到的小票。SubSlash 未核实其内容。",
       maskedName: (n) => `订阅 ${n}`,
       maskedKilled: (n) => `已取消的订阅 ${n}`,
-      hiddenSummary: (subscriptions, charges) =>
-        `${subscriptions} 个订阅 · ${charges} 笔付款（已隐藏服务名称和各订阅金额）`,
+      hiddenSummary: "各订阅的明细已隐藏，只显示合计。",
+      hiddenValue: "已隐藏",
       reopen: "小票不会保留在地址栏中。请重新打开收到的链接。",
     },
     page: {
@@ -436,8 +436,8 @@ export const ja: Widen<typeof ko> = {
       unverifiedMark: "共有リンクで受け取ったレシートです。SubSlashは内容を確認していません。",
       maskedName: (n) => `サブスク ${n}`,
       maskedKilled: (n) => `解約したサブスク ${n}`,
-      hiddenSummary: (subscriptions, charges) =>
-        `サブスク${subscriptions}件 · 支払い${charges}件（サービス名とサブスクごとの金額は隠しています）`,
+      hiddenSummary: "サブスクごとの内訳は隠しています。合計だけ表示します。",
+      hiddenValue: "非表示",
       reopen: "レシートはアドレスバーに残しません。受け取ったリンクをもう一度開いてください。",
     },
     page: {
@@ -555,8 +555,8 @@ export const vi: Widen<typeof ko> = {
       unverifiedMark: "Hóa đơn nhận qua liên kết chia sẻ. SubSlash chưa kiểm tra nội dung.",
       maskedName: (n) => `Gói đăng ký ${n}`,
       maskedKilled: (n) => `Gói đã hủy ${n}`,
-      hiddenSummary: (subscriptions, charges) =>
-        `${subscriptions} gói đăng ký · ${charges} lần thanh toán (đã ẩn tên dịch vụ và số tiền từng gói)`,
+      hiddenSummary: "Chi tiết từng gói đã được ẩn. Chỉ hiển thị tổng.",
+      hiddenValue: "Đã ẩn",
       reopen: "Hóa đơn không được giữ trên thanh địa chỉ. Hãy mở lại liên kết bạn nhận được.",
     },
     page: {
@@ -679,8 +679,8 @@ export const fr: Widen<typeof ko> = {
       unverifiedMark: "Ticket reçu par un lien partagé. SubSlash n'a pas vérifié son contenu.",
       maskedName: (n) => `Abonnement ${n}`,
       maskedKilled: (n) => `Abonnement résilié ${n}`,
-      hiddenSummary: (subscriptions, charges) =>
-        `${subscriptions} abonnement${subscriptions > 1 ? "s" : ""} · ${charges} paiement${charges > 1 ? "s" : ""} (noms des services et montants par abonnement masqués)`,
+      hiddenSummary: "Le détail par abonnement est masqué. Seul le total est affiché.",
+      hiddenValue: "Masqué",
       reopen:
         "Le ticket n'est pas conservé dans la barre d'adresse. Rouvrez le lien que vous avez reçu.",
     },
@@ -803,8 +803,8 @@ export const es: Widen<typeof ko> = {
         "Ticket recibido por un enlace compartido. SubSlash no ha comprobado su contenido.",
       maskedName: (n) => `Suscripción ${n}`,
       maskedKilled: (n) => `Suscripción cancelada ${n}`,
-      hiddenSummary: (subscriptions, charges) =>
-        `${subscriptions} suscripci${subscriptions === 1 ? "ón" : "ones"} · ${charges} cobro${charges === 1 ? "" : "s"} (nombres de servicios e importes por suscripción ocultos)`,
+      hiddenSummary: "El detalle por suscripción está oculto. Solo se muestra el total.",
+      hiddenValue: "Oculto",
       reopen:
         "El ticket no se guarda en la barra de direcciones. Vuelve a abrir el enlace que recibiste.",
     },
@@ -930,8 +930,8 @@ export const de: Widen<typeof ko> = {
         "Über einen geteilten Link erhaltener Beleg. SubSlash hat den Inhalt nicht geprüft.",
       maskedName: (n) => `Abo ${n}`,
       maskedKilled: (n) => `Gekündigtes Abo ${n}`,
-      hiddenSummary: (subscriptions, charges) =>
-        `${subscriptions} Abo${subscriptions === 1 ? "" : "s"} · ${charges} Zahlung${charges === 1 ? "" : "en"} (Namen der Dienste und Beträge pro Abo ausgeblendet)`,
+      hiddenSummary: "Die Aufschlüsselung pro Abo ist ausgeblendet. Nur die Summe wird angezeigt.",
+      hiddenValue: "Ausgeblendet",
       reopen: "Der Beleg bleibt nicht in der Adressleiste. Öffne den erhaltenen Link noch einmal.",
     },
     page: {
@@ -1055,8 +1055,8 @@ export const pt: Widen<typeof ko> = {
         "Recibo recebido por um link compartilhado. O SubSlash não verificou o conteúdo.",
       maskedName: (n) => `Assinatura ${n}`,
       maskedKilled: (n) => `Assinatura cancelada ${n}`,
-      hiddenSummary: (subscriptions, charges) =>
-        `${subscriptions} assinatura${subscriptions === 1 ? "" : "s"} · ${charges} cobrança${charges === 1 ? "" : "s"} (nomes dos serviços e valores por assinatura ocultos)`,
+      hiddenSummary: "O detalhamento por assinatura está oculto. Só o total é mostrado.",
+      hiddenValue: "Oculto",
       reopen: "O recibo não fica na barra de endereços. Abra de novo o link que você recebeu.",
     },
     page: {
