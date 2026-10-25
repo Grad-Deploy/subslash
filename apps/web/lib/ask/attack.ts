@@ -25,6 +25,21 @@ function compact(text: string): string {
   return text.replace(/[\s.\-_·*~'"`,/\\|]+/g, "");
 }
 
+/** 숫자·기호로 바꿔 쓴 영문자를 되돌린 모양("1gn0re prev10us", "pr0mpt"). 붙여 쓴 낱말을 찾을 때만 쓴다. */
+const LEET: Record<string, string> = {
+  "0": "o",
+  "1": "i",
+  "3": "e",
+  "4": "a",
+  "5": "s",
+  "7": "t",
+  "@": "a",
+  $: "s",
+};
+function unleet(text: string): string {
+  return text.replace(/[013457@$]/g, (char) => LEET[char]);
+}
+
 /** 붙여 쓴 모양에서도 찾는 낱말. 이 앱에 묻는 정상 질문에는 나오지 않는다. */
 const COMPACT_WORDS = [
   "프롬프트",
@@ -33,6 +48,16 @@ const COMPACT_WORDS = [
   "jailbreak",
   "systemprompt",
   "systemmessage",
+  "prompt",
+  "unsupported",
+  // 띄어 써 패턴을 피한 것("이 전 지 시 무 시", "시스 템 메 시 지")
+  "시스템메시지",
+  "시스템메세지",
+  "이전지시",
+  "지시무시",
+  "지시를무시",
+  "명령무시",
+  "규칙무시",
   "ignoreprevious",
   "ignoreallprevious",
   "개발자모드",
@@ -54,12 +79,26 @@ const PATTERNS: RegExp[] = [
   /(?:시스템|system)\s*(?:메시지|message|지시|지침|규칙|명령|rules?|instructions?)/,
   /(?:너|넌|니|당신|ai|모델|챗봇|봇)\s*(?:의|한테|에게|가|이)?\s*(?:받은|주어진|설정된|입력된|가진|따르는)?\s*(?:지시|지침|규칙|명령|설정값|instructions?|rules)/,
   /(?:초기|숨겨진|숨긴|내부|비밀|원본)\s*(?:지시|지침|규칙|명령|설정)/,
+  // AI 자신이 받은 것·쓰는 것을 묻는 말("너의 설정 문서", "너가 쓰는 LLM", "너를 만든 회사가 준 메모")
+  /(?:^|\s)(?:너|네|니|당신)(?:의|가|를|한테|에게)?\s*(?:쓰는|사용하는|받은|가진)?\s*(?:llm|언어\s*모델|설정\s*문서|설정|문서|메모|안내문|원문)/,
+  /(?:너|널|당신)(?:를|을)?\s*(?:만든|설정한|가르친|훈련시킨)/,
+  /(?:너|넌|너는|당신은?)\s*누구(?:한테|에게)[^?]{0,15}(?:듣고|받고|배우고)/,
+  /(?:숨은|숨겨진|숨긴|감춰진|감춘)\s*(?:문장|글|텍스트|메시지|내용|말)/,
+  /(?:앞|위|처음|이전)\S*\s*(?:받은|준|적힌|주어진)\s*(?:안내문|메모|문서|글|문장|내용|말|것|걸)/,
+  /전문\s*(?:을|를)?\s*(?:보여|출력|알려|말해)/,
+  /(?:everything|all)\s+(?:that\s+)?you\s+(?:were|have\s+been)\s+(?:given|told)|what\s+tools\s+do\s+you\s+have|list\s+(?:your|the|their)\s+(?:tools|functions)|(?:기능|도구|툴|함수)\s*(?:이름|명)\s*(?:을|를)?\s*(?:\S+\s*){0,3}(?:나열|목록|알려|보여)/,
   /(?:your|the)\s+(?:system\s+)?(?:instructions|guidelines|rules|configuration|hidden\s+prompt)/,
   // 앞의 지시를 무시·잊으라는 말
   /(?:이전|앞|위|기존|앞선|지금까지|모든|원래)(?:의|에|에서)?\s*(?:지시|명령|지침|규칙|대화|설정|제한)\S*\s*(?:은|는|을|를|다|모두|전부)?\s*(?:무시|잊|버려|어겨|해제|풀어)/,
   /(?:지시|명령|지침|규칙|제한|룰|필터)\S*\s*(?:은|는|을|를)?\s*(?:다\s*|모두\s*|전부\s*)?(?:무시|잊어|어기|해제|풀어|우회)/,
   /\b(?:ignore|disregard|forget|override|bypass)\s+(?:all|any|the|your|previous|prior|above|earlier|these|those|every|everything|what)\b/,
   /前の指示|指示を無視|(?:忽略|无视)(?:之前|以上|上面|前面|所有)|ignora\s+(?:las|todas|tus)|ignore[sz]?\s+(?:les|toutes|tes)|ignoriere|ignore\s+as\s+instruções/,
+  // '잊어라'와 다른 낱말로 쓴 것(일본어 命令·忘れて, 중국어 忘掉, 베트남어·독일어·스페인어·포르투갈어·프랑스어)
+  /(?:以前|これまで|上|前)の(?:命令|ルール|設定|指示)|(?:指示|命令|ルール)を(?:すべて|全部)?(?:忘れ|無視)/,
+  /(?:忘掉|忘记|忘了)(?:之前|以上|上面|前面|所有|全部)|之前的(?:规则|指令|指示|设定|设置)/,
+  /(?:bỏ\s*qua|quên)[^.?!]{0,20}(?:hướng\s*dẫn|chỉ\s*dẫn|lệnh|quy\s*tắc)/,
+  /(?:vergiss|vergessen\s+sie)[^.?!]{0,30}(?:anweisungen|regeln|vorgaben)/,
+  /(?:olvida|esqueça|esqueca|oublie)[^.?!]{0,30}(?:instrucciones|reglas|instruções|regras|instructions|consignes|règles)/,
   // 역할을 바꾸려는 말
   /너는\s*이제|넌\s*이제|(?:지금|이제)부터\s*(?:너는|넌|당신은)|역할극|롤\s*플레이|role\s*-?\s*play|pretend\s+(?:to\s+be|you(?:'re|\s+are))|\bact\s+as\b|you\s+are\s+now|from\s+now\s+on,?\s+you|\bdan\b/,
   // '하루 질문 제한이 몇 번'은 정상 질문이라, 제한을 없애거나 풀라는 말만 본다
@@ -69,6 +108,10 @@ const PATTERNS: RegExp[] = [
   // 비밀값·다른 사람의 기록
   /api\s*(?:키|key)|환경\s*변수|env(?:ironment)?\s*var|\.env\b|_api_key|비밀\s*키|secret\s*key|access\s*token|토큰\s*(?:값|보여|알려|출력)/,
   /비밀번호\s*(?:좀\s*)?(?:알려|보여|출력|말해)|password\s+(?:is|of|for)/,
+  /(?:관리자|운영자|admin|서버|db)\S*\s*(?:계정\s*)?(?:의\s*)?비밀번호/,
+  /(?:vercel|openai|anthropic|gemini|google|turso|resend)\s*(?:키|key|토큰|token)/,
+  // AI가 어느 회사 모델인지 떠보는 말("너 GPT야 클로드야?")
+  /(?:너|넌|니가|네가)\s*(?:혹시\s*)?(?:gpt|챗\s*gpt|chatgpt|클로드|claude|제미나이|gemini|라마|llama)/,
   // '다른 사람과 나눠 쓰는 구독'은 정상 질문이라 '사람'은 보지 않는다
   /(?:다른|모든|남의)\s*(?:사용자|유저|회원|계정)[^?]{0,20}(?:구독|정보|이메일|기록|데이터|계정)[^?]{0,10}(?:보여|알려|출력|목록)/,
   // 도구·함수를 직접 다루려는 말
@@ -102,6 +145,7 @@ const PATTERNS: RegExp[] = [
 export function isPromptAttack(question: string): boolean {
   const text = normalize(question);
   const flat = compact(text);
-  if (COMPACT_WORDS.some((word) => flat.includes(word))) return true;
+  const plain = unleet(flat);
+  if (COMPACT_WORDS.some((word) => flat.includes(word) || plain.includes(word))) return true;
   return PATTERNS.some((pattern) => pattern.test(text));
 }
