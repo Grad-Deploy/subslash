@@ -1,6 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { buildReceipt, previousMonth, type Subscription, type UsageLog } from "@subslash/shared";
-import { describeReceiptLine, receiptFootnotes } from "@lib/receipt-view";
+import {
+  defaultReceiptMonth,
+  describeReceiptLine,
+  formatReceiptShareText,
+  isReceiptUnknown,
+  receiptCountText,
+  receiptEmptyText,
+  receiptFootnotes,
+  receiptTotalLabel,
+  receiptTotalText,
+} from "@lib/receipt-view";
 import { messages } from "@lib/i18n/messages";
 
 // 2026년 9월 27일 오전 9시(기기 시간대).
@@ -397,5 +407,56 @@ describe("영수증 문구 — 결제 메일로 넣은 줄", () => {
     expect(receiptFootnotes(messages.ko, august)).toContain(
       "등록하기 전 결제 1건은 Gmail에서 찾은 결제 메일의 날짜와 금액으로 넣었어요. 나눠 내는 구독의 내 몫은 지금 나누는 비율로 계산했어요.",
     );
+  });
+});
+
+describe("모르는 달의 영수증", () => {
+  const t = messages.ko;
+  // NOW(9월 27일)에 등록한 구독 — 8월은 등록하기 전이라 결제했는지 모른다.
+  const fresh = sub({ createdAt: new Date(2026, 8, 27).toISOString() });
+
+  it("등록하기 전 달은 '결제된 구독이 없어요'·₩0·0건이 아니라 모른다고 한다", () => {
+    const august = buildReceipt([fresh], [], AUGUST, RATE, NOW);
+    expect(isReceiptUnknown(august)).toBe(true);
+    expect(receiptEmptyText(t, august)).toBe(t.receiptView.unknownEmpty("2026년 8월"));
+    expect(receiptEmptyText(t, august)).not.toBe(t.receiptView.empty);
+    expect(receiptTotalText(t, august)).toBe("모름");
+    expect(receiptTotalLabel(t, august)).toBe("합계(내 몫)");
+    expect(receiptCountText(t, august)).toBe("모름");
+    const text = formatReceiptShareText(t, august);
+    expect(text).not.toContain("₩0");
+    expect(text).toContain("모름");
+  });
+
+  it("줄이 하나라도 있으면 아는 만큼 합계를 적는다", () => {
+    const september = buildReceipt([fresh], [], SEPTEMBER, RATE, NOW);
+    expect(isReceiptUnknown(september)).toBe(false);
+    expect(receiptTotalText(t, september)).toBe("₩13,500");
+  });
+
+  it("그 전에 해지해 결제가 없던 달은 '결제된 구독이 없어요'가 맞다", () => {
+    const killed = sub({ status: "killed", killedAt: new Date(2026, 6, 20).toISOString() });
+    const september = buildReceipt([killed], [], SEPTEMBER, RATE, NOW);
+    expect(september.lines).toEqual([]);
+    expect(isReceiptUnknown(september)).toBe(false);
+    expect(receiptEmptyText(t, september)).toBe(t.receiptView.empty);
+  });
+
+  it("결제 월을 모르는 연간 구독뿐이면 모른다고 한다", () => {
+    const undated = sub({ billingCycle: "yearly", billingMonth: undefined });
+    const september = buildReceipt([undated], [], SEPTEMBER, RATE, NOW);
+    expect(september.excluded.undated).toBe(1);
+    expect(isReceiptUnknown(september)).toBe(true);
+  });
+
+  it("처음 여는 달은 지난달이고, 지난달이 등록하기 전이면 이번 달이다", () => {
+    expect(defaultReceiptMonth([sub()], [], RATE, NOW)).toEqual({ ...AUGUST });
+    expect(defaultReceiptMonth([fresh], [], RATE, NOW)).toEqual({ ...SEPTEMBER });
+    expect(defaultReceiptMonth([], [], RATE, NOW)).toEqual({
+      kind: "month",
+      ...previousMonth(NOW),
+    });
+    // 예전에 등록한 것이 하나라도 있으면 지난달에 줄이 생긴다
+    expect(defaultReceiptMonth([fresh, sub({ id: "old" })], [], RATE, NOW)).toEqual({ ...AUGUST });
   });
 });

@@ -14,6 +14,9 @@ export const ko = {
     paperLabel: (period: string) => `${period} 구독 영수증`,
     issued: (number: string, date: string) => `No. ${number} · 발행 ${date}`,
     empty: "결제된 구독이 없어요",
+    unknownEmpty: (period: string) =>
+      `${period}에 결제했는지 알 수 있는 구독이 없어요. 등록하기 전 달이나 결제 월을 모르는 연간 구독은 비워 뒀어요.`,
+    unknownValue: "모름",
     total: (count: number) => `합계(내 몫) · ${count}건`,
     billed: "카드에 찍힌 금액",
     defended: "해지로 지킨 돈",
@@ -92,6 +95,7 @@ export const ko = {
         "영수증은 이 기기의 기록으로 만들어요. 공유하면 영수증 내용(서비스 이름·금액)이 링크에 담겨, 링크를 받은 사람은 누구나 볼 수 있고 보낸 링크는 취소할 수 없어요. 사용 횟수와 나눠 내는 금액은 담지 않고, 링크의 내용은 서버에 저장하지 않아요.",
       maskNames: "서비스 이름과 구독별 금액 가리고 공유하기",
       maskSingleHint: "구독이 하나뿐이면 합계만 보고도 어떤 서비스인지 짐작할 수 있어요.",
+      nothingToShare: "결제가 적힌 영수증만 공유할 수 있어요. 다른 달을 골라 보세요.",
       confirmTitle: "영수증 링크를 보낼까요?",
       confirmBody:
         "영수증 내용이 링크에 담겨요. 링크를 받은 사람은 누구나 볼 수 있고, 다시 전달될 수도 있어요. 보낸 링크는 취소할 수 없어요.",
@@ -137,6 +141,9 @@ export const en: Widen<typeof ko> = {
     paperLabel: (period) => `${period} subscription receipt`,
     issued: (number, date) => `No. ${number} · issued ${date}`,
     empty: "No subscriptions were charged",
+    unknownEmpty: (period) =>
+      `There's no subscription we know was charged in ${period}. Months before you added a subscription, and yearly plans without a billing month, are left blank.`,
+    unknownValue: "Unknown",
     total: (count) => `Total (your share) · ${count} ${one(count) ? "charge" : "charges"}`,
     billed: "Charged to your card",
     defended: "Money kept by cancelling",
@@ -216,6 +223,7 @@ export const en: Widen<typeof ko> = {
         "The receipt is made from this device's records. When you share it, its contents (service names and amounts) go into the link: anyone with the link can see them, and a sent link can't be taken back. Usage counts and shared-plan amounts aren't included, and the link's contents aren't stored on our server.",
       maskNames: "Hide service names and per-subscription amounts when sharing",
       maskSingleHint: "With only one subscription, the total alone may reveal which service it is.",
+      nothingToShare: "Only receipts with charges on them can be shared. Try another month.",
       confirmTitle: "Send a receipt link?",
       confirmBody:
         "The receipt's contents go into the link. Anyone with the link can see them, and it may be forwarded. A sent link can't be taken back.",
@@ -262,6 +270,9 @@ export const zh: Widen<typeof ko> = {
     paperLabel: (period) => `${period} 订阅小票`,
     issued: (number, date) => `No. ${number} · ${date} 开具`,
     empty: "没有扣款的订阅",
+    unknownEmpty: (period) =>
+      `没有能确定在${period}付过款的订阅。添加订阅之前的月份，以及不知道付款月份的年付订阅，都留空了。`,
+    unknownValue: "未知",
     total: (count) => `合计（我的份额）· ${count} 笔`,
     billed: "卡上扣款",
     defended: "退订守住的钱",
@@ -330,6 +341,7 @@ export const zh: Widen<typeof ko> = {
         "小票由这台设备上的记录生成。分享时，小票内容（服务名称和金额）会放进链接里：拿到链接的任何人都能看到，发出的链接无法撤回。不包含使用次数和分摊金额，链接内容也不会保存在服务器上。",
       maskNames: "分享时隐藏服务名称和各订阅金额",
       maskSingleHint: "只有一个订阅时，仅凭合计也可能猜出是哪项服务。",
+      nothingToShare: "只有列出付款的小票才能分享。请选择其他月份。",
       confirmTitle: "要发送小票链接吗？",
       confirmBody:
         "小票内容会放进链接里。拿到链接的任何人都能看到，也可能被转发。发出的链接无法撤回。",
@@ -366,6 +378,9 @@ export const ja: Widen<typeof ko> = {
     paperLabel: (period) => `${period} サブスクのレシート`,
     issued: (number, date) => `No. ${number} · ${date} 発行`,
     empty: "請求されたサブスクはありません",
+    unknownEmpty: (period) =>
+      `${period}に支払ったと分かるサブスクがありません。登録する前の月や、支払い月が分からない年額プランは空けてあります。`,
+    unknownValue: "不明",
     total: (count) => `合計（自分の負担分）· ${count} 件`,
     billed: "カードへの請求",
     defended: "解約で守ったお金",
@@ -438,6 +453,7 @@ export const ja: Widen<typeof ko> = {
         "レシートはこの端末の記録から作ります。共有すると、レシートの内容（サービス名・金額）がリンクに入り、リンクを受け取った人は誰でも見られます。送ったリンクは取り消せません。利用回数や分担額は入れず、リンクの内容はサーバーに保存しません。",
       maskNames: "サービス名とサブスクごとの金額を隠して共有する",
       maskSingleHint: "サブスクが1つだけだと、合計だけでどのサービスか推測できることがあります。",
+      nothingToShare: "支払いが載っているレシートだけ共有できます。ほかの月を選んでみてください。",
       confirmTitle: "レシートのリンクを送りますか？",
       confirmBody:
         "レシートの内容がリンクに入ります。リンクを受け取った人は誰でも見られ、転送されることもあります。送ったリンクは取り消せません。",
@@ -480,6 +496,9 @@ export const vi: Widen<typeof ko> = {
     paperLabel: (period) => `Hóa đơn gói đăng ký ${period}`,
     issued: (number, date) => `Số ${number} · xuất ngày ${date}`,
     empty: "Không có gói nào bị trừ tiền",
+    unknownEmpty: (period) =>
+      `Không có gói nào được biết là đã thanh toán trong ${period}. Các tháng trước khi bạn thêm gói và gói năm chưa rõ tháng thanh toán được để trống.`,
+    unknownValue: "Không rõ",
     total: (count) => `Tổng (phần của tôi) · ${count} khoản`,
     billed: "Trừ trên thẻ",
     defended: "Tiền giữ lại nhờ hủy",
@@ -554,6 +573,7 @@ export const vi: Widen<typeof ko> = {
       maskNames: "Ẩn tên dịch vụ và số tiền từng gói khi chia sẻ",
       maskSingleHint:
         "Nếu chỉ có một gói, chỉ cần nhìn tổng cũng có thể đoán ra đó là dịch vụ nào.",
+      nothingToShare: "Chỉ có thể chia sẻ hóa đơn có ghi khoản thanh toán. Hãy chọn tháng khác.",
       confirmTitle: "Gửi liên kết hóa đơn?",
       confirmBody:
         "Nội dung hóa đơn được đưa vào liên kết. Bất kỳ ai có liên kết đều xem được và có thể chuyển tiếp. Liên kết đã gửi không thể thu hồi.",
@@ -596,6 +616,9 @@ export const fr: Widen<typeof ko> = {
     paperLabel: (period) => `Ticket d'abonnements — ${period}`,
     issued: (number, date) => `N° ${number} · émis le ${date}`,
     empty: "Aucun abonnement n'a été débité",
+    unknownEmpty: (period) =>
+      `Aucun abonnement dont on sait qu'il a été payé en ${period}. Les mois avant l'ajout d'un abonnement et les forfaits annuels sans mois de paiement sont laissés vides.`,
+    unknownValue: "Inconnu",
     total: (count) => `Total (votre part) · ${count} paiement${Number(count) === 1 ? "" : "s"}`,
     billed: "Débité sur votre carte",
     defended: "Argent économisé en résiliant",
@@ -675,6 +698,8 @@ export const fr: Widen<typeof ko> = {
       maskNames: "Masquer les noms des services et les montants par abonnement au partage",
       maskSingleHint:
         "Avec un seul abonnement, le total suffit parfois à deviner de quel service il s'agit.",
+      nothingToShare:
+        "Seuls les tickets comportant des paiements peuvent être partagés. Choisissez un autre mois.",
       confirmTitle: "Envoyer un lien vers le ticket ?",
       confirmBody:
         "Le contenu du ticket est placé dans le lien. Toute personne qui a le lien peut le voir, et il peut être transféré. Un lien envoyé ne peut pas être retiré.",
@@ -717,6 +742,9 @@ export const es: Widen<typeof ko> = {
     paperLabel: (period) => `Ticket de suscripciones de ${period}`,
     issued: (number, date) => `N.º ${number} · emitido el ${date}`,
     empty: "No se cobró ninguna suscripción",
+    unknownEmpty: (period) =>
+      `No hay ninguna suscripción que sepamos que se cobró en ${period}. Los meses anteriores a añadir una suscripción y los planes anuales sin mes de cobro se dejan en blanco.`,
+    unknownValue: "Desconocido",
     total: (count) => `Total (tu parte) · ${count} cobro${Number(count) === 1 ? "" : "s"}`,
     billed: "Cobrado a tu tarjeta",
     defended: "Dinero ahorrado cancelando",
@@ -794,6 +822,7 @@ export const es: Widen<typeof ko> = {
       maskNames: "Ocultar los nombres de los servicios y los importes por suscripción al compartir",
       maskSingleHint:
         "Con una sola suscripción, el total puede bastar para adivinar qué servicio es.",
+      nothingToShare: "Solo se pueden compartir tickets con cobros. Prueba con otro mes.",
       confirmTitle: "¿Enviar un enlace al ticket?",
       confirmBody:
         "El contenido del ticket va dentro del enlace. Cualquiera que tenga el enlace puede verlo y puede reenviarse. Un enlace enviado no se puede retirar.",
@@ -836,6 +865,9 @@ export const de: Widen<typeof ko> = {
     paperLabel: (period) => `Abo-Beleg ${period}`,
     issued: (number, date) => `Nr. ${number} · ausgestellt am ${date}`,
     empty: "Es wurden keine Abos abgebucht",
+    unknownEmpty: (period) =>
+      `Für ${period} ist kein Abo bekannt, das bezahlt wurde. Monate vor dem Hinzufügen eines Abos und Jahresabos ohne Abrechnungsmonat bleiben leer.`,
+    unknownValue: "Unbekannt",
     total: (count) =>
       `Gesamt (dein Anteil) · ${count} ${Number(count) === 1 ? "Abbuchung" : "Abbuchungen"}`,
     billed: "Von der Karte abgebucht",
@@ -916,6 +948,7 @@ export const de: Widen<typeof ko> = {
       maskNames: "Namen der Dienste und Beträge pro Abo beim Teilen ausblenden",
       maskSingleHint:
         "Bei nur einem Abo lässt sich schon an der Summe erraten, welcher Dienst es ist.",
+      nothingToShare: "Nur Belege mit Zahlungen können geteilt werden. Wähle einen anderen Monat.",
       confirmTitle: "Link zum Beleg senden?",
       confirmBody:
         "Der Inhalt des Belegs steht im Link. Jeder mit dem Link kann ihn sehen, und er kann weitergeleitet werden. Ein gesendeter Link lässt sich nicht zurückholen.",
@@ -961,6 +994,9 @@ export const pt: Widen<typeof ko> = {
     paperLabel: (period) => `Recibo de assinaturas de ${period}`,
     issued: (number, date) => `Nº ${number} · emitido em ${date}`,
     empty: "Nenhuma assinatura foi cobrada",
+    unknownEmpty: (period) =>
+      `Não há nenhuma assinatura que saibamos ter sido cobrada em ${period}. Os meses antes de você adicionar uma assinatura e os planos anuais sem mês de cobrança ficam em branco.`,
+    unknownValue: "Desconhecido",
     total: (count) => `Total (sua parte) · ${count} cobrança${Number(count) === 1 ? "" : "s"}`,
     billed: "Cobrado no seu cartão",
     defended: "Dinheiro economizado cancelando",
@@ -1036,6 +1072,7 @@ export const pt: Widen<typeof ko> = {
         "O recibo é feito com os dados deste dispositivo. Ao compartilhar, o conteúdo do recibo (nomes dos serviços e valores) vai dentro do link: qualquer pessoa com o link pode vê-lo, e um link enviado não pode ser desfeito. Usos e valores divididos não são incluídos, e o conteúdo do link não é salvo no nosso servidor.",
       maskNames: "Ocultar os nomes dos serviços e os valores por assinatura ao compartilhar",
       maskSingleHint: "Com uma só assinatura, só o total já pode revelar qual é o serviço.",
+      nothingToShare: "Só é possível compartilhar recibos com cobranças. Escolha outro mês.",
       confirmTitle: "Enviar um link do recibo?",
       confirmBody:
         "O conteúdo do recibo vai dentro do link. Qualquer pessoa com o link pode vê-lo, e ele pode ser encaminhado. Um link enviado não pode ser desfeito.",
