@@ -6,6 +6,7 @@ import {
   receiptFootnotes,
   receiptNumber,
   receiptPeriodSuffix,
+  type ReceiptRenderOptions,
 } from "./receipt-view";
 import { receiptArt } from "./receipt-art";
 import { fit, wrap } from "./receipt-canvas";
@@ -51,12 +52,20 @@ export async function renderReceiptImage(
   issuedAt: Date,
   t: Messages,
   theme: ReceiptTheme = "classic",
+  options: ReceiptRenderOptions = {},
 ): Promise<Blob> {
-  if (theme !== "classic") return renderThemedReceipt(theme, receiptArt(t, receipt, issuedAt), t);
-  return renderClassic(receipt, issuedAt, t);
+  if (theme !== "classic") {
+    return renderThemedReceipt(theme, receiptArt(t, receipt, issuedAt, options), t);
+  }
+  return renderClassic(receipt, issuedAt, t, options);
 }
 
-async function renderClassic(receipt: Receipt, issuedAt: Date, t: Messages): Promise<Blob> {
+async function renderClassic(
+  receipt: Receipt,
+  issuedAt: Date,
+  t: Messages,
+  options: ReceiptRenderOptions,
+): Promise<Blob> {
   const v = t.receiptView;
   // 글꼴이 늦게 오면 대체 글꼴로 그려진다. 이미 받아 둔 글꼴만 기다린다.
   await document.fonts?.ready;
@@ -181,7 +190,7 @@ async function renderClassic(receipt: Receipt, issuedAt: Date, t: Messages): Pro
 
   // 알림
   measure.font = font(10);
-  for (const note of receiptFootnotes(t, receipt)) {
+  for (const note of receiptFootnotes(t, receipt, options)) {
     for (const detail of wrap(measure, `· ${note}`, inner)) {
       text(detail, { size: 10, color: MUTED });
       y += 14;

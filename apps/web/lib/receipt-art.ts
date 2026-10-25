@@ -6,6 +6,7 @@ import {
   receiptFootnotes,
   receiptNumber,
   receiptPeriodSuffix,
+  type ReceiptRenderOptions,
 } from "./receipt-view";
 
 /**
@@ -43,7 +44,12 @@ export interface ReceiptArt {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-export function receiptArt(t: Messages, receipt: Receipt, issuedAt: Date): ReceiptArt {
+export function receiptArt(
+  t: Messages,
+  receipt: Receipt,
+  issuedAt: Date,
+  options: ReceiptRenderOptions = {},
+): ReceiptArt {
   const v = t.receiptView;
   const issuedDate = formatDotDate(issuedAt);
   const number = receiptNumber(receipt.period);
@@ -94,7 +100,7 @@ export function receiptArt(t: Messages, receipt: Receipt, issuedAt: Date): Recei
     })),
     empty: receipt.lines.length === 0 ? v.empty : null,
     extras,
-    notes: receiptFootnotes(t, receipt),
+    notes: receiptFootnotes(t, receipt, options),
     from: `${pad(startMonth)}.01`,
     to,
   };
