@@ -150,7 +150,8 @@ export interface SharePayload {
   title: string;
   /** 링크까지 담은 문장. */
   text: string;
-  url: string;
+  /** 붙일 링크. 없으면 글만 보낸다(영수증이 너무 커 링크를 만들지 못했을 때). */
+  url?: string;
 }
 
 /**

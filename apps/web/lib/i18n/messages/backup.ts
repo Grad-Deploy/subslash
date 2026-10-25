@@ -29,6 +29,11 @@ export const ko = {
   title: "데이터 백업",
   intro:
     "기록은 이 기기에만 있어요. 앱이나 브라우저 데이터를 지우거나 기기를 바꾸기 전에 백업하거나 로그인하세요.",
+  // 로그인한 사람에게 '이 기기에만 있어요·로그인하세요'라고 하지 않는다(운영 QA 2026-10-24). 동기화 켜짐 / 꺼짐.
+  introSynced:
+    "기록은 이 기기와 계정에 함께 있고, 로그인한 기기끼리 자동으로 맞춰져요. 따로 보관하고 싶을 때 백업 파일을 저장하세요.",
+  introSyncOff:
+    "자동 동기화가 꺼진 동안 바꾼 기록은 이 기기에만 있어요. 앱이나 브라우저 데이터를 지우기 전에 백업하거나 ‘계정에 저장’을 누르세요.",
   exportFile: "백업 파일 저장",
   restoreFile: "백업에서 복원",
   chooseFile: "백업 파일 선택",
@@ -116,6 +121,10 @@ export const en: Widen<typeof ko> = {
   title: "Data backup",
   intro:
     "Your records live only on this device. Back them up or log in before clearing the app's or browser's data or changing devices.",
+  introSynced:
+    "Your records are on this device and in your account, and stay in sync across devices you're logged in on. Save a backup file if you want your own copy.",
+  introSyncOff:
+    "While auto-sync is off, changes stay only on this device. Back up or tap ‘Save to account’ before clearing the app's or browser's data.",
   exportFile: "Save backup file",
   restoreFile: "Restore from backup",
   chooseFile: "Choose backup file",
@@ -204,6 +213,10 @@ export const zh: Widen<typeof ko> = {
   lastSaved: (savedAt, line) => `最后保存 ${savedAt} · ${line}`,
   title: "数据备份",
   intro: "你的记录只在这台设备上。在清除应用或浏览器数据，或更换设备之前，请先备份或登录。",
+  introSynced:
+    "你的记录同时保存在这台设备和账户中，已登录的设备之间会自动同步。想另外保存时，请保存备份文件。",
+  introSyncOff:
+    "自动同步关闭期间的更改只保存在这台设备上。清除应用或浏览器数据之前，请先备份或点按“保存到账户”。",
   exportFile: "保存备份文件",
   restoreFile: "从备份恢复",
   chooseFile: "选择备份文件",
@@ -285,6 +298,10 @@ export const ja: Widen<typeof ko> = {
   title: "データのバックアップ",
   intro:
     "記録はこの端末の中にだけあります。アプリやブラウザのデータを消去したり端末を替えたりする前に、バックアップするかログインしてください。",
+  introSynced:
+    "記録はこの端末とアカウントの両方にあり、ログインした端末どうしで自動的にそろいます。手元に控えを残したいときはバックアップファイルを保存してください。",
+  introSyncOff:
+    "自動同期がオフの間に変えた記録はこの端末にだけあります。アプリやブラウザのデータを消去する前に、バックアップするか「アカウントに保存」を押してください。",
   exportFile: "バックアップファイルを保存",
   restoreFile: "バックアップから復元",
   chooseFile: "バックアップファイルを選ぶ",
@@ -369,6 +386,10 @@ export const vi: Widen<typeof ko> = {
   title: "Sao lưu dữ liệu",
   intro:
     "Dữ liệu chỉ nằm trên thiết bị này. Hãy sao lưu hoặc đăng nhập trước khi xóa dữ liệu ứng dụng hay trình duyệt, hoặc đổi thiết bị.",
+  introSynced:
+    "Dữ liệu nằm trên thiết bị này và trong tài khoản, tự động đồng bộ giữa các thiết bị đã đăng nhập. Hãy lưu tệp sao lưu nếu muốn giữ bản riêng.",
+  introSyncOff:
+    "Khi tắt tự động đồng bộ, thay đổi chỉ nằm trên thiết bị này. Hãy sao lưu hoặc nhấn “Lưu vào tài khoản” trước khi xóa dữ liệu ứng dụng hay trình duyệt.",
   exportFile: "Lưu tệp sao lưu",
   restoreFile: "Khôi phục từ bản sao lưu",
   chooseFile: "Chọn tệp sao lưu",
@@ -454,6 +475,10 @@ export const fr: Widen<typeof ko> = {
   title: "Sauvegarde des données",
   intro:
     "Vos données ne sont que sur cet appareil. Sauvegardez-les ou connectez-vous avant d'effacer les données de l'appli ou du navigateur, ou de changer d'appareil.",
+  introSynced:
+    "Vos données sont sur cet appareil et dans votre compte, et restent synchronisées entre vos appareils connectés. Enregistrez une sauvegarde si vous voulez votre propre copie.",
+  introSyncOff:
+    "Tant que la synchronisation automatique est désactivée, les changements restent sur cet appareil. Sauvegardez ou touchez « Enregistrer dans le compte » avant d'effacer les données de l'appli ou du navigateur.",
   exportFile: "Enregistrer une sauvegarde",
   restoreFile: "Restaurer une sauvegarde",
   chooseFile: "Choisir un fichier de sauvegarde",
@@ -545,6 +570,10 @@ export const es: Widen<typeof ko> = {
   title: "Copia de seguridad",
   intro:
     "Tus registros solo están en este dispositivo. Haz una copia o inicia sesión antes de borrar los datos de la app o del navegador, o de cambiar de dispositivo.",
+  introSynced:
+    "Tus registros están en este dispositivo y en tu cuenta, y se sincronizan entre los dispositivos con la sesión iniciada. Guarda una copia si quieres tener la tuya.",
+  introSyncOff:
+    "Mientras la sincronización automática está desactivada, los cambios solo quedan en este dispositivo. Haz una copia o toca «Guardar en la cuenta» antes de borrar los datos de la app o del navegador.",
   exportFile: "Guardar copia",
   restoreFile: "Restaurar copia",
   chooseFile: "Elegir archivo de copia",
@@ -634,6 +663,10 @@ export const de: Widen<typeof ko> = {
   title: "Datensicherung",
   intro:
     "Deine Daten liegen nur auf diesem Gerät. Sichere sie oder melde dich an, bevor du die Daten der App oder des Browsers löschst oder das Gerät wechselst.",
+  introSynced:
+    "Deine Daten liegen auf diesem Gerät und in deinem Konto und werden zwischen angemeldeten Geräten automatisch abgeglichen. Speichere eine Sicherungsdatei, wenn du eine eigene Kopie willst.",
+  introSyncOff:
+    "Solange die automatische Synchronisierung aus ist, bleiben Änderungen nur auf diesem Gerät. Sichere sie oder tippe auf „Im Konto speichern“, bevor du die Daten der App oder des Browsers löschst.",
   exportFile: "Sicherungsdatei speichern",
   restoreFile: "Aus Sicherung wiederherstellen",
   chooseFile: "Sicherungsdatei wählen",
@@ -722,6 +755,10 @@ export const pt: Widen<typeof ko> = {
   title: "Backup de dados",
   intro:
     "Seus registros ficam só neste dispositivo. Faça backup ou entre na conta antes de limpar os dados do app ou do navegador, ou de trocar de dispositivo.",
+  introSynced:
+    "Seus registros ficam neste dispositivo e na sua conta, e se sincronizam entre os dispositivos conectados. Salve um backup se quiser ter sua própria cópia.",
+  introSyncOff:
+    "Enquanto a sincronização automática estiver desligada, as mudanças ficam só neste dispositivo. Faça backup ou toque em “Salvar na conta” antes de limpar os dados do app ou do navegador.",
   exportFile: "Salvar backup",
   restoreFile: "Restaurar backup",
   chooseFile: "Escolher arquivo de backup",
