@@ -172,7 +172,10 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 기록(`chargeHistory`, `utils/chargeHistory`)으로 남긴다. 구독 영수증(`buildReceipt`)은 등록한 달보다 앞선
 달을 이 기록이 있는 달만 그 메일의 금액으로 채운다 — 첫 메일과 마지막 메일 사이라도 메일이 없는 달은
 모른다(해지했다 다시 구독했거나 검색 상한에 밀렸을 수 있다). 같은 서비스의 다른 구독(해지 전 예전 구독)이
-이미 센 달은 세지 않는다. 기록은 이미 등록한 구독에도 적는다(`recordChargeHistory`). 서버
+이미 센 달은 세지 않는다. 그래서 줄이 하나도 없는데 등록 전이거나 결제 월을 몰라 뺀 구독이 있는 영수증은 결제가 없던 것이
+아니라 모르는 것이다(`isReceiptUnknown`) — '결제된 구독이 없어요'·₩0 대신 '모름'이라 적고, 공유하지 않으며, 처음 여는 달은
+그런 지난달 대신 이번 달이다(`defaultReceiptMonth`, 리포트 버튼도 같다). 처음 등록한 사람이 지난달 영수증을 열면 늘 ₩0이었다.
+기록은 이미 등록한 구독에도 적는다(`recordChargeHistory`). 서버
 (`gmail_discoveries.charge_history`)는 `GMAIL_CHARGE_HISTORY_STARTS_ON`(null이면 닫힘)부터 저장하고, 옛
 영수증이 늦게 와도(`scanOlder`) 후보는 덮지 않되 기록은 합친다. 칼럼이 스키마에 있으므로 시작일과
 관계없이 **배포 전에 두 배포 DB에 `drizzle/0016_gmail_charge_history.sql`을 적용한다.**
