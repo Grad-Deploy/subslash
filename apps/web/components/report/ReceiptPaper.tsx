@@ -6,6 +6,8 @@ import {
   formatReceiptPeriodText,
   receiptFootnotes,
   receiptEmptyText,
+  receiptTotalLabel,
+  receiptTotalText,
   receiptNumber,
   receiptPeriodSuffix,
   type ReceiptRenderOptions,
@@ -53,7 +55,9 @@ export function ReceiptPaper({
       <hr className="my-4 border-t border-dashed border-zinc-400" />
 
       {receipt.lines.length === 0 ? (
-        <p className="py-4 text-center text-sm text-zinc-500">{receiptEmptyText(t, render)}</p>
+        <p className="py-4 text-center text-sm text-zinc-500">
+          {receiptEmptyText(t, receipt, render)}
+        </p>
       ) : (
         <ul className="space-y-3">
           {receipt.lines.map((line) => (
@@ -76,8 +80,8 @@ export function ReceiptPaper({
 
       <dl className="space-y-1.5">
         <div className="flex items-baseline justify-between">
-          <dt className="text-sm font-bold">{v.total(receipt.chargeCount)}</dt>
-          <dd className="text-lg font-extrabold tabular-nums">{formatKRW(receipt.totalKRW)}</dd>
+          <dt className="text-sm font-bold">{receiptTotalLabel(t, receipt)}</dt>
+          <dd className="text-lg font-extrabold tabular-nums">{receiptTotalText(t, receipt)}</dd>
         </div>
         {receipt.billedTotalKRW !== receipt.totalKRW && (
           <div className="flex items-baseline justify-between text-xs text-zinc-500">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ReceiptText } from "lucide-react";
-import { formatKRW, previousMonth, type findBundleOverlaps } from "@subslash/shared";
+import { formatKRW, type findBundleOverlaps } from "@subslash/shared";
 import { IS_APP_BUILD } from "@lib/platform";
 import { receiptHref } from "@lib/receipt-view";
 import { useServiceNames, useT } from "@lib/i18n";
@@ -11,12 +11,20 @@ const AppFitText = IS_APP_BUILD
   ? dynamic(() => import("../app/AppFitText").then((m) => m.AppFitText), { ssr: false })
   : null;
 
-/** 지난달 영수증과 올해 결산 영수증으로 가는 칸. */
-export function ReceiptLinks({ now }: { now: Date }) {
+/**
+ * 달 영수증과 올해 결산 영수증으로 가는 칸. 달은 영수증 화면이 처음 여는 달과 같다(`defaultReceiptMonth` — 지난달,
+ * 지난달이 구독을 등록하기 전이면 이번 달). 버튼에 '9월'이라 적고 '결제된 구독이 없어요'를 열지 않게.
+ */
+export function ReceiptLinks({
+  now,
+  month,
+}: {
+  now: Date;
+  month: { kind: "month"; year: number; month: number };
+}) {
   const r = useT().reportPage.receipts;
-  const last = previousMonth(now);
   const links = [
-    { href: receiptHref({ kind: "month", ...last }), label: r.month(last.month) },
+    { href: receiptHref(month), label: r.month(month.month) },
     {
       href: receiptHref({ kind: "year", year: now.getFullYear() }),
       label: r.year(now.getFullYear()),

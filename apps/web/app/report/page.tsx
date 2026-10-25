@@ -10,6 +10,7 @@ import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { isAiAskOpen } from "@lib/privacy";
 import { IS_APP_BUILD } from "@lib/platform";
+import { defaultReceiptMonth } from "@lib/receipt-view";
 import {
   buildCheckInBars,
   buildOtherMetricRows,
@@ -56,6 +57,10 @@ export default function ReportPage() {
     [subscriptions, now],
   );
   const overlaps = useMemo(() => findBundleOverlaps(subscriptions), [subscriptions]);
+  const receiptMonth = useMemo(
+    () => defaultReceiptMonth(subscriptions, usageLogs, rate, now),
+    [subscriptions, usageLogs, rate, now],
+  );
   const rows = useMemo(
     () => buildValueRows(active, usageLogs, rate, now),
     [active, usageLogs, rate, now],
@@ -84,7 +89,7 @@ export default function ReportPage() {
       </header>
 
       {/* 매달 1일 앱 알림이 여는 지난달 영수증. 구독이 없어도 해지한 기록이 있으면 볼 것이 있다. */}
-      {subscriptions.length > 0 && <ReceiptLinks now={now} />}
+      {subscriptions.length > 0 && <ReceiptLinks now={now} month={receiptMonth} />}
 
       {active.length === 0 ? (
         <section className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-12 text-center">
