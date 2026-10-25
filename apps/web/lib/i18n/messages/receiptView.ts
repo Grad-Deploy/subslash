@@ -75,6 +75,9 @@ export const ko = {
       unverifiedMark: "공유 링크로 받은 영수증이에요. SubSlash가 내용을 확인하지 않았어요.",
       maskedName: (n: number) => `구독 ${n}`,
       maskedKilled: (n: number) => `해지한 구독 ${n}`,
+      hiddenSummary: (subscriptions: number, charges: number) =>
+        `구독 ${subscriptions}개 · 결제 ${charges}건 (서비스 이름과 구독별 금액은 가렸어요)`,
+      reopen: "영수증은 주소창에 남기지 않아요. 받은 링크를 다시 열어 주세요.",
     },
     page: {
       back: "← 리포트",
@@ -87,7 +90,8 @@ export const ko = {
       share: "공유하기",
       privacy:
         "영수증은 이 기기의 기록으로 만들어요. 공유하면 영수증 내용(서비스 이름·금액)이 링크에 담겨, 링크를 받은 사람은 누구나 볼 수 있고 보낸 링크는 취소할 수 없어요. 사용 횟수와 나눠 내는 금액은 담지 않고, 링크의 내용은 서버에 저장하지 않아요.",
-      maskNames: "서비스 이름 가리고 공유하기",
+      maskNames: "서비스 이름과 구독별 금액 가리고 공유하기",
+      maskSingleHint: "구독이 하나뿐이면 합계만 보고도 어떤 서비스인지 짐작할 수 있어요.",
       confirmTitle: "영수증 링크를 보낼까요?",
       confirmBody:
         "영수증 내용이 링크에 담겨요. 링크를 받은 사람은 누구나 볼 수 있고, 다시 전달될 수도 있어요. 보낸 링크는 취소할 수 없어요.",
@@ -195,6 +199,9 @@ export const en: Widen<typeof ko> = {
       unverifiedMark: "Receipt received via a shared link. SubSlash hasn't checked its contents.",
       maskedName: (n) => `Subscription ${n}`,
       maskedKilled: (n) => `Canceled subscription ${n}`,
+      hiddenSummary: (subscriptions, charges) =>
+        `${subscriptions} subscription${subscriptions === 1 ? "" : "s"} · ${charges} charge${charges === 1 ? "" : "s"} (service names and per-subscription amounts hidden)`,
+      reopen: "The receipt isn't kept in the address bar. Open the link you received again.",
     },
     page: {
       back: "← Report",
@@ -207,7 +214,8 @@ export const en: Widen<typeof ko> = {
       share: "Share",
       privacy:
         "The receipt is made from this device's records. When you share it, its contents (service names and amounts) go into the link: anyone with the link can see them, and a sent link can't be taken back. Usage counts and shared-plan amounts aren't included, and the link's contents aren't stored on our server.",
-      maskNames: "Hide service names when sharing",
+      maskNames: "Hide service names and per-subscription amounts when sharing",
+      maskSingleHint: "With only one subscription, the total alone may reveal which service it is.",
       confirmTitle: "Send a receipt link?",
       confirmBody:
         "The receipt's contents go into the link. Anyone with the link can see them, and it may be forwarded. A sent link can't be taken back.",
@@ -305,6 +313,9 @@ export const zh: Widen<typeof ko> = {
       unverifiedMark: "通过分享链接收到的小票。SubSlash 未核实其内容。",
       maskedName: (n) => `订阅 ${n}`,
       maskedKilled: (n) => `已取消的订阅 ${n}`,
+      hiddenSummary: (subscriptions, charges) =>
+        `${subscriptions} 个订阅 · ${charges} 笔付款（已隐藏服务名称和各订阅金额）`,
+      reopen: "小票不会保留在地址栏中。请重新打开收到的链接。",
     },
     page: {
       back: "← 报告",
@@ -317,7 +328,8 @@ export const zh: Widen<typeof ko> = {
       share: "分享",
       privacy:
         "小票由这台设备上的记录生成。分享时，小票内容（服务名称和金额）会放进链接里：拿到链接的任何人都能看到，发出的链接无法撤回。不包含使用次数和分摊金额，链接内容也不会保存在服务器上。",
-      maskNames: "分享时隐藏服务名称",
+      maskNames: "分享时隐藏服务名称和各订阅金额",
+      maskSingleHint: "只有一个订阅时，仅凭合计也可能猜出是哪项服务。",
       confirmTitle: "要发送小票链接吗？",
       confirmBody:
         "小票内容会放进链接里。拿到链接的任何人都能看到，也可能被转发。发出的链接无法撤回。",
@@ -409,6 +421,9 @@ export const ja: Widen<typeof ko> = {
       unverifiedMark: "共有リンクで受け取ったレシートです。SubSlashは内容を確認していません。",
       maskedName: (n) => `サブスク ${n}`,
       maskedKilled: (n) => `解約したサブスク ${n}`,
+      hiddenSummary: (subscriptions, charges) =>
+        `サブスク${subscriptions}件 · 支払い${charges}件（サービス名とサブスクごとの金額は隠しています）`,
+      reopen: "レシートはアドレスバーに残しません。受け取ったリンクをもう一度開いてください。",
     },
     page: {
       back: "← レポート",
@@ -421,7 +436,8 @@ export const ja: Widen<typeof ko> = {
       share: "共有",
       privacy:
         "レシートはこの端末の記録から作ります。共有すると、レシートの内容（サービス名・金額）がリンクに入り、リンクを受け取った人は誰でも見られます。送ったリンクは取り消せません。利用回数や分担額は入れず、リンクの内容はサーバーに保存しません。",
-      maskNames: "サービス名を隠して共有する",
+      maskNames: "サービス名とサブスクごとの金額を隠して共有する",
+      maskSingleHint: "サブスクが1つだけだと、合計だけでどのサービスか推測できることがあります。",
       confirmTitle: "レシートのリンクを送りますか？",
       confirmBody:
         "レシートの内容がリンクに入ります。リンクを受け取った人は誰でも見られ、転送されることもあります。送ったリンクは取り消せません。",
@@ -520,6 +536,9 @@ export const vi: Widen<typeof ko> = {
       unverifiedMark: "Hóa đơn nhận qua liên kết chia sẻ. SubSlash chưa kiểm tra nội dung.",
       maskedName: (n) => `Gói đăng ký ${n}`,
       maskedKilled: (n) => `Gói đã hủy ${n}`,
+      hiddenSummary: (subscriptions, charges) =>
+        `${subscriptions} gói đăng ký · ${charges} lần thanh toán (đã ẩn tên dịch vụ và số tiền từng gói)`,
+      reopen: "Hóa đơn không được giữ trên thanh địa chỉ. Hãy mở lại liên kết bạn nhận được.",
     },
     page: {
       back: "← Báo cáo",
@@ -532,7 +551,9 @@ export const vi: Widen<typeof ko> = {
       share: "Chia sẻ",
       privacy:
         "Hóa đơn được tạo từ dữ liệu trên thiết bị này. Khi chia sẻ, nội dung hóa đơn (tên dịch vụ và số tiền) được đưa vào liên kết: bất kỳ ai có liên kết đều xem được, và liên kết đã gửi không thể thu hồi. Số lần sử dụng và số tiền chia sẻ không được đưa vào, và nội dung liên kết không được lưu trên máy chủ.",
-      maskNames: "Ẩn tên dịch vụ khi chia sẻ",
+      maskNames: "Ẩn tên dịch vụ và số tiền từng gói khi chia sẻ",
+      maskSingleHint:
+        "Nếu chỉ có một gói, chỉ cần nhìn tổng cũng có thể đoán ra đó là dịch vụ nào.",
       confirmTitle: "Gửi liên kết hóa đơn?",
       confirmBody:
         "Nội dung hóa đơn được đưa vào liên kết. Bất kỳ ai có liên kết đều xem được và có thể chuyển tiếp. Liên kết đã gửi không thể thu hồi.",
@@ -635,6 +656,10 @@ export const fr: Widen<typeof ko> = {
       unverifiedMark: "Ticket reçu par un lien partagé. SubSlash n'a pas vérifié son contenu.",
       maskedName: (n) => `Abonnement ${n}`,
       maskedKilled: (n) => `Abonnement résilié ${n}`,
+      hiddenSummary: (subscriptions, charges) =>
+        `${subscriptions} abonnement${subscriptions > 1 ? "s" : ""} · ${charges} paiement${charges > 1 ? "s" : ""} (noms des services et montants par abonnement masqués)`,
+      reopen:
+        "Le ticket n'est pas conservé dans la barre d'adresse. Rouvrez le lien que vous avez reçu.",
     },
     page: {
       back: "← Rapport",
@@ -647,7 +672,9 @@ export const fr: Widen<typeof ko> = {
       share: "Partager",
       privacy:
         "Le ticket est créé à partir des données de cet appareil. Si vous le partagez, son contenu (noms des services et montants) est placé dans le lien : toute personne qui a le lien peut le voir, et un lien envoyé ne peut pas être retiré. Le nombre d'utilisations et les montants partagés ne sont pas inclus, et le contenu du lien n'est pas enregistré sur notre serveur.",
-      maskNames: "Masquer les noms des services au partage",
+      maskNames: "Masquer les noms des services et les montants par abonnement au partage",
+      maskSingleHint:
+        "Avec un seul abonnement, le total suffit parfois à deviner de quel service il s'agit.",
       confirmTitle: "Envoyer un lien vers le ticket ?",
       confirmBody:
         "Le contenu du ticket est placé dans le lien. Toute personne qui a le lien peut le voir, et il peut être transféré. Un lien envoyé ne peut pas être retiré.",
@@ -748,6 +775,10 @@ export const es: Widen<typeof ko> = {
         "Ticket recibido por un enlace compartido. SubSlash no ha comprobado su contenido.",
       maskedName: (n) => `Suscripción ${n}`,
       maskedKilled: (n) => `Suscripción cancelada ${n}`,
+      hiddenSummary: (subscriptions, charges) =>
+        `${subscriptions} suscripci${subscriptions === 1 ? "ón" : "ones"} · ${charges} cobro${charges === 1 ? "" : "s"} (nombres de servicios e importes por suscripción ocultos)`,
+      reopen:
+        "El ticket no se guarda en la barra de direcciones. Vuelve a abrir el enlace que recibiste.",
     },
     page: {
       back: "← Informe",
@@ -760,7 +791,9 @@ export const es: Widen<typeof ko> = {
       share: "Compartir",
       privacy:
         "El ticket se crea con los datos de este dispositivo. Al compartirlo, su contenido (nombres de servicios e importes) va dentro del enlace: cualquiera que tenga el enlace puede verlo y un enlace enviado no se puede retirar. No se incluyen los usos ni los importes compartidos, y el contenido del enlace no se guarda en nuestro servidor.",
-      maskNames: "Ocultar los nombres de los servicios al compartir",
+      maskNames: "Ocultar los nombres de los servicios y los importes por suscripción al compartir",
+      maskSingleHint:
+        "Con una sola suscripción, el total puede bastar para adivinar qué servicio es.",
       confirmTitle: "¿Enviar un enlace al ticket?",
       confirmBody:
         "El contenido del ticket va dentro del enlace. Cualquiera que tenga el enlace puede verlo y puede reenviarse. Un enlace enviado no se puede retirar.",
@@ -865,6 +898,9 @@ export const de: Widen<typeof ko> = {
         "Über einen geteilten Link erhaltener Beleg. SubSlash hat den Inhalt nicht geprüft.",
       maskedName: (n) => `Abo ${n}`,
       maskedKilled: (n) => `Gekündigtes Abo ${n}`,
+      hiddenSummary: (subscriptions, charges) =>
+        `${subscriptions} Abo${subscriptions === 1 ? "" : "s"} · ${charges} Zahlung${charges === 1 ? "" : "en"} (Namen der Dienste und Beträge pro Abo ausgeblendet)`,
+      reopen: "Der Beleg bleibt nicht in der Adressleiste. Öffne den erhaltenen Link noch einmal.",
     },
     page: {
       back: "← Bericht",
@@ -877,7 +913,9 @@ export const de: Widen<typeof ko> = {
       share: "Teilen",
       privacy:
         "Der Beleg wird aus den Daten dieses Geräts erstellt. Wenn du ihn teilst, steht sein Inhalt (Namen der Dienste und Beträge) im Link: Jeder mit dem Link kann ihn sehen, und ein gesendeter Link lässt sich nicht zurückholen. Nutzungszahlen und geteilte Beträge sind nicht enthalten, und der Inhalt des Links wird nicht auf unserem Server gespeichert.",
-      maskNames: "Namen der Dienste beim Teilen ausblenden",
+      maskNames: "Namen der Dienste und Beträge pro Abo beim Teilen ausblenden",
+      maskSingleHint:
+        "Bei nur einem Abo lässt sich schon an der Summe erraten, welcher Dienst es ist.",
       confirmTitle: "Link zum Beleg senden?",
       confirmBody:
         "Der Inhalt des Belegs steht im Link. Jeder mit dem Link kann ihn sehen, und er kann weitergeleitet werden. Ein gesendeter Link lässt sich nicht zurückholen.",
@@ -981,6 +1019,9 @@ export const pt: Widen<typeof ko> = {
         "Recibo recebido por um link compartilhado. O SubSlash não verificou o conteúdo.",
       maskedName: (n) => `Assinatura ${n}`,
       maskedKilled: (n) => `Assinatura cancelada ${n}`,
+      hiddenSummary: (subscriptions, charges) =>
+        `${subscriptions} assinatura${subscriptions === 1 ? "" : "s"} · ${charges} cobrança${charges === 1 ? "" : "s"} (nomes dos serviços e valores por assinatura ocultos)`,
+      reopen: "O recibo não fica na barra de endereços. Abra de novo o link que você recebeu.",
     },
     page: {
       back: "← Relatório",
@@ -993,7 +1034,8 @@ export const pt: Widen<typeof ko> = {
       share: "Compartilhar",
       privacy:
         "O recibo é feito com os dados deste dispositivo. Ao compartilhar, o conteúdo do recibo (nomes dos serviços e valores) vai dentro do link: qualquer pessoa com o link pode vê-lo, e um link enviado não pode ser desfeito. Usos e valores divididos não são incluídos, e o conteúdo do link não é salvo no nosso servidor.",
-      maskNames: "Ocultar os nomes dos serviços ao compartilhar",
+      maskNames: "Ocultar os nomes dos serviços e os valores por assinatura ao compartilhar",
+      maskSingleHint: "Com uma só assinatura, só o total já pode revelar qual é o serviço.",
       confirmTitle: "Enviar um link do recibo?",
       confirmBody:
         "O conteúdo do recibo vai dentro do link. Qualquer pessoa com o link pode vê-lo, e ele pode ser encaminhado. Um link enviado não pode ser desfeito.",
