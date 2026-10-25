@@ -67,6 +67,12 @@ export const ko = {
       total: "합계(내 몫)",
       defended: "해지로 지킨 돈",
     },
+    shared: {
+      badge: "공유받은 구독 영수증",
+      note: "보낸 사람의 기기 기록으로 만든 영수증이에요. 링크에 담긴 내용을 그대로 보여 줘요.",
+      invalid: "영수증을 읽지 못했어요. 링크가 잘렸거나 바뀌었을 수 있어요.",
+      cta: "SubSlash로 내 구독 영수증 만들기",
+    },
     page: {
       back: "← 리포트",
       tabsLabel: "영수증 기간",
@@ -77,7 +83,7 @@ export const ko = {
       saveImage: "이미지로 저장",
       share: "공유하기",
       privacy:
-        "영수증은 이 기기의 기록으로 만들어요. 저장하거나 공유할 때만 기기 밖으로 나가요. 서비스 이름이 적혀 있으니 보내기 전에 확인하세요.",
+        "영수증은 이 기기의 기록으로 만들어요. 공유하면 영수증 내용(서비스 이름·금액)이 링크에 담겨, 링크를 받은 사람은 누구나 볼 수 있어요. 링크의 내용은 서버에 저장하지 않아요.",
       yearDetail: (year: number) => `${year}년 결산 자세히 보기`,
       imageSaved: "영수증 이미지를 저장했어요",
       imageFailed: "이미지를 만들지 못했어요. 글로 공유해 보세요.",
@@ -173,6 +179,12 @@ export const en: Widen<typeof ko> = {
       total: "Total (your share)",
       defended: "Money kept by cancelling",
     },
+    shared: {
+      badge: "A shared subscription receipt",
+      note: "This receipt was made from the sender's device records. It shows exactly what's in the link.",
+      invalid: "Couldn't read this receipt. The link may have been cut off or changed.",
+      cta: "Make my own receipt with SubSlash",
+    },
     page: {
       back: "← Report",
       tabsLabel: "Receipt period",
@@ -183,7 +195,7 @@ export const en: Widen<typeof ko> = {
       saveImage: "Save as image",
       share: "Share",
       privacy:
-        "The receipt is made from this device's records. It only leaves the device when you save or share it. Service names are printed on it, so check before sending.",
+        "The receipt is made from this device's records. When you share it, its contents (service names and amounts) go into the link, and anyone with the link can see them. The link's contents aren't stored on our server.",
       yearDetail: (year) => `See the ${year} year in review`,
       imageSaved: "Saved the receipt image",
       imageFailed: "Couldn't make the image. Try sharing it as text.",
@@ -269,6 +281,12 @@ export const zh: Widen<typeof ko> = {
       total: "合计（我的份额）",
       defended: "退订守住的钱",
     },
+    shared: {
+      badge: "收到的订阅小票",
+      note: "这张小票由发送者设备上的记录生成，按链接里的内容原样显示。",
+      invalid: "无法读取这张小票。链接可能被截断或改动了。",
+      cta: "用 SubSlash 生成我的订阅小票",
+    },
     page: {
       back: "← 报告",
       tabsLabel: "小票期间",
@@ -279,7 +297,7 @@ export const zh: Widen<typeof ko> = {
       saveImage: "保存为图片",
       share: "分享",
       privacy:
-        "小票由这台设备上的记录生成。只有在你保存或分享时才会离开设备。上面印有服务名称，发送前请确认。",
+        "小票由这台设备上的记录生成。分享时，小票内容（服务名称和金额）会放进链接里，拿到链接的任何人都能看到。链接内容不会保存在服务器上。",
       yearDetail: (year) => `查看 ${year} 年度总结`,
       imageSaved: "已保存小票图片",
       imageFailed: "无法生成图片。请尝试以文字分享。",
@@ -359,6 +377,12 @@ export const ja: Widen<typeof ko> = {
       total: "合計（自分の負担分）",
       defended: "解約で守ったお金",
     },
+    shared: {
+      badge: "共有されたサブスクのレシート",
+      note: "送った人の端末の記録から作ったレシートです。リンクに入っている内容をそのまま表示しています。",
+      invalid: "レシートを読み込めませんでした。リンクが途中で切れたか、変わった可能性があります。",
+      cta: "SubSlashで自分のレシートを作る",
+    },
     page: {
       back: "← レポート",
       tabsLabel: "レシートの期間",
@@ -369,7 +393,7 @@ export const ja: Widen<typeof ko> = {
       saveImage: "画像で保存",
       share: "共有",
       privacy:
-        "レシートはこの端末の記録から作ります。保存や共有をしたときだけ端末の外に出ます。サービス名が印字されるので、送る前に確認してください。",
+        "レシートはこの端末の記録から作ります。共有すると、レシートの内容（サービス名・金額）がリンクに入り、リンクを受け取った人は誰でも見られます。リンクの内容はサーバーに保存しません。",
       yearDetail: (year) => `${year}年の年間まとめを見る`,
       imageSaved: "レシートの画像を保存しました",
       imageFailed: "画像を作れませんでした。テキストで共有してみてください。",
@@ -456,6 +480,12 @@ export const vi: Widen<typeof ko> = {
       total: "Tổng (phần của tôi)",
       defended: "Tiền giữ lại nhờ hủy",
     },
+    shared: {
+      badge: "Hóa đơn đăng ký được chia sẻ",
+      note: "Hóa đơn này được tạo từ dữ liệu trên thiết bị của người gửi và hiển thị đúng nội dung trong liên kết.",
+      invalid: "Không đọc được hóa đơn này. Liên kết có thể đã bị cắt hoặc bị thay đổi.",
+      cta: "Tạo hóa đơn của tôi với SubSlash",
+    },
     page: {
       back: "← Báo cáo",
       tabsLabel: "Kỳ hóa đơn",
@@ -466,7 +496,7 @@ export const vi: Widen<typeof ko> = {
       saveImage: "Lưu thành ảnh",
       share: "Chia sẻ",
       privacy:
-        "Hóa đơn được tạo từ dữ liệu trên thiết bị này. Nó chỉ rời thiết bị khi bạn lưu hoặc chia sẻ. Tên dịch vụ được in trên đó, hãy kiểm tra trước khi gửi.",
+        "Hóa đơn được tạo từ dữ liệu trên thiết bị này. Khi bạn chia sẻ, nội dung hóa đơn (tên dịch vụ và số tiền) được đưa vào liên kết, và bất kỳ ai có liên kết đều xem được. Nội dung liên kết không được lưu trên máy chủ.",
       yearDetail: (year) => `Xem tổng kết năm ${year}`,
       imageSaved: "Đã lưu ảnh hóa đơn",
       imageFailed: "Không tạo được ảnh. Hãy thử chia sẻ dạng văn bản.",
@@ -557,6 +587,12 @@ export const fr: Widen<typeof ko> = {
       total: "Total (votre part)",
       defended: "Argent économisé en résiliant",
     },
+    shared: {
+      badge: "Ticket d'abonnements partagé",
+      note: "Ce ticket a été créé à partir des données de l'appareil de l'expéditeur. Il affiche tel quel le contenu du lien.",
+      invalid: "Impossible de lire ce ticket. Le lien a peut-être été coupé ou modifié.",
+      cta: "Créer mon ticket avec SubSlash",
+    },
     page: {
       back: "← Rapport",
       tabsLabel: "Période du ticket",
@@ -567,7 +603,7 @@ export const fr: Widen<typeof ko> = {
       saveImage: "Enregistrer en image",
       share: "Partager",
       privacy:
-        "Le ticket est créé à partir des données de cet appareil. Il ne quitte l'appareil que si vous l'enregistrez ou le partagez. Les noms des services y figurent : vérifiez avant de l'envoyer.",
+        "Le ticket est créé à partir des données de cet appareil. Si vous le partagez, son contenu (noms des services et montants) est placé dans le lien, et toute personne qui a le lien peut le voir. Le contenu du lien n'est pas enregistré sur notre serveur.",
       yearDetail: (year) => `Voir le bilan ${year}`,
       imageSaved: "Image du ticket enregistrée",
       imageFailed: "Impossible de créer l'image. Essayez de partager en texte.",
@@ -655,6 +691,12 @@ export const es: Widen<typeof ko> = {
       total: "Total (tu parte)",
       defended: "Dinero ahorrado cancelando",
     },
+    shared: {
+      badge: "Ticket de suscripciones compartido",
+      note: "Este ticket se creó con los datos del dispositivo de quien lo envió. Muestra tal cual lo que hay en el enlace.",
+      invalid: "No se pudo leer este ticket. Puede que el enlace esté cortado o modificado.",
+      cta: "Crear mi ticket con SubSlash",
+    },
     page: {
       back: "← Informe",
       tabsLabel: "Periodo del ticket",
@@ -665,7 +707,7 @@ export const es: Widen<typeof ko> = {
       saveImage: "Guardar como imagen",
       share: "Compartir",
       privacy:
-        "El ticket se crea con los datos de este dispositivo. Solo sale del dispositivo cuando lo guardas o compartes. Lleva impresos los nombres de los servicios, así que revísalo antes de enviarlo.",
+        "El ticket se crea con los datos de este dispositivo. Al compartirlo, su contenido (nombres de servicios e importes) va dentro del enlace, y cualquiera que tenga el enlace puede verlo. El contenido del enlace no se guarda en nuestro servidor.",
       yearDetail: (year) => `Ver el resumen de ${year}`,
       imageSaved: "Imagen del ticket guardada",
       imageFailed: "No se pudo crear la imagen. Prueba a compartirlo como texto.",
@@ -756,6 +798,13 @@ export const de: Widen<typeof ko> = {
       total: "Gesamt (dein Anteil)",
       defended: "Durch Kündigen gespartes Geld",
     },
+    shared: {
+      badge: "Geteilter Abo-Beleg",
+      note: "Dieser Beleg wurde aus den Daten auf dem Gerät des Absenders erstellt. Er zeigt genau das, was im Link steht.",
+      invalid:
+        "Dieser Beleg konnte nicht gelesen werden. Der Link wurde vielleicht abgeschnitten oder verändert.",
+      cta: "Eigenen Beleg mit SubSlash erstellen",
+    },
     page: {
       back: "← Bericht",
       tabsLabel: "Belegzeitraum",
@@ -766,7 +815,7 @@ export const de: Widen<typeof ko> = {
       saveImage: "Als Bild speichern",
       share: "Teilen",
       privacy:
-        "Der Beleg wird aus den Daten dieses Geräts erstellt. Er verlässt das Gerät nur, wenn du ihn speicherst oder teilst. Die Namen der Dienste stehen darauf, prüf ihn also vor dem Senden.",
+        "Der Beleg wird aus den Daten dieses Geräts erstellt. Wenn du ihn teilst, steht sein Inhalt (Namen der Dienste und Beträge) im Link, und jeder mit dem Link kann ihn sehen. Der Inhalt des Links wird nicht auf unserem Server gespeichert.",
       yearDetail: (year) => `Jahresrückblick ${year} ansehen`,
       imageSaved: "Belegbild gespeichert",
       imageFailed: "Das Bild konnte nicht erstellt werden. Versuch es als Text zu teilen.",
@@ -857,6 +906,12 @@ export const pt: Widen<typeof ko> = {
       total: "Total (sua parte)",
       defended: "Dinheiro economizado cancelando",
     },
+    shared: {
+      badge: "Recibo de assinaturas compartilhado",
+      note: "Este recibo foi feito com os dados do dispositivo de quem enviou. Ele mostra exatamente o que está no link.",
+      invalid: "Não foi possível ler este recibo. O link pode ter sido cortado ou alterado.",
+      cta: "Criar meu recibo com o SubSlash",
+    },
     page: {
       back: "← Relatório",
       tabsLabel: "Período do recibo",
@@ -867,7 +922,7 @@ export const pt: Widen<typeof ko> = {
       saveImage: "Salvar como imagem",
       share: "Compartilhar",
       privacy:
-        "O recibo é feito com os dados deste dispositivo. Ele só sai do dispositivo quando você salva ou compartilha. Os nomes dos serviços aparecem impressos, então confira antes de enviar.",
+        "O recibo é feito com os dados deste dispositivo. Ao compartilhar, o conteúdo do recibo (nomes dos serviços e valores) vai dentro do link, e qualquer pessoa com o link pode vê-lo. O conteúdo do link não é salvo no nosso servidor.",
       yearDetail: (year) => `Ver o resumo de ${year}`,
       imageSaved: "Imagem do recibo salva",
       imageFailed: "Não foi possível criar a imagem. Tente compartilhar como texto.",
