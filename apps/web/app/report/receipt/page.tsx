@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Download, Share2 } from "lucide-react";
-import { buildReceipt, previousMonth, type ReceiptPeriod } from "@subslash/shared";
+import { buildReceipt, type ReceiptPeriod } from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
@@ -12,6 +12,7 @@ import { rateRangeFor, useHistoricalRates } from "@hooks/useHistoricalRates";
 import { copyText, saveImage, shareText } from "@lib/native";
 import { webUrl } from "@lib/api";
 import {
+  defaultReceiptMonth,
   formatReceiptPeriodText,
   formatReceiptShareText,
   parseReceiptPeriod,
@@ -62,7 +63,7 @@ function isFuture(period: ReceiptPeriod, now: Date): boolean {
  * 구독 영수증 — 지난달(또는 고른 달·해)에 기록상 결제된 구독을 영수증 모양으로.
  *
  * 매달 1일 앱 알림(lib/local-reminders)이 지난달 영수증을 여기로 연다. 주소는 `?month=2026-09`나
- * `?year=2026`이고, 없으면 지난달이다. 영수증은 이미지로 저장하거나 글로 공유할 수 있다 — 둘 다
+ * `?year=2026`이고, 없으면 지난달이다(지난달이 구독을 등록하기 전이라 모르는 달이면 이번 달). 영수증은 이미지로 저장하거나 글로 공유할 수 있다 — 둘 다
  * 사용자가 누를 때만 기기 밖으로 나간다.
  */
 function ReceiptFromQuery() {
@@ -84,11 +85,16 @@ function ReceiptFromQuery() {
   const [maskNames, setMaskNames] = useState(false);
   const [confirmShare, setConfirmShare] = useState(false);
 
+  // 주소에 기간이 없으면 지난달, 지난달이 등록하기 전이라 모르는 달이면 이번 달(defaultReceiptMonth).
+  const defaultMonth = useMemo(
+    () => defaultReceiptMonth(subscriptions, usageLogs, rate, now),
+    [subscriptions, usageLogs, rate, now],
+  );
   const period: ReceiptPeriod = useMemo(() => {
     const parsed = parseReceiptPeriod(params);
     if (parsed && !isFuture(parsed, now) && parsed.year >= EARLIEST_YEAR) return parsed;
-    return { kind: "month", ...previousMonth(now) };
-  }, [params, now]);
+    return defaultMonth;
+  }, [params, now, defaultMonth]);
 
   // 지난 달러 결제는 결제일의 고시 환율로 바꾼다. 받는 동안은 숫자가 바뀌어 보이지 않게 기다린다.
   const range = useMemo(() => {
@@ -139,8 +145,7 @@ function ReceiptFromQuery() {
   const next = shift(period, 1);
   const canGoBack = previous.year >= EARLIEST_YEAR;
   const canGoForward = !isFuture(next, now);
-  const monthView: ReceiptPeriod =
-    period.kind === "month" ? period : { kind: "month", ...previousMonth(now) };
+  const monthView: ReceiptPeriod = period.kind === "month" ? period : defaultMonth;
   const yearView: ReceiptPeriod = { kind: "year", year: period.year };
 
   const flash = (text: string) => {
@@ -164,6 +169,8 @@ function ReceiptFromQuery() {
 
   // 링크는 영수증만 보여 주는 화면이다. 지금 영수증·디자인의 링크가 준비되기 전에는 공유 버튼을 잠근다.
   const link = shareLink?.key === shareKey ? shareLink : null;
+  // 결제가 적힌 줄이 없으면 보낼 것이 없다. 등록하기 전 달의 빈 영수증을 보내면 받는 사람은 '안 냈다'로 읽는다.
+  const nothingToShare = receipt.lines.length === 0;
 
   const shareAsText = async () => {
     if (!link) return;
@@ -268,11 +275,12 @@ function ReceiptFromQuery() {
           {busy ? <Spinner className="size-4" /> : <Download className="size-4" aria-hidden />}
           {v.page.saveImage}
         </Button>
-        <Button disabled={!link} onClick={onShare}>
+        <Button disabled={!link || nothingToShare} onClick={onShare}>
           <Share2 className="size-4" aria-hidden />
           {v.page.share}
         </Button>
       </div>
+      {nothingToShare && <p className="text-xs text-muted-foreground">{v.page.nothingToShare}</p>}
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"

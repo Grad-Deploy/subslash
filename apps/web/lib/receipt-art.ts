@@ -3,8 +3,11 @@ import type { Messages } from "@lib/i18n/messages";
 import {
   describeReceiptLine,
   formatReceiptPeriodText,
+  receiptCountText,
   receiptEmptyText,
   receiptFootnotes,
+  receiptTotalLabel,
+  receiptTotalText,
   receiptNumber,
   receiptPeriodSuffix,
   type ReceiptRenderOptions,
@@ -32,6 +35,8 @@ export interface ReceiptArt {
   /** "합계(내 몫) · 2건" */
   totalLabel: string;
   count: number;
+  /** 탑승권의 '건수' 칸("3건"). 모르는 영수증이면 '모름'. */
+  countText: string;
   lines: { name: string; amount: string; meta: string }[];
   /** 결제된 구독이 없을 때의 한 줄. 있으면 null. */
   empty: string | null;
@@ -91,15 +96,16 @@ export function receiptArt(
     number,
     issuedDate,
     issuedLine: v.issued(number, issuedDate),
-    total: formatKRW(receipt.totalKRW),
-    totalLabel: v.total(receipt.chargeCount),
+    total: receiptTotalText(t, receipt),
+    totalLabel: receiptTotalLabel(t, receipt),
     count: receipt.chargeCount,
+    countText: receiptCountText(t, receipt),
     lines: receipt.lines.map((line) => ({
       name: line.name,
       amount: formatKRW(line.amountKRW),
       meta: describeReceiptLine(t, line, period, options),
     })),
-    empty: receipt.lines.length === 0 ? receiptEmptyText(t, options) : null,
+    empty: receipt.lines.length === 0 ? receiptEmptyText(t, receipt, options) : null,
     extras,
     notes: receiptFootnotes(t, receipt, options),
     from: `${pad(startMonth)}.01`,

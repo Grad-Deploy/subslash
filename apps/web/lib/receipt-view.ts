@@ -1,9 +1,13 @@
 import {
+  buildReceipt,
   formatChargeDate,
   formatKRW,
+  previousMonth,
   type Receipt,
   type ReceiptLine,
   type ReceiptPeriod,
+  type Subscription,
+  type UsageLog,
 } from "@subslash/shared";
 import type { Messages } from "@lib/i18n/messages";
 
@@ -86,10 +90,64 @@ export interface ReceiptRenderOptions {
 }
 
 /** 줄이 없을 때 그 자리에 적는 말. 가린 영수증이면 몇 개를 가렸는지다. */
-export function receiptEmptyText(t: Messages, { hidden }: ReceiptRenderOptions = {}): string {
-  return hidden
-    ? t.receiptView.shared.hiddenSummary(hidden.subscriptions, hidden.charges)
+export function receiptEmptyText(
+  t: Messages,
+  receipt: Receipt,
+  { hidden }: ReceiptRenderOptions = {},
+): string {
+  if (hidden) return t.receiptView.shared.hiddenSummary(hidden.subscriptions, hidden.charges);
+  return isReceiptUnknown(receipt)
+    ? t.receiptView.unknownEmpty(formatReceiptPeriodText(t, receipt.period))
     : t.receiptView.empty;
+}
+
+/**
+ * 줄이 하나도 없는데, 등록하기 전 달이거나 결제 월을 몰라 뺀 구독이 있는 영수증 — 결제가 없던 것이 아니라 모른다. 이때
+ * '결제된 구독이 없어요'·'₩0'이라고 하면 안 낸 것처럼 읽힌다(처음 등록한 사람이 지난달 영수증을 열면 늘 이랬다).
+ * 줄이 하나라도 있으면 합계는 아는 만큼이고, 빠진 것은 알림(receiptFootnotes)이 말한다.
+ */
+export function isReceiptUnknown(receipt: Receipt): boolean {
+  return (
+    receipt.lines.length === 0 &&
+    (receipt.excluded.beforeRegistration > 0 || receipt.excluded.undated > 0)
+  );
+}
+
+/** 합계 금액. 모르는 영수증은 ₩0이 아니라 '모름'. */
+export function receiptTotalText(t: Messages, receipt: Receipt): string {
+  return isReceiptUnknown(receipt) ? t.receiptView.unknownValue : formatKRW(receipt.totalKRW);
+}
+
+/** 합계 이름. 모르는 영수증에는 '0건'을 붙이지 않는다. */
+export function receiptTotalLabel(t: Messages, receipt: Receipt): string {
+  return isReceiptUnknown(receipt)
+    ? t.receiptView.share.total
+    : t.receiptView.total(receipt.chargeCount);
+}
+
+/** 건수(탑승권의 '건수' 칸). 모르는 영수증은 '모름'. */
+export function receiptCountText(t: Messages, receipt: Receipt): string {
+  return isReceiptUnknown(receipt)
+    ? t.receiptView.unknownValue
+    : t.receiptView.art.countValue(receipt.chargeCount);
+}
+
+/**
+ * 처음 여는 달 영수증. 지난달이 기본이지만(매달 1일 알림이 여는 달), 지난달이 모르는 영수증이면(구독을 모두 그 뒤에
+ * 등록했다) 이번 달을 연다 — 처음 등록한 사람이 리포트의 영수증을 누르면 늘 빈 지난달이 열렸다.
+ */
+export function defaultReceiptMonth(
+  subscriptions: readonly Subscription[],
+  usageLogs: readonly UsageLog[],
+  rate: number,
+  now: Date,
+): { kind: "month"; year: number; month: number } {
+  const last = { kind: "month", ...previousMonth(now) } as const;
+  if (subscriptions.length === 0) return last;
+  const receipt = buildReceipt(subscriptions, usageLogs, last, rate, now);
+  return isReceiptUnknown(receipt)
+    ? { kind: "month", year: now.getFullYear(), month: now.getMonth() + 1 }
+    : last;
 }
 
 /** 영수증 밑의 알림. 빠진 것이 있으면 몇 개가 왜 빠졌는지 말한다. */
@@ -175,14 +233,14 @@ export function formatReceiptShareText(
       ? s.upcomingInTitle
       : s.todayInTitle;
   const lines = [s.title(formatReceiptPeriodText(t, receipt.period), suffix), "-".repeat(28)];
-  if (receipt.lines.length === 0) lines.push(receiptEmptyText(t, options));
+  if (receipt.lines.length === 0) lines.push(receiptEmptyText(t, receipt, options));
   for (const line of receipt.lines) {
     const count = line.chargeDates.length > 1 ? ` ×${line.chargeDates.length}` : "";
     const upcoming = line.upcomingDates.length > 0 ? s.upcomingMark : "";
     lines.push(`${line.name}${count}${upcoming}  ${formatKRW(line.amountKRW)}`);
   }
   lines.push("-".repeat(28));
-  lines.push(`${s.total}  ${formatKRW(receipt.totalKRW)}`);
+  lines.push(`${s.total}  ${receiptTotalText(t, receipt)}`);
   if (receipt.defendedKRW > 0) lines.push(`${s.defended}  ${formatKRW(receipt.defendedKRW)}`);
   lines.push("", t.receiptView.notes.base);
   return lines.join("\n");

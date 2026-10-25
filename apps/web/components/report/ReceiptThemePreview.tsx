@@ -74,8 +74,13 @@ export function ReceiptThemePreview({
   const t = useT();
   const tRef = useLatestT();
   const locale = useLocale();
-  // 그린 결과는 어느 디자인의 것인지와 함께 둔다 — 디자인을 바꾸면 다른 디자인의 그림·실패를 보이지 않는다.
-  const [image, setImage] = useState<{ theme: ReceiptTheme; url: string | null } | null>(null);
+  // 그린 결과는 어느 디자인·영수증의 것인지와 함께 둔다 — 디자인이나 달을 바꾸면 다시 그리는 동안 다른 디자인·달의
+  // 그림을 보이지 않는다(9월로 넘긴 뒤 1초쯤 '9월' 아래에 10월 그림이 남아 있었다).
+  const [image, setImage] = useState<{
+    theme: ReceiptTheme;
+    receipt: Receipt;
+    url: string | null;
+  } | null>(null);
 
   useEffect(() => {
     if (theme === "classic") return;
@@ -85,10 +90,10 @@ export function ReceiptThemePreview({
       .then((blob) => {
         if (cancelled) return;
         url = URL.createObjectURL(blob);
-        setImage({ theme, url });
+        setImage({ theme, receipt, url });
       })
       .catch(() => {
-        if (!cancelled) setImage({ theme, url: null });
+        if (!cancelled) setImage({ theme, receipt, url: null });
       });
     return () => {
       cancelled = true;
@@ -104,7 +109,7 @@ export function ReceiptThemePreview({
       </div>
     );
   }
-  const current = image?.theme === theme ? image : null;
+  const current = image?.theme === theme && image.receipt === receipt ? image : null;
   const ready = current?.url ?? null;
   const failed = current !== null && current.url === null;
   return (

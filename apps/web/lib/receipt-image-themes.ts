@@ -287,7 +287,7 @@ async function renderPass(art: ReceiptArt, t: Messages): Promise<HTMLCanvasEleme
   // 기간·건수·발행
   const cells: [string, string][] = [
     [a.period, art.periodPlain],
-    [a.count, a.countValue(art.count)],
+    [a.count, art.countText],
     [a.issued, art.issuedDate],
   ];
   const cellW = (innerW - 24) / 3;

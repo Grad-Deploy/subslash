@@ -5,6 +5,8 @@ import {
   formatReceiptPeriodText,
   receiptEmptyText,
   receiptFootnotes,
+  receiptTotalLabel,
+  receiptTotalText,
   receiptNumber,
   receiptPeriodSuffix,
   type ReceiptRenderOptions,
@@ -144,8 +146,13 @@ async function renderClassic(
 
   // 줄
   if (receipt.lines.length === 0) {
-    text(receiptEmptyText(t, options), { size: 14, color: MUTED, align: "center" });
-    y += 22;
+    // 모르는 영수증의 설명은 길어서 줄을 나눈다.
+    measure.font = font(14);
+    for (const part of wrap(measure, receiptEmptyText(t, receipt, options), inner)) {
+      text(part, { size: 14, color: MUTED, align: "center" });
+      y += 20;
+    }
+    y += 2;
   }
   for (const line of receipt.lines) {
     // 이름과 그 아래 설명은 붙여 쓰고, 다음 구독과는 띄운다.
@@ -164,7 +171,7 @@ async function renderClassic(
   dashed();
 
   // 합계
-  row(v.total(receipt.chargeCount), formatKRW(receipt.totalKRW), 18, 800);
+  row(receiptTotalLabel(t, receipt), receiptTotalText(t, receipt), 18, 800);
   if (receipt.billedTotalKRW !== receipt.totalKRW) {
     row(v.billed, formatKRW(receipt.billedTotalKRW), 12, 400, MUTED);
   }
