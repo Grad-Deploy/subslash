@@ -14,8 +14,8 @@ import type { ReceiptRenderOptions } from "./receipt-view";
  * 않는다 — 내용이 링크 안에 있어 이 화면을 거치지 않고도 풀어 읽을 수 있으므로, 화면이 막아도 지켜지는 것이 없다.
  *
  * 링크에는 영수증에 꼭 필요한 것만 싣는다: 사용 횟수·1회 단가, 나눠 내는지와 카드에 찍힌 금액은 싣지 않는다(남에게 보일
- * 까닭이 적고 사생활에 가깝다). 가리면(`maskNames`) 구독별 줄을 아예 싣지 않고 구독 수·결제 건수·합계만 싣는다 — 이름만
- * 가리면 29,811원 같은 금액과 결제일로 어느 서비스인지 짐작된다. 금액을 반올림하지 않는 것은 내지 않은 숫자를 그리게 되어서다.
+ * 까닭이 적고 사생활에 가깝다). 가리면(`maskNames`) 합계만 싣는다(`totalOnly`) — 이름만 가리면 29,811원 같은 금액과
+ * 결제일로, 구독 수·건수만으로도 무엇을 내는지 좁혀진다. 금액을 반올림하지 않는 것은 내지 않은 숫자를 그리게 되어서다.
  * 구독 ID와 사용자가 고른 아이콘(`iconUrl`)도 싣지 않는다 — 아이콘은 그림 주소일 수 있다.
  *
  * 링크는 남이 지어 보낼 수 있으므로 푸는 쪽은 칸마다 모양을 확인하고, 하나라도 틀리면 아무것도 그리지 않는다.
@@ -106,8 +106,30 @@ function wireName(name: string): string | null {
 }
 
 /**
+ * 가린 영수증: 기간·발행일·합계만 남긴다. 구독별 줄·해지 목록·지킨 돈과 구독 수·건수·환율·빠진 구독 수는 0으로 둔다 —
+ * 개수만으로도 무엇을 내는지 좁혀진다. 결제 예정이 있었는지(합계가 '결제 예정 포함'인지)만 0·1로 남긴다. 보내는 글·링크와
+ * 받는 쪽이 모두 이것을 써서, 예전 링크(구독 수를 실은 3판)도 받는 쪽에서 합계만 보인다.
+ */
+function totalOnly(receipt: Receipt): Receipt {
+  return {
+    ...receipt,
+    lines: [],
+    killed: [],
+    billedTotalKRW: receipt.totalKRW,
+    priciestPerUse: null,
+    chargeCount: 0,
+    upcomingCount: receipt.upcomingCount > 0 ? 1 : 0,
+    evidencedCount: 0,
+    defendedKRW: 0,
+    defendedUnknownCount: 0,
+    fx: { historical: 0, current: 0 },
+    excluded: { undated: 0, beforeRegistration: 0, trial: 0 },
+  };
+}
+
+/**
  * 링크에 실리는 것과 같은 영수증과 그릴 때 넘길 것 — 공유하는 글도 이것으로 만들어 글과 링크가 같은 것을 보이게 한다.
- * 가리면 구독별 줄과 해지한 구독 목록이 빠지고 요약이 남는다. 사용 횟수·나눠 내는 금액은 늘 빠진다.
+ * 가리면 합계만 남는다(`totalOnly`). 사용 횟수·나눠 내는 금액은 늘 빠진다.
  */
 export function shareableReceipt(
   receipt: Receipt,
@@ -120,13 +142,7 @@ export function shareableReceipt(
     priciestPerUse: null,
   };
   if (maskNames) {
-    return {
-      receipt: { ...base, lines: [], killed: [] },
-      render: {
-        unverified: true,
-        hidden: { subscriptions: receipt.lines.length, charges: receipt.chargeCount },
-      },
-    };
+    return { receipt: totalOnly(receipt), render: { unverified: true, hidden: true } };
   }
   return {
     receipt: {
@@ -151,9 +167,12 @@ export function shareableReceipt(
 }
 
 function toWire(
-  { receipt, issuedAt, theme }: Pick<SharedReceipt, "receipt" | "issuedAt" | "theme">,
+  shared: Pick<SharedReceipt, "receipt" | "issuedAt" | "theme">,
   { maskNames = false }: ShareOptions,
 ): Wire {
+  const { issuedAt, theme } = shared;
+  // 가리면 합계만 남긴 영수증을 싣는다. 구독 수(`h`)는 가렸다는 표시로만 두고 0을 싣는다.
+  const receipt = maskNames ? totalOnly(shared.receipt) : shared.receipt;
   return {
     v: VERSION,
     p: receipt.period,
@@ -169,7 +188,7 @@ function toWire(
           line.billingCycle,
           line.killedOn,
         ]),
-    ...(maskNames ? { h: receipt.lines.length } : {}),
+    ...(maskNames ? { h: 0 } : {}),
     t: receipt.totalKRW,
     n: [receipt.chargeCount, receipt.upcomingCount, receipt.evidencedCount],
     d: [receipt.defendedKRW, receipt.defendedUnknownCount],
@@ -326,8 +345,8 @@ function fromWire(value: unknown, labels: MaskedNameLabels, now: Date): SharedRe
   if (!isWon(MAX_TOTAL_WON)(wire.t)) return null;
   if (!tupleOf<[number, number, number]>(wire.n, 3, isCount)) return null;
   const [chargeCount, upcomingCount, evidencedCount] = wire.n;
-  if (upcomingCount > chargeCount || evidencedCount > chargeCount) return null;
   if (!hidden) {
+    if (upcomingCount > chargeCount || evidencedCount > chargeCount) return null;
     // 합계와 건수는 줄에서 다시 센다. 만들 때(buildReceipt)와 같은 순서로 더하므로 고치지 않은 링크면 정확히 같다.
     const total = lines.reduce((sum, line) => sum + line.amountKRW, 0);
     const count = (pick: (line: ReceiptLine) => string[]) =>
@@ -342,28 +361,28 @@ function fromWire(value: unknown, labels: MaskedNameLabels, now: Date): SharedRe
   if (!tupleOf<[number, number]>(wire.fx, 2, isCount)) return null;
   if (!tupleOf<[number, number, number]>(wire.x, 3, isCount)) return null;
   const [defendedKRW, defendedUnknownCount] = wire.d as [number, number];
+  const receipt: Receipt = {
+    period,
+    isComplete: wire.c === 1,
+    lines,
+    totalKRW: wire.t,
+    billedTotalKRW: wire.t,
+    chargeCount,
+    upcomingCount,
+    evidencedCount,
+    priciestPerUse: null,
+    defendedKRW,
+    defendedUnknownCount,
+    killed,
+    fx: { historical: wire.fx[0], current: wire.fx[1] },
+    excluded: { undated: wire.x[0], beforeRegistration: wire.x[1], trial: wire.x[2] },
+  };
   return {
-    receipt: {
-      period,
-      isComplete: wire.c === 1,
-      lines,
-      totalKRW: wire.t,
-      billedTotalKRW: wire.t,
-      chargeCount,
-      upcomingCount,
-      evidencedCount,
-      priciestPerUse: null,
-      defendedKRW,
-      defendedUnknownCount,
-      killed,
-      fx: { historical: wire.fx[0], current: wire.fx[1] },
-      excluded: { undated: wire.x[0], beforeRegistration: wire.x[1], trial: wire.x[2] },
-    },
+    // 가린 영수증은 링크에 무엇이 실렸든 합계만 그린다(구독 수를 실은 예전 3판 링크도).
+    receipt: hidden ? totalOnly(receipt) : receipt,
     issuedAt,
     theme: wire.th,
-    render: hidden
-      ? { unverified: true, hidden: { subscriptions: wire.h as number, charges: chargeCount } }
-      : { unverified: true },
+    render: hidden ? { unverified: true, hidden: true } : { unverified: true },
   };
 }
 

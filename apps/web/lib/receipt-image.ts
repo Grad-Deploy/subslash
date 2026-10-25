@@ -171,7 +171,7 @@ async function renderClassic(
   dashed();
 
   // 합계
-  row(receiptTotalLabel(t, receipt), receiptTotalText(t, receipt), 18, 800);
+  row(receiptTotalLabel(t, receipt, options), receiptTotalText(t, receipt), 18, 800);
   if (receipt.billedTotalKRW !== receipt.totalKRW) {
     row(v.billed, formatKRW(receipt.billedTotalKRW), 12, 400, MUTED);
   }
