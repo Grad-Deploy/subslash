@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Download, Share2 } from "lucide-react";
@@ -22,6 +22,7 @@ import { useLatestT, useServiceNames, useT } from "@lib/i18n";
 import { renderReceiptImage } from "@lib/receipt-image";
 import { ReceiptThemePicker, ReceiptThemePreview } from "@components/report/ReceiptThemePreview";
 import { useReceiptTheme } from "@lib/receipt-theme";
+import { RECEIPT_SHARE_PATH, encodeReceiptShare } from "@lib/receipt-share";
 import { Button } from "@components/ui/button";
 import { Spinner, PageSpinner } from "@components/ui/spinner";
 import { CopyFallbackDialog } from "@components/ui/copy-fallback-dialog";
@@ -105,6 +106,20 @@ function ReceiptFromQuery() {
     };
   }, [subscriptions, usageLogs, period, rate, now, rateOn, names]);
 
+  // 공유 링크는 미리 만들어 둔다 — 누른 뒤에 압축을 기다리면 브라우저가 공유 창을 사용자 동작으로 보지 않을 수 있다.
+  // 만든 링크는 어느 영수증·디자인의 것인지와 함께 두어, 바뀐 뒤에 옛 링크를 보내지 않는다.
+  const shareKey = useMemo(() => ({ receipt, theme }), [receipt, theme]);
+  const [shareLink, setShareLink] = useState<{ key: typeof shareKey; url: string } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void encodeReceiptShare({ receipt, issuedAt: now, theme }).then((hash) => {
+      if (!cancelled) setShareLink({ key: shareKey, url: webUrl(`${RECEIPT_SHARE_PATH}#${hash}`) });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [shareKey, receipt, theme, now]);
+
   if (!mounted || ratesLoading) return <PageSpinner />;
 
   const previous = shift(period, -1);
@@ -134,12 +149,17 @@ function ReceiptFromQuery() {
     }
   };
 
+  // 링크는 영수증만 보여 주는 화면이다. 지금 영수증·디자인의 링크가 준비되기 전에는 공유 버튼을 잠근다.
+  const readyLink = shareLink?.key === shareKey ? shareLink.url : null;
+
   const shareAsText = async () => {
-    const text = formatReceiptShareText(tRef.current, receipt);
+    if (!readyLink) return;
+    // 앱의 공유 창은 주소 칸을 따로 넘기지 않으므로 글 끝에 링크를 적는다(절약 공유와 같다).
+    const text = `${formatReceiptShareText(tRef.current, receipt)}\n\n${readyLink}`;
     const shared = await shareText({
       title: v.paperLabel(formatReceiptPeriodText(tRef.current, period)),
       text,
-      url: webUrl("/"),
+      url: readyLink,
     });
     if (shared) return;
     if (await copyText(text)) flash(tRef.current.receiptView.page.textCopied);
@@ -221,7 +241,7 @@ function ReceiptFromQuery() {
           {busy ? <Spinner className="size-4" /> : <Download className="size-4" aria-hidden />}
           {v.page.saveImage}
         </Button>
-        <Button onClick={() => void shareAsText()}>
+        <Button disabled={!readyLink} onClick={() => void shareAsText()}>
           <Share2 className="size-4" aria-hidden />
           {v.page.share}
         </Button>
