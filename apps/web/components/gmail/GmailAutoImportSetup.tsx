@@ -1,29 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { useAuth } from "@hooks/useAuth";
+import { useGmailLink } from "@hooks/useGmailLink";
 import { webUrl } from "@lib/api";
 import { GMAIL_AUTO_SCRIPT_MANIFEST, gmailAutoScript } from "@lib/gmail-import";
-import { leaveForExternal } from "@lib/native";
-import {
-  createGmailLink,
-  deleteGmailLink,
-  fetchGmailLink,
-  markGmailConnectStarted,
-  requestGmailDiscoveriesAfterConnect,
-  startGmailConnect,
-  type GmailLinkState,
-} from "@lib/gmail-auto-client";
 import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { CopyBlock } from "./CopyBlock";
 import { GmailOlderScanNotice } from "./GmailOlderScanNotice";
 import { ScriptNewStep } from "./ScriptNewStep";
-import { useKnownText, useLatestT, useLocale, useT } from "@lib/i18n";
+import { useKnownText, useLocale, useT } from "@lib/i18n";
 import { appsScriptLocale } from "@lib/i18n/config";
-
-type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 
 /**
  * Gmail 자동 가져오기 켜기. 로그인한 사람에게만 연결 토큰이 든 스크립트를 준다 — 찾은 구독을
@@ -34,84 +22,22 @@ export function GmailAutoImportSetup() {
   const known = useKnownText();
   const locale = useLocale();
   const s = t.importing.setup;
-  const tRef = useLatestT();
   const formatDateTime = (iso: string) => new Date(iso).toLocaleString(t.importing.locale);
-  const { account, loading } = useAuth();
-  const [link, setLink] = useState<GmailLinkState | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
+  const {
+    account,
+    loading,
+    link,
+    token,
+    busy,
+    error,
+    pendingConfirm,
+    setPendingConfirm,
+    connect,
+    issueToken,
+    runConfirm,
+  } = useGmailLink({ failures: (m) => m.importing.setup });
   // 원클릭 연결이 있을 때 복사 방식은 접어 둔다.
   const [showManual, setShowManual] = useState(false);
-
-  useEffect(() => {
-    if (!account) return;
-    fetchGmailLink()
-      .then(setLink)
-      .catch((e: unknown) =>
-        setError(e instanceof Error ? e.message : tRef.current.importing.setup.readFailed),
-      );
-  }, [account, tRef]);
-
-  const issueToken = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      setToken(await createGmailLink());
-      setLink(await fetchGmailLink());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : tRef.current.importing.setup.tokenFailed);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const connect = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      // Google 권한 화면으로 간다. 웹에서는 이 탭이 그대로 가고(돌아오면 화면이 다시 그려진다),
-      // 앱에서는 인앱 브라우저로 열고 닫힐 때 연결 상태를 다시 읽는다 — 앱 웹뷰가 통째로 나가면
-      // 담아 둔 화면을 잃는다.
-      const url = await startGmailConnect(locale);
-      markGmailConnectStarted();
-      leaveForExternal(url, () => {
-        setBusy(false);
-        fetchGmailLink()
-          .then(setLink)
-          .catch(() => undefined);
-        // 연결하면서 최근 메일 검사가 끝났으니 찾은 구독을 바로 받고, 1분쯤 뒤에 오는 나머지 1년 치도
-        // 이어서 받는다.
-        requestGmailDiscoveriesAfterConnect();
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : tRef.current.importing.setup.connectFailed);
-      setBusy(false);
-    }
-  };
-
-  const disconnect = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await deleteGmailLink();
-      setToken(null);
-      setLink(await fetchGmailLink());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : tRef.current.importing.setup.disconnectFailed);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const runConfirm = () => {
-    const kind = pendingConfirm;
-    setPendingConfirm(null);
-    if (kind === "reconnect") void connect();
-    else if (kind === "rotate") void issueToken();
-    else if (kind === "disconnect") void disconnect();
-  };
 
   return (
     <section className="space-y-3 rounded-2xl border p-4">

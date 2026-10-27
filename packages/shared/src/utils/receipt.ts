@@ -1,7 +1,7 @@
 import type { ChargeRecord, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { isSameService } from "./chargeHistory";
-import { getBilledAmount, toKRW } from "./currency";
+import { getBilledAmount, getBilledAmountKRW, toKRW } from "./currency";
 import { isInTrial, startOfDay, localDateKey } from "./date";
 import type { RateOn } from "./historicalRate";
 import {
@@ -313,7 +313,7 @@ export function buildReceipt(
         sub.billingCycle === "yearly"
           ? getMyAnnualAmountKRW(sub, dayRate)
           : getMyMonthlyAmountKRW(sub, dayRate);
-      recordedBilled += toKRW(getBilledAmount(sub), sub.currency, dayRate);
+      recordedBilled += getBilledAmountKRW(sub, dayRate);
     }
     // 결제 메일의 금액은 카드에 청구된 값이다. 나눠 내면 지금 나누는 비율로 내 몫을 계산한다.
     const billedNow = getBilledAmount(sub);
