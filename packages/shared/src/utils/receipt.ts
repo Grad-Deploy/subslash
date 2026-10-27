@@ -137,6 +137,15 @@ function periodStart(period: ReceiptPeriod): Date {
     : new Date(period.year, 0, 1);
 }
 
+/** 영수증 기간의 첫날과 마지막 날(기기 시간대 0시). `buildReceipt`가 보는 기간과 같다. */
+export function receiptPeriodDays(period: ReceiptPeriod): { start: Date; end: Date } {
+  const after = periodEnd(period);
+  return {
+    start: periodStart(period),
+    end: new Date(after.getFullYear(), after.getMonth(), after.getDate() - 1),
+  };
+}
+
 function inPeriod(date: Date | null, period: ReceiptPeriod): boolean {
   if (!date) return false;
   return date >= periodStart(period) && date < periodEnd(period);
