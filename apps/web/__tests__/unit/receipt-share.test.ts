@@ -137,6 +137,14 @@ describe("영수증 공유 링크", () => {
     }
   });
 
+  it("공유하는 글의 영수증은 링크를 푼 영수증과 같다", async () => {
+    const hash = (await encodeReceiptShare({ receipt: receipt(), issuedAt, theme: "classic" }))!;
+    const back = (await decode(hash))!;
+    const shown = shareableReceipt(receipt(), {}, labels);
+    expect(shown.receipt).toStrictEqual(back.receipt);
+    expect(shown.render).toStrictEqual(back.render);
+  });
+
   describe("가림 모드", () => {
     it("합계만 싣는다 — 구독별 줄·해지 목록·지킨 돈·구독 수·건수·환율·빠진 구독 수는 싣지 않는다", async () => {
       const hash = (await encodeReceiptShare(

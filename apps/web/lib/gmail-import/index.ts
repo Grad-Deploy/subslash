@@ -1,4 +1,5 @@
 import type { ReceiptEmail } from "@subslash/shared";
+import { fromBase64Url } from "@lib/base64url";
 
 /**
  * Gmail 결제 메일 가져오기.
@@ -28,10 +29,11 @@ function text(value: unknown, max: number): string {
 export async function decodeGmailImport(encoded: string): Promise<ReceiptEmail[]> {
   let data: unknown;
   try {
-    const base64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
-    const bytes = Uint8Array.from(atob(padded), (char) => char.charCodeAt(0));
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+    const bytes = fromBase64Url(encoded);
+    if (!bytes) throw new GmailImportError();
+    const stream = new Blob([bytes as BlobPart])
+      .stream()
+      .pipeThrough(new DecompressionStream("gzip"));
     data = JSON.parse(await new Response(stream).text());
   } catch {
     throw new GmailImportError();
