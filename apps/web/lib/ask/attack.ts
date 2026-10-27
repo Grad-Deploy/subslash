@@ -46,7 +46,6 @@ const COMPACT_WORDS = [
   "지시문",
   "탈옥",
   "jailbreak",
-  "systemprompt",
   "systemmessage",
   "prompt",
   "unsupported",
@@ -144,8 +143,8 @@ const PATTERNS: RegExp[] = [
 /** 프롬프트 인젝션·탈옥 시도로 보이는지. */
 export function isPromptAttack(question: string): boolean {
   const text = normalize(question);
-  const flat = compact(text);
-  const plain = unleet(flat);
-  if (COMPACT_WORDS.some((word) => flat.includes(word) || plain.includes(word))) return true;
+  // 낱말에는 바꿔 쓴 글자가 없으므로 되돌린 모양에서만 찾아도 붙여 쓴 그대로의 낱말이 걸린다.
+  const plain = unleet(compact(text));
+  if (COMPACT_WORDS.some((word) => plain.includes(word))) return true;
   return PATTERNS.some((pattern) => pattern.test(text));
 }

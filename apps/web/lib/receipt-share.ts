@@ -1,4 +1,10 @@
-import type { Receipt, ReceiptLine, ReceiptPeriod } from "@subslash/shared";
+import {
+  DAY_MS,
+  isChargeDate,
+  type Receipt,
+  type ReceiptLine,
+  type ReceiptPeriod,
+} from "@subslash/shared";
 import { isReceiptTheme, type ReceiptTheme } from "./receipt-theme";
 import type { ReceiptRenderOptions } from "./receipt-view";
 
@@ -136,17 +142,14 @@ export function shareableReceipt(
   { maskNames = false }: ShareOptions,
   labels: MaskedNameLabels,
 ): { receipt: Receipt; render: ReceiptRenderOptions } {
-  const base: Receipt = {
-    ...receipt,
-    billedTotalKRW: receipt.totalKRW,
-    priciestPerUse: null,
-  };
   if (maskNames) {
     return { receipt: totalOnly(receipt), render: { unverified: true, hidden: true } };
   }
   return {
     receipt: {
-      ...base,
+      ...receipt,
+      billedTotalKRW: receipt.totalKRW,
+      priciestPerUse: null,
       lines: receipt.lines.map((line, i) => ({
         ...line,
         subscriptionId: `shared-${i}`,
@@ -177,22 +180,21 @@ function toWire(
     v: VERSION,
     p: receipt.period,
     c: receipt.isComplete ? 1 : 0,
-    l: maskNames
-      ? []
-      : receipt.lines.map((line) => [
-          wireName(line.name),
-          line.chargeDates,
-          line.upcomingDates,
-          line.evidencedDates,
-          line.amountKRW,
-          line.billingCycle,
-          line.killedOn,
-        ]),
+    // 가린 영수증은 `totalOnly`가 줄·해지 목록을 이미 비웠다.
+    l: receipt.lines.map((line) => [
+      wireName(line.name),
+      line.chargeDates,
+      line.upcomingDates,
+      line.evidencedDates,
+      line.amountKRW,
+      line.billingCycle,
+      line.killedOn,
+    ]),
     ...(maskNames ? { h: 0 } : {}),
     t: receipt.totalKRW,
     n: [receipt.chargeCount, receipt.upcomingCount, receipt.evidencedCount],
     d: [receipt.defendedKRW, receipt.defendedUnknownCount],
-    k: maskNames ? [] : receipt.killed.map((item) => [wireName(item.name), item.killedOn]),
+    k: receipt.killed.map((item) => [wireName(item.name), item.killedOn]),
     fx: [receipt.fx.historical, receipt.fx.current],
     x: [receipt.excluded.undated, receipt.excluded.beforeRegistration, receipt.excluded.trial],
     i: issuedAt.toISOString(),
@@ -201,16 +203,7 @@ function toWire(
 }
 
 /** 달력에 있는 날(`YYYY-MM-DD`). 2026-13-45처럼 모양만 맞는 것은 아니다. */
-function isDay(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return false;
-  const [year, month, day] = match.slice(1).map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  return (
-    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
-  );
-}
+const isDay = isChargeDate;
 /** 이름 칸: 가린 것(null)이거나, 길이 안이고 연락처처럼 보이지 않는 글. */
 const isWireName = (value: unknown): value is string | null =>
   value === null ||
@@ -220,10 +213,8 @@ const isWireName = (value: unknown): value is string | null =>
     !looksLikeContact(value));
 const isCount = (value: unknown): value is number =>
   typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100_000;
-const isWon =
-  (max: number) =>
-  (value: unknown): value is number =>
-    typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= max;
+const isWon = (value: unknown, max: number): value is number =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= max;
 const tupleOf = <T>(
   value: unknown,
   length: number,
@@ -275,7 +266,7 @@ function readLine(
   if (!Array.isArray(value) || value.length !== 7) return null;
   const [name, chargeDates, upcomingDates, evidencedDates, amount, cycle, killedOn] =
     value as unknown[];
-  if (!isWireName(name) || !isWon(MAX_LINE_WON)(amount)) return null;
+  if (!isWireName(name) || !isWon(amount, MAX_LINE_WON)) return null;
   const isDays = (days: unknown): days is string[] =>
     Array.isArray(days) && days.length <= MAX_DATES && days.every((d) => isDay(d) && inPeriod(d));
   if (!isDays(chargeDates) || !isDays(upcomingDates) || !isDays(evidencedDates)) return null;
@@ -312,8 +303,10 @@ function fromWire(value: unknown, labels: MaskedNameLabels, now: Date): SharedRe
   // 거절하지 않게 양쪽에 하루씩 여유를 둔다(한국에서 1일 0시 30분에 만든 것을 미국에서 열면 그곳은 아직 전날이다).
   const issuedAt = typeof wire.i === "string" ? new Date(wire.i) : null;
   if (!issuedAt || Number.isNaN(issuedAt.getTime())) return null;
-  const DAY = 24 * 60 * 60 * 1000;
-  if (issuedAt.getTime() < start.getTime() - DAY || issuedAt.getTime() > now.getTime() + DAY) {
+  if (
+    issuedAt.getTime() < start.getTime() - DAY_MS ||
+    issuedAt.getTime() > now.getTime() + DAY_MS
+  ) {
     return null;
   }
   if (!isReceiptTheme(wire.th)) return null;
@@ -342,7 +335,7 @@ function fromWire(value: unknown, labels: MaskedNameLabels, now: Date): SharedRe
     });
   }
 
-  if (!isWon(MAX_TOTAL_WON)(wire.t)) return null;
+  if (!isWon(wire.t, MAX_TOTAL_WON)) return null;
   if (!tupleOf<[number, number, number]>(wire.n, 3, isCount)) return null;
   const [chargeCount, upcomingCount, evidencedCount] = wire.n;
   if (!hidden) {
@@ -357,7 +350,7 @@ function fromWire(value: unknown, labels: MaskedNameLabels, now: Date): SharedRe
     if (evidencedCount !== count((line) => line.evidencedDates)) return null;
   }
   if (!Array.isArray(wire.d) || wire.d.length !== 2) return null;
-  if (!isWon(MAX_TOTAL_WON)(wire.d[0]) || !isCount(wire.d[1])) return null;
+  if (!isWon(wire.d[0], MAX_TOTAL_WON) || !isCount(wire.d[1])) return null;
   if (!tupleOf<[number, number]>(wire.fx, 2, isCount)) return null;
   if (!tupleOf<[number, number, number]>(wire.x, 3, isCount)) return null;
   const [defendedKRW, defendedUnknownCount] = wire.d as [number, number];
