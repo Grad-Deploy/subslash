@@ -66,10 +66,13 @@ test("이번 달 영수증에 지금 구독 중인 구독이 나오고, 결제�
   await expect(receipt).toContainText("₩22,800");
   await expect(receipt).not.toContainText("결제된 구독이 없어요");
 
-  // 등록한 달보다 앞선 8월은 구독 중이었는지 모른다.
+  // 등록한 달보다 앞선 8월은 구독 중이었는지 모른다 — '결제 없음·₩0'이 아니라 '모름'이다.
   await page.goto("/report/receipt?month=2026-08");
   const august = page.getByRole("article", { name: "2026년 8월 구독 영수증" });
-  await expect(august).toContainText("결제된 구독이 없어요");
+  await expect(august).toContainText("2026년 8월에 결제했는지 알 수 있는 구독이 없어요");
+  await expect(august).toContainText("모름");
+  await expect(august).not.toContainText("결제된 구독이 없어요");
+  await expect(august).not.toContainText("₩0");
   await expect(august).toContainText(
     "등록한 달보다 앞선 달 중 결제 메일을 찾지 못한 달은 구독 중이었는지 몰라 넣지 않았어요(2개)",
   );
