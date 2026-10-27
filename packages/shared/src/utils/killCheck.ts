@@ -1,5 +1,5 @@
 import type { BillingCycle, SubscriptionStatus } from "../types";
-import { getNextBillingDateFor } from "./date";
+import { getNextBillingDateFor, parseTimestamp } from "./date";
 
 /**
  * 해지가 실제로 결제를 멈췄는지 확인한다.
@@ -43,9 +43,8 @@ export type KillCheckStatus =
  * 결제일로 본다. 기준이 어긋나면 지킨 것으로 센 달을 확인하지 않게 된다.
  */
 export function getFirstBillingDateAfterKill(sub: KillCheckSubscription): Date | null {
-  if (!sub.killedAt) return null;
-  const killed = new Date(sub.killedAt);
-  if (Number.isNaN(killed.getTime())) return null;
+  const killed = parseTimestamp(sub.killedAt);
+  if (!killed) return null;
   // getNextBillingDateFor는 기준일 당일의 결제일을 지난 것으로 본다. 하루 전을
   // 기준으로 넘겨야 해지 당일의 결제일이 포함된다.
   const dayBefore = new Date(killed.getFullYear(), killed.getMonth(), killed.getDate() - 1);

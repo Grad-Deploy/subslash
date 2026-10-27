@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { DEFAULT_EXCHANGE_RATE } from "@subslash/shared";
+import { DEFAULT_EXCHANGE_RATE, parseTimestamp } from "@subslash/shared";
 import { useStore, isValidExchangeRate, type ExchangeRateSource } from "@lib/store";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -10,9 +10,8 @@ import { refreshExchangeRate } from "@hooks/useAutoExchangeRate";
 import { intlLocale, type Locale } from "@lib/i18n/config";
 
 function formatUpdatedAt(iso: string | null, locale: Locale): string {
-  if (!iso) return "";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
+  const date = parseTimestamp(iso);
+  if (!date) return "";
   return date.toLocaleDateString(intlLocale(locale), {
     year: "numeric",
     month: "long",

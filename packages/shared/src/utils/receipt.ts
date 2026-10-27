@@ -2,7 +2,7 @@ import type { ChargeRecord, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { isSameService } from "./chargeHistory";
 import { getBilledAmount, getBilledAmountKRW, toKRW } from "./currency";
-import { isInTrial, startOfDay, localDateKey } from "./date";
+import { isInTrial, parseTimestamp, startOfDay, localDateKey } from "./date";
 import type { RateOn } from "./historicalRate";
 import {
   getMyAnnualAmountKRW,
@@ -106,9 +106,8 @@ export interface Receipt {
 
 /** ISO 시각을 그 기기 시간대의 날짜로. 깨졌으면 null. */
 function dayOf(iso: string | undefined): Date | null {
-  if (!iso) return null;
-  const time = new Date(iso);
-  return Number.isNaN(time.getTime()) ? null : startOfDay(time);
+  const time = parseTimestamp(iso);
+  return time ? startOfDay(time) : null;
 }
 
 /** 그 달의 결제일. 연간 구독이 그 달에 결제되지 않으면 null. 짧은 달은 말일로 당긴다. */
@@ -152,8 +151,8 @@ function lastUsesLogIn(
   for (const log of logs) {
     if (log.subscriptionId !== subscriptionId) continue;
     if ((log.metric ?? "uses") !== "uses") continue;
-    const at = new Date(log.checkedAt);
-    if (Number.isNaN(at.getTime()) || !inPeriod(at, period)) continue;
+    const at = parseTimestamp(log.checkedAt);
+    if (!at || !inPeriod(at, period)) continue;
     if (!latest || at.getTime() >= Date.parse(latest.checkedAt)) latest = log;
   }
   return latest;
