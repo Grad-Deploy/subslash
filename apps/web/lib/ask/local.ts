@@ -1,4 +1,4 @@
-import { POPULAR_SERVICES, type Subscription } from "@subslash/shared";
+import { POPULAR_SERVICES, daysInMonth, type Subscription } from "@subslash/shared";
 import { isPromptAttack } from "./attack";
 import { ALIAS_NAMES, compactName } from "./fuzzy";
 import { matchPresets, matchSubscriptions } from "./service-match";
@@ -38,7 +38,7 @@ const clampDays = (n: number) => Math.min(31, Math.max(1, Math.round(n)));
 
 /** 오늘(포함)부터 이번 달 마지막 날까지의 일수. */
 function daysToMonthEnd(now: Date): number {
-  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const last = daysInMonth(now.getFullYear(), now.getMonth());
   return clampDays(last - now.getDate() + 1);
 }
 
