@@ -1,23 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Lock, X } from "lucide-react";
 import { useIsClient } from "@hooks/useIsClient";
-import { useAuth } from "@hooks/useAuth";
+import { useGmailLink } from "@hooks/useGmailLink";
 import { webUrl } from "@lib/api";
 import { GMAIL_AUTO_SCRIPT_MANIFEST, gmailAutoScript } from "@lib/gmail-import";
-import { leaveForExternal, openExternal } from "@lib/native";
-import {
-  createGmailLink,
-  deleteGmailLink,
-  fetchGmailLink,
-  markGmailConnectStarted,
-  requestGmailDiscoveriesAfterConnect,
-  startGmailConnect,
-  type GmailLinkState,
-} from "@lib/gmail-auto-client";
+import { openExternal } from "@lib/native";
 import { GmailOlderScanNotice } from "../GmailOlderScanNotice";
 import { isGmailAutoImportOpen } from "@lib/privacy";
 import { InlineConfirm } from "../../ui/inline-confirm";
@@ -26,10 +17,8 @@ import { AppCopyCode } from "./AppCopyCode";
 import { AppImportFlow } from "./AppImportFlow";
 import { AppStepper, StepTip, type AppStep } from "./AppStepper";
 import { useOverlayLock } from "@hooks/useOverlayLock";
-import { useKnownText, useLatestT, useLocale, useT } from "@lib/i18n";
+import { useKnownText, useLocale, useT } from "@lib/i18n";
 import { appsScriptLocale } from "@lib/i18n/config";
-
-type PendingConfirm = "reconnect" | "rotate" | "disconnect";
 
 /**
  * 앱의 결제 메일 불러오기(/import 안내). 웹의 긴 안내 대신 고를 방법 → 한 단계씩으로 나눈다.
@@ -45,7 +34,6 @@ export function AppImportGuide() {
   const known = useKnownText();
   const locale = useLocale();
   const g = t.importing.guide;
-  const tRef = useLatestT();
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString(g.dateFormat, { month: "long", day: "numeric" });
   const confirmCopy = {
@@ -53,88 +41,31 @@ export function AppImportGuide() {
     rotate: g.confirmRotate,
     disconnect: g.confirmDisconnect,
   };
-  const { account, loading } = useAuth();
-  const [link, setLink] = useState<GmailLinkState | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [manual, setManual] = useState(false);
   const [pcSheet, setPcSheet] = useState(false);
-
-  useEffect(() => {
-    if (!account) return;
-    fetchGmailLink()
-      .then(setLink)
-      .catch((e: unknown) =>
-        setError(e instanceof Error ? e.message : tRef.current.importing.guide.readFailed),
-      );
-  }, [account, tRef]);
-
-  const refresh = () =>
-    fetchGmailLink()
-      .then(setLink)
-      .catch(() => undefined);
-
-  const connect = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      // 앱 웹뷰가 통째로 나가면 담아 둔 화면을 잃으므로 인앱 브라우저로 열고, 닫히면 다시 읽는다.
-      const url = await startGmailConnect(locale);
-      markGmailConnectStarted();
-      leaveForExternal(url, () => {
-        setBusy(false);
-        void refresh();
-        // 웹 앱이 최근 메일 검사까지 마쳤다. 앱은 화면이 새로 열리지 않으므로 찾은 구독을
-        // 받으라고 알려야 한다 — 알리지 않으면 앱을 껐다 켤 때까지 등록되지 않았다. 나머지 1년 치는
-        // 1분쯤 뒤에 오므로 조금 뒤에 다시 받는다.
-        requestGmailDiscoveriesAfterConnect();
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : tRef.current.importing.guide.connectFailed);
-      setBusy(false);
-    }
-  };
-
-  const issueToken = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      setToken(await createGmailLink());
+  const {
+    account,
+    loading,
+    link,
+    token,
+    clearToken,
+    busy,
+    error,
+    pendingConfirm,
+    setPendingConfirm,
+    refresh,
+    connect,
+    issueToken,
+    runConfirm,
+  } = useGmailLink({
+    failures: (m) => m.importing.guide,
+    onTokenIssued: () => {
       setStepIndex(0);
       setManual(true);
-      void refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : tRef.current.importing.guide.tokenFailed);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const disconnect = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await deleteGmailLink();
-      setToken(null);
-      setManual(false);
-      await refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : tRef.current.importing.guide.disconnectFailed);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const runConfirm = () => {
-    const kind = pendingConfirm;
-    setPendingConfirm(null);
-    if (kind === "reconnect") void connect();
-    else if (kind === "rotate") void issueToken();
-    else if (kind === "disconnect") void disconnect();
-  };
+    },
+    onDisconnected: () => setManual(false),
+  });
 
   const confirmBox = pendingConfirm && (
     <InlineConfirm
@@ -231,7 +162,7 @@ export function AppImportGuide() {
           onIndex={setStepIndex}
           onDone={() => {
             setManual(false);
-            setToken(null);
+            clearToken();
             void refresh();
           }}
         />
