@@ -144,6 +144,8 @@ export function receiptCountText(
     : t.receiptView.art.countValue(receipt.chargeCount);
 }
 
+export type ReceiptMonth = Extract<ReceiptPeriod, { kind: "month" }>;
+
 /**
  * 처음 여는 달 영수증. 지난달이 기본이지만(매달 1일 알림이 여는 달), 지난달이 모르는 영수증이면(구독을 모두 그 뒤에
  * 등록했다) 이번 달을 연다 — 처음 등록한 사람이 리포트의 영수증을 누르면 늘 빈 지난달이 열렸다.
@@ -153,7 +155,7 @@ export function defaultReceiptMonth(
   usageLogs: readonly UsageLog[],
   rate: number,
   now: Date,
-): { kind: "month"; year: number; month: number } {
+): ReceiptMonth {
   const last = { kind: "month", ...previousMonth(now) } as const;
   if (subscriptions.length === 0) return last;
   const receipt = buildReceipt(subscriptions, usageLogs, last, rate, now);

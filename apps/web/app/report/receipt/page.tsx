@@ -129,7 +129,10 @@ function ReceiptFromQuery() {
     url: string | null;
   } | null>(null);
   useEffect(() => {
+    // 환율을 받기 전의 영수증은 곧 버려지므로 압축하지 않는다.
+    if (!mounted || ratesLoading) return;
     let cancelled = false;
+    const { receipt, theme, maskNames } = shareKey;
     void encodeReceiptShare({ receipt, issuedAt: now, theme }, { maskNames }).then((hash) => {
       if (cancelled) return;
       setShareLink({ key: shareKey, url: hash ? webUrl(`${RECEIPT_SHARE_PATH}#${hash}`) : null });
@@ -137,7 +140,7 @@ function ReceiptFromQuery() {
     return () => {
       cancelled = true;
     };
-  }, [shareKey, receipt, theme, maskNames, now]);
+  }, [shareKey, now, mounted, ratesLoading]);
 
   if (!mounted || ratesLoading) return <PageSpinner />;
 
