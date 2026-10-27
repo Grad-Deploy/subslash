@@ -34,7 +34,6 @@ export interface ReceiptArt {
   total: string;
   /** "합계(내 몫) · 2건" */
   totalLabel: string;
-  count: number;
   /** 탑승권의 '건수' 칸("3건"). 모르는 영수증이면 '모름'. */
   countText: string;
   lines: { name: string; amount: string; meta: string }[];
@@ -98,7 +97,6 @@ export function receiptArt(
     issuedLine: v.issued(number, issuedDate),
     total: receiptTotalText(t, receipt),
     totalLabel: receiptTotalLabel(t, receipt, options),
-    count: receipt.chargeCount,
     countText: receiptCountText(t, receipt, options),
     lines: receipt.lines.map((line) => ({
       name: line.name,
