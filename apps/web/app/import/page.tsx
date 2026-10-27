@@ -22,6 +22,7 @@ import { isGmailAutoImportOpen } from "@lib/privacy";
 import { AutoImportModal } from "../../components/import/AutoImportModal";
 import { CopyBlock } from "../../components/gmail/CopyBlock";
 import { GmailAutoImportSetup } from "../../components/gmail/GmailAutoImportSetup";
+import { ScriptNewStep } from "../../components/gmail/ScriptNewStep";
 import { Button } from "../../components/ui/button";
 import { PageSpinner } from "../../components/ui/spinner";
 import { Inbox, SearchX } from "lucide-react";
@@ -87,19 +88,7 @@ function Guide() {
           {autoOpen && <h2 className="text-base font-bold">{p.direct}</h2>}
 
           <ol className="list-decimal space-y-2 pl-5">
-            <li>
-              {/* 영어 "Create a "처럼 링크 앞에 오는 말. 한국어는 비어 있다. */}
-              {p.step1Before}
-              <a
-                href="https://script.new"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-primary underline underline-offset-2"
-              >
-                {p.step1Link}
-              </a>
-              {p.step1After}
-            </li>
+            <ScriptNewStep />
             <li>{p.step2}</li>
             <li>{p.step3}</li>
             <li>{p.step4}</li>

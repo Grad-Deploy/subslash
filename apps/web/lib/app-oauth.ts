@@ -7,7 +7,7 @@
  * 넘겨받기 기한) 동안 기기에 적어 두고, 돌아오는 딥링크·앱 복귀·다음 실행 어느 쪽에서든 받아 간다.
  * verifier는 그 한 번의 로그인에만 쓰이고 받아 가면 지운다.
  */
-import { removeLocal } from "@lib/local-storage";
+import { removeLocal, writeLocal } from "@lib/local-storage";
 import { apiFetch } from "./api";
 
 const PENDING_KEY = "subslash-oauth-pending";
@@ -35,12 +35,9 @@ function readPending(): Pending | null {
   }
 }
 
+// 적지 못해도 이번 실행 안에서는 버튼이 쥔 값으로 받아 간다.
 export function savePendingLogin(verifier: string): void {
-  try {
-    localStorage.setItem(PENDING_KEY, JSON.stringify({ verifier, at: Date.now() }));
-  } catch {
-    // 적지 못해도 이번 실행 안에서는 버튼이 쥔 값으로 받아 간다.
-  }
+  writeLocal(PENDING_KEY, JSON.stringify({ verifier, at: Date.now() }));
 }
 
 // 지우지 못해도 기한이 지나면 읽지 않는다.
