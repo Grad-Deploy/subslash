@@ -1,7 +1,7 @@
 import { Currency, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { getBilledAmount } from "./currency";
-import { getDaysUntilBillingFor, getDaysUntilTrialEnd, DAY_MS } from "./date";
+import { getDaysUntilBillingFor, getDaysUntilTrialEnd, parseTimestamp, DAY_MS } from "./date";
 import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
 import { getKillCheckStatus } from "./killCheck";
@@ -224,8 +224,8 @@ function latestLogBySubscription(logs: UsageLog[]): Map<string, UsageLog> {
 }
 
 function daysSince(iso: string, now: Date): number | null {
-  const then = new Date(iso);
-  if (Number.isNaN(then.getTime())) return null;
+  const then = parseTimestamp(iso);
+  if (!then) return null;
   return Math.floor((now.getTime() - then.getTime()) / DAY_MS);
 }
 

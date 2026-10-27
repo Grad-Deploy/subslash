@@ -6,6 +6,7 @@ import {
   isResubscribeReminderDue,
   localDateKey,
   type Subscription,
+  parseTimestamp,
 } from "@subslash/shared";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -22,8 +23,8 @@ interface KillRecordCardProps {
 
 /** 이 구독을 해지한 날(기기 시간대). 기록이 없거나 깨졌으면 null. */
 function killedDate(sub: Subscription): string | null {
-  const killed = sub.killedAt ? new Date(sub.killedAt) : null;
-  return killed && !Number.isNaN(killed.getTime()) ? localDateKey(killed) : null;
+  const killed = parseTimestamp(sub.killedAt);
+  return killed ? localDateKey(killed) : null;
 }
 
 /**

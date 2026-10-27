@@ -4,6 +4,7 @@ import {
   type Receipt,
   type ReceiptLine,
   type ReceiptPeriod,
+  parseTimestamp,
 } from "@subslash/shared";
 import { isReceiptTheme, type ReceiptTheme } from "./receipt-theme";
 import type { ReceiptRenderOptions } from "./receipt-view";
@@ -301,8 +302,8 @@ function fromWire(value: unknown, labels: MaskedNameLabels, now: Date): SharedRe
 
   // 발행일은 기간이 시작한 뒤부터 오늘까지다. 기간의 시작은 받는 사람의 시간대로 재므로, 보낸 사람과 시간대가 달라도
   // 거절하지 않게 양쪽에 하루씩 여유를 둔다(한국에서 1일 0시 30분에 만든 것을 미국에서 열면 그곳은 아직 전날이다).
-  const issuedAt = typeof wire.i === "string" ? new Date(wire.i) : null;
-  if (!issuedAt || Number.isNaN(issuedAt.getTime())) return null;
+  const issuedAt = typeof wire.i === "string" ? parseTimestamp(wire.i) : null;
+  if (!issuedAt) return null;
   if (
     issuedAt.getTime() < start.getTime() - DAY_MS ||
     issuedAt.getTime() > now.getTime() + DAY_MS
