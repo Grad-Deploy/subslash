@@ -1,20 +1,14 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useTransition } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import {
-  DiscoveredSubscription,
-  parsePaymentSms,
-  formatKRW,
-  sumMonthlyKRW,
-} from "@subslash/shared";
+import { DiscoveredSubscription, formatKRW } from "@subslash/shared";
 import { useStore } from "../../lib/store";
-import { useExchangeRate } from "../../hooks/useExchangeRate";
+import { useImportCandidates } from "../../hooks/useImportCandidates";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../ui/dialog";
 import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { IS_APP_BUILD } from "@lib/platform";
-import { discoveredFormData } from "@lib/discovered-form";
 import { useT } from "@lib/i18n";
 import dynamic from "next/dynamic";
 import { SAMPLE_NAVER_RECEIPT, SAMPLE_SMS } from "./samples";
@@ -57,91 +51,38 @@ function WebAutoImportModal({
   onRegistered,
 }: AutoImportModalProps) {
   const w = useT().importing.web;
-  const { addBatchSubscriptions, subscriptions, clearSubscriptions } = useStore();
+  const { subscriptions, clearSubscriptions } = useStore();
   // '모두 지우고'는 해지한 구독과 그 절약 기록까지 지운다. 활성 목록만 보고 온
   // 사람이 모르고 지우지 않게 따로 적는다.
   const killedCount = subscriptions.filter((sub) => sub.status === "killed").length;
-  const rate = useExchangeRate();
-
-  // SMS parse state
-  const [smsText, setSmsText] = useState<string>(initialSmsText ?? "");
-
-  // Discovered items
-  const [discoveredItems, setDiscoveredItems] = useState<DiscoveredSubscription[]>(
-    initialDiscovered ?? [],
-  );
-  const [replaceExisting, setReplaceExisting] = useState<boolean>(!initialDiscovered);
-  /** 후보 개수 옆에 붙일 설명(예: "Gmail 메일 40통에서"). */
-  const [resultsNote, setResultsNote] = useState<string | null>(initialResultsNote ?? null);
+  const {
+    smsText,
+    changeText,
+    items,
+    resultsNote,
+    clear,
+    close,
+    toggle,
+    selected,
+    monthlyKRW,
+    replaceExisting,
+    setReplaceExisting,
+    willReplace,
+    register,
+  } = useImportCandidates({
+    isOpen,
+    onClose,
+    initialSmsText,
+    initialDiscovered,
+    initialResultsNote,
+    onRegistered,
+    // 웹은 처음 등록하는 사람이 많아 문자로 새로 채우는 것을 기본으로 둔다. 메일 후보를 확인할 때는 끈다.
+    replaceByDefault: !initialDiscovered,
+  });
   const [confirmClear, setConfirmClear] = useState(false);
-  const [, startTransition] = useTransition();
-
-  const sharedTextParsed = useRef(false);
-
-  const handleClearParsingRecords = () => {
-    setSmsText("");
-    setDiscoveredItems([]);
-    setResultsNote(null);
-  };
-
-  const handleClose = () => {
-    handleClearParsingRecords();
-    onClose();
-  };
-
-  // Run SMS parse
-  const handleParseSms = (textToParse: string) => {
-    const results = parsePaymentSms(textToParse);
-    setDiscoveredItems(results);
-    setResultsNote(null);
-  };
-
-  const handleFillSample = () => {
-    setSmsText(SAMPLE_SMS);
-    handleParseSms(SAMPLE_SMS);
-  };
-
-  const handleFillSampleNaver = () => {
-    setSmsText(SAMPLE_NAVER_RECEIPT);
-    handleParseSms(SAMPLE_NAVER_RECEIPT);
-  };
-
-  // Text arriving from the share target is parsed as soon as the modal opens.
-  useEffect(() => {
-    if (!isOpen || !initialSmsText || sharedTextParsed.current) return;
-    sharedTextParsed.current = true;
-    handleParseSms(initialSmsText);
-  }, [isOpen, initialSmsText]);
-
-  const handleToggleSelect = (id: string) => {
-    setDiscoveredItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, selected: !item.selected } : item)),
-    );
-  };
-
-  const handleBatchRegister = () => {
-    const selected = discoveredItems.filter((item) => item.selected);
-    if (selected.length === 0) return;
-
-    const dataList = selected.map(discoveredFormData);
-
-    startTransition(() => {
-      addBatchSubscriptions(dataList, { clearPrevious: replaceExisting });
-      // 결제 메일에서 찾은 후보는 이전 결제 메일들을 방금 등록한 구독에 적는다. 앱이 적는 사실이라
-      // 폼 데이터(SubscriptionFormData)로 넘기지 않는다.
-      useStore.getState().recordChargeHistory(selected);
-      onRegistered?.();
-      handleClose();
-    });
-  };
-
-  const selectedItems = discoveredItems.filter((i) => i.selected);
-  const selectedCount = selectedItems.length;
-  // 연간 영수증도 섞여 들어오므로 금액을 그대로 더하면 '/월' 합계가 부풀려진다.
-  const selectedMonthlyKRW = sumMonthlyKRW(selectedItems, rate);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
       <DialogContent className="max-w-2xl bg-card text-foreground border-border">
         <DialogHeader className="pb-2 border-b border-border">
           <div className="flex items-center gap-2">
@@ -162,7 +103,7 @@ function WebAutoImportModal({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={handleFillSample}
+                  onClick={() => changeText(SAMPLE_SMS)}
                   className="text-xs py-1 h-7 border-dashed"
                 >
                   {w.sampleCard}
@@ -171,17 +112,17 @@ function WebAutoImportModal({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={handleFillSampleNaver}
+                  onClick={() => changeText(SAMPLE_NAVER_RECEIPT)}
                   className="text-xs py-1 h-7 border-dashed text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/10"
                 >
                   {w.sampleNaver}
                 </Button>
-                {(smsText || discoveredItems.length > 0) && (
+                {(smsText || items.length > 0) && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={handleClearParsingRecords}
+                    onClick={clear}
                     className="text-xs py-1 h-7 border-dashed text-rose-600 dark:text-rose-400 border-rose-500/40 hover:bg-rose-500/10"
                   >
                     {w.clear}
@@ -204,10 +145,7 @@ function WebAutoImportModal({
             <textarea
               rows={5}
               value={smsText}
-              onChange={(e) => {
-                setSmsText(e.target.value);
-                handleParseSms(e.target.value);
-              }}
+              onChange={(e) => changeText(e.target.value)}
               placeholder={w.placeholder}
               className="w-full p-3 text-xs md:text-sm font-mono rounded-lg border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
@@ -217,7 +155,7 @@ function WebAutoImportModal({
             붙여넣었는데 아무것도 못 찾았으면 그렇다고 말한다. 화면이 조용하면 사용자는 앱이
             멈춘 줄 안다. 금액이 없으면 등록할 수 없다 — 지어낼 수 없는 값이라 그렇다고 적는다.
           */}
-          {smsText.trim().length > 0 && discoveredItems.length === 0 && (
+          {smsText.trim().length > 0 && items.length === 0 && (
             <div className="rounded-xl border border-dashed p-4 text-xs leading-relaxed text-muted-foreground">
               <p className="font-semibold text-foreground">{w.noneTitle}</p>
               <p className="mt-1.5">{w.noneAmount}</p>
@@ -225,12 +163,8 @@ function WebAutoImportModal({
             </div>
           )}
 
-          {discoveredItems.length > 0 && (
-            <DiscoveredResults
-              items={discoveredItems}
-              note={resultsNote}
-              onToggle={handleToggleSelect}
-            />
+          {items.length > 0 && (
+            <DiscoveredResults items={items} note={resultsNote} onToggle={toggle} />
           )}
         </div>
 
@@ -255,10 +189,10 @@ function WebAutoImportModal({
             </label>
 
             <div className="flex items-center gap-2 shrink-0">
-              {discoveredItems.length > 0 && (
+              {items.length > 0 && (
                 <button
                   type="button"
-                  onClick={handleClearParsingRecords}
+                  onClick={clear}
                   className="text-xs text-muted-foreground hover:text-foreground underline"
                 >
                   {w.clearResults}
@@ -291,25 +225,21 @@ function WebAutoImportModal({
 
           <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-end gap-3">
             <div className="flex shrink-0 items-center gap-2 w-full sm:w-auto justify-end">
-              <Button type="button" variant="outline" size="sm" onClick={handleClose}>
+              <Button type="button" variant="outline" size="sm" onClick={close}>
                 {w.cancel}
               </Button>
               <Button
                 type="button"
                 size="sm"
-                disabled={selectedCount === 0}
-                onClick={handleBatchRegister}
+                disabled={selected.length === 0}
+                onClick={register}
                 className="font-medium gap-1.5 shadow-sm h-auto min-h-8 py-1.5 whitespace-normal text-left"
               >
                 <span>
-                  {replaceExisting && subscriptions.length > 0
-                    ? w.registerReplace(selectedCount)
-                    : w.register(selectedCount)}
+                  {willReplace ? w.registerReplace(selected.length) : w.register(selected.length)}
                 </span>
-                {selectedMonthlyKRW > 0 && (
-                  <span className="text-xs opacity-90">
-                    {w.monthly(formatKRW(selectedMonthlyKRW))}
-                  </span>
+                {monthlyKRW > 0 && (
+                  <span className="text-xs opacity-90">{w.monthly(formatKRW(monthlyKRW))}</span>
                 )}
               </Button>
             </div>

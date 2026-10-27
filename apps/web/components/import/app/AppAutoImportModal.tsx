@@ -1,17 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useTransition } from "react";
+import React, { useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
-import {
-  type DiscoveredSubscription,
-  formatCurrency,
-  formatKRW,
-  parsePaymentSms,
-  sumMonthlyKRW,
-} from "@subslash/shared";
-import { useExchangeRate } from "@hooks/useExchangeRate";
+import { type DiscoveredSubscription, formatCurrency, formatKRW } from "@subslash/shared";
+import { useImportCandidates } from "@hooks/useImportCandidates";
 import { useStore } from "@lib/store";
-import { discoveredFormData } from "@lib/discovered-form";
 import { cn } from "@lib/utils";
 import { ServiceLogo } from "../../subscription/ServiceLogo";
 import type { AutoImportModalProps } from "../AutoImportModal";
@@ -54,73 +47,41 @@ export function AppAutoImportModal({
   const names = useServiceNames();
   const t = useT();
   const a = t.importing.app;
-  const { addBatchSubscriptions, subscriptions } = useStore();
-  const rate = useExchangeRate();
+  const { subscriptions } = useStore();
   const killedCount = subscriptions.filter((sub) => sub.status === "killed").length;
-
-  const [smsText, setSmsText] = useState(initialSmsText ?? "");
-  const [items, setItems] = useState<DiscoveredSubscription[]>(initialDiscovered ?? []);
-  const [resultsNote, setResultsNote] = useState<string | null>(initialResultsNote ?? null);
-  const [replaceExisting, setReplaceExisting] = useState(false);
+  // 웹과 달리 '기존 구독 지우고 등록'은 늘 꺼진 채로 연다(위 설명).
+  const {
+    smsText,
+    changeText,
+    items,
+    resultsNote,
+    clear,
+    close,
+    toggle,
+    selected,
+    monthlyKRW,
+    replaceExisting,
+    setReplaceExisting,
+    willReplace,
+    register,
+  } = useImportCandidates({
+    isOpen,
+    onClose,
+    initialSmsText,
+    initialDiscovered,
+    initialResultsNote,
+    onRegistered,
+    replaceByDefault: false,
+  });
   const [sampleIndex, setSampleIndex] = useState(0);
-  const [, startTransition] = useTransition();
-  const sharedTextParsed = useRef(false);
 
   // 메일에서 이미 찾아 온 후보를 확인하는 때는 붙여넣기 칸을 보이지 않는다.
   const reviewOnly = Boolean(initialDiscovered);
 
-  const parse = (text: string) => {
-    setItems(parsePaymentSms(text));
-    setResultsNote(null);
-  };
-
-  const clear = () => {
-    setSmsText("");
-    setItems([]);
-    setResultsNote(null);
-  };
-
-  const close = () => {
-    clear();
-    setReplaceExisting(false);
-    onClose();
-  };
-
-  // 공유하기로 받은 글은 열리자마자 읽는다.
-  useEffect(() => {
-    if (!isOpen || !initialSmsText || sharedTextParsed.current) return;
-    sharedTextParsed.current = true;
-    parse(initialSmsText);
-  }, [isOpen, initialSmsText]);
-
   const fillSample = () => {
     // 예시는 카드 문자와 네이버페이 영수증을 번갈아 채운다.
-    const text = sampleIndex % 2 === 0 ? SAMPLE_SMS : SAMPLE_NAVER_RECEIPT;
+    changeText(sampleIndex % 2 === 0 ? SAMPLE_SMS : SAMPLE_NAVER_RECEIPT);
     setSampleIndex((i) => i + 1);
-    setSmsText(text);
-    parse(text);
-  };
-
-  const toggle = (id: string) =>
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, selected: !item.selected } : item)),
-    );
-
-  const selected = items.filter((i) => i.selected);
-  // 연간 영수증도 섞이므로 금액을 그대로 더하지 않고 월 환산 헬퍼를 쓴다.
-  const monthlyKRW = sumMonthlyKRW(selected, rate);
-  const willReplace = replaceExisting && subscriptions.length > 0;
-
-  const register = () => {
-    if (selected.length === 0) return;
-    const dataList = selected.map(discoveredFormData);
-    startTransition(() => {
-      addBatchSubscriptions(dataList, { clearPrevious: willReplace });
-      // 결제 메일에서 찾은 후보는 이전 결제 메일들을 방금 등록한 구독에 적는다(웹의 등록 창과 같다).
-      useStore.getState().recordChargeHistory(selected);
-      onRegistered?.();
-      close();
-    });
   };
 
   return (
@@ -157,10 +118,7 @@ export function AppAutoImportModal({
             <textarea
               rows={items.length > 0 ? 2 : 6}
               value={smsText}
-              onChange={(e) => {
-                setSmsText(e.target.value);
-                parse(e.target.value);
-              }}
+              onChange={(e) => changeText(e.target.value)}
               placeholder={a.placeholder}
               className="w-full resize-none rounded-2xl border bg-card p-3 text-[13px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
