@@ -158,20 +158,14 @@ public class UsageStatsPlugin extends Plugin {
      */
     @PluginMethod
     public void query(PluginCall call) {
-        if (!isGranted()) {
-            call.reject("사용 기록 액세스가 꺼져 있습니다", "NOT_GRANTED");
-            return;
-        }
+        if (!requireGranted(call)) return;
         Set<String> wanted = readPackages(call);
         if (wanted == null) return;
         int days = Math.max(1, Math.min(400, call.getInt("days", 30)));
 
         Calendar cal = Calendar.getInstance();
         long end = cal.getTimeInMillis();
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
+        toStartOfDay(cal);
         cal.add(Calendar.DAY_OF_MONTH, -(days - 1));
         long start = cal.getTimeInMillis();
 
@@ -203,10 +197,7 @@ public class UsageStatsPlugin extends Plugin {
      */
     @PluginMethod
     public void queryForeground(PluginCall call) {
-        if (!isGranted()) {
-            call.reject("사용 기록 액세스가 꺼져 있습니다", "NOT_GRANTED");
-            return;
-        }
+        if (!requireGranted(call)) return;
         Long from = call.getLong("from");
         Long to = call.getLong("to");
         if (from == null || to == null || to <= from) {
@@ -253,8 +244,7 @@ public class UsageStatsPlugin extends Plugin {
      * 시각에서 사용이 잘린다(에뮬레이터의 유튜브 94초가 32초로 잡혔다).
      */
     private long walkForeground(long start, long end, Set<String> wanted, IntervalSink sink) {
-        UsageStatsManager usm = (UsageStatsManager) getContext().getSystemService(Context.USAGE_STATS_SERVICE);
-        UsageEvents events = usm.queryEvents(start, end);
+        UsageEvents events = queryEvents(start, end);
         UsageEvents.Event event = new UsageEvents.Event();
 
         long firstEventAt = -1;
@@ -311,8 +301,7 @@ public class UsageStatsPlugin extends Plugin {
      * 알림이 떠 있던 시간'이라고 적는다. 한 앱이 서비스를 여럿 띄우면 서비스(클래스)마다 따로 잰다.
      */
     private void walkServices(long start, long end, Set<String> wanted, IntervalSink sink) {
-        UsageStatsManager usm = (UsageStatsManager) getContext().getSystemService(Context.USAGE_STATS_SERVICE);
-        UsageEvents events = usm.queryEvents(start, end);
+        UsageEvents events = queryEvents(start, end);
         UsageEvents.Event event = new UsageEvents.Event();
         // "패키지|서비스 클래스" → 시작 시각
         Map<String, Long> running = new HashMap<>();
@@ -348,6 +337,26 @@ public class UsageStatsPlugin extends Plugin {
     private static String packageOf(String key) {
         int bar = key.indexOf('|');
         return bar < 0 ? key : key.substring(0, bar);
+    }
+
+    private UsageEvents queryEvents(long start, long end) {
+        UsageStatsManager usm = (UsageStatsManager) getContext().getSystemService(Context.USAGE_STATS_SERVICE);
+        return usm.queryEvents(start, end);
+    }
+
+    /** cal을 그날 0시(이 폰의 시간대)로 옮긴다. */
+    private static void toStartOfDay(Calendar cal) {
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+    }
+
+    /** 사용 기록 액세스가 꺼져 있으면 NOT_GRANTED로 거절하고 false. */
+    private boolean requireGranted(PluginCall call) {
+        if (isGranted()) return true;
+        call.reject("사용 기록 액세스가 꺼져 있습니다", "NOT_GRANTED");
+        return false;
     }
 
     private boolean isGranted() {
@@ -433,10 +442,7 @@ public class UsageStatsPlugin extends Plugin {
             long cursor = from;
             while (cursor < to) {
                 cal.setTimeInMillis(cursor);
-                cal.set(Calendar.HOUR_OF_DAY, 0);
-                cal.set(Calendar.MINUTE, 0);
-                cal.set(Calendar.SECOND, 0);
-                cal.set(Calendar.MILLISECOND, 0);
+                toStartOfDay(cal);
                 cal.add(Calendar.DAY_OF_MONTH, 1);
                 long segmentEnd = Math.min(to, cal.getTimeInMillis());
                 entry(dayFormat.format(cursor), pkg)[slot] += segmentEnd - cursor;
@@ -446,12 +452,7 @@ public class UsageStatsPlugin extends Plugin {
 
         private long[] entry(String day, String pkg) {
             String key = day + "|" + pkg;
-            long[] value = byKey.get(key);
-            if (value == null) {
-                value = new long[] { 0, 0, 0 };
-                byKey.put(key, value);
-            }
-            return value;
+            return byKey.computeIfAbsent(key, k -> new long[] { 0, 0, 0 });
         }
 
         JSArray toJSArray() {
