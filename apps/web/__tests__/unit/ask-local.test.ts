@@ -317,6 +317,43 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
     }
   });
 
+  it("화면 언어마다의 인사·고맙다는 말은 AI에 보내지 않고 곧바로 unsupported다", () => {
+    // "hello"만 기기가 답하고 "halo"·"merci"는 AI로 가서 횟수를 썼다 — 횟수가 찼으면 인사에 '질문이 많아 잠시 쉬어
+    // 갈게요'가 나왔다(웹 QA 2026-10-27).
+    for (const q of [
+      "hello",
+      "Halo",
+      "merci",
+      "Merci beaucoup!",
+      "감사합니다",
+      "고마워요~",
+      "thank you",
+      "你好",
+      "谢谢！",
+      "こんにちは",
+      "ありがとうございます。",
+      "xin chào",
+      "Cảm ơn",
+      "bonjour",
+      "hola",
+      "gracias",
+      "hallo",
+      "danke schön",
+      "olá",
+      "obrigada",
+    ]) {
+      expect(localAskCall(q, { now: NOW }), q).toEqual({ tool: "unsupported" });
+    }
+    // 인사로 시작해도 질문이 붙으면 인사로 읽지 않는다.
+    for (const q of [
+      "hello 한 달 구독비 얼마야?",
+      "감사합니다 OTT에 얼마 써?",
+      "hola, how much a month?",
+    ]) {
+      expect(localAskCall(q, { now: NOW }), q).not.toEqual({ tool: "unsupported" });
+    }
+  });
+
   it("띄어 쓴 '일 년'도 1년이다", () => {
     // "일 년 뒤엔 얼마"를 한 달 합계로 답했다(운영 QA 2026-10-24).
     expect(
