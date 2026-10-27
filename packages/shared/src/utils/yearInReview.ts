@@ -2,6 +2,7 @@ import type { Subscription, SubscriptionCategory, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { CATEGORY_LABELS } from "../constants/categories";
 import { toKRW } from "./currency";
+import { parseTimestamp } from "./date";
 import { getYearDefendedSeries, sumMyAnnualKRW, type YearDefendedSeries } from "./sharing";
 import { rateForCharge, type RateOn } from "./historicalRate";
 
@@ -65,8 +66,7 @@ export interface YearInReview {
 }
 
 function yearOf(iso: string | undefined): number | null {
-  const time = iso ? Date.parse(iso) : NaN;
-  return Number.isNaN(time) ? null : new Date(time).getFullYear();
+  return parseTimestamp(iso)?.getFullYear() ?? null;
 }
 
 /** 가장 늦은 체크인. 시각이 같으면 나중에 기록한 것을 최신으로 본다. */

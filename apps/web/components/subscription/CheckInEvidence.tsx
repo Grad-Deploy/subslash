@@ -9,6 +9,7 @@ import {
   getCheckInEvidence,
   metricOfLog,
   unitCostPart,
+  parseTimestamp,
 } from "@subslash/shared";
 import { useT, type Messages } from "@lib/i18n";
 import { describeQuantityText, unitCostText } from "@lib/i18n/check-in-text";
@@ -48,8 +49,8 @@ function describeCostChange(
 }
 
 function formatCheckedAt(t: Messages, iso: string): string {
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime())
+  const date = parseTimestamp(iso);
+  return !date
     ? t.checkin.evidence.unknownDate
     : date.toLocaleDateString(t.checkin.evidence.dateLocale, { month: "long", day: "numeric" });
 }
