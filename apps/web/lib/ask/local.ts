@@ -324,9 +324,26 @@ const SUB_COUNT =
   /구독\s*(?:중인\s*(?:거|것|서비스)?|하는\s*(?:거|것|서비스)?)?\s*(?:이|은|을|가|는)?\s*(?:지금\s*)?(?:총|전부|모두|다)?\s*몇\s*(?:개|가지)|how many subscriptions/;
 const NOT_SUB_COUNT = /결제|청구|체험|해지|취소|끊|안\s*쓰|겹|중복|이번\s*주|다음\s*주|며칠|\d/;
 
-/** 인사·뜻 없는 짧은 말("ㅎㅇ", "안녕"). 물어볼 수 있는 것을 보여 준다(unsupported) — 사용법(help)이 아니다. */
-const SMALL_TALK =
-  /^(?:ㅎㅇ|ㅎ2|하이|ㅂㅇ|안녕(?:하세요)?|반가워(?:요)?|ㅇㅇ|ㄴㄴ|ㅋ+|ㅎ+|ㅠ+|ㅜ+|hi|hello|hey|yo)[\s!?.~]*$/;
+/**
+ * 인사·고맙다는 말·뜻 없는 짧은 말("ㅎㅇ", "안녕", "merci"). 물어볼 수 있는 것을 보여 준다(unsupported) — 사용법(help)이
+ * 아니다. 화면 언어(lib/i18n/config)마다의 인사도 둔다 — 한국어·영어만 있을 때 "hello"는 기기가 답하고 "halo"·"merci"는
+ * AI로 가서 횟수를 썼고, 횟수가 찼으면 인사에 '질문이 많아 잠시 쉬어 갈게요'가 나왔다. 서버도 이 규칙을 횟수를 세기
+ * 전에 돌린다.
+ */
+const SMALL_TALK = new RegExp(
+  "^(?:" +
+    [
+      // 한국어
+      "ㅎㅇ|ㅎ2|하이|ㅂㅇ|안녕(?:하세요)?|반가워(?:요)?|고마워(?:요)?|감사(?:합니다|해요)?|ㄱㅅ|ㄳ|땡큐|ㅇㅇ|ㄴㄴ|ㅋ+|ㅎ+|ㅠ+|ㅜ+",
+      // 영어
+      "hi|hello|hey|yo|hiya|good (?:morning|afternoon|evening)|thanks?(?: you)?|thx|ty",
+      // 중국어·일본어·베트남어
+      "你好|您好|嗨|谢谢|謝謝|こんにちは|こんばんは|おはよう(?:ございます)?|ありがとう(?:ございます)?|xin chào|chào(?: bạn)?|cảm ơn|cám ơn",
+      // 프랑스어·스페인어·독일어·포르투갈어(와 같은 철자의 인사 'halo')
+      "bonjour|salut|coucou|merci(?: beaucoup)?|hola|buenos días|buenas|gracias|hallo|halo|guten tag|moin|danke(?: schön)?|olá|ola|oi|bom dia|obrigad[oa]",
+    ].join("|") +
+    ")[\\s!?.~！？。、]*$",
+);
 
 /** 앱 사용법 질문: 어떻게·어디서를 묻고 앱 기능 낱말이 함께 있다. 도움말(`help`)로 넘긴다. */
 const HELP_HOW =
