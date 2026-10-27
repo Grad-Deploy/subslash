@@ -1,16 +1,6 @@
-import { formatKRW, type Receipt, formatDotDate } from "@subslash/shared";
+import { formatKRW, type Receipt } from "@subslash/shared";
 import type { Messages } from "@lib/i18n/messages";
-import {
-  describeReceiptLine,
-  formatReceiptPeriodText,
-  receiptEmptyText,
-  receiptFootnotes,
-  receiptTotalLabel,
-  receiptTotalText,
-  receiptNumber,
-  receiptPeriodSuffix,
-  type ReceiptRenderOptions,
-} from "./receipt-view";
+import { receiptNumber, type ReceiptRenderOptions } from "./receipt-view";
 import { receiptArt } from "./receipt-art";
 import { fit, wrap } from "./receipt-canvas";
 import { renderThemedReceipt } from "./receipt-image-themes";
@@ -70,6 +60,8 @@ async function renderClassic(
   options: ReceiptRenderOptions,
 ): Promise<Blob> {
   const v = t.receiptView;
+  // 적는 말은 다른 테마와 같은 곳(receiptArt)에서 만든다. 합계 아래 덧붙임만 이 종이의 모양대로 나눠 적는다.
+  const art = receiptArt(t, receipt, issuedAt, options);
   // 글꼴이 늦게 오면 대체 글꼴로 그려진다. 이미 받아 둔 글꼴만 기다린다.
   await document.fonts?.ready;
 
@@ -131,13 +123,13 @@ async function renderClassic(
   y += 22;
   text(v.title, { size: 13, color: MUTED, align: "center" });
   y += 24;
-  text(`${formatReceiptPeriodText(t, receipt.period)}${receiptPeriodSuffix(t, receipt)}`, {
+  text(art.period, {
     size: 15,
     weight: 700,
     align: "center",
   });
   y += 20;
-  text(v.issued(receiptNumber(receipt.period), formatDotDate(issuedAt)), {
+  text(art.issuedLine, {
     size: 11,
     color: MUTED,
     align: "center",
@@ -145,24 +137,20 @@ async function renderClassic(
   dashed();
 
   // 줄
-  if (receipt.lines.length === 0) {
+  if (art.empty !== null) {
     // 모르는 영수증의 설명은 길어서 줄을 나눈다.
     measure.font = font(14);
-    for (const part of wrap(measure, receiptEmptyText(t, receipt, options), inner)) {
+    for (const part of wrap(measure, art.empty, inner)) {
       text(part, { size: 14, color: MUTED, align: "center" });
       y += 20;
     }
     y += 2;
   }
-  for (const line of receipt.lines) {
+  for (const line of art.lines) {
     // 이름과 그 아래 설명은 붙여 쓰고, 다음 구독과는 띄운다.
-    row(line.name, formatKRW(line.amountKRW), 15, 600, INK, 18);
+    row(line.name, line.amount, 15, 600, INK, 18);
     measure.font = font(11);
-    for (const detail of wrap(
-      measure,
-      describeReceiptLine(t, line, receipt.period, options),
-      inner,
-    )) {
+    for (const detail of wrap(measure, line.meta, inner)) {
       text(detail, { size: 11, color: MUTED });
       y += 15;
     }
@@ -171,7 +159,7 @@ async function renderClassic(
   dashed();
 
   // 합계
-  row(receiptTotalLabel(t, receipt, options), receiptTotalText(t, receipt), 18, 800);
+  row(art.totalLabel, art.total, 18, 800);
   if (receipt.billedTotalKRW !== receipt.totalKRW) {
     row(v.billed, formatKRW(receipt.billedTotalKRW), 12, 400, MUTED);
   }
@@ -202,7 +190,7 @@ async function renderClassic(
 
   // 알림
   measure.font = font(10);
-  for (const note of receiptFootnotes(t, receipt, options)) {
+  for (const note of art.notes) {
     for (const detail of wrap(measure, `· ${note}`, inner)) {
       text(detail, { size: 10, color: MUTED });
       y += 14;

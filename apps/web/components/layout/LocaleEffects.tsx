@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useLocale, useT } from "@lib/i18n";
+import { usePageTitleOverride } from "@lib/page-title";
 
 /**
  * `<html lang>`과 탭 제목을 화면 언어에 맞춘다. 첫 화면은 localeInitScript가 lang을 먼저 맞추고, 설정에서
@@ -10,22 +11,20 @@ import { useLocale, useT } from "@lib/i18n";
  *
  * 탭 제목은 페이지의 metadata가 서버에서 한국어로 정하므로, 화면이 그려진 뒤 `pageTitles` 표로 바꾼다 —
  * 예전에는 영어 화면에서도 탭이 '로그인 · SubSlash'였다. 화면을 옮기면 Next.js가 새 페이지의 한국어 제목을
- * 넣으므로 주소가 바뀔 때마다, 그리고 제목이 바뀔 때마다 다시 맞춘다.
+ * 넣으므로 주소가 바뀔 때마다, 그리고 제목이 바뀔 때마다 다시 맞춘다. 주소로 정할 수 없는 화면(404)은
+ * `usePageTitle`로 제목을 정한다.
  */
 export function LocaleEffects() {
   const locale = useLocale();
   const titles = useT().pageTitles;
   const pathname = usePathname();
+  const override = usePageTitleOverride();
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
   useEffect(() => {
     const path = (pathname ?? "/").replace(/\/+$/, "") || "/";
-    // 없는 주소는 표에 둘 수 없어 404 화면이 단 표시(NotFoundView)로 가린다.
-    const notFound = document.querySelector('[data-page-title="notFound"]') !== null;
-    const title = notFound
-      ? titles.notFound
-      : ((titles.paths as Record<string, string>)[path] ?? titles.site);
+    const title = override ?? (titles.paths as Record<string, string>)[path] ?? titles.site;
     const apply = () => {
       if (document.title !== title) document.title = title;
     };
@@ -35,6 +34,6 @@ export function LocaleEffects() {
     const observer = new MutationObserver(apply);
     observer.observe(document.head, { childList: true, subtree: true, characterData: true });
     return () => observer.disconnect();
-  }, [titles, pathname]);
+  }, [titles, pathname, override]);
   return null;
 }

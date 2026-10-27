@@ -1,24 +1,15 @@
 import React from "react";
-import { formatKRW, type Receipt, formatDotDate } from "@subslash/shared";
+import { formatKRW, type Receipt } from "@subslash/shared";
 import { useT } from "@lib/i18n";
-import {
-  describeReceiptLine,
-  formatReceiptPeriodText,
-  receiptFootnotes,
-  receiptEmptyText,
-  receiptTotalLabel,
-  receiptTotalText,
-  receiptNumber,
-  receiptPeriodSuffix,
-  type ReceiptRenderOptions,
-} from "@lib/receipt-view";
+import { receiptArt } from "@lib/receipt-art";
+import type { ReceiptRenderOptions } from "@lib/receipt-view";
 
 /**
  * 영수증 모양으로 그린 한 달·한 해의 구독 결제(utils/receipt).
  *
  * 종이는 어두운 화면에서도 밝은 종이색이다 — 영수증이라는 물건을 그린 것이라 테마를 따르지 않는다.
- * 대신 글자 색도 함께 고정해 어느 테마에서나 대비가 같다. 이미지로 저장하는 그림(lib/receipt-image)과
- * 같은 문구를 쓴다.
+ * 대신 글자 색도 함께 고정해 어느 테마에서나 대비가 같다. 적는 말은 이미지로 저장하는 그림과 같은 곳
+ * (lib/receipt-art)에서 만들고, 합계 아래 덧붙임만 이 종이의 모양대로 나눠 적는다.
  */
 export function ReceiptPaper({
   receipt,
@@ -32,45 +23,33 @@ export function ReceiptPaper({
 }) {
   const t = useT();
   const v = t.receiptView;
-  const period = formatReceiptPeriodText(t, receipt.period);
-  const issued = formatDotDate(issuedAt);
+  const art = receiptArt(t, receipt, issuedAt, render);
 
   return (
     <article
-      aria-label={v.paperLabel(period)}
+      aria-label={v.paperLabel(art.periodPlain)}
       className="receipt-paper relative mx-auto w-full max-w-sm bg-[#fbfaf7] px-6 pt-7 pb-10 text-zinc-900"
     >
       <header className="space-y-1 text-center">
         <p className="text-xl font-extrabold tracking-tight">SubSlash</p>
         <p className="text-xs text-zinc-500">{v.title}</p>
-        <p className="pt-1 text-base font-bold">
-          {period}
-          {receiptPeriodSuffix(t, receipt)}
-        </p>
-        <p className="text-[11px] text-zinc-500 tabular-nums">
-          {v.issued(receiptNumber(receipt.period), issued)}
-        </p>
+        <p className="pt-1 text-base font-bold">{art.period}</p>
+        <p className="text-[11px] text-zinc-500 tabular-nums">{art.issuedLine}</p>
       </header>
 
       <hr className="my-4 border-t border-dashed border-zinc-400" />
 
-      {receipt.lines.length === 0 ? (
-        <p className="py-4 text-center text-sm text-zinc-500">
-          {receiptEmptyText(t, receipt, render)}
-        </p>
+      {art.empty !== null ? (
+        <p className="py-4 text-center text-sm text-zinc-500">{art.empty}</p>
       ) : (
         <ul className="space-y-3">
-          {receipt.lines.map((line) => (
-            <li key={line.subscriptionId}>
+          {art.lines.map((line, i) => (
+            <li key={receipt.lines[i].subscriptionId}>
               <div className="flex items-baseline justify-between gap-3">
                 <span className="min-w-0 truncate text-[15px] font-semibold">{line.name}</span>
-                <span className="shrink-0 font-semibold tabular-nums">
-                  {formatKRW(line.amountKRW)}
-                </span>
+                <span className="shrink-0 font-semibold tabular-nums">{line.amount}</span>
               </div>
-              <p className="text-[11px] leading-snug text-zinc-500">
-                {describeReceiptLine(t, line, receipt.period, render)}
-              </p>
+              <p className="text-[11px] leading-snug text-zinc-500">{line.meta}</p>
             </li>
           ))}
         </ul>
@@ -80,8 +59,8 @@ export function ReceiptPaper({
 
       <dl className="space-y-1.5">
         <div className="flex items-baseline justify-between">
-          <dt className="text-sm font-bold">{receiptTotalLabel(t, receipt, render)}</dt>
-          <dd className="text-lg font-extrabold tabular-nums">{receiptTotalText(t, receipt)}</dd>
+          <dt className="text-sm font-bold">{art.totalLabel}</dt>
+          <dd className="text-lg font-extrabold tabular-nums">{art.total}</dd>
         </div>
         {receipt.billedTotalKRW !== receipt.totalKRW && (
           <div className="flex items-baseline justify-between text-xs text-zinc-500">
@@ -112,7 +91,7 @@ export function ReceiptPaper({
       <hr className="my-4 border-t border-dashed border-zinc-400" />
 
       <ul className="space-y-0.5 text-[10px] leading-snug text-zinc-500">
-        {receiptFootnotes(t, receipt, render).map((note) => (
+        {art.notes.map((note) => (
           <li key={note}>· {note}</li>
         ))}
       </ul>
