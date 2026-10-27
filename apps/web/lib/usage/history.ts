@@ -293,17 +293,13 @@ export function monthlyTotals(
   history: UsageHistory,
   packages: readonly string[],
   now: Date,
-): { month: string; label: string; totals: UsageTotals }[] {
-  const months: { month: string; label: string; totals: UsageTotals }[] = [];
+): { month: string; totals: UsageTotals }[] {
+  const months: { month: string; totals: UsageTotals }[] = [];
   for (let i = 11; i >= 0; i -= 1) {
     const first = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const month = localMonthKey(first);
     const dates = monthDates(month, now);
-    months.push({
-      month,
-      label: `${first.getMonth() + 1}월`,
-      totals: totalsFor(history, packages, dates),
-    });
+    months.push({ month, totals: totalsFor(history, packages, dates) });
   }
   return months;
 }

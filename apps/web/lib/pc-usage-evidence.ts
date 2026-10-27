@@ -1,4 +1,4 @@
-import { writeLocal } from "@lib/local-storage";
+import { parseStoredObject, readLocal, writeLocal } from "@lib/local-storage";
 import {
   cliDayKey,
   type CliDayKey,
@@ -37,15 +37,7 @@ export const EVIDENCE_KEY = "subslash-pc-usage-evidence";
 const KEEP_DAYS = 40;
 
 export function readEvidence(): EvidenceStore {
-  try {
-    const raw = localStorage.getItem(EVIDENCE_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : {};
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? (parsed as EvidenceStore)
-      : {};
-  } catch {
-    return {};
-  }
+  return parseStoredObject<EvidenceStore>(readLocal(EVIDENCE_KEY));
 }
 
 // 저장소를 쓸 수 없으면 이번 화면 안에서만 합친다.

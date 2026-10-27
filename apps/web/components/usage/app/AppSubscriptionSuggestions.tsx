@@ -5,6 +5,7 @@ import type { ServicePreset, Subscription } from "@subslash/shared";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import { useLocale, useServiceNames, useT } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
+import { parseStoredObject } from "@lib/local-storage";
 import { packageLabel } from "@lib/usage/packages";
 import { readDeviceValue, SUGGEST_DISMISSED_KEY, writeDeviceValue } from "@lib/usage/storage";
 import {
@@ -19,15 +20,6 @@ import { Button } from "../../ui/button";
 
 /** 한 번에 보여 줄 후보 수. 많이 쓴 순으로 앞에서부터. */
 const MAX_SHOWN = 2;
-
-function parseDismissed(raw: string | null): SuggestDismissMap {
-  try {
-    const parsed = JSON.parse(raw ?? "{}") as unknown;
-    return parsed && typeof parsed === "object" ? (parsed as SuggestDismissMap) : {};
-  } catch {
-    return {};
-  }
-}
 
 /**
  * 폰 기록으로 찾은 '등록하지 않았는데 쓰고 있는 구독'을 묻는 카드(안드로이드 앱, 대시보드).
@@ -52,7 +44,7 @@ export function AppSubscriptionSuggestions({
   useEffect(() => {
     let alive = true;
     void readDeviceValue(SUGGEST_DISMISSED_KEY).then((raw) => {
-      if (alive) setDismissed(parseDismissed(raw));
+      if (alive) setDismissed(parseStoredObject<SuggestDismissMap>(raw));
     });
     return () => {
       alive = false;

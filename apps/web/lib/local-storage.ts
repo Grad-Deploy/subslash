@@ -23,6 +23,21 @@ export function writeLocal(key: string, value: string): boolean {
   }
 }
 
+/**
+ * 기기에 둔 JSON 객체(id → 값 같은 표)를 읽는다. 없거나 깨졌거나 객체가 아니면 빈 객체 — 기기 설정이 깨졌다고
+ * 화면이 멈추지 않게. 칸 하나하나의 모양은 확인하지 않는다.
+ */
+export function parseStoredObject<T extends object>(raw: string | null): T {
+  try {
+    const parsed: unknown = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as T)
+      : ({} as T);
+  } catch {
+    return {} as T;
+  }
+}
+
 /** 값을 지운다. 지우지 못해도 조용히 넘어간다. */
 export function removeLocal(key: string): void {
   try {

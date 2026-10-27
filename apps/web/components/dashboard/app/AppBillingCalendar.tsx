@@ -2,7 +2,13 @@
 
 import React, { useMemo, useState } from "react";
 import { CalendarDays, ChevronRight } from "lucide-react";
-import { formatDday, getDaysUntilBillingFor, isInTrial, type Subscription } from "@subslash/shared";
+import {
+  daysInMonth,
+  formatDday,
+  getDaysUntilBillingFor,
+  isInTrial,
+  type Subscription,
+} from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { cn } from "@lib/utils";
 import { useT, useServiceNames } from "@lib/i18n";
@@ -27,7 +33,7 @@ function useUpcoming(now: Date) {
         (row): row is { sub: Subscription; days: number } => row.days !== null && row.days >= 0,
       )
       .sort((a, b) => a.days - b.days);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const lastDay = daysInMonth(now.getFullYear(), now.getMonth());
     const leftThisMonth = dated.filter((row) => now.getDate() + row.days <= lastDay).length;
     return { active, next: dated[0] ?? null, leftThisMonth };
   }, [subscriptions, now]);
