@@ -1,10 +1,13 @@
 import {
   DAY_MS,
   isChargeDate,
+  localDateKey,
+  receiptPeriodDays,
   type Receipt,
   type ReceiptLine,
   type ReceiptPeriod,
 } from "@subslash/shared";
+import { fromBase64Url, toBase64Url } from "./base64url";
 import { isReceiptTheme, type ReceiptTheme } from "./receipt-theme";
 import type { ReceiptRenderOptions } from "./receipt-view";
 
@@ -133,6 +136,45 @@ function totalOnly(receipt: Receipt): Receipt {
   };
 }
 
+/** 링크에 싣는 칸만으로 만든 줄. 보내는 글(`shareableReceipt`)과 받는 쪽(`readLine`)이 같은 모양을 쓴다. */
+type SharedLineFields = Pick<
+  ReceiptLine,
+  "chargeDates" | "upcomingDates" | "evidencedDates" | "amountKRW" | "billingCycle" | "killedOn"
+> & { name: string | null };
+
+function sharedLine(line: SharedLineFields, index: number, labels: MaskedNameLabels): ReceiptLine {
+  // 칸을 하나씩 옮긴다 — 펼치면 보내는 쪽 줄의 아이콘 주소(`iconUrl`)·사용 횟수가 따라온다.
+  return {
+    subscriptionId: `shared-${index}`,
+    name: line.name ?? labels.masked(index + 1),
+    chargeDates: line.chargeDates,
+    upcomingDates: line.upcomingDates,
+    evidencedDates: line.evidencedDates,
+    amountKRW: line.amountKRW,
+    billedKRW: line.amountKRW,
+    shared: false,
+    billingCycle: line.billingCycle,
+    killedOn: line.killedOn,
+    usage: null,
+  };
+}
+
+function sharedKilled(
+  name: string | null,
+  killedOn: string,
+  index: number,
+  labels: MaskedNameLabels,
+): Receipt["killed"][number] {
+  return {
+    subscriptionId: `shared-killed-${index}`,
+    name: name ?? labels.maskedKilled(index + 1),
+    killedOn,
+  };
+}
+
+const renderFor = (hidden: boolean): ReceiptRenderOptions =>
+  hidden ? { unverified: true, hidden: true } : { unverified: true };
+
 /**
  * 링크에 실리는 것과 같은 영수증과 그릴 때 넘길 것 — 공유하는 글도 이것으로 만들어 글과 링크가 같은 것을 보이게 한다.
  * 가리면 합계만 남는다(`totalOnly`). 사용 횟수·나눠 내는 금액은 늘 빠진다.
@@ -142,30 +184,20 @@ export function shareableReceipt(
   { maskNames = false }: ShareOptions,
   labels: MaskedNameLabels,
 ): { receipt: Receipt; render: ReceiptRenderOptions } {
-  if (maskNames) {
-    return { receipt: totalOnly(receipt), render: { unverified: true, hidden: true } };
-  }
+  if (maskNames) return { receipt: totalOnly(receipt), render: renderFor(true) };
   return {
     receipt: {
       ...receipt,
       billedTotalKRW: receipt.totalKRW,
       priciestPerUse: null,
-      lines: receipt.lines.map((line, i) => ({
-        ...line,
-        subscriptionId: `shared-${i}`,
-        iconUrl: undefined,
-        name: wireName(line.name) ?? labels.masked(i + 1),
-        billedKRW: line.amountKRW,
-        shared: false,
-        usage: null,
-      })),
-      killed: receipt.killed.map((item, i) => ({
-        subscriptionId: `shared-killed-${i}`,
-        name: wireName(item.name) ?? labels.maskedKilled(i + 1),
-        killedOn: item.killedOn,
-      })),
+      lines: receipt.lines.map((line, i) =>
+        sharedLine({ ...line, name: wireName(line.name) }, i, labels),
+      ),
+      killed: receipt.killed.map((item, i) =>
+        sharedKilled(wireName(item.name), item.killedOn, i, labels),
+      ),
     },
-    render: { unverified: true },
+    render: renderFor(false),
   };
 }
 
@@ -241,20 +273,8 @@ function readPeriod(value: unknown): ReceiptPeriod | null {
 
 /** 영수증 기간의 첫날·마지막 날(`YYYY-MM-DD`, 글자로 견줄 수 있다)과 첫날 0시(기기 시간대). */
 function periodBounds(period: ReceiptPeriod): { first: string; last: string; start: Date } {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  if (period.kind === "year") {
-    return {
-      first: `${period.year}-01-01`,
-      last: `${period.year}-12-31`,
-      start: new Date(period.year, 0, 1),
-    };
-  }
-  const lastDay = new Date(Date.UTC(period.year, period.month, 0)).getUTCDate();
-  return {
-    first: `${period.year}-${pad(period.month)}-01`,
-    last: `${period.year}-${pad(period.month)}-${pad(lastDay)}`,
-    start: new Date(period.year, period.month - 1, 1),
-  };
+  const { start, end } = receiptPeriodDays(period);
+  return { first: localDateKey(start), last: localDateKey(end), start };
 }
 
 function readLine(
@@ -275,19 +295,19 @@ function readLine(
   if (![...upcomingDates, ...evidencedDates].every((day) => charged.has(day))) return null;
   if (cycle !== "monthly" && cycle !== "yearly") return null;
   if (killedOn !== null && !(isDay(killedOn) && inPeriod(killedOn))) return null;
-  return {
-    subscriptionId: `shared-${index}`,
-    name: name ?? labels.masked(index + 1),
-    chargeDates,
-    upcomingDates,
-    evidencedDates,
-    amountKRW: amount,
-    billedKRW: amount,
-    shared: false,
-    billingCycle: cycle,
-    killedOn,
-    usage: null,
-  };
+  return sharedLine(
+    {
+      name,
+      chargeDates,
+      upcomingDates,
+      evidencedDates,
+      amountKRW: amount,
+      billingCycle: cycle,
+      killedOn,
+    },
+    index,
+    labels,
+  );
 }
 
 function fromWire(value: unknown, labels: MaskedNameLabels, now: Date): SharedReceipt | null {
@@ -328,11 +348,7 @@ function fromWire(value: unknown, labels: MaskedNameLabels, now: Date): SharedRe
   for (const [i, item] of wire.k.entries()) {
     if (!Array.isArray(item) || item.length !== 2 || !isWireName(item[0])) return null;
     if (!isDay(item[1]) || !inPeriod(item[1])) return null;
-    killed.push({
-      subscriptionId: `shared-killed-${i}`,
-      name: item[0] ?? labels.maskedKilled(i + 1),
-      killedOn: item[1],
-    });
+    killed.push(sharedKilled(item[0], item[1], i, labels));
   }
 
   if (!isWon(wire.t, MAX_TOTAL_WON)) return null;
@@ -375,26 +391,8 @@ function fromWire(value: unknown, labels: MaskedNameLabels, now: Date): SharedRe
     receipt: hidden ? totalOnly(receipt) : receipt,
     issuedAt,
     theme: wire.th,
-    render: hidden ? { unverified: true, hidden: true } : { unverified: true },
+    render: renderFor(hidden),
   };
-}
-
-function toBase64Url(bytes: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  }
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function fromBase64Url(text: string): Uint8Array | null {
-  if (!/^[A-Za-z0-9_-]*$/.test(text)) return null;
-  try {
-    const binary = atob(text.replace(/-/g, "+").replace(/_/g, "/"));
-    return Uint8Array.from(binary, (char) => char.charCodeAt(0));
-  } catch {
-    return null;
-  }
 }
 
 const canCompress = () =>
