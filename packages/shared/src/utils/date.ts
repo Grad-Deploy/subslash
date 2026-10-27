@@ -156,6 +156,17 @@ export function isInTrial(sub: { trialEndsAt?: string }, now: Date = new Date())
   return startOfDay(now).getTime() < ends.getTime();
 }
 
+/**
+ * 지금 카드에서 돈이 나가는 구독인지 — 구독 중이고 무료 체험 중이 아니다. 지출·1회 단가·결제 일정처럼 '내는 돈'을
+ * 다루는 곳은 이것으로 고른다. 체험 중인 구독을 넣으면 내지도 않은 돈을 보이게 된다(CLAUDE.md '데이터 위치').
+ */
+export function isPaying(
+  sub: { status: string; trialEndsAt?: string },
+  now: Date = new Date(),
+): boolean {
+  return sub.status === "active" && !isInTrial(sub, now);
+}
+
 /** 체험이 끝나기까지 남은 날. 종료일을 모르거나 이미 끝났으면 null. */
 export function getDaysUntilTrialEnd(
   sub: { trialEndsAt?: string },
