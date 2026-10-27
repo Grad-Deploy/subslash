@@ -19,6 +19,7 @@ import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { CopyBlock } from "./CopyBlock";
 import { GmailOlderScanNotice } from "./GmailOlderScanNotice";
+import { ScriptNewStep } from "./ScriptNewStep";
 import { useKnownText, useLatestT, useLocale, useT } from "@lib/i18n";
 import { appsScriptLocale } from "@lib/i18n/config";
 
@@ -175,18 +176,7 @@ export function GmailAutoImportSetup() {
               {token ? (
                 <div className="space-y-3">
                   <ol className="list-decimal space-y-2 pl-5">
-                    <li>
-                      {t.importing.page.step1Before}
-                      <a
-                        href="https://script.new"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-primary underline underline-offset-2"
-                      >
-                        {t.importing.page.step1Link}
-                      </a>
-                      {t.importing.page.step1After}
-                    </li>
+                    <ScriptNewStep />
                     <li>{s.manualStep2}</li>
                     <li>{s.manualStep3}</li>
                     <li>{s.manualStep4}</li>
