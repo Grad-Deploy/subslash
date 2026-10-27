@@ -72,6 +72,17 @@ export function getNextBillingDateFor(
   return new Date(nextYear, monthIndex, effectiveDay(nextYear, monthIndex, schedule.billingDay));
 }
 
+/**
+ * 기록에 남긴 시각(ISO 문자열, 예: `killedAt`·`checkedAt`)을 Date로. 없거나 읽을 수 없으면 null — 모르는 시각을
+ * 지어내지 않는다. `new Date(null)`은 1970년 1월 1일이 되고 깨진 값은 'Invalid Date'가 되므로, 시각 칸을 읽는 곳은
+ * 저마다 검사하지 않고 이것을 쓴다. 날짜만 적은 칸(`trialEndsAt`·`reviewAt`)은 `parseDateOnly`다.
+ */
+export function parseTimestamp(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 /** 그 기기 시간대의 그날 0시. */
 export function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());

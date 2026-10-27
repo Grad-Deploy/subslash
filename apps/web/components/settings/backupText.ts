@@ -1,5 +1,6 @@
 import type { BackupData } from "@lib/store";
 import type { SnapshotSummary } from "@lib/account-snapshot-client";
+import { parseTimestamp } from "@subslash/shared";
 import type { Messages } from "@lib/i18n/messages";
 
 /**
@@ -12,15 +13,14 @@ import type { Messages } from "@lib/i18n/messages";
 type BackupMessages = Messages["backup"];
 
 export function formatBackupDate(iso: string | null, t: BackupMessages): string | null {
-  if (!iso) return null;
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return null;
+  const date = parseTimestamp(iso);
+  if (!date) return null;
   return t.date(date.getFullYear(), date.getMonth() + 1, date.getDate());
 }
 
 export function formatSavedAt(iso: string, t: BackupMessages): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return t.unknownTime;
+  const date = parseTimestamp(iso);
+  if (!date) return t.unknownTime;
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${formatBackupDate(iso, t)} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }

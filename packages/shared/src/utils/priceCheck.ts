@@ -1,4 +1,4 @@
-import { DAY_MS } from "./date";
+import { DAY_MS, parseTimestamp } from "./date";
 import { Currency, BillingCycle } from "../types";
 import { referencePriceFor } from "../constants/services";
 
@@ -62,8 +62,8 @@ export function getPriceCheckCandidates(
 
   for (const sub of subs) {
     const checkedSource = sub.lastPriceCheckedAt ?? sub.createdAt;
-    const checkedDate = new Date(checkedSource);
-    if (Number.isNaN(checkedDate.getTime())) continue;
+    const checkedDate = parseTimestamp(checkedSource);
+    if (!checkedDate) continue;
 
     const daysSinceChecked = Math.max(0, daysBetween(checkedDate, now));
     const isStale = daysSinceChecked >= PRICE_CHECK_INTERVAL_DAYS;
