@@ -54,6 +54,14 @@ type BilledSubscription = {
   taxRate?: number;
 };
 
+/** 한 번의 결제액(`getBilledAmount`)을 원으로 바꾼 값. 월·연 환산 전의 카드 청구액이다. */
+export function getBilledAmountKRW(
+  sub: Omit<BilledSubscription, "billingCycle">,
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): number {
+  return toKRW(getBilledAmount(sub), sub.currency, rate);
+}
+
 /**
  * A subscription's cost expressed as monthly KRW — yearly plans are divided by
  * 12 and USD plans converted, so totals across a mixed list are comparable.
@@ -63,7 +71,7 @@ export function getMonthlyAmountKRW(
   sub: BilledSubscription,
   rate: number = DEFAULT_EXCHANGE_RATE,
 ): number {
-  const krw = toKRW(getBilledAmount(sub), sub.currency, rate);
+  const krw = getBilledAmountKRW(sub, rate);
   return sub.billingCycle === "yearly" ? Math.round(krw / 12) : krw;
 }
 
@@ -72,7 +80,7 @@ export function getAnnualAmountKRW(
   sub: BilledSubscription,
   rate: number = DEFAULT_EXCHANGE_RATE,
 ): number {
-  const krw = toKRW(getBilledAmount(sub), sub.currency, rate);
+  const krw = getBilledAmountKRW(sub, rate);
   return sub.billingCycle === "yearly" ? krw : krw * 12;
 }
 
