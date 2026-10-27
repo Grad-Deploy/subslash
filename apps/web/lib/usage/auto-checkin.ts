@@ -18,7 +18,7 @@
  * - 혜택·용량: 폰 기록으로 알 수 없어 적지 않는다.
  */
 import {
-  isInTrial,
+  isPaying,
   metricForSubscription,
   metricOfLog,
   type Subscription,
@@ -65,7 +65,7 @@ export function planAutoCheckIns(
 
   for (const sub of subscriptions) {
     // 체험 중인 구독은 나가는 돈이 없어 1회 단가를 매기지 않는다.
-    if (sub.status !== "active" || isInTrial(sub, now) || !packagesFor(sub)) continue;
+    if (!isPaying(sub, now) || !packagesFor(sub)) continue;
     const metric = metricForSubscription(sub);
     const usage = subUsage(sub, history, installed, dates, rate);
     if (usage.state !== "measured") continue;

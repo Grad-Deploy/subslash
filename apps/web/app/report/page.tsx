@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { BarChart3 } from "lucide-react";
-import { findBundleOverlaps, isInTrial, sumMyAnnualKRW, sumMyMonthlyKRW } from "@subslash/shared";
+import { findBundleOverlaps, isPaying, sumMyAnnualKRW, sumMyMonthlyKRW } from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
@@ -53,7 +53,7 @@ export default function ReportPage() {
   const now = useMemo(() => new Date(), []);
   // 체험 중인 구독은 카드에서 나가는 돈이 없으므로 넣지 않는다.
   const active = useMemo(
-    () => subscriptions.filter((sub) => sub.status === "active" && !isInTrial(sub, now)),
+    () => subscriptions.filter((sub) => isPaying(sub, now)),
     [subscriptions, now],
   );
   const overlaps = useMemo(() => findBundleOverlaps(subscriptions), [subscriptions]);
