@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Lock, X } from "lucide-react";
-import { useIsClient } from "@hooks/useIsClient";
+import { ChevronDown, Lock } from "lucide-react";
 import { useGmailLink } from "@hooks/useGmailLink";
 import { webUrl } from "@lib/api";
 import { GMAIL_AUTO_SCRIPT_MANIFEST, gmailAutoScript } from "@lib/gmail-import";
@@ -16,7 +14,7 @@ import { Spinner } from "../../ui/spinner";
 import { AppCopyCode } from "./AppCopyCode";
 import { AppImportFlow } from "./AppImportFlow";
 import { AppStepper, StepTip, type AppStep } from "./AppStepper";
-import { useOverlayLock } from "@hooks/useOverlayLock";
+import { AppSheet } from "../../settings/app/AppSheet";
 import { useKnownText, useLocale, useT } from "@lib/i18n";
 import { appsScriptLocale } from "@lib/i18n/config";
 
@@ -351,60 +349,17 @@ function PcInstallSheet({
     [g.pcStep2, g.pcStep2Sub],
     [g.pcStep3, g.pcStep3Sub],
   ] as const;
-  const isClient = useIsClient();
   const address = webUrl("/import");
 
-  useOverlayLock(open, onClose);
-
-  if (!open || !isClient) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex h-[100dvh] items-end px-safe">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="pc-install-title"
-        className="relative flex max-h-[88dvh] w-full flex-col rounded-t-3xl border-t bg-background shadow-2xl animate-in slide-in-from-bottom-8 fade-in"
-      >
-        <div className="flex h-6 shrink-0 items-center justify-center">
-          <span className="h-1 w-9 rounded-full bg-border" aria-hidden />
-        </div>
-        <header className="flex shrink-0 items-start justify-between gap-3 px-5 pb-2">
-          <div>
-            <h2 id="pc-install-title" className="text-lg font-black tracking-tight">
-              {g.pcTitle}
-            </h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">{g.pcHint}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="-mr-1.5 rounded-full p-1.5 text-muted-foreground hover:bg-secondary"
-          >
-            <X className="size-5" />
-            <span className="sr-only">{g.close}</span>
-          </button>
-        </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-3">
-          <ol>
-            {pcSteps.map(([title, sub], i) => (
-              <li key={title} className="flex items-center gap-3 py-2">
-                <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-secondary text-[13px] font-extrabold">
-                  {i + 1}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-[13.5px] font-bold">{title}</span>
-                  <span className="block text-[11px] text-muted-foreground">{sub}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
-          <div className="mt-2">
-            <AppCopyCode label={g.webAddress} code={address} />
-          </div>
-        </div>
-        <div className="grid shrink-0 gap-2 border-t px-5 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+  return (
+    <AppSheet
+      open={open}
+      onClose={onClose}
+      title={g.pcTitle}
+      description={g.pcHint}
+      heightClassName="max-h-[88dvh]"
+      footer={
+        <div className="grid gap-2">
           <button
             type="button"
             onClick={onClose}
@@ -421,8 +376,24 @@ function PcInstallSheet({
             {g.stayPhone}
           </button>
         </div>
+      }
+    >
+      <ol>
+        {pcSteps.map(([title, sub], i) => (
+          <li key={title} className="flex items-center gap-3 py-2">
+            <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-secondary text-[13px] font-extrabold">
+              {i + 1}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[13.5px] font-bold">{title}</span>
+              <span className="block text-[11px] text-muted-foreground">{sub}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-2">
+        <AppCopyCode label={g.webAddress} code={address} />
       </div>
-    </div>,
-    document.body,
+    </AppSheet>
   );
 }
