@@ -6,7 +6,7 @@
  * 비었으면 사본으로 되살린다(lib/mirrored-storage와 같은 이유 — 운영체제가 웹뷰 저장소를 비우면
  * 1년 동안 쌓은 기록이 사라진다).
  */
-import { readLocal, writeLocal } from "@lib/local-storage";
+import { parseStoredObject, readLocal, writeLocal } from "@lib/local-storage";
 import { IS_APP_BUILD } from "../platform";
 import { preferencesModule } from "../preferences";
 
@@ -60,12 +60,7 @@ export function writeDeviceValue(key: string, value: string): void {
 export type SnoozeMap = Record<string, string>;
 
 export function readSnooze(): SnoozeMap {
-  try {
-    const parsed = JSON.parse(readLocal(SNOOZE_KEY) ?? "{}") as unknown;
-    return parsed && typeof parsed === "object" ? (parsed as SnoozeMap) : {};
-  } catch {
-    return {};
-  }
+  return parseStoredObject<SnoozeMap>(readLocal(SNOOZE_KEY));
 }
 
 export const AUTO_CHECKIN_KEY = "subslash-usage-auto-checkin";
