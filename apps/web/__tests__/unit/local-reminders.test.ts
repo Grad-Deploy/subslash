@@ -51,6 +51,17 @@ describe("planReminders", () => {
     expect(plan[0].at).toEqual(new Date(2026, 9, 8, 9));
   });
 
+  it("무료 체험 중에 오는 결제일은 알리지 않고, 체험이 끝난 뒤의 결제부터 알린다", () => {
+    // 체험이 10/20에 끝난다. 9/15·10/15 결제일은 체험 중이라 돈이 나가지 않고, 11/15부터 낸다.
+    const plan = planReminders([sub({ trialEndsAt: "2026-10-20" })], 3, NOW);
+    expect(plan.map((r) => r.body)).toEqual([
+      "11월 15일에 ₩17,000이 결제될 예정이에요. 계속 쓸지 확인해 보세요.",
+    ]);
+    // 종료일 당일은 결제가 시작되는 날이다(isInTrial).
+    const onEnd = planReminders([sub({ trialEndsAt: "2026-10-15" })], 3, NOW);
+    expect(onEnd[0].body).toMatch(/^10월 15일에/);
+  });
+
   it("결제 월을 모르는 연간 구독은 알리지 않는다", () => {
     const plan = planReminders([sub({ billingCycle: "yearly", billingMonth: undefined })], 3, NOW);
     expect(plan).toEqual([]);

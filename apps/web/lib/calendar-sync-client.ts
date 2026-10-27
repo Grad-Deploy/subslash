@@ -1,4 +1,4 @@
-import { currentCancelUrl, getBilledAmount, isInTrial, type Subscription } from "@subslash/shared";
+import { currentCancelUrl, getBilledAmount, isPaying, type Subscription } from "@subslash/shared";
 import { apiFetch, readApiError } from "./api";
 import { withAppReturn } from "./native";
 import { SOURCE_LOCALE, appsScriptLocale, type Locale } from "./i18n/config";
@@ -31,7 +31,7 @@ export function toCalendarPlanEntries(subscriptions: Subscription[]): CalendarPl
   return (
     subscriptions
       // 체험 중인 구독은 아직 청구되지 않는다. 캘린더에 없는 결제를 넣지 않는다.
-      .filter((sub) => sub.status === "active" && !isInTrial(sub))
+      .filter((sub) => isPaying(sub))
       .map((sub) => ({
         clientId: sub.id,
         name: sub.name,

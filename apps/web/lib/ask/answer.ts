@@ -10,6 +10,7 @@ import {
   getPlanAlternatives,
   getSavingsTiers,
   isInTrial,
+  isPaying,
   metricOfLog,
   planCurrency,
   sumMyAnnualKRW,
@@ -91,7 +92,7 @@ function answer(
 
 /** 카드에서 지금 돈이 나가는 구독. 무료 체험 중인 구독은 뺀다(CLAUDE.md '데이터 위치'). */
 function paying(ctx: AskContext): Subscription[] {
-  return ctx.subscriptions.filter((sub) => sub.status === "active" && !isInTrial(sub, ctx.now));
+  return ctx.subscriptions.filter((sub) => isPaying(sub, ctx.now));
 }
 
 export { matchSubscriptions };
