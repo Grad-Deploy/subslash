@@ -1,8 +1,7 @@
 import {
-  getBilledAmount,
+  getBilledAmountKRW,
   isInTrial,
   needsBillingMonth,
-  toKRW,
   effectiveDay,
   type Subscription,
 } from "@subslash/shared";
@@ -81,7 +80,7 @@ export function buildBillingMonth(
     if (onDay) onDay.push(sub);
     else days.set(day, [sub]);
     billingCount += 1;
-    totalKRW += toKRW(getBilledAmount(sub), sub.currency, rate);
+    totalKRW += getBilledAmountKRW(sub, rate);
   }
 
   return { year, monthIndex, days, billingCount, totalKRW, undatedCount };
@@ -89,7 +88,7 @@ export function buildBillingMonth(
 
 /** 그날 카드에 찍히는 금액의 합(원 환산). */
 export function dayTotalKRW(subs: Subscription[], rate: number): number {
-  return subs.reduce((sum, sub) => sum + toKRW(getBilledAmount(sub), sub.currency, rate), 0);
+  return subs.reduce((sum, sub) => sum + getBilledAmountKRW(sub, rate), 0);
 }
 
 /**
