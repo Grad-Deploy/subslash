@@ -279,15 +279,10 @@ const MANUAL_HEADER: Record<Exclude<AppsScriptLocale, "ko">, string[]> = {
  */
 function withoutKoreanComments(code: string, lang: Exclude<AppsScriptLocale, "ko">): string {
   const header = `/**\n${MANUAL_HEADER[lang].map((line) => (line ? ` * ${line}` : " *")).join("\n")}\n */`;
-  let first = true;
+  // 첫 블록(머리말)을 그 언어의 것으로 바꾸고, 남은 블록 중 한국어인 것을 걷는다. 바꾼 머리말에는 한글이 없다.
   return code
-    .replace(/\/\*\*[\s\S]*?\*\//g, (block) => {
-      if (first) {
-        first = false;
-        return header;
-      }
-      return /[가-힣]/.test(block) ? "" : block;
-    })
+    .replace(/\/\*\*[\s\S]*?\*\//, () => header)
+    .replace(/\/\*\*[\s\S]*?\*\//g, (block) => (/[가-힣]/.test(block) ? "" : block))
     .split("\n")
     .filter((line) => !(/^\s*\/\//.test(line) && /[가-힣]/.test(line)))
     .join("\n")
