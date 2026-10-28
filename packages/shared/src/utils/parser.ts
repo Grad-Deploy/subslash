@@ -1,4 +1,4 @@
-import { DAY_MS } from "./date";
+import { daysBetween } from "./date";
 import type {
   BillingCycle,
   DiscoveredSubscription,
@@ -252,7 +252,7 @@ export function daysSinceReceipt(receiptDate: string, now: Date): number | null 
   if (!match) return null;
   const at = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
   if (Number.isNaN(at)) return null;
-  return Math.max(0, Math.floor((now.getTime() - at) / DAY_MS));
+  return Math.max(0, daysBetween(at, now));
 }
 
 /** 마지막 결제 메일이 오래돼 지금도 결제 중인지 알 수 없는 후보인지. */
@@ -354,7 +354,7 @@ ${piece.body}`;
         return;
       }
 
-      const daysAgo = Math.max(0, Math.floor((now.getTime() - receivedAt.getTime()) / DAY_MS));
+      const daysAgo = Math.max(0, daysBetween(receivedAt, now));
       const stale = daysAgo > STALE_AFTER_DAYS[parsed.billingCycle];
       const snippet = `${receiptDate} · ${email.from} · ${email.subject}`;
 
