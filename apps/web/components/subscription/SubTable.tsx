@@ -20,7 +20,7 @@ import {
   toKRW,
   type RiskLevel,
   metricOfLog,
-  DAY_MS,
+  daysBetween,
 } from "@subslash/shared";
 import { Button } from "../ui/button";
 import { cn } from "@lib/utils";
@@ -136,9 +136,7 @@ export function SubTable({
         latest && metricOfLog(latest) === "uses"
           ? toKRW(latest.costPerUse, sub.currency, rate)
           : null,
-      checkedDaysAgo: Number.isNaN(checkedMs)
-        ? null
-        : Math.floor((now.getTime() - checkedMs) / DAY_MS),
+      checkedDaysAgo: Number.isNaN(checkedMs) ? null : daysBetween(checkedMs, now),
       killedAtMs: Number.isNaN(killedMs) ? null : killedMs,
     };
   });

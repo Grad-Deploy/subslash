@@ -1,4 +1,4 @@
-import { DAY_MS, parseTimestamp } from "./date";
+import { daysBetween, parseTimestamp } from "./date";
 import { Currency, BillingCycle } from "../types";
 import { referencePriceFor } from "../constants/services";
 
@@ -40,10 +40,6 @@ export interface PriceCheckCandidate {
   daysSinceChecked: number;
   /** 한 번이라도 요금을 확인해 준 적이 있는지. */
   everChecked: boolean;
-}
-
-function daysBetween(from: Date, to: Date): number {
-  return Math.floor((to.getTime() - from.getTime()) / DAY_MS);
 }
 
 /**

@@ -83,6 +83,14 @@ export function parseTimestamp(value: string | null | undefined): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+/**
+ * `from`부터 `to`까지 지난 날 수 — 시간 차이를 24시간으로 나눠 내린 값이다(달력의 날짜 차이가 아니다). `to`가
+ * 앞이면 음수다. '마지막 체크인으로부터 며칠'·'마지막 요금 확인으로부터 며칠'처럼 지난 기간을 셀 때 쓴다.
+ */
+export function daysBetween(from: Date | number, to: Date | number): number {
+  return Math.floor((+to - +from) / DAY_MS);
+}
+
 /** 그 기기 시간대의 그날 0시. */
 export function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
