@@ -76,6 +76,53 @@ test.describe("Gmail 결제 메일 가져오기 (E2E)", () => {
     expect(names).toEqual(["내 노션", "넷플릭스"]);
   });
 
+  // 예전에는 묻지 않고 하나 더 만들어 월 지출이 두 번 셈해졌다. 일부러 두 번 내는 경우도 있어 막지는 않는다.
+  test("이미 구독 중인 서비스는 '이미 등록한 구독'으로 체크를 풀어 두고, 다시 고르면 등록한다", async ({
+    page,
+  }) => {
+    await page.addInitScript(
+      ({ key, value }) => {
+        if (!localStorage.getItem(key)) localStorage.setItem(key, value);
+      },
+      {
+        key: STORAGE_KEY,
+        value: JSON.stringify({
+          state: {
+            subscriptions: [{ ...EXISTING_SUB, id: "existing-netflix", name: "넷플릭스" }],
+            usageLogs: [],
+            accounts: [],
+          },
+          version: 1,
+        }),
+      },
+    );
+
+    const recent = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+    await page.goto(
+      `/import${gmailHash([
+        {
+          from: "Netflix <info@account.netflix.com>",
+          subject: "넷플릭스 결제 안내",
+          date: recent,
+          body: "결제 금액 : 17,000원",
+        },
+      ])}`,
+    );
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText("이미 등록한 구독")).toBeVisible({ timeout: 30_000 });
+    await expect(dialog.getByRole("checkbox").last()).not.toBeChecked();
+
+    await dialog.getByText("넷플릭스", { exact: true }).click();
+    await dialog.getByRole("button", { name: /1개 구독 일괄 등록/ }).click();
+    await expect(page).toHaveURL(/\/subs/, { timeout: 30_000 });
+    const count = await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key) ?? "{}").state?.subscriptions?.length ?? 0,
+      STORAGE_KEY,
+    );
+    expect(count).toBe(2);
+  });
+
   test("망가진 값으로 열면 오류를 알리고 설치 안내로 갈 수 있다", async ({ page }) => {
     await page.goto("/import#gmail=broken");
 

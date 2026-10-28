@@ -11,9 +11,12 @@ import { describeStatus } from "./describeStatus";
 /** 결제 문자·메일에서 찾은 후보 한 줄(웹의 결제 문자로 불러오기). 누르면 고르기·풀기가 바뀐다. */
 export function DiscoveredRow({
   item,
+  tracked,
   onToggle,
 }: {
   item: DiscoveredSubscription;
+  /** 이미 구독 중인 서비스의 후보(체크를 풀어 둔다, useImportCandidates). */
+  tracked: boolean;
   onToggle: () => void;
 }) {
   const names = useServiceNames();
@@ -73,6 +76,11 @@ export function DiscoveredRow({
               // 오래됐다는 것뿐이고, 연간 구독은 원래 1년에 한 번 온다.
               <Badge variant="outline" className="text-[10px] py-0 text-muted-foreground">
                 {r.staleBadge}
+              </Badge>
+            )}
+            {tracked && (
+              <Badge variant="outline" className="text-[10px] py-0 text-muted-foreground">
+                {r.trackedBadge}
               </Badge>
             )}
           </div>
