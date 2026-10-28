@@ -13,10 +13,11 @@ export const metadata: Metadata = {
  * JavaScript ever running — no store access, no interactivity.
  *
  * 화면 언어도 React 없이 고른다. 첫 화면 스크립트(localeInitScript)가 `<html lang>`을 기기 언어로 정하므로,
- * 두 언어를 함께 두고 CSS로 그 언어만 보인다.
+ * 두 언어를 함께 두고 CSS로 그 언어만 보인다. 번역이 없는 언어(일본어 등)는 영어다(`FALLBACK_LOCALE`) —
+ * 예전에는 `lang=en`일 때만 영어를 보여, 다른 언어 화면에 한국어가 나왔다.
  */
-const KO = "[html[lang=en]_&]:hidden";
-const EN = "hidden [html[lang=en]_&]:block";
+const KO = "hidden [html[lang=ko]_&]:block";
+const EN = "[html[lang=ko]_&]:hidden";
 export default function OfflinePage() {
   return (
     <div className="py-16 text-center space-y-3">
