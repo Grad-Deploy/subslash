@@ -58,6 +58,7 @@ export function AppAutoImportModal({
     clear,
     close,
     toggle,
+    isTracked,
     selected,
     monthlyKRW,
     replaceExisting,
@@ -200,6 +201,7 @@ export function AppAutoImportModal({
                       <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                         <Status item={item} />
                         {!item.isCanceled && <span>· {cycleText(t, item)}</span>}
+                        {isTracked(item) && <span>· {t.importing.row.trackedBadge}</span>}
                       </span>
                     </span>
                     <span

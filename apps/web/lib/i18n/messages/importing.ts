@@ -28,6 +28,7 @@ export const ko = {
     row: {
       naver: "네이버",
       canceledBadge: "해지 완료 메일 감지 (비활성)",
+      trackedBadge: "이미 등록한 구독",
       recentBadge: "최근 결제 확인 (활성)",
       staleBadge: "마지막 결제 메일이 오래됨 (확인 필요)",
       canceledCycle: "해지 완료됨",
@@ -327,6 +328,7 @@ export const en: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "Cancellation email found (inactive)",
+      trackedBadge: "Already in your list",
       recentBadge: "Recent payment confirmed (active)",
       staleBadge: "Last payment email is old (needs checking)",
       canceledCycle: "Cancelled",
@@ -638,6 +640,7 @@ export const zh: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "发现退订邮件（未订阅）",
+      trackedBadge: "已在列表中",
       recentBadge: "已确认最近付款（订阅中）",
       staleBadge: "最后的付款邮件较旧（需确认）",
       canceledCycle: "已退订",
@@ -918,6 +921,7 @@ export const ja: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "解約メールあり（購読していない）",
+      trackedBadge: "登録済み",
       recentBadge: "最近の支払いを確認（購読中）",
       staleBadge: "最後の支払いメールが古い（確認が必要）",
       canceledCycle: "解約済み",
@@ -1219,6 +1223,7 @@ export const vi: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "Có email hủy (không đăng ký)",
+      trackedBadge: "Đã có trong danh sách",
       recentBadge: "Đã xác nhận thanh toán gần đây (đang đăng ký)",
       staleBadge: "Email thanh toán cuối đã cũ (cần kiểm tra)",
       canceledCycle: "Đã hủy",
@@ -1522,6 +1527,7 @@ export const fr: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "E-mail de résiliation trouvé (inactif)",
+      trackedBadge: "Déjà dans votre liste",
       recentBadge: "Paiement récent confirmé (actif)",
       staleBadge: "Dernier e-mail de paiement ancien (à vérifier)",
       canceledCycle: "Résilié",
@@ -1843,6 +1849,7 @@ export const es: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "Correo de cancelación encontrado (inactiva)",
+      trackedBadge: "Ya está en tu lista",
       recentBadge: "Pago reciente confirmado (activa)",
       staleBadge: "Último correo de pago antiguo (revisar)",
       canceledCycle: "Cancelada",
@@ -2150,6 +2157,7 @@ export const de: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "Kündigungs-E-Mail gefunden (inaktiv)",
+      trackedBadge: "Bereits in deiner Liste",
       recentBadge: "Aktuelle Zahlung bestätigt (aktiv)",
       staleBadge: "Letzte Zahlungs-E-Mail ist alt (prüfen)",
       canceledCycle: "Gekündigt",
@@ -2464,6 +2472,7 @@ export const pt: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "E-mail de cancelamento encontrado (inativa)",
+      trackedBadge: "Já está na sua lista",
       recentBadge: "Pagamento recente confirmado (ativa)",
       staleBadge: "Último e-mail de pagamento antigo (conferir)",
       canceledCycle: "Cancelada",

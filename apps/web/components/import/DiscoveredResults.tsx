@@ -22,11 +22,13 @@ const FILTER_IDS: readonly CategoryFilter[] = ["all", "ott", "ai", "other"];
 export function DiscoveredResults({
   items,
   note,
+  isTracked,
   onToggle,
 }: {
   items: DiscoveredSubscription[];
   /** 개수 옆에 붙일 설명(예: "Gmail 메일 40통에서"). */
   note: string | null;
+  isTracked: (item: DiscoveredSubscription) => boolean;
   onToggle: (id: string) => void;
 }) {
   const r = useT().importing.results;
@@ -82,7 +84,12 @@ export function DiscoveredResults({
           </div>
         ) : (
           shown.map((item) => (
-            <DiscoveredRow key={item.id} item={item} onToggle={() => onToggle(item.id)} />
+            <DiscoveredRow
+              key={item.id}
+              item={item}
+              tracked={isTracked(item)}
+              onToggle={() => onToggle(item.id)}
+            />
           ))
         )}
       </div>
