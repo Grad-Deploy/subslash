@@ -7,6 +7,7 @@ import { getPriceCheckCandidates } from "./priceCheck";
 import { getKillCheckStatus } from "./killCheck";
 import { getLowUsageBillingFigures, type MetaphorKey } from "./metaphor";
 import { isResubscribeReminderDue } from "./killRecord";
+import { latestCheckInBySubscription } from "./checkInEvidence";
 
 /**
  * 대시보드의 행동 큐.
@@ -211,18 +212,6 @@ const VERB: Record<ActionKind, ActionVerb> = {
   "resubscribe-reminder": "review-resubscribe",
 };
 
-/** 구독별 가장 최근 체크인. */
-function latestLogBySubscription(logs: UsageLog[]): Map<string, UsageLog> {
-  const latest = new Map<string, UsageLog>();
-  for (const log of logs) {
-    const current = latest.get(log.subscriptionId);
-    if (!current || new Date(log.checkedAt) > new Date(current.checkedAt)) {
-      latest.set(log.subscriptionId, log);
-    }
-  }
-  return latest;
-}
-
 function daysSince(iso: string, now: Date): number | null {
   const then = parseTimestamp(iso);
   if (!then) return null;
@@ -250,7 +239,7 @@ export function getActionQueue(
   rate: number = DEFAULT_EXCHANGE_RATE,
 ): ActionItem[] {
   const active = subscriptions.filter((sub) => sub.status === "active");
-  const latest = latestLogBySubscription(usageLogs);
+  const latest = latestCheckInBySubscription(usageLogs);
 
   // 요금 확인 대상은 이미 만들어둔 판정기를 그대로 쓴다.
   const priceChecks = new Map(
