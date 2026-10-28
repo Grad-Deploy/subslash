@@ -20,7 +20,8 @@ import { Button } from "../../../components/ui/button";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { PageSpinner } from "../../../components/ui/spinner";
 import { copyText } from "@lib/native";
-import { useT, useServiceNames } from "@lib/i18n";
+import { useLocale, useT, useServiceNames } from "@lib/i18n";
+import { intlLocale } from "@lib/i18n/config";
 import { describeSpendingTypeText } from "@lib/i18n/savings-text";
 
 /** 이보다 이른 해는 이 앱에 기록이 있을 수 없다. */
@@ -64,8 +65,9 @@ function YearInReviewContent() {
   const mounted = useIsClient();
   const t = useT();
   const r = t.savings.review;
+  const locale = useLocale();
   const formatDay = (iso: string) =>
-    new Date(iso).toLocaleDateString(r.dateLocale, { month: "long", day: "numeric" });
+    new Date(iso).toLocaleDateString(intlLocale(locale), { month: "long", day: "numeric" });
   const [copied, setCopied] = useState(false);
   const [now] = useState(() => new Date());
   const currentYear = now.getFullYear();
