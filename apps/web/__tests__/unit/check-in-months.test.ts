@@ -27,6 +27,20 @@ describe("checkInMonths", () => {
     expect(months[10]).toEqual({ month: "2026-09", quantity: null });
   });
 
+  it("시각을 읽을 수 없는 기록은 마지막으로 고르지 않되, 그것뿐인 달은 그 기록을 쓴다", () => {
+    const { months } = checkInMonths(
+      [
+        log("2026-10", 8, { checkedAt: "2026-10-01T00:00:00.000Z" }),
+        log("2026-10", 1, { checkedAt: "어제" }),
+        log("2026-09", 3, { checkedAt: "어제" }),
+      ],
+      "uses",
+      NOW,
+    );
+    expect(months[11]).toEqual({ month: "2026-10", quantity: 8 });
+    expect(months[10]).toEqual({ month: "2026-09", quantity: 3 });
+  });
+
   it("같은 달에 여러 번 체크인했으면 마지막 것을 쓴다", () => {
     const { months } = checkInMonths(
       [

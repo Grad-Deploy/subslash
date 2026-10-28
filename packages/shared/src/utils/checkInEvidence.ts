@@ -91,13 +91,12 @@ export function getCheckInEvidence<T extends CheckInLog>(logs: T[]): CheckInEvid
   if (logs.length === 0) return null;
 
   // 기록은 추가된 순서로 쌓이지만 그 순서를 믿지 않고 체크인 시각으로 줄 세운다.
-  // 시각이 같거나 읽을 수 없으면 나중에 추가된 것을 최신으로 본다.
+  // 시각이 같으면 나중에 추가된 것을 최신으로 보고, 시각을 읽을 수 없는 기록은 가장 오래된 쪽에 둔다
+  // (`latestCheckIn`과 같은 기준 — 언제인지 모르는 체크인을 '마지막 체크인'이라고 말하지 않는다).
+  const timeOf = (log: T) => parseTimestamp(log.checkedAt)?.getTime() ?? -Infinity;
   const ordered = logs
-    .map((log, index) => ({ log, index }))
-    .sort((a, b) => {
-      const diff = Date.parse(b.log.checkedAt) - Date.parse(a.log.checkedAt);
-      return Number.isNaN(diff) || diff === 0 ? b.index - a.index : diff;
-    })
+    .map((log, index) => ({ log, index, time: timeOf(log) }))
+    .sort((a, b) => (a.time === b.time ? b.index - a.index : b.time - a.time))
     .map(({ log }) => log);
 
   // 재는 것이 바뀐 적이 있으면(예전 횟수 체크인 → 시간) 최근 것과 같은 지표끼리만 평균·비교한다.
