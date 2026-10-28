@@ -126,3 +126,17 @@ test.describe("화면 언어 (E2E)", () => {
     await expect(page.getByText("Usernames must be")).toBeVisible();
   });
 });
+
+// 오프라인 화면은 JS 없이 CSS로 언어를 고른다. 예전에는 lang=en일 때만 영어라, 일본어 기기에 한국어가 나왔다.
+test.describe("오프라인 화면의 언어 (E2E)", () => {
+  test.use({ locale: "ja-JP" });
+
+  test("번역이 없는 언어의 기기에서는 한국어가 아니라 영어로 보인다", async ({ page }) => {
+    await page.goto("/offline");
+    await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+    await expect(page.getByRole("heading", { level: 1, name: "You're offline" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "지금은 오프라인입니다" }),
+    ).toBeHidden();
+  });
+});
