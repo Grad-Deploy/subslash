@@ -63,6 +63,7 @@ function WebAutoImportModal({
     clear,
     close,
     toggle,
+    isTracked,
     selected,
     monthlyKRW,
     replaceExisting,
@@ -164,7 +165,12 @@ function WebAutoImportModal({
           )}
 
           {items.length > 0 && (
-            <DiscoveredResults items={items} note={resultsNote} onToggle={toggle} />
+            <DiscoveredResults
+              items={items}
+              note={resultsNote}
+              isTracked={isTracked}
+              onToggle={toggle}
+            />
           )}
         </div>
 
