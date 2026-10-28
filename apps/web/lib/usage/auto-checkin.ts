@@ -19,6 +19,7 @@
  */
 import {
   isPaying,
+  latestCheckIn,
   metricForSubscription,
   metricOfLog,
   type Subscription,
@@ -73,13 +74,7 @@ export function planAutoCheckIns(
     const quantity = phoneQuantity(metric, usage.totals);
     if (quantity === null || quantity === 0) continue;
 
-    const latest = usageLogs
-      .filter((log) => log.subscriptionId === sub.id)
-      .reduce<UsageLog | null>(
-        (best, log) =>
-          !best || Date.parse(log.checkedAt) > Date.parse(best.checkedAt) ? log : best,
-        null,
-      );
+    const latest = latestCheckIn(usageLogs, (log) => log.subscriptionId === sub.id);
 
     const plan: AutoCheckIn = { subscriptionId: sub.id, metric, quantity };
     if (!latest) {

@@ -1,6 +1,7 @@
 import type { Subscription, SubscriptionCategory, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { CATEGORY_LABELS } from "../constants/categories";
+import { latestCheckIn } from "./checkInEvidence";
 import { toKRW } from "./currency";
 import { parseTimestamp } from "./date";
 import { getYearDefendedSeries, sumMyAnnualKRW, type YearDefendedSeries } from "./sharing";
@@ -67,21 +68,6 @@ export interface YearInReview {
 
 function yearOf(iso: string | undefined): number | null {
   return parseTimestamp(iso)?.getFullYear() ?? null;
-}
-
-/** 가장 늦은 체크인. 시각이 같으면 나중에 기록한 것을 최신으로 본다. */
-function latestLog(logs: UsageLog[]): UsageLog | undefined {
-  let latest: UsageLog | undefined;
-  let latestTime = -Infinity;
-  for (const log of logs) {
-    const time = Date.parse(log.checkedAt);
-    const comparable = Number.isNaN(time) ? -Infinity : time;
-    if (!latest || comparable >= latestTime) {
-      latest = log;
-      latestTime = comparable;
-    }
-  }
-  return latest;
 }
 
 /**
@@ -165,7 +151,7 @@ export function buildYearInReview(
   const reviewed = [...active, ...killedThisYear];
   const checkIns = reviewed
     .flatMap((sub): CheckInStanding[] => {
-      const latest = latestLog(
+      const latest = latestCheckIn(
         // '1회당 가장 싸게/비싸게'로 줄 세우므로 횟수 체크인만 본다. 시간당·하루당과 섞으면 비교가 안 된다.
         logs.filter(
           (log) =>

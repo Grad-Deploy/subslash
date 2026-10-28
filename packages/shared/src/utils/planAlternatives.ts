@@ -1,4 +1,5 @@
 import { DAY_MS } from "./date";
+import { latestCheckIn } from "./checkInEvidence";
 import type { BillingCycle, Currency, Subscription, UsageLog } from "../types";
 import {
   counterpartPlan,
@@ -79,16 +80,14 @@ function recentUsesLog(
   logs: readonly UsageLog[],
   now: Date,
 ): UsageLog | null {
-  let latest: UsageLog | null = null;
-  for (const log of logs) {
-    if (log.subscriptionId !== subscriptionId) continue;
-    // 1회 단가로 줄 세우므로 횟수 체크인만 본다. 시간·쓴 날과 섞으면 '1회'의 뜻이 달라진다.
-    if ((log.metric ?? "uses") !== "uses") continue;
-    const time = Date.parse(log.checkedAt);
-    if (Number.isNaN(time) || now.getTime() - time > RECENT_USAGE_DAYS * DAY_MS) continue;
-    if (!latest || time >= Date.parse(latest.checkedAt)) latest = log;
-  }
-  return latest;
+  // 1회 단가로 줄 세우므로 횟수 체크인만 본다. 시간·쓴 날과 섞으면 '1회'의 뜻이 달라진다.
+  return latestCheckIn(
+    logs,
+    (log, at) =>
+      log.subscriptionId === subscriptionId &&
+      (log.metric ?? "uses") === "uses" &&
+      now.getTime() - at.getTime() <= RECENT_USAGE_DAYS * DAY_MS,
+  );
 }
 
 function priceOf(

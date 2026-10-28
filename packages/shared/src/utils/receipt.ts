@@ -1,6 +1,7 @@
 import type { ChargeRecord, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { isSameService } from "./chargeHistory";
+import { latestCheckIn } from "./checkInEvidence";
 import { getBilledAmount, getBilledAmountKRW, toKRW } from "./currency";
 import { isInTrial, parseTimestamp, startOfDay, localDateKey } from "./date";
 import type { RateOn } from "./historicalRate";
@@ -147,15 +148,13 @@ function lastUsesLogIn(
   logs: readonly UsageLog[],
   period: ReceiptPeriod,
 ): UsageLog | null {
-  let latest: UsageLog | null = null;
-  for (const log of logs) {
-    if (log.subscriptionId !== subscriptionId) continue;
-    if ((log.metric ?? "uses") !== "uses") continue;
-    const at = parseTimestamp(log.checkedAt);
-    if (!at || !inPeriod(at, period)) continue;
-    if (!latest || at.getTime() >= Date.parse(latest.checkedAt)) latest = log;
-  }
-  return latest;
+  return latestCheckIn(
+    logs,
+    (log, at) =>
+      log.subscriptionId === subscriptionId &&
+      (log.metric ?? "uses") === "uses" &&
+      inPeriod(at, period),
+  );
 }
 
 /** `YYYY-MM-DD`를 그 기기 시간대의 날짜로. */

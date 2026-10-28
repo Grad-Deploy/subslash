@@ -1,6 +1,7 @@
 import { Currency, Subscription, UsageLog } from "../types";
 import { calculateCostPerUse, getRiskLevel } from "./cost-per-use";
 import { toKRW } from "./currency";
+import { latestCheckInBySubscription } from "./checkInEvidence";
 import { getMyMonthlyShareAmount, getMyMonthlyAmountKRW } from "./sharing";
 
 // ─────────────────────────────────────────────────────────
@@ -208,14 +209,7 @@ export function getMonthlyValueSummary(
 ): MonthlyValueSummary {
   const active = subscriptions.filter((s) => s.status === "active");
 
-  // 구독별 최신 체크인
-  const latestLog = new Map<string, UsageLog>();
-  for (const log of usageLogs) {
-    const current = latestLog.get(log.subscriptionId);
-    if (!current || new Date(log.checkedAt) > new Date(current.checkedAt)) {
-      latestLog.set(log.subscriptionId, log);
-    }
-  }
+  const latestLog = latestCheckInBySubscription(usageLogs);
 
   const worthItItems: ValueReportItem[] = [];
   const wastedItems: ValueReportItem[] = [];

@@ -1,6 +1,47 @@
 import type { UsageLog } from "../types";
+import { parseTimestamp } from "./date";
 
 type CheckInLog = Pick<UsageLog, "usageCount" | "costPerUse" | "checkedAt" | "metric">;
+
+/**
+ * 가장 늦은 체크인. `include`가 있으면 그것이 받아 준 것 중에서 고른다. 시각이 같으면 나중에 기록한(배열에서
+ * 뒤에 있는) 것을 최신으로 보고, 시각을 읽을 수 없는 기록은 고르지 않는다 — 언제인지 모르는 체크인을 '최근'이라고
+ * 말하지 않는다. 없으면 `null`.
+ */
+export function latestCheckIn<T extends Pick<UsageLog, "checkedAt">>(
+  logs: Iterable<T>,
+  include?: (log: T, at: Date) => boolean,
+): T | null {
+  let latest: T | null = null;
+  let latestTime = -Infinity;
+  for (const log of logs) {
+    const at = parseTimestamp(log.checkedAt);
+    if (!at || (include && !include(log, at))) continue;
+    if (at.getTime() >= latestTime) {
+      latest = log;
+      latestTime = at.getTime();
+    }
+  }
+  return latest;
+}
+
+/** 구독마다 가장 늦은 체크인(`latestCheckIn`과 같은 기준). */
+export function latestCheckInBySubscription<
+  T extends Pick<UsageLog, "checkedAt" | "subscriptionId">,
+>(logs: Iterable<T>): Map<string, T> {
+  const bySubscription = new Map<string, T[]>();
+  for (const log of logs) {
+    const list = bySubscription.get(log.subscriptionId);
+    if (list) list.push(log);
+    else bySubscription.set(log.subscriptionId, [log]);
+  }
+  const latest = new Map<string, T>();
+  for (const [id, list] of bySubscription) {
+    const log = latestCheckIn(list);
+    if (log) latest.set(id, log);
+  }
+  return latest;
+}
 
 /** 평균을 낼 최근 체크인 수. */
 export const CHECK_IN_EVIDENCE_WINDOW = 3;

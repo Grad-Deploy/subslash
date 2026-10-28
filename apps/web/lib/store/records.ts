@@ -3,6 +3,7 @@ import {
   clampQuantity,
   evaluateMetric,
   getMyMonthlyShareAmount,
+  latestCheckIn,
   metricForSubscription,
   storagePlanFit,
   type CheckInResponse,
@@ -141,8 +142,5 @@ export function buildCheckInLog(
 
 /** 가장 최근 체크인이 빨강인지. 체크인이 없으면 위험으로 보지 않는다(모름). */
 export function isAtRisk(sub: Subscription, usageLogs: UsageLog[]): boolean {
-  const logs = usageLogs
-    .filter((log) => log.subscriptionId === sub.id)
-    .sort((a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime());
-  return logs.length > 0 && logs[0].riskLevel === "red";
+  return latestCheckIn(usageLogs, (log) => log.subscriptionId === sub.id)?.riskLevel === "red";
 }
