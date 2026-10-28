@@ -369,6 +369,8 @@ function fromWire(value: unknown, labels: MaskedNameLabels, now: Date): SharedRe
     defendedUnknownCount,
     killed,
     fx: { historical: wire.fx[0], current: wire.fx[1] },
+    // 고치기 전 금액으로 셈한 건수는 링크에 싣지 않는다 — 받는 쪽은 그 안내를 쓰지 않는다.
+    priorAmount: 0,
     excluded: { undated: wire.x[0], beforeRegistration: wire.x[1], trial: wire.x[2] },
   };
   return {

@@ -12,6 +12,7 @@ import {
   chargeHistoryTarget,
   matchCancelNotices,
   mergeChargeHistory,
+  nextAmountHistory,
   type ChargeRecord,
 } from "@subslash/shared";
 import {
@@ -166,6 +167,8 @@ export const useStore = create<SubSlashStore>()(
             (sub) => ({
               ...sub,
               ...data,
+              // 금액을 고쳤으면 고친 날부터 새 금액이다. 지난 결제는 고치기 전 금액으로 셈한다(영수증).
+              amountHistory: nextAmountHistory(sub, { ...sub, ...data }),
               // 금액을 고쳤으면 "영수증과 다르다"는 표식은 더 이상 맞지 않는다.
               ...(data.amount !== undefined
                 ? { observedAmount: undefined, observedAmountAt: undefined }
@@ -177,17 +180,21 @@ export const useStore = create<SubSlashStore>()(
           const checkedAt = new Date().toISOString();
           patchSubscriptions(
             (sub) => sub.id === id,
-            (sub) => ({
-              ...sub,
-              amount:
+            (sub) => {
+              const amount =
                 typeof newAmount === "number" && Number.isFinite(newAmount) && newAmount > 0
                   ? newAmount
-                  : sub.amount,
-              lastPriceCheckedAt: checkedAt,
-              // 사용자가 답을 줬으니 관측 표식을 내린다. 또 다른 금액이 오면 다시 적힌다.
-              observedAmount: undefined,
-              observedAmountAt: undefined,
-            }),
+                  : sub.amount;
+              return {
+                ...sub,
+                amount,
+                amountHistory: nextAmountHistory(sub, { ...sub, amount }),
+                lastPriceCheckedAt: checkedAt,
+                // 사용자가 답을 줬으니 관측 표식을 내린다. 또 다른 금액이 오면 다시 적힌다.
+                observedAmount: undefined,
+                observedAmountAt: undefined,
+              };
+            },
           );
         },
         // 이미 해지한 구독은 다시 해지로 기록하지 않는다. 예전에는 상세 화면의 해지 가이드나 해지 전에

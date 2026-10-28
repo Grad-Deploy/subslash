@@ -68,6 +68,7 @@ const BACKUP_FIELDS_EN: BackupFieldNames = {
   "해지 기록": "cancellation record",
   "주문 메일 근거": "order email evidence",
   "결제 메일 기록": "payment email history",
+  "금액 변경 기록": "amount change history",
   "구독 ID": "subscription ID",
   월: "month",
   "사용 횟수": "usage count",
