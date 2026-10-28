@@ -16,7 +16,7 @@ import { AppImportFlow } from "./AppImportFlow";
 import { AppStepper, StepTip, type AppStep } from "./AppStepper";
 import { AppSheet } from "../../settings/app/AppSheet";
 import { useKnownText, useLocale, useT } from "@lib/i18n";
-import { appsScriptLocale } from "@lib/i18n/config";
+import { appsScriptLocale, intlLocale } from "@lib/i18n/config";
 
 /**
  * 앱의 결제 메일 불러오기(/import 안내). 웹의 긴 안내 대신 고를 방법 → 한 단계씩으로 나눈다.
@@ -33,7 +33,7 @@ export function AppImportGuide() {
   const locale = useLocale();
   const g = t.importing.guide;
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(g.dateFormat, { month: "long", day: "numeric" });
+    new Date(iso).toLocaleDateString(intlLocale(locale), { month: "long", day: "numeric" });
   const confirmCopy = {
     reconnect: g.confirmReconnect,
     rotate: g.confirmRotate,
