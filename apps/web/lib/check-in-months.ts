@@ -1,4 +1,10 @@
-import { metricOfLog, type UsageLog, type ValueMetric, localMonthKey } from "@subslash/shared";
+import {
+  latestCheckIn,
+  metricOfLog,
+  type UsageLog,
+  type ValueMetric,
+  localMonthKey,
+} from "@subslash/shared";
 
 /** 한 달의 체크인 수량. 그 달에 체크인하지 않았으면 null이다 — 0(안 썼다)과 다르다. */
 export interface CheckInMonth {
@@ -30,7 +36,7 @@ export function checkInMonths(
     keys.push(localMonthKey(new Date(now.getFullYear(), now.getMonth() - i, 1)));
   }
   const inRange = new Set(keys);
-  const latest = new Map<string, UsageLog>();
+  const byMonth = new Map<string, UsageLog[]>();
   let otherMetric = 0;
   for (const log of logs) {
     if (!inRange.has(log.month)) continue;
@@ -38,11 +44,16 @@ export function checkInMonths(
       otherMetric += 1;
       continue;
     }
-    const prev = latest.get(log.month);
-    if (!prev || log.checkedAt > prev.checkedAt) latest.set(log.month, log);
+    byMonth.set(log.month, [...(byMonth.get(log.month) ?? []), log]);
   }
+  // 그 달의 마지막 체크인. 시각을 읽을 수 없는 기록뿐이면 언제가 마지막인지 몰라도 그 달에 체크인한
+  // 것은 맞으므로, 나중에 기록한 것을 쓴다.
+  const latestIn = (month: string) => {
+    const monthLogs = byMonth.get(month) ?? [];
+    return latestCheckIn(monthLogs) ?? monthLogs.at(-1) ?? null;
+  };
   return {
-    months: keys.map((month) => ({ month, quantity: latest.get(month)?.usageCount ?? null })),
+    months: keys.map((month) => ({ month, quantity: latestIn(month)?.usageCount ?? null })),
     otherMetric,
   };
 }

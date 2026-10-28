@@ -37,6 +37,16 @@ describe("getCheckInEvidence", () => {
     expect(evidence?.latest.usageCount).toBe(2);
   });
 
+  it("시각을 읽을 수 없는 기록은 마지막 체크인으로 고르지 않는다(latestCheckIn과 같은 기준)", () => {
+    const evidence = getCheckInEvidence([
+      log(8, 12900 / 8, "2026-10-01T00:00:00.000Z"),
+      log(1, 12900, "어제"),
+    ]);
+
+    expect(evidence?.latest.usageCount).toBe(8);
+    expect(evidence?.recent.map((l) => l.usageCount)).toEqual([8, 1]);
+  });
+
   it("직전 체크인보다 덜 썼으면 이용 횟수는 줄고 1회당 비용은 오른다", () => {
     const evidence = getCheckInEvidence([
       log(6, 17000 / 6, "2026-08-01T00:00:00.000Z"),
