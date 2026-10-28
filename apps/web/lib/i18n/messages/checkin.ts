@@ -235,7 +235,6 @@ export const ko = {
       "숫자는 체크인 때 적은 값입니다. 폰 기록으로 자동 체크인한 것은 이 폰의 기록이라, 다른 기기에서 쓴 것은 빠져 있습니다.",
     unknownDate: "날짜 모름",
     amountOf: (metric: string, n: string) => `${n}${metric}`,
-    dateLocale: "ko-KR",
   },
   flow: {
     reminderOn: "결제 알림을 켰어요. 몇 초 뒤 시험 알림이 떠요.",
@@ -502,7 +501,6 @@ export const en: Widen<typeof ko> = {
       "The numbers are what you entered at check-in. Auto check-ins from phone records only cover this phone, so use on other devices is missing.",
     unknownDate: "Date unknown",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "en-US",
   },
   flow: {
     reminderOn: "Payment reminders are on. A test notification will arrive in a few seconds.",
@@ -774,7 +772,6 @@ export const zh: Widen<typeof ko> = {
       "数字是签到时你输入的值。手机记录的自动签到只涵盖这部手机，不包括其他设备上的使用。",
     unknownDate: "日期不明",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "zh-CN",
   },
   flow: {
     reminderOn: "扣款提醒已开启。几秒后会收到测试通知。",
@@ -1032,7 +1029,6 @@ export const ja: Widen<typeof ko> = {
       "数字はチェックインで入力した値です。スマホの記録による自動チェックインはこのスマホだけなので、ほかの端末での利用は含まれません。",
     unknownDate: "日付不明",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "ja-JP",
   },
   flow: {
     reminderOn: "支払い通知がオンになりました。数秒後にテスト通知が届きます。",
@@ -1294,7 +1290,6 @@ export const vi: Widen<typeof ko> = {
       "Các con số là giá trị bạn nhập khi check-in. Check-in tự động từ dữ liệu điện thoại chỉ tính điện thoại này, không gồm việc dùng trên thiết bị khác.",
     unknownDate: "Không rõ ngày",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "vi-VN",
   },
   flow: {
     reminderOn: "Đã bật nhắc thanh toán. Thông báo thử sẽ đến sau vài giây.",
@@ -1573,7 +1568,6 @@ export const fr: Widen<typeof ko> = {
       "Les chiffres sont ceux saisis lors du check-in. Les check-ins automatiques ne couvrent que ce téléphone : l'usage sur d'autres appareils manque.",
     unknownDate: "Date inconnue",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "fr-FR",
   },
   flow: {
     reminderOn:
@@ -1847,7 +1841,6 @@ export const es: Widen<typeof ko> = {
       "Las cifras son lo que escribiste al registrar. Los registros automáticos del móvil solo cubren este móvil, así que falta el uso en otros dispositivos.",
     unknownDate: "Fecha desconocida",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "es-ES",
   },
   flow: {
     reminderOn:
@@ -2123,7 +2116,6 @@ export const de: Widen<typeof ko> = {
       "Die Zahlen sind deine Eingaben beim Eintragen. Automatische Einträge aus Handydaten umfassen nur dieses Handy, Nutzung auf anderen Geräten fehlt.",
     unknownDate: "Datum unbekannt",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "de-DE",
   },
   flow: {
     reminderOn:
@@ -2395,7 +2387,6 @@ export const pt: Widen<typeof ko> = {
       "Os números são o que você informou ao registrar. Os registros automáticos do celular cobrem só este celular, então falta o uso em outros dispositivos.",
     unknownDate: "Data desconhecida",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "pt-BR",
   },
   flow: {
     reminderOn:

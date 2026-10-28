@@ -7,6 +7,7 @@ import {
   needsBillingMonth,
   formatDday,
   formatCountdown,
+  daysBetween,
 } from "@subslash/shared";
 
 describe("Date Utils", () => {
@@ -164,5 +165,21 @@ describe("연간 결제 구독의 다음 결제일", () => {
     expect(
       getDaysUntilBillingFor({ billingDay: 12, billingCycle: "yearly", billingMonth: 9 }, SEP_9),
     ).toBe(3);
+  });
+});
+
+describe("daysBetween", () => {
+  const at = (iso: string) => new Date(iso);
+
+  it("지난 시간을 24시간 단위로 내려 센다(달력의 날짜 차이가 아니다)", () => {
+    expect(daysBetween(at("2026-10-01T00:00:00Z"), at("2026-10-28T00:00:00Z"))).toBe(27);
+    expect(daysBetween(at("2026-10-27T23:00:00Z"), at("2026-10-28T01:00:00Z"))).toBe(0);
+    expect(daysBetween(at("2026-10-27T01:00:00Z"), at("2026-10-28T00:59:00Z"))).toBe(0);
+  });
+
+  it("밀리초 숫자도 받고, to가 앞이면 음수다", () => {
+    const from = Date.parse("2026-10-28T00:00:00Z");
+    expect(daysBetween(from, from + 3 * 86_400_000)).toBe(3);
+    expect(daysBetween(at("2026-10-28T00:00:00Z"), at("2026-10-26T12:00:00Z"))).toBe(-2);
   });
 });

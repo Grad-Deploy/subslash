@@ -178,7 +178,6 @@ export const ko = {
       ) =>
         `SubSlash ${scope} 구독 결산\n해지한 구독 ${killed}개 · 해지로 막은 결제 ${blocked}${confirmedLine}${type ? `\n소비 유형: ${type}` : ""}\n결산 보기: ${url}`,
       shareConfirmed: (amount: string) => ` · 그중 지킨 돈 ${amount}`,
-      dateLocale: "ko-KR",
     },
     spendingType: {
       focusedTitle: (category: string) => `${category} 집중형`,
@@ -472,7 +471,6 @@ export const en: Widen<typeof ko> = {
       shareText: (scope, killed, blocked, confirmedLine, type, url) =>
         `SubSlash ${scope} subscription review\nCancelled ${killed} ${pluralOf(killed, "subscription", "subscriptions")} · charges blocked by cancelling ${blocked}${confirmedLine}${type ? `\nSpending type: ${type}` : ""}\nSee the review: ${url}`,
       shareConfirmed: (amount) => ` · of which kept ${amount}`,
-      dateLocale: "en-US",
     },
     spendingType: {
       focusedTitle: (category) => `${category}-focused`,
@@ -760,7 +758,6 @@ export const zh: Widen<typeof ko> = {
       shareText: (scope, killed, blocked, confirmedLine, type, url) =>
         `SubSlash ${scope}订阅总结\n退订 ${killed} 个 · 退订拦下的扣款 ${blocked}${confirmedLine}${type ? `\n消费类型：${type}` : ""}\n查看总结：${url}`,
       shareConfirmed: (amount) => ` · 其中守住 ${amount}`,
-      dateLocale: "zh-CN",
     },
     spendingType: {
       focusedTitle: (category) => `${category}集中型`,
@@ -1030,7 +1027,6 @@ export const ja: Widen<typeof ko> = {
       shareText: (scope, killed, blocked, confirmedLine, type, url) =>
         `SubSlash ${scope}サブスクまとめ\n${killed} 件解約 · 解約で止めた請求 ${blocked}${confirmedLine}${type ? `\n支出タイプ: ${type}` : ""}\nまとめを見る: ${url}`,
       shareConfirmed: (amount) => ` · うち守った ${amount}`,
-      dateLocale: "ja-JP",
     },
     spendingType: {
       focusedTitle: (category) => `${category}集中型`,
@@ -1315,7 +1311,6 @@ export const vi: Widen<typeof ko> = {
       shareText: (scope, killed, blocked, confirmedLine, type, url) =>
         `Tổng kết gói đăng ký SubSlash ${scope}\nĐã hủy ${killed} gói · khoản trừ đã chặn nhờ hủy ${blocked}${confirmedLine}${type ? `\nKiểu chi tiêu: ${type}` : ""}\nXem tổng kết: ${url}`,
       shareConfirmed: (amount) => ` · trong đó giữ được ${amount}`,
-      dateLocale: "vi-VN",
     },
     spendingType: {
       focusedTitle: (category) => `Tập trung vào ${category}`,
@@ -1608,7 +1603,6 @@ export const fr: Widen<typeof ko> = {
       shareText: (scope, killed, blocked, confirmedLine, type, url) =>
         `Bilan des abonnements SubSlash ${scope}\n${killed} abonnement${svPl(killed, "", "s")} résilié${svPl(killed, "", "s")} · prélèvements bloqués ${blocked}${confirmedLine}${type ? `\nProfil de dépenses : ${type}` : ""}\nVoir le bilan : ${url}`,
       shareConfirmed: (amount) => ` · dont ${amount} gardés`,
-      dateLocale: "fr-FR",
     },
     spendingType: {
       focusedTitle: (category) => `Axé ${category}`,
@@ -1900,7 +1894,6 @@ export const es: Widen<typeof ko> = {
       shareText: (scope, killed, blocked, confirmedLine, type, url) =>
         `Resumen de suscripciones SubSlash ${scope}\n${killed} suscripci${svPl(killed, "ón", "ones")} cancelada${svPl(killed, "", "s")} · cobros bloqueados ${blocked}${confirmedLine}${type ? `\nTipo de gasto: ${type}` : ""}\nMira el resumen: ${url}`,
       shareConfirmed: (amount) => ` · de ello conservado ${amount}`,
-      dateLocale: "es-ES",
     },
     spendingType: {
       focusedTitle: (category) => `Centrado en ${category}`,
@@ -2198,7 +2191,6 @@ export const de: Widen<typeof ko> = {
       shareText: (scope, killed, blocked, confirmedLine, type, url) =>
         `SubSlash Abo-Rückblick ${scope}\n${killed} ${svPl(killed, "Abo", "Abos")} gekündigt · verhinderte Abbuchungen ${blocked}${confirmedLine}${type ? `\nAusgabentyp: ${type}` : ""}\nRückblick ansehen: ${url}`,
       shareConfirmed: (amount) => ` · davon behalten ${amount}`,
-      dateLocale: "de-DE",
     },
     spendingType: {
       focusedTitle: (category) => `Fokus ${category}`,
@@ -2494,7 +2486,6 @@ export const pt: Widen<typeof ko> = {
       shareText: (scope, killed, blocked, confirmedLine, type, url) =>
         `Resumo de assinaturas SubSlash ${scope}\n${killed} assinatura${svPl(killed, "", "s")} cancelada${svPl(killed, "", "s")} · cobranças bloqueadas ${blocked}${confirmedLine}${type ? `\nPerfil de gastos: ${type}` : ""}\nVeja o resumo: ${url}`,
       shareConfirmed: (amount) => ` · dos quais guardados ${amount}`,
-      dateLocale: "pt-BR",
     },
     spendingType: {
       focusedTitle: (category) => `Foco em ${category}`,

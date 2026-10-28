@@ -286,7 +286,6 @@ export const ko = {
       webAddress: "웹 주소",
       understood: "알겠어요",
       stayPhone: "그래도 폰에서 할게요",
-      dateFormat: "ko-KR",
       close: "닫기",
     },
     flow: {
@@ -600,7 +599,6 @@ export const en: Widen<typeof ko> = {
       webAddress: "Web address",
       understood: "Got it",
       stayPhone: "I'll do it on my phone anyway",
-      dateFormat: "en-US",
       close: "Close",
     },
     flow: {
@@ -882,7 +880,6 @@ export const zh: Widen<typeof ko> = {
       webAddress: "网页地址",
       understood: "知道了",
       stayPhone: "还是在手机上做",
-      dateFormat: "zh-CN",
       close: "关闭",
     },
     flow: {
@@ -1183,7 +1180,6 @@ export const ja: Widen<typeof ko> = {
       webAddress: "ウェブのアドレス",
       understood: "わかりました",
       stayPhone: "それでもスマホでやる",
-      dateFormat: "ja-JP",
       close: "閉じる",
     },
     flow: {
@@ -1485,7 +1481,6 @@ export const vi: Widen<typeof ko> = {
       webAddress: "Địa chỉ web",
       understood: "Đã hiểu",
       stayPhone: "Tôi vẫn làm trên điện thoại",
-      dateFormat: "vi-VN",
       close: "Đóng",
     },
     flow: {
@@ -1808,7 +1803,6 @@ export const fr: Widen<typeof ko> = {
       webAddress: "Adresse web",
       understood: "Compris",
       stayPhone: "Je le fais quand même sur mon téléphone",
-      dateFormat: "fr-FR",
       close: "Fermer",
     },
     flow: {
@@ -2116,7 +2110,6 @@ export const es: Widen<typeof ko> = {
       webAddress: "Dirección web",
       understood: "Entendido",
       stayPhone: "Lo haré en el móvil igualmente",
-      dateFormat: "es-ES",
       close: "Cerrar",
     },
     flow: {
@@ -2431,7 +2424,6 @@ export const de: Widen<typeof ko> = {
       webAddress: "Web-Adresse",
       understood: "Verstanden",
       stayPhone: "Ich mache es trotzdem am Handy",
-      dateFormat: "de-DE",
       close: "Schließen",
     },
     flow: {
@@ -2741,7 +2733,6 @@ export const pt: Widen<typeof ko> = {
       webAddress: "Endereço web",
       understood: "Entendi",
       stayPhone: "Vou fazer no celular mesmo assim",
-      dateFormat: "pt-BR",
       close: "Fechar",
     },
     flow: {

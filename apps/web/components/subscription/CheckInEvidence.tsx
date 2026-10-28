@@ -11,7 +11,8 @@ import {
   unitCostPart,
   parseTimestamp,
 } from "@subslash/shared";
-import { useT, type Messages } from "@lib/i18n";
+import { useLocale, useT, type Locale, type Messages } from "@lib/i18n";
+import { intlLocale } from "@lib/i18n/config";
 import { describeQuantityText, unitCostText } from "@lib/i18n/check-in-text";
 
 interface CheckInEvidenceProps {
@@ -48,11 +49,11 @@ function describeCostChange(
   return delta > 0 ? e.costUp(perUnit, shown) : e.costDown(perUnit, shown);
 }
 
-function formatCheckedAt(t: Messages, iso: string): string {
+function formatCheckedAt(t: Messages, locale: Locale, iso: string): string {
   const date = parseTimestamp(iso);
   return !date
     ? t.checkin.evidence.unknownDate
-    : date.toLocaleDateString(t.checkin.evidence.dateLocale, { month: "long", day: "numeric" });
+    : date.toLocaleDateString(intlLocale(locale), { month: "long", day: "numeric" });
 }
 
 /**
@@ -63,6 +64,7 @@ function formatCheckedAt(t: Messages, iso: string): string {
  */
 export function CheckInEvidence({ logs, currency }: CheckInEvidenceProps) {
   const t = useT();
+  const locale = useLocale();
   const e = t.checkin.evidence;
   const evidence = getCheckInEvidence(logs);
   if (!evidence) return null;
@@ -97,7 +99,7 @@ export function CheckInEvidence({ logs, currency }: CheckInEvidenceProps) {
           </dd>
           <dd className="text-[11px] text-muted-foreground">
             {e.recorded(
-              formatCheckedAt(t, latest.checkedAt),
+              formatCheckedAt(t, locale, latest.checkedAt),
               describeQuantityText(t, metric, latest.usageCount),
             )}
           </dd>

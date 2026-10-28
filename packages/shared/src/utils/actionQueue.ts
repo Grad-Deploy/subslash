@@ -1,7 +1,7 @@
 import { Currency, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { getBilledAmount } from "./currency";
-import { getDaysUntilBillingFor, getDaysUntilTrialEnd, parseTimestamp, DAY_MS } from "./date";
+import { daysBetween, getDaysUntilBillingFor, getDaysUntilTrialEnd, parseTimestamp } from "./date";
 import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
 import { getKillCheckStatus } from "./killCheck";
@@ -215,7 +215,7 @@ const VERB: Record<ActionKind, ActionVerb> = {
 function daysSince(iso: string, now: Date): number | null {
   const then = parseTimestamp(iso);
   if (!then) return null;
-  return Math.floor((now.getTime() - then.getTime()) / DAY_MS);
+  return daysBetween(then, now);
 }
 
 /** 이번 결제에서 빠져나갈 내 몫. 연간 플랜은 한 번에 연 결제액이 나간다. */
