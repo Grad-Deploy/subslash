@@ -193,6 +193,8 @@ export function receiptFootnotes(
   if (current > 0) {
     notes.push(n.current(current));
   }
+  // 금액을 고치기 전의 결제를 고치기 전 금액으로 셈했으면, 그 금액이 사용자가 적은 값이라고 밝힌다.
+  if (receipt.priorAmount > 0) notes.push(n.priorAmount(receipt.priorAmount));
   if (!receipt.isComplete) {
     notes.push(receipt.upcomingCount > 0 ? n.incompleteUpcoming : n.incompleteToday);
   }

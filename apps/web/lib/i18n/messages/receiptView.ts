@@ -52,6 +52,8 @@ export const ko = {
         "지난 달러 결제는 결제일의 고시 환율(ECB 기준)로 바꿨어요. 카드사 환율과 조금 다를 수 있어요.",
       current: (count: number) =>
         `지난 달러 결제 ${count}건은 그날 환율을 받지 못해 지금 설정한 환율로 계산했어요.`,
+      priorAmount: (count: number) =>
+        `금액을 고치기 전에 있던 결제 ${count}건은 고치기 전 금액으로 계산했어요. 고친 날부터 새 금액이라고 보고, 이 금액은 직접 적은 값이에요.`,
       incompleteUpcoming:
         "아직 끝나지 않은 기간이에요. 지금 구독 중인데 이번 달 결제일이 오지 않은 것은 ‘결제 예정’으로 넣었어요.",
       incompleteToday: "아직 끝나지 않은 기간이라 오늘까지 결제된 것만 적었어요.",
@@ -179,6 +181,8 @@ export const en: Widen<typeof ko> = {
         "Past dollar payments were converted at the published rate on the payment date (ECB). It may differ slightly from your card company's rate.",
       current: (count) =>
         `${count} past dollar ${one(count) ? "payment" : "payments"} couldn't get that day's rate, so ${one(count) ? "it uses" : "they use"} the rate you set now.`,
+      priorAmount: (count) =>
+        `${count} ${one(count) ? "payment" : "payments"} from before you changed the amount ${one(count) ? "uses" : "use"} the earlier amount. A new amount counts from the day you changed it, and these amounts are what you entered.`,
       incompleteUpcoming:
         "This period isn't over yet. Subscriptions you have now whose billing day this month hasn't come are included as “due”.",
       incompleteToday: "This period isn't over yet, so only charges up to today are listed.",
@@ -300,6 +304,8 @@ export const zh: Widen<typeof ko> = {
         `登记之前的 ${count} 笔付款，按 Gmail 中找到的付款邮件的日期和金额补充。${shared ? "分摊订阅的份额按当前的分摊方式计算。" : ""}`,
       historical: "过去的美元付款按付款日的公布汇率（ECB）换算，可能与发卡机构的汇率略有不同。",
       current: (count) => `${count} 笔过去的美元付款无法取得当天汇率，因此使用你现在设置的汇率。`,
+      priorAmount: (count) =>
+        `修改金额之前的 ${count} 笔付款按修改前的金额计算。新金额从修改当天起算，这些金额是你自己填写的。`,
       incompleteUpcoming: "本期尚未结束。本月扣款日还没到的现有订阅以“将扣款”计入。",
       incompleteToday: "本期尚未结束，因此只列出截至今天的扣款。",
       undated: (count) => `${count} 个不知道扣款月份的年付订阅无法计入。`,
@@ -410,6 +416,8 @@ export const ja: Widen<typeof ko> = {
         "過去のドル払いは支払日の公表レート（ECB）で換算しました。カード会社のレートとは少し違うことがあります。",
       current: (count) =>
         `過去のドル払い ${count} 件はその日のレートが取れず、今設定しているレートを使いました。`,
+      priorAmount: (count) =>
+        `金額を変更する前の支払い ${count} 件は、変更前の金額で計算しました。新しい金額は変更した日からとみなし、これらはあなたが入力した金額です。`,
       incompleteUpcoming:
         "この期間はまだ終わっていません。今月の支払日がまだ来ていない今のサブスクは「支払い予定」として含めています。",
       incompleteToday: "この期間はまだ終わっていないため、今日までの請求だけを載せています。",
@@ -528,6 +536,8 @@ export const vi: Widen<typeof ko> = {
         "Các khoản trả bằng đô la trước đây được quy đổi theo tỷ giá công bố ngày thanh toán (ECB). Có thể hơi khác tỷ giá của ngân hàng phát hành thẻ.",
       current: (count) =>
         `${count} khoản trả bằng đô la trước đây không lấy được tỷ giá ngày đó, nên dùng tỷ giá bạn đang đặt.`,
+      priorAmount: (count) =>
+        `${count} khoản thanh toán trước khi bạn đổi số tiền được tính theo số tiền cũ. Số tiền mới được tính từ ngày bạn đổi, và đây là số tiền bạn tự nhập.`,
       incompleteUpcoming:
         "Kỳ này chưa kết thúc. Các gói hiện có mà ngày thanh toán tháng này chưa đến được tính là “sắp trừ”.",
       incompleteToday: "Kỳ này chưa kết thúc nên chỉ liệt kê các khoản đến hôm nay.",
@@ -651,6 +661,8 @@ export const fr: Widen<typeof ko> = {
         "Les paiements passés en dollars ont été convertis au taux publié du jour du paiement (BCE). Il peut légèrement différer du taux de votre banque.",
       current: (count) =>
         `${count} paiement${Number(count) === 1 ? "" : "s"} passé${Number(count) === 1 ? "" : "s"} en dollars n'${Number(count) === 1 ? "a" : "ont"} pas pu obtenir le taux du jour : le taux que vous avez défini est utilisé.`,
+      priorAmount: (count) =>
+        `${count} paiement${Number(count) === 1 ? "" : "s"} antérieur${Number(count) === 1 ? "" : "s"} à la modification du montant ${Number(count) === 1 ? "utilise" : "utilisent"} l'ancien montant. Le nouveau montant compte à partir du jour de la modification ; ces montants sont ceux que vous avez saisis.`,
       incompleteUpcoming:
         "Cette période n'est pas terminée. Les abonnements actuels dont le jour de paiement de ce mois n'est pas encore arrivé sont inclus comme « prévus ».",
       incompleteToday:
@@ -775,6 +787,8 @@ export const es: Widen<typeof ko> = {
         "Los pagos pasados en dólares se convirtieron al tipo publicado el día del pago (BCE). Puede diferir un poco del tipo de tu banco.",
       current: (count) =>
         `${count} pago${Number(count) === 1 ? "" : "s"} pasado${Number(count) === 1 ? "" : "s"} en dólares no ${Number(count) === 1 ? "obtuvo" : "obtuvieron"} el tipo de ese día, así que se usa el tipo que tienes configurado.`,
+      priorAmount: (count) =>
+        `${count} pago${Number(count) === 1 ? "" : "s"} anterior${Number(count) === 1 ? "" : "es"} al cambio de importe ${Number(count) === 1 ? "usa" : "usan"} el importe anterior. El nuevo importe cuenta desde el día en que lo cambiaste, y estos importes son los que escribiste.`,
       incompleteUpcoming:
         "Este periodo no ha terminado. Las suscripciones actuales cuyo día de cobro de este mes no ha llegado se incluyen como «por cobrar».",
       incompleteToday: "Este periodo no ha terminado, así que solo se listan los cobros hasta hoy.",
@@ -899,6 +913,8 @@ export const de: Widen<typeof ko> = {
         "Frühere Dollarzahlungen wurden zum veröffentlichten Kurs des Zahlungstags (EZB) umgerechnet. Er kann leicht vom Kurs deiner Kartenfirma abweichen.",
       current: (count) =>
         `Für ${count} frühere Dollarzahlung${Number(count) === 1 ? "" : "en"} gab es keinen Tageskurs, daher wird dein aktuell eingestellter Kurs verwendet.`,
+      priorAmount: (count) =>
+        `${count} Zahlung${Number(count) === 1 ? "" : "en"} vor der Betragsänderung ${Number(count) === 1 ? "verwendet" : "verwenden"} den früheren Betrag. Der neue Betrag gilt ab dem Tag der Änderung; diese Beträge hast du selbst eingetragen.`,
       incompleteUpcoming:
         "Dieser Zeitraum ist noch nicht vorbei. Aktuelle Abos, deren Abbuchungstag in diesem Monat noch kommt, sind als „fällig“ enthalten.",
       incompleteToday:
@@ -1027,6 +1043,8 @@ export const pt: Widen<typeof ko> = {
         "Os pagamentos passados em dólar foram convertidos pela taxa publicada no dia do pagamento (BCE). Pode diferir um pouco da taxa do seu banco.",
       current: (count) =>
         `${count} pagamento${Number(count) === 1 ? "" : "s"} passado${Number(count) === 1 ? "" : "s"} em dólar não ${Number(count) === 1 ? "teve" : "tiveram"} a taxa do dia, então usamos a taxa que você definiu agora.`,
+      priorAmount: (count) =>
+        `${count} pagamento${Number(count) === 1 ? "" : "s"} anterior${Number(count) === 1 ? "" : "es"} à alteração do valor ${Number(count) === 1 ? "usa" : "usam"} o valor antigo. O novo valor conta a partir do dia da alteração, e esses valores são os que você digitou.`,
       incompleteUpcoming:
         "Este período ainda não terminou. As assinaturas atuais cujo dia de cobrança deste mês ainda não chegou entram como “a vencer”.",
       incompleteToday: "Este período ainda não terminou, então só aparecem as cobranças até hoje.",
