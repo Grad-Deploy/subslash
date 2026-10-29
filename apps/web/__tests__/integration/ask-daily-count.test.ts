@@ -18,8 +18,9 @@ delete process.env.TURSO_AUTH_TOKEN;
 const { getDb, closeDb } = await import("../../lib/db");
 const { accounts, askDailyCounts } = await import("../../lib/schema");
 const { createSession, deleteAccount } = await import("../../lib/auth-server");
-const { koreaDay, pruneAskDailyCounts, secondsUntilKoreaMidnight, takeAskQuota } =
+const { pruneAskDailyCounts, secondsUntilKoreaMidnight, takeAskQuota } =
   await import("../../lib/ask/daily-count");
+const { koreaDay } = await import("../../lib/korea-time");
 const { limitAiRequest } = await import("../../lib/ask/guard");
 const { resetAllRateLimits } = await import("../../lib/rate-limit");
 
