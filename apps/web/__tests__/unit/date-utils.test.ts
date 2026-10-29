@@ -6,7 +6,7 @@ import {
   getDaysUntilBillingFor,
   needsBillingMonth,
   formatDday,
-  formatCountdown,
+  formatTimeLeft,
   daysBetween,
 } from "@subslash/shared";
 
@@ -91,17 +91,23 @@ describe("Date Utils", () => {
     });
   });
 
-  describe("formatCountdown", () => {
-    it("Target 1 day ahead: starts with D-", () => {
+  describe("formatTimeLeft", () => {
+    it("하루 안의 남은 시간을 HH:MM:SS로 적는다", () => {
       const now = new Date("2023-09-06T00:00:00Z");
-      const target = new Date("2023-09-07T00:00:00Z");
-      expect(formatCountdown(target, now)).toMatch(/^D-/);
+      const target = new Date("2023-09-06T05:04:03Z");
+      expect(formatTimeLeft(target, now)).toBe("05:04:03");
     });
 
-    it("Target in the past: D-Day 00:00:00", () => {
+    it("날 수는 빼고 하루 안의 몫만 적는다", () => {
       const now = new Date("2023-09-06T00:00:00Z");
-      const target = new Date("2023-09-05T00:00:00Z");
-      expect(formatCountdown(target, now)).toBe("D-Day 00:00:00");
+      const target = new Date("2023-09-07T01:00:00Z");
+      expect(formatTimeLeft(target, now)).toBe("01:00:00");
+    });
+
+    it("지났거나 모르면 00:00:00", () => {
+      const now = new Date("2023-09-06T00:00:00Z");
+      expect(formatTimeLeft(new Date("2023-09-05T00:00:00Z"), now)).toBe("00:00:00");
+      expect(formatTimeLeft(null, now)).toBe("00:00:00");
     });
   });
 });

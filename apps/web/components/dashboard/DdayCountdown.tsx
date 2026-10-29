@@ -3,11 +3,10 @@
 import React, { useEffect, useState } from "react";
 import {
   formatDday,
+  formatTimeLeft,
   getDaysUntilBillingFor,
   getNextBillingDateFor,
   type BillingSchedule,
-  DAY_MS,
-  HOUR_MS,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useT } from "@lib/i18n";
@@ -29,15 +28,7 @@ function useLocalDday(schedule: BillingSchedule) {
       setDDay(days);
 
       if (days !== null && days <= 1) {
-        const next = getNextBillingDateFor(current, now);
-        const diffMs = next ? next.getTime() - now.getTime() : 0;
-        const clamped = Math.max(0, diffMs);
-        const hours = Math.floor((clamped % DAY_MS) / HOUR_MS);
-        const minutes = Math.floor((clamped % HOUR_MS) / (1000 * 60));
-        const seconds = Math.floor((clamped % (1000 * 60)) / 1000);
-        setTimeLeft(
-          `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`,
-        );
+        setTimeLeft(formatTimeLeft(getNextBillingDateFor(current, now), now));
       }
     };
     updateTime();

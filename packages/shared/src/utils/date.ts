@@ -4,7 +4,8 @@ import { BillingCycle } from "../types";
 export const HOUR_MS = 60 * 60 * 1000;
 export const DAY_MS = 24 * HOUR_MS;
 
-const pad2 = (n: number) => String(n).padStart(2, "0");
+/** 두 자리로(`7` → `"07"`). 날짜·시각을 손으로 조립할 때 쓴다. */
+export const pad2 = (n: number) => String(n).padStart(2, "0");
 
 /** 기기 시간대의 날짜를 `YYYY-MM-DD`로. 파일마다 따로 적던 것을 여기 모았다. */
 export function localDateKey(date: Date): string {
@@ -19,6 +20,11 @@ export function localMonthKey(date: Date): string {
 /** 기기 시간대의 날짜를 `2026.10.07`로. 영수증·메일 날짜와 같은 모양이다. */
 export function formatDotDate(date: Date): string {
   return `${date.getFullYear()}.${pad2(date.getMonth() + 1)}.${pad2(date.getDate())}`;
+}
+
+/** 기기 시간대의 시각을 `HH:mm`로(24시간). */
+export function formatClockTime(date: Date): string {
+  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 }
 
 /** Everything needed to work out when a subscription is charged next. */
@@ -149,18 +155,17 @@ export function formatDday(daysLeft: number): string {
   return `D+${Math.abs(daysLeft)}`;
 }
 
-export function formatCountdown(targetDate: Date, now: Date = new Date()): string {
-  const diffTime = targetDate.getTime() - now.getTime();
-  if (diffTime <= 0) return "D-Day 00:00:00";
-
-  const days = Math.floor(diffTime / DAY_MS);
-  const hours = Math.floor((diffTime % DAY_MS) / HOUR_MS);
-  const minutes = Math.floor((diffTime % HOUR_MS) / (1000 * 60));
-  const seconds = Math.floor((diffTime % (1000 * 60)) / 1000);
-
-  const formatUnit = (unit: number) => unit.toString().padStart(2, "0");
-
-  return `D-${days} ${formatUnit(hours)}:${formatUnit(minutes)}:${formatUnit(seconds)}`;
+/**
+ * 남은 시간을 `HH:MM:SS`로. 날 수는 D-day 배지가 따로 적으므로 하루 안의 몫만 적고, 이미 지났거나 모르면(null)
+ * `00:00:00`이다. 결제가 하루 남은 카드가 초 단위로 센다.
+ */
+export function formatTimeLeft(target: Date | null, now: Date = new Date()): string {
+  const ms = target ? Math.max(0, target.getTime() - now.getTime()) : 0;
+  const minuteMs = 60 * 1000;
+  const hours = Math.floor((ms % DAY_MS) / HOUR_MS);
+  const minutes = Math.floor((ms % HOUR_MS) / minuteMs);
+  const seconds = Math.floor((ms % minuteMs) / 1000);
+  return `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
 }
 
 /**
