@@ -1,5 +1,7 @@
+import { DAY_MS } from "@subslash/shared";
 import { eq, lt, sql } from "drizzle-orm";
 import { getDb } from "@lib/db";
+import { koreaDay, koreaMidnight } from "@lib/korea-time";
 import { askDailyCounts } from "@lib/schema";
 
 /**
@@ -8,19 +10,9 @@ import { askDailyCounts } from "@lib/schema";
  * 열리는 날은 lib/privacy의 `AI_ASK_DAILY_COUNT_STARTS_ON`, 셈은 lib/ask/guard가 부른다.
  */
 
-/** 한국 날짜(YYYY-MM-DD). */
-export function koreaDay(now: Date = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(now);
-}
-
 /** 한국 날짜가 바뀔 때까지 남은 초(한도에 걸렸을 때 Retry-After). */
 export function secondsUntilKoreaMidnight(now: Date = new Date()): number {
-  const next = new Date(`${koreaDay(now)}T00:00:00+09:00`).getTime() + 24 * 60 * 60 * 1000;
+  const next = koreaMidnight(koreaDay(now)) + DAY_MS;
   return Math.max(1, Math.ceil((next - now.getTime()) / 1000));
 }
 

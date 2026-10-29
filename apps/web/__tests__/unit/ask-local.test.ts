@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { Subscription } from "@subslash/shared";
 import { ASK_EVAL_SET, isExpectedCall } from "@lib/ask/eval-set";
 import { ASK_TRAIN_SET } from "@lib/ask/train-set";
-import { isMixedLanguage, koreaToday, localAskCall, parseDays, refineCall } from "@lib/ask/local";
+import { isMixedLanguage, localAskCall, parseDays, refineCall } from "@lib/ask/local";
+import { koreaToday } from "@lib/korea-time";
 import type { AskCall } from "@lib/ask/tools";
 
 const NOW = new Date(2026, 9, 13, 12); // 2026-10-13

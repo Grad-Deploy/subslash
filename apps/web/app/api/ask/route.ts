@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { koreaToday, localAskCall } from "@lib/ask/local";
+import { localAskCall } from "@lib/ask/local";
+import { koreaToday } from "@lib/korea-time";
 import { pickAskCall } from "@lib/ask/provider";
 import { aiAskConfig, answerWithAi, createAnswerCache, readAskRequest } from "@lib/ask/guard";
 import type { AskCall, AskTurn } from "@lib/ask/tools";
