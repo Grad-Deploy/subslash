@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { isGmailAutoImportOpen } from "@lib/privacy";
+import { featureClosedResponse, isGmailAutoImportOpen } from "@lib/privacy";
 import { MAX_INGEST_BYTES, ingestReceiptEmails } from "@lib/gmail-auto-import";
 
 /**
@@ -10,9 +10,7 @@ import { MAX_INGEST_BYTES, ingestReceiptEmails } from "@lib/gmail-auto-import";
  * 서버에서 돌아 쿠키가 없다. 받은 메일은 파싱하는 데만 쓰고 저장하지 않으므로 로그에도 남기지 않는다.
  */
 export async function POST(request: NextRequest) {
-  if (!isGmailAutoImportOpen()) {
-    return NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
-  }
+  if (!isGmailAutoImportOpen()) return featureClosedResponse();
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
 
