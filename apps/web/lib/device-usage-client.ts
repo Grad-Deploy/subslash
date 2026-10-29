@@ -2,6 +2,7 @@ import { DAY_MS } from "@subslash/shared";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { apiFetch, readApiError } from "./api";
+import { toHex } from "./bytes";
 import {
   isUsageGranted,
   isUsageSupported,
@@ -112,7 +113,7 @@ export async function stableDeviceKey(accountId: string): Promise<string | null>
     "SHA-256",
     new TextEncoder().encode(`subslash-device-usage:${accountId}:${id}`),
   );
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return toHex(digest);
 }
 
 /**

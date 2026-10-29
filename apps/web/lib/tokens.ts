@@ -13,8 +13,9 @@ export function generateSyncToken(): string {
   return randomBytes(32).toString("hex");
 }
 
-export function hashSyncToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
+/** SHA-256의 16진수. 저장하는 토큰·1회용 코드는 이 해시로만 둔다. */
+export function sha256Hex(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 function linkSecret(): string {
