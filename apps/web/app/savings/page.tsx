@@ -32,7 +32,7 @@ import { Subscription } from "@subslash/shared";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { PageSpinner } from "../../components/ui/spinner";
 import { PiggyBank } from "lucide-react";
-import { copyText } from "@lib/native";
+import { useCopyText } from "@hooks/useCopyText";
 import { IS_APP_BUILD } from "@lib/platform";
 import { useT, useServiceNames } from "@lib/i18n";
 import { rewardHeadline } from "@lib/i18n/savings-text";
@@ -57,7 +57,7 @@ function SavingsDashboard() {
   const { getKilledSubscriptions, reviveSubscription } = useStore();
   const rate = useExchangeRate();
   const mounted = useIsClient();
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyText(2500);
   const [reviveTarget, setReviveTarget] = useState<Subscription | null>(null);
 
   if (!mounted) {
@@ -74,10 +74,7 @@ function SavingsDashboard() {
   const detoxLevel = getDetoxLevel(tiers.confirmed, killedSubs.length);
 
   const copyToClipboard = async (text: string) => {
-    if (await copyText(text)) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } else {
+    if (!(await copy(text))) {
       console.error("Failed to copy share text");
     }
   };
