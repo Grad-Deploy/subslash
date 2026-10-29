@@ -11,6 +11,7 @@ import { getDb } from "./db";
 import { accounts, gmailDiscoveries, gmailImportLinks, type GmailDiscovery } from "./schema";
 import { canSignLinks, generateSyncToken, hashSyncToken, signLink, verifyLink } from "./tokens";
 import { readReceiptEmails } from "./gmail-import";
+import { KOREA_TIME_ZONE } from "./korea-time";
 import { isGmailChargeHistoryOpen } from "./privacy";
 
 /**
@@ -29,9 +30,6 @@ const MAX_PENDING = 100;
 
 /** 받아 가지 않은 후보를 남겨 두는 기간. */
 const PENDING_TTL_MS = 30 * DAY_MS;
-
-/** 결제일을 읽는 달력의 시간대. 한국 서비스라 한국 시간으로 본다(캘린더 피드와 같다). */
-const USER_TIME_ZONE = "Asia/Seoul";
 
 export interface ImportLinkStatus {
   createdAt: string;
@@ -182,7 +180,7 @@ export async function ingestReceiptEmails(
 
   // 방침에 게시한 날부터만 이전 결제 메일(받은 날·금액)을 저장한다.
   const keepHistory = isGmailChargeHistoryOpen(now);
-  const candidates = parseReceiptEmails(emails, { now, timeZone: USER_TIME_ZONE }).flatMap(
+  const candidates = parseReceiptEmails(emails, { now, timeZone: KOREA_TIME_ZONE }).flatMap(
     (item) => {
       const tier = discoveryTier(item);
       if (!tier || !item.receiptDate) return [];
