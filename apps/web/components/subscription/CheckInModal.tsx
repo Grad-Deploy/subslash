@@ -27,7 +27,7 @@ import { UsageMetaphorCard } from "./UsageMetaphorCard";
 import { CostEfficiencyGauge } from "./CostEfficiencyGauge";
 import { cn } from "@lib/utils";
 import { openExternal } from "@lib/native";
-import { copyText } from "@lib/native";
+import { useCopyText } from "@hooks/useCopyText";
 import { IS_APP_BUILD } from "@lib/platform";
 import { PC_USAGE_SERVICES, type PcUsageServiceId } from "@lib/pc-usage";
 import dynamic from "next/dynamic";
@@ -72,7 +72,7 @@ export function CheckInModal({
   const locale = useLocale();
   const c = t.checkin;
   const [count, setCount] = useState<number>(initialCount);
-  const [copied, setCopied] = useState(false);
+  const { copied, copy, reset: resetCopied } = useCopyText();
 
   // The modal stays mounted on the detail page, so reset the counter whenever
   // it is reopened or pointed at a different subscription. 렌더링 중에 맞춘다 — effect로
@@ -83,7 +83,7 @@ export function CheckInModal({
     setPrevOpenKey(openKey);
     if (openKey !== null) {
       setCount(initialCount);
-      setCopied(false);
+      resetCopied();
     }
   }
 
@@ -132,13 +132,6 @@ export function CheckInModal({
       : cancelUrlKind === "direct"
         ? c.modal.cancelPage(names.sub(subscription))
         : c.modal.openService(names.sub(subscription));
-
-  const handleCopyId = async (text: string) => {
-    // 복사하지 못했으면 '복사했어요'를 띄우지 않는다. ID는 화면에 그대로 보인다.
-    if (!(await copyText(text))) return;
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -315,7 +308,7 @@ export function CheckInModal({
                 {subscription.linkedAccountName && (
                   <button
                     onClick={() =>
-                      void handleCopyId(
+                      void copy(
                         subscription.linkedAccountName!.split("(")[1]?.replace(")", "") ||
                           subscription.linkedAccountName!,
                       )

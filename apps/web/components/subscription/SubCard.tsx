@@ -23,7 +23,7 @@ import { isWideScreen } from "@lib/wide-screen";
 import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "../../hooks/useExchangeRate";
 import { ServiceLogo } from "./ServiceLogo";
-import { copyText } from "@lib/native";
+import { useCopyText } from "@hooks/useCopyText";
 import { useT, useServiceNames } from "@lib/i18n";
 
 interface SubCardProps {
@@ -52,7 +52,7 @@ export function SubCard({
   const t = useT();
   const c = t.subs.card;
   const rate = useExchangeRate();
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyText();
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   const shared = isShared(subscription);
 
@@ -62,15 +62,9 @@ export function SubCard({
       ...settlementParts(subscription),
       name: names.sub(subscription),
     });
-    if (await copyText(message)) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } else {
-      // Clipboard access can be refused (insecure context, denied permission);
-      // saying nothing would look like the copy silently worked.
-      setCopied(false);
-      setCopyFallback(message);
-    }
+    // Clipboard access can be refused (insecure context, denied permission);
+    // saying nothing would look like the copy silently worked.
+    if (!(await copy(message))) setCopyFallback(message);
   };
 
   return (

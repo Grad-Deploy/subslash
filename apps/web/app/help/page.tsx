@@ -11,7 +11,8 @@ import {
 } from "@lib/privacy";
 import { faqGroups } from "@lib/help/faq";
 import { HelpSearch } from "@components/help/HelpSearch";
-import { copyText, openExternal } from "@lib/native";
+import { openExternal } from "@lib/native";
+import { useCopyText } from "@hooks/useCopyText";
 import { IS_APP_BUILD } from "@lib/platform";
 import { Button } from "../../components/ui/button";
 import { useLocale, useT } from "@lib/i18n";
@@ -45,15 +46,12 @@ export default function HelpPage() {
   const gmailCompose = email
     ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
     : null;
-  const [copied, setCopied] = React.useState(false);
+  const { copied, copy } = useCopyText();
 
   const copyEmail = async () => {
     if (!email) return;
     // 복사하지 못했으면 '복사됨'을 띄우지 않는다. 주소는 화면에 그대로 보인다.
-    if (await copyText(email)) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    await copy(email);
   };
 
   return (
