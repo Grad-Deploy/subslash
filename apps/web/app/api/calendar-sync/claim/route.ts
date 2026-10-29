@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
-import { isGmailAutoImportOpen } from "@lib/privacy";
+import { featureClosedResponse, isGmailAutoImportOpen } from "@lib/privacy";
 import { appUrl } from "@lib/email";
 import {
   CALENDAR_NAMES,
@@ -16,9 +16,7 @@ import { logError } from "@lib/log";
  * 지워진다.
  */
 export async function POST(request: NextRequest) {
-  if (!isGmailAutoImportOpen()) {
-    return NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
-  }
+  if (!isGmailAutoImportOpen()) return featureClosedResponse();
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
 
