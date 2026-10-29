@@ -19,7 +19,7 @@ import { shareText } from "../../../lib/native";
 import { Button } from "../../../components/ui/button";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { PageSpinner } from "../../../components/ui/spinner";
-import { copyText } from "@lib/native";
+import { useCopyText } from "@hooks/useCopyText";
 import { useLocale, useT, useServiceNames } from "@lib/i18n";
 import { intlLocale } from "@lib/i18n/config";
 import { describeSpendingTypeText } from "@lib/i18n/savings-text";
@@ -68,7 +68,7 @@ function YearInReviewContent() {
   const locale = useLocale();
   const formatDay = (iso: string) =>
     new Date(iso).toLocaleDateString(intlLocale(locale), { month: "long", day: "numeric" });
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyText(2500);
   const [now] = useState(() => new Date());
   const currentYear = now.getFullYear();
   const year = readYear(searchParams.get("year"), currentYear);
@@ -130,10 +130,7 @@ function YearInReviewContent() {
 
     // 공유 창을 열었거나 사용자가 닫았으면 끝이다. 공유할 수 없는 환경이면 복사로 넘어간다.
     if (await shareText({ title: r.shareTitle(year), text, url })) return;
-    if (await copyText(text)) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } else {
+    if (!(await copy(text))) {
       console.error("Failed to copy review share text");
     }
   };
