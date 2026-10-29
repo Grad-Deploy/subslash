@@ -185,7 +185,7 @@ export async function shareText({ title, text, url }: SharePayload): Promise<boo
  * 글자를 클립보드에 복사한다. 복사했으면 true, 못 했으면 false — 못 했을 때 '복사됨'을 띄우지 않고
  * 글자를 화면에 보여주는 것은 부른 쪽이 한다.
  *
- * 앱에서는 네이티브 클립보드를 쓴다. 웹뷰의 `navigator.clipboard`는 출처(`capacitor://`)나 웹뷰
+ * 앱에서는 네이티브 클립보드를 쓴다. 웹뷰의 `navigator.clipboard`는 출처(`https://localhost`)나 웹뷰
  * 버전에 따라 없거나 거절되어, 앱에서만 복사 버튼이 아무것도 하지 않았다.
  */
 export async function copyText(text: string): Promise<boolean> {

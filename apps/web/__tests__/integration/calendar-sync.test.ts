@@ -146,7 +146,7 @@ describe("구글 캘린더에 결제일 등록", () => {
     const { cookie } = await loggedIn("app-user");
     for (const [origin, sent, client, expected] of [
       ["https://localhost", "com.subslash.app", "app", "com.subslash.app"],
-      ["capacitor://localhost", "evil-app", "app", null],
+      ["https://localhost", "evil-app", "app", null],
       ["https://subslash.test", "com.subslash.app", null, null],
     ] as const) {
       const response = await startRoute.POST(

@@ -13,9 +13,6 @@
       },
       "android": {
         "image": "latest"
-      },
-      "ios": {
-        "image": "latest"
       }
     },
     "preview": {
@@ -24,10 +21,6 @@
       "android": {
         "image": "latest",
         "buildType": "apk"
-      },
-      "ios": {
-        "image": "latest",
-        "simulator": true
       }
     },
     "production": {

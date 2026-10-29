@@ -12,7 +12,6 @@ import sharp from "sharp";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const res = (p) => resolve(root, "android/app/src/main/res", p);
-const ios = (p) => resolve(root, "ios/App/App/Assets.xcassets", p);
 
 // 웹 manifest의 background_color·theme_color, 브랜드 검정.
 const BACKGROUND = "#09090B";
@@ -29,15 +28,12 @@ const svg = (body, viewBox = "0 0 512 512") =>
 const inner = iconSvg.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "");
 const mark = inner.replace(BG_RECT, "");
 
-// 바탕 모양만 다른 네 가지.
+// 바탕 모양만 다른 세 가지.
 const rounded = svg(inner); // 웹과 같은 둥근 사각형(안드로이드 7 이하 런처)
 // 슬래시 끝(가운데에서 259)이 원(반지름 256) 밖으로 나가므로 마크를 90%로 줄인다.
 const circle = svg(
   `<circle cx="256" cy="256" r="256" fill="${BACKGROUND}" /><g transform="translate(25.6 25.6) scale(0.9)">${mark}</g>`,
 );
-const square = svg(
-  inner.replace(BG_RECT, `<rect width="512" height="512" fill="${BACKGROUND}" />`),
-); // iOS가 모서리를 깎는다
 // 적응형 아이콘 전경은 108dp 틀이고 런처가 가운데 72dp만 보이며, 원형 마스크에서도 잘리지 않는 자리는
 // 지름 66dp다. 슬래시 끝은 512 틀의 가운데에서 259만큼 떨어져 있으므로 512 틀을 64dp로 줄이면 반지름
 // 32.4dp 안에 든다.
@@ -52,10 +48,6 @@ for (const [name, scale] of Object.entries(densities)) {
   await png(adaptive, 108 * scale).toFile(res(`mipmap-${name}/ic_launcher_foreground.png`));
 }
 
-// iOS 앱 아이콘은 투명 픽셀이 있으면 스토어에서 거절된다.
-await png(square, 1024)
-  .flatten({ background: BACKGROUND })
-  .toFile(ios("AppIcon.appiconset/AppIcon-512@2x.png"));
 
 // 스플래시: 검은 바탕 가운데에 마크. 크기는 짧은 변의 30%(마크 자체는 그 75%).
 async function splash(file, width, height) {
@@ -79,8 +71,5 @@ for (const [name, [w, h]] of Object.entries(port)) {
   await splash(res(`drawable-land-${name}/splash.png`), h, w);
 }
 await splash(res("drawable/splash.png"), 480, 320);
-for (const file of ["splash-2732x2732.png", "splash-2732x2732-1.png", "splash-2732x2732-2.png"]) {
-  await splash(ios(`Splash.imageset/${file}`), 2732, 2732);
-}
 
 console.log("앱 아이콘과 스플래시를 apps/web/app/icon.svg에서 다시 만들었습니다.");
