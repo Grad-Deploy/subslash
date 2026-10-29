@@ -5,11 +5,7 @@ import { accountSnapshots, accounts, sessions, verificationMailLog, type Account
 import { canSignLinks, emailFingerprint, signLink, verifyLink } from "./tokens";
 import { accountVerificationEmail, appUrl, sendEmail } from "./email";
 import { VERIFY_ACCOUNT_TTL_DAYS } from "./verification-config";
-import { deleteGmailImportData } from "./gmail-auto-import";
-import { deleteCalendarSyncPlan } from "./calendar-sync";
-import { deleteAllDeviceUsage } from "./device-usage-server";
-import { deleteOAuthData } from "./oauth-cleanup";
-import { deleteAskDailyCounts } from "./ask/daily-count";
+import { deleteAccountRecords } from "./account-data";
 import { logError } from "./log";
 
 /**
@@ -240,16 +236,8 @@ export async function deleteUnverifiedAccount(accountId: string): Promise<boolea
     .returning({ id: accounts.id });
   if (deleted.length === 0) return false;
 
-  // 스키마의 ON DELETE CASCADE는 PRAGMA foreign_keys가 켜져 있을 때만 동작한다.
-  // 알림 미러를 지울 때처럼 딸린 행을 직접 지운다. 계정에 저장한 기록도 함께 지운다 —
-  // 주소의 주인이 모르는 가입이라고 한 계정의 기록을 서버에 남겨 둘 이유가 없다.
-  await db.delete(sessions).where(eq(sessions.accountId, accountId));
-  await db.delete(accountSnapshots).where(eq(accountSnapshots.accountId, accountId));
-  await deleteGmailImportData(accountId);
-  await deleteCalendarSyncPlan(accountId);
-  await deleteAllDeviceUsage(accountId);
-  await deleteOAuthData(accountId);
-  await deleteAskDailyCounts(accountId);
+  // 계정에 저장한 기록도 함께 지운다 — 주소의 주인이 모르는 가입이라고 한 계정의 기록을 서버에 남겨 둘 이유가 없다.
+  await deleteAccountRecords(accountId);
   return true;
 }
 
