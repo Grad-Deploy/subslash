@@ -1,3 +1,5 @@
+import { koreaMidnight } from "./korea-time";
+
 /**
  * 개인정보처리방침에 적는 운영 정보. 방침 문장은 app/privacy/page.tsx에 있고, 사람이
  * 정해야 하는 값만 여기 모은다.
@@ -34,16 +36,8 @@ export const GMAIL_AUTO_IMPORT_STARTS_ON: string | null = "2026-09-17";
 
 /** Gmail 자동 가져오기가 열렸는지. */
 export function isGmailAutoImportOpen(now: Date = new Date()): boolean {
-  // 시작 전에도 테스트가 이 기능의 화면과 API를 볼 수 있게 여는 스위치. 운영 빌드에서는
-  // NODE_ENV가 production이라 이 줄이 빠지므로 배포에서는 켤 수 없다.
-  if (
-    process.env.NODE_ENV !== "production" &&
-    process.env.NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN === "true"
-  ) {
-    return true;
-  }
-  if (!GMAIL_AUTO_IMPORT_STARTS_ON) return false;
-  return now.getTime() >= new Date(`${GMAIL_AUTO_IMPORT_STARTS_ON}T00:00:00+09:00`).getTime();
+  if (testSwitchOn(process.env.NEXT_PUBLIC_GMAIL_AUTO_IMPORT_TEST_OPEN)) return true;
+  return hasStarted(GMAIL_AUTO_IMPORT_STARTS_ON, now);
 }
 
 /**
@@ -64,26 +58,14 @@ export const AI_ASK_DAILY_COUNT_STARTS_ON: string | null = "2026-10-20";
 
 /** 로그인한 계정의 AI 질문 횟수를 DB에 세는지. 테스트 서버만 스위치로 연다. */
 export function isAiAskDailyCountOpen(now: Date = new Date()): boolean {
-  if (
-    process.env.NODE_ENV !== "production" &&
-    process.env.NEXT_PUBLIC_AI_ASK_DAILY_COUNT_TEST_OPEN === "true"
-  ) {
-    return true;
-  }
-  if (!AI_ASK_DAILY_COUNT_STARTS_ON) return false;
-  return now.getTime() >= new Date(`${AI_ASK_DAILY_COUNT_STARTS_ON}T00:00:00+09:00`).getTime();
+  if (testSwitchOn(process.env.NEXT_PUBLIC_AI_ASK_DAILY_COUNT_TEST_OPEN)) return true;
+  return hasStarted(AI_ASK_DAILY_COUNT_STARTS_ON, now);
 }
 
 /** AI에게 묻는 기능이 열렸는지. 테스트 서버는 Gmail 자동 가져오기처럼 스위치로 연다. */
 export function isAiAskOpen(now: Date = new Date()): boolean {
-  if (
-    process.env.NODE_ENV !== "production" &&
-    process.env.NEXT_PUBLIC_AI_ASK_TEST_OPEN === "true"
-  ) {
-    return true;
-  }
-  if (!AI_ASK_STARTS_ON) return false;
-  return now.getTime() >= new Date(`${AI_ASK_STARTS_ON}T00:00:00+09:00`).getTime();
+  if (testSwitchOn(process.env.NEXT_PUBLIC_AI_ASK_TEST_OPEN)) return true;
+  return hasStarted(AI_ASK_STARTS_ON, now);
 }
 
 /**
@@ -99,15 +81,8 @@ export const GMAIL_CHARGE_HISTORY_STARTS_ON: string | null = "2026-09-28";
 /** 자동 가져오기가 이전 결제 메일을 저장하기 시작했는지. */
 export function isGmailChargeHistoryOpen(now: Date = new Date()): boolean {
   if (!isGmailAutoImportOpen(now)) return false;
-  // 테스트 서버만 시작 전에 여는 스위치. 운영 빌드에서는 이 줄이 빠진다.
-  if (
-    process.env.NODE_ENV !== "production" &&
-    process.env.NEXT_PUBLIC_GMAIL_CHARGE_HISTORY_TEST_OPEN === "true"
-  ) {
-    return true;
-  }
-  if (!GMAIL_CHARGE_HISTORY_STARTS_ON) return false;
-  return now.getTime() >= new Date(`${GMAIL_CHARGE_HISTORY_STARTS_ON}T00:00:00+09:00`).getTime();
+  if (testSwitchOn(process.env.NEXT_PUBLIC_GMAIL_CHARGE_HISTORY_TEST_OPEN)) return true;
+  return hasStarted(GMAIL_CHARGE_HISTORY_STARTS_ON, now);
 }
 
 /**
@@ -128,15 +103,8 @@ export const DEVICE_USAGE_STARTS_ON: string | null = "2026-09-25";
 
 /** 기기 간 사용 측정이 열렸는지. */
 export function isDeviceUsageOpen(now: Date = new Date()): boolean {
-  // 테스트 서버만 시작 전에 여는 스위치. 운영 빌드에서는 이 줄이 빠진다.
-  if (
-    process.env.NODE_ENV !== "production" &&
-    process.env.NEXT_PUBLIC_DEVICE_USAGE_TEST_OPEN === "true"
-  ) {
-    return true;
-  }
-  if (!DEVICE_USAGE_STARTS_ON) return false;
-  return now.getTime() >= new Date(`${DEVICE_USAGE_STARTS_ON}T00:00:00+09:00`).getTime();
+  if (testSwitchOn(process.env.NEXT_PUBLIC_DEVICE_USAGE_TEST_OPEN)) return true;
+  return hasStarted(DEVICE_USAGE_STARTS_ON, now);
 }
 
 /**
@@ -149,13 +117,20 @@ export const SOCIAL_LOGIN_STARTS_ON: string | null = "2026-09-28";
 
 /** 소셜 로그인이 열렸는지. */
 export function isSocialLoginOpen(now: Date = new Date()): boolean {
-  // 테스트 서버만 시작 전에 여는 스위치. 운영 빌드에서는 이 줄이 빠진다.
-  if (
-    process.env.NODE_ENV !== "production" &&
-    process.env.NEXT_PUBLIC_SOCIAL_LOGIN_TEST_OPEN === "true"
-  ) {
-    return true;
-  }
-  if (!SOCIAL_LOGIN_STARTS_ON) return false;
-  return now.getTime() >= new Date(`${SOCIAL_LOGIN_STARTS_ON}T00:00:00+09:00`).getTime();
+  if (testSwitchOn(process.env.NEXT_PUBLIC_SOCIAL_LOGIN_TEST_OPEN)) return true;
+  return hasStarted(SOCIAL_LOGIN_STARTS_ON, now);
+}
+
+/** 시작일(YYYY-MM-DD, 한국 시간 0시)이 지났는지. null은 날짜를 정하지 않은 것이라 닫혀 있다. */
+function hasStarted(startsOn: string | null, now: Date): boolean {
+  return startsOn !== null && now.getTime() >= koreaMidnight(startsOn);
+}
+
+/**
+ * 시작 전에도 테스트가 기능의 화면과 API를 볼 수 있게 여는 스위치. 운영 빌드에서는 NODE_ENV가 production이라 켤 수 없다.
+ * 값은 부르는 곳에서 `process.env.NEXT_PUBLIC_…`로 그대로 넘긴다 — Next는 글자 그대로 적은 이름만 빌드 때 값으로 바꾸므로,
+ * 이름을 문자열로 받아 여기서 읽으면 화면에서는 늘 꺼진다.
+ */
+function testSwitchOn(value: string | undefined): boolean {
+  return process.env.NODE_ENV !== "production" && value === "true";
 }
