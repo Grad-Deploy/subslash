@@ -5,6 +5,7 @@ import {
   storagePlanFit,
   type Subscription,
 } from "@subslash/shared";
+import { toHex } from "../bytes";
 import { SOURCE_LOCALE, appsScriptLocale, type Locale } from "../i18n/config";
 
 /**
@@ -58,9 +59,7 @@ export function storageQuotaCheckUrl(
 
 /** 측정 하나를 가리키는 값. 웹 앱이 그대로 돌려준다. */
 export function newMeasureState(): string {
-  const bytes = new Uint8Array(12);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  return toHex(crypto.getRandomValues(new Uint8Array(12)));
 }
 
 export type StorageQuotaResult =

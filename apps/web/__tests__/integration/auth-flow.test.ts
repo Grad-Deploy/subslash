@@ -17,7 +17,8 @@ delete process.env.TURSO_AUTH_TOKEN;
 
 const { getDb, closeDb } = await import("../../lib/db");
 const { accounts, sessions } = await import("../../lib/schema");
-const { hashSessionToken, SESSION_COOKIE } = await import("../../lib/auth-server");
+const { SESSION_COOKIE } = await import("../../lib/auth-server");
+const { sha256Hex } = await import("../../lib/tokens");
 
 const { POST: signupRoute } = await import("../../app/api/auth/signup/route");
 const { POST: loginRoute } = await import("../../app/api/auth/login/route");
@@ -153,7 +154,7 @@ describe("회원가입", () => {
     const rows = await db.select().from(sessions);
     expect(rows).toHaveLength(1);
     expect(rows[0].tokenHash).not.toBe(token);
-    expect(rows[0].tokenHash).toBe(hashSessionToken(token));
+    expect(rows[0].tokenHash).toBe(sha256Hex(token));
   });
 
   it("입력값을 서버가 다시 검사한다", async () => {
@@ -378,7 +379,7 @@ describe("세션", () => {
     await db
       .update(sessions)
       .set({ expiresAt: new Date(Date.now() - 1000).toISOString() })
-      .where(eq(sessions.tokenHash, hashSessionToken(token)));
+      .where(eq(sessions.tokenHash, sha256Hex(token)));
 
     const res = await meRoute(
       request("http://localhost/api/auth/me", { cookie: `${SESSION_COOKIE}=${token}` }),

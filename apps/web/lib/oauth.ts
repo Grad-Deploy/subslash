@@ -2,7 +2,7 @@ import { createHash, randomBytes } from "crypto";
 import type { OAuthErrorCode } from "./oauth-messages";
 import { isAppReturnScheme } from "./app-return";
 import { OAUTH_PROVIDER_IDS, isOAuthProviderId, type OAuthProviderId } from "./oauth-providers";
-import { canSignLinks, readSignedValue, signValue } from "./tokens";
+import { canSignLinks, readSignedValue, sha256Hex, signValue } from "./tokens";
 
 export type { OAuthErrorCode } from "./oauth-messages";
 export {
@@ -106,7 +106,7 @@ export function s256(verifier: string): string {
 
 /** 제공자 회원 번호의 해시. 제공자 이름을 섞어, 다른 제공자의 같은 번호와 겹치지 않게 한다. */
 export function subjectHash(provider: OAuthProviderId, subject: string): string {
-  return createHash("sha256").update(`${provider}:${subject}`).digest("hex");
+  return sha256Hex(`${provider}:${subject}`);
 }
 
 /**

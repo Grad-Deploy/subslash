@@ -1,4 +1,3 @@
-import { createHash } from "crypto";
 import { and, count, eq, inArray, lt, sql } from "drizzle-orm";
 import {
   mergeChargeHistory,
@@ -9,7 +8,7 @@ import {
 } from "@subslash/shared";
 import { getDb } from "./db";
 import { accounts, gmailDiscoveries, gmailImportLinks, type GmailDiscovery } from "./schema";
-import { canSignLinks, generateSyncToken, hashSyncToken, signLink, verifyLink } from "./tokens";
+import { canSignLinks, generateSyncToken, sha256Hex, signLink, verifyLink } from "./tokens";
 import { readReceiptEmails } from "./gmail-import";
 import { KOREA_TIME_ZONE } from "./korea-time";
 import { isGmailChargeHistoryOpen } from "./privacy";
@@ -86,7 +85,7 @@ export function discoveryTier(item: DiscoveredSubscription): "auto" | "review" |
 /** 연결 토큰을 새로 만든다. 이미 있으면 바꾼다 — 예전 스크립트는 그 순간부터 거절된다. */
 export async function createImportLink(accountId: string, now = new Date()): Promise<string> {
   const token = generateSyncToken();
-  const tokenHash = hashSyncToken(token);
+  const tokenHash = sha256Hex(token);
   const createdAt = now.toISOString();
   await getDb()
     .insert(gmailImportLinks)
@@ -146,7 +145,7 @@ export async function ingestReceiptEmails(
   const [link] = await db
     .select()
     .from(gmailImportLinks)
-    .where(eq(gmailImportLinks.tokenHash, hashSyncToken(token)))
+    .where(eq(gmailImportLinks.tokenHash, sha256Hex(token)))
     .limit(1);
   if (!link) {
     return {
@@ -348,9 +347,7 @@ async function linkFingerprint(accountId: string): Promise<string> {
     .from(gmailImportLinks)
     .where(eq(gmailImportLinks.accountId, accountId))
     .limit(1);
-  return link
-    ? createHash("sha256").update(`link:${link.tokenHash}`).digest("hex").slice(0, 32)
-    : "none";
+  return link ? sha256Hex(`link:${link.tokenHash}`).slice(0, 32) : "none";
 }
 
 /**
