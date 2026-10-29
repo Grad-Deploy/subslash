@@ -145,9 +145,10 @@ PR에서 고친다. 방침은 한국어판(`components/privacy/PrivacyKo`, 원�
 - 다른 기기에서 '계정에서 지우기'로 지웠으면 그 기록을 다시 올리지 않고 동기화를 멈춘다.
 - 기기마다 다른 것(동기화 상태 `accountSync`, 로컬 알림 설정)은 넣지 않는다.
 - 서버는 받은 기록을 `parseBackup`으로 다시 검사한다. 표에는 gzip한 base64(`gz:` 접두사)로 두고 압축 전 기록은 그대로
-  읽는다(`unpackPayload`) — 크기 상한은 압축 전 글자 수로 건다. 계정을 지우는 경로를 새로 만들면
-  `sessions`처럼 이 표도 직접 지운다 — `ON DELETE CASCADE`는 `PRAGMA foreign_keys`가 켜져 있을
-  때만 동작한다.
+  읽는다(`unpackPayload`) — 크기 상한은 압축 전 글자 수로 건다. 계정에 딸린 표는 `deleteAccountRecords`
+  (`lib/account-data`)가 직접 지운다 — `ON DELETE CASCADE`는 `PRAGMA foreign_keys`가 켜져 있을 때만 동작한다. 계정을
+  지우는 경로(회원 탈퇴·모르는 가입 지우기)는 이 함수를 부르고, 계정에 딸린 표를 새로 만들면 여기에 더한다. 아래의
+  `deleteGmailImportData`·`deleteOAuthData`·`deleteAskDailyCounts`도 이 함수가 부른다.
 
 화면의 기록은 주인(`recordsOwner`: 비로그인 null, 로그인하면 계정 ID)이 있고, 로그인 상태가 바뀌면
 `lib/records-owner`가 주인별 칸(`subslash-records:*`)으로 바꿔 끼운다 — 예전에는 로그아웃해도 로그인한

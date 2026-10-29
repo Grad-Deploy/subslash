@@ -3,14 +3,10 @@ import { randomBytes } from "crypto";
 import { and, eq, gt, lt, or } from "drizzle-orm";
 import { getDb } from "./db";
 import { sha256Hex } from "./tokens";
-import { accountSnapshots, accounts, sessions, type Account } from "./schema";
+import { accounts, sessions, type Account } from "./schema";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAppOrigin } from "./app-origins";
-import { deleteGmailImportData } from "./gmail-auto-import";
-import { deleteCalendarSyncPlan } from "./calendar-sync";
-import { deleteAllDeviceUsage } from "./device-usage-server";
-import { deleteOAuthData } from "./oauth-cleanup";
-import { deleteAskDailyCounts } from "./ask/daily-count";
+import { deleteAccountRecords } from "./account-data";
 import { hasPassword } from "./password";
 
 /**
@@ -124,23 +120,11 @@ export async function replacePassword(account: Account, newHash: string): Promis
 }
 
 /**
- * 회원 탈퇴. 계정과 거기 딸린 세션·계정에 저장한 기록·Gmail 자동 가져오기 연결과 후보를 지운다. 계정이 없었으면 `false`.
- *
- * 스키마의 ON DELETE CASCADE는 PRAGMA foreign_keys가 켜져 있을 때만 동작하므로 딸린 행을
- * 직접 지운다. 결제 알림(notification_subscribers)은 계정과 따로라 여기서 건드리지 않는다.
- * 계정 메일 발송 기록(verification_mail_log)은 주소별 발송 한도라 남긴다 — 지우면 탈퇴와
- * 재가입을 되풀이해 한도를 풀 수 있다. 그 기록은 24시간이 지나면 다음 발송 때 지워진다.
+ * 회원 탈퇴. 딸린 기록(`deleteAccountRecords`)을 먼저 지우고 계정을 지운다. 계정이 없었으면 `false`.
  */
 export async function deleteAccount(accountId: string): Promise<boolean> {
-  const db = getDb();
-  await db.delete(sessions).where(eq(sessions.accountId, accountId));
-  await db.delete(accountSnapshots).where(eq(accountSnapshots.accountId, accountId));
-  await deleteGmailImportData(accountId);
-  await deleteCalendarSyncPlan(accountId);
-  await deleteAllDeviceUsage(accountId);
-  await deleteOAuthData(accountId);
-  await deleteAskDailyCounts(accountId);
-  const deleted = await db
+  await deleteAccountRecords(accountId);
+  const deleted = await getDb()
     .delete(accounts)
     .where(eq(accounts.id, accountId))
     .returning({ id: accounts.id });
