@@ -1,7 +1,8 @@
 import { DAY_MS } from "@subslash/shared";
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
 import { and, eq, gt, lt, or } from "drizzle-orm";
 import { getDb } from "./db";
+import { sha256Hex } from "./tokens";
 import { accountSnapshots, accounts, sessions, type Account } from "./schema";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAppOrigin } from "./app-origins";
@@ -27,10 +28,6 @@ import { hasPassword } from "./password";
 export const SESSION_COOKIE = "subslash_session";
 const SESSION_TTL_DAYS = 30;
 const SESSION_TTL_MS = SESSION_TTL_DAYS * DAY_MS;
-
-export function hashSessionToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
 
 /** 로그인한 사람에게 돌려줄 수 있는 정보. 해시는 절대 포함하지 않는다. */
 export interface PublicAccount {
@@ -71,7 +68,7 @@ export async function createSession(accountId: string): Promise<IssuedSession> {
 
   await db.insert(sessions).values({
     accountId,
-    tokenHash: hashSessionToken(token),
+    tokenHash: sha256Hex(token),
     expiresAt: expiresAt.toISOString(),
   });
 
@@ -93,7 +90,7 @@ export async function getAccountBySessionToken(token: string | undefined): Promi
     .select({ account: accounts })
     .from(sessions)
     .innerJoin(accounts, eq(sessions.accountId, accounts.id))
-    .where(and(eq(sessions.tokenHash, hashSessionToken(token)), gt(sessions.expiresAt, now)))
+    .where(and(eq(sessions.tokenHash, sha256Hex(token)), gt(sessions.expiresAt, now)))
     .limit(1);
 
   return rows[0]?.account ?? null;
@@ -103,7 +100,7 @@ export async function getAccountBySessionToken(token: string | undefined): Promi
 export async function destroySession(token: string | undefined): Promise<void> {
   if (!token) return;
   const db = getDb();
-  await db.delete(sessions).where(eq(sessions.tokenHash, hashSessionToken(token)));
+  await db.delete(sessions).where(eq(sessions.tokenHash, sha256Hex(token)));
 }
 
 /**
