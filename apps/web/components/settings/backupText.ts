@@ -1,6 +1,6 @@
 import type { BackupData } from "@lib/store";
 import type { SnapshotSummary } from "@lib/account-snapshot-client";
-import { parseTimestamp } from "@subslash/shared";
+import { formatClockTime, parseTimestamp } from "@subslash/shared";
 import type { Messages } from "@lib/i18n/messages";
 
 /**
@@ -21,8 +21,7 @@ export function formatBackupDate(iso: string | null, t: BackupMessages): string 
 export function formatSavedAt(iso: string, t: BackupMessages): string {
   const date = parseTimestamp(iso);
   if (!date) return t.unknownTime;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${formatBackupDate(iso, t)} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return `${formatBackupDate(iso, t)} ${formatClockTime(date)}`;
 }
 
 /** 이 기기의 지금 기록 개수. */
