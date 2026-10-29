@@ -22,6 +22,7 @@ const { accounts } = await import("../../lib/schema");
 const { SESSION_COOKIE, createSession, deleteAccount } = await import("../../lib/auth-server");
 const { countCalendarSyncPlans, claimCalendarSyncPlan, createCalendarSyncPlan } =
   await import("../../lib/calendar-sync");
+const { resetAllRateLimits } = await import("../../lib/rate-limit");
 const startRoute = await import("../../app/api/calendar-sync/route");
 const claimRoute = await import("../../app/api/calendar-sync/claim/route");
 
@@ -112,7 +113,10 @@ function claim(code: unknown) {
   );
 }
 
-beforeEach(resetDatabase);
+beforeEach(async () => {
+  await resetDatabase();
+  resetAllRateLimits();
+});
 afterAll(() => closeDb());
 
 describe("구글 캘린더에 결제일 등록", () => {
@@ -222,6 +226,28 @@ describe("구글 캘린더에 결제일 등록", () => {
     await start(cookie, { entries: [NETFLIX] });
 
     expect((await claim(firstCode)).status).toBe(400);
+  });
+
+  it("한 시간에 20번까지만 맡긴다 — 되풀이해 불러 행 쓰기 한도를 쓰지 못하게", async () => {
+    const { cookie } = await loggedIn("repeat");
+    for (let i = 0; i < 20; i++) {
+      expect((await start(cookie, { entries: [NETFLIX] })).status).toBe(200);
+    }
+    const blocked = await start(cookie, { entries: [NETFLIX] });
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get("retry-after")).toBeTruthy();
+
+    // 다른 계정은 따로 센다.
+    const other = await loggedIn("other");
+    expect((await start(other.cookie, { entries: [NETFLIX] })).status).toBe(200);
+  });
+
+  it("읽지 못한 요청은 세지 않는다", async () => {
+    const { cookie } = await loggedIn("broken");
+    for (let i = 0; i < 25; i++) {
+      expect((await start(cookie, { entries: [] })).status).toBe(400);
+    }
+    expect((await start(cookie, { entries: [NETFLIX] })).status).toBe(200);
   });
 
   it("10분이 지난 계획은 주지 않는다", async () => {

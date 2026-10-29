@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 import path from "path";
+import { contentSecurityPolicy, type CspOptions } from "./lib/csp";
 
 /**
  * 앱(Capacitor)에 담을 정적 빌드인지(`pnpm build:app`, scripts/build-app.ts). lib/platform과 같은 값이다.
@@ -10,6 +11,12 @@ import path from "path";
  * 않게 해 `route.ts`와 `proxy.ts`를 뺀다. 페이지와 레이아웃은 모두 `.tsx`다.
  */
 const isAppBuild = process.env.NEXT_PUBLIC_BUILD_TARGET === "app";
+
+/** 웹 응답의 CSP(lib/csp). 미리보기 배포에만 Vercel 도구 막대의 출처를 연다. */
+const cspOptions: CspOptions = {
+  dev: process.env.NODE_ENV === "development",
+  preview: process.env.VERCEL_ENV === "preview",
+};
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -51,7 +58,7 @@ const nextConfig: NextConfig = {
               source: "/:path*",
               headers: [
                 { key: "X-Frame-Options", value: "DENY" },
-                { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+                { key: "Content-Security-Policy", value: contentSecurityPolicy(cspOptions) },
                 { key: "X-Content-Type-Options", value: "nosniff" },
                 { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
                 {
@@ -63,14 +70,17 @@ const nextConfig: NextConfig = {
             {
               // 영수증 공유 화면은 남이 지어 보낸 링크의 값을 그린다(lib/receipt-share). 지금은 모든 칸을 글자로만 그리지만,
               // 어느 칸이 실수로 그림 주소가 되어도 바깥 주소를 부르지 못하게(받는 사람의 접속을 알리는 추적 그림) 막는다.
-              // 위 규칙의 같은 헤더를 덮으므로 frame-ancestors도 함께 적는다. script-src는 Next가 페이지마다 넣는
-              // 스크립트에 nonce가 필요한데, 정적으로 담는 앱 화면과 맞지 않아 걸지 않는다.
+              // 위 규칙의 같은 헤더를 덮으므로 같은 정책에서 그림 출처만 이 사이트로 묶는다 — 다른 화면을 위해
+              // 기본 img-src를 넓혀도(미리보기의 도구 막대 등) 이 화면은 넓어지지 않는다.
               source: "/report/receipt/share",
               headers: [
                 {
                   key: "Content-Security-Policy",
-                  value:
-                    "frame-ancestors 'none'; img-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'self'",
+                  value: contentSecurityPolicy({
+                    ...cspOptions,
+                    preview: false,
+                    imgSrc: ["'self'", "blob:", "data:"],
+                  }),
                 },
               ],
             },
