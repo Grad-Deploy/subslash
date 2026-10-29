@@ -221,7 +221,7 @@ export async function findConflicts(
 
 /**
  * 요청에 실린 세션 토큰. 웹은 httpOnly 쿠키로, 앱(Capacitor)은 `Authorization: Bearer` 헤더로
- * 보낸다 — 앱의 화면은 다른 출처(capacitor://localhost)에서 돌아 쿠키가 실리지 않는다. 둘 다
+ * 보낸다 — 앱의 화면은 다른 출처(https://localhost)에서 돌아 쿠키가 실리지 않는다. 둘 다
  * 있으면 쿠키를 쓴다.
  */
 export function readSessionToken(request: NextRequest): string | undefined {
