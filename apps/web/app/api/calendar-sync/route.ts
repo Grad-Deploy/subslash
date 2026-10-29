@@ -2,7 +2,7 @@ import { HOUR_MS } from "@subslash/shared";
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
-import { isGmailAutoImportOpen } from "@lib/privacy";
+import { featureClosedResponse, isGmailAutoImportOpen } from "@lib/privacy";
 import { appUrl } from "@lib/email";
 import { isAppOrigin } from "@lib/app-origins";
 import { isAppReturnScheme } from "@lib/app-return";
@@ -31,9 +31,7 @@ import { SOURCE_LOCALE } from "@lib/i18n/config";
 const PLANS_PER_ACCOUNT: RateLimitRule = { limit: 20, windowMs: HOUR_MS };
 
 export async function POST(request: NextRequest) {
-  if (!isGmailAutoImportOpen()) {
-    return NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
-  }
+  if (!isGmailAutoImportOpen()) return featureClosedResponse();
   const webAppUrl = gmailConnectWebAppUrl();
   if (!webAppUrl) {
     return NextResponse.json(

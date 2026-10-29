@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
-import { isGmailAutoImportOpen } from "@lib/privacy";
+import { featureClosedResponse, isGmailAutoImportOpen } from "@lib/privacy";
 import {
   createImportLink,
   deleteGmailImportData,
@@ -16,9 +16,6 @@ import { logError } from "@lib/log";
  * 어느 계정인지는 로그인 세션으로만 정한다. 토큰은 발급하는 응답에만 한 번 실리고 서버에는 해시만
  * 남는다. 사용자는 그 토큰이 든 스크립트를 자기 Apps Script에 붙여 넣는다.
  */
-
-const NOT_OPEN = () =>
-  NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
 
 export async function GET(request: NextRequest) {
   // 시작 전에는 화면이 이 기능을 숨길 수 있게 오류 대신 알린다.
@@ -43,7 +40,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isGmailAutoImportOpen()) return NOT_OPEN();
+  if (!isGmailAutoImportOpen()) return featureClosedResponse();
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
