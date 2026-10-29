@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 /**
  * 앱(Capacitor)의 로그인을 실제 SQLite에 대고 돌린다.
  *
- * 앱의 화면은 다른 출처(capacitor://localhost)에서 돌아 쿠키가 실리지 않는다. 그래서 앱은
+ * 앱의 화면은 다른 출처(https://localhost)에서 돌아 쿠키가 실리지 않는다. 그래서 앱은
  * 세션 토큰을 응답 본문으로 받아 `Authorization: Bearer` 헤더로 보낸다. 확인하려는 것:
  * 1. 본문의 토큰은 앱 출처에만 준다. 웹은 지금처럼 httpOnly 쿠키만 받는다.
  * 2. 헤더 토큰으로 로그인 상태 확인·로그아웃이 된다.
@@ -48,7 +48,8 @@ async function resetDatabase() {
   }
 }
 
-const IOS_APP = "capacitor://localhost";
+/** iOS 앱은 만들지 않으므로 이 출처는 앱으로 보지 않는다(lib/app-origins). */
+const RETIRED_IOS_APP = "capacitor://localhost";
 const ANDROID_APP = "https://localhost";
 const WEB = "https://subslash.example";
 
@@ -90,7 +91,7 @@ describe("앱 로그인 (헤더 토큰)", () => {
   it(
     "앱 출처에서 로그인하면 본문에 토큰을 주고, 그 토큰을 헤더로 보내면 로그인 상태다",
     async () => {
-      for (const origin of [IOS_APP, ANDROID_APP]) {
+      for (const origin of [ANDROID_APP]) {
         const res = await loginRoute(post("http://localhost/api/auth/login", LOGIN, { origin }));
         expect(res.status).toBe(200);
         const body = await res.json();
@@ -109,7 +110,11 @@ describe("앱 로그인 (헤더 토큰)", () => {
   it(
     "웹 출처나 출처 없는 요청에는 본문에 토큰을 주지 않고 쿠키만 준다",
     async () => {
-      for (const headers of [{ origin: WEB }, {} as Record<string, string>]) {
+      for (const headers of [
+        { origin: WEB },
+        { origin: RETIRED_IOS_APP },
+        {} as Record<string, string>,
+      ]) {
         const res = await loginRoute(post("http://localhost/api/auth/login", LOGIN, headers));
         expect(res.status).toBe(200);
         const body = await res.json();
@@ -124,7 +129,7 @@ describe("앱 로그인 (헤더 토큰)", () => {
     "헤더 토큰으로 로그아웃하면 그 세션은 더 이상 통하지 않는다",
     async () => {
       const login = await loginRoute(
-        post("http://localhost/api/auth/login", LOGIN, { origin: IOS_APP }),
+        post("http://localhost/api/auth/login", LOGIN, { origin: ANDROID_APP }),
       );
       const { sessionToken } = await login.json();
       const auth = { authorization: `Bearer ${sessionToken}` };
@@ -146,7 +151,7 @@ describe("앱 로그인 (헤더 토큰)", () => {
 
 describe("CORS (proxy)", () => {
   it("앱 출처의 사전 요청에는 그 출처와 Authorization 헤더를 허용한다", () => {
-    for (const origin of [IOS_APP, ANDROID_APP]) {
+    for (const origin of [ANDROID_APP]) {
       const res = proxy(
         new NextRequest("http://localhost/api/auth/me", {
           method: "OPTIONS",
@@ -167,7 +172,7 @@ describe("CORS (proxy)", () => {
   });
 
   it("다른 출처에는 CORS를 열지 않는다", () => {
-    for (const origin of [WEB, "https://evil.example", "http://localhost"]) {
+    for (const origin of [WEB, RETIRED_IOS_APP, "https://evil.example", "http://localhost"]) {
       const res = proxy(
         new NextRequest("http://localhost/api/auth/me", { method: "OPTIONS", headers: { origin } }),
       );

@@ -589,8 +589,7 @@ evil.com"을 띄우는 길이 된다(보내는 쪽은 그 이름을 가려서 �
 
 브랜드 마크는 `components/brand/Brand.tsx` 한 곳에 있다(마크·워드마크·락업). 좌표와 색은 브랜드
 시트에서 뽑은 값이고, 앱 아이콘(`app/icon.svg`)도 같은 좌표를 쓴다 — 한쪽만 고치면 상단 바와 홈
-화면 아이콘이 서로 다른 로고가 된다. 모바일 앱의 아이콘·스플래시(안드로이드 `res/`, iOS
-`Assets.xcassets`)는 `icon.svg`에서 만든 그림이다 — `icon.svg`를 고치면
+화면 아이콘이 서로 다른 로고가 된다. 모바일 앱의 아이콘·스플래시(안드로이드 `res/`)는 `icon.svg`에서 만든 그림이다 — `icon.svg`를 고치면
 `pnpm --filter @subslash/mobile assets`를 다시 돌린다(Capacitor 기본 그림이 남아 있어 앱만 다른 로고였다). 워드마크 가운데의 빨간 슬래시는 글꼴의 `/`가 아니라 기울인
 막대이고, 읽는 기계에는 `Sub/Slash`로 들리도록 따로 적는다.
 
@@ -718,7 +717,7 @@ E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-K
   돌아오면 모든 컴포넌트가 처음부터 돌지만 앱은 아니다. Gmail 연결은 링크 상태만 다시 읽어, 찾은
   구독(`GmailDiscoveryInbox`)이 앱을 껐다 켤 때까지 등록되지 않았다(`requestGmailDiscoveries`로 알린다).
   간편 로그인·로그인 방법 연결은 끝 화면(`/oauth/done`)이 앱의 돌아오는 주소(`<앱 ID>://oauth-done?결과`,
-  `lib/app-return`, 매니페스트·iOS URL 타입)를 연다 — 카카오톡으로 로그인하면 Chrome에서 끝나, 창을 닫으라는
+  `lib/app-return`, 매니페스트)를 연다 — 카카오톡으로 로그인하면 Chrome에서 끝나, 창을 닫으라는
   말만으로는 사용자가 웹에 남았다. `leaveForExternal`은 이 주소를 받으면 결과를 `onReturn`에 넘긴다. 앱의
   verifier는 기기에 10분 적어 두고(`lib/app-oauth`) 돌아오는 길·앱 복귀·다음 실행 어디서든 한 번만 받아 간다.
   인앱 브라우저가 여는 웹 화면에는 사이트 메뉴·Gmail 받기 상자를 두지 않는다(`SiteChrome`의 목록에 더한다).
@@ -731,7 +730,7 @@ E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-K
   이동이 막힐 수 있으므로 'SubSlash 앱으로 돌아가기' 버튼을 함께 둔다. 스킴이 없으면(예전 앱) 예전처럼 창을
   닫으라고만 말한다. 웹 앱 코드를 고쳤으므로 운영자가 다시 배포해야 반영된다.
 - 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은
-  `capacitor://localhost`(iOS)나 `https://localhost`(안드로이드)다.
+  `https://localhost`(안드로이드)다.
 - 페이지에 동적 경로(`[id]`)를 새로 만들지 않는다. 브라우저에서 만든 ID로는 페이지를 미리
   만들 수 없다. 구독 상세는 `subscriptionDetailHref()`(`/subs/detail?id=`)를 쓴다.
 - 브라우저 기본 `confirm`·`prompt`·`alert`를 쓰지 않는다. 창 밖에서는 `ConfirmDialog`, 이미
@@ -753,13 +752,12 @@ E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-K
 `IS_APP_BUILD`(`lib/platform`)로 가른다. CI가 이 빌드를 돌려 정적 내보내기를 깨는 코드를 막는다.
 안드로이드 빌드·실행은 docs/DEVELOPMENT.md의 '모바일 앱'에 있다. 고친 것을 폰에서 확인할 때는 `pnpm --filter @subslash/mobile android:dev`로 테스트용 앱(`com.subslash.app.dev`)을 스토어 앱 옆에 설치한다 — 확인하려고 versionCode를 올리거나 스토어 앱을 지우지 않는다.
 
-`apps/mobile`은 안드로이드(`android/`)와 iOS(`ios/`)를 모두 담는다. `@capacitor/android`·`@capacitor/ios`는
-코드에서 import하지 않지만 `npx cap sync`가 네이티브 프로젝트를 만들고 갱신할 때 쓰므로 지우지 않는다. iOS 프로젝트는 Capacitor 8이
-CocoaPods 대신 SPM을 쓰므로 Windows에서도 만들어지지만, **빌드는 macOS나 EAS의 macOS 작업 서버에서만**
-된다. 실기기·TestFlight·스토어는 Apple 개발자 프로그램이 있어야 하고, 계정 없이 되는 것은 시뮬레이터
-빌드(`eas.json`의 `preview.ios.simulator`)뿐이다. 네이티브 플러그인은 안드로이드에만 있으므로
-(`AppWindowPlugin`), 플러그인을 부르는 코드는 `Capacitor.getPlatform()`으로 가른다 — iOS에서 부르면
-거절당해 경고만 쌓인다.
+`apps/mobile`은 안드로이드(`android/`)만 담는다. iOS 앱은 2026년 10월에 만들지 않기로 하고 `ios/`·`@capacitor/ios`·
+EAS의 iOS 프로필·iPad 미리보기 도구(`tools/ipad-preview`)를 걷었다. iOS 앱 출처(`capacitor://localhost`)도
+`lib/app-origins`에서 뺐다 — 다시 만들면 `npx cap add ios`와 함께 그 출처를 더한다. `@capacitor/android`는
+코드에서 import하지 않지만 `npx cap sync`가 네이티브 프로젝트를 갱신할 때 쓰므로 지우지 않는다. 네이티브
+플러그인은 안드로이드에만 있으므로(`AppWindowPlugin`), 플러그인을 부르는 코드는 `Capacitor.getPlatform()`으로
+가른다 — 안드로이드가 아닌 곳에서 부르면 거절당해 경고만 쌓인다.
 
 안드로이드 릴리스 빌드는 R8로 코드를 줄이고 최적화·난독화한다(AGP 9, `minifyEnabled`·`shrinkResources`).
 AGP 9는 최적화를 끄는 `proguard-android.txt`를 받지 않으므로 `proguard-android-optimize.txt`를 쓴다. 웹 화면이
@@ -787,10 +785,6 @@ Android 이미지에는 JDK 17뿐인데 Capacitor 8은 Java 21로 컴파일해�
 (`scripts/eas-build-post-install.sh`)이 JDK 21을 받고 웹 화면을 만들어 `cap sync`한다. EAS는 작업 폴더를
 `.gitignore` 기준으로 올린다. `.easignore`를 만들면 `.gitignore`를 통째로 대신해서 `.env`까지 올라갈 수
 있으니 만들지 않는다.
-
-`tools/ipad-preview`는 Mac 없이 iPad·iPhone의 Expo Go로 화면을 iPhone에서 보는 모습 그대로 보는
-도구다(iPad는 iPhone 크기 틀, iPhone은 전체 화면. 사용법은 그 폴더의 README). pnpm 워크스페이스 밖이라 npm으로 따로 설치하고, CI·웹 빌드에 들어가지 않는다.
-출시할 앱이 아니므로 네이티브 기능은 여기서 확인할 수 없다.
 
 ## 작업 절차
 
