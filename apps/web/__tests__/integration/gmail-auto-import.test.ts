@@ -443,7 +443,8 @@ describe("원클릭 Gmail 연결", () => {
     const session = await createSession(account.id);
     for (const [origin, client] of [
       ["https://localhost", "app"],
-      ["capacitor://localhost", "app"],
+      // iOS 앱은 만들지 않으므로 그 출처는 앱으로 보지 않는다(lib/app-origins).
+      ["capacitor://localhost", null],
       ["http://localhost:3000", null],
     ] as const) {
       const response = await connectRoute.POST(

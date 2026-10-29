@@ -15,7 +15,7 @@
 | DB         | Turso (libSQL) + Drizzle ORM       |
 | 메일       | Resend (가입 확인·비밀번호 재설정) |
 | 배포       | Vercel                             |
-| 모바일     | Capacitor 8 (안드로이드·iOS), EAS  |
+| 모바일     | Capacitor 8 (안드로이드), EAS      |
 | 모노레포   | Turborepo + pnpm                   |
 | 테스트     | Vitest + Playwright                |
 
@@ -29,10 +29,9 @@ subslash/
 │   ├── lib/           # 스토어, DB, 서버 로직, 네이티브 연결, 화면 문구(i18n)
 │   ├── hooks/         # React 커스텀 훅
 │   └── drizzle/       # DB 마이그레이션 SQL
-├── apps/mobile/       # Capacitor 앱 (안드로이드·iOS)
+├── apps/mobile/       # Capacitor 앱 (안드로이드)
 ├── apps/usage-cli/    # PC의 AI 코딩 도구 사용을 체크인으로 넘기는 명령줄 도구
-├── packages/shared/   # 공유 타입, 서비스 목록, 금액·결제일 계산
-└── tools/ipad-preview # Expo Go로 화면을 보는 도구 (워크스페이스 밖)
+└── packages/shared/   # 공유 타입, 서비스 목록, 금액·결제일 계산
 ```
 
 ## 시작하기
@@ -125,7 +124,7 @@ vercel firewall publish --yes
 - 안드로이드에서 설치한 뒤 공유 시트에서 SubSlash를 고르면 결제 문자·영수증이 `/share`로 넘어와 파싱됩니다.
 - 서비스 워커는 오프라인 안내 화면 하나만 캐시합니다. 앱 셸을 캐시하면 배포 뒤 옛 빌드가 남을 위험만 커집니다.
 
-### 앱 (Capacitor, 안드로이드·iOS)
+### 앱 (Capacitor, 안드로이드)
 
 `apps/mobile`은 웹 화면을 정적으로 내보낸 것(`apps/web/out`)을 앱 안에 담고, API는 공개 웹
 `https://www.subslash.me`를 부릅니다. 다른 배포를 부르면 DB가 달라 웹에서 만든 계정으로 앱에 로그인할 수 없습니다.
@@ -150,14 +149,7 @@ pnpm --filter @subslash/mobile android:dev            # 네이티브만 고쳤�
 - 결제일 알림은 기기 안의 로컬 알림이라 로그인이 필요 없고, '알림 켜기'를 누를 때 권한을 묻습니다. 정확한 시각
   알람 권한은 쓰지 않아 몇 분 늦게 뜰 수 있습니다.
 
-**iOS** 프로젝트(`apps/mobile/ios`)는 Windows에서도 만들어지지만(Capacitor 8은 SPM을 씀) **빌드는 macOS나 EAS의
-macOS 작업 서버에서만** 됩니다. 실기기·TestFlight·App Store에는 Apple 개발자 프로그램이 필요하고, 계정 없이
-되는 것은 시뮬레이터 빌드뿐입니다.
-
-```bash
-NEXT_PUBLIC_WEB_ORIGIN=https://www.subslash.me pnpm --filter @subslash/mobile sync:ios
-pnpm --filter @subslash/mobile open:ios
-```
+iOS 앱은 만들지 않습니다(2026년 10월에 `apps/mobile/ios`를 걷었습니다).
 
 ### EAS 클라우드 빌드
 
@@ -168,7 +160,6 @@ Expo 프로젝트 `@leesean2/subslash-mobile`을 씁니다. 앱은 Capacitor라 
 cd apps/mobile
 eas build --platform android --profile preview       # 기기에 바로 설치하는 APK
 eas build --platform android --profile production    # 스토어용 AAB
-eas build --platform ios --profile preview           # 시뮬레이터용 (Apple 계정 없이 됨)
 ```
 
 - 설치 뒤 훅(`scripts/eas-build-post-install.sh`)이 JDK 21을 받고(EAS 이미지에는 JDK 17뿐), 웹 화면을 만들어 `cap sync`합니다.

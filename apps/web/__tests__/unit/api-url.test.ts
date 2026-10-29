@@ -18,7 +18,7 @@ describe("apiUrl / webUrl", () => {
   });
 
   it("앱 빌드에서는 배포된 웹 주소를 붙인다", async () => {
-    // 앱 안의 상대 주소는 capacitor://localhost를 가리켜 서버에 닿지 않는다.
+    // 앱 안의 상대 주소는 https://localhost를 가리켜 서버에 닿지 않는다.
     vi.stubEnv("NEXT_PUBLIC_WEB_ORIGIN", "https://subslash.example/");
     const { apiUrl, webUrl } = await load();
     expect(apiUrl("/api/auth/me")).toBe("https://subslash.example/api/auth/me");
