@@ -8,7 +8,7 @@ import {
 } from "@subslash/shared";
 import { getDb } from "./db";
 import { calendarSyncPlans } from "./schema";
-import { generateSyncToken, hashSyncToken } from "./tokens";
+import { generateSyncToken, sha256Hex } from "./tokens";
 import { billingRRule, calendarEligible, eventDescription, type CalendarEntry } from "./ics";
 import { subscriptionDetailHref } from "./routes";
 
@@ -182,7 +182,7 @@ export async function createCalendarSyncPlan(
   const code = generateSyncToken();
   const values = {
     accountId,
-    codeHash: hashSyncToken(code),
+    codeHash: sha256Hex(code),
     payload: JSON.stringify(plan),
     createdAt: now.toISOString(),
   };
@@ -211,7 +211,7 @@ export async function claimCalendarSyncPlan(
 
   const [row] = await db
     .delete(calendarSyncPlans)
-    .where(eq(calendarSyncPlans.codeHash, hashSyncToken(code)))
+    .where(eq(calendarSyncPlans.codeHash, sha256Hex(code)))
     .returning({ payload: calendarSyncPlans.payload });
   if (!row) return null;
 

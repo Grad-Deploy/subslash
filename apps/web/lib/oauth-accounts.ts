@@ -1,9 +1,9 @@
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
 import { and, eq, gt, lt } from "drizzle-orm";
 import { getDb } from "./db";
 import { accountIdentities, accounts, oauthAppClaims, type Account } from "./schema";
 import { NO_PASSWORD, hasPassword } from "./password";
-import { signLink, verifyLink } from "./tokens";
+import { sha256Hex, signLink, verifyLink } from "./tokens";
 import { sendAccountVerification } from "./account-verification";
 import { isUniqueViolation, logError } from "./log";
 import {
@@ -160,7 +160,7 @@ async function identityFingerprint(accountId: string): Promise<string> {
     .map((row) => `${row.provider}:${row.subjectHash}`)
     .sort()
     .join(",");
-  return createHash("sha256").update(`identities:${accountId}:${list}`).digest("hex").slice(0, 32);
+  return sha256Hex(`identities:${accountId}:${list}`).slice(0, 32);
 }
 
 /**

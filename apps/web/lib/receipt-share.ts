@@ -6,6 +6,7 @@ import {
   type ReceiptPeriod,
   parseTimestamp,
 } from "@subslash/shared";
+import { fromBase64Url, toBase64Url } from "./bytes";
 import { isReceiptTheme, type ReceiptTheme } from "./receipt-theme";
 import type { ReceiptRenderOptions } from "./receipt-view";
 
@@ -380,24 +381,6 @@ function fromWire(value: unknown, labels: MaskedNameLabels, now: Date): SharedRe
     theme: wire.th,
     render: hidden ? { unverified: true, hidden: true } : { unverified: true },
   };
-}
-
-function toBase64Url(bytes: Uint8Array): string {
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  }
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function fromBase64Url(text: string): Uint8Array | null {
-  if (!/^[A-Za-z0-9_-]*$/.test(text)) return null;
-  try {
-    const binary = atob(text.replace(/-/g, "+").replace(/_/g, "/"));
-    return Uint8Array.from(binary, (char) => char.charCodeAt(0));
-  } catch {
-    return null;
-  }
 }
 
 const canCompress = () =>
