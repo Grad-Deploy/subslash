@@ -1,3 +1,4 @@
+import { HOUR_MS } from "@subslash/shared";
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
@@ -7,6 +8,12 @@ import { isAppOrigin } from "@lib/app-origins";
 import { isAppReturnScheme } from "@lib/app-return";
 import { gmailConnectWebAppUrl } from "@lib/gmail-auto-import";
 import { createCalendarSyncPlan, parseCalendarPlan } from "@lib/calendar-sync";
+import {
+  hit,
+  retryAfterSeconds,
+  tooManyRequestsResponse,
+  type RateLimitRule,
+} from "@lib/rate-limit";
 import { logError } from "@lib/log";
 import { SOURCE_LOCALE } from "@lib/i18n/config";
 
@@ -17,6 +24,12 @@ import { SOURCE_LOCALE } from "@lib/i18n/config";
  *
  * 구독 이름·금액은 주소에 싣지 않는다 — 주소는 Google의 기록과 브라우저 방문 기록에 남는다.
  */
+/**
+ * 누를 때마다 계획 한 줄을 쓴다(계정마다 한 줄을 덮어쓴다). 표는 커지지 않지만 Turso는 행 쓰기 한도가 먼저
+ * 차므로 되풀이해 부르는 것을 막는다. 고쳐 가며 몇 번 다시 누르는 것보다 넉넉한 값이다.
+ */
+const PLANS_PER_ACCOUNT: RateLimitRule = { limit: 20, windowMs: HOUR_MS };
+
 export async function POST(request: NextRequest) {
   if (!isGmailAutoImportOpen()) {
     return NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
@@ -45,6 +58,12 @@ export async function POST(request: NextRequest) {
     if (plan.entries.length === 0) {
       return NextResponse.json({ error: "캘린더에 올릴 구독이 없습니다." }, { status: 400 });
     }
+
+    // 읽지 못한 요청은 행을 쓰지 않으므로 세지 않는다.
+    const key = `calendar-sync:account:${account.id}`;
+    const wait = retryAfterSeconds(key, PLANS_PER_ACCOUNT);
+    if (wait > 0) return tooManyRequestsResponse(wait);
+    hit(key, PLANS_PER_ACCOUNT);
 
     const url = new URL(webAppUrl);
     url.searchParams.set("action", "calendar");
