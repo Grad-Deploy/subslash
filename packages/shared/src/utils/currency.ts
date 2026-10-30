@@ -25,6 +25,16 @@ export function spaceCurrencySymbol(text: string): string {
   return text.replace(/^([−-]?)([₩$])\s*/, "$1$2 ");
 }
 
+/** 기호 뒤를 한 칸 띄운 금액(₩ 17,000 · $ 9.99). 앱의 계산서·체크인·사용 현황이 같은 표기를 쓴다. */
+export function formatSpacedAmount(amount: number, currency: Currency): string {
+  return spaceCurrencySymbol(formatAmount(amount, currency));
+}
+
+/** 원으로 셈한 값의 `formatSpacedAmount`(₩ 17,000). */
+export function formatSpacedKRW(amount: number): string {
+  return formatSpacedAmount(amount, "KRW");
+}
+
 /** Normalises any amount to KRW so mixed-currency subscriptions can be summed. */
 export function toKRW(
   amount: number,

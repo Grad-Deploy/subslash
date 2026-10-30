@@ -1,18 +1,13 @@
 "use client";
 
 import React from "react";
-import { type Subscription, formatKRW, spaceCurrencySymbol } from "@subslash/shared";
+import type { Subscription } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { monthlyTotals, type UsageHistory } from "@lib/usage/history";
 import { type UsageRange } from "@lib/usage/value";
 import { useT, type Messages } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
 import { ServiceLogo } from "../../subscription/ServiceLogo";
-
-/** '₩ 17,000'처럼 기호 뒤를 한 칸 띄운다(계산서와 같은 표기). */
-export function won(amount: number): string {
-  return spaceCurrencySymbol(formatKRW(amount));
-}
 
 export function SubLogo({ sub, size = 32 }: { sub: Subscription; size?: number }) {
   return (

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ReceiptText } from "lucide-react";
-import type { Subscription, UsageLog } from "@subslash/shared";
+import { type Subscription, type UsageLog, formatSpacedKRW } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { cn } from "@lib/utils";
 import { useT, useServiceNames } from "@lib/i18n";
@@ -10,7 +10,7 @@ import { ExchangeRateNote } from "../../settings/ExchangeRateNote";
 import { AppSheet } from "../../settings/app/AppSheet";
 import { AppSavingsLink } from "../../savings/app/AppSavingsLink";
 import { ValueReceiptPaper } from "./ValueReceiptPaper";
-import { type ValueReceipt, buildValueReceipt, sheetActions, won } from "./valueReceipt";
+import { type ValueReceipt, buildValueReceipt, sheetActions } from "./valueReceipt";
 
 export interface AppValueReceiptProps {
   subscriptions: Subscription[];
@@ -64,7 +64,7 @@ export function AppValueReceipt({
         <div className="rounded-xl bg-secondary px-2.5 py-2">
           <dt className="text-[10.5px] text-muted-foreground">{r.fixed}</dt>
           <dd className="font-mono text-[17px] font-black tracking-tight tabular-nums">
-            {won(data.fixedKRW)}
+            {formatSpacedKRW(data.fixedKRW)}
           </dd>
         </div>
         <div className="rounded-xl bg-secondary px-2.5 py-2">
@@ -72,7 +72,7 @@ export function AppValueReceipt({
             <>
               <dt className="text-[10.5px] text-muted-foreground">{r.savable}</dt>
               <dd className="font-mono text-[17px] font-black tracking-tight text-amber-700 tabular-nums dark:text-amber-400">
-                {won(summary.wastedKRW)}
+                {formatSpacedKRW(summary.wastedKRW)}
               </dd>
             </>
           ) : summary.unknownItems.length > 0 ? (

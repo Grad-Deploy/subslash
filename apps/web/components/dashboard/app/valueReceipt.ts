@@ -3,16 +3,14 @@ import {
   type SubscriptionCategory,
   type UsageLog,
   type ValueReportItem,
-  formatCurrency,
-  formatKRW,
   getMonthlyValueSummary,
   isInTrial,
   isShared,
   metricOfLog,
   sumMonthlyKRW,
   sumMyMonthlyKRW,
-  spaceCurrencySymbol,
   formatDotDate,
+  formatSpacedAmount,
 } from "@subslash/shared";
 import type { Messages } from "@lib/i18n";
 import { describeCheckInText } from "@lib/i18n/check-in-text";
@@ -28,14 +26,6 @@ export const PREVIEW_PER_SECTION = 2;
 
 export type SectionKey = "worth" | "wasted" | "unknown";
 
-/**
- * 영수증 금액은 통화 기호와 숫자 사이를 한 칸 띄운다(₩ 17,000). 고정폭 숫자와 함께 가게 영수증처럼
- * 자릿수가 정갈하게 보인다. 부호(−)는 기호 앞에 둔다.
- */
-export function won(amount: number): string {
-  return spaceCurrencySymbol(formatKRW(amount));
-}
-
 /** 먼저 연 구독을 빼고, 남은 '쉬어가도 될 구독'을 금액이 큰 순서로. 이어서 해지할 차례다. */
 export function wasteOrder(items: ValueReportItem[], firstId: string): string[] {
   return items
@@ -50,10 +40,7 @@ export function receiptDetail(t: Messages, item: ValueReportItem): string {
   if (metricOfLog(item.log) !== "uses") return describeCheckInText(t, item.log, item.sub.currency);
   const count = item.log.usageCount ?? 0;
   if (count === 0) return t.receipt.detailUnused;
-  return t.receipt.detailUses(
-    count,
-    spaceCurrencySymbol(formatCurrency(item.costPerUse ?? 0, item.sub.currency)),
-  );
+  return t.receipt.detailUses(count, formatSpacedAmount(item.costPerUse ?? 0, item.sub.currency));
 }
 
 export interface ValueReceipt {
