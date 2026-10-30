@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { BrandWordmark } from "../brand/Brand";
+import { PlayStoreLink } from "./PlayStoreLink";
 import { useT } from "@lib/i18n";
 
 /**
@@ -25,6 +26,7 @@ export function SiteFooter() {
           >
             {t.privacy}
           </Link>
+          <PlayStoreLink className="no-underline hover:underline" />
         </div>
         {/*
           화면에 보이는 서비스 이름과 로고는 남의 상표다. 구독을 알아볼 수 있게 쓸 뿐이고

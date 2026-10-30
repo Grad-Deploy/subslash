@@ -682,7 +682,8 @@ E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-K
 밝힌다 — 경로는 `components/home/screens`의 `landingScreen`이 화면 언어로 고른다. 화면이 크게 바뀌면
 `pnpm --filter @subslash/web landing:screens [-- --lang ko]`로 새로 찍는다(앱 빌드를 휴대폰 크기로 열어 예시 기록을 설정 →
 복원으로 넣고 찍는다, `scripts/landing-screens/capture.ts`). '앱 받기'(`AppDownloadLink`)는 Google Play의 스토어
-페이지(`PLAY_STORE_URL`)로 간다 — 비공개 테스트 동안에는 받을 수 없는 주소를 걸지 않으려고 링크 없는 '준비 중' 표시였다.
+페이지(`PLAY_STORE_URL`, `lib/play-store`)로 간다. 웹의 푸터와, 안드로이드 앱에서만 되는 기능을 웹에서 안내하는 문장(설정의
+여러 기기 사용 측정·리포트의 구독별 사용량)에도 같은 링크(`PlayStoreLink`, 앱에서는 그리지 않음)를 둔다 — 비공개 테스트 동안에는 받을 수 없는 주소를 걸지 않으려고 링크 없는 '준비 중' 표시였다.
 
 앱은 `/`를 열자마자 대시보드로 옮기고, 처음 실행할 때만 인트로 뒤에 옆으로 넘기는 소개(`components/launch/AppOnboarding`)를
 덮어 보여 준다. 모양은 Claude Design의 `App Onboarding v2.dc.html`(문제 · 답 · 1회당 단가 계산기 · 기능 3장 · 직접 해 보기)이고,

@@ -11,6 +11,7 @@ import { SampleChargeCard } from "./SampleChargeCard";
 import { SAMPLES, SAMPLE_TOTAL } from "./samples";
 import { useLocale, useT } from "@lib/i18n";
 import { landingScreen } from "./screens";
+import { PLAY_STORE_URL } from "@lib/play-store";
 
 /**
  * 첫 화면(소개)의 칸들. 내려 읽으며 무엇을 하는 서비스인지만 알리고, 쓰는 것은 대시보드로 넘긴다. 모양은
@@ -32,9 +33,6 @@ const lead =
   "text-[clamp(1.0625rem,1.5vw,1.25rem)] leading-[1.65] text-pretty text-muted-foreground";
 const primaryButton =
   "whitespace-nowrap rounded-xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground transition hover:-translate-y-0.5 hover:bg-primary/90 motion-reduce:hover:translate-y-0";
-
-/** Google Play의 SubSlash 앱 페이지. README의 QR도 이 주소다. */
-export const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.subslash.app";
 
 /** 앱 받기. 이 화면은 웹에만 있으므로(앱은 `/`를 열면 대시보드로 간다) 새 탭으로 스토어를 연다. */
 export function AppDownloadLink({ className }: { className?: string }) {
