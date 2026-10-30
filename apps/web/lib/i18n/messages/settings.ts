@@ -93,7 +93,7 @@ export const ko = {
     testSent: "몇 초 뒤 시험 알림이 뜹니다.",
     testFailed: "시험 알림을 보내지 못했습니다.",
     deniedHelp:
-      "알림 권한이 꺼져 있어요. 휴대폰 설정에서 SubSlash의 알림을 허용한 뒤 다시 켜 주세요(안드로이드: 설정 › 애플리케이션 › SubSlash › 알림, iOS: 설정 › SubSlash › 알림).",
+      "알림 권한이 꺼져 있어요. 휴대폰 설정에서 SubSlash의 알림을 허용한 뒤 다시 켜 주세요(설정 › 애플리케이션 › SubSlash › 알림).",
     unknownDates: (count: number) =>
       `결제 월을 적지 않은 연간 구독 ${count}개는 결제일을 알 수 없어 알리지 않습니다.`,
   },
@@ -194,7 +194,7 @@ export const en: Widen<typeof ko> = {
     testSent: "A test reminder will appear in a few seconds.",
     testFailed: "Couldn't send the test reminder.",
     deniedHelp:
-      "Notifications are blocked. Allow notifications for SubSlash in your phone settings, then turn this on again (Android: Settings › Apps › SubSlash › Notifications, iOS: Settings › SubSlash › Notifications).",
+      "Notifications are blocked. Allow notifications for SubSlash in your phone settings, then turn this on again (Settings › Apps › SubSlash › Notifications).",
     unknownDates: (count) =>
       `${count} yearly ${count === 1 ? "subscription has" : "subscriptions have"} no billing month set, so ${count === 1 ? "its" : "their"} billing date is unknown and no reminder is sent.`,
   },
@@ -290,7 +290,7 @@ export const zh: Widen<typeof ko> = {
     testSent: "测试提醒会在几秒后出现。",
     testFailed: "无法发送测试提醒。",
     deniedHelp:
-      "通知被阻止。请在手机设置中允许 SubSlash 的通知后重新开启（Android：设置 › 应用 › SubSlash › 通知，iOS：设置 › SubSlash › 通知）。",
+      "通知被阻止。请在手机设置中允许 SubSlash 的通知后重新开启（设置 › 应用 › SubSlash › 通知）。",
     unknownDates: (count) => `${count} 个年付订阅没有设置扣款月份，扣款日不明，因此不会发送提醒。`,
   },
 };
@@ -387,7 +387,7 @@ export const ja: Widen<typeof ko> = {
     testSent: "数秒後にテスト通知が表示されます。",
     testFailed: "テスト通知を送れませんでした。",
     deniedHelp:
-      "通知がブロックされています。スマホの設定で SubSlash の通知を許可してから、もう一度オンにしてください（Android: 設定 › アプリ › SubSlash › 通知、iOS: 設定 › SubSlash › 通知）。",
+      "通知がブロックされています。スマホの設定で SubSlash の通知を許可してから、もう一度オンにしてください（設定 › アプリ › SubSlash › 通知）。",
     unknownDates: (count) =>
       `年払いのサブスク ${count} 件は支払月が未設定で支払日がわからないため、通知を送りません。`,
   },
@@ -484,7 +484,7 @@ export const vi: Widen<typeof ko> = {
     testSent: "Lời nhắc thử sẽ hiện sau vài giây.",
     testFailed: "Không gửi được lời nhắc thử.",
     deniedHelp:
-      "Thông báo đang bị chặn. Hãy cho phép thông báo của SubSlash trong cài đặt điện thoại rồi bật lại (Android: Cài đặt › Ứng dụng › SubSlash › Thông báo, iOS: Cài đặt › SubSlash › Thông báo).",
+      "Thông báo đang bị chặn. Hãy cho phép thông báo của SubSlash trong cài đặt điện thoại rồi bật lại (Cài đặt › Ứng dụng › SubSlash › Thông báo).",
     unknownDates: (count) =>
       `${count} gói trả theo năm chưa đặt tháng thanh toán nên không rõ ngày thanh toán và sẽ không có lời nhắc.`,
   },
@@ -592,7 +592,7 @@ export const fr: Widen<typeof ko> = {
     testSent: "Un rappel de test apparaîtra dans quelques secondes.",
     testFailed: "Impossible d'envoyer le rappel de test.",
     deniedHelp:
-      "Les notifications sont bloquées. Autorisez les notifications de SubSlash dans les réglages du téléphone, puis réactivez (Android : Réglages › Applications › SubSlash › Notifications, iOS : Réglages › SubSlash › Notifications).",
+      "Les notifications sont bloquées. Autorisez les notifications de SubSlash dans les réglages du téléphone, puis réactivez (Réglages › Applications › SubSlash › Notifications).",
     unknownDates: (count) =>
       `${count} ${stPl(count, "abonnement annuel n'a", "abonnements annuels n'ont")} pas de mois de paiement : la date est inconnue et aucun rappel n'est envoyé.`,
   },
@@ -700,7 +700,7 @@ export const es: Widen<typeof ko> = {
     testSent: "Un recordatorio de prueba aparecerá en unos segundos.",
     testFailed: "No se pudo enviar el recordatorio de prueba.",
     deniedHelp:
-      "Las notificaciones están bloqueadas. Permite las notificaciones de SubSlash en los ajustes del móvil y vuelve a activarlo (Android: Ajustes › Aplicaciones › SubSlash › Notificaciones; iOS: Ajustes › SubSlash › Notificaciones).",
+      "Las notificaciones están bloqueadas. Permite las notificaciones de SubSlash en los ajustes del móvil y vuelve a activarlo (Ajustes › Aplicaciones › SubSlash › Notificaciones).",
     unknownDates: (count) =>
       `${count} ${stPl(count, "suscripción anual no tiene", "suscripciones anuales no tienen")} mes de cobro, así que la fecha se desconoce y no se envía recordatorio.`,
   },
@@ -805,7 +805,7 @@ export const de: Widen<typeof ko> = {
     testSent: "Eine Test-Erinnerung erscheint in wenigen Sekunden.",
     testFailed: "Die Test-Erinnerung konnte nicht gesendet werden.",
     deniedHelp:
-      "Benachrichtigungen sind blockiert. Erlaube in den Handy-Einstellungen Benachrichtigungen für SubSlash und schalte es dann erneut ein (Android: Einstellungen › Apps › SubSlash › Benachrichtigungen, iOS: Einstellungen › SubSlash › Mitteilungen).",
+      "Benachrichtigungen sind blockiert. Erlaube in den Handy-Einstellungen Benachrichtigungen für SubSlash und schalte es dann erneut ein (Einstellungen › Apps › SubSlash › Benachrichtigungen).",
     unknownDates: (count) =>
       `${count} ${stPl(count, "Jahresabo hat", "Jahresabos haben")} keinen Abbuchungsmonat, daher ist der Termin unbekannt und es kommt keine Erinnerung.`,
   },
@@ -912,7 +912,7 @@ export const pt: Widen<typeof ko> = {
     testSent: "Um lembrete de teste vai aparecer em alguns segundos.",
     testFailed: "Não foi possível enviar o lembrete de teste.",
     deniedHelp:
-      "As notificações estão bloqueadas. Permita as notificações do SubSlash nas configurações do celular e ligue de novo (Android: Configurações › Apps › SubSlash › Notificações; iOS: Ajustes › SubSlash › Notificações).",
+      "As notificações estão bloqueadas. Permita as notificações do SubSlash nas configurações do celular e ligue de novo (Configurações › Apps › SubSlash › Notificações).",
     unknownDates: (count) =>
       `${count} ${stPl(count, "assinatura anual não tem", "assinaturas anuais não têm")} mês de cobrança, então a data é desconhecida e nenhum lembrete é enviado.`,
   },

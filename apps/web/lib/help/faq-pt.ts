@@ -17,6 +17,10 @@ export const FAQ_PT: typeof FAQ_EN = {
     q: "O que o SubSlash faz?",
     a: "Ele mostra quanto cada assinatura custa por uso (custo por uso) e indica onde cancelar as que não valem a pena. Adicione suas assinaturas e registre quantas vezes usou cada uma nos últimos 30 dias, e ele faz a conta.",
   },
+  "get-app": {
+    q: "Onde baixo o app? Existe app para iPhone?",
+    a: "Baixe o app Android procurando “SubSlash” no Google Play ou pelo “Baixe o app no Google Play” no fim das páginas da web. Não há app para iPhone, então no iPhone use pelo navegador. Os check-ins automáticos pelo histórico de uso do celular e os lembretes de pagamento neste aparelho só funcionam no app Android. Entre com a mesma conta na web e no app e seus registros ficam sincronizados.",
+  },
   "cost-per-use": {
     q: "Como o custo por uso é calculado?",
     a: "Sua parte mensal é dividida pelo número de usos nos últimos 30 dias. Em assinaturas divididas com outras pessoas só conta a sua parte, e as anuais são primeiro convertidas em valor mensal. Assinaturas sem registro não têm número de usos, então não inventamos um custo e mostramos “Ainda sem registro”.",
