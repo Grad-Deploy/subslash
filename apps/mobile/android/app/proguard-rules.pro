@@ -33,3 +33,10 @@
 -if interface * { @retrofit2.http.* public *** *(...); }
 -keep,allowoptimization,allowshrinking,allowobfuscation class <3>
 -keep,allowobfuscation,allowshrinking class retrofit2.Response
+
+# 더 넓은 화면(edge-to-edge). Play Console은 앱이 EdgeToEdge.enable()을 부르는지 dex에서 찾는다. 규칙이 없으면
+# R8이 이 메서드를 MainActivity.onCreate 안으로 인라인하고 클래스 이름도 바꿔(androidx.activity.s), 부르고
+# 있는데도 '일부 사용자에게는 더 넓은 화면이 표시되지 않을 수 있습니다' 경고가 남았다.
+-keep class androidx.activity.EdgeToEdge {
+    public static void enable(...);
+}
