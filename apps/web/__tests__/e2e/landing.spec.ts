@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 /**
  * 첫 화면(소개). 내려 읽으며 무엇을 하는지 알리고, 쓰는 것은 대시보드로 보낸다.
- * 앱은 아직 비공개 테스트라 받을 곳이 없으므로 '준비 중' 표시만 있고 스토어 링크는 없다.
+ * 앱 받기는 Google Play의 스토어 페이지로 간다.
  */
 test.describe("첫 화면 소개 (E2E)", () => {
   test("계산기·기능·안심 칸을 내려 읽고, 등록은 이 화면에서 하지 않는다", async ({ page }) => {
@@ -41,9 +41,15 @@ test.describe("첫 화면 소개 (E2E)", () => {
         .toBeGreaterThan(0);
     }
 
-    // 앱은 '준비 중'만 알리고 스토어 링크를 만들지 않는다.
-    await expect(page.getByText("안드로이드 앱 · Google Play 준비 중").first()).toBeVisible();
-    await expect(page.locator('a[href*="play.google.com"]')).toHaveCount(0);
+    // 앱 받기는 SubSlash의 Google Play 페이지로 간다(첫 칸과 마무리 칸).
+    const store = page.getByRole("link", { name: "안드로이드 앱 · Google Play에서 받기" });
+    await expect(store.first()).toBeVisible();
+    for (const link of await store.all()) {
+      await expect(link).toHaveAttribute(
+        "href",
+        "https://play.google.com/store/apps/details?id=com.subslash.app",
+      );
+    }
     // 등록은 대시보드에서 한다.
     await expect(page.getByRole("button", { name: /내 구독 등록하기/ })).toHaveCount(0);
     await expect(page.getByRole("dialog")).toHaveCount(0);

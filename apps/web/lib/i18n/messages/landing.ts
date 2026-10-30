@@ -7,7 +7,7 @@ import { one } from "../english";
  */
 export const ko = {
   landing: {
-    appPending: "안드로이드 앱 · Google Play 준비 중",
+    appDownload: "안드로이드 앱 · Google Play에서 받기",
     sampleNote: "예시예요 · 서비스 목록 기준 요금",
     opening: {
       q1: "넷플릭스, 이번 달에 몇 번 봤어요?",
@@ -155,7 +155,7 @@ export const ko = {
 
 export const en: Widen<typeof ko> = {
   landing: {
-    appPending: "Android app · Google Play coming soon",
+    appDownload: "Android app · Get it on Google Play",
     sampleNote: "Example · prices from the service list",
     opening: {
       q1: "Netflix — how many times did you watch this month?",
@@ -310,7 +310,7 @@ const lnPl = (n: number, one: string, many: string) => (Number(n) === 1 ? one : 
 
 export const zh: Widen<typeof ko> = {
   landing: {
-    appPending: "Android 应用 · Google Play 即将上线",
+    appDownload: "Android 应用 · 在 Google Play 下载",
     sampleNote: "示例 · 按服务列表价格",
     opening: {
       q1: "Netflix —— 这个月看了几次？",
@@ -455,7 +455,7 @@ export const zh: Widen<typeof ko> = {
 
 export const ja: Widen<typeof ko> = {
   landing: {
-    appPending: "Android アプリ · Google Play 近日公開",
+    appDownload: "Android アプリ · Google Play で入手",
     sampleNote: "例 · サービス一覧の料金",
     opening: {
       q1: "Netflix、今月は何回見ましたか？",
@@ -600,7 +600,7 @@ export const ja: Widen<typeof ko> = {
 
 export const vi: Widen<typeof ko> = {
   landing: {
-    appPending: "Ứng dụng Android · sắp có trên Google Play",
+    appDownload: "Ứng dụng Android · tải trên Google Play",
     sampleNote: "Ví dụ · giá theo danh sách dịch vụ",
     opening: {
       q1: "Netflix — tháng này bạn xem mấy lần?",
@@ -745,7 +745,7 @@ export const vi: Widen<typeof ko> = {
 
 export const fr: Widen<typeof ko> = {
   landing: {
-    appPending: "Application Android · bientôt sur Google Play",
+    appDownload: "Application Android · disponible sur Google Play",
     sampleNote: "Exemple · prix de la liste des services",
     opening: {
       q1: "Netflix — combien de fois l'avez-vous regardé ce mois-ci ?",
@@ -896,7 +896,7 @@ export const fr: Widen<typeof ko> = {
 
 export const es: Widen<typeof ko> = {
   landing: {
-    appPending: "App de Android · pronto en Google Play",
+    appDownload: "App de Android · disponible en Google Play",
     sampleNote: "Ejemplo · precios de la lista de servicios",
     opening: {
       q1: "Netflix: ¿cuántas veces lo viste este mes?",
@@ -1045,7 +1045,7 @@ export const es: Widen<typeof ko> = {
 
 export const de: Widen<typeof ko> = {
   landing: {
-    appPending: "Android-App · bald bei Google Play",
+    appDownload: "Android-App · jetzt bei Google Play",
     sampleNote: "Beispiel · Preise aus der Dienstliste",
     opening: {
       q1: "Netflix — wie oft hast du diesen Monat geschaut?",
@@ -1194,7 +1194,7 @@ export const de: Widen<typeof ko> = {
 
 export const pt: Widen<typeof ko> = {
   landing: {
-    appPending: "App Android · em breve no Google Play",
+    appDownload: "App Android · disponível no Google Play",
     sampleNote: "Exemplo · preços da lista de serviços",
     opening: {
       q1: "Netflix — quantas vezes você assistiu este mês?",
