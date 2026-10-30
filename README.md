@@ -12,7 +12,14 @@
 해지하기로 마음먹었다면 해지까지 돕는 서비스입니다.
 
 - 웹: [www.subslash.me](https://www.subslash.me) — 회원가입 없이 바로 쓸 수 있습니다.
-- 안드로이드 앱: 지금은 비공개 테스트 중입니다. 공개 출시하면 이곳에 스토어 주소를 적습니다.
+- 안드로이드 앱: [Google Play에서 받기](https://play.google.com/store/apps/details?id=com.subslash.app) — 휴대폰
+  카메라로 아래 QR을 찍어도 됩니다.
+
+<p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.subslash.app">
+    <img src="docs/images/play-store-qr.png" alt="Google Play의 SubSlash 앱 페이지로 가는 QR 코드" width="180">
+  </a>
+</p>
 
 ### 소개 영상
 
