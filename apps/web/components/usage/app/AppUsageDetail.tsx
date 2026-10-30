@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { Smartphone } from "lucide-react";
-import { metricForSubscription, type Subscription } from "@subslash/shared";
+import { metricForSubscription, type Subscription, formatSpacedKRW } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useLocale, useT, type Messages } from "@lib/i18n";
 import { formatDurationPreciseText, formatDurationText } from "@lib/i18n/duration";
@@ -20,7 +20,7 @@ import {
   type UsageRange,
 } from "@lib/usage/value";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
-import { RangeTabs, StatTile, UsageBarChart, monthBars, won, type UsageBar } from "./parts";
+import { RangeTabs, StatTile, UsageBarChart, monthBars, type UsageBar } from "./parts";
 
 function bars(
   t: Messages,
@@ -176,10 +176,10 @@ function ValueTiles({ view, usage }: { view: MetricView; usage: SubUsage }) {
           </p>
           <p className="text-lg font-black tracking-tight tabular-nums">
             {view.short
-              ? won(usage.periodCostKRW)
+              ? formatSpacedKRW(usage.periodCostKRW)
               : view.unitKRW === null
                 ? "—"
-                : won(view.unitKRW)}
+                : formatSpacedKRW(view.unitKRW)}
           </p>
           <p className={cn("text-[11px]", style ? style.text : "text-muted-foreground")}>
             {view.short

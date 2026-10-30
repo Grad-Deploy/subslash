@@ -4,8 +4,10 @@ import {
   type Receipt,
   type ReceiptLine,
   type ReceiptPeriod,
-  pad2,
+  localDateKey,
   parseTimestamp,
+  receiptPeriodLastDay,
+  receiptPeriodStart,
 } from "@subslash/shared";
 import { fromBase64Url, toBase64Url } from "./bytes";
 import { isReceiptTheme, type ReceiptTheme } from "./receipt-theme";
@@ -244,19 +246,8 @@ function readPeriod(value: unknown): ReceiptPeriod | null {
 
 /** 영수증 기간의 첫날·마지막 날(`YYYY-MM-DD`, 글자로 견줄 수 있다)과 첫날 0시(기기 시간대). */
 function periodBounds(period: ReceiptPeriod): { first: string; last: string; start: Date } {
-  if (period.kind === "year") {
-    return {
-      first: `${period.year}-01-01`,
-      last: `${period.year}-12-31`,
-      start: new Date(period.year, 0, 1),
-    };
-  }
-  const lastDay = new Date(Date.UTC(period.year, period.month, 0)).getUTCDate();
-  return {
-    first: `${period.year}-${pad2(period.month)}-01`,
-    last: `${period.year}-${pad2(period.month)}-${pad2(lastDay)}`,
-    start: new Date(period.year, period.month - 1, 1),
-  };
+  const start = receiptPeriodStart(period);
+  return { first: localDateKey(start), last: localDateKey(receiptPeriodLastDay(period)), start };
 }
 
 function readLine(
