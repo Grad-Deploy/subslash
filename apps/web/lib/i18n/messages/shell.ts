@@ -40,6 +40,7 @@ export const ko = {
   footer: {
     help: "도움말 · 문의",
     privacy: "개인정보처리방침",
+    getApp: "Google Play에서 앱 받기",
     trademarks:
       "서비스 이름과 로고는 각 소유자의 상표이며, 구독을 알아볼 수 있게 쓸 뿐입니다. SubSlash는 해당 서비스와 제휴하거나 보증받지 않았습니다.",
   },
@@ -118,6 +119,7 @@ export const en: Widen<typeof ko> = {
   footer: {
     help: "Help & contact",
     privacy: "Privacy policy",
+    getApp: "Get the app on Google Play",
     trademarks:
       "Service names and logos are trademarks of their owners and are used only to identify subscriptions. SubSlash is not affiliated with or endorsed by these services.",
   },
@@ -193,6 +195,7 @@ export const zh: Widen<typeof ko> = {
   footer: {
     help: "帮助与咨询",
     privacy: "隐私政策",
+    getApp: "在 Google Play 下载应用",
     trademarks:
       "服务名称和标志是其所有者的商标，仅用于识别订阅。SubSlash 与这些服务没有合作关系，也未获得其认可。",
   },
@@ -263,6 +266,7 @@ export const ja: Widen<typeof ko> = {
   footer: {
     help: "ヘルプ・お問い合わせ",
     privacy: "プライバシーポリシー",
+    getApp: "Google Play でアプリを入手",
     trademarks:
       "サービス名とロゴは各所有者の商標で、サブスクを見分けるためだけに使っています。SubSlash はこれらのサービスと提携しておらず、保証も受けていません。",
   },
@@ -334,6 +338,7 @@ export const vi: Widen<typeof ko> = {
   footer: {
     help: "Trợ giúp & liên hệ",
     privacy: "Chính sách quyền riêng tư",
+    getApp: "Tải ứng dụng trên Google Play",
     trademarks:
       "Tên và logo dịch vụ là nhãn hiệu của chủ sở hữu, chỉ được dùng để nhận diện gói đăng ký. SubSlash không liên kết hay được các dịch vụ này bảo trợ.",
   },
@@ -406,6 +411,7 @@ export const fr: Widen<typeof ko> = {
   footer: {
     help: "Aide et contact",
     privacy: "Politique de confidentialité",
+    getApp: "Télécharger l’app sur Google Play",
     trademarks:
       "Les noms et logos des services sont des marques de leurs propriétaires, utilisés uniquement pour identifier les abonnements. SubSlash n'est ni affilié à ces services ni approuvé par eux.",
   },
@@ -483,6 +489,7 @@ export const es: Widen<typeof ko> = {
   footer: {
     help: "Ayuda y contacto",
     privacy: "Política de privacidad",
+    getApp: "Descarga la app en Google Play",
     trademarks:
       "Los nombres y logotipos de los servicios son marcas de sus propietarios y se usan solo para identificar suscripciones. SubSlash no está afiliado ni respaldado por estos servicios.",
   },
@@ -556,6 +563,7 @@ export const de: Widen<typeof ko> = {
   footer: {
     help: "Hilfe & Kontakt",
     privacy: "Datenschutzerklärung",
+    getApp: "App bei Google Play laden",
     trademarks:
       "Namen und Logos der Dienste sind Marken ihrer Inhaber und dienen nur zur Erkennung der Abos. SubSlash ist mit diesen Diensten weder verbunden noch von ihnen unterstützt.",
   },
@@ -630,6 +638,7 @@ export const pt: Widen<typeof ko> = {
   footer: {
     help: "Ajuda e contato",
     privacy: "Política de privacidade",
+    getApp: "Baixe o app no Google Play",
     trademarks:
       "Os nomes e logotipos dos serviços são marcas de seus donos e são usados só para identificar assinaturas. O SubSlash não é afiliado nem endossado por esses serviços.",
   },

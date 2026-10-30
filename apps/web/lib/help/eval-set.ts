@@ -14,6 +14,9 @@ export interface HelpEvalCase {
 export const HELP_EVAL_SET: readonly HelpEvalCase[] = [
   { q: "이 앱은 뭐 하는 앱이야?", expect: ["what-is"], tag: "basic" },
   { q: "서브슬래시 어디에 쓰는 거예요", expect: ["what-is"], tag: "paraphrase" },
+  { q: "앱은 어디서 받아요?", expect: ["get-app"], tag: "basic" },
+  { q: "아이폰 앱은 없어?", expect: ["get-app"], tag: "paraphrase" },
+  { q: "플레이스토어에서 설치할 수 있나요", expect: ["get-app"], tag: "paraphrase" },
   { q: "1회 단가는 어떻게 계산해?", expect: ["cost-per-use"], tag: "basic" },
   { q: "한 번 쓸 때 얼마라는 숫자 어떻게 나온 거야", expect: ["cost-per-use"], tag: "paraphrase" },
   { q: "친구랑 나눠 내는 구독은 단가 어떻게 계산돼?", expect: ["cost-per-use"], tag: "paraphrase" },

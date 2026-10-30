@@ -17,6 +17,10 @@ export const FAQ_VI: typeof FAQ_EN = {
     q: "SubSlash làm gì?",
     a: "Ứng dụng cho biết mỗi gói đăng ký tốn bao nhiêu cho một lần dùng (chi phí mỗi lần dùng) và hướng dẫn bạn đến nơi hủy những gói không đáng tiền. Hãy thêm các gói đăng ký và check-in số lần bạn đã dùng mỗi gói trong 30 ngày qua, ứng dụng sẽ tự tính.",
   },
+  "get-app": {
+    q: "Tải ứng dụng ở đâu? Có ứng dụng iPhone không?",
+    a: "Bạn có thể tải ứng dụng Android bằng cách tìm “SubSlash” trên Google Play, hoặc dùng “Tải ứng dụng trên Google Play” ở cuối trang web. Chưa có ứng dụng iPhone, nên trên iPhone hãy dùng qua trình duyệt web. Tự động check-in từ dữ liệu sử dụng điện thoại và nhắc thanh toán trên thiết bị này chỉ có trong ứng dụng Android. Đăng nhập cùng một tài khoản trên web và ứng dụng thì dữ liệu sẽ được đồng bộ.",
+  },
   "cost-per-use": {
     q: "Chi phí mỗi lần dùng được tính thế nào?",
     a: "Lấy phần tiền hằng tháng của bạn chia cho số lần dùng trong 30 ngày qua. Với gói dùng chung, chỉ tính phần của bạn; gói trả theo năm được quy ra số tiền mỗi tháng trước. Gói chưa check-in thì chưa có số lần dùng, nên chúng tôi không tự bịa ra chi phí mà hiển thị “Chưa check-in”.",

@@ -23,6 +23,10 @@ export const FAQ_EN: Record<string, { q: string; a: string | ((options: FaqOptio
       q: "What does SubSlash do?",
       a: "It shows what each subscription costs per use (cost per use) and guides you to where you can cancel the ones that aren't worth it. Add your subscriptions and check in how many times you used each one in the last 30 days, and it works it out.",
     },
+    "get-app": {
+      q: "Where do I get the app? Is there an iPhone app?",
+      a: "Get the Android app by searching for “SubSlash” on Google Play, or with “Get the app on Google Play” at the bottom of the web pages. There's no iPhone app, so on an iPhone use it in your web browser. Automatic check-ins from phone usage records and payment reminders on this device only work in the Android app. Log in with the same account on the web and in the app and your records stay in sync.",
+    },
     "cost-per-use": {
       q: "How is the cost per use calculated?",
       a: "Your monthly share is divided by the number of times you used it in the last 30 days. For subscriptions split with others only your share counts, and yearly subscriptions are divided into a monthly amount first. Subscriptions you haven't checked in on don't have a usage count, so we don't make up a cost and show “No check-in yet”.",
