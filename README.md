@@ -25,7 +25,7 @@
 
 https://github.com/user-attachments/assets/2f4b0acb-9ba4-45f0-8dd7-224c0053856b
 
-영상이 보이지 않으면 [여기서 내려받아 보세요 (MP4, 8MB)](docs/media/subslash-intro.mp4).
+영상이 보이지 않으면 [여기서 내려받아 보세요 (MP4, 7.5MB)](subslash-intro-qr.mp4).
 
 > 이 README의 화면은 모두 샘플 데이터로 찍은 안드로이드 앱 캡처입니다(2026년 10월 23일).
 
