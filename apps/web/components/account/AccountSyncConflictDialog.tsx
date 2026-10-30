@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { parseTimestamp } from "@subslash/shared";
+import { formatClockTime, parseTimestamp } from "@subslash/shared";
 import type { RecordCounts, SyncChoice, SyncConflict } from "@hooks/useAccountSync";
 import {
   Dialog,
@@ -30,12 +30,7 @@ function describe(t: Messages, counts: RecordCounts): string {
 function formatSavedAt(t: Messages, iso: string): string {
   const date = parseTimestamp(iso);
   if (!date) return t.account.conflict.unknownTime;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return t.account.conflict.savedAt(
-    date.getMonth() + 1,
-    date.getDate(),
-    `${pad(date.getHours())}:${pad(date.getMinutes())}`,
-  );
+  return t.account.conflict.savedAt(date.getMonth() + 1, date.getDate(), formatClockTime(date));
 }
 
 /**

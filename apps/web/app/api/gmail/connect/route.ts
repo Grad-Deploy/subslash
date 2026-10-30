@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
-import { isGmailAutoImportOpen } from "@lib/privacy";
+import { featureClosedResponse, isGmailAutoImportOpen } from "@lib/privacy";
 import { appUrl } from "@lib/email";
 import { isAppOrigin } from "@lib/app-origins";
 import { isAppReturnScheme } from "@lib/app-return";
@@ -15,9 +15,7 @@ import { SOURCE_LOCALE, isAppsScriptLocale } from "@lib/i18n/config";
  * 코드를 연결 토큰으로 바꾼 뒤 2주마다 도는 트리거를 건다.
  */
 export async function POST(request: NextRequest) {
-  if (!isGmailAutoImportOpen()) {
-    return NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
-  }
+  if (!isGmailAutoImportOpen()) return featureClosedResponse();
   const webAppUrl = gmailConnectWebAppUrl();
   if (!webAppUrl) {
     return NextResponse.json(
