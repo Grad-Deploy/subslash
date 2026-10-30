@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useT } from "@lib/i18n";
+import { PlayStoreLink } from "../../layout/PlayStoreLink";
 import { LevelLegend, UsageBarColumns } from "../../usage/UsageBarColumns";
 import type { CheckInBar } from "../valueRows";
 
@@ -50,7 +51,7 @@ export function CheckInUsageChart({
         {bars.length > 0 && `${c.legend} `}
         {pending > 0 && bars.length > 0 && `${c.pending(pending)} `}
         {other > 0 && `${c.other(other)} `}
-        {c.appHint}
+        {c.appHint} <PlayStoreLink />
       </p>
     </section>
   );

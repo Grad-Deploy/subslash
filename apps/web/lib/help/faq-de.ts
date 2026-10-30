@@ -17,6 +17,10 @@ export const FAQ_DE: typeof FAQ_EN = {
     q: "Was macht SubSlash?",
     a: "Es zeigt, was jedes Abo pro Nutzung kostet (Kosten pro Nutzung), und führt dich dorthin, wo du die nicht lohnenden kündigen kannst. Trag deine Abos ein und gib an, wie oft du jedes in den letzten 30 Tagen genutzt hast – den Rest rechnet es aus.",
   },
+  "get-app": {
+    q: "Wo bekomme ich die App? Gibt es eine iPhone-App?",
+    a: "Die Android-App bekommst du, indem du bei Google Play nach „SubSlash“ suchst, oder über „App bei Google Play laden“ unten auf den Webseiten. Eine iPhone-App gibt es nicht – auf dem iPhone nutzt du SubSlash im Webbrowser. Automatische Check-ins aus dem Nutzungsverlauf des Handys und Zahlungserinnerungen auf diesem Gerät gibt es nur in der Android-App. Meldest du dich im Web und in der App mit demselben Konto an, bleiben deine Daten synchron.",
+  },
   "cost-per-use": {
     q: "Wie werden die Kosten pro Nutzung berechnet?",
     a: "Dein monatlicher Anteil wird durch die Anzahl der Nutzungen der letzten 30 Tage geteilt. Bei geteilten Abos zählt nur dein Anteil, und Jahresabos werden zuerst auf einen Monatsbetrag umgerechnet. Abos ohne Eintrag haben keine Nutzungszahl, daher erfinden wir keine Kosten und zeigen „Noch kein Eintrag“.",

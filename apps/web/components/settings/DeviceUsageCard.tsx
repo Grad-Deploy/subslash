@@ -20,6 +20,7 @@ import {
 import { Button } from "../ui/button";
 import { InlineConfirm } from "../ui/inline-confirm";
 import { Spinner } from "../ui/spinner";
+import { PlayStoreLink } from "../layout/PlayStoreLink";
 import { useKnownText, useLocale, useServiceNames, useT } from "@lib/i18n";
 import { intlLocale, type Locale } from "@lib/i18n/config";
 
@@ -205,7 +206,9 @@ export function DeviceUsageCard({ onMessage }: { onMessage: (message: string) =>
           )}
         </section>
       ) : (
-        <p className="rounded-xl border p-3 text-xs text-muted-foreground">{t.androidOnly}</p>
+        <p className="rounded-xl border p-3 text-xs text-muted-foreground">
+          {t.androidOnly} <PlayStoreLink />
+        </p>
       )}
 
       <section className="space-y-2">
