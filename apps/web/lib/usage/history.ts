@@ -1,4 +1,4 @@
-import { DAY_MS, localDateKey, localMonthKey } from "@subslash/shared";
+import { DAY_MS, localDateKey, localMonthKey, pad2 } from "@subslash/shared";
 
 /**
  * 폰 사용 기록을 기기에 쌓고 기간별로 합치는 순수 함수들.
@@ -285,7 +285,7 @@ export function isCurrentMonth(month: string, now: Date): boolean {
 export function monthDates(month: string, now: Date): string[] {
   const [year, m] = month.split("-").map(Number);
   const last = isCurrentMonth(month, now) ? now.getDate() : new Date(year, m, 0).getDate();
-  return Array.from({ length: last }, (_, d) => `${month}-${String(d + 1).padStart(2, "0")}`);
+  return Array.from({ length: last }, (_, d) => `${month}-${pad2(d + 1)}`);
 }
 
 /** 최근 12개월(이번 달 포함, 오래된 것부터)의 달별 합계. */

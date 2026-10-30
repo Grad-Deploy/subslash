@@ -2,6 +2,7 @@ import {
   buildReceipt,
   formatChargeDate,
   formatKRW,
+  pad2,
   previousMonth,
   type Receipt,
   type ReceiptLine,
@@ -212,9 +213,7 @@ export function receiptFootnotes(
 
 /** 영수증 번호. 기간에서 정해지는 표시일 뿐 어떤 기록의 번호도 아니다. */
 export function receiptNumber(period: ReceiptPeriod): string {
-  return period.kind === "month"
-    ? `${period.year}-${String(period.month).padStart(2, "0")}`
-    : `${period.year}`;
+  return period.kind === "month" ? `${period.year}-${pad2(period.month)}` : `${period.year}`;
 }
 
 /** `?month=2026-09` 또는 `?year=2026`을 읽는다. 틀리면 null. */

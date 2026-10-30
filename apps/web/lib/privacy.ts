@@ -121,6 +121,14 @@ export function isSocialLoginOpen(now: Date = new Date()): boolean {
   return hasStarted(SOCIAL_LOGIN_STARTS_ON, now);
 }
 
+/**
+ * 닫힌 기능의 API가 돌려주는 응답(403). 화면은 이 문장을 `useKnownText`로 화면 언어로 바꾼다. 이 파일은 화면도 불러오므로
+ * NextResponse 대신 표준 Response를 쓴다.
+ */
+export function featureClosedResponse(): Response {
+  return Response.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
+}
+
 /** 시작일(YYYY-MM-DD, 한국 시간 0시)이 지났는지. null은 날짜를 정하지 않은 것이라 닫혀 있다. */
 function hasStarted(startsOn: string | null, now: Date): boolean {
   return startsOn !== null && now.getTime() >= koreaMidnight(startsOn);

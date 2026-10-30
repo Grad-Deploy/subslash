@@ -1,4 +1,4 @@
-import { daysBetween } from "./date";
+import { daysBetween, pad2 } from "./date";
 import type {
   BillingCycle,
   DiscoveredSubscription,
@@ -339,7 +339,7 @@ ${piece.body}`;
 
       // 같은 서비스라도 통화가 다르면 다른 구독일 수 있다.
       const key = `${parsed.name}|${parsed.currency}`;
-      const receiptDate = `${received.year}.${String(received.month).padStart(2, "0")}.${String(received.day).padStart(2, "0")}`;
+      const receiptDate = `${received.year}.${pad2(received.month)}.${pad2(received.day)}`;
       // 해지 알림은 결제가 아니다. 금액이 없는 메일도 결제 기록으로 남기지 않는다.
       const charge =
         !parsed.isCanceled && parsed.amount > 0 ? chargeDateFromReceiptDate(receiptDate) : null;

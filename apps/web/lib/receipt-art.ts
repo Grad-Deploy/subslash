@@ -1,4 +1,4 @@
-import { formatKRW, type Receipt, formatDotDate } from "@subslash/shared";
+import { formatKRW, type Receipt, formatDotDate, pad2 } from "@subslash/shared";
 import type { Messages } from "@lib/i18n/messages";
 import {
   describeReceiptLine,
@@ -47,8 +47,6 @@ export interface ReceiptArt {
   to: string;
 }
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
 export function receiptArt(
   t: Messages,
   receipt: Receipt,
@@ -67,8 +65,8 @@ export function receiptArt(
   // 기간의 끝까지다(10.28 결제 예정이 적힌 표에 'TO 10.13'이라고 쓰면 서로 어긋난다).
   const to =
     receipt.isComplete || receipt.upcomingCount > 0
-      ? `${pad(endMonth)}.${pad(lastDay)}`
-      : `${pad(issuedAt.getMonth() + 1)}.${pad(issuedAt.getDate())}`;
+      ? `${pad2(endMonth)}.${pad2(lastDay)}`
+      : `${pad2(issuedAt.getMonth() + 1)}.${pad2(issuedAt.getDate())}`;
 
   const extras: string[] = [];
   if (receipt.billedTotalKRW !== receipt.totalKRW) {
@@ -106,7 +104,7 @@ export function receiptArt(
     empty: receipt.lines.length === 0 ? receiptEmptyText(t, receipt, options) : null,
     extras,
     notes: receiptFootnotes(t, receipt, options),
-    from: `${pad(startMonth)}.01`,
+    from: `${pad2(startMonth)}.01`,
     to,
   };
 }
