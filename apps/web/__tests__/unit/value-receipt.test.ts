@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { spaceCurrencySymbol, type Subscription, type UsageLog } from "@subslash/shared";
+import {
+  formatSpacedAmount,
+  formatSpacedKRW,
+  spaceCurrencySymbol,
+  type Subscription,
+  type UsageLog,
+} from "@subslash/shared";
 import { messages } from "@lib/i18n/messages";
 import { subscriptionName } from "@lib/service-name";
 import {
@@ -10,7 +16,6 @@ import {
   receiptSections,
   sheetActions,
   wasteOrder,
-  won,
 } from "../../components/dashboard/app/valueReceipt";
 
 const RATE = 1400;
@@ -45,7 +50,8 @@ function log(subscriptionId: string, usageCount: number, riskLevel: "green" | "r
 
 describe("영수증 금액 표기", () => {
   it("통화 기호와 숫자 사이를 한 칸 띄우고, 부호는 기호 앞에 둔다", () => {
-    expect(won(17000)).toBe("₩ 17,000");
+    expect(formatSpacedKRW(17000)).toBe("₩ 17,000");
+    expect(formatSpacedAmount(9.99, "USD")).toBe("$ 9.99");
     expect(spaceCurrencySymbol("-₩17,000")).toBe("-₩ 17,000");
     expect(spaceCurrencySymbol("$9.99")).toBe("$ 9.99");
   });

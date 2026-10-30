@@ -132,6 +132,20 @@ function monthsOf(period: ReceiptPeriod): { year: number; monthIndex: number }[]
   return Array.from({ length: 12 }, (_, monthIndex) => ({ year: period.year, monthIndex }));
 }
 
+/** 영수증 기간의 첫날 0시(기기 시간대). */
+export function receiptPeriodStart(period: ReceiptPeriod): Date {
+  return period.kind === "month"
+    ? new Date(period.year, period.month - 1, 1)
+    : new Date(period.year, 0, 1);
+}
+
+/** 영수증 기간의 마지막 날 0시(기기 시간대). 그 달의 날 수를 손으로 세지 않게 여기서 낸다. */
+export function receiptPeriodLastDay(period: ReceiptPeriod): Date {
+  return period.kind === "month"
+    ? new Date(period.year, period.month, 0)
+    : new Date(period.year, 11, 31);
+}
+
 function periodEnd(period: ReceiptPeriod): Date {
   // 기간의 마지막 날 다음 날 0시.
   return period.kind === "month"
@@ -139,15 +153,9 @@ function periodEnd(period: ReceiptPeriod): Date {
     : new Date(period.year + 1, 0, 1);
 }
 
-function periodStart(period: ReceiptPeriod): Date {
-  return period.kind === "month"
-    ? new Date(period.year, period.month - 1, 1)
-    : new Date(period.year, 0, 1);
-}
-
 function inPeriod(date: Date | null, period: ReceiptPeriod): boolean {
   if (!date) return false;
-  return date >= periodStart(period) && date < periodEnd(period);
+  return date >= receiptPeriodStart(period) && date < periodEnd(period);
 }
 
 /** 그 기간에 한 마지막 횟수 체크인. */
@@ -246,7 +254,7 @@ export function buildReceipt(
     if (undated) {
       // 해지한 연간 구독도 그 기간에 결제됐을 수 있지만, 언제인지 모른다.
       const killedAt = dayOf(sub.killedAt);
-      if (sub.status === "active" || (killedAt && killedAt >= periodStart(period))) {
+      if (sub.status === "active" || (killedAt && killedAt >= receiptPeriodStart(period))) {
         excluded.undated += 1;
       }
     }

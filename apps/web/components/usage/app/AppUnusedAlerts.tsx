@@ -4,13 +4,13 @@ import React, { useMemo, useState } from "react";
 import {
   type Subscription,
   type UsageLog,
-  formatCurrency,
   getBilledAmount,
   getDaysUntilBillingFor,
   getNextBillingDateFor,
   isInTrial,
-  spaceCurrencySymbol,
   DAY_MS,
+  formatSpacedAmount,
+  formatSpacedKRW,
 } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { usePhoneUsage, usePhoneUsageStore } from "@hooks/usePhoneUsage";
@@ -20,7 +20,7 @@ import { formatDurationText } from "@lib/i18n/duration";
 import { median, subUsage, type SubUsage } from "@lib/usage/value";
 import { Button } from "../../ui/button";
 import { AppBatchCheckIn } from "./AppBatchCheckIn";
-import { SubLogo, won } from "./parts";
+import { SubLogo } from "./parts";
 
 /** 이만큼 기록이 쌓여야 '안 열었다'고 말한다. 며칠치로 단정하면 여행·바쁜 주를 해지 권유로 읽는다. */
 const MIN_COVERED_DAYS = 14;
@@ -87,7 +87,7 @@ export function AppUnusedAlerts({
       if (hidden(u.sub.id) || u.totals.opens > 0 || u.totals.ms > 0) continue;
       const days = getDaysUntilBillingFor(u.sub, now);
       if (days === null || days < 0 || days > BILLING_WITHIN_DAYS) continue;
-      const amount = spaceCurrencySymbol(formatCurrency(getBilledAmount(u.sub), u.sub.currency));
+      const amount = formatSpacedAmount(getBilledAmount(u.sub), u.sub.currency);
       list.push({
         kind: "unused",
         usage: u,
@@ -109,7 +109,7 @@ export function AppUnusedAlerts({
       list.push({
         kind: "pricey",
         usage: u,
-        title: al.priceyTitle(names.sub(u.sub), won(u.hourlyKRW as number)),
+        title: al.priceyTitle(names.sub(u.sub), formatSpacedKRW(u.hourlyKRW as number)),
         reason: al.priceyReason(
           u.totals.coveredDays,
           formatDurationText(t, u.totals.ms),

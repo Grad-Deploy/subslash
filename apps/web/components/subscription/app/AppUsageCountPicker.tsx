@@ -5,10 +5,9 @@ import dynamic from "next/dynamic";
 import {
   type Subscription,
   calculateCostPerUse,
-  formatCurrency,
   getMyMonthlyShareAmount,
   metricForSubscription,
-  spaceCurrencySymbol,
+  formatSpacedAmount,
 } from "@subslash/shared";
 import { MetricQuantityInput } from "../MetricQuantityInput";
 import { cn } from "@lib/utils";
@@ -132,9 +131,7 @@ export function AppUsageCountPicker({
             : count === 0
               ? p.notUsed
               : p.perUse(
-                  spaceCurrencySymbol(
-                    formatCurrency(calculateCostPerUse(monthly, count), subscription.currency),
-                  ),
+                  formatSpacedAmount(calculateCostPerUse(monthly, count), subscription.currency),
                 )}
         </p>
       </div>
