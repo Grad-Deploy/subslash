@@ -23,7 +23,7 @@
 
 ### 소개 영상
 
-https://github.com/user-attachments/assets/2f4b0acb-9ba4-45f0-8dd7-224c0053856b
+https://github.com/user-attachments/assets/6e244173-854f-43d9-acce-092ca0df39ce
 
 영상이 보이지 않으면 [여기서 내려받아 보세요 (MP4, 7.5MB)](subslash-intro-qr.mp4).
 
