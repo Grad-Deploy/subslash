@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
+import { formatSpacedKRW } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useLocale, useServiceNames, useT, type Messages } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
 import { packageBreakdown, packagesFor } from "@lib/usage/packages";
 import { LEVEL_STYLE, type MetricView, type SubUsage } from "@lib/usage/value";
-import { won } from "./parts";
 
 export type SortKey = "value" | "time" | "opens";
 
@@ -102,7 +102,9 @@ export function UsageLine({
       <span className={cn("text-xs font-semibold", LEVEL_STYLE.red.text)}>{u.unused}</span>
     ) : view.short ? (
       <>
-        <span className="text-sm font-black tabular-nums">{won(month.periodCostKRW)}</span>
+        <span className="text-sm font-black tabular-nums">
+          {formatSpacedKRW(month.periodCostKRW)}
+        </span>
         <span className="ml-1 text-[11px] font-semibold text-muted-foreground">
           {u.line.spentIn(formatDurationText(t, month.totals.usedMs))}
         </span>
@@ -110,7 +112,7 @@ export function UsageLine({
     ) : (
       <>
         <span className="text-sm font-black tabular-nums">
-          {view.unitKRW === null ? "—" : won(view.unitKRW)}
+          {view.unitKRW === null ? "—" : formatSpacedKRW(view.unitKRW)}
         </span>
         <span className="ml-1 text-[11px] font-semibold text-muted-foreground">
           {u.per[view.metric]}

@@ -4,7 +4,12 @@ import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Download, Share2 } from "lucide-react";
-import { buildReceipt, type ReceiptPeriod } from "@subslash/shared";
+import {
+  buildReceipt,
+  receiptPeriodLastDay,
+  receiptPeriodStart,
+  type ReceiptPeriod,
+} from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
@@ -42,16 +47,6 @@ function shift(period: ReceiptPeriod, step: number): ReceiptPeriod {
   if (period.kind === "year") return { kind: "year", year: period.year + step };
   const date = new Date(period.year, period.month - 1 + step, 1);
   return { kind: "month", year: date.getFullYear(), month: date.getMonth() + 1 };
-}
-
-/** 영수증 기간의 첫날과 마지막 날. */
-function periodBounds(period: ReceiptPeriod): { start: Date; end: Date } {
-  return period.kind === "month"
-    ? {
-        start: new Date(period.year, period.month - 1, 1),
-        end: new Date(period.year, period.month, 0),
-      }
-    : { start: new Date(period.year, 0, 1), end: new Date(period.year, 11, 31) };
 }
 
 function isFuture(period: ReceiptPeriod, now: Date): boolean {
@@ -97,10 +92,11 @@ function ReceiptFromQuery() {
   }, [params, now, defaultMonth]);
 
   // 지난 달러 결제는 결제일의 고시 환율로 바꾼다. 받는 동안은 숫자가 바뀌어 보이지 않게 기다린다.
-  const range = useMemo(() => {
-    const { start, end } = periodBounds(period);
-    return rateRangeFor(subscriptions, start, end, now);
-  }, [subscriptions, period, now]);
+  const range = useMemo(
+    () =>
+      rateRangeFor(subscriptions, receiptPeriodStart(period), receiptPeriodLastDay(period), now),
+    [subscriptions, period, now],
+  );
   const { rateOn, loading: ratesLoading } = useHistoricalRates(range);
 
   // 영수증 계산은 저장된 이름으로 하고(같은 서비스의 예전 구독을 이름으로 가린다), 보이는 이름만 화면 언어로

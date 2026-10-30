@@ -4,10 +4,9 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import {
   type Subscription,
-  formatCurrency,
   getMyMonthlyShareAmount,
   metricForSubscription,
-  spaceCurrencySymbol,
+  formatSpacedAmount,
 } from "@subslash/shared";
 import { useT, useServiceNames } from "@lib/i18n";
 import { useStore } from "@lib/store";
@@ -60,7 +59,7 @@ export function AppAddCheckIn({
           <p className="truncate text-base font-black tracking-tight">{names.sub(subscription)}</p>
         </div>
         <p className="ml-auto shrink-0 text-[13px] font-extrabold tabular-nums">
-          {spaceCurrencySymbol(formatCurrency(monthly, subscription.currency))}
+          {formatSpacedAmount(monthly, subscription.currency)}
           <span className="text-[11px] font-semibold text-muted-foreground">
             {c.addCheckIn.perMonth}
           </span>

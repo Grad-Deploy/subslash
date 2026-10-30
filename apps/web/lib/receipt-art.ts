@@ -1,4 +1,10 @@
-import { formatKRW, type Receipt, formatDotDate, pad2 } from "@subslash/shared";
+import {
+  formatKRW,
+  type Receipt,
+  formatDotDate,
+  pad2,
+  receiptPeriodLastDay,
+} from "@subslash/shared";
 import type { Messages } from "@lib/i18n/messages";
 import {
   describeReceiptLine,
@@ -59,13 +65,12 @@ export function receiptArt(
   const { period } = receipt;
 
   const startMonth = period.kind === "month" ? period.month : 1;
-  const endMonth = period.kind === "month" ? period.month : 12;
-  const lastDay = new Date(period.year, endMonth, 0).getDate();
+  const lastDay = receiptPeriodLastDay(period);
   // 끝나지 않은 기간(이번 달·올해)은 발행한 날까지만 적는다 — 다만 결제 예정을 넣었으면 그 날짜가 오늘 뒤에 있으므로
   // 기간의 끝까지다(10.28 결제 예정이 적힌 표에 'TO 10.13'이라고 쓰면 서로 어긋난다).
   const to =
     receipt.isComplete || receipt.upcomingCount > 0
-      ? `${pad2(endMonth)}.${pad2(lastDay)}`
+      ? `${pad2(lastDay.getMonth() + 1)}.${pad2(lastDay.getDate())}`
       : `${pad2(issuedAt.getMonth() + 1)}.${pad2(issuedAt.getDate())}`;
 
   const extras: string[] = [];

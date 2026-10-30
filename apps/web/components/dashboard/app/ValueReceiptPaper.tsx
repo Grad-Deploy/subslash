@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { type ValueReportItem, isInTrial } from "@subslash/shared";
+import { type ValueReportItem, isInTrial, formatSpacedKRW } from "@subslash/shared";
 import { useT, useServiceNames } from "@lib/i18n";
 import { cn } from "@lib/utils";
 import styles from "./AppValueReceipt.module.css";
@@ -16,7 +16,6 @@ import {
   receiptFooter,
   receiptSections,
   wasteOrder,
-  won,
 } from "./valueReceipt";
 
 const SECTION_DOT: Record<SectionKey, string> = {
@@ -98,7 +97,7 @@ export function ValueReceiptPaper({
                     <span className="min-w-0 truncate">{names.sub(item.sub)}</span>
                     <span className={styles.leader} aria-hidden />
                     <span className="shrink-0 font-mono tabular-nums">
-                      {won(item.monthlyAmountKRW)}
+                      {formatSpacedKRW(item.monthlyAmountKRW)}
                     </span>
                   </span>
                   <span className="mt-0.5 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
@@ -136,7 +135,9 @@ export function ValueReceiptPaper({
           {key !== "unknown" && (
             <p className="flex justify-between pt-1 text-[11.5px] text-muted-foreground">
               <span>{r.subtotal}</span>
-              <b className="font-mono font-bold text-foreground tabular-nums">{won(subtotal)}</b>
+              <b className="font-mono font-bold text-foreground tabular-nums">
+                {formatSpacedKRW(subtotal)}
+              </b>
             </p>
           )}
         </div>
@@ -177,7 +178,7 @@ export function ValueReceiptPaper({
                   />
                 </span>
                 <span className="font-mono tabular-nums">
-                  {won(amount)}
+                  {formatSpacedKRW(amount)}
                   <span className="ml-1.5 text-[10.5px] text-muted-foreground">
                     {Math.round((amount / categoryTotal) * 100)}%
                   </span>
@@ -193,27 +194,31 @@ export function ValueReceiptPaper({
         <>
           <p className="flex justify-between text-xs text-muted-foreground">
             <span>{r.subTotal}</span>
-            <span className="font-mono tabular-nums">{won(summary.totalSpendKRW)}</span>
+            <span className="font-mono tabular-nums">{formatSpacedKRW(summary.totalSpendKRW)}</span>
           </p>
           <p className="mt-0.5 mb-1.5 flex justify-between text-xs text-muted-foreground">
             <span>{r.trial(data.inTrial.length)}</span>
-            <span className="font-mono tabular-nums">−{won(data.trialKRW)}</span>
+            <span className="font-mono tabular-nums">−{formatSpacedKRW(data.trialKRW)}</span>
           </p>
         </>
       )}
       <p className="flex items-baseline justify-between">
         <span className="text-[13px] font-extrabold">{r.fixed}</span>
-        <b className="font-mono text-[22px] font-black tabular-nums">{won(data.fixedKRW)}</b>
+        <b className="font-mono text-[22px] font-black tabular-nums">
+          {formatSpacedKRW(data.fixedKRW)}
+        </b>
       </p>
       {summary.wastedKRW > 0 && (
         <p className="mt-1.5 flex items-baseline justify-between text-amber-700 dark:text-amber-400">
           <span className="text-[12.5px] font-extrabold">{r.savable}</span>
-          <b className="font-mono text-[15px] font-black tabular-nums">−{won(summary.wastedKRW)}</b>
+          <b className="font-mono text-[15px] font-black tabular-nums">
+            −{formatSpacedKRW(summary.wastedKRW)}
+          </b>
         </p>
       )}
       {data.sharedCount > 0 && (
         <p className="mt-2 text-[11px] text-muted-foreground">
-          {r.shared(data.sharedCount, won(data.billedKRW))}
+          {r.shared(data.sharedCount, formatSpacedKRW(data.billedKRW))}
         </p>
       )}
 
