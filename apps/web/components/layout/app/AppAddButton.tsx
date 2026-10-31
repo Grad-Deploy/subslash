@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, Mail, MessageSquareText, PenLine, Plus, Smartphone } from "lucide-react";
 import type { ServicePreset } from "@subslash/shared";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
+import { useSoftKeyboardOpen } from "@hooks/useSoftKeyboardOpen";
 import { useT } from "@lib/i18n";
 import { AppUsageFindSheet } from "../../usage/app/AppUsageFindSheet";
 import { AppSheet } from "../../settings/app/AppSheet";
@@ -42,6 +43,7 @@ export function AppAddButton({
   const [findOpen, setFindOpen] = useState(false);
   // iOS는 폰 사용 기록을 읽을 수 없어 이 방법을 두지 않는다.
   const { status } = usePhoneUsage();
+  const keyboardOpen = useSoftKeyboardOpen();
   const pick = (action: () => void) => () => {
     setOpen(false);
     action();
@@ -80,14 +82,16 @@ export function AppAddButton({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={t.title}
-        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-[calc(1.25rem+env(safe-area-inset-right))] z-30 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-2xl transition-transform active:scale-95"
-      >
-        <Plus className="size-7" aria-hidden />
-      </button>
+      {!keyboardOpen && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label={t.title}
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-[calc(1.25rem+env(safe-area-inset-right))] z-30 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-2xl transition-transform active:scale-95"
+        >
+          <Plus className="size-7" aria-hidden />
+        </button>
+      )}
       <AppSheet open={open} onClose={() => setOpen(false)} label={t.title}>
         <div className="space-y-2 pt-1">
           <h2 className="text-lg font-black tracking-tight">{t.title}</h2>
