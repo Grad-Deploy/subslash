@@ -17,7 +17,10 @@ export function PlayStoreLink({ className }: { className?: string }) {
       href={PLAY_STORE_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn("underline underline-offset-4 hover:text-foreground", className)}
+      className={cn(
+        "whitespace-nowrap underline underline-offset-4 hover:text-foreground",
+        className,
+      )}
     >
       {t.shell.footer.getApp}
     </a>
