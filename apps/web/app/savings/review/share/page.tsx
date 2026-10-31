@@ -83,7 +83,7 @@ function SharedReviewContent() {
         </div>
         <Button
           size="lg"
-          className="w-full h-13 text-base font-bold shadow-md rounded-xl"
+          className="w-full h-auto min-h-13 whitespace-normal text-base font-bold shadow-md rounded-xl"
           onClick={() => router.push("/")}
         >
           {s.ctaButton}

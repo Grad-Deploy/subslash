@@ -134,7 +134,8 @@ function HeroResult({
       </p>
       <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{c.basis}</p>
 
-      <div className="mt-7 flex items-center gap-4">
+      {/* 언어마다 횟수 글자가 길어('4 Nutzungen') 칸을 고정하면 넘친다. 자리가 모자라면 횟수가 다음 줄로 간다. */}
+      <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-1">
         <label htmlFor="hero-uses" className="w-[5.5rem] shrink-0 text-sm text-muted-foreground">
           {c.usesLabel}
         </label>
@@ -147,9 +148,9 @@ function HeroResult({
           value={uses}
           onChange={(e) => onUsesChange(Number(e.target.value))}
           aria-valuetext={c.uses(uses)}
-          className="h-7 flex-1 cursor-pointer accent-red-500"
+          className="h-7 min-w-24 flex-1 cursor-pointer accent-red-500"
         />
-        <span className="w-[3.25rem] shrink-0 text-right text-xl font-bold tabular-nums text-foreground">
+        <span className="ml-auto min-w-[3.25rem] shrink-0 whitespace-nowrap text-right text-xl font-bold tabular-nums text-foreground">
           {c.uses(uses)}
         </span>
       </div>

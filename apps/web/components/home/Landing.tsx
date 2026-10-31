@@ -43,11 +43,12 @@ export function AppDownloadLink({ className }: { className?: string }) {
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border bg-card px-[1.375rem] py-[0.9375rem] text-[15px] font-semibold transition hover:-translate-y-0.5 hover:bg-muted motion-reduce:hover:translate-y-0",
+        // 프랑스어처럼 문구가 길면 줄을 바꾼다 — 한 줄로 두면 휴대폰 폭보다 넓어져 페이지가 옆으로 밀렸다.
+        "inline-flex max-w-full items-center justify-center gap-1.5 text-center rounded-xl border bg-card px-[1.375rem] py-[0.9375rem] text-[15px] font-semibold transition hover:-translate-y-0.5 hover:bg-muted motion-reduce:hover:translate-y-0",
         className,
       )}
     >
-      <Smartphone className="size-4" aria-hidden />
+      <Smartphone className="size-4 shrink-0" aria-hidden />
       {t.landing.appDownload}
     </a>
   );

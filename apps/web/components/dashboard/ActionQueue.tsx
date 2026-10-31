@@ -145,7 +145,9 @@ export function ActionQueue({
 
             <div className="flex-1 min-w-0 space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-sm">{names.sub(item)}</span>
+                <span className="min-w-0 font-bold text-sm [overflow-wrap:anywhere]">
+                  {names.sub(item)}
+                </span>
                 {/* 해지한 구독이 활성 구독 사이에 섞여 보이므로 무엇을 묻는지 붙인다. */}
                 {item.kind === "verify-kill" && (
                   <span className="text-[11px] font-semibold text-primary">{q.tagVerifyKill}</span>

@@ -60,9 +60,9 @@ export function MonthlyValueReport({
               {summary.worthItItems.map((item) => (
                 <div
                   key={item.sub.id}
-                  className="flex justify-between items-center text-xs text-muted-foreground"
+                  className="flex justify-between items-center gap-2 text-xs text-muted-foreground"
                 >
-                  <span>{names.sub(item.sub)}</span>
+                  <span className="min-w-0 [overflow-wrap:anywhere]">{names.sub(item.sub)}</span>
                   <span>({describeWorthItem(t, item)})</span>
                 </div>
               ))}
@@ -81,9 +81,9 @@ export function MonthlyValueReport({
               {summary.wastedItems.map((item) => (
                 <div
                   key={item.sub.id}
-                  className="flex justify-between items-center text-xs text-muted-foreground"
+                  className="flex justify-between items-center gap-2 text-xs text-muted-foreground"
                 >
-                  <span>{names.sub(item.sub)}</span>
+                  <span className="min-w-0 [overflow-wrap:anywhere]">{names.sub(item.sub)}</span>
                   <span>{describeWastedItem(t, item)}</span>
                 </div>
               ))}
@@ -100,11 +100,13 @@ export function MonthlyValueReport({
             </div>
             <div className="pl-6 flex flex-col gap-1.5">
               {summary.unknownItems.map((item) => (
-                <div key={item.sub.id} className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">{names.sub(item.sub)}</span>
+                <div key={item.sub.id} className="flex justify-between items-center gap-2 text-xs">
+                  <span className="min-w-0 text-muted-foreground [overflow-wrap:anywhere]">
+                    {names.sub(item.sub)}
+                  </span>
                   <button
                     onClick={() => onCheckIn(item.sub.id)}
-                    className="text-[10px] bg-secondary px-2 py-0.5 rounded-full hover:bg-secondary/80 transition-colors"
+                    className="shrink-0 text-[10px] bg-secondary px-2 py-0.5 rounded-full hover:bg-secondary/80 transition-colors"
                   >
                     {r.needsCheckIn}
                   </button>
