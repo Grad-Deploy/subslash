@@ -178,7 +178,7 @@ export default function SubscriptionsPage() {
             <Button
               variant="outline"
               onClick={() => router.push("/import")}
-              className="font-semibold"
+              className="h-auto min-h-9 whitespace-normal font-semibold"
             >
               {t.page.findInMail}
             </Button>

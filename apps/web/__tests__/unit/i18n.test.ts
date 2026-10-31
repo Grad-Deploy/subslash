@@ -128,3 +128,21 @@ describe("첫 화면 스크립트", () => {
     expect(runInit(stored, [...languages])).toBe(resolveLocale(stored, languages));
   });
 });
+
+describe("체크인 문구의 조사", () => {
+  const { modal } = messages.ko.checkin;
+
+  it("이용량 질문은 이름의 받침으로 조사를 고른다", () => {
+    expect(modal.usesQuestionAfter("넷플릭스")).toBe("를\n몇 번 썼나요?");
+    expect(modal.usesQuestionAfter("티빙")).toBe("을\n몇 번 썼나요?");
+    expect(modal.usesQuestionAfter("쿠팡 와우 (쿠팡플레이)")).toBe("를\n몇 번 썼나요?");
+    // 받침을 알 수 없는 이름은 둘을 함께 적는다.
+    expect(modal.usesQuestionAfter("Netflix")).toBe("을(를)\n몇 번 썼나요?");
+  });
+
+  it("해지한 구독 안내는 따옴표 앞 글자로 조사를 고른다", () => {
+    const { killedBody } = messages.ko.checkin.link;
+    expect(killedBody("넷플릭스")).toContain("'넷플릭스'는 해지한");
+    expect(killedBody("티빙")).toContain("'티빙'은 해지한");
+  });
+});
