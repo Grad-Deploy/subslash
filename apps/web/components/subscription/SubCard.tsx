@@ -82,9 +82,10 @@ export function SubCard({
         )}
       >
         <CardContent className="p-5 flex flex-col gap-4">
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-3">
-              <div className="bg-secondary w-12 h-12 flex items-center justify-center rounded-xl shadow-inner">
+          <div className="flex justify-between items-start gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              {/* 이름이 길어도 아이콘은 눌리지 않고, 이름이 줄을 바꾼다. */}
+              <div className="bg-secondary w-12 h-12 shrink-0 flex items-center justify-center rounded-xl shadow-inner">
                 <ServiceLogo
                   name={subscription.name}
                   cancelUrl={subscription.cancelUrl}
@@ -93,7 +94,7 @@ export function SubCard({
                   size={32}
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <Link
                     href={subscriptionDetailHref(subscription.id)}
@@ -104,9 +105,11 @@ export function SubCard({
                         onSelect(subscription.id);
                       }
                     }}
-                    className="font-bold text-lg leading-none hover:underline hover:text-primary transition-colors flex items-center gap-1.5"
+                    className="min-w-0 font-bold text-lg leading-none hover:underline hover:text-primary transition-colors flex items-center gap-1.5"
                   >
-                    <span>{names.sub(subscription)}</span>
+                    <span className="min-w-0 [overflow-wrap:anywhere]">
+                      {names.sub(subscription)}
+                    </span>
                   </Link>
                   {isKilled && (
                     <Badge variant="secondary" className="text-[10px]">
