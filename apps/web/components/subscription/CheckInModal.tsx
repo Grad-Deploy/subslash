@@ -186,7 +186,9 @@ export function CheckInModal({
                 <h3 className="text-base text-center font-medium leading-relaxed [overflow-wrap:anywhere]">
                   {c.modal.usesQuestionBefore}
                   <strong className="text-primary">{names.sub(subscription)}</strong>
-                  <span className="whitespace-pre-line">{c.modal.usesQuestionAfter}</span>
+                  <span className="whitespace-pre-line">
+                    {c.modal.usesQuestionAfter(names.sub(subscription))}
+                  </span>
                 </h3>
 
                 <div className="flex items-center justify-center gap-4">
