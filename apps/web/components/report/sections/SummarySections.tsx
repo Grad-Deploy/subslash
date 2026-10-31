@@ -74,6 +74,13 @@ export function SpendSummary({
   );
 }
 
+/** 지출·구독 수에서 뺀 무료 체험. 빼기만 하면 '내 구독'의 개수와 왜 다른지 알 수 없다. 대시보드와 같은 문구다. */
+export function TrialExcludedNote({ count, monthly }: { count: number; monthly: number }) {
+  const o = useT().overview.totalSpend;
+  if (count === 0) return null;
+  return <p className="text-xs text-muted-foreground">{o.inTrial(count, formatKRW(monthly))}</p>;
+}
+
 /** 결합 상품에 든 서비스를 따로도 내고 있으면 먼저 알린다 — 증거가 있는 절약 기회다. 없으면 그리지 않는다. */
 export function BundleOverlapNotice({
   overlaps,
