@@ -4,7 +4,13 @@ import React, { useMemo } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { BarChart3 } from "lucide-react";
-import { findBundleOverlaps, isPaying, sumMyAnnualKRW, sumMyMonthlyKRW } from "@subslash/shared";
+import {
+  findBundleOverlaps,
+  isInTrial,
+  isPaying,
+  sumMyAnnualKRW,
+  sumMyMonthlyKRW,
+} from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
@@ -20,6 +26,7 @@ import {
   BundleOverlapNotice,
   ReceiptLinks,
   SpendSummary,
+  TrialExcludedNote,
 } from "@components/report/sections/SummarySections";
 import { CostPerUseRanking, OtherMetricList } from "@components/report/sections/ValueSections";
 import { AskReport } from "@components/report/sections/AskReport";
@@ -56,6 +63,10 @@ export default function ReportPage() {
     () => subscriptions.filter((sub) => isPaying(sub, now)),
     [subscriptions, now],
   );
+  const inTrial = useMemo(
+    () => subscriptions.filter((sub) => sub.status === "active" && isInTrial(sub, now)),
+    [subscriptions, now],
+  );
   const overlaps = useMemo(() => findBundleOverlaps(subscriptions), [subscriptions]);
   const receiptMonth = useMemo(
     () => defaultReceiptMonth(subscriptions, usageLogs, rate, now),
@@ -80,6 +91,9 @@ export default function ReportPage() {
   }
 
   const monthly = sumMyMonthlyKRW(active, rate);
+  const trialNote = (
+    <TrialExcludedNote count={inTrial.length} monthly={sumMyMonthlyKRW(inTrial, rate)} />
+  );
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 py-2">
@@ -91,7 +105,10 @@ export default function ReportPage() {
       {/* 매달 1일 앱 알림이 여는 지난달 영수증. 구독이 없어도 해지한 기록이 있으면 볼 것이 있다. */}
       {subscriptions.length > 0 && <ReceiptLinks now={now} month={receiptMonth} />}
 
-      {active.length === 0 ? (
+      {/* 체험 중인 구독만 있으면 '등록한 구독이 없어요'는 틀린 말이다. */}
+      {active.length === 0 && inTrial.length > 0 ? (
+        trialNote
+      ) : active.length === 0 ? (
         <section className="flex flex-col items-center gap-3 rounded-2xl border border-dashed px-6 py-12 text-center">
           <BarChart3 className="size-10 text-muted-foreground" aria-hidden />
           <p className="font-bold">{t.emptyTitle}</p>
@@ -111,6 +128,7 @@ export default function ReportPage() {
             annual={sumMyAnnualKRW(active, rate)}
             count={active.length}
           />
+          {trialNote}
           {/* 숫자는 이 기기의 기록으로 계산한다(lib/ask). AI가 닫혀 있으면 추천 질문과 기기 규칙으로만 답하고
               아무것도 서버로 보내지 않는다. */}
           <AskReport
