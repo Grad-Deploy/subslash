@@ -1,4 +1,5 @@
 import { RiskLevel, Currency } from "../types";
+import { GOOD_AT, VERDICT_THRESHOLDS } from "../constants/thresholds";
 
 export function calculateCostPerUse(amount: number, usageCount: number): number {
   if (amount <= 0) return 0;
@@ -9,18 +10,16 @@ export function calculateCostPerUse(amount: number, usageCount: number): number 
 /**
  * 1회당 비용과 이용 횟수로 위험도를 판정한다.
  *
- * - 정상 호출(`costPerUse = calculateCostPerUse(amount, usageCount)`):
- *   `usageCount >= 4`(`GOOD_AT.uses`)일 때 이미 `costPerUse <= amount * 0.25`(월 부담금의 25% 이하)가 성립하므로,
- *   실제 '잘 씀'(초록) 기준은 4회이고 코드상의 `usageCount >= 8`은 정상 흐름에서 도달하지 않는 레거시 분기다.
- * - 비결합 호출 계약:
- *   세 인자를 독립적으로 넘기는 호출·단위 테스트(`costPerUse > amount * 0.25`이면서 `usageCount >= 8`)와의
- *   하위 호환을 위해 `usageCount >= 8` 조건을 유지한다.
+ * - 기준은 `constants/thresholds.ts`의 `GOOD_AT.uses`(4회)와 `VERDICT_THRESHOLDS.uses.redBelow`(2회)에서 파생한다:
+ *   유료 구독(`amount > 0`)의 초록 단가 상한은 `amount / GOOD_AT.uses`(25%), 빨강 단가 하한은 `amount / redBelow`(50%)다.
  * - 무료·0원 부담(`amount <= 0`):
- *   0으로 나누거나 `0 <= 0` 비교로 2~3회 구간이 초록으로 건너뛰지 않도록 횟수 기준(1회 이하 빨강, 2~3회 노랑, 4회 이상 초록)을 따른다.
+ *   0으로 나누거나 `0 <= 0` 비교로 중간 구간이 초록으로 건너뛰지 않도록 횟수 기준을 따른다.
  */
 export function getRiskLevel(costPerUse: number, amount: number, usageCount: number): RiskLevel {
-  if (usageCount <= 1 || (amount > 0 && costPerUse > amount * 0.5)) return "red";
-  if (usageCount >= 8 || (amount > 0 ? costPerUse <= amount * 0.25 : usageCount >= 4)) {
+  const redBelow = VERDICT_THRESHOLDS.uses.redBelow;
+  const greenAt = GOOD_AT.uses;
+  if (usageCount <= 1 || (amount > 0 && costPerUse > amount / redBelow)) return "red";
+  if (usageCount >= 8 || (amount > 0 ? costPerUse <= amount / greenAt : usageCount >= greenAt)) {
     return "green";
   }
   return "yellow";

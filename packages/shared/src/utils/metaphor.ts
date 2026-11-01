@@ -1,9 +1,9 @@
 import { Currency, Subscription, UsageLog } from "../types";
+import { GOOD_AT, VERDICT_THRESHOLDS } from "../constants/thresholds";
 import { calculateCostPerUse, getRiskLevel } from "./cost-per-use";
 import { toKRW } from "./currency";
 import { latestCheckInBySubscription } from "./checkInEvidence";
 import { getMyMonthlyShareAmount, getMyMonthlyAmountKRW } from "./sharing";
-import { GOOD_AT } from "./valueMetric";
 
 // ─────────────────────────────────────────────────────────
 // 1. 실체감 환산 메타포
@@ -145,9 +145,13 @@ export function getBreakEvenInfo(
 ): BreakEvenInfo {
   const target = Math.max(1, breakEvenTarget);
   const progress = target > 0 ? (usageCount / target) * 100 : 0;
+  // 기본 목표(GOOD_AT.uses)일 때는 위험(danger) 경계를 VERDICT_THRESHOLDS.uses.redBelow(2회 미만)와 일치시켜
+  // GOOD_AT.uses가 바뀌더라도 getRiskLevel과 단계가 어긋나지 않게 한다. 사용자 지정 목표일 때는 50% 미만으로 판정한다.
+  const dangerThresholdPercent =
+    target === GOOD_AT.uses ? (VERDICT_THRESHOLDS.uses.redBelow / target) * 100 : 50;
 
   let level: BreakEvenInfo["level"];
-  if (progress < 50) level = "danger";
+  if (progress < dangerThresholdPercent) level = "danger";
   else if (progress < 100) level = "warning";
   else level = "safe";
 

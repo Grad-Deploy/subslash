@@ -1,8 +1,11 @@
 import type { Currency, RiskLevel, Subscription, UsageLog } from "../types";
 import { findPresetForSubscription } from "../constants/services";
+import { GOOD_AT, VERDICT_THRESHOLDS } from "../constants/thresholds";
 import { calculateCostPerUse, formatCurrency, getRiskLevel } from "./cost-per-use";
 import { toKRW } from "./currency";
 import type { StoragePlanFit } from "./storagePlan";
+
+export { GOOD_AT, VERDICT_THRESHOLDS };
 
 /**
  * 구독의 돈값을 무엇으로 재는지.
@@ -226,21 +229,13 @@ export function clampQuantity(metric: ValueMetric, value: number): number {
 }
 
 /**
- * '잘 씀'(초록)이 되는 30일 동안의 이용 목표 양. 체크인·게이지·폰 사용 기록·리포트가 같은 단일 기준을 쓴다.
- * - 횟수(`uses`): `getRiskLevel`에서 1회 단가가 한 달 요금의 25% 이하면 초록이므로 실제로는 4회부터 초록이다.
- * - 쓴 날(`days`)·시간(`hours`): `metricRiskLevel`의 10일·10시간.
- */
-export const GOOD_AT: Record<"uses" | "days" | "hours", number> = { uses: 4, days: 10, hours: 10 };
-
-/**
- * 색 기준. `uses`는 예전 기준(getRiskLevel) 그대로다. 나머지는 이렇게 정했다 — 숫자가 바뀌면 이 표와
- * 테스트를 함께 고친다.
+ * 색 기준. 모든 지표의 임계값은 `constants/thresholds.ts`(`GOOD_AT`, `VERDICT_THRESHOLDS`)를 단일 출처로 참조한다.
  *
- * - 쓴 날: 2일 이하 빨강, 10일 이상 초록. 무료로도 충분했다고 답했으면(`freeTier: "enough"`) 초록이 아니라
+ * - 쓴 날: 2일 이하 빨강, 10일(`GOOD_AT.days`) 이상 초록. 무료로도 충분했다고 답했으면(`freeTier: "enough"`) 초록이 아니라
  *   노랑이다 — 많이 써도 유료가 필요했던 것은 아니다. 빨강은 그대로 둔다(안 쓰는 데 무료로 내리라고 하면
  *   해지가 묻힌다).
- * - 쓴 시간: 2시간 미만 빨강, 10시간 이상 초록.
- * - 혜택: 회비의 절반도 못 돌려받으면 빨강, 회비 이상이면(본전) 초록.
+ * - 쓴 시간: 2시간 미만 빨강, 10시간(`GOOD_AT.hours`) 이상 초록.
+ * - 혜택: 회비의 절반도 못 돌려받으면 빨강, 회비 이상이면(이용 목표 달성) 초록.
  * - 용량: 0%(아무것도 안 둠)만 빨강, 절반 미만은 노랑(더 작은 요금제로 충분할 수 있다), 절반 이상 초록.
  *   요금제를 알면(`storageFit`) 추측하지 않는다 — 더 싼 요금제에 들어가면 노랑, 아니면 초록.
  *   적게 써도 해지하라고 하지 않는다 — 사진이 올라가 있으면 끊는 순간 곤란해진다.
@@ -258,28 +253,34 @@ export function metricRiskLevel(
     case "uses":
       return getRiskLevel(calculateCostPerUse(monthlyShare, quantity), monthlyShare, quantity);
     case "days": {
-      const byDays = quantity <= 2 ? "red" : quantity >= GOOD_AT.days ? "green" : "yellow";
+      const { redAtOrBelow, greenAt, apiValueGreenRatio } = VERDICT_THRESHOLDS.days;
+      const byDays = quantity <= redAtOrBelow ? "red" : quantity >= greenAt ? "green" : "yellow";
       // PC 기록의 토큰을 API로 냈다면 구독료 이상이었으면, 쓴 날이 적어도 본전은 뽑았다. 구독료보다 적으면 쓴
       // 날대로 둔다 — PC 기록은 웹·앱 사용이 빠진 하한값이라 판단을 낮추는 근거가 되지 못한다.
       const level =
-        apiValueRatio !== null && apiValueRatio !== undefined && apiValueRatio >= 1
+        apiValueRatio !== null && apiValueRatio !== undefined && apiValueRatio >= apiValueGreenRatio
           ? "green"
           : byDays;
       return level === "green" && freeTier === "enough" ? "yellow" : level;
     }
-    case "hours":
-      return quantity < 2 ? "red" : quantity >= GOOD_AT.hours ? "green" : "yellow";
+    case "hours": {
+      const { redBelow, greenAt } = VERDICT_THRESHOLDS.hours;
+      return quantity < redBelow ? "red" : quantity >= greenAt ? "green" : "yellow";
+    }
     case "benefit": {
+      const { redBelowRatio, greenAtRatio } = VERDICT_THRESHOLDS.benefit;
       // 혜택 수량(`quantity`)은 원화(KRW) 기준이므로, 비원화 구독이 넘어오더라도 원화로 환산해 비율 폭등을 막는다.
       const monthlyKRW = toKRW(monthlyShare, currency);
       if (monthlyKRW <= 0) return "green";
       const ratio = quantity / monthlyKRW;
-      return ratio < 0.5 ? "red" : ratio >= 1 ? "green" : "yellow";
+      return ratio < redBelowRatio ? "red" : ratio >= greenAtRatio ? "green" : "yellow";
     }
-    case "storage":
-      if (quantity === 0) return "red";
+    case "storage": {
+      const { redAt, unknownPlanGreenAt } = VERDICT_THRESHOLDS.storage;
+      if (quantity === redAt) return "red";
       if (storageFit) return storageFit.smaller ? "yellow" : "green";
-      return quantity < 50 ? "yellow" : "green";
+      return quantity < unknownPlanGreenAt ? "yellow" : "green";
+    }
   }
 }
 
