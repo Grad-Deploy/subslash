@@ -32,6 +32,15 @@ export async function apiFetch(path: `/api/${string}`, init: RequestInit = {}): 
   return res;
 }
 
+/** JSON 본문을 싣는 POST. `apiFetch`와 같고, 머리글과 직렬화를 부르는 곳마다 적지 않게 한다. */
+export function apiPostJson(path: `/api/${string}`, body: unknown): Promise<Response> {
+  return apiFetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 /**
  * 남에게 보낼 링크(공유 카드 등)의 주소. 앱 안의 주소는 다른 사람이 열 수 없으므로 앱에서는
  * 배포된 웹 주소를 쓴다. 웹에서는 지금 보고 있는 사이트(미리보기 배포 포함)의 주소다.
