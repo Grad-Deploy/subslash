@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@components/ui/button";
-import { apiFetch } from "@lib/api";
+import { apiPostJson } from "@lib/api";
 import { useKnownText, useT } from "@lib/i18n";
 
 type SendStatus = { tone: "ok" | "error"; message: string } | null;
@@ -25,11 +25,7 @@ export function ResendVerificationButton({ email, label }: { email?: string; lab
     setSending(true);
     setStatus(null);
     try {
-      const res = await apiFetch("/api/auth/verification-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(email ? { email } : {}),
-      });
+      const res = await apiPostJson("/api/auth/verification-email", email ? { email } : {});
       const data = await res.json().catch(() => ({}));
       setStatus({
         tone: data?.status === "sent" ? "ok" : "error",

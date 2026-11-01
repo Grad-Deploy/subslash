@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { VERIFY_ACCOUNT_TTL_DAYS } from "@lib/verification-config";
-import { apiFetch, apiUrl } from "@lib/api";
+import { apiUrl, apiPostJson } from "@lib/api";
 import { Spinner } from "../ui/spinner";
 import { useKnownText, useLatestT, useT, type Messages } from "@lib/i18n";
 
@@ -62,11 +62,7 @@ export function EmailVerification() {
   const decide = async (decision: "confirm" | "decline") => {
     setBusy(true);
     try {
-      const res = await apiFetch("/api/auth/verify-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, decision }),
-      });
+      const res = await apiPostJson("/api/auth/verify-email", { token, decision });
       const data = await res.json().catch(() => ({}));
       if (data?.status === "verified" && data?.error) {
         // 지우려 했는데 그사이 확인된 계정이다.

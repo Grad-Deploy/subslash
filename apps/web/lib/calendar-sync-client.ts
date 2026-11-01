@@ -1,5 +1,5 @@
 import { currentCancelUrl, getBilledAmount, isPaying, type Subscription } from "@subslash/shared";
-import { apiFetch, readApiError } from "./api";
+import { readApiError, apiPostJson } from "./api";
 import { withAppReturn } from "./native";
 import { SOURCE_LOCALE, appsScriptLocale, type Locale } from "./i18n/config";
 
@@ -58,10 +58,10 @@ export async function startCalendarSync(
 ): Promise<string> {
   // 캘린더 이름·일정 메모·웹 앱 화면의 언어. 웹 앱이 모르는 언어는 영어다.
   const lang = appsScriptLocale(locale);
-  const response = await apiFetch(await withAppReturn("/api/calendar-sync"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ entries, reminderDays, lang }),
+  const response = await apiPostJson(await withAppReturn("/api/calendar-sync"), {
+    entries,
+    reminderDays,
+    lang,
   });
   if (!response.ok) {
     throw new Error(await readApiError(response, "캘린더 등록을 시작하지 못했습니다."));
