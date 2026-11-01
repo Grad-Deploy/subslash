@@ -3,7 +3,6 @@
 import React from "react";
 import {
   findPresetForSubscription,
-  metricForSubscription,
   type ServiceUsageSummary,
   type Subscription,
 } from "@subslash/shared";
@@ -12,6 +11,7 @@ import { isMeasurableService } from "@lib/device-usage";
 import type { DeviceUsageView } from "@lib/device-usage-server";
 import { useT, type Messages } from "@lib/i18n";
 import { formatDurationText } from "@lib/i18n/duration";
+import { currentMetricFor } from "@lib/check-in-metric";
 
 /** 이 구독을 잴 수 있으면 서비스 id. 앱으로 쓰지 않는 구독(멤버십 등)은 재지 않는다. */
 function measurableServiceId(sub: Subscription): string | null {
@@ -50,7 +50,7 @@ function isAiService(sub: Subscription): boolean {
  * 묻는데 여기서만 '번'으로 말하면 같은 리포트에 두 단위가 섞인다.
  */
 function byHours(sub: Subscription): boolean {
-  return metricForSubscription(sub) === "hours";
+  return currentMetricFor(sub) === "hours";
 }
 
 /** '최소 3시간 20분'·'최소 12번'과 작은 글자의 다른 단위. */

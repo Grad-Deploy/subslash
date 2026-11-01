@@ -8,8 +8,6 @@ import {
   getCancelRoutes,
   getCancelUrlKind,
   getMyMonthlyShareAmount,
-  findPresetForSubscription,
-  metricForSubscription,
 } from "@subslash/shared";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -29,8 +27,9 @@ import { cn } from "@lib/utils";
 import { openExternal } from "@lib/native";
 import { useCopyText } from "@hooks/useCopyText";
 import { IS_APP_BUILD } from "@lib/platform";
-import { PC_USAGE_SERVICES, type PcUsageServiceId } from "@lib/pc-usage";
+import { pcUsageServiceFor } from "@lib/pc-usage";
 import dynamic from "next/dynamic";
+import { currentMetricFor } from "@lib/check-in-metric";
 
 // 앱에서는 체크인 입력을 다른 앱 체크인(등록 직후·첫 체크인 카드)과 같은 단계 막대로 받는다.
 // 웹 사용자가 이 코드를 받지 않도록 앱 빌드에서만 불러온다.
@@ -90,17 +89,13 @@ export function CheckInModal({
   const presets = [0, 1, 3, 5, 10, 20, 30];
   // 무엇을 세는지는 구독마다 다르다(음악은 시간, 멤버십은 혜택 금액 — utils/valueMetric). 횟수가
   // 아니면 횟수 전용 화면(단계 막대·비유 카드·본전 게이지)을 쓰지 않는다.
-  const metric = metricForSubscription(subscription);
+  const metric = currentMetricFor(subscription);
   // PC 웹에서 Claude·ChatGPT 구독이면 PC의 Claude Code·Codex 기록으로 셀 수 있다(/pc-usage). 그 화면에서 연
   // 창에는 두지 않는다.
   const pathname = usePathname();
-  const presetId = findPresetForSubscription(subscription)?.id;
   const pcService =
-    !IS_APP_BUILD &&
-    metric === "days" &&
-    pathname !== "/pc-usage" &&
-    (PC_USAGE_SERVICES as readonly string[]).includes(presetId ?? "")
-      ? (presetId as PcUsageServiceId)
+    !IS_APP_BUILD && metric === "days" && pathname !== "/pc-usage"
+      ? pcUsageServiceFor(subscription)
       : null;
   const byUses = metric === "uses";
   const isRed = result?.riskLevel === "red";

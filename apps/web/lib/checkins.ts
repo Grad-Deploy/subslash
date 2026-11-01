@@ -1,6 +1,6 @@
 import {
   latestCheckIn,
-  metricForSubscription,
+  metricsForSubscription,
   metricOfLog,
   type Subscription,
   type UsageLog,
@@ -39,7 +39,7 @@ export function latestFreshUsage(
 }
 
 /**
- * 이 구독이 지금 재는 지표로 적은 최근 체크인. 체크인 전이거나 지표가 바뀌기 전의 옛 체크인뿐이면 null —
+ * 이 구독이 지금 재는 지표로 적은 최근 체크인(앱·웹에서 재는 것이 다른 구독은 어느 쪽이든). 체크인 전이거나 지표가 바뀌기 전의 옛 체크인뿐이면 null —
  * 음악을 시간으로 재게 된 뒤에 남은 '5회' 체크인을 5시간으로 읽지 않는다.
  */
 export function latestFreshLogFor(
@@ -48,5 +48,5 @@ export function latestFreshLogFor(
   now: Date = new Date(),
 ): UsageLog | null {
   const log = latestFreshLog(usageLogs, sub.id, now);
-  return log && metricOfLog(log) === metricForSubscription(sub) ? log : null;
+  return log && metricsForSubscription(sub).includes(metricOfLog(log)) ? log : null;
 }

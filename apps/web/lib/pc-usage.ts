@@ -91,6 +91,20 @@ export function parsePcUsageHash(hash: string, now: Date = new Date()): PcUsageP
   return { ok: true, link: { entries, windowDays, until } };
 }
 
+/** 결합 상품 중 포함된 AI 서비스의 PC 기록으로 재는 것. */
+const BUNDLE_PC_SERVICES: Readonly<Record<string, PcUsageServiceId>> = {
+  "uplus-google-ai-youtube": "google-ai-pro",
+};
+
+/** 이 구독을 재는 PC 기록의 서비스. 없으면 null. */
+export function pcUsageServiceFor(
+  sub: Pick<Subscription, "name" | "cancelUrl">,
+): PcUsageServiceId | null {
+  const id = findPresetForSubscription(sub)?.id;
+  if (!id) return null;
+  return BUNDLE_PC_SERVICES[id] ?? (isService(id) ? id : null);
+}
+
 /**
  * 이 서비스의 구독 중인 구독. 같은 서비스 구독이 여럿이면 어느 것에 적을지 모르므로 고르지 않는다
  * (`ambiguous`) — 리포트에 물어보기와 같은 규칙이다.
@@ -103,7 +117,7 @@ export function matchPcUsageSubscription(
   | { kind: "none" }
   | { kind: "ambiguous"; count: number } {
   const matches = subscriptions.filter(
-    (sub) => sub.status === "active" && findPresetForSubscription(sub)?.id === serviceId,
+    (sub) => sub.status === "active" && pcUsageServiceFor(sub) === serviceId,
   );
   if (matches.length === 0) return { kind: "none" };
   if (matches.length > 1) return { kind: "ambiguous", count: matches.length };
