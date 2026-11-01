@@ -1,6 +1,6 @@
 import { BillingCycle, Currency } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
-import { daysInMonth, parseTimestamp } from "./date";
+import { daysInMonth, parseTimestamp, startOfDay } from "./date";
 import { rateForCharge, type RateOn } from "./historicalRate";
 import {
   formatAmount,
@@ -212,7 +212,7 @@ export function getMyMonthDefendedAmountKRW(
     // 결제일이 지난 뒤에 해지했다면 이번 달 돈은 이미 나갔다. 비교는 시각이
     // 아니라 날짜 단위로 한다 — 결제일 당일 몇 시에 눌렀는지까지 따지면
     // 표준시가 다른 곳에서 하루가 밀려 방어액이 통째로 사라진다.
-    const killDay = new Date(killDate.getFullYear(), killDate.getMonth(), killDate.getDate());
+    const killDay = startOfDay(killDate);
     if (killDay.getTime() > billingDate.getTime()) return 0;
   }
 
