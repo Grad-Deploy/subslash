@@ -18,6 +18,7 @@ import {
   type ServicePreset,
   type Subscription,
   type UsageLog,
+  startOfMonth,
 } from "@subslash/shared";
 import { buildValueRows } from "../../components/report/valueRows";
 import { latestFreshLog } from "@lib/checkins";
@@ -96,10 +97,6 @@ function paying(ctx: AskContext): Subscription[] {
 }
 
 export { matchSubscriptions };
-
-function startOfMonth(now: Date): Date {
-  return new Date(now.getFullYear(), now.getMonth(), 1);
-}
 
 export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
   const k = ctx.t.ask;
@@ -511,7 +508,7 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const now = ctx.now;
       const from =
         period === "month"
-          ? new Date(now.getFullYear(), now.getMonth(), 1)
+          ? startOfMonth(now)
           : period === "year"
             ? new Date(now.getFullYear(), 0, 1)
             : undefined;
