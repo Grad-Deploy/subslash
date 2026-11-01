@@ -6,8 +6,15 @@ import {
   findBundleOverlaps,
   getCancelAndroidApp,
   metricForSubscription,
+  POPULAR_SERVICES,
   type Subscription,
+  type UsageLog,
 } from "@subslash/shared";
+import { latestFreshLogFor } from "@lib/checkins";
+import { matchPcUsageSubscription, pcUsageServiceFor } from "@lib/pc-usage";
+import { planAutoCheckIns } from "@lib/usage/auto-checkin";
+import { lastDays, type UsageHistory } from "@lib/usage/history";
+import { buildCheckInBars } from "../../components/report/valueRows";
 import { findDuplicateSubscription } from "@lib/duplicate-subscription";
 import { packagesFor } from "@lib/usage/packages";
 import { planDiscoveries, type GmailDiscovery } from "@lib/gmail-auto-client";
@@ -81,6 +88,93 @@ describe("결합 상품", () => {
       "com.google.android.apps.youtube.music",
     ]);
     expect(metricForSubscription(BUNDLE)).toBe("hours");
+  });
+
+  const presetNamed = (id: string) => {
+    const preset = POPULAR_SERVICES.find((service) => service.id === id);
+    if (!preset) throw new Error(id);
+    return sub({ name: preset.nameKo, category: preset.category });
+  };
+
+  it("구글 AI + 유튜브 결합은 앱에서 유튜브 시간, 웹에서 AI를 쓴 날로 잰다", () => {
+    const bundle = presetNamed("uplus-google-ai-youtube");
+    expect(metricForSubscription(bundle, "app")).toBe("hours");
+    expect(metricForSubscription(bundle, "web")).toBe("days");
+    expect(packagesFor(bundle)).toEqual([
+      "com.google.android.youtube",
+      "com.google.android.apps.youtube.music",
+    ]);
+    expect(pcUsageServiceFor(bundle)).toBe("google-ai-pro");
+    expect(matchPcUsageSubscription("google-ai-pro", [bundle])).toEqual({
+      kind: "match",
+      subscription: bundle,
+    });
+  });
+
+  it("웹·앱 어느 쪽 체크인이든 최근 것으로 판단한다", () => {
+    const bundle = { ...presetNamed("uplus-google-ai-youtube"), id: "b" };
+    const now = new Date("2026-06-20T00:00:00.000Z");
+    const log = (metric: "days" | "hours", riskLevel: "green" | "red", checkedAt: string) =>
+      ({
+        id: checkedAt,
+        subscriptionId: "b",
+        usageCount: 12,
+        costPerUse: 1000,
+        riskLevel,
+        metric,
+        checkedAt,
+      }) as UsageLog;
+    const web = log("days", "green", "2026-06-19T00:00:00.000Z");
+    const app = log("hours", "red", "2026-06-10T00:00:00.000Z");
+    expect(latestFreshLogFor([app, web], bundle, now)).toBe(web);
+    const laterApp = { ...app, checkedAt: "2026-06-19T12:00:00.000Z" };
+    expect(latestFreshLogFor([web, laterApp], bundle, now)?.metric).toBe("hours");
+    expect(buildCheckInBars([bundle], [web], now).bars[0]).toMatchObject({
+      metric: "days",
+      level: "green",
+    });
+  });
+
+  it("웹에서 체크인한 지 30일 안이면 폰 기록으로 덮지 않는다", () => {
+    const bundle = { ...presetNamed("uplus-google-ai-youtube"), id: "b", amount: 29000 };
+    const now = new Date(2026, 5, 30, 12);
+    const days: UsageHistory["days"] = {};
+    for (const date of lastDays(now, 30)) {
+      days[date] = { "com.google.android.youtube": [3_600_000, 1, 3_600_000] };
+    }
+    const history = {
+      days,
+      syncedAt: now.toISOString(),
+      playbackFrom: "2026-01-01",
+      packagesSince: {
+        "com.google.android.youtube": "2026-01-01",
+        "com.google.android.apps.youtube.music": "2026-01-01",
+      },
+    } as unknown as UsageHistory;
+    const web = {
+      id: "w",
+      subscriptionId: "b",
+      usageCount: 12,
+      costPerUse: 2000,
+      riskLevel: "green",
+      metric: "days",
+      checkedAt: new Date(2026, 5, 25).toISOString(),
+    } as UsageLog;
+    expect(planAutoCheckIns([bundle], [web], history, null, now, 1350)).toEqual([]);
+    const old = { ...web, checkedAt: new Date(2026, 3, 1).toISOString() };
+    expect(planAutoCheckIns([bundle], [old], history, null, now, 1350)[0]).toMatchObject({
+      metric: "hours",
+      quantity: 30,
+    });
+  });
+
+  it("스포티파이가 든 결합 상품은 시간으로 잰다", () => {
+    const both = presetNamed("naver-plus-netflix-spotify");
+    expect(metricForSubscription(both)).toBe("hours");
+    expect(packagesFor(both)).toEqual(["com.netflix.mediaclient", "com.spotify.music"]);
+    expect(metricForSubscription(presetNamed("naver-plus-spotify"))).toBe("hours");
+    // 스포티파이가 없는 넷플릭스 결합은 넷플릭스 단독과 같이 횟수다.
+    expect(metricForSubscription(presetNamed("naver-plus-netflix"))).toBe("uses");
   });
 
   it("결합 상품에 든 서비스를 따로도 내고 있으면 알린다", () => {

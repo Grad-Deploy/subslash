@@ -3,7 +3,12 @@
  * 색은 가성비 평가(`metricView` — 체크인과 같은 기준)다. 평가는 30일 치 기록이 있어야 나오므로, 그 전의
  * 구독은 색 없이(null) 둔다 — 짧은 기록을 늘려 '잘 씀'·'비쌈'이라고 하지 않는다.
  */
-import { metricForSubscription, type RiskLevel, type Subscription } from "@subslash/shared";
+import {
+  hasSurfaceMetrics,
+  metricForSubscription,
+  type RiskLevel,
+  type Subscription,
+} from "@subslash/shared";
 import type { UsageHistory } from "./history";
 import { metricView, subUsage, type SubUsage } from "./value";
 
@@ -55,10 +60,14 @@ export function usageChartBars(
       wholeMonth && usage.totals.coveredDays === dates.length
         ? { ...usage, totals: { ...usage.totals, coveredDays: 30 } }
         : usage;
+    const measuredLevel = metricView(judged, metricForSubscription(sub, "app")).level;
     bars.push({
       sub,
       usedMs: usage.totals.usedMs,
-      level: metricView(judged, metricForSubscription(sub)).level ?? fallback?.(sub) ?? null,
+      // 앱·웹에서 재는 것이 다른 구독은 어느 쪽에서 했든 최근 체크인이 판단이다.
+      level: hasSurfaceMetrics(sub)
+        ? (fallback?.(sub) ?? measuredLevel ?? null)
+        : (measuredLevel ?? fallback?.(sub) ?? null),
     });
   }
   bars.sort((a, b) => b.usedMs - a.usedMs);
