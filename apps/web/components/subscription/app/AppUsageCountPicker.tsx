@@ -101,7 +101,7 @@ export function AppUsageCountPicker({
 
   // 횟수로 재지 않는 구독(음악은 시간, 멤버십은 혜택 금액)은 그 지표의 입력을 쓴다. 폰 기록 한 줄도
   // 연 횟수라 붙이지 않는다.
-  const metric = metricForSubscription(subscription);
+  const metric = metricForSubscription(subscription, "app");
   if (metric !== "uses") {
     return (
       <MetricQuantityInput

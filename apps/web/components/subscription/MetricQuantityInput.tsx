@@ -3,6 +3,7 @@
 import React, { useCallback, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import {
+  hasSurfaceMetrics,
   METRIC_SPECS,
   type Subscription,
   type ValueMetric,
@@ -99,6 +100,9 @@ export function MetricQuantityInput({
 
   return (
     <div className="space-y-3">
+      {hasSurfaceMetrics(subscription) && (metric === "days" || metric === "hours") && (
+        <p className="text-center text-xs text-muted-foreground">{c.input.surfaceScope[metric]}</p>
+      )}
       <div className="text-center" aria-live="polite">
         <p
           className={cn(

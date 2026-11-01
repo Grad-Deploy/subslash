@@ -4,7 +4,6 @@ import {
   evaluateMetric,
   getMyMonthlyShareAmount,
   latestCheckIn,
-  metricForSubscription,
   storagePlanFit,
   type CheckInResponse,
   type Subscription,
@@ -14,6 +13,7 @@ import {
   localMonthKey,
 } from "@subslash/shared";
 import { apiValueRatio } from "../pc-usage";
+import { currentMetricFor } from "../check-in-metric";
 
 /**
  * 구독 기록 한 줄을 바꾸는 규칙. 저장소 액션(index.ts)은 어느 구독에 적용할지만 고르고, 무엇을 지우고
@@ -100,7 +100,7 @@ export function buildCheckInLog(
   const monthlyShare = getMyMonthlyShareAmount(sub);
   // 무엇을 세었는지는 구독마다 다르다(음악은 시간, 멤버십은 혜택 금액 — utils/valueMetric). 부르는
   // 쪽이 다른 지표로 물었으면(메일의 'N회' 버튼) 그 지표를 넘긴다.
-  const metric = options?.metric ?? metricForSubscription(sub);
+  const metric = options?.metric ?? currentMetricFor(sub);
   const quantity = clampQuantity(metric, usageCount);
   // 무료 요금제로 충분했는지의 답은 묻는 구독(쓴 날로 재는, 무료 요금제가 있는 서비스)에만 쓴다.
   const freeTier = metric === "days" && asksFreeTier(sub) ? (sub.freeTierAnswer ?? null) : null;
