@@ -281,6 +281,13 @@ describe("getActionQueue", () => {
 });
 
 describe("getNextBillingHint", () => {
+  it("체험 중인 구독의 결제일은 다음 결제로 말하지 않는다", () => {
+    const trial = subDueIn(3, { id: "t", name: "체험", trialEndsAt: "2026-11-01" });
+    expect(getNextBillingHint([trial], NOW)).toBeNull();
+    const paid = subDueIn(10, { id: "p", name: "유료" });
+    expect(getNextBillingHint([trial, paid], NOW)?.name).toBe("유료");
+  });
+
   it("결제일을 아는 활성 구독 중 가장 가까운 것을 알려준다", () => {
     const near = subDueIn(4, { id: "near", name: "가까움" });
     const far = subDueIn(20, { id: "far", name: "멂" });

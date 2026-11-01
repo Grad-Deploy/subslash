@@ -7,7 +7,7 @@ import { IS_APP_BUILD } from "@lib/platform";
 import { useCheckInFlow, useReminderPrompt } from "@hooks/useCheckInFlow";
 import { useAddSubscriptionFlow } from "@hooks/useAddSubscriptionFlow";
 import { useStore } from "../../lib/store";
-import { POPULAR_SERVICES, getActionQueue, getNextBillingHint } from "@subslash/shared";
+import { isPaying, POPULAR_SERVICES, getActionQueue, getNextBillingHint } from "@subslash/shared";
 import { takeWelcomePicks } from "@lib/welcome";
 import { TotalSpend } from "../../components/dashboard/TotalSpend";
 import { ActionQueue } from "../../components/dashboard/ActionQueue";
@@ -116,7 +116,9 @@ export default function Dashboard() {
   // 할 일 목록(ActionQueue)이 체크인할 구독을 알려준다.
   const firstCheckInSub =
     startFlow && usageLogs.length === 0
-      ? [...activeSubs].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+      ? activeSubs
+          .filter((sub) => isPaying(sub))
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
       : undefined;
 
   // 폰 기록으로 찾은 구독 후보. 샘플 체험 중에는 묻지 않는다 — 화면의 목록이 내 기록이 아니다.
@@ -137,6 +139,7 @@ export default function Dashboard() {
   const queueProps = {
     items: queue,
     nextBilling,
+    trialOnly: activeSubs.length > 0 && !activeSubs.some((sub) => isPaying(sub)),
     activeCount: activeSubs.length,
     onCheckIn: handleOpenCheckIn,
     ...actions.handlers,
@@ -202,10 +205,13 @@ export default function Dashboard() {
             <AppStartChecklist
               hasSubscription={activeSubs.length > 0}
               hasCheckIn={usageLogs.length > 0}
+              checkInWaitsForTrial={
+                activeSubs.length > 0 && !activeSubs.some((sub) => isPaying(sub))
+              }
               remindersOn={reminder.remindersOn}
               onAdd={() => openAdd()}
               onCheckIn={() => {
-                const target = firstCheckInSub ?? activeSubs[0];
+                const target = firstCheckInSub ?? activeSubs.find((sub) => isPaying(sub));
                 if (target) handleOpenCheckIn(target.id);
               }}
               onReminders={() => reminder.open(activeSubs[0] ?? null)}

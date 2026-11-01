@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import {
+  isInTrial,
   POPULAR_SERVICES,
   presetFormData,
   type ServicePreset,
@@ -104,7 +105,8 @@ export function useAddSubscriptionFlow({
     }
     const endedDemo = inDemo;
     const added = addSubscription(data);
-    if (AppAddCheckIn) {
+    // 무료 체험은 끝날 때까지 체크인하지 않는다.
+    if (AppAddCheckIn && !isInTrial(added)) {
       // 체험 중의 샘플 기록은 끝나며 사라지므로 첫 체크인인지는 실제 기록으로 본다.
       setFirstEverCheckIn(!endedDemo && usageLogs.length === 0);
       setAddedSub(added);

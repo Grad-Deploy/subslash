@@ -67,7 +67,7 @@ export function SharingFields({
               id={`${idPrefix}-share`}
               type="number"
               name="myShareAmount"
-              min="0"
+              min="0.01"
               step="any"
               placeholder={String(
                 Math.round(
@@ -81,6 +81,7 @@ export function SharingFields({
               value={formData.myShareAmount ?? ""}
               onChange={onChange}
             />
+            <p className="text-[11px] text-muted-foreground break-keep">{f.positiveHint}</p>
           </div>
         )}
       </div>

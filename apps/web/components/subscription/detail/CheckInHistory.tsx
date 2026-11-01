@@ -2,7 +2,7 @@
 
 import React from "react";
 import type { Subscription, UsageLog } from "@subslash/shared";
-import { formatUSD } from "@subslash/shared";
+import { formatUSD, isInTrial } from "@subslash/shared";
 import { useLocale, useT, type Messages } from "@lib/i18n";
 import { formatTokenCount } from "@lib/pc-usage";
 import { isThisDevice } from "@lib/check-in-device";
@@ -61,7 +61,7 @@ export function CheckInHistory({
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-bold">{h.title(logs.length)}</h3>
         {/* 체크인은 지금 돈을 내는 구독의 1회 단가를 묻는다. 해지한 구독에는 묻지 않는다. */}
-        {!isKilled && (
+        {!isKilled && !isInTrial(sub) && (
           <Button size="sm" variant="outline" onClick={onCheckIn}>
             {h.add}
           </Button>

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { subscriptionDetailHref } from "@lib/routes";
 import {
+  isInTrial,
   STALE_CHECK_IN_DAYS,
   Subscription,
   UsageLog,
@@ -319,8 +320,13 @@ export function SubTable({
                 <div className="flex justify-end gap-2">
                   {mode === "active" ? (
                     <>
-                      <Button variant="outline" size="sm" onClick={() => onCheckIn?.(sub.id)}>
-                        {t.subs.card.checkIn}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isInTrial(sub)}
+                        onClick={() => onCheckIn?.(sub.id)}
+                      >
+                        {isInTrial(sub) ? t.checkin.trial.button : t.subs.card.checkIn}
                       </Button>
                       <Button variant="destructive" size="sm" onClick={() => onKill?.(sub.id)}>
                         {t.subs.card.kill}

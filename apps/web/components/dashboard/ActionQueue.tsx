@@ -1,19 +1,30 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { formatCurrency, formatDday, type ActionItem, type ActionKind } from "@subslash/shared";
 import { Button } from "../ui/button";
+import { IS_APP_BUILD } from "@lib/platform";
 import { subscriptionDetailHref } from "@lib/routes";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { ListChecks } from "lucide-react";
 import { useT, useServiceNames } from "@lib/i18n";
 import { describeActionReason } from "@lib/i18n/action-reason";
 
+// 폰 사용 기록(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
+const AppTrialUsageLine = IS_APP_BUILD
+  ? dynamic(() => import("../usage/app/AppTrialUsageLine").then((m) => m.AppTrialUsageLine), {
+      ssr: false,
+    })
+  : null;
+
 interface ActionQueueProps {
   items: ActionItem[];
   /** 큐가 비었을 때 보여줄 다음 결제. 결제일을 아는 구독이 없으면 null. */
   nextBilling: { name: string; daysUntilBilling: number } | null;
+  /** 구독이 모두 무료 체험 중이다. 다음 결제가 없는 것이지 결제일을 모르는 것이 아니다. */
+  trialOnly?: boolean;
   activeCount: number;
   onCheckIn: (subscriptionId: string) => void;
   onCancelGuide: (subscriptionId: string) => void;
@@ -55,6 +66,7 @@ const TONE: Partial<Record<ActionKind, string>> = {
 export function ActionQueue({
   items,
   nextBilling,
+  trialOnly = false,
   activeCount,
   onCheckIn,
   onCancelGuide,
@@ -113,7 +125,9 @@ export function ActionQueue({
         <p className="text-sm text-muted-foreground">
           {nextBilling
             ? q.nextBilling(nextBilling.name, formatDday(nextBilling.daysUntilBilling))
-            : q.noBillingKnown}
+            : trialOnly
+              ? q.trialOnly
+              : q.noBillingKnown}
         </p>
       </section>
     );
@@ -176,11 +190,14 @@ export function ActionQueue({
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {describeActionReason(t, item.reason)}
               </p>
+              {AppTrialUsageLine && item.kind === "trial-ending" && (
+                <AppTrialUsageLine subscriptionId={item.subscriptionId} />
+              )}
             </div>
 
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               {/* 해지 가이드가 주 버튼일 때만, 체크인을 곁들여 판단할 여지를 남긴다. */}
-              {item.verb === "cancel-guide" && (
+              {item.verb === "cancel-guide" && item.kind !== "trial-ending" && (
                 <Button
                   size="sm"
                   variant="outline"

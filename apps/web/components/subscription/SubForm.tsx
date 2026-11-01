@@ -113,10 +113,13 @@ export function SubForm({
     }
     setFormData((prev) => ({
       ...prev,
-      // 비운 숫자 칸은 0이 아니라 '적지 않음'이다. 0원은 무료 구독, 결제 월 0은
+      // 비운 숫자 칸은 0이 아니라 '적지 않음'이다. 결제 월 0은
       // 없는 달이라는 다른 주장이 된다.
       [name]:
-        name === "billingMonth" || name === "amount" || name === "billingDay"
+        name === "billingMonth" ||
+        name === "amount" ||
+        name === "billingDay" ||
+        name === "myShareAmount"
           ? value === ""
             ? undefined
             : Number(value)
@@ -250,8 +253,11 @@ export function SubForm({
     const typedAccount = signInAccount.trim();
     const accountUnchanged = typedAccount === (initialData?.linkedAccountName ?? "").trim();
 
+    // 내가 내지 않는 구독은 등록하지 않는다. 칸은 min으로 막고, 나눠 내기를 끈 뒤 숨은 칸에 남은 0도 내 몫으로 두지 않는다.
+    const share = formData.myShareAmount;
     onSubmit({
       ...formData,
+      myShareAmount: typeof share === "number" && share > 0 ? share : undefined,
       cancelUrl,
       linkedAccountId: accountUnchanged ? initialData?.linkedAccountId : undefined,
       linkedAccountName: typedAccount || undefined,
