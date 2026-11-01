@@ -69,7 +69,7 @@ export function AppAddCheckIn({
       <hr className="my-4" />
 
       <DialogTitle className="text-[17px] font-black tracking-tight">
-        {c.metric[metricForSubscription(subscription)].question}
+        {c.metric[metricForSubscription(subscription, "app")].question}
       </DialogTitle>
       <DialogDescription className="mt-1 text-xs text-muted-foreground">
         {c.addCheckIn.note}

@@ -8,7 +8,7 @@
  * verifier는 그 한 번의 로그인에만 쓰이고 받아 가면 지운다.
  */
 import { removeLocal, writeLocal } from "@lib/local-storage";
-import { apiFetch } from "./api";
+import { apiPostJson } from "./api";
 
 const PENDING_KEY = "subslash-oauth-pending";
 /** 서버의 넘겨받기 기한(OAUTH_FLOW_TTL_SECONDS)과 같다. 지나면 받아 갈 것이 없다. */
@@ -67,11 +67,7 @@ export async function claimPendingLogin(): Promise<ClaimResult> {
   if (!pending || inflight) return "none";
   inflight = true;
   try {
-    const res = await apiFetch("/api/auth/oauth/claim", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ verifier: pending.verifier }),
-    });
+    const res = await apiPostJson("/api/auth/oauth/claim", { verifier: pending.verifier });
     // 404는 아직 안 끝났거나 취소한 것이다. 기한까지 두어, 끝나고 앱으로 돌아오면 받는다.
     if (res.status === 404) return "none";
     clearPendingLogin();

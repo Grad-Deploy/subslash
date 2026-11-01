@@ -2,6 +2,7 @@ import {
   calculateCostPerUse,
   getMyMonthlyAmountKRW,
   metricForSubscription,
+  metricOfLog,
   type RiskLevel,
   type Subscription,
   type UsageLog,
@@ -111,11 +112,15 @@ export function buildCheckInBars(
       pending += 1;
       continue;
     }
+    // 앱·웹에서 재는 것이 다른 구독은 체크인에 적은 지표의 기준으로 견준다.
+    const logged = metricOfLog(log);
+    const barMetric =
+      logged === "uses" || logged === "days" || logged === "hours" ? logged : metric;
     bars.push({
       sub,
-      metric,
+      metric: barMetric,
       quantity: log.usageCount,
-      fraction: Math.min(1, log.usageCount / GOOD_AT[metric]),
+      fraction: Math.min(1, log.usageCount / GOOD_AT[barMetric]),
       level: log.riskLevel,
     });
   }

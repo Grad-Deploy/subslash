@@ -81,7 +81,10 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
         return {
           period: range === "month" ? month : subUsage(sub, history, installed, dates, rate),
           month,
-          view: month.state === "measured" ? metricView(month, metricForSubscription(sub)) : null,
+          view:
+            month.state === "measured"
+              ? metricView(month, metricForSubscription(sub, "app"))
+              : null,
         };
       })
       .sort(compare(sort));

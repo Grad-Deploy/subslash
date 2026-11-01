@@ -83,7 +83,7 @@ export function FirstCheckInCard({ subscription, onSubmit }: FirstCheckInCardPro
       </div>
 
       <p className="mt-3 mb-2 text-[13px] font-bold">
-        {t.checkin.metric[metricForSubscription(subscription)].question}
+        {t.checkin.metric[metricForSubscription(subscription, "app")].question}
       </p>
 
       {/* 입력은 앱의 다른 체크인(등록 직후·체크인 창)과 같은 단계 막대다. */}

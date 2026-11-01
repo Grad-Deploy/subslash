@@ -66,12 +66,22 @@ export const ALL_USAGE_PACKAGES: readonly string[] = [
   ...new Set([...MEASURED_USAGE_PACKAGES, ...Object.values(SUGGEST_ONLY_PACKAGES).flat()]),
 ];
 
+/**
+ * 결합 상품 중 포함된 서비스 일부로만 재는 것. 여기 없으면 포함된 서비스 모두의 앱으로 잰다.
+ *
+ * 구글 AI 프로 + 유튜브 프리미엄은 앱에서 유튜브·유튜브 뮤직 시간으로 재고, AI 사용은 웹에서 체크인한다
+ * (`SURFACE_METRICS`). 폰 기록은 이 시간에만 쓴다.
+ */
+const BUNDLE_MEASURED_SERVICES: Readonly<Record<string, readonly string[]>> = {
+  "uplus-google-ai-youtube": ["youtube-premium"],
+};
+
 /** 이 구독을 폰 기록으로 잴 수 있으면 그 앱 패키지들, 아니면 null(직접 체크인). */
 export function packagesFor(sub: Subscription): readonly string[] | null {
   const preset = findPresetForSubscription(sub);
   if (!preset) return null;
   // 결합 상품은 포함된 서비스의 앱으로 잰다(배민클럽 + 유튜브 프리미엄 → 유튜브·유튜브 뮤직).
-  const ids = [preset.id, ...(preset.includes ?? [])];
+  const ids = [preset.id, ...(BUNDLE_MEASURED_SERVICES[preset.id] ?? preset.includes ?? [])];
   const packages = [...new Set(ids.flatMap((id) => USAGE_PACKAGES[id] ?? []))];
   return packages.length > 0 ? packages : null;
 }

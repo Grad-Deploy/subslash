@@ -52,7 +52,7 @@ export function AppPhoneCheckInButton({
   // '한 번에 체크인'도 자동 체크인과 같은 구독을 모두 다룬다(구독마다 자기 지표로).
   const mapped = paying.filter((sub) => packagesFor(sub));
   const autoable = mapped.some((sub) =>
-    ["uses", "days", "hours"].includes(metricForSubscription(sub)),
+    ["uses", "days", "hours"].includes(metricForSubscription(sub, "app")),
   );
   if (!autoable) return null;
 

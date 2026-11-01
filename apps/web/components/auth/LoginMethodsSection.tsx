@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@components/ui/button";
 import { useAuth } from "@hooks/useAuth";
-import { apiFetch, apiUrl } from "@lib/api";
+import { apiFetch, apiUrl, apiPostJson } from "@lib/api";
 import { appReturnScheme, leaveForExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { oauthErrorMessageFrom } from "@lib/oauth-messages";
@@ -109,11 +109,7 @@ export function LoginMethodsSection() {
       return;
     }
     try {
-      const res = await apiFetch("/api/auth/oauth/link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider }),
-      });
+      const res = await apiPostJson("/api/auth/oauth/link", { provider });
       const data = (await res.json().catch(() => ({}))) as {
         path?: `/api/${string}`;
         error?: string;

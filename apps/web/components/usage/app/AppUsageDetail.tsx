@@ -136,7 +136,7 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
 
           {month.state === "measured" && (
             <ValueTiles
-              view={metricView(month, metricForSubscription(subscription))}
+              view={metricView(month, metricForSubscription(subscription, "app"))}
               usage={month}
             />
           )}

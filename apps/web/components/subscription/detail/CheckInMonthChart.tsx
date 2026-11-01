@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { metricForSubscription, type Subscription, type UsageLog } from "@subslash/shared";
+import { type Subscription, type UsageLog } from "@subslash/shared";
 import { useT } from "@lib/i18n";
 import { describeQuantityText } from "@lib/i18n/check-in-text";
 import { checkInMonths } from "@lib/check-in-months";
 import { useIsClient } from "@hooks/useIsClient";
 import { UsageBarChart, type UsageBar } from "../../usage/app/parts";
+import { currentMetricFor } from "@lib/check-in-metric";
 
 /**
  * 구독 상세의 달별 체크인 막대(웹·앱). 앱의 날별·요일별 막대는 폰 사용 기록으로 그리고, 이것은 사용자가
@@ -17,7 +18,7 @@ export function CheckInMonthChart({ sub, logs }: { sub: Subscription; logs: Usag
   const h = t.checkin.history;
   // 이번 달이 어디인지는 기기의 시계로 정한다. 서버 렌더링과 어긋나지 않게 그리고 난 뒤에 그린다.
   const mounted = useIsClient();
-  const metric = metricForSubscription(sub);
+  const metric = currentMetricFor(sub);
   const data = useMemo(
     () => (mounted ? checkInMonths(logs, metric, new Date()) : null),
     [mounted, logs, metric],
