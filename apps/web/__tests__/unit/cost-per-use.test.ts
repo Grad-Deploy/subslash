@@ -51,15 +51,18 @@ describe("Cost Per Use Utils", () => {
       expect(getRiskLevel(4000, 17000, 4)).toBe("green");
     });
 
-    it("Green: 비결합 호출에서 costPerUse > amount * 0.25여도 usageCount >= 8이면 green 반환", () => {
-      expect(getRiskLevel(5000, 17000, 8)).toBe("green");
+    it("Yellow: 유료 구독에서 1회 단가가 월 부담금의 25%(GOOD_AT.uses 기준)를 초과하면 횟수와 무관하게 yellow를 반환한다", () => {
+      // 레거시 usageCount >= 8 분기를 제거하고 1 / GOOD_AT.uses(25%) 단일 기준으로 판정한다.
+      expect(getRiskLevel(5000, 17000, 8)).toBe("yellow");
     });
 
-    it("무료·0원 부담(amount === 0) 구독도 0으로 나누지 않고 횟수 구간(0~1 red, 2~3 yellow, 4+ green)을 유지한다", () => {
+    it("무료·0원 부담(amount === 0) 구독도 0으로 나누지 않고 유료와 동일한 횟수 구간(정수 0~1 및 소수 1.5 red, 2~3 yellow, 4+ green)을 유지한다", () => {
       expect(calculateCostPerUse(0, 0)).toBe(0);
       expect(calculateCostPerUse(0, 3)).toBe(0);
       expect(getRiskLevel(calculateCostPerUse(0, 0), 0, 0)).toBe("red");
       expect(getRiskLevel(calculateCostPerUse(0, 1), 0, 1)).toBe("red");
+      expect(getRiskLevel(calculateCostPerUse(0, 1.5), 0, 1.5)).toBe("red");
+      expect(getRiskLevel(calculateCostPerUse(10000, 1.5), 10000, 1.5)).toBe("red");
       expect(getRiskLevel(calculateCostPerUse(0, 2), 0, 2)).toBe("yellow");
       expect(getRiskLevel(calculateCostPerUse(0, 3), 0, 3)).toBe("yellow");
       expect(getRiskLevel(calculateCostPerUse(0, 4), 0, 4)).toBe("green");
