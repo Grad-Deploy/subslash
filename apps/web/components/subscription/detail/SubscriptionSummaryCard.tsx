@@ -2,6 +2,7 @@
 
 import React from "react";
 import {
+  isInTrial,
   formatCurrency,
   formatDday,
   getBilledAmount,
@@ -119,8 +120,8 @@ export function SubscriptionSummaryCard({
             )}
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={onCheckIn}>
-              {s.checkIn}
+            <Button size="sm" variant="outline" disabled={isInTrial(sub)} onClick={onCheckIn}>
+              {isInTrial(sub) ? t.checkin.trial.button : s.checkIn}
             </Button>
             <Button size="sm" variant="destructive" onClick={onKill}>
               {s.kill}

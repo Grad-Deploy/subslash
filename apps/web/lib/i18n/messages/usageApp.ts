@@ -12,6 +12,8 @@ export const ko = {
     rangeLabel: "기간",
     level: { red: "비쌈", yellow: "애매", green: "잘 씀" },
     checkInBasis: "최근 체크인 기준",
+    trialUsage: (time: string) =>
+      `이 폰에서 최근 30일 동안 ${time} 썼어요. TV·PC에서 쓴 건 빠져 있어요.`,
     checkInBasisNote: "앱과 웹에서 재는 것이 다른 구독의 색은 최근 체크인 기준이에요.",
     per: { uses: "1회당", days: "하루당", hours: "시간당" },
     /** '잘 씀' 기준·잰 양: '4회' · '10일' · '10시간'. */
@@ -96,6 +98,8 @@ export const en: Widen<typeof ko> = {
     rangeLabel: "Period",
     level: { red: "Pricey", yellow: "So-so", green: "Good value" },
     checkInBasis: "Latest check-in:",
+    trialUsage: (time) =>
+      `You used it for ${time} on this phone in the last 30 days. Time on a TV or PC isn't included.`,
     checkInBasisNote:
       "For subscriptions measured differently in the app and on the web, the color follows the latest check-in.",
     per: { uses: "per use", days: "per day", hours: "per hour" },
@@ -189,6 +193,7 @@ export const zh: Widen<typeof ko> = {
     rangeLabel: "期间",
     level: { red: "不划算", yellow: "一般", green: "划算" },
     checkInBasis: "最近一次打卡：",
+    trialUsage: (time) => `最近 30 天在这部手机上使用了 ${time}。不包括电视和电脑上的使用。`,
     checkInBasisNote: "在应用和网页上衡量方式不同的订阅，颜色以最近一次打卡为准。",
     per: { uses: "每次", days: "每天", hours: "每小时" },
     goal: { uses: (n) => `${n} 次`, days: (n) => `${n} 天`, hours: (n) => `${n} 小时` },
@@ -265,6 +270,8 @@ export const ja: Widen<typeof ko> = {
     rangeLabel: "期間",
     level: { red: "割高", yellow: "まあまあ", green: "お得" },
     checkInBasis: "最新のチェックイン：",
+    trialUsage: (time) =>
+      `直近 30 日にこのスマホで ${time} 使いました。テレビ・PC の分は含みません。`,
     checkInBasisNote:
       "アプリとウェブで測り方が異なるサブスクの色は、最新のチェックインに基づきます。",
     per: { uses: "1 回あたり", days: "1 日あたり", hours: "1 時間あたり" },
@@ -347,6 +354,8 @@ export const vi: Widen<typeof ko> = {
     rangeLabel: "Khoảng thời gian",
     level: { red: "Đắt", yellow: "Tạm được", green: "Đáng tiền" },
     checkInBasis: "Lần check-in gần nhất:",
+    trialUsage: (time) =>
+      `Bạn đã dùng ${time} trên điện thoại này trong 30 ngày qua. Chưa tính thời gian trên TV hoặc PC.`,
     checkInBasisNote: "Với gói đo khác nhau trên ứng dụng và web, màu theo lần check-in gần nhất.",
     per: { uses: "mỗi lần", days: "mỗi ngày", hours: "mỗi giờ" },
     goal: { uses: (n) => `${n} lần`, days: (n) => `${n} ngày`, hours: (n) => `${n} giờ` },
@@ -429,6 +438,8 @@ export const fr: Widen<typeof ko> = {
     rangeLabel: "Période",
     level: { red: "Cher", yellow: "Moyen", green: "Rentable" },
     checkInBasis: "Dernier check-in :",
+    trialUsage: (time) =>
+      `Vous l'avez utilisé ${time} sur ce téléphone ces 30 derniers jours. Le temps sur TV ou PC n'est pas compté.`,
     checkInBasisNote:
       "Pour les abonnements mesurés différemment dans l'appli et sur le web, la couleur suit le dernier check-in.",
     per: { uses: "par utilisation", days: "par jour", hours: "par heure" },
@@ -521,6 +532,8 @@ export const es: Widen<typeof ko> = {
     rangeLabel: "Periodo",
     level: { red: "Caro", yellow: "Regular", green: "Vale la pena" },
     checkInBasis: "Último check-in:",
+    trialUsage: (time) =>
+      `Lo usaste ${time} en este teléfono en los últimos 30 días. No incluye el tiempo en TV o PC.`,
     checkInBasisNote:
       "En las suscripciones que se miden distinto en la app y en la web, el color sigue el último check-in.",
     per: { uses: "por uso", days: "por día", hours: "por hora" },
@@ -613,6 +626,8 @@ export const de: Widen<typeof ko> = {
     rangeLabel: "Zeitraum",
     level: { red: "Teuer", yellow: "Mittel", green: "Lohnt sich" },
     checkInBasis: "Letzter Check-in:",
+    trialUsage: (time) =>
+      `Du hast es in den letzten 30 Tagen ${time} auf diesem Handy genutzt. Zeit auf TV oder PC fehlt.`,
     checkInBasisNote:
       "Bei Abos, die in der App und im Web unterschiedlich gemessen werden, richtet sich die Farbe nach dem letzten Check-in.",
     per: { uses: "pro Nutzung", days: "pro Tag", hours: "pro Stunde" },
@@ -703,6 +718,8 @@ export const pt: Widen<typeof ko> = {
     rangeLabel: "Período",
     level: { red: "Caro", yellow: "Mais ou menos", green: "Vale a pena" },
     checkInBasis: "Último check-in:",
+    trialUsage: (time) =>
+      `Você usou ${time} neste celular nos últimos 30 dias. O tempo na TV ou no PC não está incluído.`,
     checkInBasisNote:
       "Nas assinaturas medidas de forma diferente no app e na web, a cor segue o último check-in.",
     per: { uses: "por uso", days: "por dia", hours: "por hora" },

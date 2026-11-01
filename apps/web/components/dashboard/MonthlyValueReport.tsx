@@ -1,7 +1,13 @@
 "use client";
 
 import React from "react";
-import { Subscription, UsageLog, getMonthlyValueSummary, formatKRW } from "@subslash/shared";
+import {
+  isInTrial,
+  Subscription,
+  UsageLog,
+  getMonthlyValueSummary,
+  formatKRW,
+} from "@subslash/shared";
 import { useT, useServiceNames } from "@lib/i18n";
 import {
   describeWastedItem,
@@ -105,10 +111,11 @@ export function MonthlyValueReport({
                     {names.sub(item.sub)}
                   </span>
                   <button
+                    disabled={isInTrial(item.sub)}
                     onClick={() => onCheckIn(item.sub.id)}
                     className="shrink-0 text-[10px] bg-secondary px-2 py-0.5 rounded-full hover:bg-secondary/80 transition-colors"
                   >
-                    {r.needsCheckIn}
+                    {isInTrial(item.sub) ? t.checkin.trial.button : r.needsCheckIn}
                   </button>
                 </div>
               ))}

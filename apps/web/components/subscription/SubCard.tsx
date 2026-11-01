@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
+  isInTrial,
   Subscription,
   formatCurrency,
   formatKRW,
@@ -192,8 +193,13 @@ export function SubCard({
                 </div>
               ) : (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => onCheckIn?.(subscription.id)}>
-                    {c.checkIn}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isInTrial(subscription)}
+                    onClick={() => onCheckIn?.(subscription.id)}
+                  >
+                    {isInTrial(subscription) ? t.checkin.trial.button : c.checkIn}
                   </Button>
                   <Button variant="destructive" size="sm" onClick={() => onKill?.(subscription.id)}>
                     {c.kill}
