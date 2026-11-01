@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
+import { useEscapeKey } from "@hooks/useEscapeKey";
 import type { AppSubsSort } from "@lib/subs-order";
 import { useT } from "@lib/i18n";
 import { cn } from "@lib/utils";
@@ -26,14 +27,7 @@ export function AppSortSelect({
   const t = useT().subs.sort;
   const SORT_KEYS: AppSubsSort[] = ["billing", "amount", "value"];
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
+  useEscapeKey(open, () => setOpen(false));
 
   return (
     <div className="flex items-center justify-between px-0.5 text-xs">
