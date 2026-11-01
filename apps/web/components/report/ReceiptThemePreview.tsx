@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import type { Receipt } from "@subslash/shared";
 import { useLatestT, useLocale, useT } from "@lib/i18n";
 import { renderReceiptImage } from "@lib/receipt-image";
-import { formatReceiptPeriodText } from "@lib/receipt-view";
+import { formatReceiptPeriodText, type ReceiptRenderOptions } from "@lib/receipt-view";
 import { RECEIPT_THEMES, type ReceiptTheme } from "@lib/receipt-theme";
 import { Spinner } from "@components/ui/spinner";
 import { cn } from "@lib/utils";
@@ -43,6 +43,9 @@ export function ReceiptThemePicker({
   );
 }
 
+/** 기본값을 매번 새로 만들면 그림을 다시 그리는 effect가 렌더마다 돈다. */
+const NO_OPTIONS: ReceiptRenderOptions = {};
+
 /** 고르는 칸의 색 점 — 각 디자인의 종이와 배경. */
 const SWATCH: Record<ReceiptTheme, string> = {
   classic: "bg-[#fbfaf7] ring-1 ring-zinc-300",
@@ -60,51 +63,59 @@ export function ReceiptThemePreview({
   receipt,
   issuedAt,
   theme,
+  render = NO_OPTIONS,
 }: {
   receipt: Receipt;
   issuedAt: Date;
   theme: ReceiptTheme;
+  /** 공유 링크로 받은 영수증이면 그림 안에도 '확인되지 않은 내용'·가린 줄의 요약을 그린다. */
+  render?: ReceiptRenderOptions;
 }) {
   const t = useT();
   const tRef = useLatestT();
   const locale = useLocale();
-  // 그린 결과는 어느 디자인의 것인지와 함께 둔다 — 디자인을 바꾸면 다른 디자인의 그림·실패를 보이지 않는다.
-  const [image, setImage] = useState<{ theme: ReceiptTheme; url: string | null } | null>(null);
+  // 그린 결과는 어느 디자인·영수증의 것인지와 함께 둔다 — 디자인이나 달을 바꾸면 다시 그리는 동안 다른 디자인·달의
+  // 그림을 보이지 않는다(9월로 넘긴 뒤 1초쯤 '9월' 아래에 10월 그림이 남아 있었다).
+  const [image, setImage] = useState<{
+    theme: ReceiptTheme;
+    receipt: Receipt;
+    url: string | null;
+  } | null>(null);
 
   useEffect(() => {
     if (theme === "classic") return;
     let url: string | null = null;
     let cancelled = false;
-    renderReceiptImage(receipt, issuedAt, tRef.current, theme)
+    renderReceiptImage(receipt, issuedAt, tRef.current, theme, render)
       .then((blob) => {
         if (cancelled) return;
         url = URL.createObjectURL(blob);
-        setImage({ theme, url });
+        setImage({ theme, receipt, url });
       })
       .catch(() => {
-        if (!cancelled) setImage({ theme, url: null });
+        if (!cancelled) setImage({ theme, receipt, url: null });
       });
     return () => {
       cancelled = true;
       if (url) URL.revokeObjectURL(url);
     };
     // locale: 언어를 바꾸면 그림의 문구도 다시 그린다.
-  }, [receipt, issuedAt, theme, tRef, locale]);
+  }, [receipt, issuedAt, theme, tRef, locale, render]);
 
   if (theme === "classic") {
     return (
       <div className="drop-shadow-md">
-        <ReceiptPaper receipt={receipt} issuedAt={issuedAt} />
+        <ReceiptPaper receipt={receipt} issuedAt={issuedAt} render={render} />
       </div>
     );
   }
-  const current = image?.theme === theme ? image : null;
+  const current = image?.theme === theme && image.receipt === receipt ? image : null;
   const ready = current?.url ?? null;
   const failed = current !== null && current.url === null;
   return (
     <div>
       <div className="sr-only">
-        <ReceiptPaper receipt={receipt} issuedAt={issuedAt} />
+        <ReceiptPaper receipt={receipt} issuedAt={issuedAt} render={render} />
       </div>
       {ready ? (
         // eslint-disable-next-line @next/next/no-img-element -- 기기에서 그린 그림(blob:)이라 next/image로 줄일 것이 없다.

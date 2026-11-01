@@ -11,6 +11,7 @@ import { SampleChargeCard } from "./SampleChargeCard";
 import { SAMPLES, SAMPLE_TOTAL } from "./samples";
 import { useLocale, useT } from "@lib/i18n";
 import { landingScreen } from "./screens";
+import { PLAY_STORE_URL } from "@lib/play-store";
 
 /**
  * 첫 화면(소개)의 칸들. 내려 읽으며 무엇을 하는 서비스인지만 알리고, 쓰는 것은 대시보드로 넘긴다. 모양은
@@ -18,8 +19,8 @@ import { landingScreen } from "./screens";
  * 푸터는 앱 공통 헤더·푸터가 맡는다.
  *
  * 문장은 앱이 실제로 하는 일만 적는다(CLAUDE.md '제1원칙'). 화면 캡처는 샘플 데이터로 찍은 앱 화면이고,
- * 그렇게 밝혀 둔다. 앱은 아직 비공개 테스트라 받을 곳이 없으므로 '준비 중'으로 두고 링크를 만들지 않는다 —
- * 받을 수 없는 스토어 주소를 걸면 눌러 본 사람이 막힌다.
+ * 그렇게 밝혀 둔다. 앱 받기는 Google Play의 스토어 페이지로 간다 — 비공개 테스트 동안에는 받을 곳이 없어
+ * 누를 수 없는 '준비 중' 표시였다.
  *
  * 움직임은 모두 CSS다(globals.css의 `opening-*`·`scroll-reveal`·`landing-parallax-*`·`cta-slash`). 브라우저가
  * 스크롤 애니메이션을 모르거나 사용자가 움직임 줄이기를 켰으면 처음부터 보인다 — 글이 숨은 채로 남지 않게.
@@ -33,19 +34,23 @@ const lead =
 const primaryButton =
   "whitespace-nowrap rounded-xl bg-primary px-7 py-4 text-base font-semibold text-primary-foreground transition hover:-translate-y-0.5 hover:bg-primary/90 motion-reduce:hover:translate-y-0";
 
-/** 앱 받기 자리. 공개 출시 전에는 누를 수 없는 '준비 중' 표시로 둔다. */
-export function AppDownloadPending({ className }: { className?: string }) {
+/** 앱 받기. 이 화면은 웹에만 있으므로(앱은 `/`를 열면 대시보드로 간다) 새 탭으로 스토어를 연다. */
+export function AppDownloadLink({ className }: { className?: string }) {
   const t = useT();
   return (
-    <span
+    <a
+      href={PLAY_STORE_URL}
+      target="_blank"
+      rel="noopener noreferrer"
       className={cn(
-        "inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-dashed px-[1.375rem] py-[0.9375rem] text-[15px] font-medium text-muted-foreground",
+        // 프랑스어처럼 문구가 길면 줄을 바꾼다 — 한 줄로 두면 휴대폰 폭보다 넓어져 페이지가 옆으로 밀렸다.
+        "inline-flex max-w-full items-center justify-center gap-1.5 text-center rounded-xl border bg-card px-[1.375rem] py-[0.9375rem] text-[15px] font-semibold transition hover:-translate-y-0.5 hover:bg-muted motion-reduce:hover:translate-y-0",
         className,
       )}
     >
-      <Smartphone className="size-4" aria-hidden />
-      {t.landing.appPending}
-    </span>
+      <Smartphone className="size-4 shrink-0" aria-hidden />
+      {t.landing.appDownload}
+    </a>
   );
 }
 
@@ -61,10 +66,16 @@ const heroDelay = (i: number) => ({ "--hero-delay": `${80 + i * 110}ms` }) as Re
  */
 export function LandingOpening({
   activeCount,
+  signedIn = false,
   onDemo,
 }: {
   /** 구독 중인 구독 수. 0이면 처음 온 사람으로 본다. */
   activeCount: number;
+  /**
+   * 로그인했는지. 로그인했으면 '가입 없이 이 브라우저에 저장돼요'를 쓰지 않는다 — 기록은 계정과 맞춰지고, 기기마다
+   * 동기화를 끌 수 있어 '계정에 저장돼요'라고 단정할 수도 없으니 그 줄을 두지 않는다.
+   */
+  signedIn?: boolean;
   onDemo: () => void;
 }) {
   const t = useT();
@@ -139,10 +150,12 @@ export function LandingOpening({
               {o.demo}
             </button>
           </div>
-          <AppDownloadPending className="hero-in mt-3" />
-          <p className="hero-in mt-4 text-sm text-muted-foreground" style={heroDelay(5)}>
-            {o.noSignup}
-          </p>
+          <AppDownloadLink className="hero-in mt-3" />
+          {!signedIn && (
+            <p className="hero-in mt-4 text-sm text-muted-foreground" style={heroDelay(5)}>
+              {o.noSignup}
+            </p>
+          )}
         </div>
       </div>
     </section>
@@ -366,7 +379,7 @@ export function LandingFinalCta() {
           <Link href="/dashboard" className={primaryButton}>
             {c.start}
           </Link>
-          <AppDownloadPending />
+          <AppDownloadLink />
         </div>
       </div>
     </section>

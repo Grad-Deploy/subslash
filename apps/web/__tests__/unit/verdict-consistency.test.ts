@@ -139,7 +139,7 @@ describe("5대 가치 지표 판정 일관성 및 불변식 (verdict-consistency
       ];
 
       for (const [days, expected] of goldenDays) {
-        expect(metricRiskLevel("days", 12000, days, "KRW"), `days=${days}`).toBe(expected);
+        expect(metricRiskLevel("days", 12000, days), `days=${days}`).toBe(expected);
       }
     });
 
@@ -154,7 +154,7 @@ describe("5대 가치 지표 판정 일관성 및 불변식 (verdict-consistency
       ];
 
       for (const [hours, expected] of goldenHours) {
-        expect(metricRiskLevel("hours", 12000, hours, "KRW"), `hours=${hours}`).toBe(expected);
+        expect(metricRiskLevel("hours", 12000, hours), `hours=${hours}`).toBe(expected);
       }
     });
 
@@ -174,8 +174,7 @@ describe("5대 가치 지표 판정 일관성 및 불변식 (verdict-consistency
         );
       }
 
-      // breakEvenTarget을 8로 넘기더라도 dangerBelowPercent를 생략하면 기본 규칙(2회 미만 danger)을 따른다.
-      // (만약 기본 danger 규칙을 50% 고정으로 되돌리면 2·3회가 danger가 되어 이 단언이 실패한다)
+      // breakEvenTarget을 8로 넘기더라도 기본 규칙(2회 미만 danger)을 따른다.
       expect(getBreakEvenInfo(12000, 1, 8).level).toBe("danger");
       expect(getBreakEvenInfo(12000, 2, 8).level).toBe("warning");
       expect(getBreakEvenInfo(12000, 3, 8).level).toBe("warning");
@@ -195,7 +194,7 @@ describe("5대 가치 지표 판정 일관성 및 불변식 (verdict-consistency
       for (const monthly of MONTHLY_AMOUNTS) {
         let prevOrder = -1;
         for (let days = 0; days <= 30; days += 1) {
-          const risk = metricRiskLevel("days", monthly, days, "KRW");
+          const risk = metricRiskLevel("days", monthly, days);
           const order = RISK_ORDER[risk];
           expect(order, `days=${days}, monthly=${monthly}`).toBeGreaterThanOrEqual(prevOrder);
           prevOrder = order;
@@ -215,7 +214,7 @@ describe("5대 가치 지표 판정 일관성 및 불변식 (verdict-consistency
       for (const monthly of MONTHLY_AMOUNTS) {
         let prevOrder = -1;
         for (let hours = 0; hours <= 40; hours += 1) {
-          const risk = metricRiskLevel("hours", monthly, hours, "KRW");
+          const risk = metricRiskLevel("hours", monthly, hours);
           const order = RISK_ORDER[risk];
           expect(order, `hours=${hours}, monthly=${monthly}`).toBeGreaterThanOrEqual(prevOrder);
           prevOrder = order;
@@ -269,7 +268,7 @@ describe("5대 가치 지표 판정 일관성 및 불변식 (verdict-consistency
         const step = monthly === 1000 ? 50 : 500;
         let prevOrder = -1;
         for (let benefit = 0; benefit <= monthly * 2; benefit += step) {
-          const risk = metricRiskLevel("benefit", monthly, benefit, "KRW");
+          const risk = metricRiskLevel("benefit", monthly, benefit);
           const order = RISK_ORDER[risk];
           expect(
             order,
@@ -289,35 +288,27 @@ describe("5대 가치 지표 판정 일관성 및 불변식 (verdict-consistency
       }
 
       // 리터럴 경계 정밀 확인 (1000원: 499 red / 500 yellow / 999 yellow / 1000 green, 12000원: 5999 red / 6000 yellow / 11999 yellow / 12000 green)
-      expect(metricRiskLevel("benefit", 1000, 499, "KRW")).toBe("red");
-      expect(metricRiskLevel("benefit", 1000, 500, "KRW")).toBe("yellow");
-      expect(metricRiskLevel("benefit", 1000, 999, "KRW")).toBe("yellow");
-      expect(metricRiskLevel("benefit", 1000, 1000, "KRW")).toBe("green");
+      expect(metricRiskLevel("benefit", 1000, 499)).toBe("red");
+      expect(metricRiskLevel("benefit", 1000, 500)).toBe("yellow");
+      expect(metricRiskLevel("benefit", 1000, 999)).toBe("yellow");
+      expect(metricRiskLevel("benefit", 1000, 1000)).toBe("green");
 
-      expect(metricRiskLevel("benefit", 12000, 5999, "KRW")).toBe("red");
-      expect(metricRiskLevel("benefit", 12000, 6000, "KRW")).toBe("yellow");
-      expect(metricRiskLevel("benefit", 12000, 11999, "KRW")).toBe("yellow");
-      expect(metricRiskLevel("benefit", 12000, 12000, "KRW")).toBe("green");
+      expect(metricRiskLevel("benefit", 12000, 5999)).toBe("red");
+      expect(metricRiskLevel("benefit", 12000, 6000)).toBe("yellow");
+      expect(metricRiskLevel("benefit", 12000, 11999)).toBe("yellow");
+      expect(metricRiskLevel("benefit", 12000, 12000)).toBe("green");
 
       // 월 회비 0원이면 혜택 금액과 무관하게 항상 green
       for (const benefit of [0, 100, 5000, 20000]) {
-        expect(metricRiskLevel("benefit", 0, benefit, "KRW")).toBe("green");
+        expect(metricRiskLevel("benefit", 0, benefit)).toBe("green");
       }
-    });
-
-    it("benefit 비원화(USD): 월 10 USD·혜택 8000원일 때 원화(13500원)로 환산해 비교한 yellow가 나온다 (KRW 오인 시 green이 나오는 회귀 방지)", () => {
-      // 10 USD = 13,500 KRW (기본 환율 1350). 8000 / 13500 ≈ 0.5926 -> 0.5 이상 1.0 미만이므로 yellow
-      // 만약 원화 환산 없이 8000 / 10 = 800으로 계산하면 green이 나와 실패한다.
-      expect(metricRiskLevel("benefit", 10, 8000, "USD")).toBe("yellow");
-      expect(metricRiskLevel("benefit", 10, 6000, "USD")).toBe("red");
-      expect(metricRiskLevel("benefit", 10, 13500, "USD")).toBe("green");
     });
 
     it("days 보정: freeTier='enough'는 green만 yellow로 내리고, apiValueRatio >= 1은 0~2일도 green으로 올리되 freeTier='enough'와 함께 오면 yellow가 된다", () => {
       for (let days = 0; days <= 30; days += 1) {
-        const base = metricRiskLevel("days", 20000, days, "KRW");
-        const withEnough = metricRiskLevel("days", 20000, days, "KRW", null, "enough");
-        const withNeeded = metricRiskLevel("days", 20000, days, "KRW", null, "needed");
+        const base = metricRiskLevel("days", 20000, days);
+        const withEnough = metricRiskLevel("days", 20000, days, null, "enough");
+        const withNeeded = metricRiskLevel("days", 20000, days, null, "needed");
 
         // freeTier="needed"는 기본 판정과 완전히 같다
         expect(withNeeded, `days=${days} needed`).toBe(base);
@@ -332,11 +323,11 @@ describe("5대 가치 지표 판정 일관성 및 불변식 (verdict-consistency
         // apiValueRatio >= 1이면 일수가 0~2일(red)이어도 green이 되고, freeTier="enough"와 함께 오면 yellow가 된다
         for (const ratio of [1, 1.5, 3]) {
           expect(
-            metricRiskLevel("days", 20000, days, "KRW", null, null, ratio),
+            metricRiskLevel("days", 20000, days, null, null, ratio),
             `days=${days}, ratio=${ratio}`,
           ).toBe("green");
           expect(
-            metricRiskLevel("days", 20000, days, "KRW", null, "enough", ratio),
+            metricRiskLevel("days", 20000, days, null, "enough", ratio),
             `days=${days}, enough, ratio=${ratio}`,
           ).toBe("yellow");
         }
@@ -344,7 +335,7 @@ describe("5대 가치 지표 판정 일관성 및 불변식 (verdict-consistency
         // apiValueRatio < 1이면 일수 기준(base) 그대로다
         for (const ratio of [0, 0.5, 0.99]) {
           expect(
-            metricRiskLevel("days", 20000, days, "KRW", null, null, ratio),
+            metricRiskLevel("days", 20000, days, null, null, ratio),
             `days=${days}, ratio=${ratio}`,
           ).toBe(base);
         }
@@ -368,19 +359,19 @@ describe("5대 가치 지표 판정 일관성 및 불변식 (verdict-consistency
       };
 
       // quantity === 0은 storageFit 유무와 상관없이 항상 red
-      expect(metricRiskLevel("storage", 14000, 0, "KRW")).toBe("red");
-      expect(metricRiskLevel("storage", 14000, 0, "KRW", fitWithSmaller)).toBe("red");
-      expect(metricRiskLevel("storage", 14000, 0, "KRW", fitWithoutSmaller)).toBe("red");
+      expect(metricRiskLevel("storage", 14000, 0)).toBe("red");
+      expect(metricRiskLevel("storage", 14000, 0, fitWithSmaller)).toBe("red");
+      expect(metricRiskLevel("storage", 14000, 0, fitWithoutSmaller)).toBe("red");
 
       // 요금제를 모를 때(storageFit = null): 49%는 yellow, 50%는 green
-      expect(metricRiskLevel("storage", 14000, 49, "KRW", null)).toBe("yellow");
-      expect(metricRiskLevel("storage", 14000, 50, "KRW", null)).toBe("green");
+      expect(metricRiskLevel("storage", 14000, 49, null)).toBe("yellow");
+      expect(metricRiskLevel("storage", 14000, 50, null)).toBe("green");
 
       // 요금제를 알 때(storageFit): smaller가 있으면 yellow(50% 이상이어도), 없으면 green(50% 미만인 40%여도)
-      expect(metricRiskLevel("storage", 14000, 5, "KRW", fitWithSmaller)).toBe("yellow");
-      expect(metricRiskLevel("storage", 14000, 60, "KRW", fitWithSmaller)).toBe("yellow");
-      expect(metricRiskLevel("storage", 14000, 40, "KRW", fitWithoutSmaller)).toBe("green");
-      expect(metricRiskLevel("storage", 14000, 80, "KRW", fitWithoutSmaller)).toBe("green");
+      expect(metricRiskLevel("storage", 14000, 5, fitWithSmaller)).toBe("yellow");
+      expect(metricRiskLevel("storage", 14000, 60, fitWithSmaller)).toBe("yellow");
+      expect(metricRiskLevel("storage", 14000, 40, fitWithoutSmaller)).toBe("green");
+      expect(metricRiskLevel("storage", 14000, 80, fitWithoutSmaller)).toBe("green");
     });
   });
 });

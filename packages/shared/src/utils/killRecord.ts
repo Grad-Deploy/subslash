@@ -1,6 +1,6 @@
 import type { Subscription } from "../types";
 import { formatAmount } from "./currency";
-import { formatDotDate } from "./date";
+import { formatDotDate, parseTimestamp } from "./date";
 
 /**
  * 해지한 뒤의 기록 — 다시 살펴볼 날(`resubscribeRemindOn`)과 해지 근거(`killEvidence`).
@@ -55,9 +55,8 @@ export function formatRefundRequest(
 ): string | null {
   if (sub.status !== "killed" || !sub.chargedAfterKillAt) return null;
 
-  const killed = sub.killedAt ? new Date(sub.killedAt) : null;
-  const killedText =
-    killed && !Number.isNaN(killed.getTime()) ? `${formatDotDate(killed)}에 ` : "앞서 ";
+  const killed = parseTimestamp(sub.killedAt);
+  const killedText = killed ? `${formatDotDate(killed)}에 ` : "앞서 ";
   const reference = sub.killEvidence?.reference?.trim();
   const amount =
     typeof sub.chargedAfterKillAmount === "number"

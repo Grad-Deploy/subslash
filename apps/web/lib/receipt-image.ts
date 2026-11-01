@@ -3,9 +3,13 @@ import type { Messages } from "@lib/i18n/messages";
 import {
   describeReceiptLine,
   formatReceiptPeriodText,
+  receiptEmptyText,
   receiptFootnotes,
+  receiptTotalLabel,
+  receiptTotalText,
   receiptNumber,
   receiptPeriodSuffix,
+  type ReceiptRenderOptions,
 } from "./receipt-view";
 import { receiptArt } from "./receipt-art";
 import { fit, wrap } from "./receipt-canvas";
@@ -51,12 +55,20 @@ export async function renderReceiptImage(
   issuedAt: Date,
   t: Messages,
   theme: ReceiptTheme = "classic",
+  options: ReceiptRenderOptions = {},
 ): Promise<Blob> {
-  if (theme !== "classic") return renderThemedReceipt(theme, receiptArt(t, receipt, issuedAt), t);
-  return renderClassic(receipt, issuedAt, t);
+  if (theme !== "classic") {
+    return renderThemedReceipt(theme, receiptArt(t, receipt, issuedAt, options), t);
+  }
+  return renderClassic(receipt, issuedAt, t, options);
 }
 
-async function renderClassic(receipt: Receipt, issuedAt: Date, t: Messages): Promise<Blob> {
+async function renderClassic(
+  receipt: Receipt,
+  issuedAt: Date,
+  t: Messages,
+  options: ReceiptRenderOptions,
+): Promise<Blob> {
   const v = t.receiptView;
   // 글꼴이 늦게 오면 대체 글꼴로 그려진다. 이미 받아 둔 글꼴만 기다린다.
   await document.fonts?.ready;
@@ -134,14 +146,23 @@ async function renderClassic(receipt: Receipt, issuedAt: Date, t: Messages): Pro
 
   // 줄
   if (receipt.lines.length === 0) {
-    text(v.empty, { size: 14, color: MUTED, align: "center" });
-    y += 22;
+    // 모르는 영수증의 설명은 길어서 줄을 나눈다.
+    measure.font = font(14);
+    for (const part of wrap(measure, receiptEmptyText(t, receipt, options), inner)) {
+      text(part, { size: 14, color: MUTED, align: "center" });
+      y += 20;
+    }
+    y += 2;
   }
   for (const line of receipt.lines) {
     // 이름과 그 아래 설명은 붙여 쓰고, 다음 구독과는 띄운다.
     row(line.name, formatKRW(line.amountKRW), 15, 600, INK, 18);
     measure.font = font(11);
-    for (const detail of wrap(measure, describeReceiptLine(t, line, receipt.period), inner)) {
+    for (const detail of wrap(
+      measure,
+      describeReceiptLine(t, line, receipt.period, options),
+      inner,
+    )) {
       text(detail, { size: 11, color: MUTED });
       y += 15;
     }
@@ -150,7 +171,7 @@ async function renderClassic(receipt: Receipt, issuedAt: Date, t: Messages): Pro
   dashed();
 
   // 합계
-  row(v.total(receipt.chargeCount), formatKRW(receipt.totalKRW), 18, 800);
+  row(receiptTotalLabel(t, receipt, options), receiptTotalText(t, receipt), 18, 800);
   if (receipt.billedTotalKRW !== receipt.totalKRW) {
     row(v.billed, formatKRW(receipt.billedTotalKRW), 12, 400, MUTED);
   }
@@ -181,7 +202,7 @@ async function renderClassic(receipt: Receipt, issuedAt: Date, t: Messages): Pro
 
   // 알림
   measure.font = font(10);
-  for (const note of receiptFootnotes(t, receipt)) {
+  for (const note of receiptFootnotes(t, receipt, options)) {
     for (const detail of wrap(measure, `· ${note}`, inner)) {
       text(detail, { size: 10, color: MUTED });
       y += 14;

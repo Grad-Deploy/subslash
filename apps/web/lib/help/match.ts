@@ -39,12 +39,22 @@ const STOP = new Set([
   "in",
 ]);
 
+/**
+ * 낱말 끝의 '하다' 어미. 떼지 않으면 어미끼리 겹친다 — "해지하려면 어떻게 해요"가 '하려면'이 같은 "탈퇴하려면 어떻게
+ * 하나요"를 맨 위에 두고 해지 질문들을 뒤로 밀었다. 뗀 뒤 두 글자 이상 남을 때만 뗀다.
+ */
+const VERB_ENDING = /(?:하려면|하려고|하면|할래|하고)$/;
+
 function bigrams(text: string): Set<string> {
   const words = text
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .split(/\s+/)
-    .filter((word) => word && !STOP.has(word));
+    .filter((word) => word && !STOP.has(word))
+    .map((word) => {
+      const stem = word.replace(VERB_ENDING, "");
+      return stem.length >= 2 ? stem : word;
+    });
   const out = new Set<string>();
   for (const word of words) {
     if (word.length === 1) out.add(word);

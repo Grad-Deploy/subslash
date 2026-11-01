@@ -229,7 +229,7 @@ export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {
       have,
       goal: GOOD_AT.uses,
       // 연 적이 없으면(perOpenKRW null) subUsage가 색을 매기지 않는다 — 0회는 비쌈이다.
-      ...verdict(have, usage.level ?? "red", metricRiskLevel("uses", monthlyKRW, have, "KRW")),
+      ...verdict(have, usage.level ?? "red", metricRiskLevel("uses", monthlyKRW, have)),
     };
   }
   if (metric === "days") {
@@ -246,8 +246,8 @@ export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {
       goal: GOOD_AT.days,
       ...verdict(
         have,
-        metricRiskLevel("days", monthlyKRW, Math.round(per30), "KRW", null, freeTier),
-        metricRiskLevel("days", monthlyKRW, have, "KRW", null, freeTier),
+        metricRiskLevel("days", monthlyKRW, Math.round(per30), null, freeTier),
+        metricRiskLevel("days", monthlyKRW, have, null, freeTier),
       ),
     };
   }
@@ -262,8 +262,8 @@ export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {
     goal: GOOD_AT.hours,
     ...verdict(
       have,
-      metricRiskLevel("hours", monthlyKRW, have * scale, "KRW"),
-      metricRiskLevel("hours", monthlyKRW, have, "KRW"),
+      metricRiskLevel("hours", monthlyKRW, have * scale),
+      metricRiskLevel("hours", monthlyKRW, have),
     ),
   };
 }

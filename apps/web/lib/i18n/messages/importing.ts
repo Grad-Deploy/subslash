@@ -28,6 +28,7 @@ export const ko = {
     row: {
       naver: "네이버",
       canceledBadge: "해지 완료 메일 감지 (비활성)",
+      trackedBadge: "이미 등록한 구독",
       recentBadge: "최근 결제 확인 (활성)",
       staleBadge: "마지막 결제 메일이 오래됨 (확인 필요)",
       canceledCycle: "해지 완료됨",
@@ -285,7 +286,6 @@ export const ko = {
       webAddress: "웹 주소",
       understood: "알겠어요",
       stayPhone: "그래도 폰에서 할게요",
-      dateFormat: "ko-KR",
       close: "닫기",
     },
     flow: {
@@ -327,6 +327,7 @@ export const en: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "Cancellation email found (inactive)",
+      trackedBadge: "Already in your list",
       recentBadge: "Recent payment confirmed (active)",
       staleBadge: "Last payment email is old (needs checking)",
       canceledCycle: "Cancelled",
@@ -598,7 +599,6 @@ export const en: Widen<typeof ko> = {
       webAddress: "Web address",
       understood: "Got it",
       stayPhone: "I'll do it on my phone anyway",
-      dateFormat: "en-US",
       close: "Close",
     },
     flow: {
@@ -638,6 +638,7 @@ export const zh: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "发现退订邮件（未订阅）",
+      trackedBadge: "已在列表中",
       recentBadge: "已确认最近付款（订阅中）",
       staleBadge: "最后的付款邮件较旧（需确认）",
       canceledCycle: "已退订",
@@ -879,7 +880,6 @@ export const zh: Widen<typeof ko> = {
       webAddress: "网页地址",
       understood: "知道了",
       stayPhone: "还是在手机上做",
-      dateFormat: "zh-CN",
       close: "关闭",
     },
     flow: {
@@ -918,6 +918,7 @@ export const ja: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "解約メールあり（購読していない）",
+      trackedBadge: "登録済み",
       recentBadge: "最近の支払いを確認（購読中）",
       staleBadge: "最後の支払いメールが古い（確認が必要）",
       canceledCycle: "解約済み",
@@ -1179,7 +1180,6 @@ export const ja: Widen<typeof ko> = {
       webAddress: "ウェブのアドレス",
       understood: "わかりました",
       stayPhone: "それでもスマホでやる",
-      dateFormat: "ja-JP",
       close: "閉じる",
     },
     flow: {
@@ -1219,6 +1219,7 @@ export const vi: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "Có email hủy (không đăng ký)",
+      trackedBadge: "Đã có trong danh sách",
       recentBadge: "Đã xác nhận thanh toán gần đây (đang đăng ký)",
       staleBadge: "Email thanh toán cuối đã cũ (cần kiểm tra)",
       canceledCycle: "Đã hủy",
@@ -1480,7 +1481,6 @@ export const vi: Widen<typeof ko> = {
       webAddress: "Địa chỉ web",
       understood: "Đã hiểu",
       stayPhone: "Tôi vẫn làm trên điện thoại",
-      dateFormat: "vi-VN",
       close: "Đóng",
     },
     flow: {
@@ -1522,6 +1522,7 @@ export const fr: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "E-mail de résiliation trouvé (inactif)",
+      trackedBadge: "Déjà dans votre liste",
       recentBadge: "Paiement récent confirmé (actif)",
       staleBadge: "Dernier e-mail de paiement ancien (à vérifier)",
       canceledCycle: "Résilié",
@@ -1802,7 +1803,6 @@ export const fr: Widen<typeof ko> = {
       webAddress: "Adresse web",
       understood: "Compris",
       stayPhone: "Je le fais quand même sur mon téléphone",
-      dateFormat: "fr-FR",
       close: "Fermer",
     },
     flow: {
@@ -1843,6 +1843,7 @@ export const es: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "Correo de cancelación encontrado (inactiva)",
+      trackedBadge: "Ya está en tu lista",
       recentBadge: "Pago reciente confirmado (activa)",
       staleBadge: "Último correo de pago antiguo (revisar)",
       canceledCycle: "Cancelada",
@@ -2109,7 +2110,6 @@ export const es: Widen<typeof ko> = {
       webAddress: "Dirección web",
       understood: "Entendido",
       stayPhone: "Lo haré en el móvil igualmente",
-      dateFormat: "es-ES",
       close: "Cerrar",
     },
     flow: {
@@ -2150,6 +2150,7 @@ export const de: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "Kündigungs-E-Mail gefunden (inaktiv)",
+      trackedBadge: "Bereits in deiner Liste",
       recentBadge: "Aktuelle Zahlung bestätigt (aktiv)",
       staleBadge: "Letzte Zahlungs-E-Mail ist alt (prüfen)",
       canceledCycle: "Gekündigt",
@@ -2423,7 +2424,6 @@ export const de: Widen<typeof ko> = {
       webAddress: "Web-Adresse",
       understood: "Verstanden",
       stayPhone: "Ich mache es trotzdem am Handy",
-      dateFormat: "de-DE",
       close: "Schließen",
     },
     flow: {
@@ -2464,6 +2464,7 @@ export const pt: Widen<typeof ko> = {
     row: {
       naver: "Naver",
       canceledBadge: "E-mail de cancelamento encontrado (inativa)",
+      trackedBadge: "Já está na sua lista",
       recentBadge: "Pagamento recente confirmado (ativa)",
       staleBadge: "Último e-mail de pagamento antigo (conferir)",
       canceledCycle: "Cancelada",
@@ -2732,7 +2733,6 @@ export const pt: Widen<typeof ko> = {
       webAddress: "Endereço web",
       understood: "Entendi",
       stayPhone: "Vou fazer no celular mesmo assim",
-      dateFormat: "pt-BR",
       close: "Fechar",
     },
     flow: {

@@ -6,6 +6,7 @@ import { MIN_AGE } from "@subslash/shared";
 import { Button } from "@components/ui/button";
 import { enterAfterLogin } from "@hooks/useAuth";
 import { apiFetch, apiUrl } from "@lib/api";
+import { toBase64Url } from "@lib/bytes";
 import { appReturnScheme, leaveForExternal } from "@lib/native";
 import { claimPendingLogin, clearPendingLogin, savePendingLogin } from "@lib/app-oauth";
 import { isKakaoNativeAvailable, kakaoNativeLogin } from "@lib/kakao-native";
@@ -68,17 +69,11 @@ export const PROVIDER_LOOK: Record<
   },
 };
 
-function base64url(bytes: Uint8Array): string {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
 /** 앱 넘겨받기용 비밀값과 그 해시(서버의 s256과 같은 계산). */
 async function makeVerifier(): Promise<{ verifier: string; challenge: string }> {
-  const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
+  const verifier = toBase64Url(crypto.getRandomValues(new Uint8Array(32)));
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
-  return { verifier, challenge: base64url(new Uint8Array(digest)) };
+  return { verifier, challenge: toBase64Url(new Uint8Array(digest)) };
 }
 
 /**

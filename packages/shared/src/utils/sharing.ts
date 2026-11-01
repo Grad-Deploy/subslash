@@ -1,5 +1,6 @@
 import { BillingCycle, Currency } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
+import { daysInMonth, parseTimestamp } from "./date";
 import { rateForCharge, type RateOn } from "./historicalRate";
 import {
   formatAmount,
@@ -202,13 +203,12 @@ export function getMyMonthDefendedAmountKRW(
   }
 
   // 해당 월에 결제일이 며칠인지. 31일 결제인데 30일까지인 달이면 말일로 본다.
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const billingDay = Math.min(Math.max(1, sub.billingDay || 1), daysInMonth);
+  const billingDay = Math.min(Math.max(1, sub.billingDay || 1), daysInMonth(year, month - 1));
   const billingDate = new Date(year, month - 1, billingDay);
 
   if (sub.killedAt) {
-    const killDate = new Date(sub.killedAt);
-    if (Number.isNaN(killDate.getTime())) return null;
+    const killDate = parseTimestamp(sub.killedAt);
+    if (!killDate) return null;
     // 결제일이 지난 뒤에 해지했다면 이번 달 돈은 이미 나갔다. 비교는 시각이
     // 아니라 날짜 단위로 한다 — 결제일 당일 몇 시에 눌렀는지까지 따지면
     // 표준시가 다른 곳에서 하루가 밀려 방어액이 통째로 사라진다.

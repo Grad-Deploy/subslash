@@ -59,16 +59,14 @@ SubSlash는 구독 서비스의 특성에 따라 단순히 '금액'만으로 판
 
 - **적용 대상**: 쇼핑/배달/결제 멤버십(쿠팡 와우, 네이버플러스 멤버십, 배민클럽 등)
 - **계산 공식**:
-  $$\text{benefitRatio} = \frac{\text{quantity (환급·할인 총액, KRW)}}{\text{toKRW}(\text{monthlyShare}, \text{currency})}$$
+  $$\text{benefitRatio} = \frac{\text{quantity (환급·할인 총액, KRW)}}{\text{monthlyShare (KRW)}}$$
 - **판정 기준 (`metricRiskLevel: 'benefit'`, `VERDICT_THRESHOLDS.benefit`)**:
   - 🔴 **위험 (Red)**: `benefitRatio < 0.5` (`redBelowRatio`, 월 회비의 50%도 돌려받지 못함)
-  - 🟢 **잘 씀 (Green)**: `benefitRatio >= 1.0` (`greenAtRatio`) 또는 `monthlyKRW <= 0` (회비 이상의 혜택을 환급받아 이용 목표 달성)
+  - 🟢 **잘 씀 (Green)**: `benefitRatio >= 1.0` (`greenAtRatio`) 또는 `monthlyShare <= 0` (회비 이상의 혜택을 환급받아 이용 목표 달성)
   - 🟡 **주의 (Yellow)**: 50% 이상 ~ 100% 미만 환급
-- **예외 방어 및 저장 규칙**:
-  - `metricRiskLevel`은 `currency: Currency`를 기본값 없는 필수 인자로 받아, 비원화(USD) 금액을 넘기면서 통화를 생략해 달러가 원화로 계산되는 실수를 컴파일 타임에 차단합니다.
-  - 프로덕션의 정상 구독 흐름에서는 구독 통화가 `KRW`가 아닌 경우 `metricForSubscription`에서 `uses`로 폴백하므로 비원화 `benefit`에 도달하지 않습니다.
-  - 다만 `evaluateMetric("benefit", ...)`이나 `metricRiskLevel("benefit", ...)`이 직접 호출될 때(단위 테스트 등 방어용 경로)도 회비를 `toKRW(monthlyShare, currency)`로 환산해 `costPerUse`(원화 회비 ÷ 원화 혜택액, `quantity === 0`이면 원화 회비)와 `outcome.monthly`(`KRW`)를 저장합니다. 이를 통해 `checkInEvidence`의 `costPerUse × usageCount = 월 회비(KRW)` 복원 전제가 통화 혼합 없이 항상 성립합니다.
-  - 기존 기록 표시(`unitCostPart`, `shortUnitCost`)에서 구독 통화가 `KRW`가 아닌 경우 환급률 단가 문구를 생략(`null` / `"-"`)해 레거시 데이터와의 호환성을 지킵니다.
+- **예외 방어 및 원칙**:
+  - `benefit` 지표는 원화(KRW) 멤버십 전용 지표입니다. `metricForSubscription`은 프리셋 기반으로 비원화 구독에 `benefit`을 할당하지 않고 `uses`로 안전하게 폴백합니다.
+  - 임의 환율 상수(예: 1,350)에 의존한 비원화 환산은 수행하지 않으며, 원화 회비 대비 환급률을 직접 비교합니다.
 - **기본 원리**: 앱 방문 횟수와 상관없이, 실제로 절감한 배송비/적립금/할인 혜택이 월 회비를 넘어섰는지를 직접 비교합니다.
 
 ---

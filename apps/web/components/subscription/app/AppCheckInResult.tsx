@@ -6,10 +6,9 @@ import {
   type RiskLevel,
   type Subscription,
   GOOD_AT,
-  formatCurrency,
   getBreakEvenInfo,
   getMyMonthlyShareAmount,
-  spaceCurrencySymbol,
+  formatSpacedAmount,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useT } from "@lib/i18n";
@@ -60,8 +59,7 @@ export function AppCheckInResult({
   const toneLabel = { green: r.green, yellow: r.yellow, red: r.red }[result.riskLevel];
   const monthly = getMyMonthlyShareAmount(subscription);
   const hasCost = monthly > 0;
-  const money = (amount: number) =>
-    spaceCurrencySymbol(formatCurrency(amount, subscription.currency));
+  const money = (amount: number) => formatSpacedAmount(amount, subscription.currency);
   const breakEven = getBreakEvenInfo(monthly, count, GOOD_AT.uses);
   const progress = Math.min(100, breakEven.progressPercent);
   const remaining = Math.max(0, breakEven.breakEvenUsage - count);

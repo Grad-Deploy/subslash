@@ -1,11 +1,22 @@
-import { formatKRW, type Receipt, formatDotDate } from "@subslash/shared";
+import {
+  formatKRW,
+  type Receipt,
+  formatDotDate,
+  pad2,
+  receiptPeriodLastDay,
+} from "@subslash/shared";
 import type { Messages } from "@lib/i18n/messages";
 import {
   describeReceiptLine,
   formatReceiptPeriodText,
+  receiptCountText,
+  receiptEmptyText,
   receiptFootnotes,
+  receiptTotalLabel,
+  receiptTotalText,
   receiptNumber,
   receiptPeriodSuffix,
+  type ReceiptRenderOptions,
 } from "./receipt-view";
 
 /**
@@ -29,7 +40,8 @@ export interface ReceiptArt {
   total: string;
   /** "합계(내 몫) · 2건" */
   totalLabel: string;
-  count: number;
+  /** 탑승권의 '건수' 칸("3건"). 모르는 영수증이면 '모름'. */
+  countText: string;
   lines: { name: string; amount: string; meta: string }[];
   /** 결제된 구독이 없을 때의 한 줄. 있으면 null. */
   empty: string | null;
@@ -41,23 +53,25 @@ export interface ReceiptArt {
   to: string;
 }
 
-const pad = (n: number) => String(n).padStart(2, "0");
-
-export function receiptArt(t: Messages, receipt: Receipt, issuedAt: Date): ReceiptArt {
+export function receiptArt(
+  t: Messages,
+  receipt: Receipt,
+  issuedAt: Date,
+  options: ReceiptRenderOptions = {},
+): ReceiptArt {
   const v = t.receiptView;
   const issuedDate = formatDotDate(issuedAt);
   const number = receiptNumber(receipt.period);
   const { period } = receipt;
 
   const startMonth = period.kind === "month" ? period.month : 1;
-  const endMonth = period.kind === "month" ? period.month : 12;
-  const lastDay = new Date(period.year, endMonth, 0).getDate();
+  const lastDay = receiptPeriodLastDay(period);
   // 끝나지 않은 기간(이번 달·올해)은 발행한 날까지만 적는다 — 다만 결제 예정을 넣었으면 그 날짜가 오늘 뒤에 있으므로
   // 기간의 끝까지다(10.28 결제 예정이 적힌 표에 'TO 10.13'이라고 쓰면 서로 어긋난다).
   const to =
     receipt.isComplete || receipt.upcomingCount > 0
-      ? `${pad(endMonth)}.${pad(lastDay)}`
-      : `${pad(issuedAt.getMonth() + 1)}.${pad(issuedAt.getDate())}`;
+      ? `${pad2(lastDay.getMonth() + 1)}.${pad2(lastDay.getDate())}`
+      : `${pad2(issuedAt.getMonth() + 1)}.${pad2(issuedAt.getDate())}`;
 
   const extras: string[] = [];
   if (receipt.billedTotalKRW !== receipt.totalKRW) {
@@ -84,18 +98,18 @@ export function receiptArt(t: Messages, receipt: Receipt, issuedAt: Date): Recei
     number,
     issuedDate,
     issuedLine: v.issued(number, issuedDate),
-    total: formatKRW(receipt.totalKRW),
-    totalLabel: v.total(receipt.chargeCount),
-    count: receipt.chargeCount,
+    total: receiptTotalText(t, receipt),
+    totalLabel: receiptTotalLabel(t, receipt, options),
+    countText: receiptCountText(t, receipt, options),
     lines: receipt.lines.map((line) => ({
       name: line.name,
       amount: formatKRW(line.amountKRW),
-      meta: describeReceiptLine(t, line, period),
+      meta: describeReceiptLine(t, line, period, options),
     })),
-    empty: receipt.lines.length === 0 ? v.empty : null,
+    empty: receipt.lines.length === 0 ? receiptEmptyText(t, receipt, options) : null,
     extras,
-    notes: receiptFootnotes(t, receipt),
-    from: `${pad(startMonth)}.01`,
+    notes: receiptFootnotes(t, receipt, options),
+    from: `${pad2(startMonth)}.01`,
     to,
   };
 }

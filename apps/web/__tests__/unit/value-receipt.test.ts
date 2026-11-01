@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { spaceCurrencySymbol, type Subscription, type UsageLog } from "@subslash/shared";
+import {
+  formatSpacedAmount,
+  formatSpacedKRW,
+  spaceCurrencySymbol,
+  type Subscription,
+  type UsageLog,
+} from "@subslash/shared";
 import { messages } from "@lib/i18n/messages";
+import { subscriptionName } from "@lib/service-name";
 import {
   buildValueReceipt,
   receiptDate,
@@ -9,7 +16,6 @@ import {
   receiptSections,
   sheetActions,
   wasteOrder,
-  won,
 } from "../../components/dashboard/app/valueReceipt";
 
 const RATE = 1400;
@@ -44,7 +50,8 @@ function log(subscriptionId: string, usageCount: number, riskLevel: "green" | "r
 
 describe("영수증 금액 표기", () => {
   it("통화 기호와 숫자 사이를 한 칸 띄우고, 부호는 기호 앞에 둔다", () => {
-    expect(won(17000)).toBe("₩ 17,000");
+    expect(formatSpacedKRW(17000)).toBe("₩ 17,000");
+    expect(formatSpacedAmount(9.99, "USD")).toBe("$ 9.99");
     expect(spaceCurrencySymbol("-₩17,000")).toBe("-₩ 17,000");
     expect(spaceCurrencySymbol("$9.99")).toBe("$ 9.99");
   });
@@ -147,6 +154,13 @@ describe("해지 순서와 아래 버튼", () => {
     const { cancel, checkIn } = sheetActions(messages.ko, summary);
     expect(cancel).toEqual({ id: "b", label: "구독b부터 해지 안내", rest: ["c", "a"] });
     expect(checkIn).toEqual({ id: "d", label: "구독d 체크인" });
+  });
+
+  it("버튼의 구독 이름은 화면 언어의 이름으로 바꿔 적는다", () => {
+    const netflix = { ...sub("n", 17000), name: "넷플릭스" };
+    const { summary } = buildValueReceipt([netflix], [log("n", 0, "red")], RATE, NOW);
+    const { cancel } = sheetActions(messages.en, summary, (s) => subscriptionName(s, "en"));
+    expect(cancel?.label).toBe("Cancel guide for Netflix");
   });
 
   it("할 일이 없으면 버튼도 없다", () => {

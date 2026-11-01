@@ -1,4 +1,4 @@
-import { withJosa } from "../josa";
+import { josa, withJosa } from "../josa";
 import { METRIC_SPECS, type ValueMetric } from "@subslash/shared";
 import type { Widen } from "../types";
 import { one } from "../english";
@@ -72,7 +72,7 @@ export const ko = {
     title: (name: string) => `${name} 이용량 체크인`,
     usesQuestion: "최근 30일 동안 몇 번 썼어요?",
     usesQuestionBefore: "지난 30일 동안 ",
-    usesQuestionAfter: "을(를)\n몇 번 썼나요?",
+    usesQuestionAfter: (name: string) => `${josa(name, "을", "를")}\n몇 번 썼나요?`,
     timesUnit: "회",
     submit: "가성비 분석 결과 보기",
     noResult: "결과를 확인하세요",
@@ -125,7 +125,7 @@ export const ko = {
       `${name} 요금제 용량의 ${percent}%를 쓰고 있어요.`,
     freeTierEnough: "무료 요금제로도 충분했다면, 해지하지 않고 무료로 내려도 돼요.",
     tokensOver: (times: string) =>
-      `PC의 토큰 사용량을 API 요금으로 환산하면 구독료의 ${times}배예요 — 쓴 날이 적어도 본전은 뽑았어요.`,
+      `PC의 토큰 사용량을 API 요금으로 환산하면 구독료의 ${times}배예요 — 쓴 날이 적어도 이용 목표는 채웠어요.`,
     tokensUnder: (percent: number) =>
       `PC의 토큰 사용량은 API 요금으로 구독료의 ${percent}%예요. 웹·앱에서 쓴 것은 빠져 있어 쓴 날로 판단했어요.`,
   },
@@ -237,7 +237,6 @@ export const ko = {
       "숫자는 체크인 때 적은 값입니다. 폰 기록으로 자동 체크인한 것은 이 폰의 기록이라, 다른 기기에서 쓴 것은 빠져 있습니다.",
     unknownDate: "날짜 모름",
     amountOf: (metric: string, n: string) => `${n}${metric}`,
-    dateLocale: "ko-KR",
   },
   flow: {
     reminderOn: "결제 알림을 켰어요. 몇 초 뒤 시험 알림이 떠요.",
@@ -275,11 +274,12 @@ export const ko = {
   /** 체크인 링크(/check-in)로 열었는데 체크인할 수 없을 때. */
   link: {
     invalidTitle: "잘못된 체크인 링크예요",
-    invalidBody: "메일의 버튼을 다시 누르거나 대시보드에서 체크인하세요.",
+    invalidBody: "체크인은 대시보드나 내 구독에서 할 수 있어요.",
     missingTitle: "이 기기에는 이 구독이 없어요",
     missingBody: "등록한 기기에서 링크를 열거나, 로그인해 기기끼리 기록을 맞추세요.",
     killedTitle: "이미 해지한 구독입니다",
-    killedBody: (name: string) => `'${name}'은(는) 해지한 구독이라 체크인을 남기지 않았어요.`,
+    killedBody: (name: string) =>
+      `${withJosa(`'${name}'`, "은", "는")} 해지한 구독이라 체크인을 남기지 않았어요.`,
     dashboard: "대시보드 →",
   },
 };
@@ -343,7 +343,7 @@ export const en: Widen<typeof ko> = {
     title: (name) => `${name} usage check-in`,
     usesQuestion: "How many times did you use it in the last 30 days?",
     usesQuestionBefore: "In the last 30 days, how many times did you use ",
-    usesQuestionAfter: "?",
+    usesQuestionAfter: (_name) => "?",
     timesUnit: "×",
     submit: "See the value analysis",
     noResult: "Check the result",
@@ -507,7 +507,6 @@ export const en: Widen<typeof ko> = {
       "The numbers are what you entered at check-in. Auto check-ins from phone records only cover this phone, so use on other devices is missing.",
     unknownDate: "Date unknown",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "en-US",
   },
   flow: {
     reminderOn: "Payment reminders are on. A test notification will arrive in a few seconds.",
@@ -545,7 +544,7 @@ export const en: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "This check-in link isn't valid",
-    invalidBody: "Tap the button in the email again, or check in from the dashboard.",
+    invalidBody: "You can check in from the dashboard or your subscriptions.",
     missingTitle: "This subscription isn't on this device",
     missingBody:
       "Open the link on the device where you added it, or log in to keep your devices in sync.",
@@ -636,7 +635,7 @@ export const zh: Widen<typeof ko> = {
     title: (name) => `${name} 使用量签到`,
     usesQuestion: "最近 30 天用了几次？",
     usesQuestionBefore: "最近 30 天，",
-    usesQuestionAfter: " 用了几次？",
+    usesQuestionAfter: (_name) => " 用了几次？",
     timesUnit: "次",
     submit: "查看性价比分析",
     noResult: "查看结果",
@@ -781,7 +780,6 @@ export const zh: Widen<typeof ko> = {
       "数字是签到时你输入的值。手机记录的自动签到只涵盖这部手机，不包括其他设备上的使用。",
     unknownDate: "日期不明",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "zh-CN",
   },
   flow: {
     reminderOn: "扣款提醒已开启。几秒后会收到测试通知。",
@@ -817,7 +815,7 @@ export const zh: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "这个签到链接无效",
-    invalidBody: "请再点一次邮件中的按钮，或在仪表板上签到。",
+    invalidBody: "可以在仪表板或我的订阅中签到。",
     missingTitle: "这台设备上没有这个订阅",
     missingBody: "请在添加它的设备上打开链接，或登录让各设备保持同步。",
     killedTitle: "这个订阅已经退订",
@@ -884,7 +882,7 @@ export const ja: Widen<typeof ko> = {
     title: (name) => `${name} の利用量チェックイン`,
     usesQuestion: "直近 30 日に何回使いましたか？",
     usesQuestionBefore: "直近 30 日に ",
-    usesQuestionAfter: " を何回使いましたか？",
+    usesQuestionAfter: (_name) => " を何回使いましたか？",
     timesUnit: "回",
     submit: "お得度の分析を見る",
     noResult: "結果を確認",
@@ -1041,7 +1039,6 @@ export const ja: Widen<typeof ko> = {
       "数字はチェックインで入力した値です。スマホの記録による自動チェックインはこのスマホだけなので、ほかの端末での利用は含まれません。",
     unknownDate: "日付不明",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "ja-JP",
   },
   flow: {
     reminderOn: "支払い通知がオンになりました。数秒後にテスト通知が届きます。",
@@ -1081,7 +1078,7 @@ export const ja: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "このチェックインのリンクは無効です",
-    invalidBody: "メールのボタンをもう一度押すか、ダッシュボードでチェックインしてください。",
+    invalidBody: "チェックインはダッシュボードかサブスク一覧からできます。",
     missingTitle: "この端末にはこのサブスクがありません",
     missingBody: "追加した端末でリンクを開くか、ログインして端末どうしをそろえてください。",
     killedTitle: "このサブスクはすでに解約しています",
@@ -1147,7 +1144,7 @@ export const vi: Widen<typeof ko> = {
     title: (name) => `Check-in mức dùng ${name}`,
     usesQuestion: "Trong 30 ngày qua bạn dùng mấy lần?",
     usesQuestionBefore: "Trong 30 ngày qua, bạn dùng ",
-    usesQuestionAfter: " mấy lần?",
+    usesQuestionAfter: (_name) => " mấy lần?",
     timesUnit: "lần",
     submit: "Xem phân tích giá trị",
     noResult: "Xem kết quả",
@@ -1306,7 +1303,6 @@ export const vi: Widen<typeof ko> = {
       "Các con số là giá trị bạn nhập khi check-in. Check-in tự động từ dữ liệu điện thoại chỉ tính điện thoại này, không gồm việc dùng trên thiết bị khác.",
     unknownDate: "Không rõ ngày",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "vi-VN",
   },
   flow: {
     reminderOn: "Đã bật nhắc thanh toán. Thông báo thử sẽ đến sau vài giây.",
@@ -1345,7 +1341,7 @@ export const vi: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "Đường dẫn check-in này không hợp lệ",
-    invalidBody: "Hãy nhấn lại nút trong email, hoặc check-in trên bảng điều khiển.",
+    invalidBody: "Bạn có thể check-in từ bảng điều khiển hoặc danh sách gói đăng ký.",
     missingTitle: "Thiết bị này không có gói này",
     missingBody:
       "Hãy mở đường dẫn trên thiết bị đã thêm gói, hoặc đăng nhập để đồng bộ các thiết bị.",
@@ -1419,7 +1415,7 @@ export const fr: Widen<typeof ko> = {
     title: (name) => `Check-in de ${name}`,
     usesQuestion: "Combien de fois l'avez-vous utilisé ces 30 derniers jours ?",
     usesQuestionBefore: "Ces 30 derniers jours, combien de fois avez-vous utilisé ",
-    usesQuestionAfter: " ?",
+    usesQuestionAfter: (_name) => " ?",
     timesUnit: "×",
     submit: "Voir l'analyse de valeur",
     noResult: "Voir le résultat",
@@ -1591,7 +1587,6 @@ export const fr: Widen<typeof ko> = {
       "Les chiffres sont ceux saisis lors du check-in. Les check-ins automatiques ne couvrent que ce téléphone : l'usage sur d'autres appareils manque.",
     unknownDate: "Date inconnue",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "fr-FR",
   },
   flow: {
     reminderOn:
@@ -1632,7 +1627,7 @@ export const fr: Widen<typeof ko> = {
   link: {
     invalidTitle: "Ce lien de check-in n'est pas valide",
     invalidBody:
-      "Touchez à nouveau le bouton de l'e-mail, ou faites le check-in depuis le tableau de bord.",
+      "Vous pouvez enregistrer votre usage depuis le tableau de bord ou vos abonnements.",
     missingTitle: "Cet appareil n'a pas cet abonnement",
     missingBody:
       "Ouvrez le lien sur l'appareil où vous l'avez ajouté, ou connectez-vous pour synchroniser vos appareils.",
@@ -1706,7 +1701,7 @@ export const es: Widen<typeof ko> = {
     title: (name) => `Registro de uso de ${name}`,
     usesQuestion: "¿Cuántas veces la usaste en los últimos 30 días?",
     usesQuestionBefore: "En los últimos 30 días, ¿cuántas veces usaste ",
-    usesQuestionAfter: "?",
+    usesQuestionAfter: (_name) => "?",
     timesUnit: "×",
     submit: "Ver el análisis de valor",
     noResult: "Ver el resultado",
@@ -1868,7 +1863,6 @@ export const es: Widen<typeof ko> = {
       "Las cifras son lo que escribiste al registrar. Los registros automáticos del móvil solo cubren este móvil, así que falta el uso en otros dispositivos.",
     unknownDate: "Fecha desconocida",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "es-ES",
   },
   flow: {
     reminderOn:
@@ -1907,7 +1901,7 @@ export const es: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "Este enlace de registro no es válido",
-    invalidBody: "Vuelve a pulsar el botón del correo o registra desde el panel.",
+    invalidBody: "Puedes registrar el uso desde el panel o tus suscripciones.",
     missingTitle: "Este dispositivo no tiene esta suscripción",
     missingBody:
       "Abre el enlace en el dispositivo donde la añadiste, o inicia sesión para sincronizar tus dispositivos.",
@@ -1981,7 +1975,7 @@ export const de: Widen<typeof ko> = {
     title: (name) => `Nutzung von ${name} eintragen`,
     usesQuestion: "Wie oft hast du es in den letzten 30 Tagen genutzt?",
     usesQuestionBefore: "Wie oft hast du in den letzten 30 Tagen ",
-    usesQuestionAfter: " genutzt?",
+    usesQuestionAfter: (_name) => " genutzt?",
     timesUnit: "×",
     submit: "Wertanalyse ansehen",
     noResult: "Ergebnis ansehen",
@@ -2146,7 +2140,6 @@ export const de: Widen<typeof ko> = {
       "Die Zahlen sind deine Eingaben beim Eintragen. Automatische Einträge aus Handydaten umfassen nur dieses Handy, Nutzung auf anderen Geräten fehlt.",
     unknownDate: "Datum unbekannt",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "de-DE",
   },
   flow: {
     reminderOn:
@@ -2186,8 +2179,7 @@ export const de: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "Dieser Eintragslink ist ungültig",
-    invalidBody:
-      "Tippe noch einmal auf den Button in der E-Mail oder trag es in der Übersicht ein.",
+    invalidBody: "Du kannst über das Dashboard oder deine Abos einchecken.",
     missingTitle: "Dieses Gerät hat dieses Abo nicht",
     missingBody:
       "Öffne den Link auf dem Gerät, auf dem du es hinzugefügt hast, oder melde dich an, um deine Geräte abzugleichen.",
@@ -2261,7 +2253,7 @@ export const pt: Widen<typeof ko> = {
     title: (name) => `Registro de uso de ${name}`,
     usesQuestion: "Quantas vezes você usou nos últimos 30 dias?",
     usesQuestionBefore: "Nos últimos 30 dias, quantas vezes você usou ",
-    usesQuestionAfter: "?",
+    usesQuestionAfter: (_name) => "?",
     timesUnit: "×",
     submit: "Ver a análise de valor",
     noResult: "Ver o resultado",
@@ -2422,7 +2414,6 @@ export const pt: Widen<typeof ko> = {
       "Os números são o que você informou ao registrar. Os registros automáticos do celular cobrem só este celular, então falta o uso em outros dispositivos.",
     unknownDate: "Data desconhecida",
     amountOf: (metric, n) => `${n} ${metric}`,
-    dateLocale: "pt-BR",
   },
   flow: {
     reminderOn:
@@ -2460,7 +2451,7 @@ export const pt: Widen<typeof ko> = {
   },
   link: {
     invalidTitle: "Este link de registro não é válido",
-    invalidBody: "Toque de novo no botão do e-mail ou registre pelo painel.",
+    invalidBody: "Você pode registrar o uso pelo painel ou pelas suas assinaturas.",
     missingTitle: "Este dispositivo não tem esta assinatura",
     missingBody:
       "Abra o link no dispositivo onde você adicionou, ou entre para sincronizar seus dispositivos.",

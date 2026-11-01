@@ -55,6 +55,13 @@ USD 환산 환율은 상수가 아니라 사용자 설정값이다. USD 구독�
 그렇게 바꾼 건수를 영수증에 적는다(`receipt.fx`). 고시 환율도 카드사가 청구한 환율은 아니라고 적는다. 연말 결산의 지출 구성처럼
 지금 구독을 앞으로 1년 낸다고 셈한 값은 지난 결제가 아니라 지금 환율이다.
 
+사용자가 금액(통화·세율·나눠 내기 포함)을 고치면 스토어가 고치기 전·뒤를 `amountHistory`에 남긴다
+(`utils/amountHistory`). 앱은 요금이 언제 바뀌었는지 모르므로 **고친 날부터** 새 금액이라고 보고, 영수증은 그 전의
+결제를 고치기 전 금액으로 셈하며(`priceAsOf`) 그렇게 셈한 건수를 적는다(`receipt.priorAmount`) — 예전에는 요금을 올려
+적으면 지난 달 영수증까지 새 금액으로 다시 계산됐다. 등록한 날 고친 것과 같은 날 여러 번 고친 것은 바로잡은 것으로
+보아 남기지 않거나 하나로 합친다. 결제 기록(`chargeHistory`)과 섞지 않는다 — 그쪽은 결제 메일이라는 증거이고 이쪽은
+사용자가 적은 값이다. 지킨 돈·연말 결산의 지출 구성은 지난 결제가 아니라 지금 금액 그대로다.
+
 체크인은 "지난 30일 동안 몇 번"을 묻는다. 나누는 값은 한 달치 내 몫
 (`getMyMonthlyShareAmount`)이어야 한다. 연 결제액을 그대로 나누면 12배가 된다.
 
@@ -138,9 +145,10 @@ PR에서 고친다. 방침은 한국어판(`components/privacy/PrivacyKo`, 원�
 - 다른 기기에서 '계정에서 지우기'로 지웠으면 그 기록을 다시 올리지 않고 동기화를 멈춘다.
 - 기기마다 다른 것(동기화 상태 `accountSync`, 로컬 알림 설정)은 넣지 않는다.
 - 서버는 받은 기록을 `parseBackup`으로 다시 검사한다. 표에는 gzip한 base64(`gz:` 접두사)로 두고 압축 전 기록은 그대로
-  읽는다(`unpackPayload`) — 크기 상한은 압축 전 글자 수로 건다. 계정을 지우는 경로를 새로 만들면
-  `sessions`처럼 이 표도 직접 지운다 — `ON DELETE CASCADE`는 `PRAGMA foreign_keys`가 켜져 있을
-  때만 동작한다.
+  읽는다(`unpackPayload`) — 크기 상한은 압축 전 글자 수로 건다. 계정에 딸린 표는 `deleteAccountRecords`
+  (`lib/account-data`)가 직접 지운다 — `ON DELETE CASCADE`는 `PRAGMA foreign_keys`가 켜져 있을 때만 동작한다. 계정을
+  지우는 경로(회원 탈퇴·모르는 가입 지우기)는 이 함수를 부르고, 계정에 딸린 표를 새로 만들면 여기에 더한다. 아래의
+  `deleteGmailImportData`·`deleteOAuthData`·`deleteAskDailyCounts`도 이 함수가 부른다.
 
 화면의 기록은 주인(`recordsOwner`: 비로그인 null, 로그인하면 계정 ID)이 있고, 로그인 상태가 바뀌면
 `lib/records-owner`가 주인별 칸(`subslash-records:*`)으로 바꿔 끼운다 — 예전에는 로그아웃해도 로그인한
@@ -172,7 +180,10 @@ Gmail 자동 가져오기(`gmail_import_links`, `gmail_discoveries`)는 "서버�
 기록(`chargeHistory`, `utils/chargeHistory`)으로 남긴다. 구독 영수증(`buildReceipt`)은 등록한 달보다 앞선
 달을 이 기록이 있는 달만 그 메일의 금액으로 채운다 — 첫 메일과 마지막 메일 사이라도 메일이 없는 달은
 모른다(해지했다 다시 구독했거나 검색 상한에 밀렸을 수 있다). 같은 서비스의 다른 구독(해지 전 예전 구독)이
-이미 센 달은 세지 않는다. 기록은 이미 등록한 구독에도 적는다(`recordChargeHistory`). 서버
+이미 센 달은 세지 않는다. 그래서 줄이 하나도 없는데 등록 전이거나 결제 월을 몰라 뺀 구독이 있는 영수증은 결제가 없던 것이
+아니라 모르는 것이다(`isReceiptUnknown`) — '결제된 구독이 없어요'·₩0 대신 '모름'이라 적고, 공유하지 않으며, 처음 여는 달은
+그런 지난달 대신 이번 달이다(`defaultReceiptMonth`, 리포트 버튼도 같다). 처음 등록한 사람이 지난달 영수증을 열면 늘 ₩0이었다.
+기록은 이미 등록한 구독에도 적는다(`recordChargeHistory`). 서버
 (`gmail_discoveries.charge_history`)는 `GMAIL_CHARGE_HISTORY_STARTS_ON`(null이면 닫힘)부터 저장하고, 옛
 영수증이 늦게 와도(`scanOlder`) 후보는 덮지 않되 기록은 합친다. 칼럼이 스키마에 있으므로 시작일과
 관계없이 **배포 전에 두 배포 DB에 `drizzle/0016_gmail_charge_history.sql`을 적용한다.**
@@ -263,8 +274,11 @@ parser의 `senderDomains`)는 따로 검색해 상한에 밀리지 않게 한다
 회원 탈퇴)은 `lib/rate-limit`으로 횟수를 제한한다. 로그인은 실패만 세고(아이디·IP 기준), 계정을 잠그지
 않고 잠시 기다리게 한다 — 잠그면 남이 일부러 틀려 주인을 못 들어오게 할 수 있다. 서버 인스턴스
 메모리에 세므로 대량 공격을 완전히 막지는 못한다. 그건 Vercel 방화벽(WAF)의 속도 제한이 맡는다.
+누를 때마다 행을 쓰는 곳(캘린더 등록)도 계정마다 센다 — Turso는 행 쓰기 한도가 먼저 찬다.
 비밀값 비교(크론 `CRON_SECRET` 등)는 `timingSafeEqual`로 한다. 웹 응답의 보안 헤더(틀 넣기 금지 등)는
-`next.config.ts`의 `headers()`에 있다.
+`next.config.ts`의 `headers()`에 있고, CSP는 `lib/csp`가 만든다. 페이지를 정적으로 두려고 nonce를 쓰지 않아
+`script-src`에 'unsafe-inline'이 남는다 — 이 정책이 막는 것은 바깥 스크립트·바깥으로 보내기(`connect-src`)·`<base>`·
+틀이다. 브라우저에서 바깥 주소를 부르게 바꾸면 그 출처를 `lib/csp`에 더한다(빠뜨리면 그 요청만 조용히 막힌다).
 
 ## 서버 로그와 외부 링크
 
@@ -548,12 +562,35 @@ Claude Design 'Receipt Redesign' 핸드오프의 컬러 감열지·탑승권·�
 (카드에 찍힌 금액·지킨 돈·해지)·안내문을 빼지 않고, 항목이 많으면 아트보드(600×800, 저장 2배)를 세로로 늘린다. 탑승권의 구간은
 끝나지 않은 기간이면 오늘까지, 결제 예정을 넣었으면 그 기간의 끝까지다.
 
+'공유하기'는 영수증만 보여 주는 링크(`/report/receipt/share#r=…`, `lib/receipt-share`)를 글 끝에 붙인다 — 예전에는 첫 화면
+주소를 붙여, 받은 사람이 영수증을 볼 수 없었다. 영수증 한 장(과 고른 디자인)을 압축해 `#` 뒤에만 싣고 서버에 두지 않는다
+(`?`로 옮기지 않는다). 링크를 가진 사람은 누구나 보고 보낸 링크는 취소할 수 없으므로, 기기에서 처음 보낼 때 묻고
+(`ConfirmDialog`) 안내에도 적는다. 싣는 것은 영수증에 꼭 필요한 것뿐이다 — 사용 횟수·1회 단가, 나눠 내는지·카드에 찍힌
+금액, 구독 ID, 사용자 아이콘 주소(`iconUrl`)는 싣지 않는다. 가려서 공유하면(3판) 기간·발행일·합계만 싣고
+보인다(`totalOnly`) — 구독별 줄·해지 목록·지킨 돈·구독 수·건수·개수가 든 알림은 빼고, 합계가 '결제 예정 포함'인지만 남긴다.
+이름만 가리면 29,811원 같은 금액과 결제일로, 개수만으로도 무엇을 내는지 좁혀진다. 구독 수를 실은 예전 가림 링크도 받는 쪽이
+합계만 그린다. 금액·날짜를 반올림하지 않는
+것은 내지 않은 숫자를 그리게 되어서다. 구독이 하나면 합계가 곧 그 금액이라 그렇게 알린다. 글도 같은 영수증으로 만든다.
+공유받은 영수증은 체크인을 싣지 않았으므로 '체크인 없음'이라고 적지 않는다(안 한 것이 아니라 모른다). 받는 화면은 읽자마자
+주소창에서 `#` 뒤를 지우고(방문 기록·동기화에 남는 것을 줄인다) 값은 메모리에만 둔다 — 새로고침하면 링크를 다시 열어 달라고 한다.
+
+서명하지 않는다. 숫자는 사용자가 적은 기록이라 서버가 서명해도 'SubSlash가 만들었다'만 증명하고, 지어낸 금액을
+인증된 것처럼 보이게 한다. 만료도 두지 않는다 — 내용이 링크 안에 있어 화면을 거치지 않고도 풀어 읽힌다. 대신 받는 화면과
+그림 안(각주 맨 앞, `ReceiptRenderOptions.unverified`)에 '확인되지 않은 내용'이라고 적는다 — 캡처하면 화면 밖 문구는
+잘린다. 받는 쪽은 남이 지어 보낸 링크일 수 있어 칸마다 모양을 확인해 하나라도 틀리면 그리지 않는다: 줄 50·날짜 40·이름
+60자·풀어낸 크기 64KB·링크 1만 6천 자, 날짜는 달력에 있고 영수증 기간 안(결제 예정·메일로 넣은 날은 결제일 가운데), 금액은
+줄 1억·합계 10억 원 이하(나눠 낸 몫은 소수일 수 있어 정수로 막지 않는다), 발행일은 기간 시작부터 오늘까지(시간대 차이로
+양쪽 하루 여유), 합계·건수는 줄에서 다시 센 값과 같아야 한다(`buildReceipt`와 같은 순서로 더하므로 고치지 않은 링크면
+정확히 같다 — 셈을 바꾸면 `receipt-share.test`의 왕복 테스트가 본다). 2판(v60 앱)도 같은 검사로 읽는다. 주소·이메일·
+전화번호처럼 보이는 이름(`looksLikeContact`)은 받지 않는다 — SubSlash 화면에 "로그인하려면
+evil.com"을 띄우는 길이 된다(보내는 쪽은 그 이름을 가려서 싣는다). 공유 화면만 그림 출처를 이 사이트로 묶는 CSP를 건다
+(`next.config.ts`). 철회·만료가 필요해지면 서버 보관형 링크로 바꿔야 하고, 그건 데이터 위치 원칙과 방침을 바꾸는 일이다.
+
 ## 로고와 이모지
 
 브랜드 마크는 `components/brand/Brand.tsx` 한 곳에 있다(마크·워드마크·락업). 좌표와 색은 브랜드
 시트에서 뽑은 값이고, 앱 아이콘(`app/icon.svg`)도 같은 좌표를 쓴다 — 한쪽만 고치면 상단 바와 홈
-화면 아이콘이 서로 다른 로고가 된다. 모바일 앱의 아이콘·스플래시(안드로이드 `res/`, iOS
-`Assets.xcassets`)는 `icon.svg`에서 만든 그림이다 — `icon.svg`를 고치면
+화면 아이콘이 서로 다른 로고가 된다. 모바일 앱의 아이콘·스플래시(안드로이드 `res/`)는 `icon.svg`에서 만든 그림이다 — `icon.svg`를 고치면
 `pnpm --filter @subslash/mobile assets`를 다시 돌린다(Capacitor 기본 그림이 남아 있어 앱만 다른 로고였다). 워드마크 가운데의 빨간 슬래시는 글꼴의 `/`가 아니라 기울인
 막대이고, 읽는 기계에는 `Sub/Slash`로 들리도록 따로 적는다.
 
@@ -644,8 +681,9 @@ E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-K
 화면은 Play 스토어용으로 샘플 데이터로 찍은 앱 캡처(`public/landing/`, 영어 화면은 `public/landing/en/`)이고 화면에 그렇게
 밝힌다 — 경로는 `components/home/screens`의 `landingScreen`이 화면 언어로 고른다. 화면이 크게 바뀌면
 `pnpm --filter @subslash/web landing:screens [-- --lang ko]`로 새로 찍는다(앱 빌드를 휴대폰 크기로 열어 예시 기록을 설정 →
-복원으로 넣고 찍는다, `scripts/landing-screens/capture.ts`). 앱은 비공개 테스트라 '앱 받기'는 링크 없는 '준비 중' 표시(`AppDownloadPending`)다. 공개 출시하면 그때 실제 스토어
-주소로 바꾼다 — 받을 수 없는 주소를 걸지 않는다.
+복원으로 넣고 찍는다, `scripts/landing-screens/capture.ts`). '앱 받기'(`AppDownloadLink`)는 Google Play의 스토어
+페이지(`PLAY_STORE_URL`, `lib/play-store`)로 간다. 웹의 푸터와, 안드로이드 앱에서만 되는 기능을 웹에서 안내하는 문장(설정의
+여러 기기 사용 측정·리포트의 구독별 사용량)에도 같은 링크(`PlayStoreLink`, 앱에서는 그리지 않음)를 둔다 — 비공개 테스트 동안에는 받을 수 없는 주소를 걸지 않으려고 링크 없는 '준비 중' 표시였다.
 
 앱은 `/`를 열자마자 대시보드로 옮기고, 처음 실행할 때만 인트로 뒤에 옆으로 넘기는 소개(`components/launch/AppOnboarding`)를
 덮어 보여 준다. 모양은 Claude Design의 `App Onboarding v2.dc.html`(문제 · 답 · 1회당 단가 계산기 · 기능 3장 · 직접 해 보기)이고,
@@ -681,7 +719,7 @@ E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-K
   돌아오면 모든 컴포넌트가 처음부터 돌지만 앱은 아니다. Gmail 연결은 링크 상태만 다시 읽어, 찾은
   구독(`GmailDiscoveryInbox`)이 앱을 껐다 켤 때까지 등록되지 않았다(`requestGmailDiscoveries`로 알린다).
   간편 로그인·로그인 방법 연결은 끝 화면(`/oauth/done`)이 앱의 돌아오는 주소(`<앱 ID>://oauth-done?결과`,
-  `lib/app-return`, 매니페스트·iOS URL 타입)를 연다 — 카카오톡으로 로그인하면 Chrome에서 끝나, 창을 닫으라는
+  `lib/app-return`, 매니페스트)를 연다 — 카카오톡으로 로그인하면 Chrome에서 끝나, 창을 닫으라는
   말만으로는 사용자가 웹에 남았다. `leaveForExternal`은 이 주소를 받으면 결과를 `onReturn`에 넘긴다. 앱의
   verifier는 기기에 10분 적어 두고(`lib/app-oauth`) 돌아오는 길·앱 복귀·다음 실행 어디서든 한 번만 받아 간다.
   인앱 브라우저가 여는 웹 화면에는 사이트 메뉴·Gmail 받기 상자를 두지 않는다(`SiteChrome`의 목록에 더한다).
@@ -694,7 +732,7 @@ E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-K
   이동이 막힐 수 있으므로 'SubSlash 앱으로 돌아가기' 버튼을 함께 둔다. 스킴이 없으면(예전 앱) 예전처럼 창을
   닫으라고만 말한다. 웹 앱 코드를 고쳤으므로 운영자가 다시 배포해야 반영된다.
 - 남에게 보낼 링크는 `webUrl()`로 만든다. 앱에서 `window.location.origin`은
-  `capacitor://localhost`(iOS)나 `https://localhost`(안드로이드)다.
+  `https://localhost`(안드로이드)다.
 - 페이지에 동적 경로(`[id]`)를 새로 만들지 않는다. 브라우저에서 만든 ID로는 페이지를 미리
   만들 수 없다. 구독 상세는 `subscriptionDetailHref()`(`/subs/detail?id=`)를 쓴다.
 - 브라우저 기본 `confirm`·`prompt`·`alert`를 쓰지 않는다. 창 밖에서는 `ConfirmDialog`, 이미
@@ -716,13 +754,12 @@ E2E는 한국어 문구로 찾으므로 `playwright.config.ts`가 `locale: "ko-K
 `IS_APP_BUILD`(`lib/platform`)로 가른다. CI가 이 빌드를 돌려 정적 내보내기를 깨는 코드를 막는다.
 안드로이드 빌드·실행은 docs/DEVELOPMENT.md의 '모바일 앱'에 있다. 고친 것을 폰에서 확인할 때는 `pnpm --filter @subslash/mobile android:dev`로 테스트용 앱(`com.subslash.app.dev`)을 스토어 앱 옆에 설치한다 — 확인하려고 versionCode를 올리거나 스토어 앱을 지우지 않는다.
 
-`apps/mobile`은 안드로이드(`android/`)와 iOS(`ios/`)를 모두 담는다. `@capacitor/android`·`@capacitor/ios`는
-코드에서 import하지 않지만 `npx cap sync`가 네이티브 프로젝트를 만들고 갱신할 때 쓰므로 지우지 않는다. iOS 프로젝트는 Capacitor 8이
-CocoaPods 대신 SPM을 쓰므로 Windows에서도 만들어지지만, **빌드는 macOS나 EAS의 macOS 작업 서버에서만**
-된다. 실기기·TestFlight·스토어는 Apple 개발자 프로그램이 있어야 하고, 계정 없이 되는 것은 시뮬레이터
-빌드(`eas.json`의 `preview.ios.simulator`)뿐이다. 네이티브 플러그인은 안드로이드에만 있으므로
-(`AppWindowPlugin`), 플러그인을 부르는 코드는 `Capacitor.getPlatform()`으로 가른다 — iOS에서 부르면
-거절당해 경고만 쌓인다.
+`apps/mobile`은 안드로이드(`android/`)만 담는다. iOS 앱은 2026년 10월에 만들지 않기로 하고 `ios/`·`@capacitor/ios`·
+EAS의 iOS 프로필·iPad 미리보기 도구(`tools/ipad-preview`)를 걷었다. iOS 앱 출처(`capacitor://localhost`)도
+`lib/app-origins`에서 뺐다 — 다시 만들면 `npx cap add ios`와 함께 그 출처를 더한다. `@capacitor/android`는
+코드에서 import하지 않지만 `npx cap sync`가 네이티브 프로젝트를 갱신할 때 쓰므로 지우지 않는다. 네이티브
+플러그인은 안드로이드에만 있으므로(`AppWindowPlugin`), 플러그인을 부르는 코드는 `Capacitor.getPlatform()`으로
+가른다 — 안드로이드가 아닌 곳에서 부르면 거절당해 경고만 쌓인다.
 
 안드로이드 릴리스 빌드는 R8로 코드를 줄이고 최적화·난독화한다(AGP 9, `minifyEnabled`·`shrinkResources`).
 AGP 9는 최적화를 끄는 `proguard-android.txt`를 받지 않으므로 `proguard-android-optimize.txt`를 쓴다. 웹 화면이
@@ -750,10 +787,6 @@ Android 이미지에는 JDK 17뿐인데 Capacitor 8은 Java 21로 컴파일해�
 (`scripts/eas-build-post-install.sh`)이 JDK 21을 받고 웹 화면을 만들어 `cap sync`한다. EAS는 작업 폴더를
 `.gitignore` 기준으로 올린다. `.easignore`를 만들면 `.gitignore`를 통째로 대신해서 `.env`까지 올라갈 수
 있으니 만들지 않는다.
-
-`tools/ipad-preview`는 Mac 없이 iPad·iPhone의 Expo Go로 화면을 iPhone에서 보는 모습 그대로 보는
-도구다(iPad는 iPhone 크기 틀, iPhone은 전체 화면. 사용법은 그 폴더의 README). pnpm 워크스페이스 밖이라 npm으로 따로 설치하고, CI·웹 빌드에 들어가지 않는다.
-출시할 앱이 아니므로 네이티브 기능은 여기서 확인할 수 없다.
 
 ## 작업 절차
 

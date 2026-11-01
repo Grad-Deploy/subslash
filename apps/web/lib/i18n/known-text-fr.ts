@@ -51,6 +51,7 @@ const BACKUP_FIELDS: BackupFieldNames = {
   "해지 기록": "relevé de résiliation",
   "주문 메일 근거": "preuve par e-mails de commande",
   "결제 메일 기록": "historique des e-mails de paiement",
+  "금액 변경 기록": "historique des changements de montant",
   "구독 ID": "ID d'abonnement",
   월: "mois",
   "사용 횟수": "nombre d'utilisations",

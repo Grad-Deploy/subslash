@@ -66,12 +66,7 @@ export function MetricQuantityInput({
       ? null
       : unitCostText(
           t,
-          unitCostPart(
-            metric,
-            calculateCostPerUse(effectiveMonthly, quantity),
-            quantity,
-            subscription.currency,
-          ),
+          unitCostPart(metric, calculateCostPerUse(effectiveMonthly, quantity), quantity),
           subscription.currency,
         );
   // 저장 공간: 요금제를 알면 비율을 용량으로 바꿔 옆에 보여 준다. 설정 화면에는 GB로 나오기 때문이다.

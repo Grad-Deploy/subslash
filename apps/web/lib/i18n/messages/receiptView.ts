@@ -14,6 +14,9 @@ export const ko = {
     paperLabel: (period: string) => `${period} 구독 영수증`,
     issued: (number: string, date: string) => `No. ${number} · 발행 ${date}`,
     empty: "결제된 구독이 없어요",
+    unknownEmpty: (period: string) =>
+      `${period}에 결제했는지 알 수 있는 구독이 없어요. 등록하기 전 달이나 결제 월을 모르는 연간 구독은 비워 뒀어요.`,
+    unknownValue: "모름",
     total: (count: number) => `합계(내 몫) · ${count}건`,
     billed: "카드에 찍힌 금액",
     defended: "해지로 지킨 돈",
@@ -49,6 +52,8 @@ export const ko = {
         "지난 달러 결제는 결제일의 고시 환율(ECB 기준)로 바꿨어요. 카드사 환율과 조금 다를 수 있어요.",
       current: (count: number) =>
         `지난 달러 결제 ${count}건은 그날 환율을 받지 못해 지금 설정한 환율로 계산했어요.`,
+      priorAmount: (count: number) =>
+        `금액을 고치기 전에 있던 결제 ${count}건은 고치기 전 금액으로 계산했어요. 고친 날부터 새 금액이라고 보고, 이 금액은 직접 적은 값이에요.`,
       incompleteUpcoming:
         "아직 끝나지 않은 기간이에요. 지금 구독 중인데 이번 달 결제일이 오지 않은 것은 ‘결제 예정’으로 넣었어요.",
       incompleteToday: "아직 끝나지 않은 기간이라 오늘까지 결제된 것만 적었어요.",
@@ -67,6 +72,18 @@ export const ko = {
       total: "합계(내 몫)",
       defended: "해지로 지킨 돈",
     },
+    shared: {
+      badge: "공유받은 구독 영수증",
+      note: "보낸 사람이 직접 기록한 내용을 링크에 담은 거예요. SubSlash가 확인하지 않았고, 증빙으로 쓸 수 없어요.",
+      invalid: "영수증을 읽지 못했어요. 링크가 잘렸거나 바뀌었을 수 있어요.",
+      cta: "SubSlash로 내 구독 영수증 만들기",
+      unverifiedMark: "공유 링크로 받은 영수증이에요. SubSlash가 내용을 확인하지 않았어요.",
+      maskedName: (n: number) => `구독 ${n}`,
+      maskedKilled: (n: number) => `해지한 구독 ${n}`,
+      hiddenSummary: "구독별 내역은 가렸어요. 합계만 보여요.",
+      hiddenValue: "가림",
+      reopen: "영수증은 주소창에 남기지 않아요. 받은 링크를 다시 열어 주세요.",
+    },
     page: {
       back: "← 리포트",
       tabsLabel: "영수증 기간",
@@ -77,7 +94,14 @@ export const ko = {
       saveImage: "이미지로 저장",
       share: "공유하기",
       privacy:
-        "영수증은 이 기기의 기록으로 만들어요. 저장하거나 공유할 때만 기기 밖으로 나가요. 서비스 이름이 적혀 있으니 보내기 전에 확인하세요.",
+        "영수증은 이 기기의 기록으로 만들어요. 공유하면 영수증 내용(서비스 이름·금액)이 링크에 담겨, 링크를 받은 사람은 누구나 볼 수 있고 보낸 링크는 취소할 수 없어요. 사용 횟수와 나눠 내는 금액은 담지 않고, 링크의 내용은 서버에 저장하지 않아요.",
+      maskNames: "서비스 이름과 구독별 금액 가리고 공유하기",
+      maskSingleHint: "구독이 하나뿐이면 합계만 보고도 어떤 서비스인지 짐작할 수 있어요.",
+      nothingToShare: "결제가 적힌 영수증만 공유할 수 있어요. 다른 달을 골라 보세요.",
+      confirmTitle: "영수증 링크를 보낼까요?",
+      confirmBody:
+        "영수증 내용이 링크에 담겨요. 링크를 받은 사람은 누구나 볼 수 있고, 다시 전달될 수도 있어요. 보낸 링크는 취소할 수 없어요.",
+      confirmOk: "공유하기",
       yearDetail: (year: number) => `${year}년 결산 자세히 보기`,
       imageSaved: "영수증 이미지를 저장했어요",
       imageFailed: "이미지를 만들지 못했어요. 글로 공유해 보세요.",
@@ -119,6 +143,9 @@ export const en: Widen<typeof ko> = {
     paperLabel: (period) => `${period} subscription receipt`,
     issued: (number, date) => `No. ${number} · issued ${date}`,
     empty: "No subscriptions were charged",
+    unknownEmpty: (period) =>
+      `There's no subscription we know was charged in ${period}. Months before you added a subscription, and yearly plans without a billing month, are left blank.`,
+    unknownValue: "Unknown",
     total: (count) => `Total (your share) · ${count} ${one(count) ? "charge" : "charges"}`,
     billed: "Charged to your card",
     defended: "Money kept by cancelling",
@@ -154,6 +181,8 @@ export const en: Widen<typeof ko> = {
         "Past dollar payments were converted at the published rate on the payment date (ECB). It may differ slightly from your card company's rate.",
       current: (count) =>
         `${count} past dollar ${one(count) ? "payment" : "payments"} couldn't get that day's rate, so ${one(count) ? "it uses" : "they use"} the rate you set now.`,
+      priorAmount: (count) =>
+        `${count} ${one(count) ? "payment" : "payments"} from before you changed the amount ${one(count) ? "uses" : "use"} the earlier amount. A new amount counts from the day you changed it, and these amounts are what you entered.`,
       incompleteUpcoming:
         "This period isn't over yet. Subscriptions you have now whose billing day this month hasn't come are included as “due”.",
       incompleteToday: "This period isn't over yet, so only charges up to today are listed.",
@@ -173,6 +202,18 @@ export const en: Widen<typeof ko> = {
       total: "Total (your share)",
       defended: "Money kept by cancelling",
     },
+    shared: {
+      badge: "A shared subscription receipt",
+      note: "This is what the sender recorded, carried in the link. SubSlash hasn't checked it, and it can't be used as proof.",
+      invalid: "Couldn't read this receipt. The link may have been cut off or changed.",
+      cta: "Make my own receipt with SubSlash",
+      unverifiedMark: "Receipt received via a shared link. SubSlash hasn't checked its contents.",
+      maskedName: (n) => `Subscription ${n}`,
+      maskedKilled: (n) => `Canceled subscription ${n}`,
+      hiddenSummary: "Per-subscription details are hidden. Only the total is shown.",
+      hiddenValue: "Hidden",
+      reopen: "The receipt isn't kept in the address bar. Open the link you received again.",
+    },
     page: {
       back: "← Report",
       tabsLabel: "Receipt period",
@@ -183,7 +224,14 @@ export const en: Widen<typeof ko> = {
       saveImage: "Save as image",
       share: "Share",
       privacy:
-        "The receipt is made from this device's records. It only leaves the device when you save or share it. Service names are printed on it, so check before sending.",
+        "The receipt is made from this device's records. When you share it, its contents (service names and amounts) go into the link: anyone with the link can see them, and a sent link can't be taken back. Usage counts and shared-plan amounts aren't included, and the link's contents aren't stored on our server.",
+      maskNames: "Hide service names and per-subscription amounts when sharing",
+      maskSingleHint: "With only one subscription, the total alone may reveal which service it is.",
+      nothingToShare: "Only receipts with charges on them can be shared. Try another month.",
+      confirmTitle: "Send a receipt link?",
+      confirmBody:
+        "The receipt's contents go into the link. Anyone with the link can see them, and it may be forwarded. A sent link can't be taken back.",
+      confirmOk: "Share",
       yearDetail: (year) => `See the ${year} year in review`,
       imageSaved: "Saved the receipt image",
       imageFailed: "Couldn't make the image. Try sharing it as text.",
@@ -226,6 +274,9 @@ export const zh: Widen<typeof ko> = {
     paperLabel: (period) => `${period} 订阅小票`,
     issued: (number, date) => `No. ${number} · ${date} 开具`,
     empty: "没有扣款的订阅",
+    unknownEmpty: (period) =>
+      `没有能确定在${period}付过款的订阅。添加订阅之前的月份，以及不知道付款月份的年付订阅，都留空了。`,
+    unknownValue: "未知",
     total: (count) => `合计（我的份额）· ${count} 笔`,
     billed: "卡上扣款",
     defended: "退订守住的钱",
@@ -253,6 +304,8 @@ export const zh: Widen<typeof ko> = {
         `登记之前的 ${count} 笔付款，按 Gmail 中找到的付款邮件的日期和金额补充。${shared ? "分摊订阅的份额按当前的分摊方式计算。" : ""}`,
       historical: "过去的美元付款按付款日的公布汇率（ECB）换算，可能与发卡机构的汇率略有不同。",
       current: (count) => `${count} 笔过去的美元付款无法取得当天汇率，因此使用你现在设置的汇率。`,
+      priorAmount: (count) =>
+        `修改金额之前的 ${count} 笔付款按修改前的金额计算。新金额从修改当天起算，这些金额是你自己填写的。`,
       incompleteUpcoming: "本期尚未结束。本月扣款日还没到的现有订阅以“将扣款”计入。",
       incompleteToday: "本期尚未结束，因此只列出截至今天的扣款。",
       undated: (count) => `${count} 个不知道扣款月份的年付订阅无法计入。`,
@@ -269,6 +322,18 @@ export const zh: Widen<typeof ko> = {
       total: "合计（我的份额）",
       defended: "退订守住的钱",
     },
+    shared: {
+      badge: "收到的订阅小票",
+      note: "这是发送者自己记录的内容，放在链接里。SubSlash 没有核实，不能作为凭证。",
+      invalid: "无法读取这张小票。链接可能被截断或改动了。",
+      cta: "用 SubSlash 生成我的订阅小票",
+      unverifiedMark: "通过分享链接收到的小票。SubSlash 未核实其内容。",
+      maskedName: (n) => `订阅 ${n}`,
+      maskedKilled: (n) => `已取消的订阅 ${n}`,
+      hiddenSummary: "各订阅的明细已隐藏，只显示合计。",
+      hiddenValue: "已隐藏",
+      reopen: "小票不会保留在地址栏中。请重新打开收到的链接。",
+    },
     page: {
       back: "← 报告",
       tabsLabel: "小票期间",
@@ -279,7 +344,14 @@ export const zh: Widen<typeof ko> = {
       saveImage: "保存为图片",
       share: "分享",
       privacy:
-        "小票由这台设备上的记录生成。只有在你保存或分享时才会离开设备。上面印有服务名称，发送前请确认。",
+        "小票由这台设备上的记录生成。分享时，小票内容（服务名称和金额）会放进链接里：拿到链接的任何人都能看到，发出的链接无法撤回。不包含使用次数和分摊金额，链接内容也不会保存在服务器上。",
+      maskNames: "分享时隐藏服务名称和各订阅金额",
+      maskSingleHint: "只有一个订阅时，仅凭合计也可能猜出是哪项服务。",
+      nothingToShare: "只有列出付款的小票才能分享。请选择其他月份。",
+      confirmTitle: "要发送小票链接吗？",
+      confirmBody:
+        "小票内容会放进链接里。拿到链接的任何人都能看到，也可能被转发。发出的链接无法撤回。",
+      confirmOk: "分享",
       yearDetail: (year) => `查看 ${year} 年度总结`,
       imageSaved: "已保存小票图片",
       imageFailed: "无法生成图片。请尝试以文字分享。",
@@ -312,6 +384,9 @@ export const ja: Widen<typeof ko> = {
     paperLabel: (period) => `${period} サブスクのレシート`,
     issued: (number, date) => `No. ${number} · ${date} 発行`,
     empty: "請求されたサブスクはありません",
+    unknownEmpty: (period) =>
+      `${period}に支払ったと分かるサブスクがありません。登録する前の月や、支払い月が分からない年額プランは空けてあります。`,
+    unknownValue: "不明",
     total: (count) => `合計（自分の負担分）· ${count} 件`,
     billed: "カードへの請求",
     defended: "解約で守ったお金",
@@ -341,6 +416,8 @@ export const ja: Widen<typeof ko> = {
         "過去のドル払いは支払日の公表レート（ECB）で換算しました。カード会社のレートとは少し違うことがあります。",
       current: (count) =>
         `過去のドル払い ${count} 件はその日のレートが取れず、今設定しているレートを使いました。`,
+      priorAmount: (count) =>
+        `金額を変更する前の支払い ${count} 件は、変更前の金額で計算しました。新しい金額は変更した日からとみなし、これらはあなたが入力した金額です。`,
       incompleteUpcoming:
         "この期間はまだ終わっていません。今月の支払日がまだ来ていない今のサブスクは「支払い予定」として含めています。",
       incompleteToday: "この期間はまだ終わっていないため、今日までの請求だけを載せています。",
@@ -359,6 +436,18 @@ export const ja: Widen<typeof ko> = {
       total: "合計（自分の負担分）",
       defended: "解約で守ったお金",
     },
+    shared: {
+      badge: "共有されたサブスクのレシート",
+      note: "送った人が自分で記録した内容をリンクに入れたものです。SubSlashは確認しておらず、証明には使えません。",
+      invalid: "レシートを読み込めませんでした。リンクが途中で切れたか、変わった可能性があります。",
+      cta: "SubSlashで自分のレシートを作る",
+      unverifiedMark: "共有リンクで受け取ったレシートです。SubSlashは内容を確認していません。",
+      maskedName: (n) => `サブスク ${n}`,
+      maskedKilled: (n) => `解約したサブスク ${n}`,
+      hiddenSummary: "サブスクごとの内訳は隠しています。合計だけ表示します。",
+      hiddenValue: "非表示",
+      reopen: "レシートはアドレスバーに残しません。受け取ったリンクをもう一度開いてください。",
+    },
     page: {
       back: "← レポート",
       tabsLabel: "レシートの期間",
@@ -369,7 +458,14 @@ export const ja: Widen<typeof ko> = {
       saveImage: "画像で保存",
       share: "共有",
       privacy:
-        "レシートはこの端末の記録から作ります。保存や共有をしたときだけ端末の外に出ます。サービス名が印字されるので、送る前に確認してください。",
+        "レシートはこの端末の記録から作ります。共有すると、レシートの内容（サービス名・金額）がリンクに入り、リンクを受け取った人は誰でも見られます。送ったリンクは取り消せません。利用回数や分担額は入れず、リンクの内容はサーバーに保存しません。",
+      maskNames: "サービス名とサブスクごとの金額を隠して共有する",
+      maskSingleHint: "サブスクが1つだけだと、合計だけでどのサービスか推測できることがあります。",
+      nothingToShare: "支払いが載っているレシートだけ共有できます。ほかの月を選んでみてください。",
+      confirmTitle: "レシートのリンクを送りますか？",
+      confirmBody:
+        "レシートの内容がリンクに入ります。リンクを受け取った人は誰でも見られ、転送されることもあります。送ったリンクは取り消せません。",
+      confirmOk: "共有する",
       yearDetail: (year) => `${year}年の年間まとめを見る`,
       imageSaved: "レシートの画像を保存しました",
       imageFailed: "画像を作れませんでした。テキストで共有してみてください。",
@@ -408,6 +504,9 @@ export const vi: Widen<typeof ko> = {
     paperLabel: (period) => `Hóa đơn gói đăng ký ${period}`,
     issued: (number, date) => `Số ${number} · xuất ngày ${date}`,
     empty: "Không có gói nào bị trừ tiền",
+    unknownEmpty: (period) =>
+      `Không có gói nào được biết là đã thanh toán trong ${period}. Các tháng trước khi bạn thêm gói và gói năm chưa rõ tháng thanh toán được để trống.`,
+    unknownValue: "Không rõ",
     total: (count) => `Tổng (phần của tôi) · ${count} khoản`,
     billed: "Trừ trên thẻ",
     defended: "Tiền giữ lại nhờ hủy",
@@ -437,6 +536,8 @@ export const vi: Widen<typeof ko> = {
         "Các khoản trả bằng đô la trước đây được quy đổi theo tỷ giá công bố ngày thanh toán (ECB). Có thể hơi khác tỷ giá của ngân hàng phát hành thẻ.",
       current: (count) =>
         `${count} khoản trả bằng đô la trước đây không lấy được tỷ giá ngày đó, nên dùng tỷ giá bạn đang đặt.`,
+      priorAmount: (count) =>
+        `${count} khoản thanh toán trước khi bạn đổi số tiền được tính theo số tiền cũ. Số tiền mới được tính từ ngày bạn đổi, và đây là số tiền bạn tự nhập.`,
       incompleteUpcoming:
         "Kỳ này chưa kết thúc. Các gói hiện có mà ngày thanh toán tháng này chưa đến được tính là “sắp trừ”.",
       incompleteToday: "Kỳ này chưa kết thúc nên chỉ liệt kê các khoản đến hôm nay.",
@@ -456,6 +557,18 @@ export const vi: Widen<typeof ko> = {
       total: "Tổng (phần của tôi)",
       defended: "Tiền giữ lại nhờ hủy",
     },
+    shared: {
+      badge: "Hóa đơn đăng ký được chia sẻ",
+      note: "Đây là nội dung người gửi tự ghi lại, được đưa vào liên kết. SubSlash chưa kiểm tra và không thể dùng làm bằng chứng.",
+      invalid: "Không đọc được hóa đơn này. Liên kết có thể đã bị cắt hoặc bị thay đổi.",
+      cta: "Tạo hóa đơn của tôi với SubSlash",
+      unverifiedMark: "Hóa đơn nhận qua liên kết chia sẻ. SubSlash chưa kiểm tra nội dung.",
+      maskedName: (n) => `Gói đăng ký ${n}`,
+      maskedKilled: (n) => `Gói đã hủy ${n}`,
+      hiddenSummary: "Chi tiết từng gói đã được ẩn. Chỉ hiển thị tổng.",
+      hiddenValue: "Đã ẩn",
+      reopen: "Hóa đơn không được giữ trên thanh địa chỉ. Hãy mở lại liên kết bạn nhận được.",
+    },
     page: {
       back: "← Báo cáo",
       tabsLabel: "Kỳ hóa đơn",
@@ -466,7 +579,15 @@ export const vi: Widen<typeof ko> = {
       saveImage: "Lưu thành ảnh",
       share: "Chia sẻ",
       privacy:
-        "Hóa đơn được tạo từ dữ liệu trên thiết bị này. Nó chỉ rời thiết bị khi bạn lưu hoặc chia sẻ. Tên dịch vụ được in trên đó, hãy kiểm tra trước khi gửi.",
+        "Hóa đơn được tạo từ dữ liệu trên thiết bị này. Khi chia sẻ, nội dung hóa đơn (tên dịch vụ và số tiền) được đưa vào liên kết: bất kỳ ai có liên kết đều xem được, và liên kết đã gửi không thể thu hồi. Số lần sử dụng và số tiền chia sẻ không được đưa vào, và nội dung liên kết không được lưu trên máy chủ.",
+      maskNames: "Ẩn tên dịch vụ và số tiền từng gói khi chia sẻ",
+      maskSingleHint:
+        "Nếu chỉ có một gói, chỉ cần nhìn tổng cũng có thể đoán ra đó là dịch vụ nào.",
+      nothingToShare: "Chỉ có thể chia sẻ hóa đơn có ghi khoản thanh toán. Hãy chọn tháng khác.",
+      confirmTitle: "Gửi liên kết hóa đơn?",
+      confirmBody:
+        "Nội dung hóa đơn được đưa vào liên kết. Bất kỳ ai có liên kết đều xem được và có thể chuyển tiếp. Liên kết đã gửi không thể thu hồi.",
+      confirmOk: "Chia sẻ",
       yearDetail: (year) => `Xem tổng kết năm ${year}`,
       imageSaved: "Đã lưu ảnh hóa đơn",
       imageFailed: "Không tạo được ảnh. Hãy thử chia sẻ dạng văn bản.",
@@ -505,6 +626,9 @@ export const fr: Widen<typeof ko> = {
     paperLabel: (period) => `Ticket d'abonnements — ${period}`,
     issued: (number, date) => `N° ${number} · émis le ${date}`,
     empty: "Aucun abonnement n'a été débité",
+    unknownEmpty: (period) =>
+      `Aucun abonnement dont on sait qu'il a été payé en ${period}. Les mois avant l'ajout d'un abonnement et les forfaits annuels sans mois de paiement sont laissés vides.`,
+    unknownValue: "Inconnu",
     total: (count) => `Total (votre part) · ${count} paiement${Number(count) === 1 ? "" : "s"}`,
     billed: "Débité sur votre carte",
     defended: "Argent économisé en résiliant",
@@ -537,6 +661,8 @@ export const fr: Widen<typeof ko> = {
         "Les paiements passés en dollars ont été convertis au taux publié du jour du paiement (BCE). Il peut légèrement différer du taux de votre banque.",
       current: (count) =>
         `${count} paiement${Number(count) === 1 ? "" : "s"} passé${Number(count) === 1 ? "" : "s"} en dollars n'${Number(count) === 1 ? "a" : "ont"} pas pu obtenir le taux du jour : le taux que vous avez défini est utilisé.`,
+      priorAmount: (count) =>
+        `${count} paiement${Number(count) === 1 ? "" : "s"} antérieur${Number(count) === 1 ? "" : "s"} à la modification du montant ${Number(count) === 1 ? "utilise" : "utilisent"} l'ancien montant. Le nouveau montant compte à partir du jour de la modification ; ces montants sont ceux que vous avez saisis.`,
       incompleteUpcoming:
         "Cette période n'est pas terminée. Les abonnements actuels dont le jour de paiement de ce mois n'est pas encore arrivé sont inclus comme « prévus ».",
       incompleteToday:
@@ -557,6 +683,19 @@ export const fr: Widen<typeof ko> = {
       total: "Total (votre part)",
       defended: "Argent économisé en résiliant",
     },
+    shared: {
+      badge: "Ticket d'abonnements partagé",
+      note: "Il s'agit de ce que l'expéditeur a lui-même enregistré, placé dans le lien. SubSlash ne l'a pas vérifié et il ne peut pas servir de justificatif.",
+      invalid: "Impossible de lire ce ticket. Le lien a peut-être été coupé ou modifié.",
+      cta: "Créer mon ticket avec SubSlash",
+      unverifiedMark: "Ticket reçu par un lien partagé. SubSlash n'a pas vérifié son contenu.",
+      maskedName: (n) => `Abonnement ${n}`,
+      maskedKilled: (n) => `Abonnement résilié ${n}`,
+      hiddenSummary: "Le détail par abonnement est masqué. Seul le total est affiché.",
+      hiddenValue: "Masqué",
+      reopen:
+        "Le ticket n'est pas conservé dans la barre d'adresse. Rouvrez le lien que vous avez reçu.",
+    },
     page: {
       back: "← Rapport",
       tabsLabel: "Période du ticket",
@@ -567,7 +706,16 @@ export const fr: Widen<typeof ko> = {
       saveImage: "Enregistrer en image",
       share: "Partager",
       privacy:
-        "Le ticket est créé à partir des données de cet appareil. Il ne quitte l'appareil que si vous l'enregistrez ou le partagez. Les noms des services y figurent : vérifiez avant de l'envoyer.",
+        "Le ticket est créé à partir des données de cet appareil. Si vous le partagez, son contenu (noms des services et montants) est placé dans le lien : toute personne qui a le lien peut le voir, et un lien envoyé ne peut pas être retiré. Le nombre d'utilisations et les montants partagés ne sont pas inclus, et le contenu du lien n'est pas enregistré sur notre serveur.",
+      maskNames: "Masquer les noms des services et les montants par abonnement au partage",
+      maskSingleHint:
+        "Avec un seul abonnement, le total suffit parfois à deviner de quel service il s'agit.",
+      nothingToShare:
+        "Seuls les tickets comportant des paiements peuvent être partagés. Choisissez un autre mois.",
+      confirmTitle: "Envoyer un lien vers le ticket ?",
+      confirmBody:
+        "Le contenu du ticket est placé dans le lien. Toute personne qui a le lien peut le voir, et il peut être transféré. Un lien envoyé ne peut pas être retiré.",
+      confirmOk: "Partager",
       yearDetail: (year) => `Voir le bilan ${year}`,
       imageSaved: "Image du ticket enregistrée",
       imageFailed: "Impossible de créer l'image. Essayez de partager en texte.",
@@ -606,6 +754,9 @@ export const es: Widen<typeof ko> = {
     paperLabel: (period) => `Ticket de suscripciones de ${period}`,
     issued: (number, date) => `N.º ${number} · emitido el ${date}`,
     empty: "No se cobró ninguna suscripción",
+    unknownEmpty: (period) =>
+      `No hay ninguna suscripción que sepamos que se cobró en ${period}. Los meses anteriores a añadir una suscripción y los planes anuales sin mes de cobro se dejan en blanco.`,
+    unknownValue: "Desconocido",
     total: (count) => `Total (tu parte) · ${count} cobro${Number(count) === 1 ? "" : "s"}`,
     billed: "Cobrado a tu tarjeta",
     defended: "Dinero ahorrado cancelando",
@@ -636,6 +787,8 @@ export const es: Widen<typeof ko> = {
         "Los pagos pasados en dólares se convirtieron al tipo publicado el día del pago (BCE). Puede diferir un poco del tipo de tu banco.",
       current: (count) =>
         `${count} pago${Number(count) === 1 ? "" : "s"} pasado${Number(count) === 1 ? "" : "s"} en dólares no ${Number(count) === 1 ? "obtuvo" : "obtuvieron"} el tipo de ese día, así que se usa el tipo que tienes configurado.`,
+      priorAmount: (count) =>
+        `${count} pago${Number(count) === 1 ? "" : "s"} anterior${Number(count) === 1 ? "" : "es"} al cambio de importe ${Number(count) === 1 ? "usa" : "usan"} el importe anterior. El nuevo importe cuenta desde el día en que lo cambiaste, y estos importes son los que escribiste.`,
       incompleteUpcoming:
         "Este periodo no ha terminado. Las suscripciones actuales cuyo día de cobro de este mes no ha llegado se incluyen como «por cobrar».",
       incompleteToday: "Este periodo no ha terminado, así que solo se listan los cobros hasta hoy.",
@@ -655,6 +808,20 @@ export const es: Widen<typeof ko> = {
       total: "Total (tu parte)",
       defended: "Dinero ahorrado cancelando",
     },
+    shared: {
+      badge: "Ticket de suscripciones compartido",
+      note: "Es lo que registró quien lo envió, guardado en el enlace. SubSlash no lo ha comprobado y no sirve como justificante.",
+      invalid: "No se pudo leer este ticket. Puede que el enlace esté cortado o modificado.",
+      cta: "Crear mi ticket con SubSlash",
+      unverifiedMark:
+        "Ticket recibido por un enlace compartido. SubSlash no ha comprobado su contenido.",
+      maskedName: (n) => `Suscripción ${n}`,
+      maskedKilled: (n) => `Suscripción cancelada ${n}`,
+      hiddenSummary: "El detalle por suscripción está oculto. Solo se muestra el total.",
+      hiddenValue: "Oculto",
+      reopen:
+        "El ticket no se guarda en la barra de direcciones. Vuelve a abrir el enlace que recibiste.",
+    },
     page: {
       back: "← Informe",
       tabsLabel: "Periodo del ticket",
@@ -665,7 +832,15 @@ export const es: Widen<typeof ko> = {
       saveImage: "Guardar como imagen",
       share: "Compartir",
       privacy:
-        "El ticket se crea con los datos de este dispositivo. Solo sale del dispositivo cuando lo guardas o compartes. Lleva impresos los nombres de los servicios, así que revísalo antes de enviarlo.",
+        "El ticket se crea con los datos de este dispositivo. Al compartirlo, su contenido (nombres de servicios e importes) va dentro del enlace: cualquiera que tenga el enlace puede verlo y un enlace enviado no se puede retirar. No se incluyen los usos ni los importes compartidos, y el contenido del enlace no se guarda en nuestro servidor.",
+      maskNames: "Ocultar los nombres de los servicios y los importes por suscripción al compartir",
+      maskSingleHint:
+        "Con una sola suscripción, el total puede bastar para adivinar qué servicio es.",
+      nothingToShare: "Solo se pueden compartir tickets con cobros. Prueba con otro mes.",
+      confirmTitle: "¿Enviar un enlace al ticket?",
+      confirmBody:
+        "El contenido del ticket va dentro del enlace. Cualquiera que tenga el enlace puede verlo y puede reenviarse. Un enlace enviado no se puede retirar.",
+      confirmOk: "Compartir",
       yearDetail: (year) => `Ver el resumen de ${year}`,
       imageSaved: "Imagen del ticket guardada",
       imageFailed: "No se pudo crear la imagen. Prueba a compartirlo como texto.",
@@ -704,6 +879,9 @@ export const de: Widen<typeof ko> = {
     paperLabel: (period) => `Abo-Beleg ${period}`,
     issued: (number, date) => `Nr. ${number} · ausgestellt am ${date}`,
     empty: "Es wurden keine Abos abgebucht",
+    unknownEmpty: (period) =>
+      `Für ${period} ist kein Abo bekannt, das bezahlt wurde. Monate vor dem Hinzufügen eines Abos und Jahresabos ohne Abrechnungsmonat bleiben leer.`,
+    unknownValue: "Unbekannt",
     total: (count) =>
       `Gesamt (dein Anteil) · ${count} ${Number(count) === 1 ? "Abbuchung" : "Abbuchungen"}`,
     billed: "Von der Karte abgebucht",
@@ -735,6 +913,8 @@ export const de: Widen<typeof ko> = {
         "Frühere Dollarzahlungen wurden zum veröffentlichten Kurs des Zahlungstags (EZB) umgerechnet. Er kann leicht vom Kurs deiner Kartenfirma abweichen.",
       current: (count) =>
         `Für ${count} frühere Dollarzahlung${Number(count) === 1 ? "" : "en"} gab es keinen Tageskurs, daher wird dein aktuell eingestellter Kurs verwendet.`,
+      priorAmount: (count) =>
+        `${count} Zahlung${Number(count) === 1 ? "" : "en"} vor der Betragsänderung ${Number(count) === 1 ? "verwendet" : "verwenden"} den früheren Betrag. Der neue Betrag gilt ab dem Tag der Änderung; diese Beträge hast du selbst eingetragen.`,
       incompleteUpcoming:
         "Dieser Zeitraum ist noch nicht vorbei. Aktuelle Abos, deren Abbuchungstag in diesem Monat noch kommt, sind als „fällig“ enthalten.",
       incompleteToday:
@@ -756,6 +936,20 @@ export const de: Widen<typeof ko> = {
       total: "Gesamt (dein Anteil)",
       defended: "Durch Kündigen gespartes Geld",
     },
+    shared: {
+      badge: "Geteilter Abo-Beleg",
+      note: "Das hat der Absender selbst erfasst und in den Link gepackt. SubSlash hat es nicht geprüft, und es taugt nicht als Nachweis.",
+      invalid:
+        "Dieser Beleg konnte nicht gelesen werden. Der Link wurde vielleicht abgeschnitten oder verändert.",
+      cta: "Eigenen Beleg mit SubSlash erstellen",
+      unverifiedMark:
+        "Über einen geteilten Link erhaltener Beleg. SubSlash hat den Inhalt nicht geprüft.",
+      maskedName: (n) => `Abo ${n}`,
+      maskedKilled: (n) => `Gekündigtes Abo ${n}`,
+      hiddenSummary: "Die Aufschlüsselung pro Abo ist ausgeblendet. Nur die Summe wird angezeigt.",
+      hiddenValue: "Ausgeblendet",
+      reopen: "Der Beleg bleibt nicht in der Adressleiste. Öffne den erhaltenen Link noch einmal.",
+    },
     page: {
       back: "← Bericht",
       tabsLabel: "Belegzeitraum",
@@ -766,7 +960,15 @@ export const de: Widen<typeof ko> = {
       saveImage: "Als Bild speichern",
       share: "Teilen",
       privacy:
-        "Der Beleg wird aus den Daten dieses Geräts erstellt. Er verlässt das Gerät nur, wenn du ihn speicherst oder teilst. Die Namen der Dienste stehen darauf, prüf ihn also vor dem Senden.",
+        "Der Beleg wird aus den Daten dieses Geräts erstellt. Wenn du ihn teilst, steht sein Inhalt (Namen der Dienste und Beträge) im Link: Jeder mit dem Link kann ihn sehen, und ein gesendeter Link lässt sich nicht zurückholen. Nutzungszahlen und geteilte Beträge sind nicht enthalten, und der Inhalt des Links wird nicht auf unserem Server gespeichert.",
+      maskNames: "Namen der Dienste und Beträge pro Abo beim Teilen ausblenden",
+      maskSingleHint:
+        "Bei nur einem Abo lässt sich schon an der Summe erraten, welcher Dienst es ist.",
+      nothingToShare: "Nur Belege mit Zahlungen können geteilt werden. Wähle einen anderen Monat.",
+      confirmTitle: "Link zum Beleg senden?",
+      confirmBody:
+        "Der Inhalt des Belegs steht im Link. Jeder mit dem Link kann ihn sehen, und er kann weitergeleitet werden. Ein gesendeter Link lässt sich nicht zurückholen.",
+      confirmOk: "Teilen",
       yearDetail: (year) => `Jahresrückblick ${year} ansehen`,
       imageSaved: "Belegbild gespeichert",
       imageFailed: "Das Bild konnte nicht erstellt werden. Versuch es als Text zu teilen.",
@@ -808,6 +1010,9 @@ export const pt: Widen<typeof ko> = {
     paperLabel: (period) => `Recibo de assinaturas de ${period}`,
     issued: (number, date) => `Nº ${number} · emitido em ${date}`,
     empty: "Nenhuma assinatura foi cobrada",
+    unknownEmpty: (period) =>
+      `Não há nenhuma assinatura que saibamos ter sido cobrada em ${period}. Os meses antes de você adicionar uma assinatura e os planos anuais sem mês de cobrança ficam em branco.`,
+    unknownValue: "Desconhecido",
     total: (count) => `Total (sua parte) · ${count} cobrança${Number(count) === 1 ? "" : "s"}`,
     billed: "Cobrado no seu cartão",
     defended: "Dinheiro economizado cancelando",
@@ -838,6 +1043,8 @@ export const pt: Widen<typeof ko> = {
         "Os pagamentos passados em dólar foram convertidos pela taxa publicada no dia do pagamento (BCE). Pode diferir um pouco da taxa do seu banco.",
       current: (count) =>
         `${count} pagamento${Number(count) === 1 ? "" : "s"} passado${Number(count) === 1 ? "" : "s"} em dólar não ${Number(count) === 1 ? "teve" : "tiveram"} a taxa do dia, então usamos a taxa que você definiu agora.`,
+      priorAmount: (count) =>
+        `${count} pagamento${Number(count) === 1 ? "" : "s"} anterior${Number(count) === 1 ? "" : "es"} à alteração do valor ${Number(count) === 1 ? "usa" : "usam"} o valor antigo. O novo valor conta a partir do dia da alteração, e esses valores são os que você digitou.`,
       incompleteUpcoming:
         "Este período ainda não terminou. As assinaturas atuais cujo dia de cobrança deste mês ainda não chegou entram como “a vencer”.",
       incompleteToday: "Este período ainda não terminou, então só aparecem as cobranças até hoje.",
@@ -857,6 +1064,19 @@ export const pt: Widen<typeof ko> = {
       total: "Total (sua parte)",
       defended: "Dinheiro economizado cancelando",
     },
+    shared: {
+      badge: "Recibo de assinaturas compartilhado",
+      note: "Isto é o que quem enviou registrou, guardado no link. O SubSlash não verificou e não serve como comprovante.",
+      invalid: "Não foi possível ler este recibo. O link pode ter sido cortado ou alterado.",
+      cta: "Criar meu recibo com o SubSlash",
+      unverifiedMark:
+        "Recibo recebido por um link compartilhado. O SubSlash não verificou o conteúdo.",
+      maskedName: (n) => `Assinatura ${n}`,
+      maskedKilled: (n) => `Assinatura cancelada ${n}`,
+      hiddenSummary: "O detalhamento por assinatura está oculto. Só o total é mostrado.",
+      hiddenValue: "Oculto",
+      reopen: "O recibo não fica na barra de endereços. Abra de novo o link que você recebeu.",
+    },
     page: {
       back: "← Relatório",
       tabsLabel: "Período do recibo",
@@ -867,7 +1087,14 @@ export const pt: Widen<typeof ko> = {
       saveImage: "Salvar como imagem",
       share: "Compartilhar",
       privacy:
-        "O recibo é feito com os dados deste dispositivo. Ele só sai do dispositivo quando você salva ou compartilha. Os nomes dos serviços aparecem impressos, então confira antes de enviar.",
+        "O recibo é feito com os dados deste dispositivo. Ao compartilhar, o conteúdo do recibo (nomes dos serviços e valores) vai dentro do link: qualquer pessoa com o link pode vê-lo, e um link enviado não pode ser desfeito. Usos e valores divididos não são incluídos, e o conteúdo do link não é salvo no nosso servidor.",
+      maskNames: "Ocultar os nomes dos serviços e os valores por assinatura ao compartilhar",
+      maskSingleHint: "Com uma só assinatura, só o total já pode revelar qual é o serviço.",
+      nothingToShare: "Só é possível compartilhar recibos com cobranças. Escolha outro mês.",
+      confirmTitle: "Enviar um link do recibo?",
+      confirmBody:
+        "O conteúdo do recibo vai dentro do link. Qualquer pessoa com o link pode vê-lo, e ele pode ser encaminhado. Um link enviado não pode ser desfeito.",
+      confirmOk: "Compartilhar",
       yearDetail: (year) => `Ver o resumo de ${year}`,
       imageSaved: "Imagem do recibo salva",
       imageFailed: "Não foi possível criar a imagem. Tente compartilhar como texto.",

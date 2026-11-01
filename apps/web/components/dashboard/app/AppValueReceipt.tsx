@@ -1,18 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { createPortal } from "react-dom";
-import { ReceiptText, X } from "lucide-react";
-import type { Subscription, UsageLog } from "@subslash/shared";
+import { ReceiptText } from "lucide-react";
+import { type Subscription, type UsageLog, formatSpacedKRW } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
-import { useIsClient } from "@hooks/useIsClient";
 import { cn } from "@lib/utils";
-import { useT } from "@lib/i18n";
+import { useT, useServiceNames } from "@lib/i18n";
 import { ExchangeRateNote } from "../../settings/ExchangeRateNote";
-import { useOverlayLock } from "@hooks/useOverlayLock";
+import { AppSheet } from "../../settings/app/AppSheet";
 import { AppSavingsLink } from "../../savings/app/AppSavingsLink";
 import { ValueReceiptPaper } from "./ValueReceiptPaper";
-import { type ValueReceipt, buildValueReceipt, sheetActions, won } from "./valueReceipt";
+import { type ValueReceipt, buildValueReceipt, sheetActions } from "./valueReceipt";
 
 export interface AppValueReceiptProps {
   subscriptions: Subscription[];
@@ -66,7 +64,7 @@ export function AppValueReceipt({
         <div className="rounded-xl bg-secondary px-2.5 py-2">
           <dt className="text-[10.5px] text-muted-foreground">{r.fixed}</dt>
           <dd className="font-mono text-[17px] font-black tracking-tight tabular-nums">
-            {won(data.fixedKRW)}
+            {formatSpacedKRW(data.fixedKRW)}
           </dd>
         </div>
         <div className="rounded-xl bg-secondary px-2.5 py-2">
@@ -74,7 +72,7 @@ export function AppValueReceipt({
             <>
               <dt className="text-[10.5px] text-muted-foreground">{r.savable}</dt>
               <dd className="font-mono text-[17px] font-black tracking-tight text-amber-700 tabular-nums dark:text-amber-400">
-                {won(summary.wastedKRW)}
+                {formatSpacedKRW(summary.wastedKRW)}
               </dd>
             </>
           ) : summary.unknownItems.length > 0 ? (
@@ -133,47 +131,20 @@ function ReceiptSheet({
   onCheckIn: (id: string) => void;
   onCancelGuide: (id: string, rest?: string[]) => void;
 }) {
-  const isClient = useIsClient();
   const t = useT();
-
-  useOverlayLock(open, onClose);
-
-  if (!open || !isClient) return null;
+  const names = useServiceNames();
   const { summary } = data;
-  const { cancel, checkIn } = sheetActions(t, summary);
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex h-[100dvh] items-end px-safe">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="value-receipt-title"
-        className="relative flex h-[92dvh] w-full flex-col rounded-t-3xl bg-background shadow-2xl animate-in slide-in-from-bottom-8 fade-in"
-      >
-        <div className="relative flex h-8 shrink-0 items-center justify-center">
-          <span className="h-1 w-9 rounded-full bg-border" aria-hidden />
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-1.5 right-3 rounded-full p-1.5 text-muted-foreground hover:bg-secondary"
-          >
-            <X className="size-5" />
-            <span className="sr-only">{t.receipt.close}</span>
-          </button>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
-          <ValueReceiptPaper
-            now={now}
-            data={data}
-            onCheckIn={onCheckIn}
-            onCancelGuide={onCancelGuide}
-          />
-          <div className="mt-3">
-            <ExchangeRateNote />
-          </div>
-        </div>
-        {(summary.wastedItems.length > 0 || summary.unknownItems.length > 0) && (
-          <div className="flex shrink-0 gap-2 border-t px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+  const { cancel, checkIn } = sheetActions(t, summary, names.sub);
+  const hasActions = summary.wastedItems.length > 0 || summary.unknownItems.length > 0;
+  return (
+    <AppSheet
+      open={open}
+      onClose={onClose}
+      labelledBy="value-receipt-title"
+      heightClassName="h-[92dvh]"
+      footer={
+        hasActions && (
+          <div className="flex gap-2">
             {cancel && (
               <button
                 type="button"
@@ -196,9 +167,18 @@ function ReceiptSheet({
               </button>
             )}
           </div>
-        )}
+        )
+      }
+    >
+      <ValueReceiptPaper
+        now={now}
+        data={data}
+        onCheckIn={onCheckIn}
+        onCancelGuide={onCancelGuide}
+      />
+      <div className="mt-3">
+        <ExchangeRateNote />
       </div>
-    </div>,
-    document.body,
+    </AppSheet>
   );
 }

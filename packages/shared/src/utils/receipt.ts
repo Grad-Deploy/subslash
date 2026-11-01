@@ -1,8 +1,10 @@
 import type { ChargeRecord, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
+import { priceAsOf } from "./amountHistory";
 import { isSameService } from "./chargeHistory";
-import { getBilledAmount, toKRW } from "./currency";
-import { isInTrial, startOfDay, localDateKey } from "./date";
+import { latestCheckIn } from "./checkInEvidence";
+import { getBilledAmount, getBilledAmountKRW, toKRW } from "./currency";
+import { isInTrial, parseTimestamp, startOfDay, localDateKey } from "./date";
 import type { RateOn } from "./historicalRate";
 import {
   getMyAnnualAmountKRW,
@@ -32,6 +34,8 @@ import {
  *   이후는 넣지 않는다.
  *
  * 금액은 내 몫(나눠 내면 나눈 뒤, 세금 포함)을 원 환산한 값이다. 지출 합계(`sumMyMonthlyKRW`)와 같은 기준이다.
+ * 사용자가 금액을 고쳤으면 고친 날부터 새 금액이고, 그 전의 결제는 고치기 전 금액으로 셈한다(`priceAsOf`,
+ * utils/amountHistory) — 고친 금액으로 지난 영수증을 다시 셈하면 그때 낸 돈과 다른 숫자가 된다.
  * 달러 결제는 이미 지난 결제면 결제일의 고시 환율(`rateOn`, utils/historicalRate)로 바꾼다 — 지금 환율로 바꾸면
  * 환율이 움직인 만큼 그때 낸 돈과 다른 숫자가 된다. 그날 환율을 모르거나 아직 오지 않은 결제(결제 예정)는
  * 사용자 환율(`rate`)로 바꾸고, 몇 건을 어느 쪽으로 바꿨는지 `fx`에 센다.
@@ -94,6 +98,11 @@ export interface Receipt {
    * 몰라 지금 사용자 환율로 바꾼 건수. 결제 예정은 세지 않는다(앞으로의 환율은 모른다).
    */
   fx: { historical: number; current: number };
+  /**
+   * 사용자가 금액을 고치기 전에 있던 결제라 고치기 전 금액으로 셈한 건수(`amountHistory`). 고친 날부터 새
+   * 금액이라고 본 것이라, 화면은 이것이 사용자가 적은 값으로 셈한 것임을 적는다.
+   */
+  priorAmount: number;
   excluded: {
     /** 결제 월을 모르는 연간 구독 수. */
     undated: number;
@@ -106,9 +115,8 @@ export interface Receipt {
 
 /** ISO 시각을 그 기기 시간대의 날짜로. 깨졌으면 null. */
 function dayOf(iso: string | undefined): Date | null {
-  if (!iso) return null;
-  const time = new Date(iso);
-  return Number.isNaN(time.getTime()) ? null : startOfDay(time);
+  const time = parseTimestamp(iso);
+  return time ? startOfDay(time) : null;
 }
 
 /** 그 달의 결제일. 연간 구독이 그 달에 결제되지 않으면 null. 짧은 달은 말일로 당긴다. */
@@ -124,6 +132,20 @@ function monthsOf(period: ReceiptPeriod): { year: number; monthIndex: number }[]
   return Array.from({ length: 12 }, (_, monthIndex) => ({ year: period.year, monthIndex }));
 }
 
+/** 영수증 기간의 첫날 0시(기기 시간대). */
+export function receiptPeriodStart(period: ReceiptPeriod): Date {
+  return period.kind === "month"
+    ? new Date(period.year, period.month - 1, 1)
+    : new Date(period.year, 0, 1);
+}
+
+/** 영수증 기간의 마지막 날 0시(기기 시간대). 그 달의 날 수를 손으로 세지 않게 여기서 낸다. */
+export function receiptPeriodLastDay(period: ReceiptPeriod): Date {
+  return period.kind === "month"
+    ? new Date(period.year, period.month, 0)
+    : new Date(period.year, 11, 31);
+}
+
 function periodEnd(period: ReceiptPeriod): Date {
   // 기간의 마지막 날 다음 날 0시.
   return period.kind === "month"
@@ -131,15 +153,9 @@ function periodEnd(period: ReceiptPeriod): Date {
     : new Date(period.year + 1, 0, 1);
 }
 
-function periodStart(period: ReceiptPeriod): Date {
-  return period.kind === "month"
-    ? new Date(period.year, period.month - 1, 1)
-    : new Date(period.year, 0, 1);
-}
-
 function inPeriod(date: Date | null, period: ReceiptPeriod): boolean {
   if (!date) return false;
-  return date >= periodStart(period) && date < periodEnd(period);
+  return date >= receiptPeriodStart(period) && date < periodEnd(period);
 }
 
 /** 그 기간에 한 마지막 횟수 체크인. */
@@ -148,15 +164,13 @@ function lastUsesLogIn(
   logs: readonly UsageLog[],
   period: ReceiptPeriod,
 ): UsageLog | null {
-  let latest: UsageLog | null = null;
-  for (const log of logs) {
-    if (log.subscriptionId !== subscriptionId) continue;
-    if ((log.metric ?? "uses") !== "uses") continue;
-    const at = new Date(log.checkedAt);
-    if (Number.isNaN(at.getTime()) || !inPeriod(at, period)) continue;
-    if (!latest || at.getTime() >= Date.parse(latest.checkedAt)) latest = log;
-  }
-  return latest;
+  return latestCheckIn(
+    logs,
+    (log, at) =>
+      log.subscriptionId === subscriptionId &&
+      (log.metric ?? "uses") === "uses" &&
+      inPeriod(at, period),
+  );
 }
 
 /** `YYYY-MM-DD`를 그 기기 시간대의 날짜로. */
@@ -214,6 +228,8 @@ export function buildReceipt(
 ): Receipt {
   const today = startOfDay(now);
   const fx = { historical: 0, current: 0 };
+  /** 사용자가 금액을 고치기 전의 결제라 고치기 전 금액으로 셈한 건수(utils/amountHistory). */
+  let priorAmount = 0;
   /**
    * 그 날의 결제를 원으로 바꿀 환율. 달러가 아니면 쓰이지 않는다. 아직 오지 않은 날은 지금 환율이다.
    * `count`면 지난 달러 결제로 세어 `fx`에 남긴다.
@@ -238,7 +254,7 @@ export function buildReceipt(
     if (undated) {
       // 해지한 연간 구독도 그 기간에 결제됐을 수 있지만, 언제인지 모른다.
       const killedAt = dayOf(sub.killedAt);
-      if (sub.status === "active" || (killedAt && killedAt >= periodStart(period))) {
+      if (sub.status === "active" || (killedAt && killedAt >= receiptPeriodStart(period))) {
         excluded.undated += 1;
       }
     }
@@ -304,16 +320,19 @@ export function buildReceipt(
     if (hadTrial) excluded.trial += 1;
     if (chargeDates.length === 0) continue;
 
-    // 결제 한 번의 내 몫·청구액. 결제일마다 그날의 환율로 바꾼다.
+    // 결제 한 번의 내 몫·청구액. 결제일마다 그날의 금액(사용자가 고치기 전이면 고치기 전 금액)과 그날의
+    // 환율로 바꾼다.
     let recordedMine = 0;
     let recordedBilled = 0;
     for (const date of recordedDates) {
-      const dayRate = rateFor(sub, date, true);
+      const then = priceAsOf(sub, date);
+      if (then !== sub) priorAmount += 1;
+      const dayRate = rateFor(then, date, true);
       recordedMine +=
-        sub.billingCycle === "yearly"
-          ? getMyAnnualAmountKRW(sub, dayRate)
-          : getMyMonthlyAmountKRW(sub, dayRate);
-      recordedBilled += toKRW(getBilledAmount(sub), sub.currency, dayRate);
+        then.billingCycle === "yearly"
+          ? getMyAnnualAmountKRW(then, dayRate)
+          : getMyMonthlyAmountKRW(then, dayRate);
+      recordedBilled += getBilledAmountKRW(then, dayRate);
     }
     // 결제 메일의 금액은 카드에 청구된 값이다. 나눠 내면 지금 나누는 비율로 내 몫을 계산한다.
     const billedNow = getBilledAmount(sub);
@@ -404,6 +423,7 @@ export function buildReceipt(
     killed,
     excluded,
     fx,
+    priorAmount,
   };
 }
 

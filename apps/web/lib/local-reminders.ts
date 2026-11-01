@@ -9,6 +9,7 @@ import {
   formatCurrency,
   getBilledAmount,
   getNextBillingDateFor,
+  isInTrial,
   parseDateOnly,
   type Subscription,
 } from "@subslash/shared";
@@ -42,7 +43,8 @@ export interface PlannedReminder {
 }
 
 /**
- * 앞으로 보낼 결제 알림. 활성 구독만, 결제일 `daysBefore`일 전 오전 9시에.
+ * 앞으로 보낼 결제 알림. 활성 구독만, 결제일 `daysBefore`일 전 오전 9시에. 무료 체험 중에 오는 결제일은 넣지 않는다 —
+ * 결제 캘린더·지출 합계처럼 내지 않을 돈을 알리지 않는다.
  *
  * 결제 월을 모르는 연간 구독은 결제일을 알 수 없어 넣지 않는다 — 날짜를 지어내면 오지 않을
  * 결제를 알린다. 알릴 시각이 이미 지났으면 그 결제는 건너뛴다. 늦게라도 보내면, 앱을 열 때마다
@@ -65,6 +67,8 @@ export function planReminders(
       if (!billing) break;
       // 결제일 당일은 지난 것으로 치므로(getNextBillingDateFor), 이 날로 물으면 그다음 결제가 나온다.
       from = billing;
+      // 무료 체험 중에 오는 결제일은 돈이 나가지 않는다. 체험이 끝난 뒤의 결제(종료일 당일부터)는 알린다.
+      if (isInTrial(sub, billing)) continue;
 
       const at = new Date(
         billing.getFullYear(),

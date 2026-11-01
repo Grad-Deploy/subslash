@@ -36,12 +36,11 @@ import {
  * 이 들어있어도 그것은 한 칸의 데이터로 저장될 뿐 명령이 되지 않는다.
  */
 /**
- * 가입 시도는 한 IP에서 한 시간에 100번까지. 중복 확인이 '이미 가입된 이메일입니다'를 알려 주므로,
- * 막지 않으면 남의 주소를 대량으로 넣어 누가 SubSlash를 쓰는지 알아낼 수 있다(구독 관리 앱을 쓴다는
- * 것 자체가 개인정보다). 학교·전시장 공용 와이파이(NAT)에서 수십 명이 함께 가입하며 오타를 고치는
- * 상황은 넉넉히 통과시키되, 주소를 대량으로 찔러보는 시도는 막는 값이다.
+ * 가입 시도는 IP당 한 시간에 20번까지. 중복 확인이 '이미 가입된 이메일입니다'를 알려 주므로, 막지
+ * 않으면 남의 주소를 대량으로 넣어 누가 SubSlash를 쓰는지 알아낼 수 있다(구독 관리 앱을 쓴다는
+ * 것 자체가 개인정보다). 사람이 가입하다 틀리는 횟수로는 닿지 않는 값이다.
  */
-const ATTEMPTS_PER_IP: RateLimitRule = { limit: 100, windowMs: HOUR_MS };
+const ATTEMPTS_PER_IP: RateLimitRule = { limit: 20, windowMs: HOUR_MS };
 
 export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();

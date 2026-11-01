@@ -1,15 +1,12 @@
 import { DAY_MS } from "@subslash/shared";
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
 import { and, eq, gt, lt, or } from "drizzle-orm";
 import { getDb, type DbExecutor } from "./db";
-import { accountSnapshots, accounts, sessions, type Account } from "./schema";
+import { sha256Hex } from "./tokens";
+import { accounts, sessions, type Account } from "./schema";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAppOrigin } from "./app-origins";
-import { deleteGmailImportData } from "./gmail-auto-import";
-import { deleteCalendarSyncPlan } from "./calendar-sync";
-import { deleteAllDeviceUsage } from "./device-usage-server";
-import { deleteOAuthData } from "./oauth-cleanup";
-import { deleteAskDailyCounts } from "./ask/daily-count";
+import { deleteAccountRecords } from "./account-data";
 import { hasPassword } from "./password";
 
 /**
@@ -27,10 +24,6 @@ import { hasPassword } from "./password";
 export const SESSION_COOKIE = "subslash_session";
 const SESSION_TTL_DAYS = 30;
 const SESSION_TTL_MS = SESSION_TTL_DAYS * DAY_MS;
-
-export function hashSessionToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
 
 /** 로그인한 사람에게 돌려줄 수 있는 정보. 해시는 절대 포함하지 않는다. */
 export interface PublicAccount {
@@ -73,7 +66,7 @@ export async function createSession(
 
   await db.insert(sessions).values({
     accountId,
-    tokenHash: hashSessionToken(token),
+    tokenHash: sha256Hex(token),
     expiresAt: expiresAt.toISOString(),
   });
 
@@ -95,7 +88,7 @@ export async function getAccountBySessionToken(token: string | undefined): Promi
     .select({ account: accounts })
     .from(sessions)
     .innerJoin(accounts, eq(sessions.accountId, accounts.id))
-    .where(and(eq(sessions.tokenHash, hashSessionToken(token)), gt(sessions.expiresAt, now)))
+    .where(and(eq(sessions.tokenHash, sha256Hex(token)), gt(sessions.expiresAt, now)))
     .limit(1);
 
   return rows[0]?.account ?? null;
@@ -105,7 +98,7 @@ export async function getAccountBySessionToken(token: string | undefined): Promi
 export async function destroySession(token: string | undefined): Promise<void> {
   if (!token) return;
   const db = getDb();
-  await db.delete(sessions).where(eq(sessions.tokenHash, hashSessionToken(token)));
+  await db.delete(sessions).where(eq(sessions.tokenHash, sha256Hex(token)));
 }
 
 /**
@@ -130,24 +123,13 @@ export async function replacePassword(account: Account, newHash: string): Promis
 }
 
 /**
- * 회원 탈퇴. 계정과 거기 딸린 세션·계정에 저장한 기록·Gmail 자동 가져오기 연결과 후보를 지운다. 계정이 없었으면 `false`.
+ * 회원 탈퇴. 딸린 기록(`deleteAccountRecords`)을 먼저 지우고 계정을 지운다. 계정이 없었으면 `false`.
  *
- * 스키마의 ON DELETE CASCADE는 PRAGMA foreign_keys가 켜져 있을 때만 동작하므로 딸린 행을
- * 직접 지운다. 중간에 한 단계라도 실패하면 계정은 지워졌는데 자식 행이 남거나(고아 레코드),
- * 반대로 기록만 날아가고 계정은 남지 않도록 전체를 하나의 트랜잭션으로 묶는다.
- * 결제 알림(notification_subscribers)은 계정과 따로라 여기서 건드리지 않는다.
- * 계정 메일 발송 기록(verification_mail_log)은 주소별 발송 한도라 남긴다 — 지우면 탈퇴와
- * 재가입을 되풀이해 한도를 풀 수 있다. 그 기록은 24시간이 지나면 다음 발송 때 지워진다.
+ * 전체를 하나의 트랜잭션으로 묶어 중간에 실패하더라도 계정이나 딸린 기록이 반쪽만 지워지지 않게 한다.
  */
 export async function deleteAccount(accountId: string): Promise<boolean> {
   return getDb().transaction(async (tx) => {
-    await tx.delete(sessions).where(eq(sessions.accountId, accountId));
-    await tx.delete(accountSnapshots).where(eq(accountSnapshots.accountId, accountId));
-    await deleteGmailImportData(accountId, tx);
-    await deleteCalendarSyncPlan(accountId, tx);
-    await deleteAllDeviceUsage(accountId, tx);
-    await deleteOAuthData(accountId, tx);
-    await deleteAskDailyCounts(accountId, tx);
+    await deleteAccountRecords(accountId, tx);
     const deleted = await tx
       .delete(accounts)
       .where(eq(accounts.id, accountId))
@@ -227,7 +209,7 @@ export async function findConflicts(
 
 /**
  * 요청에 실린 세션 토큰. 웹은 httpOnly 쿠키로, 앱(Capacitor)은 `Authorization: Bearer` 헤더로
- * 보낸다 — 앱의 화면은 다른 출처(capacitor://localhost)에서 돌아 쿠키가 실리지 않는다. 둘 다
+ * 보낸다 — 앱의 화면은 다른 출처(https://localhost)에서 돌아 쿠키가 실리지 않는다. 둘 다
  * 있으면 쿠키를 쓴다.
  */
 export function readSessionToken(request: NextRequest): string | undefined {

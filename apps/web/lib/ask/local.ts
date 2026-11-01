@@ -1,4 +1,4 @@
-import { POPULAR_SERVICES, type Subscription } from "@subslash/shared";
+import { POPULAR_SERVICES, daysInMonth, type Subscription } from "@subslash/shared";
 import { isPromptAttack } from "./attack";
 import { ALIAS_NAMES, compactName } from "./fuzzy";
 import { matchPresets, matchSubscriptions } from "./service-match";
@@ -16,29 +16,13 @@ type AskCategory = (typeof ASK_CATEGORIES)[number];
  * 2. `refineCall`: 기간이 적힌 질문의 일수를 기기가 다시 정한다. AI는 오늘이 며칠인지 모르므로 "월말까지"를 셀 수 없다.
  */
 
-/**
- * 한국의 오늘 날짜(그날 정오, 실행하는 곳의 시간대로 만든 Date). 서버(Vercel)는 UTC라 `new Date()`로 날짜를 세면 한국
- * 자정부터 아침 9시까지 하루 어긋난다 — "내일"·"월말까지"가 하루 틀린다.
- */
-export function koreaToday(now: Date = new Date()): Date {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(now);
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    Number(parts.find((p) => p.type === type)?.value);
-  return new Date(part("year"), part("month") - 1, part("day"), 12);
-}
-
 const normalize = (text: string) => text.toLowerCase().replace(/\s+/g, " ").trim();
 
 const clampDays = (n: number) => Math.min(31, Math.max(1, Math.round(n)));
 
 /** 오늘(포함)부터 이번 달 마지막 날까지의 일수. */
 function daysToMonthEnd(now: Date): number {
-  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const last = daysInMonth(now.getFullYear(), now.getMonth());
   return clampDays(last - now.getDate() + 1);
 }
 
@@ -324,9 +308,26 @@ const SUB_COUNT =
   /구독\s*(?:중인\s*(?:거|것|서비스)?|하는\s*(?:거|것|서비스)?)?\s*(?:이|은|을|가|는)?\s*(?:지금\s*)?(?:총|전부|모두|다)?\s*몇\s*(?:개|가지)|how many subscriptions/;
 const NOT_SUB_COUNT = /결제|청구|체험|해지|취소|끊|안\s*쓰|겹|중복|이번\s*주|다음\s*주|며칠|\d/;
 
-/** 인사·뜻 없는 짧은 말("ㅎㅇ", "안녕"). 물어볼 수 있는 것을 보여 준다(unsupported) — 사용법(help)이 아니다. */
-const SMALL_TALK =
-  /^(?:ㅎㅇ|ㅎ2|하이|ㅂㅇ|안녕(?:하세요)?|반가워(?:요)?|ㅇㅇ|ㄴㄴ|ㅋ+|ㅎ+|ㅠ+|ㅜ+|hi|hello|hey|yo)[\s!?.~]*$/;
+/**
+ * 인사·고맙다는 말·뜻 없는 짧은 말("ㅎㅇ", "안녕", "merci"). 물어볼 수 있는 것을 보여 준다(unsupported) — 사용법(help)이
+ * 아니다. 화면 언어(lib/i18n/config)마다의 인사도 둔다 — 한국어·영어만 있을 때 "hello"는 기기가 답하고 "halo"·"merci"는
+ * AI로 가서 횟수를 썼고, 횟수가 찼으면 인사에 '질문이 많아 잠시 쉬어 갈게요'가 나왔다. 서버도 이 규칙을 횟수를 세기
+ * 전에 돌린다.
+ */
+const SMALL_TALK = new RegExp(
+  "^(?:" +
+    [
+      // 한국어
+      "ㅎㅇ|ㅎ2|하이|ㅂㅇ|안녕(?:하세요)?|반가워(?:요)?|고마워(?:요)?|감사(?:합니다|해요)?|ㄱㅅ|ㄳ|땡큐|ㅇㅇ|ㄴㄴ|ㅋ+|ㅎ+|ㅠ+|ㅜ+",
+      // 영어
+      "hi|hello|hey|yo|hiya|good (?:morning|afternoon|evening)|thanks?(?: you)?|thx|ty",
+      // 중국어·일본어·베트남어
+      "你好|您好|嗨|谢谢|謝謝|こんにちは|こんばんは|おはよう(?:ございます)?|ありがとう(?:ございます)?|xin chào|chào(?: bạn)?|cảm ơn|cám ơn",
+      // 프랑스어·스페인어·독일어·포르투갈어(와 같은 철자의 인사 'halo')
+      "bonjour|salut|coucou|merci(?: beaucoup)?|hola|buenos días|buenas|gracias|hallo|halo|guten tag|moin|danke(?: schön)?|olá|ola|oi|bom dia|obrigad[oa]",
+    ].join("|") +
+    ")[\\s!?.~！？。、]*$",
+);
 
 /** 앱 사용법 질문: 어떻게·어디서를 묻고 앱 기능 낱말이 함께 있다. 도움말(`help`)로 넘긴다. */
 const HELP_HOW =
@@ -368,7 +369,15 @@ const asksAmount =
 /** 지출을 묻지만 앱이 모르는 것(요금 변경·평균·이유)이나 다른 기능(알림·비교)이 섞인 말. */
 const NOT_SPEND =
   /인상|올랐|오르|오른|내린|소식|평균|왜|이유|알림|비교|보통|예산|추천|줄었|늘었|증가|감소|변화/;
-const yearly = /1년|일년|한\s*해|연간|연\s*단위|올해|1\s*년|12\s*개월|열두\s*달|year|annual/;
+// '일 년'(띄어 씀)이 빠져 "일 년 뒤엔 얼마"를 한 달 합계로 답했다. WHOLE_YEAR는 처음부터 `일\s*년`을 본다.
+const yearly = /1년|일\s*년|한\s*해|연간|연\s*단위|올해|1\s*년|12\s*개월|열두\s*달|year|annual/;
+/**
+ * 무엇을 빼고 나머지를 묻는 말. 앱에는 '무엇을 뺀 합계'를 셀 도구가 없어 답하지 않는다(unsupported) — 분류·서비스
+ * 이름만 보고 읽으면 "OTT 빼고 나머지 구독은 1년에 얼마야?"를 뺀 쪽인 OTT의 합계로 답했고, AI에 맡겼더니 고를 도구가
+ * 없어 '빼고'를 무시한 전체 합계로 답했다(운영 QA 2026-10-24). 틀린 숫자보다 답하지 않는 편이 낫다.
+ */
+const EXCLUDING =
+  /빼고|빼면|뺀\s|제외|말고|외에|외의|나머지|except|excluding|other than|besides|apart from/;
 const monthly = /한\s*달|1달|월\s*(?:에|마다|고정|구독)|매달|매월|달에|월간|month/;
 /** 기간을 정하지 않고 쌓인 것 전부(지킨 돈의 `all`). 대시보드·절약 현황의 '해지로 지킨 돈'이 이 숫자다. */
 const allTime =
@@ -470,6 +479,7 @@ export function localAskCall(
   }
   if (q.length < 4 || q.length > 60) return null;
   if (STEERING.test(q) || NOT_MY_RECORDS.test(q)) return null;
+  if (EXCLUDING.test(q)) return { tool: "unsupported" };
   const subscriptions = options.subscriptions ?? [];
   const ofService = serviceCall(q, subscriptions);
   // 서비스 이름과 1년을 함께 적은 질문("배민 1년은?")은 '은/는'으로 끝나도 앞선 턴 없이 뜻이 하나다.

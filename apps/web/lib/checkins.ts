@@ -1,4 +1,5 @@
 import {
+  latestCheckIn,
   metricForSubscription,
   metricOfLog,
   type Subscription,
@@ -16,14 +17,10 @@ export function latestFreshLog(
   now: Date = new Date(),
 ): UsageLog | null {
   const freshAfter = now.getTime() - USAGE_FRESH_DAYS * DAY_MS;
-  let latest: UsageLog | null = null;
-  for (const log of usageLogs) {
-    if (log.subscriptionId !== subscriptionId) continue;
-    const checkedAt = Date.parse(log.checkedAt);
-    if (checkedAt < freshAfter) continue;
-    if (!latest || checkedAt > Date.parse(latest.checkedAt)) latest = log;
-  }
-  return latest;
+  return latestCheckIn(
+    usageLogs,
+    (log, at) => log.subscriptionId === subscriptionId && at.getTime() >= freshAfter,
+  );
 }
 
 /**

@@ -114,17 +114,11 @@ describe("Metaphor and Value Calculation Utils", () => {
       expect(describeBreakEven(messages.ko, info)).toContain("이용 목표 달성 완료");
     });
 
-    it("사용자 지정 목표(8회)에서도 기본 danger 규칙(redBelow = 2회 미만)이 일관되게 적용되고, dangerBelowPercent로 명시적 덮어쓰기가 가능하다", () => {
-      // dangerBelowPercent 생략 시: target과 무관하게 redBelow(2회) 미만이 danger
+    it("사용자 지정 목표(8회)에서도 기본 danger 규칙(redBelow = 2회 미만)이 일관되게 적용된다", () => {
       expect(getBreakEvenInfo(17000, 1, 8).level).toBe("danger");
       expect(getBreakEvenInfo(17000, 2, 8).level).toBe("warning");
       expect(getBreakEvenInfo(17000, 7, 8).level).toBe("warning");
       expect(getBreakEvenInfo(17000, 8, 8).level).toBe("safe");
-
-      // dangerBelowPercent = 50 명시 시: 50%(4회) 미만이 danger
-      expect(getBreakEvenInfo(17000, 3, 8, 50).level).toBe("danger");
-      expect(getBreakEvenInfo(17000, 7, 8, 50).level).toBe("warning");
-      expect(getBreakEvenInfo(17000, 8, 8, 50).level).toBe("safe");
     });
 
     it("목표 횟수가 1회 또는 2회일 때도 danger 경계(최대 100%)와 safe가 올바르게 판정된다", () => {

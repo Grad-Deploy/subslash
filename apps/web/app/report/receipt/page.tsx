@@ -1,10 +1,15 @@
 "use client";
 
-import React, { Suspense, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Download, Share2 } from "lucide-react";
-import { buildReceipt, previousMonth, type ReceiptPeriod } from "@subslash/shared";
+import {
+  buildReceipt,
+  receiptPeriodLastDay,
+  receiptPeriodStart,
+  type ReceiptPeriod,
+} from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
@@ -12,6 +17,7 @@ import { rateRangeFor, useHistoricalRates } from "@hooks/useHistoricalRates";
 import { copyText, saveImage, shareText } from "@lib/native";
 import { webUrl } from "@lib/api";
 import {
+  defaultReceiptMonth,
   formatReceiptPeriodText,
   formatReceiptShareText,
   parseReceiptPeriod,
@@ -22,10 +28,17 @@ import { useLatestT, useServiceNames, useT } from "@lib/i18n";
 import { renderReceiptImage } from "@lib/receipt-image";
 import { ReceiptThemePicker, ReceiptThemePreview } from "@components/report/ReceiptThemePreview";
 import { useReceiptTheme } from "@lib/receipt-theme";
+import { RECEIPT_SHARE_PATH, encodeReceiptShare, shareableReceipt } from "@lib/receipt-share";
+import { readLocal, writeLocal } from "@lib/local-storage";
+import { IS_APP_BUILD } from "@lib/platform";
+import { ConfirmDialog } from "@components/ui/confirm-dialog";
 import { Button } from "@components/ui/button";
 import { Spinner, PageSpinner } from "@components/ui/spinner";
 import { CopyFallbackDialog } from "@components/ui/copy-fallback-dialog";
 import { cn } from "@lib/utils";
+
+/** 이 기기에서 영수증 링크를 처음 보낼 때의 확인을 마쳤는지. 기기의 것이라 기록·백업·동기화에 넣지 않는다. */
+const SHARE_ACK_KEY = "subslash-receipt-share-ack";
 
 /** 이보다 이른 해는 이 앱에 기록이 있을 수 없다(연말 결산과 같은 값). */
 const EARLIEST_YEAR = 2020;
@@ -34,16 +47,6 @@ function shift(period: ReceiptPeriod, step: number): ReceiptPeriod {
   if (period.kind === "year") return { kind: "year", year: period.year + step };
   const date = new Date(period.year, period.month - 1 + step, 1);
   return { kind: "month", year: date.getFullYear(), month: date.getMonth() + 1 };
-}
-
-/** 영수증 기간의 첫날과 마지막 날. */
-function periodBounds(period: ReceiptPeriod): { start: Date; end: Date } {
-  return period.kind === "month"
-    ? {
-        start: new Date(period.year, period.month - 1, 1),
-        end: new Date(period.year, period.month, 0),
-      }
-    : { start: new Date(period.year, 0, 1), end: new Date(period.year, 11, 31) };
 }
 
 function isFuture(period: ReceiptPeriod, now: Date): boolean {
@@ -55,7 +58,7 @@ function isFuture(period: ReceiptPeriod, now: Date): boolean {
  * 구독 영수증 — 지난달(또는 고른 달·해)에 기록상 결제된 구독을 영수증 모양으로.
  *
  * 매달 1일 앱 알림(lib/local-reminders)이 지난달 영수증을 여기로 연다. 주소는 `?month=2026-09`나
- * `?year=2026`이고, 없으면 지난달이다. 영수증은 이미지로 저장하거나 글로 공유할 수 있다 — 둘 다
+ * `?year=2026`이고, 없으면 지난달이다(지난달이 구독을 등록하기 전이라 모르는 달이면 이번 달). 영수증은 이미지로 저장하거나 글로 공유할 수 있다 — 둘 다
  * 사용자가 누를 때만 기기 밖으로 나간다.
  */
 function ReceiptFromQuery() {
@@ -74,18 +77,26 @@ function ReceiptFromQuery() {
   const [message, setMessage] = useState<string | null>(null);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   const [theme, setTheme] = useReceiptTheme();
+  const [maskNames, setMaskNames] = useState(false);
+  const [confirmShare, setConfirmShare] = useState(false);
 
+  // 주소에 기간이 없으면 지난달, 지난달이 등록하기 전이라 모르는 달이면 이번 달(defaultReceiptMonth).
+  const defaultMonth = useMemo(
+    () => defaultReceiptMonth(subscriptions, usageLogs, rate, now),
+    [subscriptions, usageLogs, rate, now],
+  );
   const period: ReceiptPeriod = useMemo(() => {
     const parsed = parseReceiptPeriod(params);
     if (parsed && !isFuture(parsed, now) && parsed.year >= EARLIEST_YEAR) return parsed;
-    return { kind: "month", ...previousMonth(now) };
-  }, [params, now]);
+    return defaultMonth;
+  }, [params, now, defaultMonth]);
 
   // 지난 달러 결제는 결제일의 고시 환율로 바꾼다. 받는 동안은 숫자가 바뀌어 보이지 않게 기다린다.
-  const range = useMemo(() => {
-    const { start, end } = periodBounds(period);
-    return rateRangeFor(subscriptions, start, end, now);
-  }, [subscriptions, period, now]);
+  const range = useMemo(
+    () =>
+      rateRangeFor(subscriptions, receiptPeriodStart(period), receiptPeriodLastDay(period), now),
+    [subscriptions, period, now],
+  );
   const { rateOn, loading: ratesLoading } = useHistoricalRates(range);
 
   // 영수증 계산은 저장된 이름으로 하고(같은 서비스의 예전 구독을 이름으로 가린다), 보이는 이름만 화면 언어로
@@ -105,14 +116,35 @@ function ReceiptFromQuery() {
     };
   }, [subscriptions, usageLogs, period, rate, now, rateOn, names]);
 
+  // 공유 링크는 미리 만들어 둔다 — 누른 뒤에 압축을 기다리면 브라우저가 공유 창을 사용자 동작으로 보지 않을 수 있다.
+  // 만든 링크는 어느 영수증·디자인·가림의 것인지와 함께 두어, 바뀐 뒤에 옛 링크를 보내지 않는다. url이 null이면 받는 쪽
+  // 상한을 넘는 영수증이라 글로만 공유한다.
+  const shareKey = useMemo(() => ({ receipt, theme, maskNames }), [receipt, theme, maskNames]);
+  const [shareLink, setShareLink] = useState<{
+    key: typeof shareKey;
+    url: string | null;
+  } | null>(null);
+  useEffect(() => {
+    // 환율을 받기 전의 영수증은 곧 버려지므로 압축하지 않는다.
+    if (!mounted || ratesLoading) return;
+    let cancelled = false;
+    const { receipt, theme, maskNames } = shareKey;
+    void encodeReceiptShare({ receipt, issuedAt: now, theme }, { maskNames }).then((hash) => {
+      if (cancelled) return;
+      setShareLink({ key: shareKey, url: hash ? webUrl(`${RECEIPT_SHARE_PATH}#${hash}`) : null });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [shareKey, now, mounted, ratesLoading]);
+
   if (!mounted || ratesLoading) return <PageSpinner />;
 
   const previous = shift(period, -1);
   const next = shift(period, 1);
   const canGoBack = previous.year >= EARLIEST_YEAR;
   const canGoForward = !isFuture(next, now);
-  const monthView: ReceiptPeriod =
-    period.kind === "month" ? period : { kind: "month", ...previousMonth(now) };
+  const monthView: ReceiptPeriod = period.kind === "month" ? period : defaultMonth;
   const yearView: ReceiptPeriod = { kind: "year", year: period.year };
 
   const flash = (text: string) => {
@@ -134,16 +166,37 @@ function ReceiptFromQuery() {
     }
   };
 
+  // 링크는 영수증만 보여 주는 화면이다. 지금 영수증·디자인의 링크가 준비되기 전에는 공유 버튼을 잠근다.
+  const link = shareLink?.key === shareKey ? shareLink : null;
+  // 결제가 적힌 줄이 없으면 보낼 것이 없다. 등록하기 전 달의 빈 영수증을 보내면 받는 사람은 '안 냈다'로 읽는다.
+  const nothingToShare = receipt.lines.length === 0;
+
   const shareAsText = async () => {
-    const text = formatReceiptShareText(tRef.current, receipt);
+    if (!link) return;
+    // 글도 링크에 실린 것과 같은 영수증으로 만든다 — 이름을 가렸으면 글에서도 가린다.
+    const s = tRef.current.receiptView.shared;
+    const shown = shareableReceipt(
+      receipt,
+      { maskNames },
+      { masked: s.maskedName, maskedKilled: s.maskedKilled },
+    );
+    const body = formatReceiptShareText(tRef.current, shown.receipt, shown.render);
+    // 앱의 공유 창은 주소 칸을 따로 넘기지 않으므로 글 끝에 링크를 적는다(절약 공유와 같다).
+    const text = link.url ? `${body}\n\n${link.url}` : body;
     const shared = await shareText({
       title: v.paperLabel(formatReceiptPeriodText(tRef.current, period)),
       text,
-      url: webUrl("/"),
+      url: link.url ?? undefined,
     });
     if (shared) return;
     if (await copyText(text)) flash(tRef.current.receiptView.page.textCopied);
     else setCopyFallback(text);
+  };
+
+  // 보낸 링크는 취소할 수 없으므로 이 기기에서 처음 링크를 보낼 때 한 번 묻는다.
+  const onShare = () => {
+    if (link?.url && readLocal(SHARE_ACK_KEY) !== "1") setConfirmShare(true);
+    else void shareAsText();
   };
 
   return (
@@ -221,12 +274,41 @@ function ReceiptFromQuery() {
           {busy ? <Spinner className="size-4" /> : <Download className="size-4" aria-hidden />}
           {v.page.saveImage}
         </Button>
-        <Button onClick={() => void shareAsText()}>
+        <Button disabled={!link || nothingToShare} onClick={onShare}>
           <Share2 className="size-4" aria-hidden />
           {v.page.share}
         </Button>
       </div>
+      {nothingToShare && <p className="text-xs text-muted-foreground">{v.page.nothingToShare}</p>}
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={maskNames}
+          onChange={(event) => setMaskNames(event.target.checked)}
+          className="size-4"
+        />
+        {v.page.maskNames}
+      </label>
+      {/* 가려도 구독이 하나면 합계가 곧 그 구독의 금액이다. */}
+      {maskNames && receipt.lines.length === 1 && (
+        <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+          {v.page.maskSingleHint}
+        </p>
+      )}
       <p className="text-xs text-muted-foreground">{v.page.privacy}</p>
+
+      <ConfirmDialog
+        isOpen={confirmShare}
+        onClose={() => setConfirmShare(false)}
+        onConfirm={() => {
+          writeLocal(SHARE_ACK_KEY, "1");
+          void shareAsText();
+        }}
+        title={v.page.confirmTitle}
+        description={v.page.confirmBody}
+        confirmText={v.page.confirmOk}
+        centered={IS_APP_BUILD}
+      />
 
       {period.kind === "year" && (
         <Link

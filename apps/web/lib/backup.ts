@@ -1,6 +1,8 @@
 import {
+  MAX_AMOUNT_HISTORY,
   MAX_CHARGE_HISTORY,
   currentCategory,
+  isAmountChange,
   isChargeRecord,
   isValueMetric,
   isFreeTierAnswer,
@@ -165,6 +167,14 @@ function checkSubscription(v: unknown) {
     )
   ) {
     return "결제 메일 기록";
+  }
+  if (
+    !optional(
+      v.amountHistory,
+      (h) => Array.isArray(h) && h.length <= MAX_AMOUNT_HISTORY && h.every(isAmountChange),
+    )
+  ) {
+    return "금액 변경 기록";
   }
   return null;
 }

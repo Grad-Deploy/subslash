@@ -139,7 +139,7 @@ export function describeUsageMetaphor(
   }
 }
 
-/** 본전 게이지 아래 한 문장(주의 단계에서 쓴다). */
+/** 이용 목표 게이지 아래 한 문장(주의 단계에서 쓴다). */
 export function describeBreakEven(t: Messages, info: BreakEvenInfo): string {
   const g = t.checkin.gauge;
   if (info.currentUsage === 0) return g.none;

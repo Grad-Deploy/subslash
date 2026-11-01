@@ -1,22 +1,19 @@
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { ReceiptText } from "lucide-react";
-import { formatKRW, previousMonth, type findBundleOverlaps } from "@subslash/shared";
+import { formatKRW, type findBundleOverlaps } from "@subslash/shared";
 import { IS_APP_BUILD } from "@lib/platform";
-import { receiptHref } from "@lib/receipt-view";
+import { receiptHref, type ReceiptMonth } from "@lib/receipt-view";
 import { useServiceNames, useT } from "@lib/i18n";
+import { FitText } from "@components/ui/fit-text";
 
-// 요약 칸의 금액을 칸에 맞춰 줄인다(앱 전용). 웹은 지금처럼 자른다.
-const AppFitText = IS_APP_BUILD
-  ? dynamic(() => import("../app/AppFitText").then((m) => m.AppFitText), { ssr: false })
-  : null;
-
-/** 지난달 영수증과 올해 결산 영수증으로 가는 칸. */
-export function ReceiptLinks({ now }: { now: Date }) {
+/**
+ * 달 영수증과 올해 결산 영수증으로 가는 칸. 달은 영수증 화면이 처음 여는 달과 같다(`defaultReceiptMonth` — 지난달,
+ * 지난달이 구독을 등록하기 전이면 이번 달). 버튼에 '9월'이라 적고 '결제된 구독이 없어요'를 열지 않게.
+ */
+export function ReceiptLinks({ now, month }: { now: Date; month: ReceiptMonth }) {
   const r = useT().reportPage.receipts;
-  const last = previousMonth(now);
   const links = [
-    { href: receiptHref({ kind: "month", ...last }), label: r.month(last.month) },
+    { href: receiptHref(month), label: r.month(month.month) },
     {
       href: receiptHref({ kind: "year", year: now.getFullYear() }),
       label: r.year(now.getFullYear()),
@@ -31,7 +28,8 @@ export function ReceiptLinks({ now }: { now: Date }) {
           className="flex items-center gap-2 rounded-2xl border p-3 hover:bg-muted/50"
         >
           <ReceiptText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="min-w-0 text-sm font-semibold">{link.label}</span>
+          {/* 좁은 칸에서 '결산 영수 / 증'처럼 낱말 가운데서 끊지 않는다. */}
+          <span className="min-w-0 break-keep text-sm font-semibold">{link.label}</span>
         </Link>
       ))}
     </section>
@@ -42,11 +40,8 @@ function SummaryTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border px-3 py-3">
       <p className="text-xs text-muted-foreground">{label}</p>
-      {AppFitText ? (
-        <AppFitText text={value} className="font-black leading-7 tabular-nums" />
-      ) : (
-        <p className="truncate text-lg font-black tabular-nums">{value}</p>
-      )}
+      {/* 좁은 칸에서는 금액을 자르지 않고 글자를 줄인다(웹·앱). */}
+      <FitText text={value} className="font-black leading-7 tabular-nums" />
     </div>
   );
 }
@@ -77,6 +72,13 @@ export function SpendSummary({
       <SummaryTile label={s.subs} value={s.count(count)} />
     </section>
   );
+}
+
+/** 지출·구독 수에서 뺀 무료 체험. 빼기만 하면 '내 구독'의 개수와 왜 다른지 알 수 없다. 대시보드와 같은 문구다. */
+export function TrialExcludedNote({ count, monthly }: { count: number; monthly: number }) {
+  const o = useT().overview.totalSpend;
+  if (count === 0) return null;
+  return <p className="text-xs text-muted-foreground">{o.inTrial(count, formatKRW(monthly))}</p>;
 }
 
 /** 결합 상품에 든 서비스를 따로도 내고 있으면 먼저 알린다 — 증거가 있는 절약 기회다. 없으면 그리지 않는다. */

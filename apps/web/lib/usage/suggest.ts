@@ -1,4 +1,5 @@
 import {
+  HOUR_MS,
   POPULAR_SERVICES,
   bundlesIncluding,
   coveredServices,
@@ -63,7 +64,7 @@ export const SUGGEST_MIN_COVERED_DAYS = 14;
  * 최근 30일 동안 이만큼 썼거나(합계) 이만큼 여러 날 썼으면 묻는다. 둘 다 근거가 있는 값이 아니라 팀이 정한
  * 기준이다 — 앱을 잠깐 열어 본 것으로 묻지 않으려는 것이다.
  */
-export const SUGGEST_MIN_USED_MS = 60 * 60_000;
+export const SUGGEST_MIN_USED_MS = HOUR_MS;
 export const SUGGEST_MIN_ACTIVE_DAYS = 3;
 /** '내가 내지 않아요'를 고르면 이만큼 묻지 않는다. 영영 묻지 않으면 나중에 구독한 것을 놓친다. */
 export const SUGGEST_DISMISS_DAYS = 90;

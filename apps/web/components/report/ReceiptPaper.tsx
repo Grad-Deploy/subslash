@@ -5,8 +5,12 @@ import {
   describeReceiptLine,
   formatReceiptPeriodText,
   receiptFootnotes,
+  receiptEmptyText,
+  receiptTotalLabel,
+  receiptTotalText,
   receiptNumber,
   receiptPeriodSuffix,
+  type ReceiptRenderOptions,
 } from "@lib/receipt-view";
 
 /**
@@ -16,7 +20,16 @@ import {
  * 대신 글자 색도 함께 고정해 어느 테마에서나 대비가 같다. 이미지로 저장하는 그림(lib/receipt-image)과
  * 같은 문구를 쓴다.
  */
-export function ReceiptPaper({ receipt, issuedAt }: { receipt: Receipt; issuedAt: Date }) {
+export function ReceiptPaper({
+  receipt,
+  issuedAt,
+  render = {},
+}: {
+  receipt: Receipt;
+  issuedAt: Date;
+  /** 공유 링크로 받은 영수증이면 '확인되지 않은 내용'·가린 줄의 요약을 그린다(ReceiptRenderOptions). */
+  render?: ReceiptRenderOptions;
+}) {
   const t = useT();
   const v = t.receiptView;
   const period = formatReceiptPeriodText(t, receipt.period);
@@ -42,7 +55,9 @@ export function ReceiptPaper({ receipt, issuedAt }: { receipt: Receipt; issuedAt
       <hr className="my-4 border-t border-dashed border-zinc-400" />
 
       {receipt.lines.length === 0 ? (
-        <p className="py-4 text-center text-sm text-zinc-500">{v.empty}</p>
+        <p className="py-4 text-center text-sm text-zinc-500">
+          {receiptEmptyText(t, receipt, render)}
+        </p>
       ) : (
         <ul className="space-y-3">
           {receipt.lines.map((line) => (
@@ -54,7 +69,7 @@ export function ReceiptPaper({ receipt, issuedAt }: { receipt: Receipt; issuedAt
                 </span>
               </div>
               <p className="text-[11px] leading-snug text-zinc-500">
-                {describeReceiptLine(t, line, receipt.period)}
+                {describeReceiptLine(t, line, receipt.period, render)}
               </p>
             </li>
           ))}
@@ -65,8 +80,8 @@ export function ReceiptPaper({ receipt, issuedAt }: { receipt: Receipt; issuedAt
 
       <dl className="space-y-1.5">
         <div className="flex items-baseline justify-between">
-          <dt className="text-sm font-bold">{v.total(receipt.chargeCount)}</dt>
-          <dd className="text-lg font-extrabold tabular-nums">{formatKRW(receipt.totalKRW)}</dd>
+          <dt className="text-sm font-bold">{receiptTotalLabel(t, receipt, render)}</dt>
+          <dd className="text-lg font-extrabold tabular-nums">{receiptTotalText(t, receipt)}</dd>
         </div>
         {receipt.billedTotalKRW !== receipt.totalKRW && (
           <div className="flex items-baseline justify-between text-xs text-zinc-500">
@@ -97,7 +112,7 @@ export function ReceiptPaper({ receipt, issuedAt }: { receipt: Receipt; issuedAt
       <hr className="my-4 border-t border-dashed border-zinc-400" />
 
       <ul className="space-y-0.5 text-[10px] leading-snug text-zinc-500">
-        {receiptFootnotes(t, receipt).map((note) => (
+        {receiptFootnotes(t, receipt, render).map((note) => (
           <li key={note}>· {note}</li>
         ))}
       </ul>

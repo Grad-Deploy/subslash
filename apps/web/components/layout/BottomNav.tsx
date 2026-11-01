@@ -7,10 +7,12 @@ import { BarChart3, House, Receipt, Settings } from "lucide-react";
 import { cn } from "@lib/utils";
 import { IS_APP_BUILD } from "@lib/platform";
 import { useT } from "@lib/i18n";
+import { useSoftKeyboardOpen } from "@hooks/useSoftKeyboardOpen";
 
 export function BottomNav() {
   const pathname = usePathname();
   const t = useT();
+  const keyboardOpen = useSoftKeyboardOpen();
 
   const navItems = [
     { name: t.shell.nav.dashboard, href: "/dashboard", Icon: House },
@@ -19,6 +21,8 @@ export function BottomNav() {
     // 앱은 켜고 끄는 것을 설정 탭 하나에 모은다(웹은 상단 바의 설정 아이콘, 좁은 화면은 계정 메뉴).
     ...(IS_APP_BUILD ? [{ name: t.shell.nav.settings, href: "/settings", Icon: Settings }] : []),
   ];
+
+  if (keyboardOpen) return null;
 
   return (
     <nav

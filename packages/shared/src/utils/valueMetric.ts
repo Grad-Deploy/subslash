@@ -2,7 +2,6 @@ import type { Currency, RiskLevel, Subscription, UsageLog } from "../types";
 import { findPresetForSubscription } from "../constants/services";
 import { GOOD_AT, VERDICT_THRESHOLDS } from "../constants/thresholds";
 import { calculateCostPerUse, formatCurrency, getRiskLevel } from "./cost-per-use";
-import { toKRW } from "./currency";
 import type { StoragePlanFit } from "./storagePlan";
 
 export { GOOD_AT, VERDICT_THRESHOLDS };
@@ -244,11 +243,6 @@ export function metricRiskLevel(
   metric: ValueMetric,
   monthlyShare: number,
   quantity: number,
-  /**
-   * `monthlyShare`의 통화. 기본값을 두지 않는다 — 비원화(USD) 금액을 넘기면서 통화를 생략하면
-   * `benefit` 지표가 달러를 원화로 오인해 비율이 폭등하고 타입 검사도 이를 잡아 주지 못한다.
-   */
-  currency: Currency,
   storageFit?: StoragePlanFit | null,
   freeTier?: FreeTierAnswer | null,
   apiValueRatio?: number | null,
@@ -259,7 +253,7 @@ export function metricRiskLevel(
     case "days": {
       const { redAtOrBelow, greenAt, apiValueGreenRatio } = VERDICT_THRESHOLDS.days;
       const byDays = quantity <= redAtOrBelow ? "red" : quantity >= greenAt ? "green" : "yellow";
-      // PC 기록의 토큰을 API로 냈다면 구독료 이상이었으면, 쓴 날이 적어도 본전은 뽑았다. 구독료보다 적으면 쓴
+      // PC 기록의 토큰을 API로 냈다면 구독료 이상이었으면, 쓴 날이 적어도 이용 목표는 채웠다. 구독료보다 적으면 쓴
       // 날대로 둔다 — PC 기록은 웹·앱 사용이 빠진 하한값이라 판단을 낮추는 근거가 되지 못한다.
       const level =
         apiValueRatio !== null && apiValueRatio !== undefined && apiValueRatio >= apiValueGreenRatio
@@ -273,10 +267,8 @@ export function metricRiskLevel(
     }
     case "benefit": {
       const { redBelowRatio, greenAtRatio } = VERDICT_THRESHOLDS.benefit;
-      // 혜택 수량(`quantity`)은 원화(KRW) 기준이므로, 비원화 구독이 넘어오더라도 원화로 환산해 비율 폭등을 막는다.
-      const monthlyKRW = toKRW(monthlyShare, currency);
-      if (monthlyKRW <= 0) return "green";
-      const ratio = quantity / monthlyKRW;
+      if (monthlyShare <= 0) return "green";
+      const ratio = quantity / monthlyShare;
       return ratio < redBelowRatio ? "red" : ratio >= greenAtRatio ? "green" : "yellow";
     }
     case "storage": {
@@ -329,28 +321,15 @@ export function evaluateMetric(
   apiValueRatio?: number | null,
 ): MetricEvaluation {
   const ratio = metric === "days" ? (apiValueRatio ?? null) : null;
-  // benefit 수량(quantity)은 항상 원화(KRW) 기준이다.
-  // 프로덕션의 정상 구독 흐름에서는 metricForSubscription이 비원화(currency !== "KRW") 구독을
-  // "uses"로 폴백시키므로 아래 비원화 benefit의 원화 환산 경로에는 도달하지 않는다(직접 호출·테스트 전용 방어).
-  const effectiveMonthly = metric === "benefit" ? toKRW(monthlyShare, currency) : monthlyShare;
-  const effectiveCurrency: Currency = metric === "benefit" ? "KRW" : currency;
   return {
-    costPerUse: calculateCostPerUse(effectiveMonthly, quantity),
-    riskLevel: metricRiskLevel(
-      metric,
-      monthlyShare,
-      quantity,
-      currency,
-      storageFit,
-      freeTier,
-      ratio,
-    ),
+    costPerUse: calculateCostPerUse(monthlyShare, quantity),
+    riskLevel: metricRiskLevel(metric, monthlyShare, quantity, storageFit, freeTier, ratio),
     outcome: {
       metric,
       serviceName,
-      monthly: effectiveMonthly,
+      monthly: monthlyShare,
       quantity,
-      currency: effectiveCurrency,
+      currency,
       storageFit: storageFit ?? null,
       freeTierEnough: metric === "days" && quantity > 0 && freeTier === "enough",
       apiValueRatio: ratio,
@@ -396,7 +375,6 @@ export function unitCostPart(
   metric: ValueMetric,
   costPerUse: number,
   quantity: number,
-  currency: Currency = "KRW",
 ): UnitCostPart | null {
   switch (metric) {
     case "uses":
@@ -406,8 +384,6 @@ export function unitCostPart(
     case "hours":
       return quantity === 0 ? { type: "not-used" } : { type: "per-hour", cost: costPerUse };
     case "benefit": {
-      // 혜택 수량은 원화(KRW)로만 기록되므로 구독 통화가 원화가 아니면 회비 대비 비율을 계산하지 않는다.
-      if (currency !== "KRW") return null;
       // costPerUse × quantity가 한 달치 내 몫이다.
       const monthly = quantity === 0 ? costPerUse : costPerUse * quantity;
       if (monthly <= 0) return null;
@@ -428,7 +404,7 @@ export function formatUnitCost(
   quantity: number,
   currency: Currency,
 ): string | null {
-  const part = unitCostPart(metric, costPerUse, quantity, currency);
+  const part = unitCostPart(metric, costPerUse, quantity);
   if (!part) return null;
   switch (part.type) {
     case "per-use":
@@ -479,7 +455,6 @@ export function shortUnitCost(
     case "hours":
       return log.usageCount === 0 ? "안 씀" : `${money}/시간`;
     case "benefit": {
-      if (currency !== "KRW") return "-";
       const monthly = log.usageCount === 0 ? log.costPerUse : log.costPerUse * log.usageCount;
       return monthly > 0 ? `${Math.round((log.usageCount / monthly) * 100)}% 환급` : "-";
     }

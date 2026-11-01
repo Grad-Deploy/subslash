@@ -2,7 +2,7 @@ import { HOUR_MS } from "@subslash/shared";
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
-import { isDeviceUsageOpen } from "@lib/privacy";
+import { featureClosedResponse, isDeviceUsageOpen } from "@lib/privacy";
 import { parseUsageUpload, USAGE_RETENTION_DAYS } from "@lib/device-usage";
 import {
   deleteAllDeviceUsage,
@@ -26,11 +26,8 @@ import { logError } from "@lib/log";
 /** 기기는 앱을 열 때·하루 몇 번 올린다. 한 계정에 기기가 여럿이어도 넉넉한 값이다. */
 const UPLOADS_PER_ACCOUNT: RateLimitRule = { limit: 60, windowMs: HOUR_MS };
 
-const CLOSED = () =>
-  NextResponse.json({ error: "아직 시작하지 않은 기능입니다." }, { status: 403 });
-
 export async function GET(request: NextRequest) {
-  if (!isDeviceUsageOpen()) return CLOSED();
+  if (!isDeviceUsageOpen()) return featureClosedResponse();
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
@@ -48,7 +45,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isDeviceUsageOpen()) return CLOSED();
+  if (!isDeviceUsageOpen()) return featureClosedResponse();
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {

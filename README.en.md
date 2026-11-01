@@ -12,13 +12,20 @@
 watch" — and once you've decided to cancel, helps you all the way through cancelling.
 
 - Web: [www.subslash.me](https://www.subslash.me) — use it right away, no sign-up needed.
-- Android app: currently in closed testing. The store link will go here once it's publicly released.
+- Android app: [get it on Google Play](https://play.google.com/store/apps/details?id=com.subslash.app) — or scan the QR
+  code below with your phone's camera.
+
+<p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.subslash.app">
+    <img src="docs/images/play-store-qr.png" alt="QR code linking to the SubSlash app on Google Play" width="180">
+  </a>
+</p>
 
 ### Intro video
 
-https://github.com/user-attachments/assets/2f4b0acb-9ba4-45f0-8dd7-224c0053856b
+https://github.com/user-attachments/assets/6e244173-854f-43d9-acce-092ca0df39ce
 
-If the video doesn't show, [download it here (MP4, 8 MB)](docs/media/subslash-intro.mp4).
+If the video doesn't show, [download it here (MP4, 7.5 MB)](subslash-intro-qr.mp4).
 
 > Every screen in this README is a capture of the Android app taken with sample data (October 23, 2026).
 

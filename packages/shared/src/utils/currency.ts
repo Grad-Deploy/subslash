@@ -25,6 +25,16 @@ export function spaceCurrencySymbol(text: string): string {
   return text.replace(/^([−-]?)([₩$])\s*/, "$1$2 ");
 }
 
+/** 기호 뒤를 한 칸 띄운 금액(₩ 17,000 · $ 9.99). 앱의 계산서·체크인·사용 현황이 같은 표기를 쓴다. */
+export function formatSpacedAmount(amount: number, currency: Currency): string {
+  return spaceCurrencySymbol(formatAmount(amount, currency));
+}
+
+/** 원으로 셈한 값의 `formatSpacedAmount`(₩ 17,000). */
+export function formatSpacedKRW(amount: number): string {
+  return formatSpacedAmount(amount, "KRW");
+}
+
 /** Normalises any amount to KRW so mixed-currency subscriptions can be summed. */
 export function toKRW(
   amount: number,
@@ -54,6 +64,14 @@ type BilledSubscription = {
   taxRate?: number;
 };
 
+/** 한 번의 결제액(`getBilledAmount`)을 원으로 바꾼 값. 월·연 환산 전의 카드 청구액이다. */
+export function getBilledAmountKRW(
+  sub: Omit<BilledSubscription, "billingCycle">,
+  rate: number = DEFAULT_EXCHANGE_RATE,
+): number {
+  return toKRW(getBilledAmount(sub), sub.currency, rate);
+}
+
 /**
  * A subscription's cost expressed as monthly KRW — yearly plans are divided by
  * 12 and USD plans converted, so totals across a mixed list are comparable.
@@ -63,7 +81,7 @@ export function getMonthlyAmountKRW(
   sub: BilledSubscription,
   rate: number = DEFAULT_EXCHANGE_RATE,
 ): number {
-  const krw = toKRW(getBilledAmount(sub), sub.currency, rate);
+  const krw = getBilledAmountKRW(sub, rate);
   return sub.billingCycle === "yearly" ? Math.round(krw / 12) : krw;
 }
 
@@ -72,7 +90,7 @@ export function getAnnualAmountKRW(
   sub: BilledSubscription,
   rate: number = DEFAULT_EXCHANGE_RATE,
 ): number {
-  const krw = toKRW(getBilledAmount(sub), sub.currency, rate);
+  const krw = getBilledAmountKRW(sub, rate);
   return sub.billingCycle === "yearly" ? krw : krw * 12;
 }
 

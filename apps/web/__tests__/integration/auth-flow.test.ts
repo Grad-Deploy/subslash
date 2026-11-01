@@ -17,7 +17,8 @@ delete process.env.TURSO_AUTH_TOKEN;
 
 const { getDb, closeDb } = await import("../../lib/db");
 const { accounts, sessions } = await import("../../lib/schema");
-const { hashSessionToken, SESSION_COOKIE } = await import("../../lib/auth-server");
+const { SESSION_COOKIE } = await import("../../lib/auth-server");
+const { sha256Hex } = await import("../../lib/tokens");
 
 const { POST: signupRoute } = await import("../../app/api/auth/signup/route");
 const { POST: loginRoute } = await import("../../app/api/auth/login/route");
@@ -153,7 +154,7 @@ describe("회원가입", () => {
     const rows = await db.select().from(sessions);
     expect(rows).toHaveLength(1);
     expect(rows[0].tokenHash).not.toBe(token);
-    expect(rows[0].tokenHash).toBe(hashSessionToken(token));
+    expect(rows[0].tokenHash).toBe(sha256Hex(token));
   });
 
   it("입력값을 서버가 다시 검사한다", async () => {
@@ -207,27 +208,6 @@ describe("회원가입", () => {
       }),
     );
     expect(res.status).toBe(409);
-  });
-
-  it("학교·전시장 공용 와이파이(같은 공인 IP)에서 25번 연속 가입 시도가 들어와도 429로 막히지 않는다", async () => {
-    await signupRoute(json("http://localhost/api/auth/signup", VALID_SIGNUP));
-    // scrypt 해싱을 건너뛰는 중복 확인 단계까지 한 공인 IP(203.0.113.77)로 25번 연속 시도한다.
-    for (let i = 0; i < 25; i++) {
-      const res = await signupRoute(
-        request("http://localhost/api/auth/signup", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-forwarded-for": "203.0.113.77",
-          },
-          body: JSON.stringify({
-            ...VALID_SIGNUP,
-            email: `visitor_${i}@gmail.com`,
-          }),
-        }),
-      );
-      expect(res.status).toBe(409);
-    }
   });
 });
 
@@ -399,7 +379,7 @@ describe("세션", () => {
     await db
       .update(sessions)
       .set({ expiresAt: new Date(Date.now() - 1000).toISOString() })
-      .where(eq(sessions.tokenHash, hashSessionToken(token)));
+      .where(eq(sessions.tokenHash, sha256Hex(token)));
 
     const res = await meRoute(
       request("http://localhost/api/auth/me", { cookie: `${SESSION_COOKIE}=${token}` }),

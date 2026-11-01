@@ -31,7 +31,11 @@ export function AppStepper({
   const last = index === steps.length - 1;
 
   return (
-    <div className="flex min-h-[calc(100dvh-14rem)] flex-col gap-4">
+    // 버튼을 화면 맨 아래(하단 탭 바 바로 위)에 둔다. 앱은 화면 끝까지 그리므로 100dvh에 상태 표시줄·제스처
+    // 바가 들어 있어 안전 영역을 따로 뺀다 — 빼지 않았을 때(14rem만 뺐을 때) 버튼이 탭 바 뒤로 들어가 윗부분만
+    // 보였고, 그걸 누르면 탭 바가 눌려 다른 화면으로 가며 발급한 토큰 안내를 잃었다. 12rem은 헤더(4rem)·
+    // main/article 위 여백(2.5rem)·탭 바(4rem)·버튼 아래 틈을 더한 것이다.
+    <div className="flex min-h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-12rem)] flex-col gap-4">
       <div className="flex gap-1" aria-hidden>
         {steps.map((s, i) => (
           <span

@@ -17,6 +17,10 @@ export const FAQ_FR: typeof FAQ_EN = {
     q: "À quoi sert SubSlash ?",
     a: "Il montre ce que coûte chaque abonnement par utilisation (coût par utilisation) et vous guide vers l'endroit où résilier ceux qui n'en valent pas la peine. Ajoutez vos abonnements et indiquez combien de fois vous avez utilisé chacun ces 30 derniers jours : il fait le calcul.",
   },
+  "get-app": {
+    q: "Où télécharger l’app ? Existe-t-il une app iPhone ?",
+    a: "Téléchargez l’app Android en cherchant « SubSlash » sur Google Play, ou avec « Télécharger l’app sur Google Play » en bas des pages web. Il n’y a pas d’app iPhone : sur iPhone, utilisez le navigateur web. Les check-ins automatiques à partir de l’historique d’utilisation du téléphone et les rappels de paiement sur cet appareil ne fonctionnent que dans l’app Android. Connectez-vous avec le même compte sur le web et dans l’app pour garder vos données synchronisées.",
+  },
   "cost-per-use": {
     q: "Comment le coût par utilisation est-il calculé ?",
     a: "Votre part mensuelle est divisée par le nombre d'utilisations des 30 derniers jours. Pour un abonnement partagé, seule votre part compte, et les abonnements annuels sont d'abord ramenés à un montant mensuel. Sans check-in, il n'y a pas de nombre d'utilisations : nous n'inventons pas de coût et affichons « Pas encore de check-in ».",

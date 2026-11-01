@@ -66,40 +66,18 @@ describe("metricForSubscription", () => {
 
 describe("metricRiskLevel", () => {
   it("쓴 날·시간·혜택·용량마다 기준이 다르다", () => {
-    expect(metricRiskLevel("days", 20000, 2, "KRW")).toBe("red");
-    expect(metricRiskLevel("days", 20000, 5, "KRW")).toBe("yellow");
-    expect(metricRiskLevel("days", 20000, 10, "KRW")).toBe("green");
-    expect(metricRiskLevel("hours", 10000, 1, "KRW")).toBe("red");
-    expect(metricRiskLevel("hours", 10000, 10, "KRW")).toBe("green");
-    expect(metricRiskLevel("benefit", 7890, 3000, "KRW")).toBe("red");
-    expect(metricRiskLevel("benefit", 7890, 5000, "KRW")).toBe("yellow");
-    expect(metricRiskLevel("benefit", 7890, 7890, "KRW")).toBe("green");
+    expect(metricRiskLevel("days", 20000, 2)).toBe("red");
+    expect(metricRiskLevel("days", 20000, 5)).toBe("yellow");
+    expect(metricRiskLevel("days", 20000, 10)).toBe("green");
+    expect(metricRiskLevel("hours", 10000, 1)).toBe("red");
+    expect(metricRiskLevel("hours", 10000, 10)).toBe("green");
+    expect(metricRiskLevel("benefit", 7890, 3000)).toBe("red");
+    expect(metricRiskLevel("benefit", 7890, 5000)).toBe("yellow");
+    expect(metricRiskLevel("benefit", 7890, 7890)).toBe("green");
     // 적게 써도 해지하라고 하지 않는다. 아무것도 안 둘 때만 빨강.
-    expect(metricRiskLevel("storage", 4400, 0, "KRW")).toBe("red");
-    expect(metricRiskLevel("storage", 4400, 20, "KRW")).toBe("yellow");
-    expect(metricRiskLevel("storage", 4400, 60, "KRW")).toBe("green");
-  });
-
-  it("benefit 지표에서 USD 구독 통화가 넘어와도 원화로 환산해 비율 폭등을 막고, 저장값(costPerUse)과 결과 통화도 KRW로 일치시킨다", () => {
-    // $10(약 ₩13,500) 회비에 ₩5,000 혜택이면 500배가 아니라 절반 미만이므로 red
-    expect(metricRiskLevel("benefit", 10, 5000, "USD")).toBe("red");
-    const evalUsd = evaluateMetric("benefit", "해외 멤버십", 10, 5000, "USD");
-    expect(evalUsd.riskLevel).toBe("red");
-    // 10(USD) ÷ 5000(KRW) = 0.002가 아니라 13500(KRW) ÷ 5000(KRW) = 2.7로 저장되어
-    // costPerUse × quantity가 항상 원화 회비(₩13,500)로 복원된다.
-    expect(evalUsd.costPerUse).toBeCloseTo(13500 / 5000);
-    expect(evalUsd.costPerUse * 5000).toBeCloseTo(13500);
-    expect(evalUsd.outcome.monthly).toBe(13500);
-    expect(evalUsd.outcome.currency).toBe("KRW");
-    expect(shock(evalUsd)).toContain("회비 ₩13,500 중 ₩5,000만 혜택으로 돌려받았어요.");
-
-    // 비원화 통화로 기존 기록을 표시할 때는 환급률 단가 문구를 생략한다.
-    expect(describeCheckIn({ metric: "benefit", usageCount: 5000, costPerUse: 0.002 }, "USD")).toBe(
-      "혜택 ₩5,000",
-    );
-    expect(shortUnitCost({ metric: "benefit", usageCount: 5000, costPerUse: 0.002 }, "USD")).toBe(
-      "-",
-    );
+    expect(metricRiskLevel("storage", 4400, 0)).toBe("red");
+    expect(metricRiskLevel("storage", 4400, 20)).toBe("yellow");
+    expect(metricRiskLevel("storage", 4400, 60)).toBe("green");
   });
 
   it("monthlyShare === 0인 무료·공유 구독도 0으로 나누어지지 않고 정상 평가된다", () => {
@@ -125,10 +103,10 @@ describe("무료 요금제로 충분했는지", () => {
   });
 
   it("무료로도 충분했다면 많이 써도 초록이 아니라 노랑이고, 빨강은 그대로다", () => {
-    expect(metricRiskLevel("days", 29000, 20, "KRW", null, "enough")).toBe("yellow");
-    expect(metricRiskLevel("days", 29000, 20, "KRW", null, "needed")).toBe("green");
-    expect(metricRiskLevel("days", 29000, 20, "KRW", null, "unsure")).toBe("green");
-    expect(metricRiskLevel("days", 29000, 1, "KRW", null, "enough")).toBe("red");
+    expect(metricRiskLevel("days", 29000, 20, null, "enough")).toBe("yellow");
+    expect(metricRiskLevel("days", 29000, 20, null, "needed")).toBe("green");
+    expect(metricRiskLevel("days", 29000, 20, null, "unsure")).toBe("green");
+    expect(metricRiskLevel("days", 29000, 1, null, "enough")).toBe("red");
   });
 
   it("무료로 내려도 된다는 말은 쓴 날이 있고 무료로 충분했을 때만 붙인다", () => {

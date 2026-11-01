@@ -1,4 +1,3 @@
-import { createHash } from "crypto";
 import { and, count, eq, inArray, lt, sql } from "drizzle-orm";
 import {
   MAX_CHARGE_HISTORY,
@@ -10,8 +9,9 @@ import {
 } from "@subslash/shared";
 import { getDb, type DbExecutor } from "./db";
 import { accounts, gmailDiscoveries, gmailImportLinks, type GmailDiscovery } from "./schema";
-import { canSignLinks, generateSyncToken, hashSyncToken, signLink, verifyLink } from "./tokens";
+import { canSignLinks, generateSyncToken, sha256Hex, signLink, verifyLink } from "./tokens";
 import { readReceiptEmails } from "./gmail-import";
+import { KOREA_TIME_ZONE } from "./korea-time";
 import { isGmailChargeHistoryOpen } from "./privacy";
 
 /**
@@ -30,9 +30,6 @@ const MAX_PENDING = 100;
 
 /** 받아 가지 않은 후보를 남겨 두는 기간. */
 const PENDING_TTL_MS = 30 * DAY_MS;
-
-/** 결제일을 읽는 달력의 시간대. 한국 서비스라 한국 시간으로 본다(캘린더 피드와 같다). */
-const USER_TIME_ZONE = "Asia/Seoul";
 
 export interface ImportLinkStatus {
   createdAt: string;
@@ -89,7 +86,7 @@ export function discoveryTier(item: DiscoveredSubscription): "auto" | "review" |
 /** 연결 토큰을 새로 만든다. 이미 있으면 바꾼다 — 예전 스크립트는 그 순간부터 거절된다. */
 export async function createImportLink(accountId: string, now = new Date()): Promise<string> {
   const token = generateSyncToken();
-  const tokenHash = hashSyncToken(token);
+  const tokenHash = sha256Hex(token);
   const createdAt = now.toISOString();
   await getDb()
     .insert(gmailImportLinks)
@@ -151,7 +148,7 @@ export async function ingestReceiptEmails(
   const [link] = await db
     .select()
     .from(gmailImportLinks)
-    .where(eq(gmailImportLinks.tokenHash, hashSyncToken(token)))
+    .where(eq(gmailImportLinks.tokenHash, sha256Hex(token)))
     .limit(1);
   if (!link) {
     return {
@@ -175,7 +172,7 @@ export async function ingestReceiptEmails(
 
   // 방침에 게시한 날부터만 이전 결제 메일(받은 날·금액)을 저장한다.
   const keepHistory = isGmailChargeHistoryOpen(now);
-  const candidates = parseReceiptEmails(emails, { now, timeZone: USER_TIME_ZONE }).flatMap(
+  const candidates = parseReceiptEmails(emails, { now, timeZone: KOREA_TIME_ZONE }).flatMap(
     (item) => {
       const tier = discoveryTier(item);
       if (!tier || !item.receiptDate) return [];
@@ -373,9 +370,7 @@ async function linkFingerprint(accountId: string): Promise<string> {
     .from(gmailImportLinks)
     .where(eq(gmailImportLinks.accountId, accountId))
     .limit(1);
-  return link
-    ? createHash("sha256").update(`link:${link.tokenHash}`).digest("hex").slice(0, 32)
-    : "none";
+  return link ? sha256Hex(`link:${link.tokenHash}`).slice(0, 32) : "none";
 }
 
 /**

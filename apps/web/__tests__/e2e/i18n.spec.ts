@@ -32,11 +32,11 @@ test.describe("화면 언어 (E2E)", () => {
     await page.goto("/login");
     await expect(page).toHaveTitle("Log in · SubSlash");
     await page.goto("/settings");
-    await expect(page).toHaveTitle("SubSlash - The nerve to cut subscriptions");
+    await expect(page).toHaveTitle("Settings · SubSlash");
     await page.getByRole("radio", { name: "한국어" }).click();
-    await expect(page).toHaveTitle("SubSlash - 구독, 끊을 용기");
+    await expect(page).toHaveTitle("설정 · SubSlash");
     await page.getByRole("radio", { name: "기기 설정 따라" }).click();
-    await expect(page).toHaveTitle("SubSlash - The nerve to cut subscriptions");
+    await expect(page).toHaveTitle("Settings · SubSlash");
   });
 
   // 서비스 목록의 해지 안내는 확인한 원문이라 옮기지 않는다. 대신 원문이라고 밝히고 한국어로 읽게 한다.
@@ -124,5 +124,19 @@ test.describe("화면 언어 (E2E)", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Sign up" })).toBeVisible();
     await page.getByLabel("Username").fill("AB");
     await expect(page.getByText("Usernames must be")).toBeVisible();
+  });
+});
+
+// 오프라인 화면은 JS 없이 CSS로 언어를 고른다. 예전에는 lang=en일 때만 영어라, 일본어 기기에 한국어가 나왔다.
+test.describe("오프라인 화면의 언어 (E2E)", () => {
+  test.use({ locale: "ja-JP" });
+
+  test("번역이 없는 언어의 기기에서는 한국어가 아니라 영어로 보인다", async ({ page }) => {
+    await page.goto("/offline");
+    await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+    await expect(page.getByRole("heading", { level: 1, name: "You're offline" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "지금은 오프라인입니다" }),
+    ).toBeHidden();
   });
 });

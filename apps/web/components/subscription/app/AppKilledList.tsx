@@ -9,6 +9,7 @@ import {
   getMyMonthlyAmountKRW,
   type Subscription,
   formatDotDate,
+  parseTimestamp,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useStore } from "@lib/store";
@@ -23,10 +24,8 @@ import { AppSavingsLink } from "../../savings/app/AppSavingsLink";
 
 /** 'YYYY.MM.DD'. 해지일을 모르면 `unknown`('—'). */
 function killedDate(sub: Subscription, unknown: string): string {
-  if (!sub.killedAt) return unknown;
-  const date = new Date(sub.killedAt);
-  if (Number.isNaN(date.getTime())) return unknown;
-  return formatDotDate(date);
+  const date = parseTimestamp(sub.killedAt);
+  return date ? formatDotDate(date) : unknown;
 }
 
 /**

@@ -1,5 +1,6 @@
-import { RiskLevel, Currency } from "../types";
+import { RiskLevel } from "../types";
 import { GOOD_AT, VERDICT_THRESHOLDS } from "../constants/thresholds";
+import { formatAmount } from "./currency";
 
 export function calculateCostPerUse(amount: number, usageCount: number): number {
   if (amount <= 0) return 0;
@@ -28,13 +29,8 @@ export function getRiskLevel(costPerUse: number, amount: number, usageCount: num
   return "yellow";
 }
 
-export function formatCurrency(amount: number, currency: Currency): string {
-  if (currency === "KRW") {
-    // The won has no subunit; a divided cost-per-use must not show decimals.
-    return `₩${Math.round(amount).toLocaleString("ko-KR")}`;
-  }
-  return `$${amount.toFixed(2)}`;
-}
+/** `formatAmount`와 같다 — 1회 단가처럼 나눈 금액도 원은 소수 없이 적는다. 부르는 곳이 많아 이름을 남긴다. */
+export const formatCurrency = formatAmount;
 
 export interface SavingsEquivalent {
   /** Language-neutral id, so a screen can name the reward in its own language. */

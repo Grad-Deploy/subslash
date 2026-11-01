@@ -19,7 +19,6 @@
       "entry": ["scripts/**/*.{js,mjs,ts}"],
       "project": ["scripts/**/*.{js,mjs,ts}"],
       "ignoreDependencies": [
-        "@capacitor/ios",
         "@capacitor/app",
         "@capacitor/browser",
         "@capacitor/clipboard",
@@ -33,6 +32,6 @@
       "project": ["src/**/*.ts"]
     }
   },
-  "ignore": ["tools/**", "scripts/claude-hooks/**"],
+  "ignore": ["scripts/claude-hooks/**"],
   "ignoreExportsUsedInFile": true
 }

@@ -22,10 +22,12 @@ import {
  */
 export function HomePage() {
   const router = useRouter();
-  const { subscriptions, startDemo } = useStore();
+  const { subscriptions, startDemo, recordsOwner } = useStore();
   const mounted = useIsClient();
   // 구독 중인 것만 센다. 하이드레이션 전에는 저장소를 모르므로 처음 온 사람으로 그린다.
   const activeCount = mounted ? subscriptions.filter((sub) => sub.status === "active").length : 0;
+  // 기록의 주인은 서버가 답한 로그인 상태로만 바뀐다(lib/records-owner) — 네트워크 오류를 로그아웃으로 읽지 않는다.
+  const signedIn = mounted && recordsOwner !== null;
 
   // 앱의 첫 화면은 대시보드다. 앱을 켜면 이 페이지(index.html)부터 열리지만, 실행 화면(인트로·짧은
   // 로고)이 가린 사이에 대시보드로 옮긴다. 소개용 홈은 웹에서만 쓴다.
@@ -45,7 +47,7 @@ export function HomePage() {
       {/* 읽은 만큼 차오르는 빨간 줄. 스크롤 애니메이션을 모르는 브라우저에서는 그리지 않는다. */}
       <div aria-hidden className="landing-progress" />
 
-      <LandingOpening activeCount={activeCount} onDemo={handleLoadDemo} />
+      <LandingOpening activeCount={activeCount} signedIn={signedIn} onDemo={handleLoadDemo} />
       <LandingCalculator />
       <LandingShowcase />
       <LandingDuo />

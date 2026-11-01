@@ -5,11 +5,7 @@ import { accountSnapshots, accounts, sessions, verificationMailLog, type Account
 import { canSignLinks, emailFingerprint, signLink, verifyLink } from "./tokens";
 import { accountVerificationEmail, appUrl, sendEmail } from "./email";
 import { VERIFY_ACCOUNT_TTL_DAYS } from "./verification-config";
-import { deleteGmailImportData } from "./gmail-auto-import";
-import { deleteCalendarSyncPlan } from "./calendar-sync";
-import { deleteAllDeviceUsage } from "./device-usage-server";
-import { deleteOAuthData } from "./oauth-cleanup";
-import { deleteAskDailyCounts } from "./ask/daily-count";
+import { deleteAccountRecords } from "./account-data";
 import { logError } from "./log";
 
 /**
@@ -246,13 +242,7 @@ export async function deleteUnverifiedAccount(accountId: string): Promise<boolea
       .limit(1);
     if (!target) return false;
 
-    await tx.delete(sessions).where(eq(sessions.accountId, accountId));
-    await tx.delete(accountSnapshots).where(eq(accountSnapshots.accountId, accountId));
-    await deleteGmailImportData(accountId, tx);
-    await deleteCalendarSyncPlan(accountId, tx);
-    await deleteAllDeviceUsage(accountId, tx);
-    await deleteOAuthData(accountId, tx);
-    await deleteAskDailyCounts(accountId, tx);
+    await deleteAccountRecords(accountId, tx);
 
     const deleted = await tx
       .delete(accounts)

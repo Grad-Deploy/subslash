@@ -40,6 +40,7 @@ export const ko = {
   footer: {
     help: "도움말 · 문의",
     privacy: "개인정보처리방침",
+    getApp: "Google Play에서 앱 받기",
     trademarks:
       "서비스 이름과 로고는 각 소유자의 상표이며, 구독을 알아볼 수 있게 쓸 뿐입니다. SubSlash는 해당 서비스와 제휴하거나 보증받지 않았습니다.",
   },
@@ -66,6 +67,13 @@ export const ko = {
     sourceText: "원문",
     /** 한국어가 아닌 화면에서 서비스 목록 요금 옆의 표시(KoreanPriceNote). 목록 요금은 한국에서 확인한 값이라 언어를 바꿔도 옮기지 않는다. */
     koreanPrice: "요금은 한국에서 확인한 값이에요. 다르게 낸다면 실제로 내는 금액을 적어 주세요.",
+  },
+  /** 없는 주소(app/not-found). Next.js 기본 화면은 영어 한 줄뿐이고 돌아갈 길이 없었다. */
+  notFound: {
+    title: "페이지를 찾을 수 없어요",
+    body: "주소가 바뀌었거나 없는 페이지예요. 구독 기록은 그대로 있어요.",
+    home: "처음으로",
+    dashboard: "대시보드로",
   },
   app: {
     sheetClose: "닫기",
@@ -111,6 +119,7 @@ export const en: Widen<typeof ko> = {
   footer: {
     help: "Help & contact",
     privacy: "Privacy policy",
+    getApp: "Get the app on Google Play",
     trademarks:
       "Service names and logos are trademarks of their owners and are used only to identify subscriptions. SubSlash is not affiliated with or endorsed by these services.",
   },
@@ -135,6 +144,12 @@ export const en: Widen<typeof ko> = {
       "Original (Korean), not translated: we keep it exactly as we checked it on the service.",
     koreanPrice:
       "Prices are as checked for Korea. If you pay a different amount, enter what you actually pay.",
+  },
+  notFound: {
+    title: "Page not found",
+    body: "The address changed or the page doesn't exist. Your subscription records are untouched.",
+    home: "Home",
+    dashboard: "Go to dashboard",
   },
   app: {
     sheetClose: "Close",
@@ -180,6 +195,7 @@ export const zh: Widen<typeof ko> = {
   footer: {
     help: "帮助与咨询",
     privacy: "隐私政策",
+    getApp: "在 Google Play 下载应用",
     trademarks:
       "服务名称和标志是其所有者的商标，仅用于识别订阅。SubSlash 与这些服务没有合作关系，也未获得其认可。",
   },
@@ -202,6 +218,12 @@ export const zh: Widen<typeof ko> = {
     copyFallback: "无法自动复制。请长按下面的文字进行复制。",
     sourceText: "原文（韩语），未翻译：我们保留了在服务上确认过的原样内容。",
     koreanPrice: "价格为在韩国确认的金额。如果你支付的金额不同，请填写实际支付的金额。",
+  },
+  notFound: {
+    title: "找不到页面",
+    body: "地址已更改或页面不存在。你的订阅记录不受影响。",
+    home: "返回首页",
+    dashboard: "前往仪表板",
   },
   app: { sheetClose: "关闭", exitHint: "再按一次返回键退出应用" },
 };
@@ -244,6 +266,7 @@ export const ja: Widen<typeof ko> = {
   footer: {
     help: "ヘルプ・お問い合わせ",
     privacy: "プライバシーポリシー",
+    getApp: "Google Play でアプリを入手",
     trademarks:
       "サービス名とロゴは各所有者の商標で、サブスクを見分けるためだけに使っています。SubSlash はこれらのサービスと提携しておらず、保証も受けていません。",
   },
@@ -267,6 +290,12 @@ export const ja: Widen<typeof ko> = {
     sourceText: "原文（韓国語）・未翻訳: サービスで確認したとおりの内容をそのまま載せています。",
     koreanPrice:
       "料金は韓国で確認した金額です。支払い額が違う場合は、実際に支払っている金額を入力してください。",
+  },
+  notFound: {
+    title: "ページが見つかりません",
+    body: "アドレスが変わったか、存在しないページです。サブスクの記録はそのままです。",
+    home: "トップへ",
+    dashboard: "ダッシュボードへ",
   },
   app: { sheetClose: "閉じる", exitHint: "もう一度戻るを押すとアプリを終了します" },
 };
@@ -309,6 +338,7 @@ export const vi: Widen<typeof ko> = {
   footer: {
     help: "Trợ giúp & liên hệ",
     privacy: "Chính sách quyền riêng tư",
+    getApp: "Tải ứng dụng trên Google Play",
     trademarks:
       "Tên và logo dịch vụ là nhãn hiệu của chủ sở hữu, chỉ được dùng để nhận diện gói đăng ký. SubSlash không liên kết hay được các dịch vụ này bảo trợ.",
   },
@@ -333,6 +363,12 @@ export const vi: Widen<typeof ko> = {
       "Bản gốc (tiếng Hàn), chưa dịch: chúng tôi giữ nguyên nội dung đã kiểm tra trên dịch vụ.",
     koreanPrice:
       "Giá là mức đã kiểm tra tại Hàn Quốc. Nếu bạn trả số tiền khác, hãy nhập số tiền bạn thực sự trả.",
+  },
+  notFound: {
+    title: "Không tìm thấy trang",
+    body: "Địa chỉ đã thay đổi hoặc trang không tồn tại. Dữ liệu gói đăng ký của bạn vẫn còn nguyên.",
+    home: "Trang chủ",
+    dashboard: "Đến bảng điều khiển",
   },
   app: { sheetClose: "Đóng", exitHint: "Nhấn quay lại lần nữa để thoát ứng dụng" },
 };
@@ -375,6 +411,7 @@ export const fr: Widen<typeof ko> = {
   footer: {
     help: "Aide et contact",
     privacy: "Politique de confidentialité",
+    getApp: "Télécharger l’app sur Google Play",
     trademarks:
       "Les noms et logos des services sont des marques de leurs propriétaires, utilisés uniquement pour identifier les abonnements. SubSlash n'est ni affilié à ces services ni approuvé par eux.",
   },
@@ -401,6 +438,12 @@ export const fr: Widen<typeof ko> = {
       "Texte original (coréen), non traduit : nous le gardons tel que nous l'avons vérifié sur le service.",
     koreanPrice:
       "Les prix sont ceux vérifiés pour la Corée. Si vous payez un autre montant, saisissez ce que vous payez réellement.",
+  },
+  notFound: {
+    title: "Page introuvable",
+    body: "L'adresse a changé ou la page n'existe pas. Vos abonnements enregistrés sont intacts.",
+    home: "Accueil",
+    dashboard: "Aller au tableau de bord",
   },
   app: {
     sheetClose: "Fermer",
@@ -446,6 +489,7 @@ export const es: Widen<typeof ko> = {
   footer: {
     help: "Ayuda y contacto",
     privacy: "Política de privacidad",
+    getApp: "Descarga la app en Google Play",
     trademarks:
       "Los nombres y logotipos de los servicios son marcas de sus propietarios y se usan solo para identificar suscripciones. SubSlash no está afiliado ni respaldado por estos servicios.",
   },
@@ -471,6 +515,12 @@ export const es: Widen<typeof ko> = {
       "Texto original (coreano), sin traducir: lo mantenemos tal como lo comprobamos en el servicio.",
     koreanPrice:
       "Los precios son los comprobados para Corea. Si pagas otro importe, introduce lo que pagas realmente.",
+  },
+  notFound: {
+    title: "Página no encontrada",
+    body: "La dirección cambió o la página no existe. Tus suscripciones guardadas siguen intactas.",
+    home: "Inicio",
+    dashboard: "Ir al panel",
   },
   app: { sheetClose: "Cerrar", exitHint: "Pulsa atrás otra vez para salir de la app" },
 };
@@ -513,6 +563,7 @@ export const de: Widen<typeof ko> = {
   footer: {
     help: "Hilfe & Kontakt",
     privacy: "Datenschutzerklärung",
+    getApp: "App bei Google Play laden",
     trademarks:
       "Namen und Logos der Dienste sind Marken ihrer Inhaber und dienen nur zur Erkennung der Abos. SubSlash ist mit diesen Diensten weder verbunden noch von ihnen unterstützt.",
   },
@@ -539,6 +590,12 @@ export const de: Widen<typeof ko> = {
       "Original (Koreanisch), nicht übersetzt: Wir übernehmen es genau so, wie wir es beim Dienst geprüft haben.",
     koreanPrice:
       "Die Preise wurden für Korea geprüft. Wenn du einen anderen Betrag zahlst, gib ein, was du tatsächlich zahlst.",
+  },
+  notFound: {
+    title: "Seite nicht gefunden",
+    body: "Die Adresse hat sich geändert oder die Seite gibt es nicht. Deine Abo-Daten bleiben unverändert.",
+    home: "Startseite",
+    dashboard: "Zum Dashboard",
   },
   app: { sheetClose: "Schließen", exitHint: "Noch einmal Zurück drücken, um die App zu beenden" },
 };
@@ -581,6 +638,7 @@ export const pt: Widen<typeof ko> = {
   footer: {
     help: "Ajuda e contato",
     privacy: "Política de privacidade",
+    getApp: "Baixe o app no Google Play",
     trademarks:
       "Os nomes e logotipos dos serviços são marcas de seus donos e são usados só para identificar assinaturas. O SubSlash não é afiliado nem endossado por esses serviços.",
   },
@@ -606,6 +664,12 @@ export const pt: Widen<typeof ko> = {
       "Texto original (coreano), sem tradução: mantemos exatamente como conferimos no serviço.",
     koreanPrice:
       "Os preços são os conferidos para a Coreia. Se você paga outro valor, informe o que paga de fato.",
+  },
+  notFound: {
+    title: "Página não encontrada",
+    body: "O endereço mudou ou a página não existe. Seus registros de assinaturas continuam intactos.",
+    home: "Início",
+    dashboard: "Ir para o painel",
   },
   app: { sheetClose: "Fechar", exitHint: "Toque em voltar de novo para sair do app" },
 };

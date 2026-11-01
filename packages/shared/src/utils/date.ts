@@ -4,7 +4,8 @@ import { BillingCycle } from "../types";
 export const HOUR_MS = 60 * 60 * 1000;
 export const DAY_MS = 24 * HOUR_MS;
 
-const pad2 = (n: number) => String(n).padStart(2, "0");
+/** 두 자리로(`7` → `"07"`). 날짜·시각을 손으로 조립할 때 쓴다. */
+export const pad2 = (n: number) => String(n).padStart(2, "0");
 
 /** 기기 시간대의 날짜를 `YYYY-MM-DD`로. 파일마다 따로 적던 것을 여기 모았다. */
 export function localDateKey(date: Date): string {
@@ -21,6 +22,11 @@ export function formatDotDate(date: Date): string {
   return `${date.getFullYear()}.${pad2(date.getMonth() + 1)}.${pad2(date.getDate())}`;
 }
 
+/** 기기 시간대의 시각을 `HH:mm`로(24시간). */
+export function formatClockTime(date: Date): string {
+  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
 /** Everything needed to work out when a subscription is charged next. */
 export interface BillingSchedule {
   billingDay: number;
@@ -29,10 +35,14 @@ export interface BillingSchedule {
   billingMonth?: number;
 }
 
+/** 그 달의 날 수(= 말일). monthIndex는 0~11. */
+export function daysInMonth(year: number, monthIndex: number): number {
+  return new Date(year, monthIndex + 1, 0).getDate();
+}
+
 /** 카드 회사가 하는 것처럼, 그 달에 없는 날짜(2월 30일 등)는 말일로 당긴다. 결제 캘린더도 이 함수를 쓴다. */
 export function effectiveDay(year: number, monthIndex: number, billingDay: number): number {
-  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-  return Math.min(billingDay, lastDay);
+  return Math.min(billingDay, daysInMonth(year, monthIndex));
 }
 
 /**
@@ -145,18 +155,17 @@ export function formatDday(daysLeft: number): string {
   return `D+${Math.abs(daysLeft)}`;
 }
 
-export function formatCountdown(targetDate: Date, now: Date = new Date()): string {
-  const diffTime = targetDate.getTime() - now.getTime();
-  if (diffTime <= 0) return "D-Day 00:00:00";
-
-  const days = Math.floor(diffTime / DAY_MS);
-  const hours = Math.floor((diffTime % DAY_MS) / HOUR_MS);
-  const minutes = Math.floor((diffTime % HOUR_MS) / (1000 * 60));
-  const seconds = Math.floor((diffTime % (1000 * 60)) / 1000);
-
-  const formatUnit = (unit: number) => unit.toString().padStart(2, "0");
-
-  return `D-${days} ${formatUnit(hours)}:${formatUnit(minutes)}:${formatUnit(seconds)}`;
+/**
+ * 남은 시간을 `HH:MM:SS`로. 날 수는 D-day 배지가 따로 적으므로 하루 안의 몫만 적고, 이미 지났거나 모르면(null)
+ * `00:00:00`이다. 결제가 하루 남은 카드가 초 단위로 센다.
+ */
+export function formatTimeLeft(target: Date | null, now: Date = new Date()): string {
+  const ms = target ? Math.max(0, target.getTime() - now.getTime()) : 0;
+  const minuteMs = 60 * 1000;
+  const hours = Math.floor((ms % DAY_MS) / HOUR_MS);
+  const minutes = Math.floor((ms % HOUR_MS) / minuteMs);
+  const seconds = Math.floor((ms % minuteMs) / 1000);
+  return `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
 }
 
 /**
@@ -169,6 +178,17 @@ export function isInTrial(sub: { trialEndsAt?: string }, now: Date = new Date())
   const ends = new Date(`${sub.trialEndsAt}T00:00:00`);
   if (Number.isNaN(ends.getTime())) return false;
   return startOfDay(now).getTime() < ends.getTime();
+}
+
+/**
+ * 지금 카드에서 돈이 나가는 구독인지 — 구독 중이고 무료 체험 중이 아니다. 지출·1회 단가·결제 일정처럼 '내는 돈'을
+ * 다루는 곳은 이것으로 고른다. 체험 중인 구독을 넣으면 내지도 않은 돈을 보이게 된다(CLAUDE.md '데이터 위치').
+ */
+export function isPaying(
+  sub: { status: string; trialEndsAt?: string },
+  now: Date = new Date(),
+): boolean {
+  return sub.status === "active" && !isInTrial(sub, now);
 }
 
 /** 체험이 끝나기까지 남은 날. 종료일을 모르거나 이미 끝났으면 null. */

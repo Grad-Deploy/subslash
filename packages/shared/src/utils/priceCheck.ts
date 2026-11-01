@@ -1,4 +1,4 @@
-import { DAY_MS } from "./date";
+import { daysBetween, parseTimestamp } from "./date";
 import { Currency, BillingCycle } from "../types";
 import { referencePriceFor } from "../constants/services";
 
@@ -42,10 +42,6 @@ export interface PriceCheckCandidate {
   everChecked: boolean;
 }
 
-function daysBetween(from: Date, to: Date): number {
-  return Math.floor((to.getTime() - from.getTime()) / DAY_MS);
-}
-
 /**
  * 요금을 다시 확인해 볼 만한 구독을 고른다.
  *
@@ -62,8 +58,8 @@ export function getPriceCheckCandidates(
 
   for (const sub of subs) {
     const checkedSource = sub.lastPriceCheckedAt ?? sub.createdAt;
-    const checkedDate = new Date(checkedSource);
-    if (Number.isNaN(checkedDate.getTime())) continue;
+    const checkedDate = parseTimestamp(checkedSource);
+    if (!checkedDate) continue;
 
     const daysSinceChecked = Math.max(0, daysBetween(checkedDate, now));
     const isStale = daysSinceChecked >= PRICE_CHECK_INTERVAL_DAYS;

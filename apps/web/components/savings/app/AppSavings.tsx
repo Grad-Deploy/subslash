@@ -21,7 +21,8 @@ import { useIsClient } from "@hooks/useIsClient";
 import { useExchangeRate } from "@hooks/useExchangeRate";
 import { useStore } from "@lib/store";
 import { webUrl } from "@lib/api";
-import { copyText, shareText } from "@lib/native";
+import { shareText } from "@lib/native";
+import { useCopyText } from "@hooks/useCopyText";
 import { buildShareSearchParams } from "@lib/share-savings";
 import { ServiceLogo } from "../../subscription/ServiceLogo";
 import { ConfirmDialog } from "../../ui/confirm-dialog";
@@ -62,7 +63,7 @@ export function AppSavings() {
   } = useStore();
   const [reviveTarget, setReviveTarget] = useState<Subscription | null>(null);
   const [chargedTarget, setChargedTarget] = useState<Subscription | null>(null);
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyText(2500);
   const [showAllBreakdown, setShowAllBreakdown] = useState(false);
   const [showAllKilled, setShowAllKilled] = useState(false);
 
@@ -125,10 +126,7 @@ export function AppSavings() {
     if (await shareText({ title: t.savings.share.title, text, url: shareUrl })) return;
     // 앱 웹뷰에서는 navigator.clipboard가 막혀 있어 네이티브 복사(copyText)를 쓴다. 실패하면
     // '복사했어요'를 띄우지 않는다(#114와 같은 기준).
-    if (await copyText(text)) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    }
+    await copy(text);
   };
 
   return (

@@ -1,4 +1,4 @@
-import { DAY_MS } from "./date";
+import { daysBetween, pad2 } from "./date";
 import type {
   BillingCycle,
   DiscoveredSubscription,
@@ -252,7 +252,7 @@ export function daysSinceReceipt(receiptDate: string, now: Date): number | null 
   if (!match) return null;
   const at = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
   if (Number.isNaN(at)) return null;
-  return Math.max(0, Math.floor((now.getTime() - at) / DAY_MS));
+  return Math.max(0, daysBetween(at, now));
 }
 
 /** 마지막 결제 메일이 오래돼 지금도 결제 중인지 알 수 없는 후보인지. */
@@ -339,7 +339,7 @@ ${piece.body}`;
 
       // 같은 서비스라도 통화가 다르면 다른 구독일 수 있다.
       const key = `${parsed.name}|${parsed.currency}`;
-      const receiptDate = `${received.year}.${String(received.month).padStart(2, "0")}.${String(received.day).padStart(2, "0")}`;
+      const receiptDate = `${received.year}.${pad2(received.month)}.${pad2(received.day)}`;
       // 해지 알림은 결제가 아니다. 금액이 없는 메일도 결제 기록으로 남기지 않는다.
       const charge =
         !parsed.isCanceled && parsed.amount > 0 ? chargeDateFromReceiptDate(receiptDate) : null;
@@ -354,7 +354,7 @@ ${piece.body}`;
         return;
       }
 
-      const daysAgo = Math.max(0, Math.floor((now.getTime() - receivedAt.getTime()) / DAY_MS));
+      const daysAgo = Math.max(0, daysBetween(receivedAt, now));
       const stale = daysAgo > STALE_AFTER_DAYS[parsed.billingCycle];
       const snippet = `${receiptDate} · ${email.from} · ${email.subject}`;
 
