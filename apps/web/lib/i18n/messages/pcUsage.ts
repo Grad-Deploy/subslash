@@ -43,7 +43,7 @@ export const ko = {
     modalLinkClaude: "PC의 Claude Code 기록이나 claude.ai 대화 파일로 세기 →",
     apiValue: (usd: string) => `API 요금으로 환산하면 약 ${usd}`,
     ratioOver: (times: string) =>
-      `내 몫 한 달 구독료의 ${times}배어치를 썼어요 — PC 사용만으로도 본전 이상이에요.`,
+      `내 몫 한 달 구독료의 ${times}배어치를 썼어요 — PC 사용만으로도 구독료 이상을 썼어요.`,
     ratioUnder: (percent: number) =>
       `내 몫 한 달 구독료의 ${percent}%어치예요. 웹·앱에서 쓴 것은 빠져 있어서 실제로는 더 썼을 수 있어요.`,
     apiNote:

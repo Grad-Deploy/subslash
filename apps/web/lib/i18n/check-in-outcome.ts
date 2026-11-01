@@ -1,4 +1,5 @@
 import {
+  GOOD_AT,
   calculateCostPerUse,
   formatAmount,
   formatCurrency,
@@ -17,25 +18,46 @@ import { formatRatio } from "../pc-usage";
 export function describeCheckInOutcome(t: Messages, outcome: CheckInOutcome): string {
   const o = t.checkin.outcome;
   const { metric, serviceName: name, monthly, quantity, currency } = outcome;
+  const hasCost = monthly > 0;
   const money = (amount: number) => formatCurrency(amount, currency);
   const message = (() => {
     switch (metric) {
       case "uses":
+        if (!hasCost) {
+          return quantity === 0
+            ? o.hoursNone(name, null)
+            : `${name} · ${t.value.checkIn.uses(quantity)}`;
+        }
         if (quantity === 0) return o.unused(money(monthly));
         if (quantity === 1) return o.once(name, money(monthly));
         return o.perUse(name, money(calculateCostPerUse(monthly, quantity)));
       case "days":
+        if (!hasCost) {
+          return quantity === 0
+            ? o.daysNone(name, null)
+            : `${name} · ${t.value.checkIn.days(quantity)}`;
+        }
         return quantity === 0
           ? o.daysNone(name, money(monthly))
           : o.daysSome(name, money(monthly / quantity));
       case "hours":
+        if (!hasCost) {
+          return quantity === 0
+            ? o.hoursNone(name, null)
+            : `${name} · ${t.value.checkIn.hours(quantity)}`;
+        }
         return quantity === 0
           ? o.hoursNone(name, money(monthly))
           : o.hoursSome(name, money(monthly / quantity));
-      case "benefit":
+      case "benefit": {
+        const benefitMoney = formatCurrency(quantity, "KRW");
+        if (!hasCost) {
+          return `${name} · ${t.value.checkIn.benefit(benefitMoney)}`;
+        }
         return quantity >= monthly
-          ? o.benefitOver(money(monthly), money(quantity))
-          : o.benefitUnder(money(monthly), money(quantity));
+          ? o.benefitOver(money(monthly), benefitMoney)
+          : o.benefitUnder(money(monthly), benefitMoney);
+      }
       case "storage": {
         if (quantity === 0) return o.storageEmpty(name);
         const fit = outcome.storageFit;
@@ -68,6 +90,31 @@ export function describeUsageMetaphor(
   t: Messages,
   metaphor: UsageMetaphor,
 ): { comparison: string; message: string } {
+  if (metaphor.amountKRW <= 0) {
+    const r = t.checkin.appResult;
+    if (metaphor.kind === "unused") {
+      return {
+        comparison: r.toBreakEven,
+        message: `${t.checkin.outcome.hoursNone(metaphor.serviceName, null)} ${r.remainingNote(GOOD_AT.uses)}`,
+      };
+    }
+    if (metaphor.kind === "movie" || metaphor.kind === "once") {
+      return {
+        comparison: r.toBreakEven,
+        message: `${t.value.checkIn.uses(1)} · ${r.remainingNote(GOOD_AT.uses - 1)}`,
+      };
+    }
+    if (metaphor.kind === "warning") {
+      return {
+        comparison: r.toBreakEven,
+        message: r.remainingNote(1),
+      };
+    }
+    return {
+      comparison: r.toBreakEven,
+      message: r.doneNote,
+    };
+  }
   const m = t.checkin.metaphor;
   const item = t.value.metaphor[metaphor.item](metaphor.count);
   const cost = formatAmount(metaphor.cost, metaphor.currency);
@@ -90,7 +137,7 @@ export function describeUsageMetaphor(
   }
 }
 
-/** 본전 게이지 아래 한 문장(주의 단계에서 쓴다). */
+/** 이용 목표 게이지 아래 한 문장(주의 단계에서 쓴다). */
 export function describeBreakEven(t: Messages, info: BreakEvenInfo): string {
   const g = t.checkin.gauge;
   if (info.currentUsage === 0) return g.none;

@@ -1,14 +1,31 @@
 import { RiskLevel } from "../types";
+import { GOOD_AT, VERDICT_THRESHOLDS } from "../constants/thresholds";
 import { formatAmount } from "./currency";
 
 export function calculateCostPerUse(amount: number, usageCount: number): number {
-  if (usageCount === 0) return amount;
+  if (amount <= 0) return 0;
+  if (usageCount <= 0) return amount;
   return amount / usageCount;
 }
 
+/**
+ * 1회당 비용과 이용 횟수로 위험도를 판정한다.
+ *
+ * - 기준은 `constants/thresholds.ts`의 `GOOD_AT.uses`(4회)와 `VERDICT_THRESHOLDS.uses.redBelow`(2회)에서 파생한다:
+ *   - 빨강(`red`): `usageCount < 2`(`redBelow`)이거나 유료 구독(`amount > 0`)에서 1회 단가가 월 부담금의 `1 / redBelow`(50%)를 초과할 때
+ *   - 초록(`green`): 유료 구독(`amount > 0`)은 1회 단가가 월 부담금의 `1 / GOOD_AT.uses`(25%) 이하일 때,
+ *     무료·0원 부담(`amount <= 0`)은 `usageCount >= GOOD_AT.uses`(4회 이상)일 때
+ *   - 노랑(`yellow`): 그 사이의 주의 구간(정수 기준 2~3회)
+ * - 유료와 0원 부담 구독 모두 빨강 경계를 `usageCount < 2`로 통일해, 폰 사용 기록 환산(`opensPer30`) 같은 소수 횟수(예: 1.5회)에서도
+ *   유료와 0원 구독이 항상 같은 색을 내도록 보장한다.
+ */
 export function getRiskLevel(costPerUse: number, amount: number, usageCount: number): RiskLevel {
-  if (usageCount <= 1 || costPerUse > amount * 0.5) return "red";
-  if (usageCount >= 8 || costPerUse <= amount * 0.25) return "green";
+  const redBelow = VERDICT_THRESHOLDS.uses.redBelow;
+  const greenAt = GOOD_AT.uses;
+  if (usageCount < redBelow || (amount > 0 && costPerUse > amount / redBelow)) return "red";
+  if (amount > 0 ? costPerUse <= amount / greenAt : usageCount >= greenAt) {
+    return "green";
+  }
   return "yellow";
 }
 

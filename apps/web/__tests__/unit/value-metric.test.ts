@@ -79,6 +79,17 @@ describe("metricRiskLevel", () => {
     expect(metricRiskLevel("storage", 4400, 20)).toBe("yellow");
     expect(metricRiskLevel("storage", 4400, 60)).toBe("green");
   });
+
+  it("monthlyShare === 0인 무료·공유 구독도 0으로 나누어지지 않고 정상 평가된다", () => {
+    const usesZero = evaluateMetric("uses", "넷플릭스", 0, 0, "KRW");
+    expect(usesZero.costPerUse).toBe(0);
+    expect(Number.isFinite(usesZero.costPerUse)).toBe(true);
+
+    const benefitZero = evaluateMetric("benefit", "네이버플러스", 0, 0, "KRW");
+    expect(benefitZero.costPerUse).toBe(0);
+    expect(benefitZero.riskLevel).toBe("green");
+    expect(shortUnitCost({ metric: "benefit", usageCount: 0, costPerUse: 0 }, "KRW")).toBe("-");
+  });
 });
 
 describe("무료 요금제로 충분했는지", () => {
@@ -166,5 +177,28 @@ describe("getCheckInEvidence", () => {
     expect(evidence.recent.map((l) => l.id)).toEqual(["b", "a"]);
     expect(evidence.averageUsage).toBe(15);
     expect(evidence.change?.usage).toBe(10);
+  });
+
+  it("benefit 지표 기록도 costPerUse × usageCount로 월 회비를 복원해 요금 변경 여부를 일관되게 판정한다", () => {
+    const first = evaluateMetric("benefit", "쿠팡 와우", 7890, 5000, "KRW");
+    const second = evaluateMetric("benefit", "쿠팡 와우", 7890, 15000, "KRW");
+    const evidence = getCheckInEvidence([
+      log({
+        id: "b1",
+        metric: "benefit",
+        usageCount: 5000,
+        costPerUse: first.costPerUse,
+        checkedAt: "2026-08-01T00:00:00.000Z",
+      }),
+      log({
+        id: "b2",
+        metric: "benefit",
+        usageCount: 15000,
+        costPerUse: second.costPerUse,
+        checkedAt: "2026-09-01T00:00:00.000Z",
+      }),
+    ])!;
+    expect(evidence.change?.usage).toBe(10000);
+    expect(evidence.change?.priceChanged).toBe(false);
   });
 });

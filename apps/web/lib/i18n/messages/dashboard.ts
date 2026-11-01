@@ -40,8 +40,8 @@ export const ko = {
   reason: {
     chargedAfterKill: (date: string, amount: string | null) =>
       `해지로 기록한 뒤인 ${date}에 결제 메일이 왔습니다${amount ? ` (${amount})` : ""}. 해지가 안 됐을 수 있으니 다시 확인해 주세요.`,
-    trialEnding: (dday: string, endsAt: string, stake: string) =>
-      `${dday} · 무료 체험이 ${endsAt}에 끝납니다. 그대로 두면 ${stake}부터 결제가 시작됩니다.`,
+    trialEnding: (dday: string, endsAt: string, stake: string | null) =>
+      `${dday} · 무료 체험이 ${endsAt}에 끝납니다. 그대로 두면 ${stake !== null ? `${stake}부터 결제가 시작됩니다.` : "유료 결제가 시작됩니다."}`,
     cancelNotice: (date: string) =>
       `${date}에 해지·취소 알림 메일이 왔습니다. 해지했다면 기록해 주세요. 요금제 변경이나 환불 안내일 수도 있어요.`,
     billingSoonRisky: (dday: string, checkIn: string, stake: string | null) =>
@@ -117,7 +117,7 @@ export const en: Widen<typeof ko> = {
     chargedAfterKill: (date, amount) =>
       `A payment email arrived on ${date}, after you marked this as cancelled${amount ? ` (${amount})` : ""}. The cancellation may not have gone through, so please check again.`,
     trialEnding: (dday, endsAt, stake) =>
-      `${dday} · Your free trial ends on ${endsAt}. If you leave it, billing starts at ${stake}.`,
+      `${dday} · Your free trial ends on ${endsAt}. ${stake !== null ? `If you leave it, billing starts at ${stake}.` : "If you leave it, paid billing will start."}`,
     cancelNotice: (date) =>
       `A cancellation email arrived on ${date}. If you did cancel, please record it. It may also be a plan change or refund notice.`,
     billingSoonRisky: (dday, checkIn, stake) =>
@@ -193,7 +193,7 @@ export const zh: Widen<typeof ko> = {
     chargedAfterKill: (date, amount) =>
       `在你标记为已退订之后，${date} 收到了付款邮件${amount ? `（${amount}）` : ""}。退订可能没有成功，请再确认一下。`,
     trialEnding: (dday, endsAt, stake) =>
-      `${dday} · 免费试用将于 ${endsAt} 结束。如果不处理，将开始扣款 ${stake}。`,
+      `${dday} · 免费试用将于 ${endsAt} 结束。${stake !== null ? `如果不处理，将开始扣款 ${stake}。` : "如果不处理，将开始付费扣款。"}`,
     cancelNotice: (date) =>
       `${date} 收到了退订邮件。如果确实退订了，请记录下来。它也可能是套餐变更或退款通知。`,
     billingSoonRisky: (dday, checkIn, stake) =>
@@ -263,7 +263,7 @@ export const ja: Widen<typeof ko> = {
     chargedAfterKill: (date, amount) =>
       `解約済みにしたあと、${date} に支払いメールが届きました${amount ? `（${amount}）` : ""}。解約できていない可能性があるので、もう一度確認してください。`,
     trialEnding: (dday, endsAt, stake) =>
-      `${dday} · 無料体験は ${endsAt} に終わります。そのままにすると ${stake} の請求が始まります。`,
+      `${dday} · 無料体験は ${endsAt} に終わります。${stake !== null ? `そのままにすると ${stake} の請求が始まります。` : "そのままにすると有料の請求が始まります。"}`,
     cancelNotice: (date) =>
       `${date} に解約のメールが届きました。解約したなら記録してください。プラン変更や返金のお知らせの場合もあります。`,
     billingSoonRisky: (dday, checkIn, stake) =>
@@ -339,7 +339,7 @@ export const vi: Widen<typeof ko> = {
     chargedAfterKill: (date, amount) =>
       `Email thanh toán đến vào ${date}, sau khi bạn đánh dấu đã hủy${amount ? ` (${amount})` : ""}. Có thể việc hủy chưa thành công, hãy kiểm tra lại.`,
     trialEnding: (dday, endsAt, stake) =>
-      `${dday} · Bản dùng thử miễn phí kết thúc vào ${endsAt}. Nếu để nguyên, bạn sẽ bắt đầu bị trừ ${stake}.`,
+      `${dday} · Bản dùng thử miễn phí kết thúc vào ${endsAt}. ${stake !== null ? `Nếu để nguyên, bạn sẽ bắt đầu bị trừ ${stake}.` : "Nếu để nguyên, gói sẽ chuyển sang tính phí."}`,
     cancelNotice: (date) =>
       `Email hủy đến vào ${date}. Nếu bạn đã hủy thật, hãy ghi lại. Đó cũng có thể là thông báo đổi gói hoặc hoàn tiền.`,
     billingSoonRisky: (dday, checkIn, stake) =>
@@ -415,7 +415,7 @@ export const fr: Widen<typeof ko> = {
     chargedAfterKill: (date, amount) =>
       `Un e-mail de paiement est arrivé le ${date}, après que vous l'avez marqué comme résilié${amount ? ` (${amount})` : ""}. La résiliation n'a peut-être pas abouti : vérifiez à nouveau.`,
     trialEnding: (dday, endsAt, stake) =>
-      `${dday} · Votre essai gratuit se termine le ${endsAt}. Sans action, la facturation de ${stake} commencera.`,
+      `${dday} · Votre essai gratuit se termine le ${endsAt}. ${stake !== null ? `Sans action, la facturation de ${stake} commencera.` : "Sans action, la facturation payante commencera."}`,
     cancelNotice: (date) =>
       `Un e-mail de résiliation est arrivé le ${date}. Si vous avez bien résilié, enregistrez-le. Il peut aussi s'agir d'un changement de formule ou d'un remboursement.`,
     billingSoonRisky: (dday, checkIn, stake) =>
@@ -492,7 +492,7 @@ export const es: Widen<typeof ko> = {
     chargedAfterKill: (date, amount) =>
       `Llegó un correo de pago el ${date}, después de marcarla como cancelada${amount ? ` (${amount})` : ""}. Puede que la cancelación no se completara: compruébalo otra vez.`,
     trialEnding: (dday, endsAt, stake) =>
-      `${dday} · Tu prueba gratuita termina el ${endsAt}. Si no haces nada, empezarán a cobrarte ${stake}.`,
+      `${dday} · Tu prueba gratuita termina el ${endsAt}. ${stake !== null ? `Si no haces nada, empezarán a cobrarte ${stake}.` : "Si no haces nada, empezará el cobro de pago."}`,
     cancelNotice: (date) =>
       `Llegó un correo de cancelación el ${date}. Si cancelaste, regístralo. También puede ser un aviso de cambio de plan o de reembolso.`,
     billingSoonRisky: (dday, checkIn, stake) =>
@@ -568,7 +568,7 @@ export const de: Widen<typeof ko> = {
     chargedAfterKill: (date, amount) =>
       `Am ${date} kam eine Zahlungs-E-Mail, nachdem du das Abo als gekündigt markiert hast${amount ? ` (${amount})` : ""}. Die Kündigung hat vielleicht nicht geklappt – prüf es bitte noch einmal.`,
     trialEnding: (dday, endsAt, stake) =>
-      `${dday} · Dein kostenloser Test endet am ${endsAt}. Wenn du nichts tust, werden ${stake} abgebucht.`,
+      `${dday} · Dein kostenloser Test endet am ${endsAt}. ${stake !== null ? `Wenn du nichts tust, werden ${stake} abgebucht.` : "Wenn du nichts tust, beginnt das kostenpflichtige Abo."}`,
     cancelNotice: (date) =>
       `Am ${date} kam eine Kündigungs-E-Mail. Wenn du wirklich gekündigt hast, trag es ein. Es kann auch eine Tarifänderung oder Erstattung sein.`,
     billingSoonRisky: (dday, checkIn, stake) =>
@@ -645,7 +645,7 @@ export const pt: Widen<typeof ko> = {
     chargedAfterKill: (date, amount) =>
       `Chegou um e-mail de pagamento em ${date}, depois de você marcar como cancelada${amount ? ` (${amount})` : ""}. O cancelamento pode não ter dado certo, confira de novo.`,
     trialEnding: (dday, endsAt, stake) =>
-      `${dday} · Seu teste grátis termina em ${endsAt}. Se deixar como está, a cobrança de ${stake} começa.`,
+      `${dday} · Seu teste grátis termina em ${endsAt}. ${stake !== null ? `Se deixar como está, a cobrança de ${stake} começa.` : "Se deixar como está, a cobrança paga começa."}`,
     cancelNotice: (date) =>
       `Chegou um e-mail de cancelamento em ${date}. Se você cancelou mesmo, registre. Também pode ser um aviso de mudança de plano ou reembolso.`,
     billingSoonRisky: (dday, checkIn, stake) =>

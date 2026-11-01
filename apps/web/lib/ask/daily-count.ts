@@ -1,6 +1,6 @@
 import { DAY_MS } from "@subslash/shared";
 import { eq, lt, sql } from "drizzle-orm";
-import { getDb } from "@lib/db";
+import { getDb, type DbExecutor } from "@lib/db";
 import { koreaDay, koreaMidnight } from "@lib/korea-time";
 import { askDailyCounts } from "@lib/schema";
 
@@ -50,6 +50,9 @@ export async function pruneAskDailyCounts(now: Date = new Date()): Promise<void>
 }
 
 /** 계정을 지울 때. ON DELETE CASCADE는 PRAGMA foreign_keys가 켜져 있을 때만 동작하므로 직접 지운다. */
-export async function deleteAskDailyCounts(accountId: string): Promise<void> {
-  await getDb().delete(askDailyCounts).where(eq(askDailyCounts.accountId, accountId));
+export async function deleteAskDailyCounts(
+  accountId: string,
+  db: DbExecutor = getDb(),
+): Promise<void> {
+  await db.delete(askDailyCounts).where(eq(askDailyCounts.accountId, accountId));
 }

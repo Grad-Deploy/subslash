@@ -7,8 +7,11 @@ export function RiskBadge({
   level,
   showLabel = true,
   size = "md",
+  free = false,
 }: {
   level: RiskLevel;
+  /** 내 몫이 0원인 구독. 내지 않는 돈을 두고 해지를 권하지 않는다. */
+  free?: boolean;
   showLabel?: boolean;
   size?: "sm" | "md" | "lg";
 }) {
@@ -16,7 +19,7 @@ export function RiskBadge({
   const config: Record<RiskLevel, { label: string; color: BadgeProps["variant"] }> = {
     green: { label: t.risk.green, color: "success" },
     yellow: { label: t.risk.yellow, color: "warning" },
-    red: { label: t.risk.red, color: "destructive" },
+    red: { label: free ? t.risk.redFree : t.risk.red, color: "destructive" },
   };
 
   const selected = config[level] || config.green;

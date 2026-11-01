@@ -484,3 +484,220 @@ describe("로고를 찾을 단서", () => {
     expect(item?.cancelUrl).toBe(cancelUrl);
   });
 });
+
+describe("부담금 0원 구독 (C2)", () => {
+  it("금액이 0원인 구독은 금전 손실 기반 해지 권유(billing-soon-risky, low-usage-billing-soon, risky)를 생성하지 않는다", () => {
+    const freeSoonRisky = subDueIn(2, { id: "free-soon-risky", amount: 0 });
+    const freeSoonLow = subDueIn(2, { id: "free-soon-low", amount: 0 });
+    const freeRisky = subDueIn(20, { id: "free-risky", amount: 0 });
+
+    const logs = [
+      log("free-soon-risky", {
+        usageCount: 0,
+        costPerUse: 0,
+        riskLevel: "red",
+        checkedAt: daysAgo(1),
+      }),
+      log("free-soon-low", {
+        usageCount: 2,
+        costPerUse: 0,
+        riskLevel: "green",
+        checkedAt: daysAgo(1),
+      }),
+      log("free-risky", { usageCount: 0, costPerUse: 0, riskLevel: "red", checkedAt: daysAgo(1) }),
+    ];
+
+    expect(getActionQueue([freeSoonRisky, freeSoonLow, freeRisky], logs, NOW)).toEqual([]);
+  });
+
+  it("가족 공유로 내 부담금이 0원인 구독도 해지 권유 대상에서 제외하되, 체크인·해지 알림 등 별도 항목은 유지한다", () => {
+    const sharedZeroRisky = subDueIn(20, {
+      id: "shared-zero-risky",
+      amount: 17000,
+      sharingCount: 4,
+      myShareAmount: 0,
+    });
+    const sharedZeroStale = subDueIn(20, {
+      id: "shared-zero-stale",
+      amount: 17000,
+      sharingCount: 4,
+      myShareAmount: 0,
+    });
+    const sharedZeroCancelNotice = subDueIn(20, {
+      id: "shared-zero-cancel",
+      amount: 17000,
+      sharingCount: 4,
+      myShareAmount: 0,
+      cancelNoticeAt: "2026.09.08",
+    });
+
+    const logs = [
+      log("shared-zero-risky", {
+        usageCount: 0,
+        costPerUse: 0,
+        riskLevel: "red",
+        checkedAt: daysAgo(1),
+      }),
+      log("shared-zero-stale", {
+        usageCount: 0,
+        costPerUse: 0,
+        riskLevel: "red",
+        checkedAt: daysAgo(STALE_CHECK_IN_DAYS + 2),
+      }),
+    ];
+
+    const queue = getActionQueue(
+      [sharedZeroRisky, sharedZeroStale, sharedZeroCancelNotice],
+      logs,
+      NOW,
+    );
+    expect(queue.map((item) => [item.subscriptionId, item.kind])).toEqual([
+      ["shared-zero-cancel", "cancel-notice"],
+      ["shared-zero-stale", "stale-check-in"],
+    ]);
+  });
+
+  it("0원 부담 구독의 결제 임박(billing-soon) 및 무료 체험 종료(trial-ending)는 ₩0 금액 문구를 만들지 않는다", () => {
+    const end = new Date(NOW.getTime() + 2 * MS_PER_DAY);
+    const trialIso = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
+
+    const freeTrial = subDueIn(20, {
+      id: "free-trial",
+      amount: 0,
+      trialEndsAt: trialIso,
+    });
+    const sharedSoon = subDueIn(3, {
+      id: "shared-soon",
+      amount: 17000,
+      sharingCount: 4,
+      myShareAmount: 0,
+    });
+
+    const logs = [
+      log("shared-soon", {
+        usageCount: 5,
+        costPerUse: 0,
+        riskLevel: "green",
+        checkedAt: daysAgo(20),
+      }),
+    ];
+
+    const queue = getActionQueue([freeTrial, sharedSoon], logs, NOW);
+    expect(queue.map((item) => [item.subscriptionId, item.kind])).toEqual([
+      ["free-trial", "trial-ending"],
+      ["shared-soon", "billing-soon"],
+    ]);
+    expect(queue[0].amountAtStake).toBeNull();
+    expect(queue[1].amountAtStake).toBeNull();
+
+    for (const locale of Object.keys(messages) as Array<keyof typeof messages>) {
+      for (const item of queue) {
+        const text = describeActionReason(messages[locale], item.reason);
+        expect(text).not.toContain("₩0");
+      }
+    }
+  });
+});
+
+describe("결제일 미상 항목 및 우선순위 1 동률 정렬 (P3)", () => {
+  it("cancel-notice는 daysUntilBilling이 null이어도 같은 우선순위(1)의 trial-ending·billing-soon-risky보다 먼저 정렬한다", () => {
+    const end = new Date(NOW.getTime() + 1 * MS_PER_DAY);
+    const trialIso = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
+
+    const trial = subDueIn(20, { id: "trial", trialEndsAt: trialIso });
+    const soonRisky = subDueIn(1, { id: "soon-risky" });
+    const cancelNotice = subDueIn(20, { id: "cancel-notice", cancelNoticeAt: "2026.09.09" });
+
+    const queue = getActionQueue([soonRisky, trial, cancelNotice], [log("soon-risky")], NOW);
+    expect(queue.map((item) => item.kind)).toEqual([
+      "cancel-notice",
+      "trial-ending",
+      "billing-soon-risky",
+    ]);
+  });
+
+  it("결제월 미입력 연간 구독끼리 같은 우선순위이면 amountAtStake: null을 유지하면서 내 부담금 순으로 정렬한다", () => {
+    const smallYearly = subDueIn(10, {
+      id: "yearly-small",
+      billingCycle: "yearly",
+      billingMonth: undefined,
+      amount: 50000,
+    });
+    const largeYearly = subDueIn(10, {
+      id: "yearly-large",
+      billingCycle: "yearly",
+      billingMonth: undefined,
+      amount: 120000,
+    });
+    const sharedYearly = subDueIn(10, {
+      id: "yearly-shared",
+      billingCycle: "yearly",
+      billingMonth: undefined,
+      amount: 200000,
+      sharingCount: 4,
+      myShareAmount: 30000,
+    });
+
+    const queue = getActionQueue([smallYearly, sharedYearly, largeYearly], [], NOW);
+    expect(queue.map((item) => item.subscriptionId)).toEqual([
+      "yearly-large",
+      "yearly-small",
+      "yearly-shared",
+    ]);
+    for (const item of queue) {
+      expect(item.kind).toBe("missing-billing-month");
+      expect(item.daysUntilBilling).toBeNull();
+      expect(item.amountAtStake).toBeNull();
+    }
+  });
+
+  it("같은 우선순위(risky)에서 결제일을 아는 구독은 결제월 미입력 연간 구독보다 항상 앞선다", () => {
+    const knownDateRisky = subDueIn(20, { id: "known-risky", amount: 9900 });
+    const undatedSmallRisky = subDueIn(20, {
+      id: "undated-small-risky",
+      billingCycle: "yearly",
+      billingMonth: undefined,
+      amount: 60000,
+    });
+    const undatedLargeRisky = subDueIn(20, {
+      id: "undated-large-risky",
+      billingCycle: "yearly",
+      billingMonth: undefined,
+      amount: 240000,
+    });
+
+    const logs = [log("known-risky"), log("undated-small-risky"), log("undated-large-risky")];
+
+    const queue = getActionQueue([undatedSmallRisky, knownDateRisky, undatedLargeRisky], logs, NOW);
+    expect(queue.map((item) => item.subscriptionId)).toEqual([
+      "known-risky",
+      "undated-large-risky",
+      "undated-small-risky",
+    ]);
+    expect(queue[1].amountAtStake).toBeNull();
+    expect(queue[2].amountAtStake).toBeNull();
+  });
+
+  it("checkedAt 시각이 깨진 로그가 앞에 있어도 정상 체크인 기록을 최신으로 선택한다", () => {
+    const sub = subDueIn(3, { id: "sub-broken-log" });
+    const logs = [
+      log("sub-broken-log", { checkedAt: "not-a-date", riskLevel: "green", usageCount: 10 }),
+      log("sub-broken-log", { checkedAt: daysAgo(1), riskLevel: "red", usageCount: 0 }),
+    ];
+
+    const queue = getActionQueue([sub], logs, NOW);
+    expect(queue).toHaveLength(1);
+    expect(queue[0].kind).toBe("billing-soon-risky");
+  });
+
+  it("checkedAt 시각이 같으면 배열에서 뒤에 있는(나중에 기록된) 체크인을 최신으로 선택한다", () => {
+    const sub = subDueIn(3, { id: "sub-tie-log" });
+    const sameTime = daysAgo(1);
+    const logs = [
+      log("sub-tie-log", { id: "first", checkedAt: sameTime, riskLevel: "red", usageCount: 0 }),
+      log("sub-tie-log", { id: "second", checkedAt: sameTime, riskLevel: "green", usageCount: 6 }),
+    ];
+
+    expect(getActionQueue([sub], logs, NOW)).toEqual([]);
+  });
+});

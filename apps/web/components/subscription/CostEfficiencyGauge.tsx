@@ -24,6 +24,7 @@ export function CostEfficiencyGauge({
   const t = useT();
   const g = t.checkin.gauge;
   const monthlyAmount = getMyMonthlyShareAmount(subscription);
+  const hasCost = monthlyAmount > 0;
   const breakEvenInfo = getBreakEvenInfo(monthlyAmount, usageCount);
 
   // Level specific colors
@@ -42,6 +43,7 @@ export function CostEfficiencyGauge({
   // Cap progress at 100 for the UI
   const displayProgress = Math.min(Math.max(breakEvenInfo.progressPercent, 0), 100);
   const formattedCostPerUse = formatCurrency(costPerUse, subscription.currency);
+  const remaining = Math.max(0, breakEvenInfo.breakEvenUsage - breakEvenInfo.currentUsage);
 
   return (
     <div className="flex flex-col gap-2 w-full max-w-[400px]">
@@ -52,8 +54,15 @@ export function CostEfficiencyGauge({
         >
           {g.progress(breakEvenInfo.progressPercent)}
         </span>
-        {/* 막대 끝이 본전(100%)이다. 예전에는 본전선을 막대의 80% 자리에 그려 숫자와 맞지 않았다. */}
-        <div className="relative flex-1 h-3 bg-secondary rounded-full overflow-hidden">
+        {/* 막대 끝이 이용 목표(100%)다. 예전에는 기준선을 막대의 80% 자리에 그려 숫자와 맞지 않았다. */}
+        <div
+          className="relative flex-1 h-3 bg-secondary rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={displayProgress}
+          aria-label={g.baseline}
+        >
           <div
             className={`h-full transition-all duration-500 ${barColors[breakEvenInfo.level]}`}
             style={{ width: `${displayProgress}%` }}
@@ -65,9 +74,10 @@ export function CostEfficiencyGauge({
         <span
           className={`min-w-0 font-medium [overflow-wrap:anywhere] ${levelColors[breakEvenInfo.level]}`}
         >
-          {breakEvenInfo.level === "danger" && g.diet(formattedCostPerUse)}
+          {breakEvenInfo.level === "danger" &&
+            (hasCost ? g.diet(formattedCostPerUse) : g.remaining(remaining))}
           {breakEvenInfo.level === "warning" && describeBreakEven(t, breakEvenInfo)}
-          {breakEvenInfo.level === "safe" && g.achieved(formattedCostPerUse)}
+          {breakEvenInfo.level === "safe" && (hasCost ? g.achieved(formattedCostPerUse) : g.done)}
         </span>
         <span className="shrink-0 text-[10px] text-muted-foreground">{g.baseline}</span>
       </div>

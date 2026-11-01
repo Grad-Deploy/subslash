@@ -3,6 +3,7 @@ import { createClient, type Client } from "@libsql/client";
 import * as schema from "./schema";
 
 type Database = LibSQLDatabase<typeof schema>;
+export type DbExecutor = Pick<Database, "select" | "insert" | "update" | "delete">;
 
 /**
  * The database backs email reminders only. Everything else in the app runs
@@ -55,9 +56,59 @@ export function getDb(): Database {
 }
 
 function connect(url: string, authToken: string | undefined): Database {
-  client = createClient({ url, authToken });
+  client = wrapLocalTransaction(createClient({ url, authToken }));
   cached = drizzle(client, { schema });
   return cached;
+}
+
+/**
+ * 로컬 SQLite(`file:`·`:memory:`)에서 `@libsql/client`의 기본 `transaction()`은 기존 연결을 비우고
+ *(`#db = null`) 다음 쿼리부터 새 연결을 연다. `:memory:`에서는 새 연결이 빈 DB가 되어 표가 사라지고,
+ * 동시에 들어온 트랜잭션은 `SQLITE_BUSY`로 실패한다. 로컬 연결은 한 줄로 차례대로 돌리고 같은 연결에서
+ * `BEGIN IMMEDIATE`…`COMMIT`/`ROLLBACK`을 실행해 원자성과 메모리 DB를 모두 지킨다.
+ */
+function wrapLocalTransaction(rawClient: Client): Client {
+  if (rawClient.protocol !== "file") return rawClient;
+  let queue = Promise.resolve();
+  rawClient.transaction = (async (mode = "write") => {
+    let release!: () => void;
+    const prev = queue;
+    queue = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await prev;
+    const begin = mode === "read" ? "BEGIN DEFERRED" : "BEGIN IMMEDIATE";
+    try {
+      await rawClient.execute(begin);
+    } catch (error) {
+      release();
+      throw error;
+    }
+    let closed = false;
+    const finish = async (statement: "COMMIT" | "ROLLBACK") => {
+      if (closed) return;
+      closed = true;
+      try {
+        await rawClient.execute(statement);
+      } finally {
+        release();
+      }
+    };
+    return {
+      execute: (stmt) => rawClient.execute(stmt),
+      batch: (stmts) => Promise.all(stmts.map((stmt) => rawClient.execute(stmt))),
+      executeMultiple: (sql) => rawClient.executeMultiple(sql),
+      commit: () => finish("COMMIT"),
+      rollback: () => finish("ROLLBACK"),
+      close: () => {
+        void finish("ROLLBACK");
+      },
+      get closed() {
+        return closed;
+      },
+    };
+  }) as Client["transaction"];
+  return rawClient;
 }
 
 /**

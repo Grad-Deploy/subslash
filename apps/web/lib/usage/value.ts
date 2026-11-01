@@ -6,6 +6,7 @@ import {
   asksFreeTier,
   getMyMonthlyAmountKRW,
   getRiskLevel,
+  GOOD_AT,
   hasSurfaceMetrics,
   metricRiskLevel,
   type RiskLevel,
@@ -178,11 +179,9 @@ export function median(values: number[]): number | null {
 export const VERDICT_DAYS = 30;
 
 /**
- * '잘 씀'이 되는 30일 동안의 양. 체크인의 색 기준과 같은 값이다 — 기준을 바꾸면 여기도 바꾼다.
- * - 횟수: getRiskLevel은 8회 이상 **또는** 1회 단가가 한 달 요금의 25% 이하면 초록이라, 실제로는 4회부터다.
- * - 쓴 날·시간: metricRiskLevel의 10일·10시간.
+ * '잘 씀'이 되는 30일 동안의 양. `@subslash/shared`의 단일 기준을 그대로 내보낸다.
  */
-export const GOOD_AT: Record<"uses" | "days" | "hours", number> = { uses: 4, days: 10, hours: 10 };
+export { GOOD_AT };
 
 /**
  * 구독의 가성비 한 줄. 체크인과 같은 지표(`metricForSubscription`)로 말한다 — Gemini처럼 '쓴 날'로 재는
