@@ -1,3 +1,6 @@
+/**
+ * 기준을 바꾸면 이 표와 docs/VERDICT_ALGORITHMS.md를 함께 고친다.
+ */
 import { describe, expect, it } from "vitest";
 import {
   GOOD_AT,
@@ -97,6 +100,88 @@ function assertUsesInvariants() {
 }
 
 describe("5대 가치 지표 판정 일관성 및 불변식 (verdict-consistency)", () => {
+  // 기준을 바꾸면 이 표와 docs/VERDICT_ALGORITHMS.md를 함께 고친다.
+  // GOOD_AT나 VERDICT_THRESHOLDS를 참조하지 않고 리터럴 숫자로 기대값을 고정해,
+  // 상수가 의도치 않게 변경되었을 때 테스트가 즉시 실패하도록 한다.
+  describe("기본 임계값 리터럴 고정 골든 테스트 (golden thresholds)", () => {
+    it("uses: 월 부담금 12000원 및 0원 모두 0·1·1.5회 red, 2·3·3.9회 yellow, 4·5회 green이다", () => {
+      const goldenUses: ReadonlyArray<readonly [number, RiskLevel]> = [
+        [0, "red"],
+        [1, "red"],
+        [1.5, "red"],
+        [2, "yellow"],
+        [3, "yellow"],
+        [3.9, "yellow"],
+        [4, "green"],
+        [5, "green"],
+      ];
+
+      for (const monthly of [12000, 0] as const) {
+        for (const [count, expected] of goldenUses) {
+          const cpu = calculateCostPerUse(monthly, count);
+          expect(getRiskLevel(cpu, monthly, count), `monthly=${monthly}, count=${count}`).toBe(
+            expected,
+          );
+        }
+      }
+    });
+
+    it("days: 0·1·2일 red, 3·9일 yellow, 10·30일 green이다", () => {
+      const goldenDays: ReadonlyArray<readonly [number, RiskLevel]> = [
+        [0, "red"],
+        [1, "red"],
+        [2, "red"],
+        [3, "yellow"],
+        [9, "yellow"],
+        [10, "green"],
+        [30, "green"],
+      ];
+
+      for (const [days, expected] of goldenDays) {
+        expect(metricRiskLevel("days", 12000, days, "KRW"), `days=${days}`).toBe(expected);
+      }
+    });
+
+    it("hours: 0·1·1.9시간 red, 2·9시간 yellow, 10시간 green이다", () => {
+      const goldenHours: ReadonlyArray<readonly [number, RiskLevel]> = [
+        [0, "red"],
+        [1, "red"],
+        [1.9, "red"],
+        [2, "yellow"],
+        [9, "yellow"],
+        [10, "green"],
+      ];
+
+      for (const [hours, expected] of goldenHours) {
+        expect(metricRiskLevel("hours", 12000, hours, "KRW"), `hours=${hours}`).toBe(expected);
+      }
+    });
+
+    it("게이지 기본 호출(getBreakEvenInfo): 0·1회 danger, 2·3회 warning, 4회 이상 safe이며 목표 횟수를 바꿔도 기본 danger 경계는 2회 미만이다", () => {
+      const goldenGaugeDefault: ReadonlyArray<readonly [number, "danger" | "warning" | "safe"]> = [
+        [0, "danger"],
+        [1, "danger"],
+        [2, "warning"],
+        [3, "warning"],
+        [4, "safe"],
+        [5, "safe"],
+      ];
+
+      for (const [count, expected] of goldenGaugeDefault) {
+        expect(getBreakEvenInfo(12000, count).level, `default target count=${count}`).toBe(
+          expected,
+        );
+      }
+
+      // breakEvenTarget을 8로 넘기더라도 dangerBelowPercent를 생략하면 기본 규칙(2회 미만 danger)을 따른다.
+      // (만약 기본 danger 규칙을 50% 고정으로 되돌리면 2·3회가 danger가 되어 이 단언이 실패한다)
+      expect(getBreakEvenInfo(12000, 1, 8).level).toBe("danger");
+      expect(getBreakEvenInfo(12000, 2, 8).level).toBe("warning");
+      expect(getBreakEvenInfo(12000, 3, 8).level).toBe("warning");
+      expect(getBreakEvenInfo(12000, 8, 8).level).toBe("safe");
+    });
+  });
+
   describe("uses 지표 불변식 (기본 GOOD_AT.uses = 4)", () => {
     it("월 부담금 {0, 1000, 12000} × 정수(0~30)·소수(0~6, 0.5 간격) 전 구간에서 게이지·막대·0원/유료·단조성이 일치한다", () => {
       expect(GOOD_AT.uses).toBe(4);
