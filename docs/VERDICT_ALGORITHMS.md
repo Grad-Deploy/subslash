@@ -115,3 +115,11 @@ SubSlash는 구독 서비스의 특성에 따라 단순히 '금액'만으로 판
 - **0원 부담 구독 방어**:
   - 실부담금 0원(`hasMyShare === false`) 구독은 금전 손실 기반 해지 권유(`billing-soon-risky`, `low-usage-billing-soon`, `risky`) 대상에서 제외하되 체크인·해지 확인 등 비금전 액션은 유지합니다.
   - `stakeKRW <= 0`일 때 `amountAtStake`와 `stakeKRW`를 `null`로 두어 `billing-soon`, `trial-ending` 등에서 `"₩0이 곧 빠져나갑니다"`, `"₩0부터 결제가 시작됩니다"` 문구가 생성되지 않도록 방어합니다.
+
+---
+
+## 3. 후속 과제 (Follow-up Candidates)
+
+- **`GOOD_AT` 불변 타입 전환**: 현재 `GOOD_AT`는 동적 변경 일관성 테스트(`GOOD_AT.uses = 5`)를 위해 변경 가능한 객체(`Record<..., number>`)로 선언되어 있습니다. 추후 `Readonly`로 잠그고 테스트에서는 `vi.spyOn` 또는 테스트 전용 헬퍼를 사용하는 방향을 검토합니다.
+- **`storagePlan.ts`의 `HEADROOM(0.8)` 위치 정리**: 하위 요금제 추천 여유율 상수(`HEADROOM = 0.8`)를 `VERDICT_THRESHOLDS`로 통합할지, 요금제 용량 계산 전용 상수로 분리 유지할지 결정합니다.
+- **`metricRiskLevel` 인자 구조 개선**: 현재 7개의 위치 인자를 받으므로, 추후 시그니처 변경 시 선택 인자(`storageFit`, `freeTier`, `apiValueRatio`)를 옵션 객체로 묶는 리팩토링을 고려합니다.
