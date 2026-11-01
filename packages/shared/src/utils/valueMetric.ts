@@ -50,8 +50,9 @@ export const SERVICE_METRICS: Readonly<Record<string, ValueMetric>> = {
   "tving-double-disney": "hours",
   "tving-wavve-double": "hours",
   "apple-one": "hours",
-  // 요금이 구글 AI 프로와 같고 유튜브 프리미엄이 덤으로 붙는 상품이라, AI를 쓴 날로 잰다.
-  "uplus-google-ai-youtube": "days",
+  // 음악은 화면을 끄고 듣는다. 앱을 연 횟수로 재면 한 번 틀어 두고 오래 들어도 1회다.
+  "naver-plus-spotify": "hours",
+  "naver-plus-netflix-spotify": "hours",
   spotify: "hours",
   melon: "hours",
   "apple-music": "hours",
@@ -87,20 +88,47 @@ const CATEGORY_METRICS: Readonly<Partial<Record<Subscription["category"], ValueM
   cloud: "storage",
 };
 
+/** 체크인하는 곳. 앱은 폰 기록이 있고 웹은 없다. */
+export type MetricSurface = "app" | "web";
+
 /**
- * 이 구독을 재는 지표. 서비스 목록에서 찾으면 그 서비스의 것, 못 찾으면 사용자가 고른 분류로 정한다
+ * 체크인하는 곳마다 재는 것이 다른 서비스. 구글 AI 프로 + 유튜브 프리미엄은 앱에서는 폰 기록으로 잴 수 있는 유튜브·유튜브
+ * 뮤직 시간으로, 웹에서는 PC 기록으로 셀 수 있는 AI를 쓴 날로 잰다. 판단은 어느 쪽에서 했든 가장 최근 체크인을 따른다.
+ */
+const SURFACE_METRICS: Readonly<Record<string, Readonly<Record<MetricSurface, ValueMetric>>>> = {
+  "uplus-google-ai-youtube": { app: "hours", web: "days" },
+};
+
+/**
+ * 이 구독을 재는 지표. `surface`는 체크인하는 곳이고, 곳마다 다른 서비스(`SURFACE_METRICS`)만 본다. 서비스 목록에서 찾으면 그 서비스의 것, 못 찾으면 사용자가 고른 분류로 정한다
  * (CATEGORY_METRICS). 그 밖에는 예전처럼 횟수다.
  *
  * 혜택 금액은 원으로 받으므로 원화 구독에만 쓴다 — 달러 회비와 원 혜택을 나누면 뜻 없는 숫자가 된다.
  */
 export function metricForSubscription(
   sub: Pick<Subscription, "name" | "cancelUrl" | "category" | "currency">,
+  surface: MetricSurface = "web",
 ): ValueMetric {
   const preset = findPresetForSubscription(sub);
+  const bySurface = preset && SURFACE_METRICS[preset.id];
+  if (bySurface) return bySurface[surface];
   const metric: ValueMetric =
     (preset && SERVICE_METRICS[preset.id]) ?? CATEGORY_METRICS[sub.category] ?? "uses";
   if (metric === "benefit" && sub.currency !== "KRW") return "uses";
   return metric;
+}
+
+/** 체크인하는 곳마다 재는 것이 다른 구독인지. */
+export function hasSurfaceMetrics(sub: Pick<Subscription, "name" | "cancelUrl">): boolean {
+  const preset = findPresetForSubscription(sub);
+  return !!preset && !!SURFACE_METRICS[preset.id];
+}
+
+/** 이 구독의 체크인으로 받아들이는 지표들. 어느 곳에서 적은 체크인이든 지금 기준으로 읽는다. */
+export function metricsForSubscription(
+  sub: Pick<Subscription, "name" | "cancelUrl" | "category" | "currency">,
+): readonly ValueMetric[] {
+  return [...new Set([metricForSubscription(sub, "app"), metricForSubscription(sub, "web")])];
 }
 
 /**

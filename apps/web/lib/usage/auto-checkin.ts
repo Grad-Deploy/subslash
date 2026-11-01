@@ -20,6 +20,7 @@
 import {
   isPaying,
   latestCheckIn,
+  hasSurfaceMetrics,
   metricForSubscription,
   metricOfLog,
   type Subscription,
@@ -67,7 +68,7 @@ export function planAutoCheckIns(
   for (const sub of subscriptions) {
     // 체험 중인 구독은 나가는 돈이 없어 1회 단가를 매기지 않는다.
     if (!isPaying(sub, now) || !packagesFor(sub)) continue;
-    const metric = metricForSubscription(sub);
+    const metric = metricForSubscription(sub, "app");
     const usage = subUsage(sub, history, installed, dates, rate);
     if (usage.state !== "measured") continue;
     if (usage.totals.coveredDays < AUTO_CHECKIN_DAYS) continue;
@@ -91,6 +92,11 @@ export function planAutoCheckIns(
         metricOfLog(latest) === metric &&
         latest.usageCount >= quantity
       ) {
+        continue;
+      }
+      // 앱·웹에서 재는 것이 다른 구독: 웹에서 체크인한 지 30일 안이면 폰 기록으로 덮지 않는다. 덮으면 앱을 여는
+      // 순간 웹 체크인이 판단에서 사라진다.
+      if (age < MANUAL_FRESH_MS && hasSurfaceMetrics(sub) && metricOfLog(latest) !== metric) {
         continue;
       }
       plans.push(plan);

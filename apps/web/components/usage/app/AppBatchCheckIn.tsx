@@ -68,7 +68,7 @@ export function AppBatchCheckIn({
     let skipped = 0;
     for (const sub of subscriptions) {
       const usage = subUsage(sub, history, installed, dates, rate);
-      const metric = metricForSubscription(sub);
+      const metric = metricForSubscription(sub, "app");
       if (
         usage.state === "unmapped" ||
         usage.state === "no-data" ||

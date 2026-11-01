@@ -52,6 +52,10 @@ export const ko = {
     storage: koMetric("storage"),
   },
   input: {
+    surfaceScope: {
+      days: "유튜브가 아니라 Gemini 같은 AI를 쓴 날만 세어 주세요.",
+      hours: "유튜브와 유튜브 뮤직을 쓴 시간을 세어 주세요.",
+    },
     presetLabel: (value: number, unit: string) => `${value}${unit}`,
     /** 숫자 옆에 붙는 단위. 영어는 1이면 단수('1 hour')로 쓴다. */
     unitFor: (_value: number, unit: string) => unit,
@@ -321,6 +325,10 @@ export const en: Widen<typeof ko> = {
     },
   },
   input: {
+    surfaceScope: {
+      days: "Count only the days you used AI such as Gemini, not YouTube.",
+      hours: "Count the time you spent on YouTube and YouTube Music.",
+    },
     presetLabel: (value, unit) => (unit === "%" ? `${value}%` : `${value} ${enUnit(value, unit)}`),
     unitFor: enUnit,
     presetBenefit: (value) => (value === 0 ? "₩0" : `₩${value / 1000}k`),
@@ -611,6 +619,10 @@ export const zh: Widen<typeof ko> = {
     },
   },
   input: {
+    surfaceScope: {
+      days: "只计算使用 Gemini 等 AI 的天数，不包括 YouTube。",
+      hours: "请计算使用 YouTube 和 YouTube Music 的时间。",
+    },
     presetLabel: (value, unit) => `${value}${unit === "%" ? "%" : ` ${unit}`}`,
     unitFor: (_value, unit) => unit,
     presetBenefit: (value) =>
@@ -856,6 +868,10 @@ export const ja: Widen<typeof ko> = {
     },
   },
   input: {
+    surfaceScope: {
+      days: "YouTube ではなく、Gemini などの AI を使った日だけ数えてください。",
+      hours: "YouTube と YouTube Music を使った時間を数えてください。",
+    },
     presetLabel: (value, unit) => `${value}${unit === "%" ? "%" : ` ${unit}`}`,
     unitFor: (_value, unit) => unit,
     presetBenefit: (value) =>
@@ -1117,6 +1133,10 @@ export const vi: Widen<typeof ko> = {
     },
   },
   input: {
+    surfaceScope: {
+      days: "Chỉ tính những ngày dùng AI như Gemini, không tính YouTube.",
+      hours: "Hãy tính thời gian dùng YouTube và YouTube Music.",
+    },
     presetLabel: (value, unit) => `${value}${unit === "%" ? "%" : ` ${unit}`}`,
     unitFor: (_value, unit) => unit,
     presetBenefit: (value) => (value === 0 ? "0 won" : `${value / 1000} nghìn`),
@@ -1378,6 +1398,10 @@ export const fr: Widen<typeof ko> = {
     },
   },
   input: {
+    surfaceScope: {
+      days: "Ne comptez que les jours d'utilisation d'une IA comme Gemini, pas YouTube.",
+      hours: "Comptez le temps passé sur YouTube et YouTube Music.",
+    },
     presetLabel: (value, unit) => (unit === "%" ? `${value} %` : `${value} ${frUnit(value, unit)}`),
     unitFor: frUnit,
     presetBenefit: (value) => (value === 0 ? "0 ₩" : `${value / 1000} k₩`),
@@ -1658,6 +1682,10 @@ export const es: Widen<typeof ko> = {
     },
   },
   input: {
+    surfaceScope: {
+      days: "Cuenta solo los días en que usaste una IA como Gemini, no YouTube.",
+      hours: "Cuenta el tiempo que usaste YouTube y YouTube Music.",
+    },
     presetLabel: (value, unit) => (unit === "%" ? `${value} %` : `${value} ${esUnit(value, unit)}`),
     unitFor: esUnit,
     presetBenefit: (value) => (value === 0 ? "0 ₩" : `${value / 1000} mil ₩`),
@@ -1929,6 +1957,10 @@ export const de: Widen<typeof ko> = {
     },
   },
   input: {
+    surfaceScope: {
+      days: "Zähle nur die Tage, an denen du eine KI wie Gemini genutzt hast, nicht YouTube.",
+      hours: "Zähle die Zeit, die du YouTube und YouTube Music genutzt hast.",
+    },
     presetLabel: (value, unit) =>
       unit === "%"
         ? `${value} %`
@@ -2205,6 +2237,10 @@ export const pt: Widen<typeof ko> = {
     },
   },
   input: {
+    surfaceScope: {
+      days: "Conte só os dias em que usou uma IA como o Gemini, não o YouTube.",
+      hours: "Conte o tempo que usou o YouTube e o YouTube Music.",
+    },
     presetLabel: (value, unit) => (unit === "%" ? `${value}%` : `${value} ${ptUnit(value, unit)}`),
     unitFor: ptUnit,
     presetBenefit: (value) => (value === 0 ? "₩0" : `₩${value / 1000} mil`),
