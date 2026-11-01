@@ -79,6 +79,39 @@ describe("metricRiskLevel", () => {
     expect(metricRiskLevel("storage", 4400, 20)).toBe("yellow");
     expect(metricRiskLevel("storage", 4400, 60)).toBe("green");
   });
+
+  it("benefit 지표에서 USD 구독 통화가 넘어와도 원화로 환산해 비율 폭등을 막고, 저장값(costPerUse)과 결과 통화도 KRW로 일치시킨다", () => {
+    // $10(약 ₩13,500) 회비에 ₩5,000 혜택이면 500배가 아니라 절반 미만이므로 red
+    expect(metricRiskLevel("benefit", 10, 5000, null, null, null, "USD")).toBe("red");
+    const evalUsd = evaluateMetric("benefit", "해외 멤버십", 10, 5000, "USD");
+    expect(evalUsd.riskLevel).toBe("red");
+    // 10(USD) ÷ 5000(KRW) = 0.002가 아니라 13500(KRW) ÷ 5000(KRW) = 2.7로 저장되어
+    // costPerUse × quantity가 항상 원화 회비(₩13,500)로 복원된다.
+    expect(evalUsd.costPerUse).toBeCloseTo(13500 / 5000);
+    expect(evalUsd.costPerUse * 5000).toBeCloseTo(13500);
+    expect(evalUsd.outcome.monthly).toBe(13500);
+    expect(evalUsd.outcome.currency).toBe("KRW");
+    expect(shock(evalUsd)).toContain("회비 ₩13,500 중 ₩5,000만 혜택으로 돌려받았어요.");
+
+    // 비원화 통화로 기존 기록을 표시할 때는 환급률 단가 문구를 생략한다.
+    expect(describeCheckIn({ metric: "benefit", usageCount: 5000, costPerUse: 0.002 }, "USD")).toBe(
+      "혜택 ₩5,000",
+    );
+    expect(shortUnitCost({ metric: "benefit", usageCount: 5000, costPerUse: 0.002 }, "USD")).toBe(
+      "-",
+    );
+  });
+
+  it("monthlyShare === 0인 무료·공유 구독도 0으로 나누어지지 않고 정상 평가된다", () => {
+    const usesZero = evaluateMetric("uses", "넷플릭스", 0, 0, "KRW");
+    expect(usesZero.costPerUse).toBe(0);
+    expect(Number.isFinite(usesZero.costPerUse)).toBe(true);
+
+    const benefitZero = evaluateMetric("benefit", "네이버플러스", 0, 0, "KRW");
+    expect(benefitZero.costPerUse).toBe(0);
+    expect(benefitZero.riskLevel).toBe("green");
+    expect(shortUnitCost({ metric: "benefit", usageCount: 0, costPerUse: 0 }, "KRW")).toBe("-");
+  });
 });
 
 describe("무료 요금제로 충분했는지", () => {
@@ -166,5 +199,28 @@ describe("getCheckInEvidence", () => {
     expect(evidence.recent.map((l) => l.id)).toEqual(["b", "a"]);
     expect(evidence.averageUsage).toBe(15);
     expect(evidence.change?.usage).toBe(10);
+  });
+
+  it("benefit 지표 기록도 costPerUse × usageCount로 원화 월 회비를 복원해 요금 변경 여부를 일관되게 판정한다", () => {
+    const first = evaluateMetric("benefit", "해외 멤버십", 10, 5000, "USD");
+    const second = evaluateMetric("benefit", "해외 멤버십", 10, 15000, "USD");
+    const evidence = getCheckInEvidence([
+      log({
+        id: "b1",
+        metric: "benefit",
+        usageCount: 5000,
+        costPerUse: first.costPerUse,
+        checkedAt: "2026-08-01T00:00:00.000Z",
+      }),
+      log({
+        id: "b2",
+        metric: "benefit",
+        usageCount: 15000,
+        costPerUse: second.costPerUse,
+        checkedAt: "2026-09-01T00:00:00.000Z",
+      }),
+    ])!;
+    expect(evidence.change?.usage).toBe(10000);
+    expect(evidence.change?.priceChanged).toBe(false);
   });
 });

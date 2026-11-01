@@ -3,6 +3,7 @@
 import React from "react";
 import {
   Subscription,
+  GOOD_AT,
   getBreakEvenInfo,
   getMyMonthlyShareAmount,
   formatCurrency,
@@ -24,7 +25,8 @@ export function CostEfficiencyGauge({
   const t = useT();
   const g = t.checkin.gauge;
   const monthlyAmount = getMyMonthlyShareAmount(subscription);
-  const breakEvenInfo = getBreakEvenInfo(monthlyAmount, usageCount);
+  const hasCost = monthlyAmount > 0;
+  const breakEvenInfo = getBreakEvenInfo(monthlyAmount, usageCount, GOOD_AT.uses);
 
   // Level specific colors
   const levelColors = {
@@ -42,20 +44,30 @@ export function CostEfficiencyGauge({
   // Cap progress at 100 for the UI
   const displayProgress = Math.min(Math.max(breakEvenInfo.progressPercent, 0), 100);
   const formattedCostPerUse = formatCurrency(costPerUse, subscription.currency);
+  const remaining = Math.max(0, breakEvenInfo.breakEvenUsage - breakEvenInfo.currentUsage);
 
   return (
     <div className="flex flex-col gap-2 w-full max-w-[400px]">
       <div className="flex items-center gap-3">
-        <span className={`text-sm font-bold min-w-[40px] ${levelColors[breakEvenInfo.level]}`}>
-          {breakEvenInfo.progressPercent}%
+        {/* 무엇의 퍼센트인지 적는다 — 숫자만 있을 때는 '38%'가 무엇인지 알 수 없었다. */}
+        <span
+          className={`shrink-0 text-sm font-bold tabular-nums ${levelColors[breakEvenInfo.level]}`}
+        >
+          {g.progress(breakEvenInfo.progressPercent)}
         </span>
-        <div className="relative flex-1 h-3 bg-secondary rounded-full overflow-hidden">
+        {/* 막대 끝이 이용 목표(100%)다. 예전에는 기준선을 막대의 80% 자리에 그려 숫자와 맞지 않았다. */}
+        <div
+          className="relative flex-1 h-3 bg-secondary rounded-full overflow-hidden"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={displayProgress}
+          aria-label={g.baseline}
+        >
           <div
             className={`h-full transition-all duration-500 ${barColors[breakEvenInfo.level]}`}
             style={{ width: `${displayProgress}%` }}
           />
-          {/* Break-even marker at 80% position visually representing the target */}
-          <div className="absolute top-0 bottom-0 left-[80%] w-[2px] bg-border border-l border-dashed border-primary-foreground/50 z-10" />
         </div>
       </div>
 
@@ -63,9 +75,10 @@ export function CostEfficiencyGauge({
         <span
           className={`min-w-0 font-medium [overflow-wrap:anywhere] ${levelColors[breakEvenInfo.level]}`}
         >
-          {breakEvenInfo.level === "danger" && g.diet(formattedCostPerUse)}
+          {breakEvenInfo.level === "danger" &&
+            (hasCost ? g.diet(formattedCostPerUse) : g.remaining(remaining))}
           {breakEvenInfo.level === "warning" && describeBreakEven(t, breakEvenInfo)}
-          {breakEvenInfo.level === "safe" && g.achieved(formattedCostPerUse)}
+          {breakEvenInfo.level === "safe" && (hasCost ? g.achieved(formattedCostPerUse) : g.done)}
         </span>
         <span className="shrink-0 text-[10px] text-muted-foreground">{g.baseline}</span>
       </div>

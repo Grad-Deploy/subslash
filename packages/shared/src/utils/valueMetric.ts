@@ -1,6 +1,7 @@
 import type { Currency, RiskLevel, Subscription, UsageLog } from "../types";
 import { findPresetForSubscription } from "../constants/services";
 import { calculateCostPerUse, formatCurrency, getRiskLevel } from "./cost-per-use";
+import { toKRW } from "./currency";
 import type { StoragePlanFit } from "./storagePlan";
 
 /**
@@ -225,12 +226,19 @@ export function clampQuantity(metric: ValueMetric, value: number): number {
 }
 
 /**
+ * '잘 씀'(초록)이 되는 30일 동안의 이용 목표 양. 체크인·게이지·폰 사용 기록·리포트가 같은 단일 기준을 쓴다.
+ * - 횟수(`uses`): `getRiskLevel`에서 1회 단가가 한 달 요금의 25% 이하면 초록이므로 실제로는 4회부터 초록이다.
+ * - 쓴 날(`days`)·시간(`hours`): `metricRiskLevel`의 10일·10시간.
+ */
+export const GOOD_AT: Record<"uses" | "days" | "hours", number> = { uses: 4, days: 10, hours: 10 };
+
+/**
  * 색 기준. `uses`는 예전 기준(getRiskLevel) 그대로다. 나머지는 이렇게 정했다 — 숫자가 바뀌면 이 표와
  * 테스트를 함께 고친다.
  *
- * - 쓴 날: 2일 이하 빨강, 10일 이상 초록. 횟수의 1회 이하/8회 이상에 맞춘 값이다. 무료로도 충분했다고
- *   답했으면(`freeTier: "enough"`) 초록이 아니라 노랑이다 — 많이 써도 유료가 필요했던 것은 아니다. 빨강은
- *   그대로 둔다(안 쓰는 데 무료로 내리라고 하면 해지가 묻힌다).
+ * - 쓴 날: 2일 이하 빨강, 10일 이상 초록. 무료로도 충분했다고 답했으면(`freeTier: "enough"`) 초록이 아니라
+ *   노랑이다 — 많이 써도 유료가 필요했던 것은 아니다. 빨강은 그대로 둔다(안 쓰는 데 무료로 내리라고 하면
+ *   해지가 묻힌다).
  * - 쓴 시간: 2시간 미만 빨강, 10시간 이상 초록.
  * - 혜택: 회비의 절반도 못 돌려받으면 빨강, 회비 이상이면(본전) 초록.
  * - 용량: 0%(아무것도 안 둠)만 빨강, 절반 미만은 노랑(더 작은 요금제로 충분할 수 있다), 절반 이상 초록.
@@ -244,12 +252,13 @@ export function metricRiskLevel(
   storageFit?: StoragePlanFit | null,
   freeTier?: FreeTierAnswer | null,
   apiValueRatio?: number | null,
+  currency: Currency = "KRW",
 ): RiskLevel {
   switch (metric) {
     case "uses":
       return getRiskLevel(calculateCostPerUse(monthlyShare, quantity), monthlyShare, quantity);
     case "days": {
-      const byDays = quantity <= 2 ? "red" : quantity >= 10 ? "green" : "yellow";
+      const byDays = quantity <= 2 ? "red" : quantity >= GOOD_AT.days ? "green" : "yellow";
       // PC 기록의 토큰을 API로 냈다면 구독료 이상이었으면, 쓴 날이 적어도 본전은 뽑았다. 구독료보다 적으면 쓴
       // 날대로 둔다 — PC 기록은 웹·앱 사용이 빠진 하한값이라 판단을 낮추는 근거가 되지 못한다.
       const level =
@@ -259,10 +268,12 @@ export function metricRiskLevel(
       return level === "green" && freeTier === "enough" ? "yellow" : level;
     }
     case "hours":
-      return quantity < 2 ? "red" : quantity >= 10 ? "green" : "yellow";
+      return quantity < 2 ? "red" : quantity >= GOOD_AT.hours ? "green" : "yellow";
     case "benefit": {
-      if (monthlyShare <= 0) return "green";
-      const ratio = quantity / monthlyShare;
+      // 혜택 수량(`quantity`)은 원화(KRW) 기준이므로, 비원화 구독이 넘어오더라도 원화로 환산해 비율 폭등을 막는다.
+      const monthlyKRW = toKRW(monthlyShare, currency);
+      if (monthlyKRW <= 0) return "green";
+      const ratio = quantity / monthlyKRW;
       return ratio < 0.5 ? "red" : ratio >= 1 ? "green" : "yellow";
     }
     case "storage":
@@ -313,15 +324,27 @@ export function evaluateMetric(
   apiValueRatio?: number | null,
 ): MetricEvaluation {
   const ratio = metric === "days" ? (apiValueRatio ?? null) : null;
+  // benefit 수량(quantity)은 항상 원화(KRW)이므로, 비원화 구독을 직접 평가할 때도
+  // 회비를 원화로 환산해 costPerUse(회비 KRW ÷ 혜택 KRW)와 outcome의 통화 단위를 일치시킨다.
+  const effectiveMonthly = metric === "benefit" ? toKRW(monthlyShare, currency) : monthlyShare;
+  const effectiveCurrency: Currency = metric === "benefit" ? "KRW" : currency;
   return {
-    costPerUse: calculateCostPerUse(monthlyShare, quantity),
-    riskLevel: metricRiskLevel(metric, monthlyShare, quantity, storageFit, freeTier, ratio),
+    costPerUse: calculateCostPerUse(effectiveMonthly, quantity),
+    riskLevel: metricRiskLevel(
+      metric,
+      monthlyShare,
+      quantity,
+      storageFit,
+      freeTier,
+      ratio,
+      currency,
+    ),
     outcome: {
       metric,
       serviceName,
-      monthly: monthlyShare,
+      monthly: effectiveMonthly,
       quantity,
-      currency,
+      currency: effectiveCurrency,
       storageFit: storageFit ?? null,
       freeTierEnough: metric === "days" && quantity > 0 && freeTier === "enough",
       apiValueRatio: ratio,
@@ -367,6 +390,7 @@ export function unitCostPart(
   metric: ValueMetric,
   costPerUse: number,
   quantity: number,
+  currency: Currency = "KRW",
 ): UnitCostPart | null {
   switch (metric) {
     case "uses":
@@ -376,6 +400,8 @@ export function unitCostPart(
     case "hours":
       return quantity === 0 ? { type: "not-used" } : { type: "per-hour", cost: costPerUse };
     case "benefit": {
+      // 혜택 수량은 원화(KRW)로만 기록되므로 구독 통화가 원화가 아니면 회비 대비 비율을 계산하지 않는다.
+      if (currency !== "KRW") return null;
       // costPerUse × quantity가 한 달치 내 몫이다.
       const monthly = quantity === 0 ? costPerUse : costPerUse * quantity;
       if (monthly <= 0) return null;
@@ -396,7 +422,7 @@ export function formatUnitCost(
   quantity: number,
   currency: Currency,
 ): string | null {
-  const part = unitCostPart(metric, costPerUse, quantity);
+  const part = unitCostPart(metric, costPerUse, quantity, currency);
   if (!part) return null;
   switch (part.type) {
     case "per-use":
@@ -447,6 +473,7 @@ export function shortUnitCost(
     case "hours":
       return log.usageCount === 0 ? "안 씀" : `${money}/시간`;
     case "benefit": {
+      if (currency !== "KRW") return "-";
       const monthly = log.usageCount === 0 ? log.costPerUse : log.costPerUse * log.usageCount;
       return monthly > 0 ? `${Math.round((log.usageCount / monthly) * 100)}% 환급` : "-";
     }

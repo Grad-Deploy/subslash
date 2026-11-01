@@ -47,12 +47,22 @@ describe("Cost Per Use Utils", () => {
       expect(getRiskLevel(5000, 17000, 3)).toBe("yellow");
     });
 
-    it("Green: usageCount 8+ regardless", () => {
-      expect(getRiskLevel(2000, 17000, 8)).toBe("green");
+    it("Green: costPerUse <= amount * 0.25 (정상 호출의 GOOD_AT.uses = 4회 기준)", () => {
+      expect(getRiskLevel(4000, 17000, 4)).toBe("green");
     });
 
-    it("Green: costPerUse <= amount * 0.25", () => {
-      expect(getRiskLevel(4000, 17000, 4)).toBe("green");
+    it("Green: 비결합 호출에서 costPerUse > amount * 0.25여도 usageCount >= 8이면 green 반환", () => {
+      expect(getRiskLevel(5000, 17000, 8)).toBe("green");
+    });
+
+    it("무료·0원 부담(amount === 0) 구독도 0으로 나누지 않고 횟수 구간(0~1 red, 2~3 yellow, 4+ green)을 유지한다", () => {
+      expect(calculateCostPerUse(0, 0)).toBe(0);
+      expect(calculateCostPerUse(0, 3)).toBe(0);
+      expect(getRiskLevel(calculateCostPerUse(0, 0), 0, 0)).toBe("red");
+      expect(getRiskLevel(calculateCostPerUse(0, 1), 0, 1)).toBe("red");
+      expect(getRiskLevel(calculateCostPerUse(0, 2), 0, 2)).toBe("yellow");
+      expect(getRiskLevel(calculateCostPerUse(0, 3), 0, 3)).toBe("yellow");
+      expect(getRiskLevel(calculateCostPerUse(0, 4), 0, 4)).toBe("green");
     });
   });
 

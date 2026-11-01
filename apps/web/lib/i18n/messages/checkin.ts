@@ -96,12 +96,14 @@ export const ko = {
       `이번 달 ${amount}을 공중에 버리셨습니다. 지금 바로 킬(Kill) 스위치를 켜세요.`,
     once: (name: string, amount: string) => `이번 달 ${name} 1회를 ${amount}에 이용하셨습니다.`,
     perUse: (name: string, cost: string) => `이번 달 ${name} 1회당 ${cost}을 지출하셨습니다.`,
-    daysNone: (name: string, monthly: string) =>
-      `최근 30일 동안 ${withJosa(name, "을", "를")} 하루도 안 썼어요. ${monthly}을 그냥 냈어요.`,
+    daysNone: (name: string, monthly: string | null) =>
+      `최근 30일 동안 ${withJosa(name, "을", "를")} 하루도 안 썼어요.` +
+      (monthly !== null ? ` ${monthly}을 그냥 냈어요.` : ""),
     daysSome: (name: string, cost: string) =>
       `${withJosa(name, "을", "를")} 쓴 날 하루에 ${cost}씩 냈어요.`,
-    hoursNone: (name: string, monthly: string) =>
-      `최근 30일 동안 ${withJosa(name, "을", "를")} 안 썼어요. ${monthly}을 그냥 냈어요.`,
+    hoursNone: (name: string, monthly: string | null) =>
+      `최근 30일 동안 ${withJosa(name, "을", "를")} 안 썼어요.` +
+      (monthly !== null ? ` ${monthly}을 그냥 냈어요.` : ""),
     hoursSome: (name: string, cost: string) => `${name} 한 시간에 ${cost}씩 냈어요.`,
     benefitOver: (monthly: string, benefit: string) =>
       `회비 ${monthly}보다 많은 ${benefit}을 혜택으로 돌려받았어요.`,
@@ -139,20 +141,21 @@ export const ko = {
       `이번 달 1회 이용했어요. 지금 잠시 쉬어가면 매달 ${item} 값(${cost})을 아낄 수 있어요.`,
     warningComparison: (item: string) => `${item} 수준`,
     warningMessage: (cost: string) =>
-      `1회당 ${cost} — 조금만 더 자주 쓰면 본전 달성! 알차게 즐겨보세요.`,
+      `1회당 ${cost} — 조금만 더 자주 쓰면 이용 목표 달성! 알차게 즐겨보세요.`,
     cheapComparison: "커피 한 잔보다 알뜰하게",
     cheapMessage: (cost: string) =>
-      `1회당 ${cost} — 커피 한 잔보다 알뜰하게 즐겼어요! 본전 달성 완료`,
+      `1회당 ${cost} — 커피 한 잔보다 알뜰하게 즐겼어요! 이용 목표 달성 완료`,
     worthComparison: (item: string) => `${item} 가치`,
-    worthMessage: (cost: string) => `1회당 ${cost} — 낸 돈 이상으로 알차게 활용하고 있어요!`,
+    worthMessage: (cost: string) => `1회당 ${cost} — 이용 목표를 채워 알차게 활용하고 있어요!`,
   },
   gauge: {
     none: "이번 달 이용이 아직 없어요. 더 자주 쓰거나, 잠시 쉬어가며 지출을 아낄 수 있어요.",
-    remaining: (n: number) => `본전까지 앞으로 ${n}회 더 이용하면 달성!`,
-    done: "본전 달성 완료! 알뜰하게 활용 중이에요.",
+    remaining: (n: number) => `이용 목표까지 앞으로 ${n}회 더 이용하면 달성!`,
+    done: "이용 목표 달성 완료! 알뜰하게 활용 중이에요.",
     diet: (cost: string) => `지출 다이어트 추천 (회당 ${cost})`,
-    achieved: (cost: string) => `본전 달성 완료! (회당 ${cost})`,
-    baseline: "본전 기준선",
+    achieved: (cost: string) => `이용 목표 달성 완료! (회당 ${cost})`,
+    baseline: "이용 목표 기준선",
+    progress: (percent: number) => `이용 목표의 ${percent}%`,
   },
   bar: {
     label: "1회 이용당 비용",
@@ -166,12 +169,12 @@ export const ko = {
     unusedNote: (monthly: string) =>
       `최근 30일 동안 안 썼어요. 쉬어가면 한 달 ${monthly}을 아껴요.`,
     redNote: (monthly: string) => `쉬어가면 한 달 ${monthly}을 아껴요.`,
-    remainingNote: (n: number) => `${n}번 더 쓰면 본전이에요.`,
-    doneNote: "낸 돈 이상으로 쓰고 있어요.",
+    remainingNote: (n: number) => `${n}번 더 쓰면 이용 목표를 채워요.`,
+    doneNote: "이용 목표를 채워 잘 쓰고 있어요.",
     summary: (count: number, monthly: string) => `최근 30일 ${count}회 · 한 달 ${monthly}`,
-    toBreakEven: "본전까지",
+    toBreakEven: "이용 목표까지",
     progress: (current: number, target: number) => `${current} / ${target}회`,
-    progressLabel: "본전까지 사용 횟수",
+    progressLabel: "이용 목표까지 사용 횟수",
     cancelGuide: "해지 안내 보기",
     keep: "계속 쓸게요",
     confirm: "확인",
@@ -364,10 +367,12 @@ export const en: Widen<typeof ko> = {
     once: (name, amount) => `This month you used ${name} once, for ${amount}.`,
     perUse: (name, cost) => `This month ${name} cost you ${cost} per use.`,
     daysNone: (name, monthly) =>
-      `You didn't use ${name} on a single day in the last 30 days. You paid ${monthly} for nothing.`,
+      `You didn't use ${name} on a single day in the last 30 days.` +
+      (monthly !== null ? ` You paid ${monthly} for nothing.` : ""),
     daysSome: (name, cost) => `You paid ${cost} for each day you used ${name}.`,
     hoursNone: (name, monthly) =>
-      `You didn't use ${name} in the last 30 days. You paid ${monthly} for nothing.`,
+      `You didn't use ${name} in the last 30 days.` +
+      (monthly !== null ? ` You paid ${monthly} for nothing.` : ""),
     hoursSome: (name, cost) => `You paid ${cost} per hour of ${name}.`,
     benefitOver: (monthly, benefit) =>
       `You got back ${benefit} in benefits, more than the ${monthly} fee.`,
@@ -403,19 +408,21 @@ export const en: Widen<typeof ko> = {
       `You used it once this month. Take a break now and you could save ${item} (${cost}) every month.`,
     warningComparison: (item) => `About ${item}`,
     warningMessage: (cost) =>
-      `${cost} per use — use it a little more and you break even! Enjoy it.`,
+      `${cost} per use — use it a little more to reach your usage goal! Enjoy it.`,
     cheapComparison: "Cheaper than a cup of coffee",
-    cheapMessage: (cost) => `${cost} per use — cheaper than a cup of coffee! You've broken even`,
+    cheapMessage: (cost) => `${cost} per use — cheaper than a cup of coffee! Usage goal reached`,
     worthComparison: (item) => `Worth ${item}`,
-    worthMessage: (cost) => `${cost} per use — you're getting more than you paid for!`,
+    worthMessage: (cost) =>
+      `${cost} per use — you've reached your usage goal and are making good use of it!`,
   },
   gauge: {
     none: "No use yet this month. Use it more, or pause it and save the money.",
-    remaining: (n) => `${n} more ${one(n) ? "use" : "uses"} to break even!`,
-    done: "Broken even! You're making good use of it.",
+    remaining: (n) => `${n} more ${one(n) ? "use" : "uses"} to reach your usage goal!`,
+    done: "Usage goal reached! You're making good use of it.",
     diet: (cost) => `Trim suggested (${cost} per use)`,
-    achieved: (cost) => `Broken even! (${cost} per use)`,
-    baseline: "Break-even line",
+    achieved: (cost) => `Usage goal reached! (${cost} per use)`,
+    baseline: "Usage goal line",
+    progress: (percent) => `${percent}% of usage goal`,
   },
   bar: {
     label: "Cost per use",
@@ -430,13 +437,13 @@ export const en: Widen<typeof ko> = {
     unusedNote: (monthly) =>
       `You didn't use it in the last 30 days. Pause it and save ${monthly} a month.`,
     redNote: (monthly) => `Pause it and save ${monthly} a month.`,
-    remainingNote: (n) => `${n} more ${one(n) ? "use" : "uses"} and you break even.`,
-    doneNote: "You're getting more than you pay.",
+    remainingNote: (n) => `${n} more ${one(n) ? "use" : "uses"} to reach your usage goal.`,
+    doneNote: "You've reached your usage goal and are using it well.",
     summary: (count, monthly) =>
       `${count} ${one(count) ? "use" : "uses"} in the last 30 days · ${monthly} a month`,
-    toBreakEven: "To break even",
+    toBreakEven: "Toward usage goal",
     progress: (current, target) => `${current} / ${target}`,
-    progressLabel: "Uses toward break-even",
+    progressLabel: "Uses toward usage goal",
     cancelGuide: "See the cancel guide",
     keep: "I'll keep it",
     confirm: "OK",
@@ -651,9 +658,11 @@ export const zh: Widen<typeof ko> = {
     unused: (amount) => `这个月白白扔掉了 ${amount}。现在就按下退订开关吧。`,
     once: (name, amount) => `这个月为了用一次 ${name} 花了 ${amount}。`,
     perUse: (name, cost) => `这个月 ${name} 每次花了 ${cost}。`,
-    daysNone: (name, monthly) => `最近 30 天一天也没用 ${name}。白白付了 ${monthly}。`,
+    daysNone: (name, monthly) =>
+      `最近 30 天一天也没用 ${name}。` + (monthly !== null ? `白白付了 ${monthly}。` : ""),
     daysSome: (name, cost) => `${name} 每个使用日花了 ${cost}。`,
-    hoursNone: (name, monthly) => `最近 30 天没用 ${name}。白白付了 ${monthly}。`,
+    hoursNone: (name, monthly) =>
+      `最近 30 天没用 ${name}。` + (monthly !== null ? `白白付了 ${monthly}。` : ""),
     hoursSome: (name, cost) => `${name} 每小时花了 ${cost}。`,
     benefitOver: (monthly, benefit) => `收回了 ${benefit} 的优惠，超过了 ${monthly} 的会费。`,
     benefitUnder: (monthly, benefit) => `${monthly} 的会费只收回了 ${benefit} 的优惠。`,
@@ -683,19 +692,20 @@ export const zh: Widen<typeof ko> = {
     onceComparison: (item) => `可以省下${item}的机会`,
     onceMessage: (item, cost) => `这个月用了一次。现在休息一下，每个月可以省下${item}（${cost}）。`,
     warningComparison: (item) => `约等于${item}`,
-    warningMessage: (cost) => `每次 ${cost} —— 再多用一点就够本了！好好享受吧。`,
+    warningMessage: (cost) => `每次 ${cost} —— 再多用一点就达使用目标！好好享受吧。`,
     cheapComparison: "比一杯咖啡还便宜",
-    cheapMessage: (cost) => `每次 ${cost} —— 比一杯咖啡还便宜！已经够本了`,
+    cheapMessage: (cost) => `每次 ${cost} —— 比一杯咖啡还便宜！已达使用目标`,
     worthComparison: (item) => `值${item}`,
-    worthMessage: (cost) => `每次 ${cost} —— 用得比付的还多！`,
+    worthMessage: (cost) => `每次 ${cost} —— 已达使用目标，用得很充分！`,
   },
   gauge: {
     none: "这个月还没用。多用一点，或者暂停省下钱吧。",
-    remaining: (n) => `再用 ${n} 次就够本！`,
-    done: "已经够本！用得很好。",
+    remaining: (n) => `再用 ${n} 次就达使用目标！`,
+    done: "已达使用目标！用得很好。",
     diet: (cost) => `建议精简（每次 ${cost}）`,
-    achieved: (cost) => `已经够本！（每次 ${cost}）`,
-    baseline: "够本线",
+    achieved: (cost) => `已达使用目标！（每次 ${cost}）`,
+    baseline: "使用目标线",
+    progress: (percent) => `达到使用目标的 ${percent}%`,
   },
   bar: { label: "单次成本", footer: (count, monthly) => `共 ${count} 次 · 按每月 ${monthly} 计算` },
   appResult: {
@@ -705,12 +715,12 @@ export const zh: Widen<typeof ko> = {
     perUse: "每次",
     unusedNote: (monthly) => `最近 30 天没用过。暂停后每月可省 ${monthly}。`,
     redNote: (monthly) => `暂停后每月可省 ${monthly}。`,
-    remainingNote: (n) => `再用 ${n} 次就够本。`,
-    doneNote: "用得比付的还多。",
+    remainingNote: (n) => `再用 ${n} 次就达使用目标。`,
+    doneNote: "已达使用目标，用得很好。",
     summary: (count, monthly) => `最近 30 天 ${count} 次 · 每月 ${monthly}`,
-    toBreakEven: "距离够本",
+    toBreakEven: "距离使用目标",
     progress: (current, target) => `${current} / ${target}`,
-    progressLabel: "距离够本的使用次数",
+    progressLabel: "距离使用目标的使用次数",
     cancelGuide: "查看退订指南",
     keep: "继续使用",
     confirm: "确定",
@@ -897,10 +907,12 @@ export const ja: Widen<typeof ko> = {
     once: (name, amount) => `今月は ${name} を 1 回使うために ${amount} 払いました。`,
     perUse: (name, cost) => `今月 ${name} は 1 回あたり ${cost} でした。`,
     daysNone: (name, monthly) =>
-      `直近 30 日に ${name} を 1 日も使いませんでした。${monthly} をそのまま払いました。`,
+      `直近 30 日に ${name} を 1 日も使いませんでした。` +
+      (monthly !== null ? `${monthly} をそのまま払いました。` : ""),
     daysSome: (name, cost) => `${name} は使った日 1 日あたり ${cost} でした。`,
     hoursNone: (name, monthly) =>
-      `直近 30 日に ${name} を使いませんでした。${monthly} をそのまま払いました。`,
+      `直近 30 日に ${name} を使いませんでした。` +
+      (monthly !== null ? `${monthly} をそのまま払いました。` : ""),
     hoursSome: (name, cost) => `${name} は 1 時間あたり ${cost} でした。`,
     benefitOver: (monthly, benefit) => `会費 ${monthly} より多い ${benefit} の特典を受けました。`,
     benefitUnder: (monthly, benefit) =>
@@ -933,38 +945,39 @@ export const ja: Widen<typeof ko> = {
     onceMessage: (item, cost) =>
       `今月は 1 回使いました。今ひと休みすれば、毎月${item}（${cost}）を節約できます。`,
     warningComparison: (item) => `${item}くらい`,
-    warningMessage: (cost) => `1 回 ${cost} — もう少し使えば元が取れます！楽しんでください。`,
+    warningMessage: (cost) => `1 回 ${cost} — もう少し使えば利用目標を達成！楽しんでください。`,
     cheapComparison: "コーヒー 1 杯より安い",
-    cheapMessage: (cost) => `1 回 ${cost} — コーヒー 1 杯より安い！元が取れています`,
+    cheapMessage: (cost) => `1 回 ${cost} — コーヒー 1 杯より安い！利用目標を達成しました`,
     worthComparison: (item) => `${item}分の価値`,
-    worthMessage: (cost) => `1 回 ${cost} — 払った以上に使っています！`,
+    worthMessage: (cost) => `1 回 ${cost} — 利用目標を満たしてしっかり活用しています！`,
   },
   gauge: {
     none: "今月はまだ使っていません。もっと使うか、一時停止してお金を節約しましょう。",
-    remaining: (n) => `あと ${n} 回で元が取れます！`,
-    done: "元が取れました！よく活用しています。",
+    remaining: (n) => `あと ${n} 回で利用目標を達成！`,
+    done: "利用目標を達成！よく活用しています。",
     diet: (cost) => `スリム化のおすすめ（1 回 ${cost}）`,
-    achieved: (cost) => `元が取れました！（1 回 ${cost}）`,
-    baseline: "元が取れるライン",
+    achieved: (cost) => `利用目標を達成！（1 回 ${cost}）`,
+    baseline: "利用目標ライン",
+    progress: (percent) => `利用目標の ${percent}%`,
   },
   bar: {
     label: "1 回あたりの単価",
     footer: (count, monthly) => `合計 ${count} 回 · 月 ${monthly} 基準`,
   },
   appResult: {
-    green: "元が取れている",
+    green: "よく使っている",
     yellow: "ぎりぎり",
     red: "一時停止してよい",
     perUse: "1 回あたり",
     unusedNote: (monthly) =>
       `直近 30 日に使っていません。一時停止すれば毎月 ${monthly} の節約です。`,
     redNote: (monthly) => `一時停止すれば毎月 ${monthly} の節約です。`,
-    remainingNote: (n) => `あと ${n} 回使えば元が取れます。`,
-    doneNote: "払った以上に使っています。",
+    remainingNote: (n) => `あと ${n} 回使えば利用目標に届きます。`,
+    doneNote: "利用目標を満たしてよく使っています。",
     summary: (count, monthly) => `直近 30 日 ${count} 回 · 月 ${monthly}`,
-    toBreakEven: "元が取れるまで",
+    toBreakEven: "利用目標まで",
     progress: (current, target) => `${current} / ${target}`,
-    progressLabel: "元が取れるまでの利用回数",
+    progressLabel: "利用目標までの利用回数",
     cancelGuide: "解約ガイドを見る",
     keep: "使い続ける",
     confirm: "OK",
@@ -1158,10 +1171,12 @@ export const vi: Widen<typeof ko> = {
     once: (name, amount) => `Tháng này bạn dùng ${name} một lần với giá ${amount}.`,
     perUse: (name, cost) => `Tháng này ${name} tốn ${cost} mỗi lần dùng.`,
     daysNone: (name, monthly) =>
-      `Bạn không dùng ${name} ngày nào trong 30 ngày qua. Bạn đã trả ${monthly} vô ích.`,
+      `Bạn không dùng ${name} ngày nào trong 30 ngày qua.` +
+      (monthly !== null ? ` Bạn đã trả ${monthly} vô ích.` : ""),
     daysSome: (name, cost) => `Bạn trả ${cost} cho mỗi ngày dùng ${name}.`,
     hoursNone: (name, monthly) =>
-      `Bạn không dùng ${name} trong 30 ngày qua. Bạn đã trả ${monthly} vô ích.`,
+      `Bạn không dùng ${name} trong 30 ngày qua.` +
+      (monthly !== null ? ` Bạn đã trả ${monthly} vô ích.` : ""),
     hoursSome: (name, cost) => `Bạn trả ${cost} cho mỗi giờ dùng ${name}.`,
     benefitOver: (monthly, benefit) => `Bạn thu lại ${benefit} ưu đãi, nhiều hơn phí ${monthly}.`,
     benefitUnder: (monthly, benefit) => `Với phí ${monthly}, bạn chỉ thu lại ${benefit} ưu đãi.`,
@@ -1193,19 +1208,21 @@ export const vi: Widen<typeof ko> = {
     onceMessage: (item, cost) =>
       `Tháng này bạn dùng một lần. Nghỉ một chút, mỗi tháng có thể tiết kiệm ${item} (${cost}).`,
     warningComparison: (item) => `Khoảng ${item}`,
-    warningMessage: (cost) => `${cost} mỗi lần — dùng thêm chút nữa là đủ bù! Hãy tận hưởng.`,
+    warningMessage: (cost) =>
+      `${cost} mỗi lần — dùng thêm chút nữa là đạt mục tiêu sử dụng! Hãy tận hưởng.`,
     cheapComparison: "Rẻ hơn một ly cà phê",
-    cheapMessage: (cost) => `${cost} mỗi lần — rẻ hơn một ly cà phê! Bạn đã đủ bù`,
+    cheapMessage: (cost) => `${cost} mỗi lần — rẻ hơn một ly cà phê! Đã đạt mục tiêu sử dụng`,
     worthComparison: (item) => `Đáng giá ${item}`,
-    worthMessage: (cost) => `${cost} mỗi lần — bạn dùng nhiều hơn số tiền bỏ ra!`,
+    worthMessage: (cost) => `${cost} mỗi lần — đã đạt mục tiêu sử dụng và đang tận dụng tốt!`,
   },
   gauge: {
     none: "Tháng này chưa dùng. Dùng nhiều hơn, hoặc tạm dừng để tiết kiệm.",
-    remaining: (n) => `Thêm ${n} lần nữa là đủ bù!`,
-    done: "Đã đủ bù! Bạn đang tận dụng tốt.",
+    remaining: (n) => `Thêm ${n} lần nữa là đạt mục tiêu sử dụng!`,
+    done: "Đã đạt mục tiêu sử dụng! Bạn đang tận dụng tốt.",
     diet: (cost) => `Nên cắt bớt (${cost} mỗi lần)`,
-    achieved: (cost) => `Đã đủ bù! (${cost} mỗi lần)`,
-    baseline: "Ngưỡng đủ bù",
+    achieved: (cost) => `Đã đạt mục tiêu sử dụng! (${cost} mỗi lần)`,
+    baseline: "Mức mục tiêu sử dụng",
+    progress: (percent) => `Đạt ${percent}% mục tiêu sử dụng`,
   },
   bar: {
     label: "Chi phí mỗi lần dùng",
@@ -1219,12 +1236,12 @@ export const vi: Widen<typeof ko> = {
     unusedNote: (monthly) =>
       `30 ngày qua bạn không dùng. Tạm dừng để tiết kiệm ${monthly} mỗi tháng.`,
     redNote: (monthly) => `Tạm dừng để tiết kiệm ${monthly} mỗi tháng.`,
-    remainingNote: (n) => `Thêm ${n} lần nữa là đủ bù.`,
-    doneNote: "Bạn dùng nhiều hơn số tiền bỏ ra.",
+    remainingNote: (n) => `Thêm ${n} lần nữa là đạt mục tiêu sử dụng.`,
+    doneNote: "Bạn đã đạt mục tiêu sử dụng và đang dùng tốt.",
     summary: (count, monthly) => `${count} lần trong 30 ngày qua · ${monthly} mỗi tháng`,
-    toBreakEven: "Đến khi đủ bù",
+    toBreakEven: "Đến mục tiêu sử dụng",
     progress: (current, target) => `${current} / ${target}`,
-    progressLabel: "Số lần dùng đến khi đủ bù",
+    progressLabel: "Số lần dùng đến mục tiêu sử dụng",
     cancelGuide: "Xem hướng dẫn hủy",
     keep: "Tôi sẽ giữ",
     confirm: "OK",
@@ -1426,10 +1443,12 @@ export const fr: Widen<typeof ko> = {
     once: (name, amount) => `Ce mois-ci, vous avez utilisé ${name} une fois, pour ${amount}.`,
     perUse: (name, cost) => `Ce mois-ci, ${name} vous a coûté ${cost} par utilisation.`,
     daysNone: (name, monthly) =>
-      `Vous n'avez pas utilisé ${name} un seul jour en 30 jours. Vous avez payé ${monthly} pour rien.`,
+      `Vous n'avez pas utilisé ${name} un seul jour en 30 jours.` +
+      (monthly !== null ? ` Vous avez payé ${monthly} pour rien.` : ""),
     daysSome: (name, cost) => `Vous avez payé ${cost} pour chaque jour d'utilisation de ${name}.`,
     hoursNone: (name, monthly) =>
-      `Vous n'avez pas utilisé ${name} ces 30 derniers jours. Vous avez payé ${monthly} pour rien.`,
+      `Vous n'avez pas utilisé ${name} ces 30 derniers jours.` +
+      (monthly !== null ? ` Vous avez payé ${monthly} pour rien.` : ""),
     hoursSome: (name, cost) => `Vous avez payé ${cost} par heure de ${name}.`,
     benefitOver: (monthly, benefit) =>
       `Vous avez récupéré ${benefit} d'avantages, plus que les ${monthly} d'abonnement.`,
@@ -1467,19 +1486,23 @@ export const fr: Widen<typeof ko> = {
       `Une seule utilisation ce mois-ci. Faites une pause et économisez ${item} (${cost}) chaque mois.`,
     warningComparison: (item) => `Environ ${item}`,
     warningMessage: (cost) =>
-      `${cost} par utilisation — encore un peu et c'est rentabilisé ! Profitez-en.`,
+      `${cost} par utilisation — encore un peu pour atteindre l'objectif d'utilisation ! Profitez-en.`,
     cheapComparison: "Moins cher qu'un café",
-    cheapMessage: (cost) => `${cost} par utilisation — moins cher qu'un café ! C'est rentabilisé`,
+    cheapMessage: (cost) =>
+      `${cost} par utilisation — moins cher qu'un café ! Objectif d'utilisation atteint`,
     worthComparison: (item) => `L'équivalent de ${item}`,
-    worthMessage: (cost) => `${cost} par utilisation — vous en tirez plus que ce que vous payez !`,
+    worthMessage: (cost) =>
+      `${cost} par utilisation — objectif d'utilisation atteint, vous en faites bon usage !`,
   },
   gauge: {
     none: "Pas encore utilisé ce mois-ci. Utilisez-le davantage, ou mettez-le en pause pour économiser.",
-    remaining: (n) => `Encore ${n} utilisation${ciPl(n, "", "s")} pour le rentabiliser !`,
-    done: "Rentabilisé ! Vous en faites bon usage.",
+    remaining: (n) =>
+      `Encore ${n} utilisation${ciPl(n, "", "s")} pour atteindre l'objectif d'utilisation !`,
+    done: "Objectif d'utilisation atteint ! Vous en faites bon usage.",
     diet: (cost) => `Réduction conseillée (${cost} par utilisation)`,
-    achieved: (cost) => `Rentabilisé ! (${cost} par utilisation)`,
-    baseline: "Seuil de rentabilité",
+    achieved: (cost) => `Objectif d'utilisation atteint ! (${cost} par utilisation)`,
+    baseline: "Seuil d'objectif d'utilisation",
+    progress: (percent) => `${percent} % de l'objectif d'utilisation`,
   },
   bar: {
     label: "Coût par utilisation",
@@ -1487,20 +1510,21 @@ export const fr: Widen<typeof ko> = {
       `${count} utilisation${ciPl(count, "", "s")} au total · base ${monthly}/mois`,
   },
   appResult: {
-    green: "Rentable",
+    green: "Bien utilisé",
     yellow: "Limite",
     red: "À mettre en pause",
     perUse: "Par utilisation",
     unusedNote: (monthly) =>
       `Pas utilisé ces 30 derniers jours. Mettez-le en pause et économisez ${monthly} par mois.`,
     redNote: (monthly) => `Mettez-le en pause et économisez ${monthly} par mois.`,
-    remainingNote: (n) => `Encore ${n} utilisation${ciPl(n, "", "s")} et c'est rentabilisé.`,
-    doneNote: "Vous en tirez plus que ce que vous payez.",
+    remainingNote: (n) =>
+      `Encore ${n} utilisation${ciPl(n, "", "s")} pour atteindre l'objectif d'utilisation.`,
+    doneNote: "Objectif d'utilisation atteint, vous l'utilisez bien.",
     summary: (count, monthly) =>
       `${count} utilisation${ciPl(count, "", "s")} ces 30 derniers jours · ${monthly} par mois`,
-    toBreakEven: "Pour être rentable",
+    toBreakEven: "Vers l'objectif d'utilisation",
     progress: (current, target) => `${current} / ${target}`,
-    progressLabel: "Utilisations vers la rentabilité",
+    progressLabel: "Utilisations vers l'objectif d'utilisation",
     cancelGuide: "Voir le guide de résiliation",
     keep: "Je le garde",
     confirm: "OK",
@@ -1706,10 +1730,12 @@ export const es: Widen<typeof ko> = {
     once: (name, amount) => `Este mes usaste ${name} una vez, por ${amount}.`,
     perUse: (name, cost) => `Este mes ${name} te costó ${cost} por uso.`,
     daysNone: (name, monthly) =>
-      `No usaste ${name} ni un día en los últimos 30. Pagaste ${monthly} para nada.`,
+      `No usaste ${name} ni un día en los últimos 30.` +
+      (monthly !== null ? ` Pagaste ${monthly} para nada.` : ""),
     daysSome: (name, cost) => `Pagaste ${cost} por cada día que usaste ${name}.`,
     hoursNone: (name, monthly) =>
-      `No usaste ${name} en los últimos 30 días. Pagaste ${monthly} para nada.`,
+      `No usaste ${name} en los últimos 30 días.` +
+      (monthly !== null ? ` Pagaste ${monthly} para nada.` : ""),
     hoursSome: (name, cost) => `Pagaste ${cost} por hora de ${name}.`,
     benefitOver: (monthly, benefit) =>
       `Recuperaste ${benefit} en ventajas, más que la cuota de ${monthly}.`,
@@ -1743,19 +1769,21 @@ export const es: Widen<typeof ko> = {
     onceMessage: (item, cost) =>
       `Este mes la usaste una vez. Tómate un descanso y podrías ahorrar ${item} (${cost}) cada mes.`,
     warningComparison: (item) => `Unos ${item}`,
-    warningMessage: (cost) => `${cost} por uso: ¡úsala un poco más y la amortizas! Disfrútala.`,
+    warningMessage: (cost) =>
+      `${cost} por uso: ¡úsala un poco más para alcanzar el objetivo de uso! Disfrútala.`,
     cheapComparison: "Más barato que un café",
-    cheapMessage: (cost) => `${cost} por uso: ¡más barato que un café! Ya la amortizaste`,
+    cheapMessage: (cost) => `${cost} por uso: ¡más barato que un café! Objetivo de uso alcanzado`,
     worthComparison: (item) => `Equivale a ${item}`,
-    worthMessage: (cost) => `${cost} por uso: ¡le sacas más de lo que pagas!`,
+    worthMessage: (cost) => `${cost} por uso: ¡alcanzaste el objetivo de uso y la aprovechas bien!`,
   },
   gauge: {
     none: "Aún no la usaste este mes. Úsala más, o páusala y ahorra el dinero.",
-    remaining: (n) => `¡${n} uso${ciPl(n, "", "s")} más para amortizarla!`,
-    done: "¡Amortizada! La estás aprovechando bien.",
+    remaining: (n) => `¡${n} uso${ciPl(n, "", "s")} más para alcanzar el objetivo de uso!`,
+    done: "¡Objetivo de uso alcanzado! La estás aprovechando bien.",
     diet: (cost) => `Recorte sugerido (${cost} por uso)`,
-    achieved: (cost) => `¡Amortizada! (${cost} por uso)`,
-    baseline: "Línea de amortización",
+    achieved: (cost) => `¡Objetivo de uso alcanzado! (${cost} por uso)`,
+    baseline: "Línea de objetivo de uso",
+    progress: (percent) => `${percent} % del objetivo de uso`,
   },
   bar: {
     label: "Coste por uso",
@@ -1769,13 +1797,13 @@ export const es: Widen<typeof ko> = {
     unusedNote: (monthly) =>
       `No la usaste en los últimos 30 días. Páusala y ahorra ${monthly} al mes.`,
     redNote: (monthly) => `Páusala y ahorra ${monthly} al mes.`,
-    remainingNote: (n) => `${n} uso${ciPl(n, "", "s")} más y la amortizas.`,
-    doneNote: "Le sacas más de lo que pagas.",
+    remainingNote: (n) => `${n} uso${ciPl(n, "", "s")} más para alcanzar el objetivo de uso.`,
+    doneNote: "Alcanzaste el objetivo de uso y la usas bien.",
     summary: (count, monthly) =>
       `${count} uso${ciPl(count, "", "s")} en los últimos 30 días · ${monthly} al mes`,
-    toBreakEven: "Para amortizarla",
+    toBreakEven: "Hacia el objetivo de uso",
     progress: (current, target) => `${current} / ${target}`,
-    progressLabel: "Usos hacia la amortización",
+    progressLabel: "Usos hacia el objetivo de uso",
     cancelGuide: "Ver la guía de cancelación",
     keep: "Me la quedo",
     confirm: "Aceptar",
@@ -1977,11 +2005,13 @@ export const de: Widen<typeof ko> = {
     once: (name, amount) => `Diesen Monat hast du ${name} einmal genutzt, für ${amount}.`,
     perUse: (name, cost) => `Diesen Monat hat dich ${name} ${cost} pro Nutzung gekostet.`,
     daysNone: (name, monthly) =>
-      `Du hast ${name} in den letzten 30 Tagen an keinem Tag genutzt. Du hast ${monthly} umsonst gezahlt.`,
+      `Du hast ${name} in den letzten 30 Tagen an keinem Tag genutzt.` +
+      (monthly !== null ? ` Du hast ${monthly} umsonst gezahlt.` : ""),
     daysSome: (name, cost) =>
       `Du hast ${cost} für jeden Tag gezahlt, an dem du ${name} genutzt hast.`,
     hoursNone: (name, monthly) =>
-      `Du hast ${name} in den letzten 30 Tagen nicht genutzt. Du hast ${monthly} umsonst gezahlt.`,
+      `Du hast ${name} in den letzten 30 Tagen nicht genutzt.` +
+      (monthly !== null ? ` Du hast ${monthly} umsonst gezahlt.` : ""),
     hoursSome: (name, cost) => `Du hast ${cost} pro Stunde ${name} gezahlt.`,
     benefitOver: (monthly, benefit) =>
       `Du hast ${benefit} an Vorteilen zurückbekommen, mehr als die ${monthly} Gebühr.`,
@@ -2020,19 +2050,20 @@ export const de: Widen<typeof ko> = {
       `Diesen Monat einmal genutzt. Mach jetzt eine Pause und spar jeden Monat ${item} (${cost}).`,
     warningComparison: (item) => `Etwa ${item}`,
     warningMessage: (cost) =>
-      `${cost} pro Nutzung — noch ein bisschen mehr, dann lohnt es sich! Viel Spaß damit.`,
+      `${cost} pro Nutzung — noch ein bisschen mehr bis zum Nutzungsziel! Viel Spaß damit.`,
     cheapComparison: "Günstiger als ein Kaffee",
-    cheapMessage: (cost) => `${cost} pro Nutzung — günstiger als ein Kaffee! Es hat sich gelohnt`,
+    cheapMessage: (cost) => `${cost} pro Nutzung — günstiger als ein Kaffee! Nutzungsziel erreicht`,
     worthComparison: (item) => `So viel wert wie ${item}`,
-    worthMessage: (cost) => `${cost} pro Nutzung — du bekommst mehr, als du zahlst!`,
+    worthMessage: (cost) => `${cost} pro Nutzung — Nutzungsziel erreicht, du nutzt es gut!`,
   },
   gauge: {
     none: "Diesen Monat noch nicht genutzt. Nutz es mehr oder pausier es und spar das Geld.",
-    remaining: (n) => `Noch ${n} ${ciPl(n, "Nutzung", "Nutzungen")}, dann lohnt es sich!`,
-    done: "Hat sich gelohnt! Du nutzt es gut.",
+    remaining: (n) => `Noch ${n} ${ciPl(n, "Nutzung", "Nutzungen")} bis zum Nutzungsziel!`,
+    done: "Nutzungsziel erreicht! Du nutzt es gut.",
     diet: (cost) => `Kürzen empfohlen (${cost} pro Nutzung)`,
-    achieved: (cost) => `Hat sich gelohnt! (${cost} pro Nutzung)`,
-    baseline: "Lohnt-sich-Linie",
+    achieved: (cost) => `Nutzungsziel erreicht! (${cost} pro Nutzung)`,
+    baseline: "Nutzungsziel-Linie",
+    progress: (percent) => `${percent} % des Nutzungsziels`,
   },
   bar: {
     label: "Kosten pro Nutzung",
@@ -2046,12 +2077,12 @@ export const de: Widen<typeof ko> = {
     unusedNote: (monthly) =>
       `In den letzten 30 Tagen nicht genutzt. Pausier es und spar ${monthly} im Monat.`,
     redNote: (monthly) => `Pausier es und spar ${monthly} im Monat.`,
-    remainingNote: (n) => `Noch ${n} ${ciPl(n, "Nutzung", "Nutzungen")}, dann lohnt es sich.`,
-    doneNote: "Du bekommst mehr, als du zahlst.",
+    remainingNote: (n) => `Noch ${n} ${ciPl(n, "Nutzung", "Nutzungen")} bis zum Nutzungsziel.`,
+    doneNote: "Nutzungsziel erreicht, du nutzt es gut.",
     summary: (count, monthly) => `${count}-mal in den letzten 30 Tagen · ${monthly} im Monat`,
-    toBreakEven: "Bis es sich lohnt",
+    toBreakEven: "Bis zum Nutzungsziel",
     progress: (current, target) => `${current} / ${target}`,
-    progressLabel: "Nutzungen bis es sich lohnt",
+    progressLabel: "Nutzungen bis zum Nutzungsziel",
     cancelGuide: "Kündigungshilfe ansehen",
     keep: "Ich behalte es",
     confirm: "OK",
@@ -2254,10 +2285,12 @@ export const pt: Widen<typeof ko> = {
     once: (name, amount) => `Este mês você usou ${name} uma vez, por ${amount}.`,
     perUse: (name, cost) => `Este mês ${name} custou ${cost} por uso.`,
     daysNone: (name, monthly) =>
-      `Você não usou ${name} nem um dia nos últimos 30. Pagou ${monthly} à toa.`,
+      `Você não usou ${name} nem um dia nos últimos 30.` +
+      (monthly !== null ? ` Pagou ${monthly} à toa.` : ""),
     daysSome: (name, cost) => `Você pagou ${cost} por dia de uso de ${name}.`,
     hoursNone: (name, monthly) =>
-      `Você não usou ${name} nos últimos 30 dias. Pagou ${monthly} à toa.`,
+      `Você não usou ${name} nos últimos 30 dias.` +
+      (monthly !== null ? ` Pagou ${monthly} à toa.` : ""),
     hoursSome: (name, cost) => `Você pagou ${cost} por hora de ${name}.`,
     benefitOver: (monthly, benefit) =>
       `Você recuperou ${benefit} em benefícios, mais que a mensalidade de ${monthly}.`,
@@ -2291,19 +2324,21 @@ export const pt: Widen<typeof ko> = {
     onceMessage: (item, cost) =>
       `Você usou uma vez este mês. Dê uma pausa e economize ${item} (${cost}) todo mês.`,
     warningComparison: (item) => `Cerca de ${item}`,
-    warningMessage: (cost) => `${cost} por uso — use um pouco mais e compensa! Aproveite.`,
+    warningMessage: (cost) =>
+      `${cost} por uso — use um pouco mais para atingir a meta de uso! Aproveite.`,
     cheapComparison: "Mais barato que um café",
-    cheapMessage: (cost) => `${cost} por uso — mais barato que um café! Já compensou`,
+    cheapMessage: (cost) => `${cost} por uso — mais barato que um café! Meta de uso atingida`,
     worthComparison: (item) => `Vale ${item}`,
-    worthMessage: (cost) => `${cost} por uso — você aproveita mais do que paga!`,
+    worthMessage: (cost) => `${cost} por uso — você atingiu a meta de uso e está aproveitando bem!`,
   },
   gauge: {
     none: "Ainda sem uso este mês. Use mais ou pause e economize.",
-    remaining: (n) => `Mais ${n} uso${ciPl(n, "", "s")} para compensar!`,
-    done: "Compensou! Você está aproveitando bem.",
+    remaining: (n) => `Mais ${n} uso${ciPl(n, "", "s")} para atingir a meta de uso!`,
+    done: "Meta de uso atingida! Você está aproveitando bem.",
     diet: (cost) => `Corte sugerido (${cost} por uso)`,
-    achieved: (cost) => `Compensou! (${cost} por uso)`,
-    baseline: "Linha de compensação",
+    achieved: (cost) => `Meta de uso atingida! (${cost} por uso)`,
+    baseline: "Linha da meta de uso",
+    progress: (percent) => `${percent}% da meta de uso`,
   },
   bar: {
     label: "Custo por uso",
@@ -2317,13 +2352,13 @@ export const pt: Widen<typeof ko> = {
     perUse: "Por uso",
     unusedNote: (monthly) => `Sem uso nos últimos 30 dias. Pause e economize ${monthly} por mês.`,
     redNote: (monthly) => `Pause e economize ${monthly} por mês.`,
-    remainingNote: (n) => `Mais ${n} uso${ciPl(n, "", "s")} e compensa.`,
-    doneNote: "Você aproveita mais do que paga.",
+    remainingNote: (n) => `Mais ${n} uso${ciPl(n, "", "s")} para atingir a meta de uso.`,
+    doneNote: "Você atingiu a meta de uso e está usando bem.",
     summary: (count, monthly) =>
       `${count} uso${ciPl(count, "", "s")} nos últimos 30 dias · ${monthly} por mês`,
-    toBreakEven: "Para compensar",
+    toBreakEven: "Até a meta de uso",
     progress: (current, target) => `${current} / ${target}`,
-    progressLabel: "Usos até compensar",
+    progressLabel: "Usos até a meta de uso",
     cancelGuide: "Ver o guia de cancelamento",
     keep: "Vou manter",
     confirm: "OK",

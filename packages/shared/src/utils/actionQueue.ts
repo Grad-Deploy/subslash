@@ -1,12 +1,19 @@
 import { Currency, Subscription, UsageLog } from "../types";
 import { DEFAULT_EXCHANGE_RATE } from "../constants/thresholds";
 import { getBilledAmount } from "./currency";
-import { getDaysUntilBillingFor, getDaysUntilTrialEnd, DAY_MS } from "./date";
-import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW } from "./sharing";
+import {
+  daysBetween,
+  getDaysUntilBillingFor,
+  getDaysUntilTrialEnd,
+  needsBillingMonth,
+  parseTimestamp,
+} from "./date";
+import { getMyAnnualAmountKRW, getMyMonthlyAmountKRW, getMyMonthlyShareAmount } from "./sharing";
 import { getPriceCheckCandidates } from "./priceCheck";
 import { getKillCheckStatus } from "./killCheck";
 import { getLowUsageBillingFigures, type MetaphorKey } from "./metaphor";
 import { isResubscribeReminderDue } from "./killRecord";
+import { latestCheckInBySubscription } from "./checkInEvidence";
 
 /**
  * 대시보드의 행동 큐.
@@ -81,7 +88,7 @@ export type CheckInFigures = Pick<UsageLog, "metric" | "usageCount" | "costPerUs
  */
 export type ActionReason =
   | { type: "charged-after-kill"; chargedAt: string; amount: number | null; currency: Currency }
-  | { type: "trial-ending"; daysLeft: number; endsAt: string; stakeKRW: number }
+  | { type: "trial-ending"; daysLeft: number; endsAt: string; stakeKRW: number | null }
   | { type: "cancel-notice"; noticeAt: string }
   | {
       type: "billing-soon-risky";
@@ -193,6 +200,27 @@ const PRIORITY: Record<ActionKind, number> = {
   "resubscribe-reminder": 10,
 };
 
+/**
+ * 같은 우선순위(`priority === 1`) 안에서 제품 주석이 정한 순서:
+ * 해지 알림(`cancel-notice`) → 무료 체험 종료(`trial-ending`) → 결제 임박 위험(`billing-soon-risky`) → 결제 임박 저사용(`low-usage-billing-soon`).
+ */
+const KIND_ORDER: Record<ActionKind, number> = {
+  "charged-after-kill": 0,
+  "cancel-notice": 1,
+  "trial-ending": 2,
+  "billing-soon-risky": 3,
+  "low-usage-billing-soon": 4,
+  "billing-soon": 5,
+  "verify-kill": 6,
+  "amount-changed": 7,
+  risky: 8,
+  "never-checked-in": 9,
+  "stale-check-in": 10,
+  "price-check": 11,
+  "missing-billing-month": 12,
+  "resubscribe-reminder": 13,
+};
+
 const VERB: Record<ActionKind, ActionVerb> = {
   // 물어볼 것이 아니라 다시 해지하러 가야 한다.
   "charged-after-kill": "cancel-guide",
@@ -211,22 +239,10 @@ const VERB: Record<ActionKind, ActionVerb> = {
   "resubscribe-reminder": "review-resubscribe",
 };
 
-/** 구독별 가장 최근 체크인. */
-function latestLogBySubscription(logs: UsageLog[]): Map<string, UsageLog> {
-  const latest = new Map<string, UsageLog>();
-  for (const log of logs) {
-    const current = latest.get(log.subscriptionId);
-    if (!current || new Date(log.checkedAt) > new Date(current.checkedAt)) {
-      latest.set(log.subscriptionId, log);
-    }
-  }
-  return latest;
-}
-
 function daysSince(iso: string, now: Date): number | null {
-  const then = new Date(iso);
-  if (Number.isNaN(then.getTime())) return null;
-  return Math.floor((now.getTime() - then.getTime()) / DAY_MS);
+  const then = parseTimestamp(iso);
+  if (!then) return null;
+  return daysBetween(then, now);
 }
 
 /** 이번 결제에서 빠져나갈 내 몫. 연간 플랜은 한 번에 연 결제액이 나간다. */
@@ -250,7 +266,7 @@ export function getActionQueue(
   rate: number = DEFAULT_EXCHANGE_RATE,
 ): ActionItem[] {
   const active = subscriptions.filter((sub) => sub.status === "active");
-  const latest = latestLogBySubscription(usageLogs);
+  const latest = latestCheckInBySubscription(usageLogs);
 
   // 요금 확인 대상은 이미 만들어둔 판정기를 그대로 쓴다.
   const priceChecks = new Map(
@@ -261,6 +277,8 @@ export function getActionQueue(
   );
 
   const items: ActionItem[] = [];
+  /** 결제월 미입력 연간 구독끼리 같은 우선순위에서 정렬할 때만 쓰는 내 부담금(KRW). `amountAtStake: null` 계약은 건드리지 않는다. */
+  const undatedStake = new Map<string, number>();
 
   for (const sub of active) {
     // 마지막 메일이 해지·취소 알림이었다. 해지했다면 이 구독의 다른 줄(결제 임박·체크인)은 모두 틀린
@@ -290,7 +308,8 @@ export function getActionQueue(
     const trialDays = getDaysUntilTrialEnd(sub, now);
     if (trialDays !== null) {
       if (trialDays > TRIAL_ENDING_DAYS) continue;
-      const stake = chargeAtStakeKRW(sub, rate);
+      const rawStake = chargeAtStakeKRW(sub, rate);
+      const stake = rawStake > 0 ? rawStake : null;
       items.push({
         subscriptionId: sub.id,
         name: sub.name,
@@ -317,8 +336,15 @@ export function getActionQueue(
     const days = getDaysUntilBillingFor(sub, now);
     const log = latest.get(sub.id);
     const isRisky = log?.riskLevel === "red";
+    // 실제 내 부담금이 0원 이하인 구독(무료·가족 공유 0원 부담)은 "₩0을 지킵니다", "돈값을 못 하고 있습니다" 같은
+    // 금전 손실 기반 해지 권유(billing-soon-risky, low-usage-billing-soon, risky) 대상에서 제외한다.
+    const hasMyShare = getMyMonthlyShareAmount(sub) > 0;
     const billingSoon = days !== null && days >= 0 && days <= BILLING_SOON_DAYS;
-    const stake = days === null ? null : chargeAtStakeKRW(sub, rate);
+    const rawStake = chargeAtStakeKRW(sub, rate);
+    const stake = days === null || rawStake <= 0 ? null : rawStake;
+    if (needsBillingMonth(sub)) {
+      undatedStake.set(sub.id, rawStake);
+    }
     // 체크인의 1회당 단가는 구독 자체의 통화로 기록된다. 달러 구독에 ₩를
     // 붙이면 $10이 "₩10"으로 읽힌다.
     // 마지막 체크인. 지표마다 말이 다르다('3회 이용 · 1회당 ₩5,000', '30일 중 2일 사용 · 하루당 …').
@@ -336,7 +362,7 @@ export function getActionQueue(
     const observed =
       typeof sub.observedAmount === "number" && sub.observedAmountAt ? sub.observedAmount : null;
 
-    if (billingSoon && isRisky) {
+    if (hasMyShare && billingSoon && isRisky) {
       kind = "billing-soon-risky";
       reason = {
         type: "billing-soon-risky",
@@ -346,6 +372,7 @@ export function getActionQueue(
         stakeKRW: stake,
       };
     } else if (
+      hasMyShare &&
       billingSoon &&
       days !== null &&
       days <= 3 &&
@@ -384,7 +411,7 @@ export function getActionQueue(
         billed: getBilledAmount(sub),
         currency: sub.currency,
       };
-    } else if (isRisky) {
+    } else if (hasMyShare && isRisky) {
       kind = "risky";
       reason = { type: "risky", checkIn: checkIn!, currency: sub.currency };
     } else if (sub.billingCycle === "yearly" && typeof sub.billingMonth !== "number") {
@@ -510,11 +537,21 @@ export function getActionQueue(
 
   return items.sort((a, b) => {
     if (a.priority !== b.priority) return a.priority - b.priority;
+    // 해지 알림(cancel-notice)은 daysUntilBilling이 null이지만, 같은 우선순위(1)의 무료 체험 종료·결제 임박보다 먼저 묻는다.
+    if (a.kind !== b.kind && (a.kind === "cancel-notice" || b.kind === "cancel-notice")) {
+      return a.kind === "cancel-notice" ? -1 : 1;
+    }
     // 같은 급함이면 결제가 먼저 오는 쪽, 날짜를 모르는 쪽은 뒤로.
     const left = a.daysUntilBilling ?? Number.POSITIVE_INFINITY;
     const right = b.daysUntilBilling ?? Number.POSITIVE_INFINITY;
     if (left !== right) return left - right;
-    return (b.amountAtStake ?? 0) - (a.amountAtStake ?? 0);
+    // 둘 다 결제일을 모르면(결제월 미입력 연간 구독끼리 같은 우선순위인 경우에만) 내 부담금이 큰 쪽을 먼저 둔다.
+    const stakeDiff =
+      a.daysUntilBilling === null && b.daysUntilBilling === null
+        ? (undatedStake.get(b.subscriptionId) ?? 0) - (undatedStake.get(a.subscriptionId) ?? 0)
+        : (b.amountAtStake ?? 0) - (a.amountAtStake ?? 0);
+    if (stakeDiff !== 0) return stakeDiff;
+    return KIND_ORDER[a.kind] - KIND_ORDER[b.kind];
   });
 }
 

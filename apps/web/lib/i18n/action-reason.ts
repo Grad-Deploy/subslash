@@ -8,21 +8,29 @@ import type { Messages } from "./messages";
  */
 export function describeActionReason(t: Messages, reason: ActionReason): string {
   const r = t.dashboard.reason;
+  const positiveKRW = (stakeKRW: number | null) =>
+    stakeKRW !== null && stakeKRW > 0 ? formatKRW(stakeKRW) : null;
   switch (reason.type) {
     case "charged-after-kill":
       return r.chargedAfterKill(
         reason.chargedAt,
-        reason.amount !== null ? formatAmount(reason.amount, reason.currency) : null,
+        reason.amount !== null && reason.amount > 0
+          ? formatAmount(reason.amount, reason.currency)
+          : null,
       );
     case "trial-ending":
-      return r.trialEnding(formatDday(reason.daysLeft), reason.endsAt, formatKRW(reason.stakeKRW));
+      return r.trialEnding(
+        formatDday(reason.daysLeft),
+        reason.endsAt,
+        positiveKRW(reason.stakeKRW),
+      );
     case "cancel-notice":
       return r.cancelNotice(reason.noticeAt);
     case "billing-soon-risky":
       return r.billingSoonRisky(
         formatDday(reason.days),
         describeCheckInText(t, reason.checkIn, reason.currency),
-        reason.stakeKRW !== null ? formatKRW(reason.stakeKRW) : null,
+        positiveKRW(reason.stakeKRW),
       );
     case "low-usage-billing-soon": {
       const item = t.value.metaphor[reason.item](reason.count);
@@ -33,11 +41,7 @@ export function describeActionReason(t: Messages, reason: ActionReason): string 
     }
     case "billing-soon":
       return reason.hasCheckIn
-        ? r.billingSoon(
-            formatDday(reason.days),
-            reason.stakeKRW !== null ? formatKRW(reason.stakeKRW) : null,
-            reason.sinceCheckIn,
-          )
+        ? r.billingSoon(formatDday(reason.days), positiveKRW(reason.stakeKRW), reason.sinceCheckIn)
         : r.billingSoonNoCheckIn(formatDday(reason.days));
     case "verify-kill": {
       const d = reason.billingDate;

@@ -36,7 +36,7 @@ export function previewFirstCheckInRisk(subscription: Subscription, count: numbe
   const fit = metric === "storage" ? storagePlanFit(subscription, quantity) : null;
   const freeTier =
     metric === "days" && asksFreeTier(subscription) ? (subscription.freeTierAnswer ?? null) : null;
-  return metricRiskLevel(metric, monthly, quantity, fit, freeTier);
+  return metricRiskLevel(metric, monthly, quantity, fit, freeTier, null, subscription.currency);
 }
 
 /**

@@ -22,7 +22,7 @@ export function describeCheckInText(
   const n = log.usageCount;
   const quantity = describeQuantityText(t, metric, n);
 
-  const unit = unitCostText(t, unitCostPart(metric, log.costPerUse, n), currency);
+  const unit = unitCostText(t, unitCostPart(metric, log.costPerUse, n, currency), currency);
   return unit ? `${quantity} · ${unit}` : quantity;
 }
 
@@ -76,7 +76,7 @@ export function shortUnitCostText(
   const c = t.value.checkIn;
   const metric = metricOfLog(log);
   if (metric === "storage") return c.shortStorage(log.usageCount);
-  const part = unitCostPart(metric, log.costPerUse, log.usageCount);
+  const part = unitCostPart(metric, log.costPerUse, log.usageCount, currency);
   if (!part) return c.shortNone;
   const money = formatCurrency(log.costPerUse, currency);
   switch (part.type) {

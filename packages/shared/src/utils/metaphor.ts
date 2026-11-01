@@ -1,7 +1,9 @@
 import { Currency, Subscription, UsageLog } from "../types";
 import { calculateCostPerUse, getRiskLevel } from "./cost-per-use";
 import { toKRW } from "./currency";
+import { latestCheckInBySubscription } from "./checkInEvidence";
 import { getMyMonthlyShareAmount, getMyMonthlyAmountKRW } from "./sharing";
+import { GOOD_AT } from "./valueMetric";
 
 // ─────────────────────────────────────────────────────────
 // 1. 실체감 환산 메타포
@@ -17,9 +19,9 @@ export interface UsageMetaphor {
    * - `unused`: 이번 달 안 썼다 (`amountKRW` 값어치의 `item`)
    * - `movie`: 1회 이용이고 영화관 티켓에 가깝다 (`item`은 영화관 티켓)
    * - `once`: 1회 이용이고 `item`에 가깝다
-   * - `warning`: 본전까지 조금 남았다
+   * - `warning`: 이용 목표까지 조금 남았다
    * - `cheap`: 커피 한 잔보다 알뜰하다
-   * - `worth`: 낸 돈 이상으로 쓰고 있다
+   * - `worth`: 이용 목표를 채워 잘 쓰고 있다
    */
   kind: "unused" | "movie" | "once" | "warning" | "cheap" | "worth";
   serviceName: string;
@@ -117,35 +119,36 @@ export function getUsageMetaphor(
 }
 
 // ─────────────────────────────────────────────────────────
-// 2. 가성비 게이지 — 본전 도달 정보
+// 2. 이용 목표 게이지 — 목표 횟수 도달 정보
 // ─────────────────────────────────────────────────────────
 
 export interface BreakEvenInfo {
-  /** 본전을 뽑으려면 필요한 이용 횟수. */
+  /** '잘 씀'(초록) 기준이 되는 이용 목표 횟수. */
   breakEvenUsage: number;
   currentUsage: number;
-  /** 0 ~ 100+. 100 이상이면 본전 이상. */
+  /** 0 ~ 100+. 100 이상이면 이용 목표 달성. */
   progressPercent: number;
   level: "danger" | "warning" | "safe";
 }
 
 /**
- * 본전 도달 기준을 계산한다.
+ * 이용 목표 도달 비율과 단계를 계산한다.
  *
- * 기본 breakEvenTarget은 8회(기존 getRiskLevel의 green 기준).
- * 8회 이상이면 1회당 단가가 금액의 12.5% 이하 — "돈값을 한다"고 본다.
+ * 기본 목표(`breakEvenTarget`)는 `GOOD_AT.uses`(4회, `getRiskLevel`의 초록 기준 — 1회 단가가 월 부담금의
+ * 25% 이하가 되는 횟수)다. 단계는 이용 목표의 50% 미만 위험(`danger`)·100% 미만 주의(`warning`)·100% 이상
+ * 달성(`safe`)이며, 4회 기준일 때 횟수마다 `getRiskLevel`과 일치한다(1회 이하 빨강, 2~3회 노랑, 4회 이상 초록).
  */
 export function getBreakEvenInfo(
   _amount: number,
   usageCount: number,
-  breakEvenTarget: number = 8,
+  breakEvenTarget: number = GOOD_AT.uses,
 ): BreakEvenInfo {
   const target = Math.max(1, breakEvenTarget);
   const progress = target > 0 ? (usageCount / target) * 100 : 0;
 
   let level: BreakEvenInfo["level"];
-  if (progress <= 40) level = "danger";
-  else if (progress <= 80) level = "warning";
+  if (progress < 50) level = "danger";
+  else if (progress < 100) level = "warning";
   else level = "safe";
 
   return {
@@ -206,14 +209,7 @@ export function getMonthlyValueSummary(
 ): MonthlyValueSummary {
   const active = subscriptions.filter((s) => s.status === "active");
 
-  // 구독별 최신 체크인
-  const latestLog = new Map<string, UsageLog>();
-  for (const log of usageLogs) {
-    const current = latestLog.get(log.subscriptionId);
-    if (!current || new Date(log.checkedAt) > new Date(current.checkedAt)) {
-      latestLog.set(log.subscriptionId, log);
-    }
-  }
+  const latestLog = latestCheckInBySubscription(usageLogs);
 
   const worthItItems: ValueReportItem[] = [];
   const wastedItems: ValueReportItem[] = [];
