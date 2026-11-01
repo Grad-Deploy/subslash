@@ -30,7 +30,7 @@ const checkIn = (days: number, tokens?: { count: number; apiUsd: number | null }
 
 describe("쓴 날 + 토큰으로 해지 판단", () => {
   it("쓴 날이 적어도 API 환산이 구독료 이상이면 본전 이상(초록)이다", () => {
-    expect(metricRiskLevel("days", 22, 1, null, null, 2)).toBe("green");
+    expect(metricRiskLevel("days", 22, 1, "USD", null, null, 2)).toBe("green");
     expect(checkIn(1, { count: 3_000_000, apiUsd: 44 }).log.riskLevel).toBe("green");
   });
 
@@ -40,7 +40,7 @@ describe("쓴 날 + 토큰으로 해지 판단", () => {
   });
 
   it("'무료 요금제로 충분했다'고 답했으면 토큰이 많아도 무료로 내려 보라고 한다", () => {
-    expect(metricRiskLevel("days", 22, 1, null, "enough", 2)).toBe("yellow");
+    expect(metricRiskLevel("days", 22, 1, "USD", null, "enough", 2)).toBe("yellow");
   });
 
   it("체크인에 토큰 수와 API 환산 금액, 하루당 가격이 함께 남는다", () => {

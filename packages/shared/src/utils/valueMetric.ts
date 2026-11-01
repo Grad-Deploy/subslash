@@ -244,10 +244,14 @@ export function metricRiskLevel(
   metric: ValueMetric,
   monthlyShare: number,
   quantity: number,
+  /**
+   * `monthlyShare`의 통화. 기본값을 두지 않는다 — 비원화(USD) 금액을 넘기면서 통화를 생략하면
+   * `benefit` 지표가 달러를 원화로 오인해 비율이 폭등하고 타입 검사도 이를 잡아 주지 못한다.
+   */
+  currency: Currency,
   storageFit?: StoragePlanFit | null,
   freeTier?: FreeTierAnswer | null,
   apiValueRatio?: number | null,
-  currency: Currency = "KRW",
 ): RiskLevel {
   switch (metric) {
     case "uses":
@@ -325,8 +329,9 @@ export function evaluateMetric(
   apiValueRatio?: number | null,
 ): MetricEvaluation {
   const ratio = metric === "days" ? (apiValueRatio ?? null) : null;
-  // benefit 수량(quantity)은 항상 원화(KRW)이므로, 비원화 구독을 직접 평가할 때도
-  // 회비를 원화로 환산해 costPerUse(회비 KRW ÷ 혜택 KRW)와 outcome의 통화 단위를 일치시킨다.
+  // benefit 수량(quantity)은 항상 원화(KRW) 기준이다.
+  // 프로덕션의 정상 구독 흐름에서는 metricForSubscription이 비원화(currency !== "KRW") 구독을
+  // "uses"로 폴백시키므로 아래 비원화 benefit의 원화 환산 경로에는 도달하지 않는다(직접 호출·테스트 전용 방어).
   const effectiveMonthly = metric === "benefit" ? toKRW(monthlyShare, currency) : monthlyShare;
   const effectiveCurrency: Currency = metric === "benefit" ? "KRW" : currency;
   return {
@@ -335,10 +340,10 @@ export function evaluateMetric(
       metric,
       monthlyShare,
       quantity,
+      currency,
       storageFit,
       freeTier,
       ratio,
-      currency,
     ),
     outcome: {
       metric,
