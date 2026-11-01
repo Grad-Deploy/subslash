@@ -128,7 +128,11 @@ export function AppNextBilling() {
                 </span>
               </>
             ) : (
-              <span className="min-w-0 truncate">{c.noKnownDate}</span>
+              <span className="min-w-0 truncate">
+                {active.length > 0 && active.every((sub) => isInTrial(sub, now))
+                  ? c.trialOnly
+                  : c.noKnownDate}
+              </span>
             )}
           </span>
           <span className="block text-xs text-muted-foreground">
