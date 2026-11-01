@@ -4,7 +4,7 @@ import { priceAsOf } from "./amountHistory";
 import { isSameService } from "./chargeHistory";
 import { latestCheckIn } from "./checkInEvidence";
 import { getBilledAmount, getBilledAmountKRW, toKRW } from "./currency";
-import { isInTrial, parseTimestamp, startOfDay, localDateKey } from "./date";
+import { isInTrial, parseTimestamp, startOfDay, startOfMonth, localDateKey } from "./date";
 import type { RateOn } from "./historicalRate";
 import {
   getMyAnnualAmountKRW,
@@ -191,7 +191,7 @@ function coveredByAnotherRecord(
   return subscriptions.some((other) => {
     if (other.id === sub.id || !isSameService(other, sub)) return false;
     const registered = dayOf(other.createdAt);
-    if (!registered || new Date(registered.getFullYear(), registered.getMonth(), 1) > date) {
+    if (!registered || startOfMonth(registered) > date) {
       return false;
     }
     if (other.status === "active") return true;
@@ -243,7 +243,7 @@ export function buildReceipt(
     }
     return historical ?? rate;
   };
-  const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const thisMonth = startOfMonth(today);
   const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
   const lines: ReceiptLine[] = [];
   const excluded = { undated: 0, beforeRegistration: 0, trial: 0 };
@@ -261,9 +261,7 @@ export function buildReceipt(
 
     const registered = dayOf(sub.createdAt);
     // 등록한 달의 1일. 그 달의 결제는 결제일이 등록일보다 앞서도 구독 중이던 것으로 본다.
-    const registeredMonth = registered
-      ? new Date(registered.getFullYear(), registered.getMonth(), 1)
-      : null;
+    const registeredMonth = registered ? startOfMonth(registered) : null;
     const killed = sub.status === "killed" ? dayOf(sub.killedAt) : null;
     // 해지했다는데 언제인지 모르면 어느 결제가 해지 뒤였는지 모른다. 기록으로 계산하는 줄은 만들지 않는다.
     const unknownKill = sub.status === "killed" && !killed;
