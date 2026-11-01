@@ -157,8 +157,10 @@ export function getBreakEvenInfo(
 ): BreakEvenInfo {
   const target = Math.max(1, breakEvenTarget);
   const progress = target > 0 ? (usageCount / target) * 100 : 0;
-  const dangerThresholdPercent =
-    dangerBelowPercent ?? (VERDICT_THRESHOLDS.uses.redBelow / target) * 100;
+  const dangerThresholdPercent = Math.min(
+    100,
+    dangerBelowPercent ?? (VERDICT_THRESHOLDS.uses.redBelow / target) * 100,
+  );
 
   let level: BreakEvenInfo["level"];
   if (progress < dangerThresholdPercent) level = "danger";

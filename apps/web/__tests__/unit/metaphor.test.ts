@@ -126,6 +126,17 @@ describe("Metaphor and Value Calculation Utils", () => {
       expect(getBreakEvenInfo(17000, 7, 8, 50).level).toBe("warning");
       expect(getBreakEvenInfo(17000, 8, 8, 50).level).toBe("safe");
     });
+
+    it("목표 횟수가 1회 또는 2회일 때도 danger 경계(최대 100%)와 safe가 올바르게 판정된다", () => {
+      // target=1: 0회 danger, 1회 safe
+      expect(getBreakEvenInfo(17000, 0, 1).level).toBe("danger");
+      expect(getBreakEvenInfo(17000, 1, 1).level).toBe("safe");
+
+      // target=2: 0·1회 danger, 2회 safe (기존 동작 유지 확인)
+      expect(getBreakEvenInfo(17000, 0, 2).level).toBe("danger");
+      expect(getBreakEvenInfo(17000, 1, 2).level).toBe("danger");
+      expect(getBreakEvenInfo(17000, 2, 2).level).toBe("safe");
+    });
   });
 
   describe("getCostPerUseBarState", () => {
