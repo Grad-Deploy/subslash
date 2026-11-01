@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { formatKRW, getSavingsTiers } from "@subslash/shared";
+import { formatKRW, getSavingsTiers, startOfMonth } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { useStore } from "@lib/store";
 import { useExchangeRate } from "@hooks/useExchangeRate";
@@ -36,7 +36,7 @@ export function AppSavingsLink({
 
   const now = new Date();
   const tiers = getSavingsTiers(killed, now, rate);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthStart = startOfMonth(now);
   const thisMonth = getSavingsTiers(killed, now, rate, { from: monthStart, to: now }).confirmed;
 
   // 지킨 돈이 아직 없을 때: 결제일이 지나 확인을 기다리는 돈이 있으면 그걸, 아니면 언제 쌓이는지 적는다.
