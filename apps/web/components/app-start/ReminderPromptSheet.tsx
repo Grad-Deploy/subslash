@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, X } from "lucide-react";
 import { getNextBillingDateFor, type Subscription } from "@subslash/shared";
+import { useEscapeKey } from "@hooks/useEscapeKey";
 import { REMINDER_DAY_CHOICES, useLocalReminderSettings } from "@hooks/useLocalReminders";
 import {
   checkReminderPermission,
@@ -49,14 +50,7 @@ export function ReminderPromptSheet({
     void checkReminderPermission().then(setPermission);
   }, [open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  useEscapeKey(open, onClose);
 
   if (!open) return null;
 

@@ -1,5 +1,5 @@
 import type { BillingCycle, SubscriptionStatus } from "../types";
-import { getNextBillingDateFor, parseTimestamp } from "./date";
+import { getNextBillingDateFor, parseTimestamp, startOfDay } from "./date";
 
 /**
  * 해지가 실제로 결제를 멈췄는지 확인한다.
@@ -67,7 +67,7 @@ export function getKillCheckStatus(
   const billingDate = getFirstBillingDateAfterKill(sub);
   if (!billingDate) return { state: "unknown" };
 
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const today = startOfDay(now);
   return today.getTime() > billingDate.getTime()
     ? { state: "due", billingDate }
     : { state: "waiting", billingDate };

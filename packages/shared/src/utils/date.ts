@@ -102,6 +102,11 @@ export function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+/** 그 기기 시간대의 그달 1일 0시. */
+export function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
 /**
  * Days until the next charge, or null when the date is unknown (a yearly plan
  * with no billing month). Callers must render that as "not set", never as 0.
