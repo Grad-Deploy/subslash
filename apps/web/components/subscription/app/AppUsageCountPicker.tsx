@@ -6,10 +6,10 @@ import {
   type Subscription,
   calculateCostPerUse,
   getMyMonthlyShareAmount,
-  metricForSubscription,
   formatSpacedAmount,
 } from "@subslash/shared";
 import { MetricQuantityInput } from "../MetricQuantityInput";
+import { currentMetricFor } from "@lib/check-in-metric";
 import { cn } from "@lib/utils";
 import { useT } from "@lib/i18n";
 import { IS_APP_BUILD } from "@lib/platform";
@@ -101,7 +101,7 @@ export function AppUsageCountPicker({
 
   // 횟수로 재지 않는 구독(음악은 시간, 멤버십은 혜택 금액)은 그 지표의 입력을 쓴다. 폰 기록 한 줄도
   // 연 횟수라 붙이지 않는다.
-  const metric = metricForSubscription(subscription, "app");
+  const metric = currentMetricFor(subscription);
   if (metric !== "uses") {
     return (
       <MetricQuantityInput

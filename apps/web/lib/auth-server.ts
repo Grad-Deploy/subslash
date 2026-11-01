@@ -1,7 +1,7 @@
 import { DAY_MS } from "@subslash/shared";
 import { randomBytes } from "crypto";
 import { and, eq, gt, lt, or } from "drizzle-orm";
-import { getDb } from "./db";
+import { getDb, type DbExecutor } from "./db";
 import { sha256Hex } from "./tokens";
 import { accounts, sessions, type Account } from "./schema";
 import { NextResponse, type NextRequest } from "next/server";
@@ -57,8 +57,10 @@ export interface IssuedSession {
 }
 
 /** 새 세션을 만들고, 브라우저에 내려줄 토큰을 돌려준다. */
-export async function createSession(accountId: string): Promise<IssuedSession> {
-  const db = getDb();
+export async function createSession(
+  accountId: string,
+  db: DbExecutor = getDb(),
+): Promise<IssuedSession> {
   const token = randomBytes(32).toString("hex");
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
 
@@ -108,27 +110,32 @@ export async function destroySession(token: string | undefined): Promise<void> {
  * 봐 바꾸는 경우도 있다. 바꾼 사람의 기기는 부르는 쪽이 새 세션으로 이어 준다.
  */
 export async function replacePassword(account: Account, newHash: string): Promise<boolean> {
-  const db = getDb();
-  const updated = await db
-    .update(accounts)
-    .set({ passwordHash: newHash })
-    .where(and(eq(accounts.id, account.id), eq(accounts.passwordHash, account.passwordHash)))
-    .returning({ id: accounts.id });
-  if (updated.length === 0) return false;
-  await db.delete(sessions).where(eq(sessions.accountId, account.id));
-  return true;
+  return getDb().transaction(async (tx) => {
+    const updated = await tx
+      .update(accounts)
+      .set({ passwordHash: newHash })
+      .where(and(eq(accounts.id, account.id), eq(accounts.passwordHash, account.passwordHash)))
+      .returning({ id: accounts.id });
+    if (updated.length === 0) return false;
+    await tx.delete(sessions).where(eq(sessions.accountId, account.id));
+    return true;
+  });
 }
 
 /**
  * 회원 탈퇴. 딸린 기록(`deleteAccountRecords`)을 먼저 지우고 계정을 지운다. 계정이 없었으면 `false`.
+ *
+ * 전체를 하나의 트랜잭션으로 묶어 중간에 실패하더라도 계정이나 딸린 기록이 반쪽만 지워지지 않게 한다.
  */
 export async function deleteAccount(accountId: string): Promise<boolean> {
-  await deleteAccountRecords(accountId);
-  const deleted = await getDb()
-    .delete(accounts)
-    .where(eq(accounts.id, accountId))
-    .returning({ id: accounts.id });
-  return deleted.length > 0;
+  return getDb().transaction(async (tx) => {
+    await deleteAccountRecords(accountId, tx);
+    const deleted = await tx
+      .delete(accounts)
+      .where(eq(accounts.id, accountId))
+      .returning({ id: accounts.id });
+    return deleted.length > 0;
+  });
 }
 
 /** 만료된 세션 정리. 실패해도 로그인 자체를 막지는 않는다. */

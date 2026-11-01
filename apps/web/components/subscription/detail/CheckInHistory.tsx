@@ -110,7 +110,8 @@ export function CheckInHistory({
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <RiskBadge level={log.riskLevel} size="sm" />
+                {/* 그때 낸 돈이 없던 체크인(`costPerUse`는 그때의 내 몫 기준)에는 해지를 권하지 않는다. */}
+                <RiskBadge level={log.riskLevel} size="sm" free={log.costPerUse <= 0} />
               </div>
             </div>
           ))}

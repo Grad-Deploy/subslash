@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { getDb } from "./db";
+import { getDb, type DbExecutor } from "./db";
 import { accountSnapshots, sessions } from "./schema";
 import { deleteGmailImportData } from "./gmail-auto-import";
 import { deleteCalendarSyncPlan } from "./calendar-sync";
@@ -16,13 +16,15 @@ import { deleteAskDailyCounts } from "./ask/daily-count";
  * 기록(verification_mail_log)은 주소별 발송 한도라 남긴다 — 지우면 탈퇴와 재가입을 되풀이해 한도를 풀 수 있다. 그
  * 기록은 24시간이 지나면 다음 발송 때 지워진다.
  */
-export async function deleteAccountRecords(accountId: string): Promise<void> {
-  const db = getDb();
+export async function deleteAccountRecords(
+  accountId: string,
+  db: DbExecutor = getDb(),
+): Promise<void> {
   await db.delete(sessions).where(eq(sessions.accountId, accountId));
   await db.delete(accountSnapshots).where(eq(accountSnapshots.accountId, accountId));
-  await deleteGmailImportData(accountId);
-  await deleteCalendarSyncPlan(accountId);
-  await deleteAllDeviceUsage(accountId);
-  await deleteOAuthData(accountId);
-  await deleteAskDailyCounts(accountId);
+  await deleteGmailImportData(accountId, db);
+  await deleteCalendarSyncPlan(accountId, db);
+  await deleteAllDeviceUsage(accountId, db);
+  await deleteOAuthData(accountId, db);
+  await deleteAskDailyCounts(accountId, db);
 }

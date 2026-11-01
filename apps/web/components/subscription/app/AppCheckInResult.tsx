@@ -34,7 +34,7 @@ const TONE: Record<RiskLevel, { dot: string; bar: string; text: string }> = {
 
 /**
  * 앱의 체크인 결과. 웹의 결과 화면(충격 문구·배지·비유 카드·게이지 두 개·로그인 안내·버튼 셋)을
- * 한 화면에 한 가지 말만 하도록 줄였다: 상태 한 줄 → 1회당 금액 → 본전까지 막대 하나 → 할 일 하나.
+ * 한 화면에 한 가지 말만 하도록 줄였다: 상태 한 줄 → 1회당 금액 → 이용 목표까지 막대 하나 → 할 일 하나.
  * 로그인 계정·결제 수단 안내는 해지 안내 창에 이미 있어 여기서는 뺐다.
  */
 export function AppCheckInResult({
@@ -55,23 +55,26 @@ export function AppCheckInResult({
 }) {
   const r = useT().checkin.appResult;
   const tone = TONE[result.riskLevel];
-  const toneLabel = { green: r.green, yellow: r.yellow, red: r.red }[result.riskLevel];
   const monthly = getMyMonthlyShareAmount(subscription);
+  const toneLabel = { green: r.green, yellow: r.yellow, red: monthly > 0 ? r.red : r.redFree }[
+    result.riskLevel
+  ];
+  const hasCost = monthly > 0;
   const money = (amount: number) => formatSpacedAmount(amount, subscription.currency);
   const breakEven = getBreakEvenInfo(monthly, count);
   const progress = Math.min(100, breakEven.progressPercent);
   const remaining = Math.max(0, breakEven.breakEvenUsage - count);
 
   const note =
-    count === 0
+    hasCost && count === 0
       ? r.unusedNote(money(monthly))
-      : result.riskLevel === "red"
+      : hasCost && result.riskLevel === "red"
         ? r.redNote(money(monthly))
         : remaining > 0
           ? r.remainingNote(remaining)
           : r.doneNote;
 
-  const suggestCancel = result.riskLevel !== "green";
+  const suggestCancel = hasCost && result.riskLevel !== "green";
 
   return (
     <div className="space-y-6 pt-2">

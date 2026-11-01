@@ -1,5 +1,6 @@
 import { findPresetForSubscription, type Subscription } from "@subslash/shared";
 import { SOURCE_LOCALE, translationFor, type Locale, type Translations } from "../i18n/config";
+import { serviceIdName } from "../service-name";
 
 /**
  * 서비스(서비스 목록의 id) → 그 서비스를 쓰는 안드로이드 앱 패키지.
@@ -119,6 +120,12 @@ export function packageLabel(pkg: string, locale: Locale = SOURCE_LOCALE): strin
   return translationFor(PACKAGE_LABEL_TRANSLATIONS, locale)?.[pkg] ?? PACKAGE_LABELS[pkg];
 }
 
+/** 앱이 재는 서비스의 화면 이름. 표에 없는 앱이면 undefined. */
+function serviceNameOfPackage(pkg: string, locale: Locale): string | undefined {
+  const serviceId = Object.keys(USAGE_PACKAGES).find((id) => USAGE_PACKAGES[id]?.includes(pkg));
+  return serviceId && serviceIdName(serviceId, locale);
+}
+
 /** 구독의 앱별 사용 시간을 보여 줄 줄들. 앱이 하나뿐이면 빈 배열(나눌 것이 없다). */
 export function packageBreakdown(
   packages: readonly string[],
@@ -128,7 +135,7 @@ export function packageBreakdown(
   if (packages.length < 2) return [];
   return packages.map((pkg) => ({
     pkg,
-    label: packageLabel(pkg, locale) ?? pkg,
+    label: packageLabel(pkg, locale) ?? serviceNameOfPackage(pkg, locale) ?? pkg,
     usedMs: byPackage[pkg]?.usedMs ?? 0,
     opens: byPackage[pkg]?.opens ?? 0,
   }));

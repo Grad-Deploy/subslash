@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import {
+  hasSurfaceMetrics,
   type Subscription,
   type UsageLog,
   getBilledAmount,
@@ -13,6 +14,7 @@ import {
   formatSpacedKRW,
 } from "@subslash/shared";
 import { useExchangeRate } from "@hooks/useExchangeRate";
+import { latestFreshLogFor } from "@lib/checkins";
 import { usePhoneUsage, usePhoneUsageStore } from "@hooks/usePhoneUsage";
 import { addDays, dayKey, lastDays } from "@lib/usage/history";
 import { useT, useServiceNames } from "@lib/i18n";
@@ -81,10 +83,14 @@ export function AppUnusedAlerts({
       .map((sub) => subUsage(sub, history, installed, dates, rate))
       .filter((u) => u.state === "measured" && u.totals.coveredDays >= MIN_COVERED_DAYS);
     const hidden = (id: string) => (snooze[id] ?? "") > today;
+    // 앱·웹에서 재는 것이 다른 구독은 최근 체크인이 판단이다. 폰 기록만 보고 안 쓴다·비싸다고 알리지 않는다.
+    const judgedByCheckIn = (sub: Subscription) =>
+      hasSurfaceMetrics(sub) && latestFreshLogFor(usageLogs, sub, now) !== null;
 
     const list: Alert[] = [];
     for (const u of usages) {
-      if (hidden(u.sub.id) || u.totals.opens > 0 || u.totals.ms > 0) continue;
+      if (hidden(u.sub.id) || judgedByCheckIn(u.sub) || u.totals.opens > 0 || u.totals.ms > 0)
+        continue;
       const days = getDaysUntilBillingFor(u.sub, now);
       if (days === null || days < 0 || days > BILLING_WITHIN_DAYS) continue;
       const amount = formatSpacedAmount(getBilledAmount(u.sub), u.sub.currency);
@@ -98,7 +104,12 @@ export function AppUnusedAlerts({
 
     const hourly = usages.filter((u) => u.hourlyKRW !== null);
     for (const u of hourly) {
-      if (hidden(u.sub.id) || list.some((a) => a.usage.sub.id === u.sub.id)) continue;
+      if (
+        hidden(u.sub.id) ||
+        judgedByCheckIn(u.sub) ||
+        list.some((a) => a.usage.sub.id === u.sub.id)
+      )
+        continue;
       const others = median(
         hourly.filter((o) => o.sub.id !== u.sub.id).map((o) => o.hourlyKRW as number),
       );

@@ -17,7 +17,8 @@ process.env.TURSO_DATABASE_URL = ":memory:";
 delete process.env.TURSO_AUTH_TOKEN;
 
 const { getDb, closeDb } = await import("../../lib/db");
-const { accountSnapshots, accounts, sessions } = await import("../../lib/schema");
+const { accountSnapshots, accounts, calendarSyncPlans, sessions } =
+  await import("../../lib/schema");
 const { SESSION_COOKIE } = await import("../../lib/auth-server");
 
 const { POST: signupRoute } = await import("../../app/api/auth/signup/route");
@@ -168,5 +169,48 @@ describe("회원 탈퇴", () => {
       ).toHaveLength(1);
     },
     SCRYPT_TIMEOUT_MS * 2,
+  );
+
+  it(
+    "탈퇴나 미확인 계정 삭제 도중 중간 단계에서 오류가 나면 트랜잭션 전체가 롤백되어 고아 레코드나 반쪽 삭제가 남지 않는다",
+    async () => {
+      const { deleteAccount } = await import("../../lib/auth-server");
+      const { deleteUnverifiedAccount } = await import("../../lib/account-verification");
+      const me = await signup("rollback_user", "rollback@gmail.com");
+      const db = getDb();
+      await db.insert(accountSnapshots).values({
+        accountId: me.id,
+        payload: "{}",
+        subscriptionCount: 1,
+        savedAt: new Date().toISOString(),
+      });
+
+      // 중간 단계(calendar_sync_plans 삭제)에서 강제로 DB 예외를 일으킨다.
+      await db.insert(calendarSyncPlans).values({
+        accountId: me.id,
+        codeHash: "hash_rb",
+        payload: "{}",
+        createdAt: new Date().toISOString(),
+      });
+      await db.run(
+        `CREATE TRIGGER fail_mid_delete BEFORE DELETE ON calendar_sync_plans BEGIN SELECT RAISE(ABORT, 'simulated failure'); END` as never,
+      );
+
+      await expect(deleteUnverifiedAccount(me.id)).rejects.toThrow(/calendar_sync_plans/);
+      await expect(deleteAccount(me.id)).rejects.toThrow(/calendar_sync_plans/);
+
+      // 계정, 세션, 스냅샷이 모두 롤백되어 그대로 살아 있어야 한다.
+      expect(await db.select().from(accounts).where(eq(accounts.id, me.id))).toHaveLength(1);
+      expect(await db.select().from(sessions).where(eq(sessions.accountId, me.id))).toHaveLength(1);
+      expect(
+        await db.select().from(accountSnapshots).where(eq(accountSnapshots.accountId, me.id)),
+      ).toHaveLength(1);
+
+      await db.run(`DROP TRIGGER fail_mid_delete` as never);
+      expect(await deleteUnverifiedAccount(me.id)).toBe(true);
+      expect(await db.select().from(accounts).where(eq(accounts.id, me.id))).toHaveLength(0);
+      expect(await db.select().from(sessions).where(eq(sessions.accountId, me.id))).toHaveLength(0);
+    },
+    SCRYPT_TIMEOUT_MS,
   );
 });

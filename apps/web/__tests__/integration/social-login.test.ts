@@ -302,6 +302,18 @@ describe("로그인 방법 잇기", () => {
     expect(await unlinkOAuthIdentity(owner.id, "google")).toBe("ok");
   });
 
+  it("비밀번호 없는 계정이 이어 둔 두 제공자를 동시에 끊으려 해도 최소 하나는 남는다", async () => {
+    const { account } = await resolveOAuthAccount("google", GOOGLE, { over14: true });
+    await linkOAuthIdentity(account.id, "kakao", { subject: "k-concurrent" });
+
+    const results = await Promise.all([
+      unlinkOAuthIdentity(account.id, "google"),
+      unlinkOAuthIdentity(account.id, "kakao"),
+    ]);
+    expect(results.sort()).toEqual(["last-method", "ok"]);
+    expect(await linkedProviders(account.id)).toHaveLength(1);
+  });
+
   it("웹에서는 이 브라우저에 로그인한 계정의 코드로만 연결을 시작한다", async () => {
     const owner = await passwordAccount();
     const session = await createSession(owner.id);

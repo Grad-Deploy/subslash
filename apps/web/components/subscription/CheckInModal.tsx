@@ -258,7 +258,11 @@ export function CheckInModal({
                 {describeCheckInOutcome(t, result.outcome) || c.modal.noResult}
               </h3>
               <div className="flex justify-center">
-                <RiskBadge level={result.riskLevel} size="lg" />
+                <RiskBadge
+                  level={result.riskLevel}
+                  size="lg"
+                  free={getMyMonthlyShareAmount(subscription) <= 0}
+                />
               </div>
             </div>
 

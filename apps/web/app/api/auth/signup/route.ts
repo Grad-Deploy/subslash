@@ -111,18 +111,17 @@ export async function POST(request: NextRequest) {
     // 평문 비밀번호는 여기서 해시로 바뀌고, 그 뒤로는 어디에도 남지 않는다.
     const passwordHash = await hashPassword(value.password);
 
-    const db = getDb();
-    const inserted = await db
-      .insert(accounts)
-      .values({
-        username: value.username,
-        email: value.email,
-        passwordHash,
-      })
-      .returning();
-
-    const account = inserted[0];
-    const session = await createSession(account.id);
+    const { account, session } = await getDb().transaction(async (tx) => {
+      const [created] = await tx
+        .insert(accounts)
+        .values({
+          username: value.username,
+          email: value.email,
+          passwordHash,
+        })
+        .returning();
+      return { account: created, session: await createSession(created.id, tx) };
+    });
 
     // 확인 메일은 가입이 끝난 뒤에 보낸다. 보내지 못해도 가입은 되돌리지 않고,
     // 보냈는지를 그대로 알린다 — 오지 않을 메일을 기다리게 하지 않기 위해서다.

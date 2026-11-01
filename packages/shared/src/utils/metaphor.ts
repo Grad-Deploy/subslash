@@ -1,4 +1,5 @@
 import { Currency, Subscription, UsageLog } from "../types";
+import { GOOD_AT, VERDICT_THRESHOLDS } from "../constants/thresholds";
 import { calculateCostPerUse, getRiskLevel } from "./cost-per-use";
 import { toKRW } from "./currency";
 import { latestCheckInBySubscription } from "./checkInEvidence";
@@ -18,9 +19,9 @@ export interface UsageMetaphor {
    * - `unused`: 이번 달 안 썼다 (`amountKRW` 값어치의 `item`)
    * - `movie`: 1회 이용이고 영화관 티켓에 가깝다 (`item`은 영화관 티켓)
    * - `once`: 1회 이용이고 `item`에 가깝다
-   * - `warning`: 본전까지 조금 남았다
+   * - `warning`: 이용 목표까지 조금 남았다
    * - `cheap`: 커피 한 잔보다 알뜰하다
-   * - `worth`: 낸 돈 이상으로 쓰고 있다
+   * - `worth`: 이용 목표를 채워 잘 쓰고 있다
    */
   kind: "unused" | "movie" | "once" | "warning" | "cheap" | "worth";
   serviceName: string;
@@ -32,6 +33,8 @@ export interface UsageMetaphor {
   currency: Currency;
   /** 한 달치 내 몫을 원으로 바꾼 값. */
   amountKRW: number;
+  /** 체크인에 적은 이용 횟수. */
+  usageCount: number;
 }
 
 /** 일상 소비재 기준표 — 가장 가까운 것 하나를 고른다. */
@@ -90,7 +93,7 @@ export function getUsageMetaphor(
   const count = costPerUse / best.price;
 
   const cost = calculateCostPerUse(amount, usageCount);
-  const base = { serviceName, currency, cost, amountKRW };
+  const base = { serviceName, currency, cost, amountKRW, usageCount };
 
   if (usageCount === 0) {
     const total = pickMetaphorItem(amountKRW);
@@ -118,36 +121,44 @@ export function getUsageMetaphor(
 }
 
 // ─────────────────────────────────────────────────────────
-// 2. 가성비 게이지 — 본전 도달 정보
+// 2. 이용 목표 게이지 — 목표 횟수 도달 정보
 // ─────────────────────────────────────────────────────────
 
 export interface BreakEvenInfo {
-  /** 본전을 뽑으려면 필요한 이용 횟수. */
+  /** '잘 씀'(초록) 기준이 되는 이용 목표 횟수. */
   breakEvenUsage: number;
   currentUsage: number;
-  /** 0 ~ 100+. 100 이상이면 본전 이상. */
+  /** 0 ~ 100+. 100 이상이면 이용 목표 달성. */
   progressPercent: number;
   level: "danger" | "warning" | "safe";
 }
 
 /**
- * 본전 도달 기준을 계산한다.
+ * 이용 목표 도달 비율과 단계를 계산한다 (`uses` 지표 전용).
  *
- * 기본 breakEvenTarget은 4회 — getRiskLevel이 초록으로 보는 첫 횟수다(1회당 단가가 금액의 25% 이하). 리포트의
- * '잘 씀' 기준(OTT 4회)과도 같다. 예전에는 8회였고 단계도 따로 셌다. 그래서 체크인 결과 창의 배지는 3회를 노랑
- * '주의'로, 바로 아래 게이지는 같은 3회를 3/8=38%의 빨강 '지출 다이어트 추천'으로 보였다. 단계는 본전의 50% 미만
- * 빨강·100% 미만 노랑·100% 이상 초록이고, 4회 기준이면 횟수마다 getRiskLevel과 같다(1회 이하 빨강, 2~3회 노랑).
+ * 기본 목표(`breakEvenTarget`)는 `GOOD_AT.uses`(4회, `getRiskLevel`의 초록 기준 — 1회 단가가 월 부담금의
+ * `1 / GOOD_AT.uses` 이하가 되는 횟수)다. 단계는 위험(`danger`)·주의(`warning`)·달성(`safe`)으로 나뉘며,
+ * 기본 호출일 때 모든 횟수에서 `getRiskLevel`과 일치한다(2회 미만 빨강, 2~3회 노랑, 4회 이상 초록).
+ *
+ * @param _amount 한 달 내 몫 금액(호출부 시그니처 호환용)
+ * @param usageCount 현재 이용 횟수
+ * @param breakEvenTarget '잘 씀'(달성, 100%) 기준 횟수 (기본값: `GOOD_AT.uses`)
+ *
+ * @warning 이 게이지는 `uses`(횟수) 지표 전용이다. `days`(빨강: 2일 이하 = 목표 10일의 20%)나
+ * `hours`(빨강: 2시간 미만 = 목표 10시간의 20%) 지표에 그대로 붙이면 위험(`danger`) 구간이
+ * `metricRiskLevel`의 빨강 판정과 어긋나므로 다른 지표에는 사용하지 않는다.
  */
 export function getBreakEvenInfo(
   _amount: number,
   usageCount: number,
-  breakEvenTarget: number = 4,
+  breakEvenTarget: number = GOOD_AT.uses,
 ): BreakEvenInfo {
   const target = Math.max(1, breakEvenTarget);
   const progress = target > 0 ? (usageCount / target) * 100 : 0;
+  const dangerThresholdPercent = Math.min(100, (VERDICT_THRESHOLDS.uses.redBelow / target) * 100);
 
   let level: BreakEvenInfo["level"];
-  if (progress < 50) level = "danger";
+  if (progress < dangerThresholdPercent) level = "danger";
   else if (progress < 100) level = "warning";
   else level = "safe";
 

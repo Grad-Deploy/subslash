@@ -47,6 +47,7 @@ export const ko = {
     green: "유지",
     yellow: "주의",
     red: "해지 권고",
+    redFree: "거의 안 씀",
     title: (label: string) => `위험도: ${label}`,
   },
   dday: {
@@ -139,6 +140,7 @@ export const en: Widen<typeof ko> = {
     green: "Keep",
     yellow: "Caution",
     red: "Cancel advised",
+    redFree: "Barely used",
     title: (label) => `Risk: ${label}`,
   },
   dday: {
@@ -227,7 +229,13 @@ export const zh: Widen<typeof ko> = {
       goSavings: "节省 →",
     },
   },
-  risk: { green: "保留", yellow: "注意", red: "建议退订", title: (label) => `风险：${label}` },
+  risk: {
+    green: "保留",
+    yellow: "注意",
+    red: "建议退订",
+    redFree: "几乎没用",
+    title: (label) => `风险：${label}`,
+  },
   dday: { billingMonthUnset: "未设置扣款月份", tellYearlyDate: "请告诉我们年付的扣款日" },
   calendar: {
     title: "扣款日历",
@@ -308,7 +316,13 @@ export const ja: Widen<typeof ko> = {
       goSavings: "節約 →",
     },
   },
-  risk: { green: "継続", yellow: "注意", red: "解約推奨", title: (label) => `危険度: ${label}` },
+  risk: {
+    green: "継続",
+    yellow: "注意",
+    red: "解約推奨",
+    redFree: "ほとんど未使用",
+    title: (label) => `危険度: ${label}`,
+  },
   dday: { billingMonthUnset: "支払月が未設定", tellYearlyDate: "年払いの支払日を教えてください" },
   calendar: {
     title: "支払いカレンダー",
@@ -390,7 +404,13 @@ export const vi: Widen<typeof ko> = {
       goSavings: "Tiết kiệm →",
     },
   },
-  risk: { green: "Giữ", yellow: "Chú ý", red: "Nên hủy", title: (label) => `Rủi ro: ${label}` },
+  risk: {
+    green: "Giữ",
+    yellow: "Chú ý",
+    red: "Nên hủy",
+    redFree: "Hầu như không dùng",
+    title: (label) => `Rủi ro: ${label}`,
+  },
   dday: {
     billingMonthUnset: "Chưa đặt tháng thanh toán",
     tellYearlyDate: "Hãy cho biết ngày thanh toán hằng năm",
@@ -483,6 +503,7 @@ export const fr: Widen<typeof ko> = {
     green: "À garder",
     yellow: "Attention",
     red: "Résiliation conseillée",
+    redFree: "Peu utilisé",
     title: (label) => `Risque : ${label}`,
   },
   dday: {
@@ -579,6 +600,7 @@ export const es: Widen<typeof ko> = {
     green: "Mantener",
     yellow: "Atención",
     red: "Cancelar recomendado",
+    redFree: "Poco usado",
     title: (label) => `Riesgo: ${label}`,
   },
   dday: {
@@ -675,6 +697,7 @@ export const de: Widen<typeof ko> = {
     green: "Behalten",
     yellow: "Achtung",
     red: "Kündigen empfohlen",
+    redFree: "Kaum genutzt",
     title: (label) => `Risiko: ${label}`,
   },
   dday: {
@@ -771,6 +794,7 @@ export const pt: Widen<typeof ko> = {
     green: "Manter",
     yellow: "Atenção",
     red: "Cancelar recomendado",
+    redFree: "Pouco usado",
     title: (label) => `Risco: ${label}`,
   },
   dday: {

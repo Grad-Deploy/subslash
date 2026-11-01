@@ -45,6 +45,44 @@ describe("행동 큐 이유 문장", () => {
     expect(describeActionReason(messages.ko, reason)).toContain("영화관 티켓 1.1장 값(₩17,000)");
     expect(describeActionReason(messages.en, reason)).toContain("1.1 movie tickets (₩17,000)");
   });
+
+  it("stakeKRW나 amount가 0 이하일 때는 9개 언어 모두에서 ₩0 문구를 만들지 않는다", () => {
+    const zeroReasons = [
+      { type: "trial-ending", daysLeft: 2, endsAt: "2026-09-12", stakeKRW: 0 },
+      { type: "trial-ending", daysLeft: 2, endsAt: "2026-09-12", stakeKRW: null },
+      {
+        type: "billing-soon",
+        days: 3,
+        stakeKRW: 0,
+        sinceCheckIn: 20,
+        hasCheckIn: true,
+      },
+      {
+        type: "billing-soon-risky",
+        days: 3,
+        checkIn: { usageCount: 1, costPerUse: 17000 },
+        currency: "KRW",
+        stakeKRW: 0,
+      },
+      {
+        type: "charged-after-kill",
+        chargedAt: "2026.09.05",
+        amount: 0,
+        currency: "KRW",
+      },
+    ] as const;
+
+    expect(describeActionReason(messages.ko, zeroReasons[0])).toContain(
+      "그대로 두면 유료 결제가 시작됩니다.",
+    );
+    expect(describeActionReason(messages.ko, zeroReasons[2])).toContain("곧 결제됩니다.");
+
+    for (const locale of Object.keys(messages) as Array<keyof typeof messages>) {
+      for (const reason of zeroReasons) {
+        expect(describeActionReason(messages[locale], reason)).not.toContain("₩0");
+      }
+    }
+  });
 });
 
 describe("describeCheckInText", () => {

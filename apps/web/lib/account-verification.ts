@@ -227,18 +227,28 @@ export async function pruneAbandonedAccounts(now: Date = new Date()): Promise<nu
  *
  * 확인된 계정은 주인이 '맞아요'라고 답한 것이다. 그 뒤에 남아 있던 옛 링크로
  * 지워지게 두지 않는다.
+ *
+ * 스키마의 ON DELETE CASCADE는 PRAGMA foreign_keys가 켜져 있을 때만 동작하므로 딸린 행을
+ * 직접 먼저 지운 뒤 부모 계정을 지우고, 전체를 하나의 트랜잭션으로 묶어 중간에 실패하더라도
+ * 고아 레코드(Orphan)나 반쪽짜리 삭제가 남지 않게 한다.
  */
 export async function deleteUnverifiedAccount(accountId: string): Promise<boolean> {
-  const db = getDb();
-  const deleted = await db
-    .delete(accounts)
-    .where(and(eq(accounts.id, accountId), isNull(accounts.emailVerifiedAt)))
-    .returning({ id: accounts.id });
-  if (deleted.length === 0) return false;
+  return getDb().transaction(async (tx) => {
+    const [target] = await tx
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(and(eq(accounts.id, accountId), isNull(accounts.emailVerifiedAt)))
+      .limit(1);
+    if (!target) return false;
 
-  // 계정에 저장한 기록도 함께 지운다 — 주소의 주인이 모르는 가입이라고 한 계정의 기록을 서버에 남겨 둘 이유가 없다.
-  await deleteAccountRecords(accountId);
-  return true;
+    await deleteAccountRecords(accountId, tx);
+
+    const deleted = await tx
+      .delete(accounts)
+      .where(and(eq(accounts.id, accountId), isNull(accounts.emailVerifiedAt)))
+      .returning({ id: accounts.id });
+    return deleted.length > 0;
+  });
 }
 
 export async function findAccountByEmail(email: string): Promise<Account | null> {
