@@ -7,7 +7,7 @@ import { validateLogin } from "@subslash/shared";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { enterAfterLogin } from "@hooks/useAuth";
-import { apiFetch } from "@lib/api";
+import { apiPostJson } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
 import { useKnownText, useT } from "@lib/i18n";
 
@@ -45,12 +45,11 @@ export function LoginForm() {
 
     setSubmitting(true);
     try {
-      const res = await apiFetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // 비밀번호는 본문으로만 보낸다. 주소창에 실으면 브라우저 기록과
-        // 서버 접근 로그에 그대로 남는다.
-        body: JSON.stringify({ identifier: form.identifier, password: form.password }),
+      // 비밀번호는 본문으로만 보낸다. 주소창에 실으면 브라우저 기록과
+      // 서버 접근 로그에 그대로 남는다.
+      const res = await apiPostJson("/api/auth/login", {
+        identifier: form.identifier,
+        password: form.password,
       });
       const data = await res.json().catch(() => ({}));
 
