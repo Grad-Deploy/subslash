@@ -59,7 +59,7 @@ export function ValueReceiptPaper({
           label: r.actionCancel,
           run: () => onCancelGuide(item.sub.id, wasteOrder(summary.wastedItems, item.sub.id)),
         }
-      : key === "unknown"
+      : key === "unknown" && !isInTrial(item.sub, now)
         ? { label: r.actionCheckIn, run: () => onCheckIn(item.sub.id) }
         : null;
 

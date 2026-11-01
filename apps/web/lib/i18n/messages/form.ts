@@ -99,6 +99,8 @@ export const ko = {
     },
   },
   amount: {
+    positiveHint:
+      "0원은 입력할 수 없어요. 무료 체험 중이면 끝난 뒤 낼 금액을 적고 아래에 체험 종료일을 적어 주세요.",
     yearlyExTax: "연 요금 (세금 제외)",
     monthlyExTax: "월 요금 (세금 제외)",
     yearly: "연 결제 금액",
@@ -138,6 +140,7 @@ export const ko = {
       `${name ? `${name}의 연 요금은 목록에 없어요. ` : ""}1년치 결제액을 적어 주세요(월 요금 × 12와 다를 수 있어요).`,
   },
   sharing: {
+    positiveHint: "내가 내지 않는 구독은 등록하지 않아요. 내 몫은 0원보다 커야 해요.",
     people: "함께 쓰는 인원",
     alone: "나 혼자 (1명)",
     by: (n: number) => `${n}명이서 나눔`,
@@ -260,6 +263,8 @@ export const en: Widen<typeof ko> = {
     },
   },
   amount: {
+    positiveHint:
+      "Must be more than 0. On a free trial, enter what you'll pay afterwards and add the trial end date below.",
     yearlyExTax: "Yearly price (excl. tax)",
     monthlyExTax: "Monthly price (excl. tax)",
     yearly: "Yearly payment",
@@ -300,6 +305,7 @@ export const en: Widen<typeof ko> = {
       `${name ? `The yearly price of ${name} isn't in the list. ` : ""}Enter what you pay for the whole year (it may differ from the monthly price × 12).`,
   },
   sharing: {
+    positiveHint: "Subscriptions you don't pay for aren't tracked. Your share must be more than 0.",
     people: "People sharing",
     alone: "Just me (1)",
     by: (n) => `Shared by ${n}`,
@@ -422,6 +428,7 @@ export const zh: Widen<typeof ko> = {
     },
   },
   amount: {
+    positiveHint: "金额不能为 0。如果在免费试用中，请填写试用结束后的金额，并在下方填写结束日期。",
     yearlyExTax: "年付价格（不含税）",
     monthlyExTax: "月付价格（不含税）",
     yearly: "年付金额",
@@ -459,6 +466,7 @@ export const zh: Widen<typeof ko> = {
       `${name ? `列表中没有 ${name} 的年付价格。` : ""}请输入一整年支付的金额（可能与月付价格 × 12 不同）。`,
   },
   sharing: {
+    positiveHint: "不记录您无需付费的订阅。您的份额必须大于 0。",
     people: "共用人数",
     alone: "只有我（1 人）",
     by: (n) => `${n} 人共用`,
@@ -575,6 +583,8 @@ export const ja: Widen<typeof ko> = {
     },
   },
   amount: {
+    positiveHint:
+      "0 は入力できません。無料体験中なら終了後の金額を入力し、下に終了日を入れてください。",
     yearlyExTax: "年額料金（税抜き）",
     monthlyExTax: "月額料金（税抜き）",
     yearly: "年間の支払額",
@@ -615,6 +625,7 @@ export const ja: Widen<typeof ko> = {
       `${name ? `${name} の年額料金は一覧にありません。` : ""}1 年分として払う金額を入力してください（月額 × 12 と違うことがあります）。`,
   },
   sharing: {
+    positiveHint: "自分が払わないサブスクは登録しません。自分の負担は 0 より大きくしてください。",
     people: "共有人数",
     alone: "自分だけ（1 人）",
     by: (n) => `${n} 人で共有`,
@@ -736,6 +747,8 @@ export const vi: Widen<typeof ko> = {
     },
   },
   amount: {
+    positiveHint:
+      "Không thể nhập 0. Nếu đang dùng thử miễn phí, hãy nhập số tiền sẽ trả sau đó và ngày kết thúc bên dưới.",
     yearlyExTax: "Giá theo năm (chưa thuế)",
     monthlyExTax: "Giá theo tháng (chưa thuế)",
     yearly: "Số tiền trả mỗi năm",
@@ -774,6 +787,7 @@ export const vi: Widen<typeof ko> = {
       `${name ? `Danh sách không có giá theo năm của ${name}. ` : ""}Hãy nhập số tiền bạn trả cho cả năm (có thể khác giá tháng × 12).`,
   },
   sharing: {
+    positiveHint: "Không theo dõi gói bạn không trả tiền. Phần của bạn phải lớn hơn 0.",
     people: "Số người dùng chung",
     alone: "Chỉ mình tôi (1)",
     by: (n) => `${n} người dùng chung`,
@@ -896,6 +910,8 @@ export const fr: Widen<typeof ko> = {
     },
   },
   amount: {
+    positiveHint:
+      "Le montant doit être supérieur à 0. Pendant un essai gratuit, indiquez le prix à venir et la date de fin ci-dessous.",
     yearlyExTax: "Prix annuel (HT)",
     monthlyExTax: "Prix mensuel (HT)",
     yearly: "Paiement annuel",
@@ -937,6 +953,8 @@ export const fr: Widen<typeof ko> = {
       `${name ? `Le prix annuel de ${name} n'est pas dans la liste. ` : ""}Saisissez ce que vous payez pour l'année entière (cela peut différer du prix mensuel × 12).`,
   },
   sharing: {
+    positiveHint:
+      "Les abonnements que vous ne payez pas ne sont pas suivis. Votre part doit être supérieure à 0.",
     people: "Personnes qui partagent",
     alone: "Moi seul (1)",
     by: (n) => `Partagé à ${n}`,
@@ -1060,6 +1078,8 @@ export const es: Widen<typeof ko> = {
     },
   },
   amount: {
+    positiveHint:
+      "Debe ser mayor que 0. Si estás en una prueba gratuita, indica lo que pagarás después y la fecha de fin abajo.",
     yearlyExTax: "Precio anual (sin impuestos)",
     monthlyExTax: "Precio mensual (sin impuestos)",
     yearly: "Pago anual",
@@ -1101,6 +1121,7 @@ export const es: Widen<typeof ko> = {
       `${name ? `El precio anual de ${name} no está en la lista. ` : ""}Escribe lo que pagas por el año entero (puede diferir del precio mensual × 12).`,
   },
   sharing: {
+    positiveHint: "No se registran suscripciones que no pagas. Tu parte debe ser mayor que 0.",
     people: "Personas que comparten",
     alone: "Solo yo (1)",
     by: (n) => `Compartida entre ${n}`,
@@ -1224,6 +1245,8 @@ export const de: Widen<typeof ko> = {
     },
   },
   amount: {
+    positiveHint:
+      "Der Betrag muss größer als 0 sein. Im kostenlosen Test gib den späteren Preis und unten das Enddatum an.",
     yearlyExTax: "Jahrespreis (ohne Steuer)",
     monthlyExTax: "Monatspreis (ohne Steuer)",
     yearly: "Jahreszahlung",
@@ -1264,6 +1287,8 @@ export const de: Widen<typeof ko> = {
       `${name ? `Der Jahrespreis von ${name} ist nicht in der Liste. ` : ""}Gib ein, was du für das ganze Jahr zahlst (kann vom Monatspreis × 12 abweichen).`,
   },
   sharing: {
+    positiveHint:
+      "Abos, die du nicht bezahlst, werden nicht erfasst. Dein Anteil muss größer als 0 sein.",
     people: "Personen, die teilen",
     alone: "Nur ich (1)",
     by: (n) => `Geteilt zu ${n}`,
@@ -1387,6 +1412,8 @@ export const pt: Widen<typeof ko> = {
     },
   },
   amount: {
+    positiveHint:
+      "Precisa ser maior que 0. Em teste grátis, informe o valor que pagará depois e a data de término abaixo.",
     yearlyExTax: "Preço anual (sem impostos)",
     monthlyExTax: "Preço mensal (sem impostos)",
     yearly: "Pagamento anual",
@@ -1428,6 +1455,8 @@ export const pt: Widen<typeof ko> = {
       `${name ? `O preço anual de ${name} não está na lista. ` : ""}Informe quanto você paga pelo ano inteiro (pode ser diferente do preço mensal × 12).`,
   },
   sharing: {
+    positiveHint:
+      "Assinaturas que você não paga não são registradas. Sua parte precisa ser maior que 0.",
     people: "Pessoas que dividem",
     alone: "Só eu (1)",
     by: (n) => `Dividida por ${n}`,

@@ -35,13 +35,14 @@ export function AmountFields({
           id={`${idPrefix}-amount`}
           type="number"
           name="amount"
-          min="0"
+          min="0.01"
           step="any"
           placeholder={f.placeholder}
           value={formData.amount ?? ""}
           onChange={onChange}
           required
         />
+        <p className="text-[11px] text-muted-foreground break-keep">{f.positiveHint}</p>
       </div>
       <div className="space-y-1.5">
         <label htmlFor={`${idPrefix}-currency`} className={FIELD_LABEL}>

@@ -51,6 +51,10 @@ export const ko = {
     benefit: koMetric("benefit"),
     storage: koMetric("storage"),
   },
+  trial: {
+    button: "체험 중",
+    notice: "무료 체험 중에는 낸 돈이 없어 체크인하지 않아요. 체험이 끝나면 체크인할 수 있어요.",
+  },
   input: {
     surfaceScope: {
       days: "유튜브가 아니라 Gemini 같은 AI를 쓴 날만 세어 주세요.",
@@ -326,6 +330,11 @@ export const en: Widen<typeof ko> = {
       quantityLabel: "Share of plan storage used",
       perUnit: "",
     },
+  },
+  trial: {
+    button: "On trial",
+    notice:
+      "No check-in during a free trial because you haven't paid yet. You can check in once it ends.",
   },
   input: {
     surfaceScope: {
@@ -625,6 +634,7 @@ export const zh: Widen<typeof ko> = {
       perUnit: "",
     },
   },
+  trial: { button: "试用中", notice: "免费试用期间尚未付费，因此无需打卡。试用结束后即可打卡。" },
   input: {
     surfaceScope: {
       days: "只计算使用 Gemini 等 AI 的天数，不包括 YouTube。",
@@ -876,6 +886,10 @@ export const ja: Widen<typeof ko> = {
       quantityLabel: "プラン容量の使用率",
       perUnit: "",
     },
+  },
+  trial: {
+    button: "無料体験中",
+    notice: "無料体験中はまだ支払いがないのでチェックインしません。終了後にチェックインできます。",
   },
   input: {
     surfaceScope: {
@@ -1145,6 +1159,11 @@ export const vi: Widen<typeof ko> = {
       perUnit: "",
     },
   },
+  trial: {
+    button: "Đang dùng thử",
+    notice:
+      "Không cần check-in khi đang dùng thử vì bạn chưa trả tiền. Bạn có thể check-in sau khi kết thúc.",
+  },
   input: {
     surfaceScope: {
       days: "Chỉ tính những ngày dùng AI như Gemini, không tính YouTube.",
@@ -1413,6 +1432,11 @@ export const fr: Widen<typeof ko> = {
       quantityLabel: "Part du stockage utilisée",
       perUnit: "",
     },
+  },
+  trial: {
+    button: "Essai en cours",
+    notice:
+      "Pas de check-in pendant l'essai gratuit, car vous n'avez encore rien payé. Vous pourrez le faire à la fin.",
   },
   input: {
     surfaceScope: {
@@ -1705,6 +1729,11 @@ export const es: Widen<typeof ko> = {
       perUnit: "",
     },
   },
+  trial: {
+    button: "En prueba",
+    notice:
+      "No hay check-in durante la prueba gratuita porque aún no has pagado. Podrás hacerlo cuando termine.",
+  },
   input: {
     surfaceScope: {
       days: "Cuenta solo los días en que usaste una IA como Gemini, no YouTube.",
@@ -1983,6 +2012,11 @@ export const de: Widen<typeof ko> = {
       quantityLabel: "Genutzter Anteil am Speicher",
       perUnit: "",
     },
+  },
+  trial: {
+    button: "Im Test",
+    notice:
+      "Im kostenlosen Test gibt es keinen Check-in, weil du noch nichts bezahlt hast. Danach kannst du einchecken.",
   },
   input: {
     surfaceScope: {
@@ -2266,6 +2300,11 @@ export const pt: Widen<typeof ko> = {
       quantityLabel: "Parte do armazenamento usada",
       perUnit: "",
     },
+  },
+  trial: {
+    button: "Em teste",
+    notice:
+      "Não há check-in durante o teste grátis porque você ainda não pagou. Você poderá fazê-lo quando terminar.",
   },
   input: {
     surfaceScope: {

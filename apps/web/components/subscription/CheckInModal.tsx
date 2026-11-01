@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import {
+  isInTrial,
   Subscription,
   CheckInResponse,
   getCancelAndroidApp,
@@ -145,7 +146,15 @@ export function CheckInModal({
           </DialogTitle>
         </DialogHeader>
 
-        {!result ? (
+        {!result && isInTrial(subscription) ? (
+          // 어느 길로 들어와도 같다. 낸 돈이 없는 동안에는 단가를 매기지 않는다.
+          <div className="py-4 space-y-4 text-center">
+            <p className="text-sm text-muted-foreground break-keep">{c.trial.notice}</p>
+            <Button className="w-full" onClick={onClose}>
+              {c.modal.close}
+            </Button>
+          </div>
+        ) : !result ? (
           <div className="py-4 space-y-6">
             {!byUses ? (
               <>
