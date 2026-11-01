@@ -47,17 +47,22 @@ vi.mock("@capacitor/core", () => {
   };
 });
 
-vi.mock("../../lib/api", () => ({
-  apiFetch: async (url: string, init: { method?: string; body?: string } = {}) => {
+vi.mock("../../lib/api", () => {
+  const apiFetch = async (url: string, init: { method?: string; body?: string } = {}) => {
     const method = init.method ?? "GET";
     mocks.requests.push({ url, method, body: init.body ? JSON.parse(init.body) : null });
     if (method === "DELETE" && mocks.failDelete) {
       return new Response(JSON.stringify({ error: "잠시 뒤에" }), { status: 500 });
     }
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
-  },
-  readApiError: async (_: Response, fallback: string) => fallback,
-}));
+  };
+  return {
+    apiFetch,
+    apiPostJson: (url: string, body: unknown) =>
+      apiFetch(url, { method: "POST", body: JSON.stringify(body) }),
+    readApiError: async (_: Response, fallback: string) => fallback,
+  };
+});
 
 const ORIGINAL_TARGET = process.env.NEXT_PUBLIC_BUILD_TARGET;
 

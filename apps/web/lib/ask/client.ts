@@ -1,4 +1,4 @@
-import { apiFetch, readApiError } from "@lib/api";
+import { readApiError, apiPostJson } from "@lib/api";
 import {
   MAX_ASK_HISTORY,
   isContextTurn,
@@ -19,11 +19,10 @@ export async function askReport(
   history: readonly AskTurn[] = [],
 ): Promise<{ call: AskCall; remaining?: number }> {
   const recent = history.filter(isContextTurn).slice(-MAX_ASK_HISTORY);
-  const response = await apiFetch("/api/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(recent.length > 0 ? { question, history: recent } : { question }),
-  });
+  const response = await apiPostJson(
+    "/api/ask",
+    recent.length > 0 ? { question, history: recent } : { question },
+  );
   if (!response.ok) throw new Error(await readApiError(response, "지금은 답할 수 없어요."));
   const { call, remaining } = (await response.json()) as { call?: unknown; remaining?: unknown };
   return {

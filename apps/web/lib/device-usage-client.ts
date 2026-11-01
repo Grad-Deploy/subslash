@@ -1,7 +1,7 @@
 import { DAY_MS } from "@subslash/shared";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { apiFetch, readApiError } from "./api";
+import { apiFetch, readApiError, apiPostJson } from "./api";
 import { toHex } from "./bytes";
 import {
   isUsageGranted,
@@ -177,11 +177,7 @@ export async function uploadThisDevice(accountId: string): Promise<boolean> {
   const deviceKey = await settleDeviceKey(accountId);
   const upload = await collectUpload(Date.now(), deviceKey);
   if (!upload) return false;
-  const response = await apiFetch("/api/usage", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(upload),
-  });
+  const response = await apiPostJson("/api/usage", upload);
   if (!response.ok) throw new Error(await readApiError(response, "사용 기록을 올리지 못했습니다."));
   // 올리는 사이 측정을 껐거나 계정이 바뀌었으면 이어 잴 자리를 적지 않는다.
   if (isMeasuringFor(useDeviceUsage.getState(), accountId)) {

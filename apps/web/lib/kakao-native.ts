@@ -7,7 +7,7 @@
  * 화면은 예전처럼 인앱 브라우저로 한다.
  */
 import { androidPluginLoader } from "./android-plugin";
-import { apiFetch } from "./api";
+import { apiPostJson } from "./api";
 
 interface KakaoLoginPlugin {
   isAvailable(): Promise<{ available: boolean }>;
@@ -60,15 +60,11 @@ export async function kakaoNativeLogin(options: {
     return errorOf(code === "unavailable" ? "unavailable" : "provider");
   }
   try {
-    const res = await apiFetch("/api/auth/oauth/native", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        provider: "kakao",
-        accessToken,
-        over14: options.over14 === true,
-        link: options.link === true,
-      }),
+    const res = await apiPostJson("/api/auth/oauth/native", {
+      provider: "kakao",
+      accessToken,
+      over14: options.over14 === true,
+      link: options.link === true,
     });
     if (res.ok) return { status: "ok" };
     const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;

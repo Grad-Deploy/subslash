@@ -8,7 +8,7 @@ import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { confirmStatusOf, passwordStatusOf, type LiveStatus } from "@lib/signup-status";
 import { RESET_PASSWORD_TTL_MINUTES } from "@lib/verification-config";
-import { apiFetch, apiUrl } from "@lib/api";
+import { apiUrl, apiPostJson } from "@lib/api";
 import { HydratedForm } from "@components/ui/hydrated-form";
 import { StatusMessage, statusBorder } from "./LiveStatusMessage";
 import { Spinner } from "../ui/spinner";
@@ -104,11 +104,11 @@ export function ResetPassword() {
     setBusy(true);
     setSubmitErrors({});
     try {
-      const res = await apiFetch("/api/auth/password-reset/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // 비밀번호는 본문으로만 보낸다.
-        body: JSON.stringify({ token, password, passwordConfirm: confirm }),
+      // 비밀번호는 본문으로만 보낸다.
+      const res = await apiPostJson("/api/auth/password-reset/confirm", {
+        token,
+        password,
+        passwordConfirm: confirm,
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data?.status === "reset") {
