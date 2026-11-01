@@ -12,6 +12,8 @@ const DISMISSED_KEY = "subslash_app_start_dismissed";
 interface AppStartChecklistProps {
   hasSubscription: boolean;
   hasCheckIn: boolean;
+  /** 무료 체험 구독만 있어 체크인할 구독이 없다. 체험이 끝나면 이 단계가 돌아온다. */
+  checkInWaitsForTrial: boolean;
   remindersOn: boolean;
   onAdd: () => void;
   onCheckIn: () => void;
@@ -28,6 +30,7 @@ interface AppStartChecklistProps {
 export function AppStartChecklist({
   hasSubscription,
   hasCheckIn,
+  checkInWaitsForTrial,
   remindersOn,
   onAdd,
   onCheckIn,
@@ -46,13 +49,27 @@ export function AppStartChecklist({
   const [dismissed, dismiss] = useStoredFlag(dismissedKey, true);
   if (dismissed) return null;
 
-  const steps = [
+  const steps: {
+    key: string;
+    label: string;
+    done: boolean;
+    waiting?: boolean;
+    onGo: () => void;
+  }[] = [
     { key: "add", label: s.stepAdd, done: hasSubscription, onGo: onAdd },
-    { key: "check-in", label: s.stepCheckIn, done: hasCheckIn, onGo: onCheckIn },
+    {
+      key: "check-in",
+      label: checkInWaitsForTrial ? s.stepCheckInTrial : s.stepCheckIn,
+      done: hasCheckIn,
+      waiting: checkInWaitsForTrial && !hasCheckIn,
+      onGo: onCheckIn,
+    },
     { key: "reminders", label: s.stepReminders, done: remindersOn, onGo: onReminders },
   ];
-  const doneCount = steps.filter((s) => s.done).length;
-  const current = steps.findIndex((s) => !s.done);
+  // 기다리는 단계는 지금 할 일이 아니다. 세지 않고 다음 단계로 넘어간다.
+  const counted = steps.filter((s) => !s.waiting);
+  const doneCount = counted.filter((s) => s.done).length;
+  const current = steps.findIndex((s) => !s.done && !s.waiting);
   const allDone = current === -1;
 
   return (
@@ -61,7 +78,7 @@ export function AppStartChecklist({
         <p className="text-sm font-extrabold">
           {allDone ? s.done : s.label}
           <span className="ml-1 font-semibold text-muted-foreground">
-            {doneCount}/{steps.length}
+            {doneCount}/{counted.length}
           </span>
         </p>
         <button
@@ -77,7 +94,7 @@ export function AppStartChecklist({
       <div className="mt-2 mb-1.5 h-1 overflow-hidden rounded-full bg-secondary">
         <div
           className="h-full rounded-full bg-primary transition-[width] duration-500"
-          style={{ width: `${(doneCount / steps.length) * 100}%` }}
+          style={{ width: `${(doneCount / counted.length) * 100}%` }}
         />
       </div>
 
@@ -91,11 +108,12 @@ export function AppStartChecklist({
               <li key={step.key}>
                 <button
                   type="button"
-                  onClick={step.done ? undefined : step.onGo}
-                  disabled={step.done}
+                  onClick={step.done || step.waiting ? undefined : step.onGo}
+                  disabled={step.done || step.waiting}
                   className={cn(
                     "flex w-full items-center gap-2.5 py-1.5 text-left text-[13px]",
                     step.done && "text-muted-foreground line-through",
+                    step.waiting && "text-muted-foreground",
                     isNow && "font-bold",
                   )}
                 >

@@ -5,6 +5,7 @@ import {
   daysBetween,
   getDaysUntilBillingFor,
   getDaysUntilTrialEnd,
+  isInTrial,
   needsBillingMonth,
   parseTimestamp,
 } from "./date";
@@ -568,7 +569,8 @@ export function getNextBillingHint(
   let best: { name: string; daysUntilBilling: number } | null = null;
 
   for (const sub of subscriptions) {
-    if (sub.status !== "active") continue;
+    // 체험 중에는 결제일이 와도 나가는 돈이 없다. 체험이 끝나 가는 것은 `trial-ending`이 따로 말한다.
+    if (sub.status !== "active" || isInTrial(sub, now)) continue;
     const days = getDaysUntilBillingFor(sub, now);
     if (days === null || days < 0) continue;
     if (!best || days < best.daysUntilBilling) {

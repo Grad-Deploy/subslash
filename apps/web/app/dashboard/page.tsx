@@ -139,6 +139,7 @@ export default function Dashboard() {
   const queueProps = {
     items: queue,
     nextBilling,
+    trialOnly: activeSubs.length > 0 && !activeSubs.some((sub) => isPaying(sub)),
     activeCount: activeSubs.length,
     onCheckIn: handleOpenCheckIn,
     ...actions.handlers,
@@ -204,6 +205,9 @@ export default function Dashboard() {
             <AppStartChecklist
               hasSubscription={activeSubs.length > 0}
               hasCheckIn={usageLogs.length > 0}
+              checkInWaitsForTrial={
+                activeSubs.length > 0 && !activeSubs.some((sub) => isPaying(sub))
+              }
               remindersOn={reminder.remindersOn}
               onAdd={() => openAdd()}
               onCheckIn={() => {

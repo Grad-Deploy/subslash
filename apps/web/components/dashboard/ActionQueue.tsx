@@ -23,6 +23,8 @@ interface ActionQueueProps {
   items: ActionItem[];
   /** 큐가 비었을 때 보여줄 다음 결제. 결제일을 아는 구독이 없으면 null. */
   nextBilling: { name: string; daysUntilBilling: number } | null;
+  /** 구독이 모두 무료 체험 중이다. 다음 결제가 없는 것이지 결제일을 모르는 것이 아니다. */
+  trialOnly?: boolean;
   activeCount: number;
   onCheckIn: (subscriptionId: string) => void;
   onCancelGuide: (subscriptionId: string) => void;
@@ -64,6 +66,7 @@ const TONE: Partial<Record<ActionKind, string>> = {
 export function ActionQueue({
   items,
   nextBilling,
+  trialOnly = false,
   activeCount,
   onCheckIn,
   onCancelGuide,
@@ -122,7 +125,9 @@ export function ActionQueue({
         <p className="text-sm text-muted-foreground">
           {nextBilling
             ? q.nextBilling(nextBilling.name, formatDday(nextBilling.daysUntilBilling))
-            : q.noBillingKnown}
+            : trialOnly
+              ? q.trialOnly
+              : q.noBillingKnown}
         </p>
       </section>
     );
