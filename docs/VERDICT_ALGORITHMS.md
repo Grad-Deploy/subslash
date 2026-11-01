@@ -97,6 +97,7 @@ SubSlash는 구독 서비스의 특성에 따라 단순히 '금액'만으로 판
     $$\text{progressPercent} = \text{round}\left(\frac{\text{currentUsage}}{\text{breakEvenTarget}} \times 100\right)$$
   - **단계 구분**:
     - 기본 목표(`GOOD_AT.uses`)일 때 위험(`danger`) 경계는 `VERDICT_THRESHOLDS.uses.redBelow`(2회 미만, 4회 기준 50% 미만)에서 파생되며, `< 100%`는 `warning`(주의, 2~3회), `>= 100%`는 `safe`(목표 달성, 4회 이상)입니다.
+    - 비기본 목표에서 `getBreakEvenInfo`의 danger 경계는 50% 고정이 아니라 `redBelow` 기반(최대 100%)입니다.
     - **주의**: 이 게이지는 `uses` 지표 전용입니다. `days`(빨강: 2일 이하 = 목표 10일의 20%)나 `hours`(빨강: 2시간 미만 = 목표 10시간의 20%) 지표에 붙이면 `metricRiskLevel`의 빨강 구간과 게이지의 `danger` 단계가 어긋나므로 다른 지표에는 사용하지 않습니다.
 - **1회 이용당 비용 막대 (`getCostPerUseBarState`, `CostPerUseBar`)**:
   - **막대 길이 (`ratio`)**: 월 부담금 대비 1회 단가 비중(`Math.round((costPerUse / monthlyAmount) * 100)`)을 나타내며, 이용 횟수가 1회(100%) ➔ 2회(50%) ➔ 4회(25%) ➔ 10회(10%)로 늘수록 점진적으로 줄어듭니다 (`usageCount <= 0`이고 유료 구독이면 100%, `monthlyAmount <= 0`인 0원 부담 구독은 0%).
@@ -115,8 +116,6 @@ SubSlash는 구독 서비스의 특성에 따라 단순히 '금액'만으로 판
 - **0원 부담 구독 방어**:
   - 실부담금 0원(`hasMyShare === false`) 구독은 금전 손실 기반 해지 권유(`billing-soon-risky`, `low-usage-billing-soon`, `risky`) 대상에서 제외하되 체크인·해지 확인 등 비금전 액션은 유지합니다.
   - `stakeKRW <= 0`일 때 `amountAtStake`와 `stakeKRW`를 `null`로 두어 `billing-soon`, `trial-ending` 등에서 `"₩0이 곧 빠져나갑니다"`, `"₩0부터 결제가 시작됩니다"` 문구가 생성되지 않도록 방어합니다.
-
-- 비기본 목표에서 getBreakEvenInfo의 danger 경계는 50% 고정이 아니라 redBelow 기반(최대 100%)이다.
 
 ---
 

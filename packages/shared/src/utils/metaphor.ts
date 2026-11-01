@@ -143,7 +143,7 @@ export interface BreakEvenInfo {
  * @param breakEvenTarget '잘 씀'(달성, 100%) 기준 횟수 (기본값: `GOOD_AT.uses`)
  * @param dangerBelowPercent 위험(`danger`)으로 판정할 진행률(%) 상한. 생략하면 `breakEvenTarget` 값과 무관하게
  *   항상 `(VERDICT_THRESHOLDS.uses.redBelow / target) * 100`(`redBelow`회 미만) 규칙을 적용하며,
- *   호출자가 별도 비율(예: `50`)을 명시해 덮어쓸 수 있다.
+ *   호출자가 별도 비율(예: `50`)을 명시해 덮어쓸 수 있다. 최대 100으로 제한된다(100을 넘겨도 100으로 처리).
  *
  * @warning 이 게이지는 `uses`(횟수) 지표 전용이다. `days`(빨강: 2일 이하 = 목표 10일의 20%)나
  * `hours`(빨강: 2시간 미만 = 목표 10시간의 20%) 지표에 그대로 붙이면 위험(`danger`) 구간이
