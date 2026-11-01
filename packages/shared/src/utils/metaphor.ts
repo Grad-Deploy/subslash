@@ -132,11 +132,15 @@ export interface BreakEvenInfo {
 }
 
 /**
- * 이용 목표 도달 비율과 단계를 계산한다.
+ * 이용 목표 도달 비율과 단계를 계산한다 (`uses` 지표 전용).
  *
  * 기본 목표(`breakEvenTarget`)는 `GOOD_AT.uses`(4회, `getRiskLevel`의 초록 기준 — 1회 단가가 월 부담금의
- * 25% 이하가 되는 횟수)다. 단계는 이용 목표의 50% 미만 위험(`danger`)·100% 미만 주의(`warning`)·100% 이상
- * 달성(`safe`)이며, 4회 기준일 때 횟수마다 `getRiskLevel`과 일치한다(1회 이하 빨강, 2~3회 노랑, 4회 이상 초록).
+ * `1 / GOOD_AT.uses` 이하가 되는 횟수)다. 단계는 위험(`danger`)·주의(`warning`)·달성(`safe`)으로 나뉘며,
+ * `GOOD_AT.uses` 기준일 때 모든 횟수에서 `getRiskLevel`과 일치한다(2회 미만 빨강, 2~3회 노랑, 4회 이상 초록).
+ *
+ * @warning 이 게이지는 `uses`(횟수) 지표 전용이다. `days`(빨강: 2일 이하 = 목표 10일의 20%)나
+ * `hours`(빨강: 2시간 미만 = 목표 10시간의 20%) 지표에 그대로 붙이면 위험(`danger`) 구간이
+ * `metricRiskLevel`의 빨강 판정과 어긋나므로 다른 지표에는 사용하지 않는다.
  */
 export function getBreakEvenInfo(
   _amount: number,
