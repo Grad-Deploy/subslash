@@ -179,9 +179,9 @@ describe("getCheckInEvidence", () => {
     expect(evidence.change?.usage).toBe(10);
   });
 
-  it("benefit 지표 기록도 costPerUse × usageCount로 원화 월 회비를 복원해 요금 변경 여부를 일관되게 판정한다", () => {
-    const first = evaluateMetric("benefit", "해외 멤버십", 10, 5000, "USD");
-    const second = evaluateMetric("benefit", "해외 멤버십", 10, 15000, "USD");
+  it("benefit 지표 기록도 costPerUse × usageCount로 월 회비를 복원해 요금 변경 여부를 일관되게 판정한다", () => {
+    const first = evaluateMetric("benefit", "쿠팡 와우", 7890, 5000, "KRW");
+    const second = evaluateMetric("benefit", "쿠팡 와우", 7890, 15000, "KRW");
     const evidence = getCheckInEvidence([
       log({
         id: "b1",

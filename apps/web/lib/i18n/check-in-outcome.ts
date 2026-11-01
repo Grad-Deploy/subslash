@@ -4,7 +4,6 @@ import {
   formatAmount,
   formatCurrency,
   formatKRW,
-  toKRW,
   type BreakEvenInfo,
   type CheckInOutcome,
   type UsageMetaphor,
@@ -52,11 +51,10 @@ export function describeCheckInOutcome(t: Messages, outcome: CheckInOutcome): st
           : o.hoursSome(name, money(monthly / quantity));
       case "benefit": {
         const benefitMoney = formatCurrency(quantity, "KRW");
-        const monthlyKRW = toKRW(monthly, currency);
-        if (monthlyKRW <= 0) {
+        if (!hasCost) {
           return `${name} · ${t.value.checkIn.benefit(benefitMoney)}`;
         }
-        return quantity >= monthlyKRW
+        return quantity >= monthly
           ? o.benefitOver(money(monthly), benefitMoney)
           : o.benefitUnder(money(monthly), benefitMoney);
       }

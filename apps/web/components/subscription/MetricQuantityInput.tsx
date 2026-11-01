@@ -11,7 +11,6 @@ import {
   getMyMonthlyShareAmount,
   storagePlanFit,
   asksFreeTier,
-  toKRW,
   DAY_MS,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
@@ -60,13 +59,12 @@ export function MetricQuantityInput({
   const quantity = value ?? 0;
   const step = metric === "benefit" ? 1000 : 1;
   const monthly = getMyMonthlyShareAmount(subscription);
-  const effectiveMonthly = metric === "benefit" ? toKRW(monthly, subscription.currency) : monthly;
   const unitCost =
     value === null
       ? null
       : unitCostText(
           t,
-          unitCostPart(metric, calculateCostPerUse(effectiveMonthly, quantity), quantity),
+          unitCostPart(metric, calculateCostPerUse(monthly, quantity), quantity),
           subscription.currency,
         );
   // 저장 공간: 요금제를 알면 비율을 용량으로 바꿔 옆에 보여 준다. 설정 화면에는 GB로 나오기 때문이다.

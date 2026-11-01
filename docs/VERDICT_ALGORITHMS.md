@@ -22,7 +22,7 @@ SubSlash는 구독 서비스의 특성에 따라 단순히 '금액'만으로 판
     - 무료·0원 부담 구독(`amount <= 0`): `usageCount >= GOOD_AT.uses` (4회 이상)
   - 🟡 **주의 (Yellow)**: 그 사이의 구간 (정수 기준 2~3회 이용 구간)
 - **0원·가족 공유 0원 부담 구독 경계 및 문구 분리 원칙**:
-  - 빨강 경계를 `usageCount <= 1`이 아닌 `usageCount < 2`로 통일해, 폰 사용 기록 환산(`opensPer30`) 같은 소수 횟수(예: `1.5회`)에서도 유료 구독과 0원 부담 구독이 항상 같은 색(`red`)을 반환합니다(정수 입력 결과는 `0~1 red`, `2~3 yellow`, `4+ green`으로 동일).
+  - 기존에는 `amount <= 0`일 때 `costPerUse(0) <= amount(0) * 0.25`가 항상 참이어서 `1회 초과`(`1.5회`, `2~3회` 포함)가 모두 `green`으로 판정되었습니다. 이를 고쳐 `amount <= 0`일 때는 `usageCount >= GOOD_AT.uses`(4회)일 때만 `green`이 되도록 하고, 빨강 경계를 `usageCount < 2`로 통일해 유료 구독과 0원 부담 구독이 모든 정수·소수 입력에서 항상 같은 색(`0~1.9회 red`, `2~3.9회 yellow`, `4회 이상 green`)을 반환합니다.
   - 과거 `getRiskLevel`에 남아 있던 `usageCount >= 8` 레거시 분기는 삭제하고 `GOOD_AT.uses`에서 파생된 단일 기준만 사용합니다.
   - `monthly <= 0`일 때는 `describeCheckInOutcome`, `describeUsageMetaphor`, `AppCheckInResult`, `CostEfficiencyGauge`에서 `"₩0을 아껴요"`, `"₩0을 냈어요"` 같은 금전 손실·절약 문구와 해지 안내 CTA를 제안하지 않고 이용 목표까지 남은 횟수만 안내합니다.
 - **기본 원리**: 30일 동안 최소 주 1회(한 달 4회) 이상 시청하면 1회당 단가가 월 요금의 1/4 이하로 내려가 "충분히 돈값을 했다"고 판단합니다.
@@ -121,4 +121,4 @@ SubSlash는 구독 서비스의 특성에 따라 단순히 '금액'만으로 판
 
 - **`GOOD_AT` 불변 타입 전환**: 현재 `GOOD_AT`는 동적 변경 일관성 테스트(`GOOD_AT.uses = 5`)를 위해 변경 가능한 객체(`Record<..., number>`)로 선언되어 있습니다. 추후 `Readonly`로 잠그고 테스트에서는 `vi.spyOn` 또는 테스트 전용 헬퍼를 사용하는 방향을 검토합니다.
 - **`storagePlan.ts`의 `HEADROOM(0.8)` 위치 정리**: 하위 요금제 추천 여유율 상수(`HEADROOM = 0.8`)를 `VERDICT_THRESHOLDS`로 통합할지, 요금제 용량 계산 전용 상수로 분리 유지할지 결정합니다.
-- **`metricRiskLevel` 인자 구조 개선**: 현재 7개의 위치 인자를 받으므로, 추후 시그니처 변경 시 선택 인자(`storageFit`, `freeTier`, `apiValueRatio`)를 옵션 객체로 묶는 리팩토링을 고려합니다.
+- **`metricRiskLevel` 인자 구조 개선**: 현재 6개의 위치 인자를 받으므로, 추후 시그니처 변경 시 선택 인자(`storageFit`, `freeTier`, `apiValueRatio`)를 옵션 객체로 묶는 리팩토링을 고려합니다.
