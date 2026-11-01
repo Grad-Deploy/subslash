@@ -33,6 +33,8 @@ export interface UsageMetaphor {
   currency: Currency;
   /** 한 달치 내 몫을 원으로 바꾼 값. */
   amountKRW: number;
+  /** 체크인에 적은 이용 횟수. */
+  usageCount: number;
 }
 
 /** 일상 소비재 기준표 — 가장 가까운 것 하나를 고른다. */
@@ -91,7 +93,7 @@ export function getUsageMetaphor(
   const count = costPerUse / best.price;
 
   const cost = calculateCostPerUse(amount, usageCount);
-  const base = { serviceName, currency, cost, amountKRW };
+  const base = { serviceName, currency, cost, amountKRW, usageCount };
 
   if (usageCount === 0) {
     const total = pickMetaphorItem(amountKRW);

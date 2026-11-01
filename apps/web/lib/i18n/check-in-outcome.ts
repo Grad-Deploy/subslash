@@ -92,22 +92,24 @@ export function describeUsageMetaphor(
 ): { comparison: string; message: string } {
   if (metaphor.amountKRW <= 0) {
     const r = t.checkin.appResult;
+    // 폰 기록으로 환산한 소수 횟수(1.5회)도 있어 남은 횟수는 올림한다.
+    const remaining = Math.max(0, Math.ceil(GOOD_AT.uses - metaphor.usageCount));
     if (metaphor.kind === "unused") {
       return {
         comparison: r.toBreakEven,
-        message: `${t.checkin.outcome.hoursNone(metaphor.serviceName, null)} ${r.remainingNote(GOOD_AT.uses)}`,
+        message: `${t.checkin.outcome.hoursNone(metaphor.serviceName, null)} ${r.remainingNote(remaining)}`,
       };
     }
     if (metaphor.kind === "movie" || metaphor.kind === "once") {
       return {
         comparison: r.toBreakEven,
-        message: `${t.value.checkIn.uses(1)} · ${r.remainingNote(GOOD_AT.uses - 1)}`,
+        message: `${t.value.checkIn.uses(metaphor.usageCount)} · ${r.remainingNote(remaining)}`,
       };
     }
     if (metaphor.kind === "warning") {
       return {
         comparison: r.toBreakEven,
-        message: r.remainingNote(1),
+        message: r.remainingNote(remaining),
       };
     }
     return {

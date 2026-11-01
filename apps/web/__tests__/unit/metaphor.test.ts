@@ -25,6 +25,18 @@ const metaphor = (...args: Parameters<typeof getUsageMetaphor>) => {
 
 describe("Metaphor and Value Calculation Utils", () => {
   describe("getUsageMetaphor", () => {
+    it("0원 구독의 안내는 실제로 남은 횟수를 말한다", () => {
+      const note = messages.ko.checkin.appResult.remainingNote;
+      const message = (count: number) =>
+        describeUsageMetaphor(messages.ko, getUsageMetaphor(0, "KRW", count, "Netflix", RATE))
+          .message;
+      expect(message(0)).toContain(note(4));
+      expect(message(1)).toContain(note(3));
+      expect(message(1.5)).toContain(note(3));
+      expect(message(2)).toBe(note(2));
+      expect(message(3)).toBe(note(1));
+    });
+
     it("0회 사용 시 쉬어가기 추천 메타포 반환", () => {
       const result = metaphor(17000, "KRW", 0, "넷플릭스", RATE);
       expect(result.tone).toBe("danger");
