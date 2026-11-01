@@ -136,7 +136,14 @@ export interface BreakEvenInfo {
  *
  * 기본 목표(`breakEvenTarget`)는 `GOOD_AT.uses`(4회, `getRiskLevel`의 초록 기준 — 1회 단가가 월 부담금의
  * `1 / GOOD_AT.uses` 이하가 되는 횟수)다. 단계는 위험(`danger`)·주의(`warning`)·달성(`safe`)으로 나뉘며,
- * `GOOD_AT.uses` 기준일 때 모든 횟수에서 `getRiskLevel`과 일치한다(2회 미만 빨강, 2~3회 노랑, 4회 이상 초록).
+ * 기본 호출일 때 모든 횟수에서 `getRiskLevel`과 일치한다(2회 미만 빨강, 2~3회 노랑, 4회 이상 초록).
+ *
+ * @param _amount 한 달 내 몫 금액(호출부 시그니처 호환용)
+ * @param usageCount 현재 이용 횟수
+ * @param breakEvenTarget '잘 씀'(달성, 100%) 기준 횟수 (기본값: `GOOD_AT.uses`)
+ * @param dangerBelowPercent 위험(`danger`)으로 판정할 진행률(%) 상한. 생략하면 `breakEvenTarget` 값과 무관하게
+ *   항상 `(VERDICT_THRESHOLDS.uses.redBelow / target) * 100`(`redBelow`회 미만) 규칙을 적용하며,
+ *   호출자가 별도 비율(예: `50`)을 명시해 덮어쓸 수 있다.
  *
  * @warning 이 게이지는 `uses`(횟수) 지표 전용이다. `days`(빨강: 2일 이하 = 목표 10일의 20%)나
  * `hours`(빨강: 2시간 미만 = 목표 10시간의 20%) 지표에 그대로 붙이면 위험(`danger`) 구간이
@@ -146,13 +153,12 @@ export function getBreakEvenInfo(
   _amount: number,
   usageCount: number,
   breakEvenTarget: number = GOOD_AT.uses,
+  dangerBelowPercent?: number,
 ): BreakEvenInfo {
   const target = Math.max(1, breakEvenTarget);
   const progress = target > 0 ? (usageCount / target) * 100 : 0;
-  // 기본 목표(GOOD_AT.uses)일 때는 위험(danger) 경계를 VERDICT_THRESHOLDS.uses.redBelow(2회 미만)와 일치시켜
-  // GOOD_AT.uses가 바뀌더라도 getRiskLevel과 단계가 어긋나지 않게 한다. 사용자 지정 목표일 때는 50% 미만으로 판정한다.
   const dangerThresholdPercent =
-    target === GOOD_AT.uses ? (VERDICT_THRESHOLDS.uses.redBelow / target) * 100 : 50;
+    dangerBelowPercent ?? (VERDICT_THRESHOLDS.uses.redBelow / target) * 100;
 
   let level: BreakEvenInfo["level"];
   if (progress < dangerThresholdPercent) level = "danger";
