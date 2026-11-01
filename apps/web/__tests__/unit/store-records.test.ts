@@ -133,6 +133,17 @@ describe("구독 기록 규칙(lib/store/records)", () => {
         counts: [0, 20, 30, 80],
         expected: ["red", "yellow", "green", "green"],
       },
+      {
+        // 앱·웹에서 지표가 다른 결합 상품(구글 AI 프로 + 유튜브 프리미엄)도 현재 화면 기준(currentMetricFor)으로 프리뷰와 저장 결과가 일치한다.
+        sub: {
+          ...base,
+          name: "유독 구글 AI 프로 + 유튜브 프리미엄",
+          amount: 29000,
+          category: "ai",
+        },
+        counts: [0, 2, 5, 10],
+        expected: ["red", "red", "yellow", "green"],
+      },
     ];
 
     for (const { sub, counts, expected } of cases) {
