@@ -11,6 +11,8 @@ export const ko = {
     range: { week: "1주", month: "1달", year: "1년" },
     rangeLabel: "기간",
     level: { red: "비쌈", yellow: "애매", green: "잘 씀" },
+    checkInBasis: "최근 체크인 기준",
+    checkInBasisNote: "앱과 웹에서 재는 것이 다른 구독의 색은 최근 체크인 기준이에요.",
     per: { uses: "1회당", days: "하루당", hours: "시간당" },
     /** '잘 씀' 기준·잰 양: '4회' · '10일' · '10시간'. */
     goal: {
@@ -93,6 +95,9 @@ export const en: Widen<typeof ko> = {
     range: { week: "1 week", month: "1 month", year: "1 year" },
     rangeLabel: "Period",
     level: { red: "Pricey", yellow: "So-so", green: "Good value" },
+    checkInBasis: "Latest check-in:",
+    checkInBasisNote:
+      "For subscriptions measured differently in the app and on the web, the color follows the latest check-in.",
     per: { uses: "per use", days: "per day", hours: "per hour" },
     goal: {
       uses: (n) => countOf(n, "use"),
@@ -183,6 +188,8 @@ export const zh: Widen<typeof ko> = {
     range: { week: "1 周", month: "1 个月", year: "1 年" },
     rangeLabel: "期间",
     level: { red: "不划算", yellow: "一般", green: "划算" },
+    checkInBasis: "最近一次打卡：",
+    checkInBasisNote: "在应用和网页上衡量方式不同的订阅，颜色以最近一次打卡为准。",
     per: { uses: "每次", days: "每天", hours: "每小时" },
     goal: { uses: (n) => `${n} 次`, days: (n) => `${n} 天`, hours: (n) => `${n} 小时` },
     month: (m) => `${Number(m)}月`,
@@ -257,6 +264,9 @@ export const ja: Widen<typeof ko> = {
     range: { week: "1 週間", month: "1 か月", year: "1 年" },
     rangeLabel: "期間",
     level: { red: "割高", yellow: "まあまあ", green: "お得" },
+    checkInBasis: "最新のチェックイン：",
+    checkInBasisNote:
+      "アプリとウェブで測り方が異なるサブスクの色は、最新のチェックインに基づきます。",
     per: { uses: "1 回あたり", days: "1 日あたり", hours: "1 時間あたり" },
     goal: { uses: (n) => `${n} 回`, days: (n) => `${n} 日`, hours: (n) => `${n} 時間` },
     month: (m) => `${Number(m)}月`,
@@ -336,6 +346,8 @@ export const vi: Widen<typeof ko> = {
     range: { week: "1 tuần", month: "1 tháng", year: "1 năm" },
     rangeLabel: "Khoảng thời gian",
     level: { red: "Đắt", yellow: "Tạm được", green: "Đáng tiền" },
+    checkInBasis: "Lần check-in gần nhất:",
+    checkInBasisNote: "Với gói đo khác nhau trên ứng dụng và web, màu theo lần check-in gần nhất.",
     per: { uses: "mỗi lần", days: "mỗi ngày", hours: "mỗi giờ" },
     goal: { uses: (n) => `${n} lần`, days: (n) => `${n} ngày`, hours: (n) => `${n} giờ` },
     month: (m) => `T${Number(m)}`,
@@ -416,6 +428,9 @@ export const fr: Widen<typeof ko> = {
     range: { week: "1 semaine", month: "1 mois", year: "1 an" },
     rangeLabel: "Période",
     level: { red: "Cher", yellow: "Moyen", green: "Rentable" },
+    checkInBasis: "Dernier check-in :",
+    checkInBasisNote:
+      "Pour les abonnements mesurés différemment dans l'appli et sur le web, la couleur suit le dernier check-in.",
     per: { uses: "par utilisation", days: "par jour", hours: "par heure" },
     goal: {
       uses: (n) => `${n} utilisation${uaPl(n, "", "s")}`,
@@ -505,6 +520,9 @@ export const es: Widen<typeof ko> = {
     range: { week: "1 semana", month: "1 mes", year: "1 año" },
     rangeLabel: "Periodo",
     level: { red: "Caro", yellow: "Regular", green: "Vale la pena" },
+    checkInBasis: "Último check-in:",
+    checkInBasisNote:
+      "En las suscripciones que se miden distinto en la app y en la web, el color sigue el último check-in.",
     per: { uses: "por uso", days: "por día", hours: "por hora" },
     goal: {
       uses: (n) => `${n} uso${uaPl(n, "", "s")}`,
@@ -594,6 +612,9 @@ export const de: Widen<typeof ko> = {
     range: { week: "1 Woche", month: "1 Monat", year: "1 Jahr" },
     rangeLabel: "Zeitraum",
     level: { red: "Teuer", yellow: "Mittel", green: "Lohnt sich" },
+    checkInBasis: "Letzter Check-in:",
+    checkInBasisNote:
+      "Bei Abos, die in der App und im Web unterschiedlich gemessen werden, richtet sich die Farbe nach dem letzten Check-in.",
     per: { uses: "pro Nutzung", days: "pro Tag", hours: "pro Stunde" },
     goal: {
       uses: (n) => `${n} ${uaPl(n, "Nutzung", "Nutzungen")}`,
@@ -681,6 +702,9 @@ export const pt: Widen<typeof ko> = {
     range: { week: "1 semana", month: "1 mês", year: "1 ano" },
     rangeLabel: "Período",
     level: { red: "Caro", yellow: "Mais ou menos", green: "Vale a pena" },
+    checkInBasis: "Último check-in:",
+    checkInBasisNote:
+      "Nas assinaturas medidas de forma diferente no app e na web, a cor segue o último check-in.",
     per: { uses: "por uso", days: "por dia", hours: "por hora" },
     goal: {
       uses: (n) => `${n} uso${uaPl(n, "", "s")}`,

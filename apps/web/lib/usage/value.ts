@@ -6,13 +6,16 @@ import {
   asksFreeTier,
   getMyMonthlyAmountKRW,
   getRiskLevel,
+  hasSurfaceMetrics,
   metricRiskLevel,
   type RiskLevel,
   type Subscription,
+  type UsageLog,
   type ValueMetric,
   HOUR_MS,
 } from "@subslash/shared";
 import { lastDays, totalsFor, type UsageHistory, type UsageTotals } from "./history";
+import { latestFreshLogFor } from "../checkins";
 import { packagesFor } from "./packages";
 
 export type UsageRange = "week" | "month" | "year";
@@ -203,6 +206,24 @@ export interface MetricView {
   pendingDays: number;
   /** 평가. 기록이 VERDICT_DAYS가 안 되면 null(보류) — 이미 '잘 씀'을 채웠으면 그때부터 초록. */
   level: RiskLevel | null;
+  /** 평가가 폰 기록이 아니라 최근 체크인에서 왔다(`withLatestCheckIn`). 화면이 그렇게 밝힌다. */
+  fromCheckIn?: boolean;
+}
+
+/**
+ * 앱·웹에서 재는 것이 다른 구독(`hasSurfaceMetrics`)의 평가는 어느 쪽에서 했든 최근 체크인이다. 폰 기록의 양은 그대로
+ * 보이고 평가만 바꾼다 — 화면마다 폰 기록과 체크인으로 따로 매기면 대시보드는 '돈값을 못 한다', 구독 상세는 '잘 씀'이라고
+ * 말하게 된다. 체크인이 없거나 오래됐으면 폰 기록의 평가 그대로다.
+ */
+export function withLatestCheckIn(
+  view: MetricView,
+  sub: Subscription,
+  usageLogs: UsageLog[],
+  now: Date,
+): MetricView {
+  if (!hasSurfaceMetrics(sub)) return view;
+  const log = latestFreshLogFor(usageLogs, sub, now);
+  return log ? { ...view, level: log.riskLevel, pendingDays: 0, fromCheckIn: true } : view;
 }
 
 export function metricView(usage: SubUsage, metric: ValueMetric): MetricView {

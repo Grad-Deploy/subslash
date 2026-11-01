@@ -14,9 +14,10 @@ import { latestFreshLogFor } from "@lib/checkins";
 import { matchPcUsageSubscription, pcUsageServiceFor } from "@lib/pc-usage";
 import { planAutoCheckIns } from "@lib/usage/auto-checkin";
 import { lastDays, type UsageHistory } from "@lib/usage/history";
+import { withLatestCheckIn, type MetricView } from "@lib/usage/value";
 import { buildCheckInBars } from "../../components/report/valueRows";
 import { findDuplicateSubscription } from "@lib/duplicate-subscription";
-import { packagesFor } from "@lib/usage/packages";
+import { packageBreakdown, packagesFor } from "@lib/usage/packages";
 import { planDiscoveries, type GmailDiscovery } from "@lib/gmail-auto-client";
 
 function sub(overrides: Partial<Subscription>): Subscription {
@@ -135,6 +136,29 @@ describe("결합 상품", () => {
     });
   });
 
+  it("폰 기록의 평가보다 최근 체크인을 따른다", () => {
+    const bundle = { ...presetNamed("uplus-google-ai-youtube"), id: "b" };
+    const now = new Date("2026-06-20T00:00:00.000Z");
+    const view = { metric: "hours", level: "green", pendingDays: 0 } as MetricView;
+    const red = {
+      id: "w",
+      subscriptionId: "b",
+      usageCount: 1,
+      costPerUse: 29000,
+      riskLevel: "red",
+      metric: "days",
+      checkedAt: "2026-06-19T00:00:00.000Z",
+    } as UsageLog;
+    expect(withLatestCheckIn(view, bundle, [red], now)).toMatchObject({
+      level: "red",
+      fromCheckIn: true,
+    });
+    // 체크인이 없으면 폰 기록, 다른 구독은 지금처럼 폰 기록이다.
+    expect(withLatestCheckIn(view, bundle, [], now)).toBe(view);
+    const netflix = { ...presetNamed("naver-plus-netflix"), id: "b" };
+    expect(withLatestCheckIn(view, netflix, [{ ...red, metric: "uses" }], now)).toBe(view);
+  });
+
   it("웹에서 체크인한 지 30일 안이면 폰 기록으로 덮지 않는다", () => {
     const bundle = { ...presetNamed("uplus-google-ai-youtube"), id: "b", amount: 29000 };
     const now = new Date(2026, 5, 30, 12);
@@ -175,6 +199,13 @@ describe("결합 상품", () => {
     expect(metricForSubscription(presetNamed("naver-plus-spotify"))).toBe("hours");
     // 스포티파이가 없는 넷플릭스 결합은 넷플릭스 단독과 같이 횟수다.
     expect(metricForSubscription(presetNamed("naver-plus-netflix"))).toBe("uses");
+  });
+
+  it("앱이 여럿이면 패키지 이름이 아니라 서비스 이름으로 보인다", () => {
+    const apps = ["com.netflix.mediaclient", "com.spotify.music"];
+    const labels = (locale?: "en") => packageBreakdown(apps, {}, locale).map((row) => row.label);
+    expect(labels()).toEqual(["넷플릭스", "스포티파이"]);
+    expect(labels("en")).toEqual(["Netflix", "Spotify"]);
   });
 
   it("결합 상품에 든 서비스를 따로도 내고 있으면 알린다", () => {

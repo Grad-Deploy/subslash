@@ -20,6 +20,8 @@ export interface ChartBar {
   usedMs: number;
   /** 가성비. 평가 전이면 null. */
   level: RiskLevel | null;
+  /** 평가가 폰 기록이 아니라 최근 체크인에서 왔다(앱·웹에서 재는 것이 다른 구독). */
+  fromCheckIn: boolean;
 }
 
 /** 막대로 그리지 않은 구독 수. 이유마다 화면에 하는 말이 다르다. */
@@ -61,13 +63,13 @@ export function usageChartBars(
         ? { ...usage, totals: { ...usage.totals, coveredDays: 30 } }
         : usage;
     const measuredLevel = metricView(judged, metricForSubscription(sub, "app")).level;
+    const checkInLevel = hasSurfaceMetrics(sub) ? (fallback?.(sub) ?? null) : null;
     bars.push({
       sub,
       usedMs: usage.totals.usedMs,
       // 앱·웹에서 재는 것이 다른 구독은 어느 쪽에서 했든 최근 체크인이 판단이다.
-      level: hasSurfaceMetrics(sub)
-        ? (fallback?.(sub) ?? measuredLevel ?? null)
-        : (measuredLevel ?? fallback?.(sub) ?? null),
+      level: checkInLevel ?? measuredLevel ?? fallback?.(sub) ?? null,
+      fromCheckIn: checkInLevel !== null,
     });
   }
   bars.sort((a, b) => b.usedMs - a.usedMs);

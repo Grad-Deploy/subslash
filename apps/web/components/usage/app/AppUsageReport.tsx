@@ -7,6 +7,7 @@ import { metricForSubscription, type Subscription } from "@subslash/shared";
 import { cn } from "@lib/utils";
 import { subscriptionDetailHref } from "@lib/routes";
 import { useExchangeRate } from "@hooks/useExchangeRate";
+import { useStore } from "@lib/store";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import { firstRecordedDay } from "@lib/usage/history";
 import { useLocale, useT } from "@lib/i18n";
@@ -16,6 +17,7 @@ import {
   RANGE_DAYS,
   compareValue,
   metricView,
+  withLatestCheckIn,
   rangeDates,
   subUsage,
   type UsageRange,
@@ -63,6 +65,7 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
   const r = u.report;
   const rate = useExchangeRate();
   const { status, history, installed } = usePhoneUsage();
+  const usageLogs = useStore((state) => state.usageLogs);
   const [range, setRange] = useState<UsageRange>("month");
   const [sort, setSort] = useState<SortKey>("value");
   const [accessOpen, setAccessOpen] = useState(false);
@@ -83,12 +86,17 @@ export function AppUsageReport({ active }: { active: Subscription[] }) {
           month,
           view:
             month.state === "measured"
-              ? metricView(month, metricForSubscription(sub, "app"))
+              ? withLatestCheckIn(
+                  metricView(month, metricForSubscription(sub, "app")),
+                  sub,
+                  usageLogs,
+                  now,
+                )
               : null,
         };
       })
       .sort(compare(sort));
-  }, [mapped, history, installed, range, sort, rate, now]);
+  }, [mapped, history, installed, range, sort, rate, now, usageLogs]);
   const usages = useMemo(() => lines.map((line) => line.period), [lines]);
 
   const months = useMemo(() => {

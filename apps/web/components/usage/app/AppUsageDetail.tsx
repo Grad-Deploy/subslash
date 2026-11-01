@@ -7,6 +7,7 @@ import { cn } from "@lib/utils";
 import { useLocale, useT, type Messages } from "@lib/i18n";
 import { formatDurationPreciseText, formatDurationText } from "@lib/i18n/duration";
 import { useExchangeRate } from "@hooks/useExchangeRate";
+import { useStore } from "@lib/store";
 import { usePhoneUsage } from "@hooks/usePhoneUsage";
 import { lastDays, totalsFor, type UsageHistory } from "@lib/usage/history";
 import { packageBreakdown, packagesFor } from "@lib/usage/packages";
@@ -14,6 +15,7 @@ import {
   LEVEL_STYLE,
   RANGE_DAYS,
   metricView,
+  withLatestCheckIn,
   subUsage,
   type MetricView,
   type SubUsage,
@@ -54,6 +56,7 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
   const u = t.usageApp;
   const locale = useLocale();
   const rate = useExchangeRate();
+  const usageLogs = useStore((state) => state.usageLogs);
   const { status, history, installed } = usePhoneUsage();
   const [range, setRange] = useState<UsageRange>("week");
   const [accessOpen, setAccessOpen] = useState(false);
@@ -136,7 +139,12 @@ export function AppUsageDetail({ subscription }: { subscription: Subscription })
 
           {month.state === "measured" && (
             <ValueTiles
-              view={metricView(month, metricForSubscription(subscription, "app"))}
+              view={withLatestCheckIn(
+                metricView(month, metricForSubscription(subscription, "app")),
+                subscription,
+                usageLogs,
+                now,
+              )}
               usage={month}
             />
           )}
@@ -191,7 +199,10 @@ function ValueTiles({ view, usage }: { view: MetricView; usage: SubUsage }) {
                     ? d.noneDays(days)
                     : d.noneHours(days)
                 : measured}
-            {view.level && !view.short && view.unitKRW !== null && ` · ${u.level[view.level]}`}
+            {view.level &&
+              (view.fromCheckIn
+                ? ` · ${u.checkInBasis} ${u.level[view.level]}`
+                : !view.short && view.unitKRW !== null && ` · ${u.level[view.level]}`)}
             {view.pendingDays > 0 && ` · ${u.pending(view.pendingDays)}`}
           </p>
         </div>

@@ -38,7 +38,10 @@ function verdictOf(
   }
   if (unused) return { text: u.unused, className: LEVEL_STYLE.red.text };
   const level = view.level ?? "red";
-  return { text: u.level[level], className: LEVEL_STYLE[level].text };
+  return {
+    text: view.fromCheckIn ? `${u.checkInBasis} ${u.level[level]}` : u.level[level],
+    className: LEVEL_STYLE[level].text,
+  };
 }
 
 /** '6일 사용' · '4회' · '2시간 10분' — 가성비 지표로 잰 양. */
@@ -86,7 +89,8 @@ export function UsageLine({
     );
   }
 
-  const unused = isUnused(month);
+  // 최근 체크인으로 평가한 구독은 이 폰에서 안 썼어도 '안 씀'이라고 하지 않는다(웹에서 잰 AI 사용일 수 있다).
+  const unused = isUnused(month) && !view.fromCheckIn;
   const verdict = verdictOf(t, view, unused, month.totals.coveredDays);
   const barColor =
     view.pendingDays > 0 || !view.level

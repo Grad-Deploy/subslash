@@ -139,6 +139,7 @@ export function UsageTimeChart({
         {month && partial && ` ${c.partialMonth}`}
         {excluded.unmeasured > 0 && ` ${c.excluded(excluded.unmeasured)}`}{" "}
         {t.usageApp.report.tvMissing}
+        {bars.some((bar) => bar.fromCheckIn) && ` ${t.usageApp.checkInBasisNote}`}
         {excluded.unmapped > 0 && t.usageApp.report.unmapped(excluded.unmapped)}
       </p>
 
