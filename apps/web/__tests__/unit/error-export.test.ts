@@ -17,7 +17,7 @@ describe("redactSecrets", () => {
     ["Authorization: Bearer tok-2", "tok-2"],
     ["jwt eyJhbGciOiJFZERTQSJ9.eyJhIjoxfQ.sig", "eyJhbGci"],
     ["hash " + "a".repeat(64), "a".repeat(64)],
-    ["connect libsql://prod-db.turso.io failed", "prod-db"],
+    ["connect libsql://prod-db.example.com failed", "prod-db"],
     ["key re_abcdefghijklmn", "re_abcdefghijklmn"],
     ["mail someone@example.com rejected", "someone@example.com"],
     ["Failed query: select 1\nparams: me@example.com,secret-hash", "secret-hash"],
