@@ -25,7 +25,7 @@ export async function GET() {
     });
 
     if (!response.ok) {
-      console.error("[api/fx] upstream responded", response.status);
+      logError("api/fx", `upstream responded ${response.status}`);
       return NextResponse.json({ error: "upstream_unavailable" }, { status: 502 });
     }
 
@@ -35,7 +35,7 @@ export async function GET() {
     // A malformed payload must not become a rate: every won total on screen is
     // derived from this number.
     if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) {
-      console.error("[api/fx] unusable payload", body);
+      logError("api/fx", "unusable payload");
       return NextResponse.json({ error: "upstream_unavailable" }, { status: 502 });
     }
 

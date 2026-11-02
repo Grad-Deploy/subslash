@@ -2,7 +2,8 @@ import { DAY_MS } from "@subslash/shared";
 import { randomBytes } from "crypto";
 import { and, eq, gt, lt, or } from "drizzle-orm";
 import { getDb, type DbExecutor } from "./db";
-import { sha256Hex } from "./tokens";
+import { isWellFormedToken, sha256Hex } from "./tokens";
+import { clientIp, hit, retryAfterSeconds, type RateLimitRule } from "./rate-limit";
 import { accounts, sessions, type Account } from "./schema";
 import { NextResponse, type NextRequest } from "next/server";
 import { isAppOrigin } from "./app-origins";
@@ -80,7 +81,7 @@ export async function createSession(
  * 잠깐이라도 유효한 것처럼 통과할 여지가 생긴다.
  */
 export async function getAccountBySessionToken(token: string | undefined): Promise<Account | null> {
-  if (!token) return null;
+  if (!token || !isWellFormedToken(token)) return null;
   const db = getDb();
   const now = new Date().toISOString();
 
@@ -220,9 +221,29 @@ export function readSessionToken(request: NextRequest): string | undefined {
   return header.slice("Bearer ".length).trim() || undefined;
 }
 
+/** 없는 세션 토큰을 이만큼 내민 IP는 잠시 DB를 읽어 주지 않는다(지어낸 토큰으로 Turso 읽기 한도를 태우는 것을 막는다). */
+const SESSION_MISSES_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
+
+/**
+ * 세션을 확인하지 않고 거절했다는 뜻. 로그아웃이 아니다 — null로 돌려주면 같은 IP(통신사망·학교 와이파이)를 쓰는 로그인한
+ * 사람이 로그아웃으로 읽혀 기록이 비로그인 칸으로 바뀌므로, 라우트의 오류 응답이 되게 던진다.
+ */
+export class SessionCheckThrottledError extends Error {
+  constructor() {
+    super("Too many unknown session tokens from this address.");
+    this.name = "SessionCheckThrottledError";
+  }
+}
+
 /** 요청을 보낸 계정. 로그인하지 않았거나 세션이 끝났으면 null이다. */
-export function getRequestAccount(request: NextRequest): Promise<Account | null> {
-  return getAccountBySessionToken(readSessionToken(request));
+export async function getRequestAccount(request: NextRequest): Promise<Account | null> {
+  const token = readSessionToken(request);
+  if (!token || !isWellFormedToken(token)) return null;
+  const key = `session-miss:${clientIp(request.headers)}`;
+  if (retryAfterSeconds(key, SESSION_MISSES_PER_IP) > 0) throw new SessionCheckThrottledError();
+  const account = await getAccountBySessionToken(token);
+  if (!account) hit(key, SESSION_MISSES_PER_IP);
+  return account;
 }
 
 /** 로그인이 필요한 API가 로그인하지 않은 요청에 돌려주는 응답. */

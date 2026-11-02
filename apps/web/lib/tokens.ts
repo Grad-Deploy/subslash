@@ -9,6 +9,13 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
  *   leak through referrers, mail scanners and browser history.
  */
 
+const TOKEN_PATTERN = /^[0-9a-f]{64}$/;
+
+/** 우리가 발급한 모양인지(`generateSyncToken`·세션 토큰). 아니면 DB를 읽지 않고 거절해 조회 한도를 지킨다. */
+export function isWellFormedToken(token: string): boolean {
+  return TOKEN_PATTERN.test(token);
+}
+
 export function generateSyncToken(): string {
   return randomBytes(32).toString("hex");
 }

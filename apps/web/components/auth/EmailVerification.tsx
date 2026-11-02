@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { AuthOutcome } from "./AuthOutcome";
-import { useSearchParams } from "next/navigation";
+import { LINK_TOKEN_HEADER, takeLinkToken } from "@lib/link-token";
 import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { VERIFY_ACCOUNT_TTL_DAYS } from "@lib/verification-config";
@@ -35,9 +35,18 @@ export function EmailVerification() {
   const v = a.verify;
   const known = useKnownText();
   const tRef = useLatestT();
-  const token = useSearchParams().get("token");
+  // 서버 렌더링에는 주소의 `#` 뒤가 없으므로 화면을 연 뒤 한 번 읽는다(읽으면서 주소에서 지운다).
+  const [token, setToken] = useState<string | null>(null);
   // 토큰이 없는 링크는 물어볼 것도 없이 올바르지 않은 링크다.
-  const [view, setView] = useState<View>(() => (token ? { kind: "loading" } : { kind: "invalid" }));
+  const [view, setView] = useState<View>({ kind: "loading" });
+
+  useEffect(() => {
+    const found = takeLinkToken();
+    // 주소의 `#` 뒤는 화면을 연 뒤에만 읽을 수 있다(바깥 값을 한 번 옮기는 것).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (found) setToken(found);
+    else setView({ kind: "invalid" });
+  }, []);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -45,9 +54,9 @@ export function EmailVerification() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(
-          apiUrl(`/api/auth/verify-email?token=${encodeURIComponent(token)}`),
-        );
+        const res = await fetch(apiUrl("/api/auth/verify-email"), {
+          headers: { [LINK_TOKEN_HEADER]: token },
+        });
         const data = await res.json().catch(() => ({}));
         if (!cancelled) setView(viewFrom(res.ok, data, tRef.current));
       } catch {

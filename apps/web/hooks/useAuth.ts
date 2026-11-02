@@ -116,11 +116,16 @@ export async function refreshAuth(): Promise<void> {
   inflight = (async () => {
     try {
       const res = await apiFetch("/api/auth/me");
-      const data = await res.json();
-      cache = { account: data?.account ?? null, loading: false };
-      if (res.ok) syncRecordsOwner(cache.account?.id ?? null);
+      if (res.ok) {
+        const data = await res.json();
+        cache = { account: data?.account ?? null, loading: false };
+        syncRecordsOwner(cache.account?.id ?? null);
+      } else {
+        // 서버가 대답하지 못한 것은 로그아웃이 아니다. 알던 상태를 그대로 둔다.
+        cache = { account: cache.account, loading: false };
+      }
     } catch {
-      cache = { account: null, loading: false };
+      cache = { account: cache.account, loading: false };
     } finally {
       inflight = null;
       emit();

@@ -13,6 +13,8 @@ import { canSignLinks, generateSyncToken, sha256Hex, signLink, verifyLink } from
 import { readReceiptEmails } from "./gmail-import";
 import { KOREA_TIME_ZONE } from "./korea-time";
 import { isGmailChargeHistoryOpen } from "./privacy";
+import { hit, retryAfterSeconds, type RateLimitRule } from "./rate-limit";
+import { HOUR_MS } from "@subslash/shared";
 
 /**
  * Gmail 자동 가져오기의 서버 쪽.
@@ -24,6 +26,7 @@ import { isGmailChargeHistoryOpen } from "./privacy";
 
 /** 스크립트가 한 번에 보낼 수 있는 크기. 메일 100통 × 1,500자를 넉넉히 넘는다. */
 export const MAX_INGEST_BYTES = 2_000_000;
+const INGESTS_PER_LINK: RateLimitRule = { limit: 30, windowMs: HOUR_MS };
 
 /** 받아 가지 않은 후보를 한 계정에 쌓아 둘 수 있는 수. 토큰이 새도 DB를 채우지 못하게 한다. */
 const MAX_PENDING = 100;
@@ -136,7 +139,7 @@ export async function deleteGmailImportData(accountId: string, tx?: DbExecutor):
 
 export type IngestResult =
   | { ok: true; received: number; candidates: number }
-  | { ok: false; status: 400 | 401; error: string };
+  | { ok: false; status: 400 | 401 | 429; error: string };
 
 /** 스크립트가 보낸 메일을 파싱해 후보를 남긴다. 어느 계정인지는 연결 토큰으로만 정한다. */
 export async function ingestReceiptEmails(
@@ -157,6 +160,13 @@ export async function ingestReceiptEmails(
       error: "연결이 끊겼습니다. SubSlash에서 스크립트를 다시 받아 붙여 넣으세요.",
     };
   }
+
+  // 받을 때마다 행을 쓴다. 연결 한 번에 검사 네 번(최근 + 나머지 세 구간)이고 그 뒤로는 2주에 한 번이다.
+  const linkKey = `gmail-ingest:${link.tokenHash}`;
+  if (retryAfterSeconds(linkKey, INGESTS_PER_LINK) > 0) {
+    return { ok: false, status: 429, error: "요청이 너무 많습니다. 잠시 뒤에 다시 시도해 주세요." };
+  }
+  hit(linkKey, INGESTS_PER_LINK);
 
   let data: unknown;
   try {
@@ -205,19 +215,23 @@ export async function ingestReceiptEmails(
   const mergedChargeHistorySql = sql<string | null>`CASE
     WHEN excluded.charge_history IS NULL THEN ${gmailDiscoveries.chargeHistory}
     ELSE (
-      SELECT json_group_array(json(elem) ORDER BY d ASC)
+      -- Turso는 집계 함수 안의 ORDER BY를 파싱하지 못한다(로컬 SQLite는 된다). 정렬한 서브쿼리에서 모은다.
+      SELECT json_group_array(json(elem))
       FROM (
         SELECT elem, d FROM (
-          SELECT value AS elem, json_extract(value, '$.date') AS d, 1 AS p
-          FROM json_each(CASE WHEN json_valid(${gmailDiscoveries.chargeHistory}) THEN ${gmailDiscoveries.chargeHistory} ELSE '[]' END)
-          UNION ALL
-          SELECT value AS elem, json_extract(value, '$.date') AS d, 2 AS p
-          FROM json_each(CASE WHEN json_valid(excluded.charge_history) THEN excluded.charge_history ELSE '[]' END)
+          SELECT elem, d FROM (
+            SELECT value AS elem, json_extract(value, '$.date') AS d, 1 AS p
+            FROM json_each(CASE WHEN json_valid(${gmailDiscoveries.chargeHistory}) THEN ${gmailDiscoveries.chargeHistory} ELSE '[]' END)
+            UNION ALL
+            SELECT value AS elem, json_extract(value, '$.date') AS d, 2 AS p
+            FROM json_each(CASE WHEN json_valid(excluded.charge_history) THEN excluded.charge_history ELSE '[]' END)
+          )
+          GROUP BY d
+          HAVING p = max(p)
+          ORDER BY d DESC
+          LIMIT ${MAX_CHARGE_HISTORY}
         )
-        GROUP BY d
-        HAVING p = max(p)
-        ORDER BY d DESC
-        LIMIT ${MAX_CHARGE_HISTORY}
+        ORDER BY d ASC
       )
     )
   END`;

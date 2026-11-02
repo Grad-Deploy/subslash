@@ -116,7 +116,7 @@ function requestReset(email: unknown) {
 /** 가장 최근 재설정 메일에 든 링크의 토큰. */
 function lastResetToken(): string {
   const text = outbox.at(-1)?.text ?? "";
-  const match = text.match(/\/reset-password\?token=(\S+)/);
+  const match = text.match(/\/reset-password#token=(\S+)/);
   if (!match) throw new Error("재설정 메일에 링크가 없습니다.");
   return decodeURIComponent(match[1]);
 }

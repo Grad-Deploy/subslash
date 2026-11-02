@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
  *
  * 서버 인스턴스의 메모리에 센다. Vercel은 인스턴스를 여럿 띄우고 재시작도 하므로 **완전한 차단이
  * 아니라 속도를 늦추는 장치**다 — 한 인스턴스가 받는 요청은 여기서 막히고, 여러 인스턴스를 도는
- * 대량 공격은 플랫폼의 방화벽(Vercel WAF 속도 제한)이 맡는다. DB에 세지 않는 것은 로그인 실패마다
+ * 대량 공격은 플랫폼의 방화벽(Vercel WAF 속도 제한, Hobby는 규칙 하나라 인증·메일·AI 경로만 덮는다)이 맡는다. DB에 세지 않는 것은 로그인 실패마다
  * 쓰기가 생기고, 계정을 잠그는 방식은 남이 일부러 틀려 주인을 못 들어오게 할 수 있어서다.
  */
 
@@ -46,6 +46,18 @@ export function hit(key: string, rule: RateLimitRule, now = Date.now()): void {
   bucket.hits = bucket.hits.filter((at) => now - at < rule.windowMs);
   bucket.hits.push(now);
   buckets.set(key, bucket);
+}
+
+/** 막혀 있으면 429 응답, 아니면 한 번 세고 null. */
+export function takeRateLimit(
+  key: string,
+  rule: RateLimitRule,
+  now = Date.now(),
+): NextResponse | null {
+  const wait = retryAfterSeconds(key, rule, now);
+  if (wait > 0) return tooManyRequestsResponse(wait);
+  hit(key, rule, now);
+  return null;
 }
 
 /** 센 것을 지운다(로그인에 성공하면 그 아이디의 실패 횟수는 의미가 없다). */

@@ -126,7 +126,7 @@ async function signup(overrides: Record<string, unknown> = {}) {
 /** 가장 최근 확인 메일에 든 링크의 토큰. */
 function lastLinkToken(): string {
   const text = outbox.at(-1)?.text ?? "";
-  const match = text.match(/\/verify-email\?token=(\S+)/);
+  const match = text.match(/\/verify-email#token=(\S+)/);
   if (!match) throw new Error("확인 메일에 링크가 없습니다.");
   return decodeURIComponent(match[1]);
 }

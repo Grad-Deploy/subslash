@@ -96,6 +96,17 @@ describe("앱 빌드의 apiFetch", () => {
     expect(lastRequest().auth).toBe("Bearer tok-1");
   });
 
+  it("/me가 503이면 로그인 상태를 바꾸지 않고 토큰도 둔다", async () => {
+    mocks.prefs.set("subslash-session-token", "tok-1");
+    const { refreshAuth, apiFetch } = await load("app");
+    replies["/api/auth/me"] = { status: 503, body: { error: "database_unavailable" } };
+
+    await refreshAuth();
+    expect(mocks.prefs.get("subslash-session-token")).toBe("tok-1");
+    await apiFetch("/api/account/snapshot");
+    expect(lastRequest().auth).toBe("Bearer tok-1");
+  });
+
   it("계정을 지우면 토큰도 지운다", async () => {
     mocks.prefs.set("subslash-session-token", "tok-1");
     const { apiFetch } = await load("app");

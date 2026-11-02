@@ -31,3 +31,15 @@ describe("요청 수 제한", () => {
     expect(clientIp(new Headers())).toBe("unknown");
   });
 });
+
+describe("takeRateLimit", () => {
+  it("한도까지는 세고 그 뒤로는 429를 돌려준다", async () => {
+    const { takeRateLimit, resetAllRateLimits } = await import("../../lib/rate-limit");
+    resetAllRateLimits();
+    const rule = { limit: 2, windowMs: 1000 };
+    expect(takeRateLimit("k", rule, 0)).toBeNull();
+    expect(takeRateLimit("k", rule, 1)).toBeNull();
+    expect(takeRateLimit("k", rule, 2)?.status).toBe(429);
+    expect(takeRateLimit("k", rule, 1001)).toBeNull();
+  });
+});

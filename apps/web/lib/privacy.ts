@@ -28,6 +28,30 @@ export const PRIVACY_EFFECTIVE_DATE = "2026년 10월 19일";
 export const EMAIL_REMINDERS_ENDED_ON = "2026년 10월 1일";
 
 /**
+ * 서버 오류 줄을 운영자의 Grafana Cloud로 보내는 일(lib/error-export). 받는 곳이 늘어나므로 방침에 먼저 게시한다. null이면
+ * 나가지 않고 방침에도 없다. 값을 채우기 전에 스택 지역과 보관 일수를 Grafana에서 확인한다.
+ */
+export const ERROR_LOG_EXPORT: {
+  /** 시작하는 날(YYYY-MM-DD). 방침에 먼저 게시되고 그날부터 나간다. */
+  startsOn: string;
+  /** Grafana Cloud 스택의 지역. 고른 곳을 그대로 적는다. */
+  regionKo: string;
+  regionEn: string;
+  /** 그 요금제의 로그 보관 일수. */
+  retentionDays: number;
+} | null = {
+  startsOn: "2026-11-04",
+  regionKo: "일본 도쿄(AWS)",
+  regionEn: "Tokyo, Japan (AWS)",
+  retentionDays: 14,
+};
+
+/** 서버 오류 줄을 Grafana로 보내도 되는 날인지(lib/error-export). */
+export function isErrorLogExportOpen(now: Date = new Date()): boolean {
+  return hasStarted(ERROR_LOG_EXPORT?.startsOn ?? null, now);
+}
+
+/**
  * Gmail 자동 가져오기를 시작하는 날(YYYY-MM-DD, 한국 시간 0시). 이 기능은 서버에 저장하는 항목을
  * 늘리고, 방침은 "저장하는 항목이 늘어나는 변경은 시행 전에 알린다"고 약속한다. 그래서 날짜를 정해
  * 알리기 전에는 null로 두고, null이거나 그날 전이면 서버와 화면 모두 이 기능을 열지 않는다.

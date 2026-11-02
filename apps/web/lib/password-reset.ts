@@ -52,7 +52,7 @@ export async function sendPasswordReset(account: Account): Promise<SendOutcome> 
     );
     const mail = passwordResetEmail({
       username: account.username,
-      resetUrl: `${appUrl()}/reset-password?token=${encodeURIComponent(token)}`,
+      resetUrl: `${appUrl()}/reset-password#token=${encodeURIComponent(token)}`,
       validMinutes: RESET_PASSWORD_TTL_MINUTES,
     });
     const result = await sendEmail({ to: account.email, ...mail });

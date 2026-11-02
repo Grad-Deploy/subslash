@@ -80,9 +80,7 @@ export async function sendEmail(params: {
     if (!response.ok) {
       const detail = await response.text();
       // 거절 본문에 받는 주소가 그대로 실려 오는 경우가 있다.
-      console.error(
-        `[email] Resend rejected the message (${response.status}): ${maskEmail(detail)}`,
-      );
+      logError("email", `Resend rejected the message (${response.status}): ${maskEmail(detail)}`);
       return { delivered: false, error: `resend_${response.status}` };
     }
 

@@ -55,8 +55,21 @@ export function getDb(): Database {
   return connect(url, authToken);
 }
 
+/**
+ * DB 요청 하나를 기다리는 시간. 정상이면 미국 동부↔도쿄 왕복에 1초도 걸리지 않는다. `@libsql/client`는 스스로 끊지 않아,
+ * 없으면 DB가 느려질 때 요청마다 함수 제한 시간(300초)까지 기다리며 쌓인다. 끊긴 요청은 라우트의 오류 응답이 된다.
+ */
+export const DB_REQUEST_TIMEOUT_MS = 8_000;
+
+/** 한 번의 HTTP 요청에 제한 시간을 건 fetch. 응답 본문을 읽는 동안에도 적용된다. */
+export function fetchWithTimeout(timeoutMs: number, baseFetch: typeof fetch = fetch): typeof fetch {
+  return (input, init) => baseFetch(input, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+}
+
 function connect(url: string, authToken: string | undefined): Database {
-  client = wrapLocalTransaction(createClient({ url, authToken }));
+  client = wrapLocalTransaction(
+    createClient({ url, authToken, fetch: fetchWithTimeout(DB_REQUEST_TIMEOUT_MS) }),
+  );
   cached = drizzle(client, { schema });
   return cached;
 }

@@ -171,6 +171,7 @@ describe("Gmail 자동 가져오기", () => {
 
     expect((await ingest(undefined, [NETFLIX])).status).toBe(401);
     expect((await ingest("wrong-token", [NETFLIX])).status).toBe(401);
+    expect((await ingest("a".repeat(64), [NETFLIX])).status).toBe(401);
     expect(await getDb().select().from(gmailDiscoveries)).toHaveLength(0);
   });
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   AI_ASK_DAILY_COUNT_STARTS_ON,
   AI_ASK_STARTS_ON,
+  ERROR_LOG_EXPORT,
   ANONYMOUS_STATS_ENDED_ON,
   ANONYMOUS_STATS_STARTS_ON,
   DEVICE_USAGE_STARTS_ON,
@@ -339,6 +340,17 @@ export function PrivacyKo() {
                     고름 — 질문을 저장하지 않음
                   </td>
                   <td className="px-3 py-2">단국대학교가 운영하는 서버</td>
+                </tr>
+              )}
+              {ERROR_LOG_EXPORT && (
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-medium">Grafana Labs</td>
+                  <td className="px-3 py-2">
+                    {koreanDate(ERROR_LOG_EXPORT.startsOn)}부터 서버 오류 기록 보관 — 오류가 난 기능
+                    이름과 토큰·이메일을 지운 오류 문장만 보내고, 계정·IP·요청 주소는 보내지 않음.
+                    {ERROR_LOG_EXPORT.retentionDays}일 뒤 지워짐
+                  </td>
+                  <td className="px-3 py-2">{ERROR_LOG_EXPORT.regionKo}</td>
                 </tr>
               )}
               <tr className="border-t">

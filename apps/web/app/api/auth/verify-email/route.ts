@@ -7,6 +7,10 @@ import {
   type LinkState,
 } from "@lib/account-verification";
 import { logError } from "@lib/log";
+import { clientIp, takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
+import { LINK_TOKEN_HEADER } from "@lib/link-token";
+
+const ATTEMPTS_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
 
 /**
  * 가입 확인 메일의 링크가 여는 `/verify-email` 페이지가 부르는 곳.
@@ -16,10 +20,14 @@ import { logError } from "@lib/log";
  * 사람이 누르기도 전에 결정이 난다. 결정은 페이지의 버튼이 보내는 POST로만 한다.
  */
 export async function GET(request: NextRequest) {
+  const limited = takeRateLimit(`verify-email:${clientIp(request.headers)}`, ATTEMPTS_PER_IP);
+  if (limited) return limited;
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const state = await resolveVerificationLink(request.nextUrl.searchParams.get("token"));
+    const state = await resolveVerificationLink(
+      request.headers.get(LINK_TOKEN_HEADER) ?? request.nextUrl.searchParams.get("token"),
+    );
     return NextResponse.json(describe(state));
   } catch (error) {
     logError("api/auth/verify-email", error);
@@ -29,6 +37,8 @@ export async function GET(request: NextRequest) {
 
 /** 본문: `{ token, decision: "confirm" | "decline" }` */
 export async function POST(request: NextRequest) {
+  const limited = takeRateLimit(`verify-email:${clientIp(request.headers)}`, ATTEMPTS_PER_IP);
+  if (limited) return limited;
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
