@@ -1,7 +1,8 @@
-import { randomBytes, timingSafeEqual } from "crypto";
+import { randomBytes } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { isErrorExportActive } from "@lib/error-export";
 import { logError } from "@lib/log";
+import { checkCronSecret } from "@lib/secret";
 
 /**
  * 운영자가 오류 줄이 Grafana(Loki)까지 가는지 확인하는 경로(lib/error-export).
@@ -14,22 +15,15 @@ import { logError } from "@lib/log";
  * 전이라 줄이 나가지 않는다.
  */
 export async function POST(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
+  const auth = checkCronSecret(request);
+  if (auth === "missing") {
     return NextResponse.json({ error: "CRON_SECRET is not set on this server." }, { status: 503 });
   }
-  if (!sameSecret(request.headers.get("authorization"), `Bearer ${secret}`)) {
+  if (auth === "unauthorized") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const id = `check-${randomBytes(4).toString("base64url")}`;
   logError("ops/error-export-check", `manual export check ${id}`);
   return NextResponse.json({ id, active: isErrorExportActive() });
-}
-
-/** 앞에서부터 다른 글자에서 바로 멈추는 비교는 응답 시간으로 비밀값을 한 글자씩 알아낼 수 있다. */
-function sameSecret(given: string | null, expected: string): boolean {
-  const a = Buffer.from(given ?? "");
-  const b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
 }
