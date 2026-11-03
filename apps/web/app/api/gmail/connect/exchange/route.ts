@@ -10,6 +10,7 @@ import {
   tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
+import { readJsonObject } from "@lib/request-body";
 
 /** 정상 요청은 Google의 공유 IP에서 오므로 실패만 센다. */
 const FAILURES_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
   if (wait > 0) return tooManyRequestsResponse(wait);
 
   try {
-    const body = (await request.json().catch(() => null)) as { code?: unknown } | null;
+    const body = await readJsonObject(request);
     const code = typeof body?.code === "string" ? body.code.slice(0, 2000) : "";
     const token = code ? await exchangeConnectCode(code) : null;
     if (!token) {

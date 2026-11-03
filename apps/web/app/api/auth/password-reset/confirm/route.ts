@@ -7,6 +7,7 @@ import { applyPasswordReset, resolveResetLink } from "@lib/password-reset";
 import { logError } from "@lib/log";
 import { clientIp, takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
 import { LINK_TOKEN_HEADER } from "@lib/link-token";
+import { badRequestResponse, readJsonObject } from "@lib/request-body";
 
 const ATTEMPTS_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
 
@@ -49,10 +50,8 @@ export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const body = await request.json().catch(() => null);
-    if (!body || typeof body !== "object") {
-      return NextResponse.json({ error: "요청을 이해할 수 없습니다." }, { status: 400 });
-    }
+    const body = await readJsonObject(request);
+    if (!body) return badRequestResponse();
 
     // 링크부터 본다. 만료된 링크에 비밀번호 규칙을 먼저 알려주면, 고쳐 보내도
     // 결국 바꿀 수 없다는 것을 한 번 더 제출한 뒤에야 알게 된다.

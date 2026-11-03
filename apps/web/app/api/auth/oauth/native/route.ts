@@ -12,6 +12,7 @@ import { OAuthError, fetchNativeProfile, isOAuthProviderId, nativeProviders } fr
 import { linkOAuthIdentity, resolveOAuthAccount } from "@lib/oauth-accounts";
 import { isSocialLoginOpen } from "@lib/privacy";
 import { logError } from "@lib/log";
+import { readJsonObject } from "@lib/request-body";
 
 /** 카카오 액세스 토큰 모양. 길이만 넉넉히 거른다(내용은 카카오가 확인한다). */
 const TOKEN_PATTERN = /^[A-Za-z0-9_\-.~+/=]{20,512}$/;
@@ -42,12 +43,7 @@ export async function POST(request: NextRequest) {
       { status },
     );
 
-  const body = (await request.json().catch(() => null)) as {
-    provider?: unknown;
-    accessToken?: unknown;
-    over14?: unknown;
-    link?: unknown;
-  } | null;
+  const body = await readJsonObject(request);
   const provider = body?.provider;
   const accessToken = typeof body?.accessToken === "string" ? body.accessToken : "";
   if (!isOAuthProviderId(provider) || !TOKEN_PATTERN.test(accessToken)) return fail("state");

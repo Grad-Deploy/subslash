@@ -8,6 +8,7 @@ import {
   sendAccountVerification,
 } from "@lib/account-verification";
 import { logError } from "@lib/log";
+import { readJsonObject } from "@lib/request-body";
 
 /**
  * 확인 메일 다시 보내기.
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const body = await request.json().catch(() => null);
+    const body = await readJsonObject(request);
     const requestedEmail =
       body && typeof body.email === "string" ? normalizeEmailAddress(body.email) : "";
 

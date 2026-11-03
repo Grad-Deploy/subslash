@@ -16,6 +16,7 @@ import {
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { logError } from "@lib/log";
+import { badRequestResponse, readJsonObject } from "@lib/request-body";
 
 /**
  * 로그인한 세션으로 지금 비밀번호를 거듭 대입하지 못하게 한다(자리를 비운 사이 누가 쓰는 경우).
@@ -43,10 +44,8 @@ export async function PUT(request: NextRequest) {
       return loginRequiredResponse();
     }
 
-    const body = await request.json().catch(() => null);
-    if (!body || typeof body !== "object") {
-      return NextResponse.json({ error: "요청을 이해할 수 없습니다." }, { status: 400 });
-    }
+    const body = await readJsonObject(request);
+    if (!body) return badRequestResponse();
     const currentPassword = typeof body.currentPassword === "string" ? body.currentPassword : "";
     const password = typeof body.password === "string" ? body.password : "";
     const passwordConfirm = typeof body.passwordConfirm === "string" ? body.passwordConfirm : "";

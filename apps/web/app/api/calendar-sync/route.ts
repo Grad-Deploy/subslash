@@ -16,6 +16,7 @@ import {
 } from "@lib/rate-limit";
 import { logError } from "@lib/log";
 import { SOURCE_LOCALE } from "@lib/i18n/config";
+import { readJson } from "@lib/request-body";
 
 /**
  * '구글 캘린더에 등록'을 시작한다. 브라우저가 지금 구독의 결제일을 맡기면, SubSlash Apps Script
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     const account = await getRequestAccount(request);
     if (!account) return loginRequiredResponse();
 
-    const plan = parseCalendarPlan(await request.json().catch(() => null));
+    const plan = parseCalendarPlan(await readJson(request));
     if (!plan) {
       return NextResponse.json({ error: "보낸 구독 목록을 읽지 못했습니다." }, { status: 400 });
     }

@@ -12,6 +12,7 @@ import { hasPassword } from "@lib/password";
 import { isSocialLoginOpen } from "@lib/privacy";
 import { canSignLinks } from "@lib/tokens";
 import { logError } from "@lib/log";
+import { badRequestResponse, readJsonObject } from "@lib/request-body";
 
 /**
  * '내 정보'의 로그인 방법: 계정에 구글·카카오·네이버를 잇고 끊는다. 모두 로그인 세션으로만 계정을 정한다.
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
 }
 
 async function readProvider(request: NextRequest) {
-  const body = (await request.json().catch(() => null)) as { provider?: unknown } | null;
+  const body = await readJsonObject(request);
   return isOAuthProviderId(body?.provider) ? body.provider : null;
 }
 
@@ -89,7 +90,7 @@ export async function DELETE(request: NextRequest) {
     if (!account) return loginRequiredResponse();
     const provider = await readProvider(request);
     if (!provider) {
-      return NextResponse.json({ error: "요청을 이해할 수 없습니다." }, { status: 400 });
+      return badRequestResponse();
     }
     const result = await unlinkOAuthIdentity(account.id, provider);
     if (result === "last-method") {

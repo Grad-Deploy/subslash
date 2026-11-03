@@ -11,6 +11,7 @@ import {
   tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
+import { readJsonObject } from "@lib/request-body";
 
 /**
  * 비밀번호 재설정 메일 요청. 본문: `{ email }`
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const body = await request.json().catch(() => null);
+    const body = await readJsonObject(request);
     const email = body && typeof body.email === "string" ? normalizeEmailAddress(body.email) : "";
 
     const formatError = validateEmail(email);
