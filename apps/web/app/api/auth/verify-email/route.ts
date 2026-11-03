@@ -6,10 +6,10 @@ import {
   resolveVerificationLink,
   type LinkState,
 } from "@lib/account-verification";
-import { logError } from "@lib/log";
 import { clientIp, takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
 import { LINK_TOKEN_HEADER } from "@lib/link-token";
 import { badRequestResponse, readJsonObject } from "@lib/request-body";
+import { serverErrorResponse } from "@lib/route-error";
 
 const ATTEMPTS_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
 
@@ -31,8 +31,7 @@ export async function GET(request: NextRequest) {
     );
     return NextResponse.json(describe(state));
   } catch (error) {
-    logError("api/auth/verify-email", error);
-    return NextResponse.json({ error: "확인 링크를 처리하지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/auth/verify-email", error, "확인 링크를 처리하지 못했습니다.");
   }
 }
 
@@ -72,8 +71,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ status: "declined" });
   } catch (error) {
-    logError("api/auth/verify-email", error);
-    return NextResponse.json({ error: "확인 링크를 처리하지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/auth/verify-email", error, "확인 링크를 처리하지 못했습니다.");
   }
 }
 

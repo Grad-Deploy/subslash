@@ -229,7 +229,7 @@ const SESSION_MISSES_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 10
  * 사람이 로그아웃으로 읽혀 기록이 비로그인 칸으로 바뀌므로, 라우트의 오류 응답이 되게 던진다.
  */
 export class SessionCheckThrottledError extends Error {
-  constructor() {
+  constructor(readonly retryAfterSeconds: number) {
     super("Too many unknown session tokens from this address.");
     this.name = "SessionCheckThrottledError";
   }
@@ -240,7 +240,8 @@ export async function getRequestAccount(request: NextRequest): Promise<Account |
   const token = readSessionToken(request);
   if (!token || !isWellFormedToken(token)) return null;
   const key = `session-miss:${clientIp(request.headers)}`;
-  if (retryAfterSeconds(key, SESSION_MISSES_PER_IP) > 0) throw new SessionCheckThrottledError();
+  const wait = retryAfterSeconds(key, SESSION_MISSES_PER_IP);
+  if (wait > 0) throw new SessionCheckThrottledError(wait);
   const account = await getAccountBySessionToken(token);
   if (!account) hit(key, SESSION_MISSES_PER_IP);
   return account;

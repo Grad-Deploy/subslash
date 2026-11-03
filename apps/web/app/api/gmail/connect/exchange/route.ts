@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { featureClosedResponse, isGmailAutoImportOpen } from "@lib/privacy";
 import { exchangeConnectCode } from "@lib/gmail-auto-import";
-import { logError } from "@lib/log";
 import {
   clientIp,
   hit,
@@ -11,6 +10,7 @@ import {
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { readJsonObject } from "@lib/request-body";
+import { serverErrorResponse } from "@lib/route-error";
 
 /** 정상 요청은 Google의 공유 IP에서 오므로 실패만 센다. */
 const FAILURES_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ token });
   } catch (error) {
-    logError("api/gmail/connect/exchange", error);
-    return NextResponse.json({ error: "연결하지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/gmail/connect/exchange", error, "연결하지 못했습니다.");
   }
 }

@@ -277,7 +277,7 @@ parser의 `senderDomains`)는 따로 검색해 상한에 밀리지 않게 한다
 회원 탈퇴)은 `lib/rate-limit`으로 횟수를 제한한다. 로그인은 실패만 세고(아이디·IP 기준), 계정을 잠그지
 않고 잠시 기다리게 한다 — 잠그면 남이 일부러 틀려 주인을 못 들어오게 할 수 있다. 서버 인스턴스
 메모리에 세므로 대량 공격을 완전히 막지는 못한다. 그건 Vercel 방화벽(WAF)의 속도 제한이 맡는다 — Hobby 요금제는 속도 제한 규칙이 하나뿐이라 인증·메일·AI 경로(POST)만 묶어 덮고, API 전체의 상한은 없다.
-누를 때마다 행을 쓰는 곳(캘린더 등록)도 계정마다 센다 — Turso는 행 쓰기 한도가 먼저 찬다. 계정 기록·Gmail 받기·사용 기록·찾은 구독도 계정(또는 연결)마다 세고(`takeRateLimit`), 세션·연결 토큰은 발급한 모양(`isWellFormedToken`)이 아니면 DB를 읽지 않으며, 없는 토큰을 많이 내민 IP는 잠시 읽지 않는다 — 지어낸 토큰으로 Turso 읽기 한도를 태우지 못하게 하려는 것이다. 이때 세션 확인은 null이 아니라 오류로 끝난다(`SessionCheckThrottledError`): null은 로그아웃으로 읽혀 같은 IP의 로그인한 사람 기록이 바뀐다. Google의 공유 IP에서 오는 요청(`/api/gmail/ingest`·`connect/exchange`·`calendar-sync/claim`)은 실패만 센다.
+누를 때마다 행을 쓰는 곳(캘린더 등록)도 계정마다 센다 — Turso는 행 쓰기 한도가 먼저 찬다. 계정 기록·Gmail 받기·사용 기록·찾은 구독도 계정(또는 연결)마다 세고(`takeRateLimit`), 세션·연결 토큰은 발급한 모양(`isWellFormedToken`)이 아니면 DB를 읽지 않으며, 없는 토큰을 많이 내민 IP는 잠시 읽지 않는다 — 지어낸 토큰으로 Turso 읽기 한도를 태우지 못하게 하려는 것이다. 이때 세션 확인은 null이 아니라 오류로 끝난다(`SessionCheckThrottledError`): null은 로그아웃으로 읽혀 같은 IP의 로그인한 사람 기록이 바뀐다. 라우트는 이 오류를 429로 답하고 오류 줄을 남기지 않는다 — 처리하지 못한 오류는 `catch`에서 `serverErrorResponse`(`lib/route-error`)로 답한다(예전에는 500으로 답해, 지어낸 토큰으로 5xx 알림을 울릴 수 있었다). Google의 공유 IP에서 오는 요청(`/api/gmail/ingest`·`connect/exchange`·`calendar-sync/claim`)은 실패만 센다.
 비밀값 비교(크론 `CRON_SECRET` 등)는 `timingSafeEqual`로 한다. 웹 응답의 보안 헤더(틀 넣기 금지 등)는
 `next.config.ts`의 `headers()`에 있고, CSP는 `lib/csp`가 만든다. 페이지를 정적으로 두려고 nonce를 쓰지 않아
 `script-src`에 'unsafe-inline'이 남는다 — 이 정책이 막는 것은 바깥 스크립트·바깥으로 보내기(`connect-src`)·`<base>`·

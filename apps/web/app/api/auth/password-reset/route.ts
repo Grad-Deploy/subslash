@@ -3,7 +3,6 @@ import { normalizeEmailAddress, validateEmail, HOUR_MS } from "@subslash/shared"
 import { databaseUnavailableResponse } from "@lib/db";
 import { findAccountByEmail } from "@lib/account-verification";
 import { describeResetOutcome, sendPasswordReset } from "@lib/password-reset";
-import { logError } from "@lib/log";
 import {
   clientIp,
   hit,
@@ -12,6 +11,7 @@ import {
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { readJsonObject } from "@lib/request-body";
+import { serverErrorResponse } from "@lib/route-error";
 
 /**
  * 비밀번호 재설정 메일 요청. 본문: `{ email }`
@@ -71,7 +71,10 @@ export async function POST(request: NextRequest) {
       { status: httpStatus },
     );
   } catch (error) {
-    logError("api/auth/password-reset", error);
-    return NextResponse.json({ error: "재설정 메일을 보내지 못했습니다." }, { status: 500 });
+    return serverErrorResponse(
+      "api/auth/password-reset",
+      error,
+      "재설정 메일을 보내지 못했습니다.",
+    );
   }
 }
