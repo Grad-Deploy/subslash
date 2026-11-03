@@ -119,6 +119,24 @@ describe("하루 크론(알림 표를 지운 뒤)", () => {
     fetchSpy.mockRestore();
   });
 
+  it("정리 하나가 실패하면 나머지는 마치고 500으로 알린다", async () => {
+    // 200으로 답하면 Vercel의 5xx 알림이 울리지 않아, 방침의 보관 기간을 넘긴 기록이 아무도 모르게 남는다.
+    await getDb().run(`DROP TABLE ask_daily_counts` as never);
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const response = await cronRoute(cronRequest("Bearer test-cron-secret"));
+      expect(response.status).toBe(500);
+      const body = await response.json();
+      expect(body.success).toBe(false);
+      expect(body.failed).toEqual(["askCounts"]);
+      expect(body.askCountsPruned).toBe(false);
+      expect(body.sessionsPruned).toBe(true);
+      expect(body.prunedAccounts).not.toBeNull();
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
   it("비밀값이 다르면 거부한다", async () => {
     const response = await cronRoute(cronRequest("Bearer wrong"));
     expect(response.status).toBe(401);

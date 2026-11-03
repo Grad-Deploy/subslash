@@ -297,7 +297,7 @@ parser의 `senderDomains`)는 따로 검색해 상한에 밀리지 않게 한다
 
 ## 운영 알림
 
-서버 오류 줄은 Grafana Cloud(Loki)에서 본다(`lib/error-export`, `logError`가 부른다). 나가는 것은 `[범위] 값을 지운 오류 문장`과 시각·배포 환경뿐이고 스택·계정·IP·요청 주소는 보내지 않는다. Vercel 요청 로그를 드레인으로 보내지 않는다 — 주소의 토큰과 IP가 함께 나간다. 값 지우기(`redactSecrets`)는 배포 로그에도 적용한다. 설정(`GRAFANA_LOKI_*`)과 방침 게시(`ERROR_LOG_EXPORT`)가 모두 있어야 나간다. 메일 링크의 토큰은 요청 로그에 남지 않게 `#` 뒤에 싣고 API에는 헤더(`X-Link-Token`)로 보낸다(`lib/link-token`) — 이미 보낸 메일의 `?token=`도 읽는다.
+서버 오류 줄은 Grafana Cloud(Loki)에서 본다(`lib/error-export`, `logError`가 부른다). 나가는 것은 `[범위] 값을 지운 오류 문장`과 시각·배포 환경뿐이고 스택·계정·IP·요청 주소는 보내지 않는다. Vercel 요청 로그를 드레인으로 보내지 않는다 — 주소의 토큰과 IP가 함께 나간다. 값 지우기(`redactSecrets`)는 배포 로그에도 적용한다. 설정(`GRAFANA_LOKI_*`)과 방침 게시(`ERROR_LOG_EXPORT`)가 모두 있어야 나간다. 줄이 가는지는 `POST /api/ops/error-export-check`(`Authorization: Bearer <CRON_SECRET>`)로 확인한다 — `logError`로 `check-…` 한 줄을 남기고 그 id와 내보내기 상태(`active`)를 돌려준다. 쓰기 토큰은 배포에만 있어 밖에서 보내 볼 수 없다. 메일 링크의 토큰은 요청 로그에 남지 않게 `#` 뒤에 싣고 API에는 헤더(`X-Link-Token`)로 보낸다(`lib/link-token`) — 이미 보낸 메일의 `?token=`도 읽는다.
 
 따로 관리자 화면을 두지 않는다 — 서버에 볼 기록이 거의 없고, 운영자가 계정 기록을 여는 것은 방침의 저장 목적에 없다.
 오류는 Vercel 알림 규칙이 알린다(팀 기본 규칙 + `/api/*` 5xx·함수 사용량 이상을 medium부터 보는 규칙, `vercel alerts rules ls --all`).

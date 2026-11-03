@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
 import { isDatabaseConfigured } from "@lib/db";
 import { startLoginSession, withSessionCookie } from "@lib/auth-server";
 import {
@@ -13,12 +12,7 @@ import {
 import { linkOAuthIdentity, resolveOAuthAccount, storeAppClaim } from "@lib/oauth-accounts";
 import { isSocialLoginOpen } from "@lib/privacy";
 import { logError } from "@lib/log";
-
-function sameState(a: string, b: string): boolean {
-  const left = Buffer.from(a);
-  const right = Buffer.from(b);
-  return left.length === right.length && timingSafeEqual(left, right);
-}
+import { safeEqual } from "@lib/secret";
 
 /**
  * 제공자가 로그인을 마치고 돌려보내는 곳. 쿠키에 적어 둔 state와 같은지 보고, 코드로 프로필을 읽어
@@ -69,7 +63,7 @@ export async function GET(
     return fail("unavailable");
   }
   const state = params.get("state");
-  if (!flow || flow.provider !== provider || !state || !sameState(state, flow.state)) {
+  if (!flow || flow.provider !== provider || !state || !safeEqual(state, flow.state)) {
     return fail("state");
   }
   // 제공자 화면에서 '취소'·'동의 안 함'을 누르면 code 없이 error로 돌아온다.

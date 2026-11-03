@@ -1,4 +1,3 @@
-import { timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { isAiAskDailyCountOpen, isDeviceUsageOpen } from "@lib/privacy";
@@ -7,6 +6,7 @@ import { pruneDeviceUsage } from "@lib/device-usage-server";
 import { pruneAbandonedAccounts } from "@lib/account-verification";
 import { pruneExpiredSessions } from "@lib/auth-server";
 import { logError } from "@lib/log";
+import { checkCronSecret } from "@lib/secret";
 import { checkTursoUsage } from "@lib/turso-usage";
 
 /**
@@ -16,8 +16,8 @@ import { checkTursoUsage } from "@lib/turso-usage";
  * 배포 설정(vercel.json·CRON_SECRET)을 바꾸지 않으려는 것이다 — 치우는 일은 그대로 남았다.
  */
 export async function GET(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
+  const auth = checkCronSecret(request);
+  if (auth === "missing") {
     // 비밀값이 없으면 누구나 이 주소를 호출해 지우기를 돌릴 수 있으므로 실행하지 않는다. 500이 아니라
     // 503인 이유는, 이것이 코드의 결함이 아니라 배포에 환경 변수가 빠진 상태이기 때문이다 — 매일
     // 한 번씩 500이 쌓이면 진짜 장애와 구분되지 않는다.
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       { status: 503 },
     );
   }
-  if (!sameSecret(request.headers.get("authorization"), `Bearer ${secret}`)) {
+  if (auth === "unauthorized") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -80,24 +80,31 @@ export async function GET(request: NextRequest) {
       return { status: "error" as const, reason: "exception" };
     });
 
-    return NextResponse.json({
-      success: true,
-      tursoUsage,
-      sessionsPruned,
-      prunedAccounts,
-      prunedUsage,
-      askCountsPruned,
-      timestamp: now.toISOString(),
-    });
+    // 하나라도 실패하면 500으로 답한다. 정리는 서로 막지 않게 끝까지 돌리지만, 200으로 답하면 `/api/*` 5xx를 보는
+    // Vercel 알림이 울리지 않고, 크론은 다시 시도하지 않아 방침의 보관 기간을 넘긴 기록이 아무도 모르게 남는다.
+    const failed = [
+      prunedUsage === null && isDeviceUsageOpen(now) && "usage",
+      !sessionsPruned && "sessions",
+      prunedAccounts === null && "accounts",
+      askCountsPruned === false && "askCounts",
+      tursoUsage.status === "error" && "tursoUsage",
+    ].filter((name): name is string => Boolean(name));
+
+    return NextResponse.json(
+      {
+        success: failed.length === 0,
+        failed,
+        tursoUsage,
+        sessionsPruned,
+        prunedAccounts,
+        prunedUsage,
+        askCountsPruned,
+        timestamp: now.toISOString(),
+      },
+      { status: failed.length === 0 ? 200 : 500 },
+    );
   } catch (error) {
     logError("cron/notify", error);
     return NextResponse.json({ error: "Daily cleanup failed" }, { status: 500 });
   }
-}
-
-/** 앞에서부터 다른 글자에서 바로 멈추는 비교는 응답 시간으로 비밀값을 한 글자씩 알아낼 수 있다. */
-function sameSecret(given: string | null, expected: string): boolean {
-  const a = Buffer.from(given ?? "");
-  const b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
 }

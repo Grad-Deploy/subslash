@@ -78,9 +78,10 @@ export function decideSync(base: SyncBase, local: LocalView, server: ServerView)
       : { kind: "idle" };
   }
   if (!localChanged) return { kind: "pull", savedAt: server.savedAt };
-  if (server.hash !== undefined && server.hash === local.hash) {
-    return { kind: "adopt", savedAt: server.savedAt };
-  }
+  // 묻기 전에 내용을 견준다. 이 기기가 올린 것을 서버는 저장했는데 응답만 끊기면, 기기는 예전 판을 기억한 채
+  // 서버에는 새 판이 있다 — 지문을 보지 않으면 같은 기록 둘 중 하나를 고르라고 묻는다.
+  if (server.hash === undefined) return { kind: "need-server-hash" };
+  if (server.hash === local.hash) return { kind: "adopt", savedAt: server.savedAt };
   return { kind: "ask", reason: "both-changed", savedAt: server.savedAt };
 }
 
