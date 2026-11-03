@@ -74,10 +74,18 @@ describe("decideSync — 맞춰 오던 계정", () => {
   });
 
   it("양쪽이 따로 바뀌었으면 합치지 않고 묻는다", () => {
-    expect(decideSync(SYNCED, local("h-new"), { savedAt: "s2" })).toEqual({
+    expect(decideSync(SYNCED, local("h-new"), { savedAt: "s2", hash: "h-other" })).toEqual({
       kind: "ask",
       reason: "both-changed",
       savedAt: "s2",
+    });
+  });
+
+  it("양쪽이 바뀐 것처럼 보이면 묻기 전에 서버 기록의 지문을 받아 본다", () => {
+    // 올린 기록을 서버가 저장했는데 응답이 끊겨 기기는 예전 판을 기억한다. 지문 없이 물으면 같은 기록 둘 중
+    // 하나를 고르라는 창이 뜬다.
+    expect(decideSync(SYNCED, local("h-new"), { savedAt: "s2" })).toEqual({
+      kind: "need-server-hash",
     });
   });
 
