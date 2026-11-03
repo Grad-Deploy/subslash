@@ -179,7 +179,7 @@ export async function readSnapshot(
   if (!parsed.ok) {
     // 저장할 때 검사했으므로 여기 오면 형식이 바뀐 것이다. 깨진 기록을 내려보내
     // 브라우저의 멀쩡한 기록을 덮게 두지 않는다.
-    console.error("[account-snapshot] stored snapshot no longer parses:", parsed.error);
+    logError("account-snapshot", `stored snapshot no longer parses: ${parsed.error}`);
     return null;
   }
   const backup = createBackup(parsed.data, new Date(parsed.exportedAt ?? Date.now()));

@@ -9,6 +9,12 @@ import {
 } from "@lib/account-snapshot";
 import type { SaveCondition } from "@lib/account-snapshot";
 import { logError } from "@lib/log";
+import { takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
+import { HOUR_MS } from "@subslash/shared";
+
+/** 자동 동기화는 화면으로 돌아올 때 읽고, 바뀐 뒤 2초 모아 올린다. 올릴 때마다 행을 쓴다. */
+const READS_PER_ACCOUNT: RateLimitRule = { limit: 300, windowMs: HOUR_MS };
+const WRITES_PER_ACCOUNT: RateLimitRule = { limit: 120, windowMs: HOUR_MS };
 
 /**
  * 계정에 저장한 기록 — 저장(PUT), 불러오기(GET), 지우기(DELETE).
@@ -24,6 +30,8 @@ export async function GET(request: NextRequest) {
   try {
     const account = await getRequestAccount(request);
     if (!account) return loginRequiredResponse();
+    const limited = takeRateLimit(`snapshot-read:${account.id}`, READS_PER_ACCOUNT);
+    if (limited) return limited;
 
     const snapshot = await readSnapshot(account.id);
     if (!snapshot) {
@@ -67,6 +75,8 @@ export async function PUT(request: NextRequest) {
   try {
     const account = await getRequestAccount(request);
     if (!account) return loginRequiredResponse();
+    const limited = takeRateLimit(`snapshot-write:${account.id}`, WRITES_PER_ACCOUNT);
+    if (limited) return limited;
 
     // 본문을 다 읽기 전에 알 수 있으면 먼저 거절한다.
     const declared = Number(request.headers.get("content-length"));

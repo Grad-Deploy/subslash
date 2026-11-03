@@ -55,9 +55,9 @@ const SESSION_ISSUERS = new Set([
 /**
  * apiFetch가 받은 응답으로 보관한 토큰을 바꾼다.
  *
- * `/api/auth/me`가 계정 없음(null)을 줘도 토큰을 지우지 않는다. 그 응답은 서버 DB 오류 때도
- * 같아서, 지우면 서버가 잠깐 아플 때 사용자가 로그아웃된다. 만료된 토큰은 서버가 무시할 뿐이고
- * 다음 로그인이 덮어쓴다.
+ * `/api/auth/me`가 계정 없음(null)을 줘도 토큰을 지우지 않는다. 예전 서버는 DB 오류 때도 같은 응답을
+ * 줬고, 지우면 서버가 잠깐 아플 때 사용자가 로그아웃된다. 만료된 토큰은 서버가 무시할 뿐이고 다음
+ * 로그인이 덮어쓴다.
  */
 export async function trackSessionResponse(
   path: string,

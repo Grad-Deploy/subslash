@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   AI_ASK_DAILY_COUNT_STARTS_ON,
   AI_ASK_STARTS_ON,
+  ERROR_LOG_EXPORT,
   ANONYMOUS_STATS_ENDED_ON,
   ANONYMOUS_STATS_STARTS_ON,
   DEVICE_USAGE_STARTS_ON,
@@ -380,6 +381,18 @@ export function PrivacyEn() {
                     calculation or help article to answer with — does not store questions
                   </td>
                   <td className="px-3 py-2">A server operated by Dankook University</td>
+                </tr>
+              )}
+              {ERROR_LOG_EXPORT && (
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-medium">Grafana Labs</td>
+                  <td className="px-3 py-2">
+                    Keeping server error records from {englishDate(ERROR_LOG_EXPORT.startsOn)} —
+                    only the name of the failing feature and the error message with tokens and email
+                    addresses removed. No account, IP address or request URL is sent. Deleted after{" "}
+                    {ERROR_LOG_EXPORT.retentionDays} days
+                  </td>
+                  <td className="px-3 py-2">{ERROR_LOG_EXPORT.regionEn}</td>
                 </tr>
               )}
               <tr className="border-t">

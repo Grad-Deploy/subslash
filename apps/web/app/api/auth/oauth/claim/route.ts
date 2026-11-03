@@ -4,6 +4,9 @@ import { sessionTokenForApp, startLoginSession, toPublicAccount } from "@lib/aut
 import { isAppOrigin } from "@lib/app-origins";
 import { consumeAppClaim } from "@lib/oauth-accounts";
 import { logError } from "@lib/log";
+import { clientIp, takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
+
+const ATTEMPTS_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
 
 const VERIFIER_PATTERN = /^[A-Za-z0-9_-]{43,128}$/;
 
@@ -14,6 +17,8 @@ const VERIFIER_PATTERN = /^[A-Za-z0-9_-]{43,128}$/;
  * httpOnly로 둔 의미가 없다(sessionTokenForApp과 같은 규칙). 한 번 받아 가면 지워진다.
  */
 export async function POST(request: NextRequest) {
+  const limited = takeRateLimit(`oauth-claim:${clientIp(request.headers)}`, ATTEMPTS_PER_IP);
+  if (limited) return limited;
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   if (!isAppOrigin(request.headers.get("origin"))) {

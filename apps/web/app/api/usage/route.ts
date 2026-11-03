@@ -13,6 +13,7 @@ import {
 import {
   hit,
   retryAfterSeconds,
+  takeRateLimit,
   tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
@@ -25,6 +26,7 @@ import { logError } from "@lib/log";
 
 /** 기기는 앱을 열 때·하루 몇 번 올린다. 한 계정에 기기가 여럿이어도 넉넉한 값이다. */
 const UPLOADS_PER_ACCOUNT: RateLimitRule = { limit: 60, windowMs: HOUR_MS };
+const READS_PER_ACCOUNT: RateLimitRule = { limit: 120, windowMs: HOUR_MS };
 
 export async function GET(request: NextRequest) {
   if (!isDeviceUsageOpen()) return featureClosedResponse();
@@ -33,6 +35,8 @@ export async function GET(request: NextRequest) {
   try {
     const account = await getRequestAccount(request);
     if (!account) return loginRequiredResponse();
+    const limited = takeRateLimit(`usage-read:account:${account.id}`, READS_PER_ACCOUNT);
+    if (limited) return limited;
     const requested = Number(request.nextUrl.searchParams.get("days") ?? 30);
     const days = Number.isInteger(requested)
       ? Math.min(Math.max(requested, 1), USAGE_RETENTION_DAYS)

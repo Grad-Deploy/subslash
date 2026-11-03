@@ -9,6 +9,16 @@ import {
   claimCalendarSyncPlan,
 } from "@lib/calendar-sync";
 import { logError } from "@lib/log";
+import {
+  clientIp,
+  hit,
+  retryAfterSeconds,
+  tooManyRequestsResponse,
+  type RateLimitRule,
+} from "@lib/rate-limit";
+
+/** 정상 요청은 Google의 공유 IP에서 오므로 실패만 센다. */
+const FAILURES_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
 
 /**
  * SubSlash 웹 앱(Apps Script)이 사용자의 권한으로 돌면서 코드를 결제일 일정으로 바꾸는 곳.
@@ -20,11 +30,16 @@ export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
 
+  const missKey = `calendar-claim-miss:${clientIp(request.headers)}`;
+  const wait = retryAfterSeconds(missKey, FAILURES_PER_IP);
+  if (wait > 0) return tooManyRequestsResponse(wait);
+
   try {
     const body = (await request.json().catch(() => null)) as { code?: unknown } | null;
     const code = typeof body?.code === "string" ? body.code.slice(0, 200) : "";
     const plan = code ? await claimCalendarSyncPlan(code) : null;
     if (!plan) {
+      hit(missKey, FAILURES_PER_IP);
       return NextResponse.json(
         { error: "요청이 만료됐거나 이미 쓰였습니다. SubSlash에서 다시 눌러 주세요." },
         { status: 400 },

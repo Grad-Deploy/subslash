@@ -5,6 +5,10 @@ import { hashPassword } from "@lib/password";
 import { createSession, sessionJsonResponse } from "@lib/auth-server";
 import { applyPasswordReset, resolveResetLink } from "@lib/password-reset";
 import { logError } from "@lib/log";
+import { clientIp, takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
+import { LINK_TOKEN_HEADER } from "@lib/link-token";
+
+const ATTEMPTS_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
 
 /**
  * 재설정 메일의 링크가 여는 `/reset-password` 페이지가 부르는 곳.
@@ -13,10 +17,14 @@ import { logError } from "@lib/log";
  * 먼저 열어본다. 비밀번호는 사람이 새 비밀번호를 적어 보내는 POST로만 바뀐다.
  */
 export async function GET(request: NextRequest) {
+  const limited = takeRateLimit(`reset-confirm:${clientIp(request.headers)}`, ATTEMPTS_PER_IP);
+  if (limited) return limited;
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const state = await resolveResetLink(request.nextUrl.searchParams.get("token"));
+    const state = await resolveResetLink(
+      request.headers.get(LINK_TOKEN_HEADER) ?? request.nextUrl.searchParams.get("token"),
+    );
     if (state.kind === "invalid") return NextResponse.json({ status: "invalid" });
     return NextResponse.json({
       status: "valid",
@@ -36,6 +44,8 @@ export async function GET(request: NextRequest) {
  * 새 비밀번호를 방금 정한 사람에게 그 비밀번호를 한 번 더 치게 할 이유가 없다.
  */
 export async function POST(request: NextRequest) {
+  const limited = takeRateLimit(`reset-confirm:${clientIp(request.headers)}`, ATTEMPTS_PER_IP);
+  if (limited) return limited;
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {

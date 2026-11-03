@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { databaseUnavailableResponse } from "@lib/db";
 import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
+import { takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
+import { HOUR_MS } from "@subslash/shared";
+
+const REQUESTS_PER_ACCOUNT: RateLimitRule = { limit: 120, windowMs: HOUR_MS };
 import { acknowledgeDiscoveries, listDiscoveries } from "@lib/gmail-auto-import";
 import { logError } from "@lib/log";
 
@@ -19,6 +23,8 @@ export async function GET(request: NextRequest) {
   try {
     const account = await getRequestAccount(request);
     if (!account) return loginRequiredResponse();
+    const limited = takeRateLimit(`gmail-discoveries:${account.id}`, REQUESTS_PER_ACCOUNT);
+    if (limited) return limited;
     return NextResponse.json({ discoveries: await listDiscoveries(account.id) });
   } catch (error) {
     logError("api/gmail/discoveries GET", error);

@@ -8,6 +8,8 @@
  * 값이 없는 문장)만 남긴다.
  */
 
+import { exportErrorLine, redactSecrets } from "./error-export";
+
 interface QueryErrorLike {
   query: string;
   params: unknown;
@@ -53,7 +55,10 @@ export function describeError(error: unknown): string {
 /** `console.error("[scope]", error)` 대신 쓴다. 스택은 값이 없어 남긴다. */
 export function logError(scope: string, error: unknown): void {
   const stack = error instanceof Error && !isQueryError(error) ? error.stack : undefined;
-  console.error(`[${scope}] ${describeError(error)}`, ...(stack ? [`\n${stack}`] : []));
+  // 오류 문장에 토큰·이메일이 섞여 와도 배포 로그와 Grafana에 남지 않게 지운다. 바깥으로는 스택 없이 한 줄만 보낸다.
+  const line = redactSecrets(`[${scope}] ${describeError(error)}`);
+  console.error(line, ...(stack ? [`\n${redactSecrets(stack)}`] : []));
+  exportErrorLine(line);
 }
 
 /**

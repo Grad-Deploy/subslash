@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       signal: AbortSignal.timeout(8000),
     });
     if (!response.ok) {
-      console.error("[api/fx/history] upstream responded", response.status);
+      logError("api/fx/history", `upstream responded ${response.status}`);
       return NextResponse.json({ error: "upstream_unavailable" }, { status: 502 });
     }
     const body = (await response.json()) as { rates?: Record<string, { KRW?: unknown }> };

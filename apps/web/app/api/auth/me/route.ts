@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isDatabaseConfigured } from "@lib/db";
-import { getAccountBySessionToken, readSessionToken, toPublicAccount } from "@lib/auth-server";
+import { getRequestAccount, toPublicAccount } from "@lib/auth-server";
 import { logError } from "@lib/log";
 
 /**
@@ -16,11 +16,12 @@ export async function GET(request: NextRequest) {
   if (!isDatabaseConfigured()) return NextResponse.json({ account: null });
 
   try {
-    const token = readSessionToken(request);
-    const account = await getAccountBySessionToken(token);
+    const account = await getRequestAccount(request);
     return NextResponse.json({ account: account ? toPublicAccount(account) : null });
   } catch (error) {
+    // 계정 없음(200)으로 답하지 않는다. 화면은 그 답을 로그아웃으로 받아 기록을 비로그인 칸으로 바꾼다 —
+    // DB가 잠깐 아플 때 로그인한 사람의 기록이 화면에서 사라졌다.
     logError("api/auth/me", error);
-    return NextResponse.json({ account: null });
+    return NextResponse.json({ error: "database_unavailable" }, { status: 503 });
   }
 }

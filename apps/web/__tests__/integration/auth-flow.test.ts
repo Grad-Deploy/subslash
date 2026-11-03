@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterAll } from "vitest";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { eq } from "drizzle-orm";
+import { NextRequest } from "next/server";
 
 /**
  * 회원가입 → 로그인 → 세션 확인 → 로그아웃을 실제 SQLite에 대고 돌린다.
@@ -552,5 +553,27 @@ describe("입력값이 쿼리문에 섞여 들어가지 않는다", () => {
       expect((await res.json()).account).toBeNull();
       expect(await db.select().from(accounts)).toHaveLength(1);
     }
+  });
+});
+
+describe("지어낸 세션 토큰", () => {
+  const forged = (token: string) =>
+    new NextRequest("http://localhost/api/auth/me", {
+      headers: { authorization: `Bearer ${token}`, "x-forwarded-for": "198.51.100.7" },
+    });
+
+  it("모양이 틀리면 DB를 읽지 않고, 없는 토큰을 많이 내민 IP는 로그아웃이 아니라 오류로 답한다", async () => {
+    await resetDatabase();
+    resetAllRateLimits();
+    expect(await (await meRoute(forged("nope"))).json()).toEqual({ account: null });
+
+    const unknown = "a".repeat(64);
+    for (let i = 0; i < 60; i += 1) {
+      expect((await meRoute(forged(unknown))).status).toBe(200);
+    }
+    const blocked = await meRoute(forged(unknown));
+    expect(blocked.status).toBe(503);
+    expect(await blocked.json()).not.toHaveProperty("account");
+    resetAllRateLimits();
   });
 });

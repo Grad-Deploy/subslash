@@ -105,7 +105,7 @@ export async function sendAccountVerification(account: Account): Promise<SendOut
     );
     const mail = accountVerificationEmail({
       username: account.username,
-      confirmUrl: `${appUrl()}/verify-email?token=${encodeURIComponent(token)}`,
+      confirmUrl: `${appUrl()}/verify-email#token=${encodeURIComponent(token)}`,
       validDays: VERIFY_ACCOUNT_TTL_DAYS,
     });
     const result = await sendEmail({ to: account.email, ...mail });
