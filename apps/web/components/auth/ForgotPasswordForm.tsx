@@ -6,6 +6,7 @@ import { normalizeEmailAddress, validateEmail } from "@subslash/shared";
 import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { apiPostJson } from "@lib/api";
+import { readResponseBody, textOf } from "@lib/api-body";
 import { HydratedForm } from "@components/ui/hydrated-form";
 import { useKnownText, useLatestT, useT } from "@lib/i18n";
 
@@ -41,14 +42,10 @@ export function ForgotPasswordForm() {
     setSubmitting(true);
     try {
       const res = await apiPostJson("/api/auth/password-reset", { email: normalized });
-      const data = await res.json().catch(() => ({}));
+      const data = await readResponseBody(res);
       const message =
-        typeof data?.message === "string"
-          ? data.message
-          : typeof data?.error === "string"
-            ? data.error
-            : tRef.current.account.forgot.failed;
-      setResult({ tone: data?.status === "sent" ? "ok" : "error", message });
+        textOf(data, "message") ?? textOf(data, "error") ?? tRef.current.account.forgot.failed;
+      setResult({ tone: data.status === "sent" ? "ok" : "error", message });
     } catch {
       setResult({
         tone: "error",

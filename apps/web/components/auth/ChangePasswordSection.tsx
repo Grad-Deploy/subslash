@@ -13,6 +13,7 @@ import {
   type LiveStatus,
 } from "@lib/signup-status";
 import { apiFetch } from "@lib/api";
+import { fieldErrorsOf, readResponseBody, textOf } from "@lib/api-body";
 import { StatusMessage, statusBorder } from "./LiveStatusMessage";
 import { useKnownText, useLatestT, useT } from "@lib/i18n";
 import { ko as accountMessages } from "@lib/i18n/messages/account";
@@ -111,8 +112,9 @@ export function ChangePasswordSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPassword: current, password, passwordConfirm: confirm }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data?.status === "changed") {
+      const data = await readResponseBody(res);
+      const fieldErrors = fieldErrorsOf(data);
+      if (res.ok && data.status === "changed") {
         setCurrent("");
         setPassword("");
         setConfirm("");
@@ -123,13 +125,12 @@ export function ChangePasswordSection() {
         });
         // 서버가 새 세션 쿠키를 내렸다. 옛 세션은 지워졌으니 로그인 상태를 다시 묻는다.
         await refreshAuth();
-      } else if (data?.fieldErrors) {
-        setSubmitErrors(data.fieldErrors);
+      } else if (fieldErrors) {
+        setSubmitErrors(fieldErrors);
       } else {
         setResult({
           tone: "error",
-          message:
-            typeof data?.error === "string" ? data.error : tRef.current.account.change.failed,
+          message: textOf(data, "error") ?? tRef.current.account.change.failed,
         });
         // 다른 곳에서 먼저 바꿨다면 이 기기의 로그인도 끊겼다. 화면이 그 상태를 따른다.
         if (res.status === 409) await refreshAuth();

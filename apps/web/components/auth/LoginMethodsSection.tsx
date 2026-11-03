@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@components/ui/button";
 import { useAuth } from "@hooks/useAuth";
 import { apiFetch, apiUrl, apiPostJson } from "@lib/api";
+import { isApiPath, readResponseBody, textOf } from "@lib/api-body";
 import { appReturnScheme, leaveForExternal } from "@lib/native";
 import { IS_APP_BUILD } from "@lib/platform";
 import { oauthErrorMessageFrom } from "@lib/oauth-messages";
@@ -110,25 +111,24 @@ export function LoginMethodsSection() {
     }
     try {
       const res = await apiPostJson("/api/auth/oauth/link", { provider });
-      const data = (await res.json().catch(() => ({}))) as {
-        path?: `/api/${string}`;
-        error?: string;
-      };
-      if (!res.ok || !data.path) {
+      const data = await readResponseBody(res);
+      // 이 주소로 곧바로 나가므로 우리 API 경로인지 확인한다.
+      const path = textOf(data, "path");
+      if (!res.ok || !isApiPath(path)) {
         setNotice({
           tone: "error",
-          message: data.error ?? latest.current.account.methods.startFailed,
+          message: textOf(data, "error") ?? latest.current.account.methods.startFailed,
         });
         setBusy(null);
         return;
       }
       if (!IS_APP_BUILD) {
-        leaveForExternal(new URL(apiUrl(data.path), window.location.href).toString());
+        leaveForExternal(new URL(apiUrl(path), window.location.href).toString());
         return;
       }
       const scheme = await appReturnScheme();
       const returnParam = scheme ? `&return=${encodeURIComponent(scheme)}` : "";
-      leaveForExternal(apiUrl(`${data.path}&client=app${returnParam}`), (result) => {
+      leaveForExternal(apiUrl(`${path}&client=app${returnParam}`), (result) => {
         setBusy(null);
         const linked = result?.get("oauthLinked");
         const failed = result ? oauthErrorMessageFrom(result, latest.current.oauth) : null;
@@ -151,11 +151,11 @@ export function LoginMethodsSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provider }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
+        const data = await readResponseBody(res);
         setNotice({
           tone: "error",
-          message: data.error ?? latest.current.account.methods.disconnectFailed,
+          message: textOf(data, "error") ?? latest.current.account.methods.disconnectFailed,
         });
       } else {
         setNotice({

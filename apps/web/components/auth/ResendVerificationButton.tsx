@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@components/ui/button";
 import { apiPostJson } from "@lib/api";
+import { readResponseBody, textOf } from "@lib/api-body";
 import { useKnownText, useT } from "@lib/i18n";
 
 type SendStatus = { tone: "ok" | "error"; message: string } | null;
@@ -26,10 +27,10 @@ export function ResendVerificationButton({ email, label }: { email?: string; lab
     setStatus(null);
     try {
       const res = await apiPostJson("/api/auth/verification-email", email ? { email } : {});
-      const data = await res.json().catch(() => ({}));
+      const data = await readResponseBody(res);
       setStatus({
-        tone: data?.status === "sent" ? "ok" : "error",
-        message: data?.message ?? data?.error ?? t.failed,
+        tone: data.status === "sent" ? "ok" : "error",
+        message: textOf(data, "message") ?? textOf(data, "error") ?? t.failed,
       });
     } catch {
       setStatus({

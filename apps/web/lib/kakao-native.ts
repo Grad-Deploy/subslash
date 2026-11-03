@@ -8,6 +8,7 @@
  */
 import { androidPluginLoader } from "./android-plugin";
 import { apiPostJson } from "./api";
+import { readResponseBody, textOf } from "./api-body";
 
 interface KakaoLoginPlugin {
   isAvailable(): Promise<{ available: boolean }>;
@@ -67,8 +68,8 @@ export async function kakaoNativeLogin(options: {
       link: options.link === true,
     });
     if (res.ok) return { status: "ok" };
-    const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-    return errorOf(typeof body.oauthError === "string" ? body.oauthError : "server", body);
+    const body = await readResponseBody(res);
+    return errorOf(textOf(body, "oauthError") ?? "server", body);
   } catch {
     return errorOf("server");
   }
