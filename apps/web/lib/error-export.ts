@@ -95,6 +95,14 @@ async function push(config: LokiConfig, line: string, now: number): Promise<void
   }
 }
 
+/**
+ * 지금 오류 줄이 나가는 상태인지(설정이 있고 방침의 시작일이 지났는지). 운영자의 확인 경로가 "보냈다"와 "꺼져 있다"를
+ * 나눠 답하는 데 쓴다 — 꺼져 있는데 200만 돌려주면 Grafana에 줄이 없는 이유를 토큰 탓으로 오해한다.
+ */
+export function isErrorExportActive(now = Date.now()): boolean {
+  return lokiConfig() !== null && isErrorLogExportOpen(new Date(now));
+}
+
 /** 이미 값을 지운 한 줄을 내보낸다. 응답을 보낸 뒤에 보내고(`after`), 요청 밖이면 바로 보낸다. */
 export function exportErrorLine(line: string, now = Date.now()): void {
   const config = lokiConfig();
