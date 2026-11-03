@@ -4,10 +4,10 @@ import { databaseUnavailableResponse } from "@lib/db";
 import { hashPassword } from "@lib/password";
 import { createSession, sessionJsonResponse } from "@lib/auth-server";
 import { applyPasswordReset, resolveResetLink } from "@lib/password-reset";
-import { logError } from "@lib/log";
 import { clientIp, takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
 import { LINK_TOKEN_HEADER } from "@lib/link-token";
 import { badRequestResponse, readJsonObject } from "@lib/request-body";
+import { serverErrorResponse } from "@lib/route-error";
 
 const ATTEMPTS_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
 
@@ -33,8 +33,11 @@ export async function GET(request: NextRequest) {
       email: state.account.email,
     });
   } catch (error) {
-    logError("api/auth/password-reset/confirm", error);
-    return NextResponse.json({ error: "재설정 링크를 처리하지 못했습니다." }, { status: 500 });
+    return serverErrorResponse(
+      "api/auth/password-reset/confirm",
+      error,
+      "재설정 링크를 처리하지 못했습니다.",
+    );
   }
 }
 
@@ -79,7 +82,10 @@ export async function POST(request: NextRequest) {
       username: state.account.username,
     });
   } catch (error) {
-    logError("api/auth/password-reset/confirm", error);
-    return NextResponse.json({ error: "비밀번호를 바꾸지 못했습니다." }, { status: 500 });
+    return serverErrorResponse(
+      "api/auth/password-reset/confirm",
+      error,
+      "비밀번호를 바꾸지 못했습니다.",
+    );
   }
 }

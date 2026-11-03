@@ -13,6 +13,7 @@ import { linkOAuthIdentity, resolveOAuthAccount } from "@lib/oauth-accounts";
 import { isSocialLoginOpen } from "@lib/privacy";
 import { logError } from "@lib/log";
 import { readJsonObject } from "@lib/request-body";
+import { sessionThrottledResponse } from "@lib/route-error";
 
 /** 카카오 액세스 토큰 모양. 길이만 넉넉히 거른다(내용은 카카오가 확인한다). */
 const TOKEN_PATTERN = /^[A-Za-z0-9_\-.~+/=]{20,512}$/;
@@ -73,6 +74,9 @@ export async function POST(request: NextRequest) {
     if (error instanceof OAuthError) {
       return fail(error.code, error.code === "server" ? 500 : 400, error.via, provider);
     }
+    // 세션 확인을 막은 것은 요청 수 제한이라 오류 줄을 남기지 않고 429로 답한다(lib/route-error).
+    const throttled = sessionThrottledResponse(error);
+    if (throttled) return throttled;
     logError("api/auth/oauth/native", error);
     return fail("server", 500);
   }

@@ -6,8 +6,8 @@ import { appUrl } from "@lib/email";
 import { isAppOrigin } from "@lib/app-origins";
 import { isAppReturnScheme } from "@lib/app-return";
 import { createConnectCode, gmailConnectWebAppUrl } from "@lib/gmail-auto-import";
-import { logError } from "@lib/log";
 import { SOURCE_LOCALE, isAppsScriptLocale } from "@lib/i18n/config";
+import { serverErrorResponse } from "@lib/route-error";
 
 /**
  * 원클릭 Gmail 연결 시작. 로그인한 사람에게 SubSlash 웹 앱(Apps Script) 주소를 연결 코드와 함께
@@ -46,7 +46,6 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ url: url.toString() });
   } catch (error) {
-    logError("api/gmail/connect", error);
-    return NextResponse.json({ error: "Gmail 연결을 시작하지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/gmail/connect", error, "Gmail 연결을 시작하지 못했습니다.");
   }
 }

@@ -11,8 +11,8 @@ import { createLinkCode, linkedProviders, unlinkOAuthIdentity } from "@lib/oauth
 import { hasPassword } from "@lib/password";
 import { isSocialLoginOpen } from "@lib/privacy";
 import { canSignLinks } from "@lib/tokens";
-import { logError } from "@lib/log";
 import { badRequestResponse, readJsonObject } from "@lib/request-body";
+import { serverErrorResponse } from "@lib/route-error";
 
 /**
  * '내 정보'의 로그인 방법: 계정에 구글·카카오·네이버를 잇고 끊는다. 모두 로그인 세션으로만 계정을 정한다.
@@ -42,8 +42,11 @@ export async function GET(request: NextRequest) {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    logError("api/auth/oauth/link GET", error);
-    return NextResponse.json({ error: "로그인 방법을 불러오지 못했습니다." }, { status: 500 });
+    return serverErrorResponse(
+      "api/auth/oauth/link GET",
+      error,
+      "로그인 방법을 불러오지 못했습니다.",
+    );
   }
 }
 
@@ -76,8 +79,7 @@ export async function POST(request: NextRequest) {
     const params = new URLSearchParams({ link: code });
     return NextResponse.json({ path: `/api/auth/oauth/${provider}/start?${params}` });
   } catch (error) {
-    logError("api/auth/oauth/link POST", error);
-    return NextResponse.json({ error: "연결을 시작하지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/auth/oauth/link POST", error, "연결을 시작하지 못했습니다.");
   }
 }
 
@@ -104,7 +106,6 @@ export async function DELETE(request: NextRequest) {
     }
     return NextResponse.json({ ok: true, linked: await linkedProviders(account.id) });
   } catch (error) {
-    logError("api/auth/oauth/link DELETE", error);
-    return NextResponse.json({ error: "연결을 끊지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/auth/oauth/link DELETE", error, "연결을 끊지 못했습니다.");
   }
 }

@@ -10,7 +10,9 @@ process.env.TURSO_DATABASE_URL = ":memory:";
 delete process.env.TURSO_AUTH_TOKEN;
 
 const getRequestAccount = vi.fn();
-vi.mock("@lib/auth-server", () => ({
+vi.mock("@lib/auth-server", async (importOriginal) => ({
+  SessionCheckThrottledError: (await importOriginal<typeof import("@lib/auth-server")>())
+    .SessionCheckThrottledError,
   getRequestAccount,
   toPublicAccount: (account: unknown) => account,
 }));

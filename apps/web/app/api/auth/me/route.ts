@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isDatabaseConfigured } from "@lib/db";
 import { getRequestAccount, toPublicAccount } from "@lib/auth-server";
-import { logError } from "@lib/log";
+import { serverErrorResponse } from "@lib/route-error";
 
 /**
  * 지금 로그인된 계정.
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     // 계정 없음(200)으로 답하지 않는다. 화면은 그 답을 로그아웃으로 받아 기록을 비로그인 칸으로 바꾼다 —
     // DB가 잠깐 아플 때 로그인한 사람의 기록이 화면에서 사라졌다.
-    logError("api/auth/me", error);
-    return NextResponse.json({ error: "database_unavailable" }, { status: 503 });
+    // 세션 확인을 막은 것(없는 토큰을 많이 내민 IP)은 429다 — 어느 쪽이든 화면은 알던 상태를 그대로 둔다.
+    return serverErrorResponse("api/auth/me", error, "database_unavailable", 503);
   }
 }

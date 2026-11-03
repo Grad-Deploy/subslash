@@ -14,9 +14,9 @@ import {
   tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
-import { logError } from "@lib/log";
 import { SOURCE_LOCALE } from "@lib/i18n/config";
 import { readJson } from "@lib/request-body";
+import { serverErrorResponse } from "@lib/route-error";
 
 /**
  * '구글 캘린더에 등록'을 시작한다. 브라우저가 지금 구독의 결제일을 맡기면, SubSlash Apps Script
@@ -81,7 +81,6 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ url: url.toString() });
   } catch (error) {
-    logError("api/calendar-sync", error);
-    return NextResponse.json({ error: "캘린더 등록을 시작하지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/calendar-sync", error, "캘린더 등록을 시작하지 못했습니다.");
   }
 }
