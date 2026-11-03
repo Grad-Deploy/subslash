@@ -23,7 +23,10 @@ test.describe("개인정보처리방침 (E2E)", () => {
       timeout: 30_000,
     });
     // 서버로 가는 것이 무엇인지와, 국외 처리 위치를 적는다.
-    await expect(page.getByText("일본 도쿄(AWS)")).toBeVisible();
+    // Grafana(오류 기록)도 같은 지역이라, DB를 두는 Turso 행으로 좁힌다.
+    await expect(
+      page.getByRole("row", { name: /Turso/ }).getByText("일본 도쿄(AWS)"),
+    ).toBeVisible();
     // 법이 적으라고 한 것들 — 권익침해 구제를 맡는 기관과 Google 데이터 취급.
     await expect(page.getByText("개인정보분쟁조정위원회")).toBeVisible();
     await expect(page.getByRole("heading", { name: /Google 사용자 데이터 취급/ })).toBeVisible();
