@@ -80,15 +80,29 @@ export async function GET(request: NextRequest) {
       return { status: "error" as const, reason: "exception" };
     });
 
-    return NextResponse.json({
-      success: true,
-      tursoUsage,
-      sessionsPruned,
-      prunedAccounts,
-      prunedUsage,
-      askCountsPruned,
-      timestamp: now.toISOString(),
-    });
+    // 하나라도 실패하면 500으로 답한다. 정리는 서로 막지 않게 끝까지 돌리지만, 200으로 답하면 `/api/*` 5xx를 보는
+    // Vercel 알림이 울리지 않고, 크론은 다시 시도하지 않아 방침의 보관 기간을 넘긴 기록이 아무도 모르게 남는다.
+    const failed = [
+      prunedUsage === null && isDeviceUsageOpen(now) && "usage",
+      !sessionsPruned && "sessions",
+      prunedAccounts === null && "accounts",
+      askCountsPruned === false && "askCounts",
+      tursoUsage.status === "error" && "tursoUsage",
+    ].filter((name): name is string => Boolean(name));
+
+    return NextResponse.json(
+      {
+        success: failed.length === 0,
+        failed,
+        tursoUsage,
+        sessionsPruned,
+        prunedAccounts,
+        prunedUsage,
+        askCountsPruned,
+        timestamp: now.toISOString(),
+      },
+      { status: failed.length === 0 ? 200 : 500 },
+    );
   } catch (error) {
     logError("cron/notify", error);
     return NextResponse.json({ error: "Daily cleanup failed" }, { status: 500 });
