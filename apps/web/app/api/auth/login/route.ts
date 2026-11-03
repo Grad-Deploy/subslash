@@ -18,8 +18,8 @@ import {
   tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
-import { logError } from "@lib/log";
 import { badRequestResponse, readJsonObject } from "@lib/request-body";
+import { serverErrorResponse } from "@lib/route-error";
 
 /**
  * 비밀번호 대입을 늦춘다. 실패만 센다 — 제대로 로그인하는 사람은 막히지 않는다. 아이디 기준은 한
@@ -98,7 +98,6 @@ export async function POST(request: NextRequest) {
     }
     return sessionJsonResponse(request, started.session, { account: toPublicAccount(account) });
   } catch (error) {
-    logError("api/auth/login", error);
-    return NextResponse.json({ error: "로그인을 처리하지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/auth/login", error, "로그인을 처리하지 못했습니다.");
   }
 }

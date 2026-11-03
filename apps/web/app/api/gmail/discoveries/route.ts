@@ -4,10 +4,10 @@ import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
 import { takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
 import { HOUR_MS } from "@subslash/shared";
 import { readJsonObject } from "@lib/request-body";
+import { serverErrorResponse } from "@lib/route-error";
 
 const REQUESTS_PER_ACCOUNT: RateLimitRule = { limit: 120, windowMs: HOUR_MS };
 import { acknowledgeDiscoveries, listDiscoveries } from "@lib/gmail-auto-import";
-import { logError } from "@lib/log";
 
 /**
  * 결제 메일에서 찾아 둔 구독 후보 — 받기(GET), 받은 것 지우기(DELETE).
@@ -28,8 +28,11 @@ export async function GET(request: NextRequest) {
     if (limited) return limited;
     return NextResponse.json({ discoveries: await listDiscoveries(account.id) });
   } catch (error) {
-    logError("api/gmail/discoveries GET", error);
-    return NextResponse.json({ error: "찾아 둔 구독을 읽지 못했습니다." }, { status: 500 });
+    return serverErrorResponse(
+      "api/gmail/discoveries GET",
+      error,
+      "찾아 둔 구독을 읽지 못했습니다.",
+    );
   }
 }
 
@@ -50,7 +53,10 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ deleted: await acknowledgeDiscoveries(account.id, ids) });
   } catch (error) {
-    logError("api/gmail/discoveries DELETE", error);
-    return NextResponse.json({ error: "찾아 둔 구독을 지우지 못했습니다." }, { status: 500 });
+    return serverErrorResponse(
+      "api/gmail/discoveries DELETE",
+      error,
+      "찾아 둔 구독을 지우지 못했습니다.",
+    );
   }
 }

@@ -8,9 +8,9 @@ import {
   saveSnapshot,
 } from "@lib/account-snapshot";
 import type { SaveCondition } from "@lib/account-snapshot";
-import { logError } from "@lib/log";
 import { takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
 import { HOUR_MS } from "@subslash/shared";
+import { serverErrorResponse } from "@lib/route-error";
 
 /** 자동 동기화는 화면으로 돌아올 때 읽고, 바뀐 뒤 2초 모아 올린다. 올릴 때마다 행을 쓴다. */
 const READS_PER_ACCOUNT: RateLimitRule = { limit: 300, windowMs: HOUR_MS };
@@ -49,8 +49,11 @@ export async function GET(request: NextRequest) {
       backup: snapshot.backup,
     });
   } catch (error) {
-    logError("api/account/snapshot GET", error);
-    return NextResponse.json({ error: "계정에 저장된 기록을 읽지 못했습니다." }, { status: 500 });
+    return serverErrorResponse(
+      "api/account/snapshot GET",
+      error,
+      "계정에 저장된 기록을 읽지 못했습니다.",
+    );
   }
 }
 
@@ -104,8 +107,7 @@ export async function PUT(request: NextRequest) {
     }
     return NextResponse.json({ status: "saved", summary: result.summary });
   } catch (error) {
-    logError("api/account/snapshot PUT", error);
-    return NextResponse.json({ error: "계정에 저장하지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/account/snapshot PUT", error, "계정에 저장하지 못했습니다.");
   }
 }
 
@@ -119,7 +121,10 @@ export async function DELETE(request: NextRequest) {
     const deleted = await deleteSnapshot(account.id);
     return NextResponse.json({ status: deleted ? "deleted" : "none" });
   } catch (error) {
-    logError("api/account/snapshot DELETE", error);
-    return NextResponse.json({ error: "계정에 저장된 기록을 지우지 못했습니다." }, { status: 500 });
+    return serverErrorResponse(
+      "api/account/snapshot DELETE",
+      error,
+      "계정에 저장된 기록을 지우지 못했습니다.",
+    );
   }
 }

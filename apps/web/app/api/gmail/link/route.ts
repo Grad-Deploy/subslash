@@ -8,7 +8,7 @@ import {
   gmailConnectWebAppUrl,
   readImportLink,
 } from "@lib/gmail-auto-import";
-import { logError } from "@lib/log";
+import { serverErrorResponse } from "@lib/route-error";
 
 /**
  * Gmail 자동 가져오기 연결 — 상태(GET), 연결 토큰 발급·재발급(POST), 끊기(DELETE).
@@ -34,8 +34,7 @@ export async function GET(request: NextRequest) {
         : { open: true, linked: false, connectAvailable },
     );
   } catch (error) {
-    logError("api/gmail/link GET", error);
-    return NextResponse.json({ error: "연결 상태를 읽지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/gmail/link GET", error, "연결 상태를 읽지 못했습니다.");
   }
 }
 
@@ -49,8 +48,7 @@ export async function POST(request: NextRequest) {
     const token = await createImportLink(account.id);
     return NextResponse.json({ token });
   } catch (error) {
-    logError("api/gmail/link POST", error);
-    return NextResponse.json({ error: "연결 토큰을 만들지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/gmail/link POST", error, "연결 토큰을 만들지 못했습니다.");
   }
 }
 
@@ -64,7 +62,6 @@ export async function DELETE(request: NextRequest) {
     const deleted = await deleteGmailImportData(account.id);
     return NextResponse.json({ status: deleted ? "deleted" : "none" });
   } catch (error) {
-    logError("api/gmail/link DELETE", error);
-    return NextResponse.json({ error: "연결을 끊지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/gmail/link DELETE", error, "연결을 끊지 못했습니다.");
   }
 }

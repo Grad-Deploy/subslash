@@ -15,8 +15,8 @@ import {
   tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
-import { logError } from "@lib/log";
 import { badRequestResponse, readJsonObject } from "@lib/request-body";
+import { serverErrorResponse } from "@lib/route-error";
 
 /**
  * 로그인한 세션으로 지금 비밀번호를 거듭 대입하지 못하게 한다(자리를 비운 사이 누가 쓰는 경우).
@@ -96,10 +96,10 @@ export async function PUT(request: NextRequest) {
     const session = await createSession(account.id);
     return sessionJsonResponse(request, session, { status: "changed" });
   } catch (error) {
-    logError("api/auth/password", error);
-    return NextResponse.json(
-      { error: "비밀번호를 바꾸지 못했습니다. 잠시 후 다시 시도해주세요." },
-      { status: 500 },
+    return serverErrorResponse(
+      "api/auth/password",
+      error,
+      "비밀번호를 바꾸지 못했습니다. 잠시 후 다시 시도해주세요.",
     );
   }
 }

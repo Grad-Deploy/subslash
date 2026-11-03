@@ -14,7 +14,8 @@ import {
   sendAccountVerification,
   verificationWaitSeconds,
 } from "@lib/account-verification";
-import { isUniqueViolation, logError } from "@lib/log";
+import { isUniqueViolation } from "@lib/log";
+import { serverErrorResponse } from "@lib/route-error";
 import {
   clientIp,
   hit,
@@ -143,7 +144,6 @@ export async function POST(request: NextRequest) {
     if (isUniqueViolation(error)) {
       return NextResponse.json({ error: "이미 사용 중인 정보가 있습니다." }, { status: 409 });
     }
-    logError("api/auth/signup", error);
-    return NextResponse.json({ error: "가입을 처리하지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/auth/signup", error, "가입을 처리하지 못했습니다.");
   }
 }

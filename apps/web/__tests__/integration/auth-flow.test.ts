@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterAll, vi } from "vitest";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { eq } from "drizzle-orm";
@@ -562,7 +562,7 @@ describe("지어낸 세션 토큰", () => {
       headers: { authorization: `Bearer ${token}`, "x-forwarded-for": "198.51.100.7" },
     });
 
-  it("모양이 틀리면 DB를 읽지 않고, 없는 토큰을 많이 내민 IP는 로그아웃이 아니라 오류로 답한다", async () => {
+  it("모양이 틀리면 DB를 읽지 않고, 없는 토큰을 많이 내민 IP는 로그아웃이 아니라 429로 답한다", async () => {
     await resetDatabase();
     resetAllRateLimits();
     expect(await (await meRoute(forged("nope"))).json()).toEqual({ account: null });
@@ -571,9 +571,14 @@ describe("지어낸 세션 토큰", () => {
     for (let i = 0; i < 60; i += 1) {
       expect((await meRoute(forged(unknown))).status).toBe(200);
     }
+    // 서버 오류(500·503)로 답하면 막힌 요청마다 오류 줄이 남고 5xx 알림이 울린다 — 지어낸 토큰으로 거짓 장애 알림을 보낼 수 있었다.
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const blocked = await meRoute(forged(unknown));
-    expect(blocked.status).toBe(503);
+    expect(blocked.status).toBe(429);
+    expect(Number(blocked.headers.get("Retry-After"))).toBeGreaterThan(0);
     expect(await blocked.json()).not.toHaveProperty("account");
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
     resetAllRateLimits();
   });
 });

@@ -3,9 +3,9 @@ import { databaseUnavailableResponse } from "@lib/db";
 import { sessionTokenForApp, startLoginSession, toPublicAccount } from "@lib/auth-server";
 import { isAppOrigin } from "@lib/app-origins";
 import { consumeAppClaim } from "@lib/oauth-accounts";
-import { logError } from "@lib/log";
 import { clientIp, takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
 import { badRequestResponse, readJsonObject } from "@lib/request-body";
+import { serverErrorResponse } from "@lib/route-error";
 
 const ATTEMPTS_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
 
@@ -45,7 +45,6 @@ export async function POST(request: NextRequest) {
       ...sessionTokenForApp(request, session),
     });
   } catch (error) {
-    logError("api/auth/oauth/claim", error);
-    return NextResponse.json({ error: "로그인을 처리하지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/auth/oauth/claim", error, "로그인을 처리하지 못했습니다.");
   }
 }
