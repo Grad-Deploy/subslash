@@ -1,4 +1,5 @@
 import type { FieldErrors } from "@subslash/shared";
+import { fieldErrorsOf, textOf, type ResponseBody } from "./api-body";
 
 /**
  * 회원가입 폼(SignupForm)이 서버에 보내는 본문과 받은 응답의 해석. 화면 코드와 나눠 두어 테스트한다.
@@ -43,21 +44,21 @@ export type SignupOutcome =
     }
   | { ok: true; notice: VerificationNotice };
 
-interface SignupResponseBody {
-  error?: string;
-  fieldErrors?: FieldErrors;
-  emailPending?: boolean;
-  account?: { email?: string };
-  emailVerification?: { status?: string; message?: string };
+/** 안에 든 객체 칸. 객체가 아니면 빈 본문. */
+function objectOf(body: ResponseBody, key: string): ResponseBody {
+  const value = body[key];
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as ResponseBody)
+    : {};
 }
 
 /**
  * 가입 응답을 화면이 쓸 모양으로 바꾼다. 본문을 읽지 못했으면(빈 객체) 모른다고 말한다 — 확인 메일을
- * 보냈다고 단정하지 않는다.
+ * 보냈다고 단정하지 않는다. 칸은 모양을 확인해 꺼낸다(문자열이 아닌 문구를 화면에 넘기지 않는다).
  */
 export function readSignupResponse(
   ok: boolean,
-  data: SignupResponseBody | null | undefined,
+  data: ResponseBody,
   /** 사용자가 적은 주소를 정규화한 값. 응답에 주소가 없으면 이것을 쓴다. */
   normalizedEmail: string,
   /** 응답에 문구가 없을 때 쓰는 화면 언어의 문구. */
@@ -66,17 +67,18 @@ export function readSignupResponse(
   if (!ok) {
     return {
       ok: false,
-      fieldErrors: data?.fieldErrors ?? {},
-      formError: data?.error ?? fallback.failed,
-      pendingEmail: data?.emailPending ? normalizedEmail : null,
+      fieldErrors: (fieldErrorsOf(data) ?? {}) as FieldErrors,
+      formError: textOf(data, "error") ?? fallback.failed,
+      pendingEmail: data.emailPending === true ? normalizedEmail : null,
     };
   }
+  const verification = objectOf(data, "emailVerification");
   return {
     ok: true,
     notice: {
-      email: data?.account?.email ?? normalizedEmail,
-      sent: data?.emailVerification?.status === "sent",
-      message: data?.emailVerification?.message ?? fallback.unknownMail,
+      email: textOf(objectOf(data, "account"), "email") ?? normalizedEmail,
+      sent: verification.status === "sent",
+      message: textOf(verification, "message") ?? fallback.unknownMail,
     },
   };
 }

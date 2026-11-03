@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { normalizeEmailAddress, validateSignup, type FieldErrors } from "@subslash/shared";
 import { refreshAuth } from "@hooks/useAuth";
 import { apiFetch } from "@lib/api";
+import { readResponseBody } from "@lib/api-body";
 import {
   confirmStatusOf,
   emailStatusFor,
@@ -150,7 +151,7 @@ export function useSignupForm() {
         headers: { "Content-Type": "application/json" },
         body: signupRequestBody(values),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await readResponseBody(res);
       const outcome = readSignupResponse(res.ok, data, normalizedEmail, t);
 
       if (!outcome.ok) {

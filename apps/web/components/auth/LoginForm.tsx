@@ -8,6 +8,7 @@ import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { enterAfterLogin } from "@hooks/useAuth";
 import { apiPostJson } from "@lib/api";
+import { fieldErrorsOf, readResponseBody, textOf } from "@lib/api-body";
 import { HydratedForm } from "@components/ui/hydrated-form";
 import { useKnownText, useT } from "@lib/i18n";
 
@@ -51,11 +52,10 @@ export function LoginForm() {
         identifier: form.identifier,
         password: form.password,
       });
-      const data = await res.json().catch(() => ({}));
-
       if (!res.ok) {
-        setErrors(data?.fieldErrors ?? {});
-        setFormError(data?.error ?? t.failed);
+        const data = await readResponseBody(res);
+        setErrors(fieldErrorsOf(data) ?? {});
+        setFormError(textOf(data, "error") ?? t.failed);
         return;
       }
 

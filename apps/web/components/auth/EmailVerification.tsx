@@ -7,6 +7,7 @@ import { Button } from "@components/ui/button";
 import { refreshAuth } from "@hooks/useAuth";
 import { VERIFY_ACCOUNT_TTL_DAYS } from "@lib/verification-config";
 import { apiUrl, apiPostJson } from "@lib/api";
+import { readResponseBody, textOf, type ResponseBody } from "@lib/api-body";
 import { Spinner } from "../ui/spinner";
 import { useKnownText, useLatestT, useT, type Messages } from "@lib/i18n";
 
@@ -57,7 +58,7 @@ export function EmailVerification() {
         const res = await fetch(apiUrl("/api/auth/verify-email"), {
           headers: { [LINK_TOKEN_HEADER]: token },
         });
-        const data = await res.json().catch(() => ({}));
+        const data = await readResponseBody(res);
         if (!cancelled) setView(viewFrom(res.ok, data, tRef.current));
       } catch {
         if (!cancelled) setView({ kind: "network" });
@@ -72,10 +73,11 @@ export function EmailVerification() {
     setBusy(true);
     try {
       const res = await apiPostJson("/api/auth/verify-email", { token, decision });
-      const data = await res.json().catch(() => ({}));
-      if (data?.status === "verified" && data?.error) {
+      const data = await readResponseBody(res);
+      const error = textOf(data, "error");
+      if (data.status === "verified" && error) {
         // 지우려 했는데 그사이 확인된 계정이다.
-        setView({ kind: "error", message: data.error });
+        setView({ kind: "error", message: error });
       } else {
         setView(viewFrom(res.ok, data, tRef.current));
       }
@@ -203,10 +205,10 @@ export function EmailVerification() {
   }
 }
 
-function viewFrom(ok: boolean, data: Record<string, unknown> | null, t: Messages): View {
-  const status = data?.status;
-  const username = typeof data?.username === "string" ? data.username : undefined;
-  const email = typeof data?.email === "string" ? data.email : undefined;
+function viewFrom(ok: boolean, data: ResponseBody, t: Messages): View {
+  const status = data.status;
+  const username = textOf(data, "username");
+  const email = textOf(data, "email");
 
   if (status === "pending" && username && email) return { kind: "pending", username, email };
   if (status === "verified") return { kind: "verified", username };
@@ -216,11 +218,8 @@ function viewFrom(ok: boolean, data: Record<string, unknown> | null, t: Messages
   return {
     kind: "error",
     message:
-      typeof data?.error === "string"
-        ? data.error
-        : ok
-          ? t.account.verify.unknownResponse
-          : t.account.verify.failedRetry,
+      textOf(data, "error") ??
+      (ok ? t.account.verify.unknownResponse : t.account.verify.failedRetry),
   };
 }
 

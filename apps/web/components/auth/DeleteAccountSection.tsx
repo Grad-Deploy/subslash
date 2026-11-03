@@ -7,6 +7,7 @@ import { Input } from "@components/ui/input";
 import { Button } from "@components/ui/button";
 import { ConfirmDialog } from "@components/ui/confirm-dialog";
 import { apiFetch } from "@lib/api";
+import { fieldErrorsOf, readResponseBody, textOf } from "@lib/api-body";
 import { releaseRecordsToGuest } from "@lib/records-owner";
 import { HydratedForm } from "@components/ui/hydrated-form";
 import { useKnownText, useLatestT, useLocale, useT, type Locale } from "@lib/i18n";
@@ -67,12 +68,13 @@ export function DeleteAccountSection() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(noPassword ? { confirmText: password } : { password }),
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await readResponseBody(res);
       if (!res.ok) {
+        const fieldErrors = fieldErrorsOf(data);
         setError(
-          data?.fieldErrors?.password ??
-            data?.fieldErrors?.confirmText ??
-            data?.error ??
+          fieldErrors?.password ??
+            fieldErrors?.confirmText ??
+            textOf(data, "error") ??
             tRef.current.account.remove.failed,
         );
         return;

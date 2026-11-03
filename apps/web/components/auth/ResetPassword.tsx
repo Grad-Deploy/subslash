@@ -9,6 +9,7 @@ import { refreshAuth } from "@hooks/useAuth";
 import { confirmStatusOf, passwordStatusOf, type LiveStatus } from "@lib/signup-status";
 import { RESET_PASSWORD_TTL_MINUTES } from "@lib/verification-config";
 import { apiUrl, apiPostJson } from "@lib/api";
+import { fieldErrorsOf, readResponseBody, textOf } from "@lib/api-body";
 import { HydratedForm } from "@components/ui/hydrated-form";
 import { StatusMessage, statusBorder } from "./LiveStatusMessage";
 import { Spinner } from "../ui/spinner";
@@ -63,21 +64,18 @@ export function ResetPassword() {
         const res = await fetch(apiUrl("/api/auth/password-reset/confirm"), {
           headers: { [LINK_TOKEN_HEADER]: token },
         });
-        const data = await res.json().catch(() => ({}));
+        const data = await readResponseBody(res);
         if (cancelled) return;
-        if (
-          data?.status === "valid" &&
-          typeof data.username === "string" &&
-          typeof data.email === "string"
-        ) {
-          setView({ kind: "form", username: data.username, email: data.email });
-        } else if (data?.status === "invalid") {
+        const username = textOf(data, "username");
+        const email = textOf(data, "email");
+        if (data.status === "valid" && username !== undefined && email !== undefined) {
+          setView({ kind: "form", username, email });
+        } else if (data.status === "invalid") {
           setView({ kind: "invalid" });
         } else {
           setView({
             kind: "error",
-            message:
-              typeof data?.error === "string" ? data.error : tRef.current.account.reset.checkFailed,
+            message: textOf(data, "error") ?? tRef.current.account.reset.checkFailed,
           });
         }
       } catch {
@@ -119,20 +117,20 @@ export function ResetPassword() {
         password,
         passwordConfirm: confirm,
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data?.status === "reset") {
+      const data = await readResponseBody(res);
+      const fieldErrors = fieldErrorsOf(data);
+      if (res.ok && data.status === "reset") {
         // 서버가 새 세션 쿠키를 내렸다. 헤더가 곧바로 로그인 상태로 바뀌어야 한다.
         await refreshAuth();
-        setView({ kind: "done", username: typeof data.username === "string" ? data.username : "" });
-      } else if (data?.status === "invalid") {
+        setView({ kind: "done", username: textOf(data, "username") ?? "" });
+      } else if (data.status === "invalid") {
         setView({ kind: "invalid" });
-      } else if (data?.fieldErrors) {
-        setSubmitErrors(data.fieldErrors);
+      } else if (fieldErrors) {
+        setSubmitErrors(fieldErrors);
       } else {
         setView({
           kind: "error",
-          message:
-            typeof data?.error === "string" ? data.error : tRef.current.account.change.failed,
+          message: textOf(data, "error") ?? tRef.current.account.change.failed,
         });
       }
     } catch {
