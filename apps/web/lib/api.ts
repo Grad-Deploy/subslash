@@ -11,6 +11,21 @@ import { loadSessionToken, trackSessionResponse } from "./session-token";
 
 const WEB_ORIGIN = (process.env.NEXT_PUBLIC_WEB_ORIGIN ?? "").replace(/\/+$/, "");
 
+/**
+ * API 요청 하나를 기다리는 시간. 브라우저의 fetch는 스스로 끊지 않아, 모바일 네트워크가 응답 없이 멈추면 몇 분 동안
+ * 로딩이 돌고 그동안 자동 동기화도 다음 차례를 기다린다. 서버에서 오래 걸리는 단계(AI 10초, DB 요청마다 8초)보다
+ * 넉넉히 둔다. 끊긴 요청은 네트워크 오류처럼 거절되므로 부르는 곳의 오류 처리를 그대로 탄다.
+ */
+export const API_TIMEOUT_MS = 30_000;
+
+/** 부르는 곳이 넘긴 신호(취소)와 제한 시간 중 먼저 오는 것으로 끊는다. */
+function withTimeout(signal: AbortSignal | null | undefined): AbortSignal {
+  const timeout = AbortSignal.timeout(API_TIMEOUT_MS);
+  if (!signal) return timeout;
+  // AbortSignal.any가 없는 오래된 웹뷰에서는 부르는 곳의 취소를 지킨다 — 취소는 화면이 바뀌어 꼭 끊어야 하는 것이다.
+  return typeof AbortSignal.any === "function" ? AbortSignal.any([signal, timeout]) : signal;
+}
+
 /** 서버 API 주소. 웹에서는 상대 주소 그대로다. */
 export function apiUrl(path: `/api/${string}`): string {
   return `${WEB_ORIGIN}${path}`;
@@ -22,12 +37,13 @@ export function apiUrl(path: `/api/${string}`): string {
  * (lib/session-token).
  */
 export async function apiFetch(path: `/api/${string}`, init: RequestInit = {}): Promise<Response> {
-  if (!IS_APP_BUILD) return fetch(apiUrl(path), { ...init, credentials: "same-origin" });
+  const signal = withTimeout(init.signal);
+  if (!IS_APP_BUILD) return fetch(apiUrl(path), { ...init, signal, credentials: "same-origin" });
 
   const token = await loadSessionToken();
   const headers = new Headers(init.headers);
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  const res = await fetch(apiUrl(path), { ...init, headers, credentials: "omit" });
+  const res = await fetch(apiUrl(path), { ...init, headers, signal, credentials: "omit" });
   await trackSessionResponse(path, init.method ?? "GET", res);
   return res;
 }
