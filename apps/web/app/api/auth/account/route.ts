@@ -14,6 +14,7 @@ import {
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { logError } from "@lib/log";
+import { readJsonObject } from "@lib/request-body";
 
 /**
  * 로그인한 세션으로 지금 비밀번호를 거듭 대입하지 못하게 한다(자리를 비운 사이 누가 쓰는 경우).
@@ -56,10 +57,7 @@ export async function DELETE(request: NextRequest) {
       return loginRequiredResponse();
     }
 
-    const body = (await request.json().catch(() => null)) as {
-      password?: unknown;
-      confirmText?: unknown;
-    } | null;
+    const body = await readJsonObject(request);
 
     // 소셜 로그인으로만 가입해 비밀번호가 없는 계정은 확인 글자를 받는다. 비밀번호를 먼저 만들게 하면
     // 탈퇴하려는 사람을 메일 한 통 더 거치게 한다(개인정보 보호법 — 가입보다 어렵게 하지 않는다).

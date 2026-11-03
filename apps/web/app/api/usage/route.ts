@@ -18,6 +18,7 @@ import {
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { logError } from "@lib/log";
+import { readJson, readJsonObject } from "@lib/request-body";
 
 /**
  * 기기 간 사용 측정 — 계정의 모든 기기를 모아 세기(GET), 이 기기가 잰 구간 올리기(POST), 지우기(DELETE).
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
     hit(key, UPLOADS_PER_ACCOUNT);
 
-    const upload = parseUsageUpload(await request.json().catch(() => null));
+    const upload = parseUsageUpload(await readJson(request));
     if (!upload) {
       return NextResponse.json({ error: "보낸 사용 기록을 읽지 못했습니다." }, { status: 400 });
     }
@@ -85,10 +86,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const account = await getRequestAccount(request);
     if (!account) return loginRequiredResponse();
-    const body = (await request.json().catch(() => null)) as {
-      deviceKey?: unknown;
-      all?: unknown;
-    } | null;
+    const body = await readJsonObject(request);
     if (body?.all === true) {
       await deleteAllDeviceUsage(account.id);
       return NextResponse.json({ ok: true });

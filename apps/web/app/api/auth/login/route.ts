@@ -19,6 +19,7 @@ import {
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { logError } from "@lib/log";
+import { badRequestResponse, readJsonObject } from "@lib/request-body";
 
 /**
  * 비밀번호 대입을 늦춘다. 실패만 센다 — 제대로 로그인하는 사람은 막히지 않는다. 아이디 기준은 한
@@ -41,10 +42,8 @@ export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const body = await request.json().catch(() => null);
-    if (!body || typeof body !== "object") {
-      return NextResponse.json({ error: "요청을 이해할 수 없습니다." }, { status: 400 });
-    }
+    const body = await readJsonObject(request);
+    if (!body) return badRequestResponse();
 
     const { errors, value } = validateLogin(body);
     if (!value) {

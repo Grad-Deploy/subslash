@@ -14,6 +14,7 @@ import {
 import { secondsUntilKoreaMidnight, takeAskQuota } from "./daily-count";
 import { askProviderConfig, type AskProviderConfig } from "./provider";
 import { MAX_ASK_QUESTION, isContextTurn, isValidAskHistory, type AskTurn } from "./tools";
+import { readJsonObject } from "../request-body";
 
 /**
  * AI에게 묻는 API(`/api/ask`·`/api/help-ask`)가 같이 쓰는 제한. 질문은 표·로그에 남기지 않는다.
@@ -54,7 +55,7 @@ const tooMany = (wait: number) =>
   tooManyRequestsResponse(wait, "질문이 많아 잠시 쉬어 갈게요. 조금 뒤에 다시 물어봐 주세요.");
 
 export async function readQuestion(request: Request): Promise<string | NextResponse> {
-  const body = (await request.json().catch(() => null)) as { question?: unknown } | null;
+  const body = await readJsonObject(request);
   return questionFrom(body);
 }
 
@@ -65,10 +66,7 @@ export async function readQuestion(request: Request): Promise<string | NextRespo
 export async function readAskRequest(
   request: Request,
 ): Promise<{ question: string; history: AskTurn[] } | NextResponse> {
-  const body = (await request.json().catch(() => null)) as {
-    question?: unknown;
-    history?: unknown;
-  } | null;
+  const body = await readJsonObject(request);
   const question = questionFrom(body);
   if (typeof question !== "string") return question;
   // 예전 앱은 못 알아들은 턴도 보낸다 — 서버도 같은 기준으로 뺀다.

@@ -5,6 +5,7 @@ import { isAppOrigin } from "@lib/app-origins";
 import { consumeAppClaim } from "@lib/oauth-accounts";
 import { logError } from "@lib/log";
 import { clientIp, takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
+import { badRequestResponse, readJsonObject } from "@lib/request-body";
 
 const ATTEMPTS_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
 
@@ -25,10 +26,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "앱에서만 쓸 수 있습니다." }, { status: 403 });
   }
   try {
-    const body = (await request.json().catch(() => null)) as { verifier?: unknown } | null;
+    const body = await readJsonObject(request);
     const verifier = typeof body?.verifier === "string" ? body.verifier : "";
     if (!VERIFIER_PATTERN.test(verifier)) {
-      return NextResponse.json({ error: "요청을 이해할 수 없습니다." }, { status: 400 });
+      return badRequestResponse();
     }
     const accountId = await consumeAppClaim(verifier);
     if (!accountId) {

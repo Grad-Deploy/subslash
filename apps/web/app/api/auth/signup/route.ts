@@ -22,6 +22,7 @@ import {
   tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
+import { badRequestResponse, readJsonObject } from "@lib/request-body";
 
 /**
  * 회원가입.
@@ -46,10 +47,8 @@ export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const body = await request.json().catch(() => null);
-    if (!body || typeof body !== "object") {
-      return NextResponse.json({ error: "요청을 이해할 수 없습니다." }, { status: 400 });
-    }
+    const body = await readJsonObject(request);
+    if (!body) return badRequestResponse();
 
     const { errors, value } = validateSignup(body);
     if (!value) {

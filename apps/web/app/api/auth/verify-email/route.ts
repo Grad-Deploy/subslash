@@ -9,6 +9,7 @@ import {
 import { logError } from "@lib/log";
 import { clientIp, takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
 import { LINK_TOKEN_HEADER } from "@lib/link-token";
+import { badRequestResponse, readJsonObject } from "@lib/request-body";
 
 const ATTEMPTS_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
 
@@ -42,10 +43,10 @@ export async function POST(request: NextRequest) {
   const unavailable = databaseUnavailableResponse();
   if (unavailable) return unavailable;
   try {
-    const body = await request.json().catch(() => null);
+    const body = await readJsonObject(request);
     const decision = body?.decision;
-    if (decision !== "confirm" && decision !== "decline") {
-      return NextResponse.json({ error: "요청을 이해할 수 없습니다." }, { status: 400 });
+    if (!body || (decision !== "confirm" && decision !== "decline")) {
+      return badRequestResponse();
     }
 
     const state = await resolveVerificationLink(typeof body.token === "string" ? body.token : null);

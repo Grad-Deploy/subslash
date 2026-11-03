@@ -3,6 +3,7 @@ import { databaseUnavailableResponse } from "@lib/db";
 import { getRequestAccount, loginRequiredResponse } from "@lib/auth-server";
 import { takeRateLimit, type RateLimitRule } from "@lib/rate-limit";
 import { HOUR_MS } from "@subslash/shared";
+import { readJsonObject } from "@lib/request-body";
 
 const REQUESTS_PER_ACCOUNT: RateLimitRule = { limit: 120, windowMs: HOUR_MS };
 import { acknowledgeDiscoveries, listDiscoveries } from "@lib/gmail-auto-import";
@@ -39,7 +40,7 @@ export async function DELETE(request: NextRequest) {
     const account = await getRequestAccount(request);
     if (!account) return loginRequiredResponse();
 
-    const body = (await request.json().catch(() => null)) as { ids?: unknown } | null;
+    const body = await readJsonObject(request);
     if (!Array.isArray(body?.ids)) {
       return NextResponse.json({ error: "ids must be an array" }, { status: 400 });
     }
