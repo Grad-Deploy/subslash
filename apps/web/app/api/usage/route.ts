@@ -17,8 +17,8 @@ import {
   tooManyRequestsResponse,
   type RateLimitRule,
 } from "@lib/rate-limit";
-import { logError } from "@lib/log";
 import { readJson, readJsonObject } from "@lib/request-body";
+import { serverErrorResponse } from "@lib/route-error";
 
 /**
  * 기기 간 사용 측정 — 계정의 모든 기기를 모아 세기(GET), 이 기기가 잰 구간 올리기(POST), 지우기(DELETE).
@@ -44,8 +44,7 @@ export async function GET(request: NextRequest) {
       : 30;
     return NextResponse.json(await loadDeviceUsage(account.id, days));
   } catch (error) {
-    logError("api/usage GET", error);
-    return NextResponse.json({ error: "사용 기록을 읽지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/usage GET", error, "사용 기록을 읽지 못했습니다.");
   }
 }
 
@@ -71,8 +70,7 @@ export async function POST(request: NextRequest) {
     await replaceDeviceUsage(account.id, upload);
     return NextResponse.json({ ok: true, stored: upload.intervals.length });
   } catch (error) {
-    logError("api/usage POST", error);
-    return NextResponse.json({ error: "사용 기록을 저장하지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/usage POST", error, "사용 기록을 저장하지 못했습니다.");
   }
 }
 
@@ -97,7 +95,6 @@ export async function DELETE(request: NextRequest) {
     await deleteDeviceUsage(account.id, body.deviceKey);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    logError("api/usage DELETE", error);
-    return NextResponse.json({ error: "사용 기록을 지우지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/usage DELETE", error, "사용 기록을 지우지 못했습니다.");
   }
 }

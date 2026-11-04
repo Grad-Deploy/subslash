@@ -8,7 +8,6 @@ import {
   calendarNameFor,
   claimCalendarSyncPlan,
 } from "@lib/calendar-sync";
-import { logError } from "@lib/log";
 import {
   clientIp,
   hit,
@@ -17,6 +16,7 @@ import {
   type RateLimitRule,
 } from "@lib/rate-limit";
 import { readJsonObject } from "@lib/request-body";
+import { serverErrorResponse } from "@lib/route-error";
 
 /** 정상 요청은 Google의 공유 IP에서 오므로 실패만 센다. */
 const FAILURES_PER_IP: RateLimitRule = { limit: 60, windowMs: 10 * 60 * 1000 };
@@ -53,7 +53,6 @@ export async function POST(request: NextRequest) {
       events: buildCalendarEvents(plan, { appUrl: appUrl() }),
     });
   } catch (error) {
-    logError("api/calendar-sync/claim", error);
-    return NextResponse.json({ error: "결제일을 읽지 못했습니다." }, { status: 500 });
+    return serverErrorResponse("api/calendar-sync/claim", error, "결제일을 읽지 못했습니다.");
   }
 }
