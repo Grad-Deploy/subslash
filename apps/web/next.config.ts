@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 import path from "path";
 import { contentSecurityPolicy, type CspOptions } from "./lib/csp";
+import { isAdsOpen } from "./lib/privacy";
 
 /**
  * 앱(Capacitor)에 담을 정적 빌드인지(`pnpm build:app`, scripts/build-app.ts). lib/platform과 같은 값이다.
@@ -16,6 +17,8 @@ const isAppBuild = process.env.NEXT_PUBLIC_BUILD_TARGET === "app";
 const cspOptions: CspOptions = {
   dev: process.env.NODE_ENV === "development",
   preview: process.env.VERCEL_ENV === "preview",
+  // 광고를 싣는 배포만 Google 출처를 연다. lib/ads의 ADS_ENABLED와 같은 조건이다.
+  ads: process.env.SEARCH_INDEXING !== "off" && isAdsOpen(),
 };
 
 const nextConfig: NextConfig = {
@@ -79,6 +82,7 @@ const nextConfig: NextConfig = {
                   value: contentSecurityPolicy({
                     ...cspOptions,
                     preview: false,
+                    ads: false,
                     imgSrc: ["'self'", "blob:", "data:"],
                   }),
                 },

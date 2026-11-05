@@ -83,7 +83,7 @@ export const ko = {
       rows: [
         { label: "구독 기록", value: "기본은 이 기기에만" },
         { label: "결제 메일 본문", value: "저장하지 않음" },
-        { label: "광고·제3자 제공", value: "없음" },
+        { label: "구독 기록의 제3자 제공", value: "없음" },
       ],
       moreBefore: "자세한 내용은 ",
       policy: "개인정보처리방침",
@@ -232,7 +232,7 @@ export const en: Widen<typeof ko> = {
       rows: [
         { label: "Subscription records", value: "Only on this device by default" },
         { label: "Payment email bodies", value: "Not stored" },
-        { label: "Ads · sharing with third parties", value: "None" },
+        { label: "Subscription records shared with third parties", value: "None" },
       ],
       moreBefore: "More details are in the ",
       policy: "privacy policy",

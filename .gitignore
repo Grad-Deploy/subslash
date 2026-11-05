@@ -75,3 +75,4 @@ credentials.json
 apps/web/scripts/ask-eval/results/
 apps/web/scripts/ask-train/candidates/
 graphify-out/
+!apps/web/public/ads.txt

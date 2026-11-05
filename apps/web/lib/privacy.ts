@@ -19,7 +19,7 @@ export const PRIVACY_OFFICER: { name: string; email: string } | null = {
 };
 
 /** 이 방침이 효력을 갖는 날. 내용을 바꾸면 함께 바꾼다. */
-export const PRIVACY_EFFECTIVE_DATE = "2026년 10월 19일";
+export const PRIVACY_EFFECTIVE_DATE = "2026년 11월 5일";
 
 /**
  * 결제 알림 메일·캘린더 구독 주소를 그만둔 날. 방침의 '(종료)' 항목이 쓴다 — 예전에는 시행일을 그대로 써서,
@@ -57,6 +57,19 @@ export function isErrorLogExportOpen(now: Date = new Date()): boolean {
  * 알리기 전에는 null로 두고, null이거나 그날 전이면 서버와 화면 모두 이 기능을 열지 않는다.
  */
 export const GMAIL_AUTO_IMPORT_STARTS_ON: string | null = "2026-09-17";
+
+/**
+ * 웹에 Google AdSense 광고를 싣기 시작하는 날(YYYY-MM-DD, 한국 시간 0시). 광고 스크립트가 이용자의 브라우저에
+ * Google의 쿠키·식별자를 두고 접속 정보를 Google이 받으므로(lib/ads) 방침의 항목을 먼저 게시하고 그날부터 연다.
+ * null이면 닫혀 있다. 앱(Capacitor)과 검색에 노출하지 않는 배포(`SEARCH_INDEXING=off`)에는 싣지 않는다. 페이지를
+ * 정적으로 두므로 날짜가 지난 뒤 **처음 배포하는 빌드부터** 켜진다.
+ */
+export const ADS_STARTS_ON: string | null = "2026-11-12";
+
+/** 광고를 싣는 날이 지났는지. */
+export function isAdsOpen(now: Date = new Date()): boolean {
+  return hasStarted(ADS_STARTS_ON, now);
+}
 
 /** Gmail 자동 가져오기가 열렸는지. */
 export function isGmailAutoImportOpen(now: Date = new Date()): boolean {

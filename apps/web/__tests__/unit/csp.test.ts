@@ -46,6 +46,15 @@ describe("웹 응답의 CSP", () => {
     expect(preview["frame-src"]).toEqual(["https://vercel.live"]);
   });
 
+  it("광고를 싣는 배포에만 AdSense의 출처를 연다", () => {
+    expect(contentSecurityPolicy()).not.toContain("googlesyndication");
+    const ads = parse(contentSecurityPolicy({ ads: true }));
+    expect(ads["script-src"]).toContain("https://pagead2.googlesyndication.com");
+    expect(ads["frame-src"]).toContain("https://googleads.g.doubleclick.net");
+    expect(ads["script-src"]).not.toContain("https:");
+    expect(ads["default-src"]).toEqual(["'self'"]);
+  });
+
   it("그림 출처를 좁힌 화면은 그 값만 쓴다", () => {
     const share = parse(contentSecurityPolicy({ imgSrc: ["'self'"] }));
     expect(share["img-src"]).toEqual(["'self'"]);

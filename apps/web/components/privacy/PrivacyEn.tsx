@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import {
+  ADS_STARTS_ON,
   AI_ASK_DAILY_COUNT_STARTS_ON,
   AI_ASK_STARTS_ON,
   ERROR_LOG_EXPORT,
@@ -213,8 +214,37 @@ export function PrivacyEn() {
         <Item title="Access logs">
           Vercel, which hosts the service, processes requests and may keep access logs such as IP
           address and request time and path for a period of time. SubSlash does not use analytics
-          tools or advertising cookies.
+          tools.
         </Item>
+        {/* Ads run between your browser and Google, so we announce them before they start (ADS_STARTS_ON in lib/privacy.ts, lib/ads). */}
+        {ADS_STARTS_ON && (
+          <Item title={`Web ads (from ${englishDate(ADS_STARTS_ON)})`}>
+            Google AdSense ads may be shown on the website (not in the app). When an ad loads,
+            Google may place cookies and advertising identifiers in your browser and receive access
+            information such as your IP address, device and browser information, and the page you
+            visited, to choose ads and detect invalid clicks. Subscription records, account
+            information, and check-in contents are not sent to ads. How Google uses this information
+            is described in{" "}
+            <a
+              href="https://policies.google.com/technologies/partner-sites"
+              className="underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Google&rsquo;s advertising privacy information
+            </a>
+            , and you can turn off personalized ads in{" "}
+            <a
+              href="https://adssettings.google.com"
+              className="underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Google Ads Settings
+            </a>
+            . Purpose: covering the costs of running the service.
+          </Item>
+        )}
       </Section>
 
       <Section title="2. Retention and deletion">
@@ -373,6 +403,17 @@ export function PrivacyEn() {
                   </td>
                 </tr>
               )}
+              {ADS_STARTS_ON && (
+                <tr className="border-t">
+                  <td className="px-3 py-2 font-medium">Google (AdSense)</td>
+                  <td className="px-3 py-2">
+                    When ads load on the website, your browser connects to Google directly — IP
+                    address, cookies, device and browser information, and the page visited go to
+                    Google (not through SubSlash servers; no subscription records are sent)
+                  </td>
+                  <td className="px-3 py-2">Overseas (Google data centers)</td>
+                </tr>
+              )}
               {AI_ASK_STARTS_ON && (
                 <tr className="border-t">
                   <td className="px-3 py-2 font-medium">Dankook University</td>
@@ -447,7 +488,8 @@ export function PrivacyEn() {
           </li>
           <li>
             It is not used for advertising. It is not used or transferred for personalized or
-            interest-based advertising or retargeting, and SubSlash has no ads.
+            interest-based advertising or retargeting, and no email content is passed to the web ads
+            (Google AdSense).
           </li>
           <li>
             Humans do not read it. Emails are parsed automatically by the server on the spot, and
@@ -502,6 +544,8 @@ export function PrivacyEn() {
           Settings such as subscription records, theme, and view mode are kept in browser storage
           (localStorage) and not sent to the server. If you block cookies in your browser settings,
           you cannot log in, but every other feature still works.
+          {ADS_STARTS_ON &&
+            " When ads are shown on the web, Google may place cookies in this browser for ad delivery and invalid-click prevention; you can block them in your browser settings."}
         </p>
       </Section>
 
