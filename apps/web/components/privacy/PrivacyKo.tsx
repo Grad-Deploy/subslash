@@ -1,7 +1,6 @@
 import React from "react";
 import Link from "next/link";
 import {
-  ADS_STARTS_ON,
   AI_ASK_DAILY_COUNT_STARTS_ON,
   AI_ASK_STARTS_ON,
   ERROR_LOG_EXPORT,
@@ -192,35 +191,8 @@ export function PrivacyKo() {
         </Item>
         <Item title="접속 기록">
           서비스를 호스팅하는 Vercel이 요청을 처리하며 IP 주소, 요청 시각·경로 같은 접속 기록을 일정
-          기간 남길 수 있습니다. SubSlash는 분석 도구를 쓰지 않습니다.
+          기간 남길 수 있습니다. SubSlash는 분석 도구나 광고 쿠키를 쓰지 않습니다.
         </Item>
-        {/* 광고는 이용자의 브라우저와 Google 사이에서 처리되므로 시작 전에 알린다(lib/privacy.ts의 ADS_STARTS_ON, lib/ads). */}
-        {ADS_STARTS_ON && (
-          <Item title={`웹 광고 (${koreanDate(ADS_STARTS_ON)}부터)`}>
-            웹사이트(앱은 제외)에 Google AdSense 광고가 표시될 수 있습니다. 광고를 불러오면 Google이
-            이용자의 브라우저에 쿠키·광고 식별자를 두고, IP 주소·기기와 브라우저 정보·방문한 페이지
-            같은 접속 정보를 받아 광고를 고르고 부정 클릭을 가려냅니다. 구독 기록·계정 정보·체크인
-            내용은 광고로 보내지 않습니다. Google이 정보를 쓰는 방식은{" "}
-            <a
-              href="https://policies.google.com/technologies/partner-sites"
-              className="underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Google의 광고 개인정보 안내
-            </a>
-            를 따르고, 맞춤 광고는{" "}
-            <a
-              href="https://adssettings.google.com"
-              className="underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Google 광고 설정
-            </a>
-            에서 끌 수 있습니다. 목적: 서비스 운영 비용 마련.
-          </Item>
-        )}
       </Section>
 
       <Section title="2. 보관 기간과 파기">
@@ -360,17 +332,6 @@ export function PrivacyKo() {
                   <td className="px-3 py-2">각 회사의 처리 위치(Google은 국외)</td>
                 </tr>
               )}
-              {ADS_STARTS_ON && (
-                <tr className="border-t">
-                  <td className="px-3 py-2 font-medium">Google(AdSense)</td>
-                  <td className="px-3 py-2">
-                    웹사이트에서 광고를 불러올 때 브라우저가 Google에 직접 접속 — IP
-                    주소·쿠키·기기와 브라우저 정보·방문 페이지가 Google로 전달됨(SubSlash 서버를
-                    거치지 않으며 구독 기록은 보내지 않음)
-                  </td>
-                  <td className="px-3 py-2">국외(Google 데이터센터)</td>
-                </tr>
-              )}
               {AI_ASK_STARTS_ON && (
                 <tr className="border-t">
                   <td className="px-3 py-2 font-medium">단국대학교</td>
@@ -452,8 +413,8 @@ export function PrivacyKo() {
             등록하는 기능에만 씁니다. 그 밖의 목적으로 쓰지 않습니다.
           </li>
           <li>
-            광고에 쓰지 않습니다. 맞춤·관심 기반 광고나 리타기팅에 쓰거나 넘기지 않으며, 웹의
-            광고(Google AdSense)에는 메일 내용이 전혀 전달되지 않습니다.
+            광고에 쓰지 않습니다. 맞춤·관심 기반 광고나 리타기팅에 쓰거나 넘기지 않으며,
+            SubSlash에는 광고가 없습니다.
           </li>
           <li>
             사람이 읽지 않습니다. 메일은 서버가 그 자리에서 기계적으로 파싱하고, 제목과 본문은
@@ -505,8 +466,6 @@ export function PrivacyKo() {
           구독 기록·테마·보기 방식 같은 설정은 브라우저 저장공간(localStorage)에 두며 서버로 보내지
           않습니다. 브라우저 설정에서 쿠키를 막으면 로그인을 쓸 수 없고, 나머지 기능은 그대로 쓸 수
           있습니다.
-          {ADS_STARTS_ON &&
-            " 웹에서 광고가 표시되면 Google이 광고 표시·부정 클릭 방지를 위한 쿠키를 이 브라우저에 둘 수 있으며, 브라우저 설정에서 막을 수 있습니다."}
         </p>
       </Section>
 

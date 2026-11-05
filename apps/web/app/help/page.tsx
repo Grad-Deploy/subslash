@@ -14,7 +14,6 @@ import { HelpSearch } from "@components/help/HelpSearch";
 import { openExternal } from "@lib/native";
 import { useCopyText } from "@hooks/useCopyText";
 import { IS_APP_BUILD } from "@lib/platform";
-import { AdUnit } from "@components/ads/AdUnit";
 import { Button } from "../../components/ui/button";
 import { useLocale, useT } from "@lib/i18n";
 
@@ -137,7 +136,6 @@ export default function HelpPage() {
           )}
         </div>
       </section>
-      <AdUnit slot="help" />
     </div>
   );
 }

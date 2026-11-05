@@ -10,7 +10,6 @@ import { KillCelebrationHost } from "../components/subscription/KillCelebration"
 import { ThemeProvider } from "../components/layout/ThemeProvider";
 import { SiteFooter } from "../components/layout/SiteFooter";
 import { LocaleEffects } from "../components/layout/LocaleEffects";
-import { ADS_ENABLED, ADSENSE_SCRIPT_SRC } from "@lib/ads";
 import { localeInitScript } from "@lib/i18n/config";
 import { ServiceWorkerRegistrar } from "../components/layout/ServiceWorkerRegistrar";
 import { NativeAppEffects } from "../components/layout/NativeAppEffects";
@@ -90,8 +89,6 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: localeInitScript }} />
-        {/* Google AdSense. next/script는 data-nscript 속성을 붙여 AdSense가 싫어하므로 일반 태그로 둔다. */}
-        {ADS_ENABLED && <script async src={ADSENSE_SCRIPT_SRC} crossOrigin="anonymous" />}
       </head>
       <body
         className={`${inter.className} min-h-screen flex flex-col bg-background text-foreground antialiased`}

@@ -18,8 +18,6 @@ export interface CspOptions {
   dev?: boolean;
   /** Vercel 미리보기 배포. 미리보기에만 뜨는 Vercel 도구 막대(댓글)가 vercel.live에서 온다. */
   preview?: boolean;
-  /** Google AdSense를 싣는 배포(lib/ads). 광고 스크립트·광고 틀의 Google 출처를 연다. */
-  ads?: boolean;
   /** 그림 출처를 따로 좁히는 화면(영수증 공유)이 쓴다. 없으면 기본값. */
   imgSrc?: readonly string[];
 }
@@ -34,43 +32,11 @@ const VERCEL_TOOLBAR = {
   font: ["https://vercel.live", "https://assets.vercel.com"],
 };
 
-/**
- * Google AdSense가 쓰는 출처(https://support.google.com/adsense/answer/10528335). 광고 본문은
- * googleads/tpc 틀 안에서 그려지므로 이 사이트의 `frame-src`만 열면 되고, 광고주 그림 도메인은 열지 않는다.
- */
-const ADSENSE = {
-  script: [
-    "https://pagead2.googlesyndication.com",
-    "https://*.googlesyndication.com",
-    "https://*.adtrafficquality.google",
-    "https://partner.googleadservices.com",
-  ],
-  connect: [
-    "https://pagead2.googlesyndication.com",
-    "https://*.google.com",
-    "https://*.adtrafficquality.google",
-  ],
-  img: [
-    "https://pagead2.googlesyndication.com",
-    "https://*.google.com",
-    "https://*.googlesyndication.com",
-  ],
-  frame: [
-    "https://googleads.g.doubleclick.net",
-    "https://tpc.googlesyndication.com",
-    "https://*.googlesyndication.com",
-    "https://*.google.com",
-  ],
-};
-
 const DEFAULT_IMG_SRC = ["'self'", "data:", "blob:"] as const;
 
 export function contentSecurityPolicy(options: CspOptions = {}): string {
-  const { dev = false, preview = false, ads = false } = options;
-  const adsense = (key: keyof typeof ADSENSE) => (ads ? ADSENSE[key] : []);
+  const { dev = false, preview = false } = options;
   const toolbar = (key: keyof typeof VERCEL_TOOLBAR) => (preview ? VERCEL_TOOLBAR[key] : []);
-
-  const frameSrc = [...toolbar("frame"), ...adsense("frame")];
 
   const directives: Record<string, readonly string[]> = {
     "default-src": ["'self'"],
@@ -81,21 +47,15 @@ export function contentSecurityPolicy(options: CspOptions = {}): string {
       "'wasm-unsafe-eval'",
       ...(dev ? ["'unsafe-eval'"] : []),
       ...toolbar("script"),
-      ...adsense("script"),
     ],
     // 컴포넌트가 style 속성으로 색·크기를 정한다.
     "style-src": ["'self'", "'unsafe-inline'", ...toolbar("style")],
-    "img-src": [...(options.imgSrc ?? DEFAULT_IMG_SRC), ...toolbar("img"), ...adsense("img")],
+    "img-src": [...(options.imgSrc ?? DEFAULT_IMG_SRC), ...toolbar("img")],
     "font-src": ["'self'", "data:", ...toolbar("font")],
-    "connect-src": [
-      "'self'",
-      ...(dev ? ["ws:"] : []),
-      ...toolbar("connect"),
-      ...adsense("connect"),
-    ],
+    "connect-src": ["'self'", ...(dev ? ["ws:"] : []), ...toolbar("connect")],
     "worker-src": ["'self'", "blob:"],
     "manifest-src": ["'self'"],
-    "frame-src": frameSrc.length > 0 ? frameSrc : ["'none'"],
+    "frame-src": toolbar("frame").length > 0 ? toolbar("frame") : ["'none'"],
     "object-src": ["'none'"],
     "base-uri": ["'none'"],
     "form-action": ["'self'"],
