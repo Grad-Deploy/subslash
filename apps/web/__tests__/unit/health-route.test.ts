@@ -23,12 +23,12 @@ describe("GET /api/health", () => {
   });
 
   it("DB가 실패하면 503을 돌려주고 원인은 응답에 싣지 않는다", async () => {
-    run.mockRejectedValue(new Error("libsql://secret-db.turso.io timed out"));
+    run.mockRejectedValue(new Error("connect ETIMEDOUT db-host-7f3a"));
     const response = await GET();
     expect(response.status).toBe(503);
     const body = await response.text();
     expect(body).toBe('{"status":"error"}');
-    expect(body).not.toContain("secret-db");
+    expect(body).not.toContain("db-host-7f3a");
     expect(logError).toHaveBeenCalledWith("api/health", expect.any(Error));
   });
 });
