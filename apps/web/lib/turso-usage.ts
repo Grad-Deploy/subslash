@@ -190,12 +190,25 @@ export async function checkTursoUsage(
   const alerts = usageAlerts(usage, limits, config.threshold);
   if (alerts.length === 0 && !blocked) return { status: "ok", alerts: 0 };
 
+  // 메일과 별개로 오류 한 줄을 남긴다. Loki → Grafana → Slack 오류 알림(scope `turso-usage`)이 이 줄을 보고 울린다.
+  // 메일 키가 없거나 메일이 실패해도 알림이 사라지지 않게 메일보다 먼저 남긴다. 지표 이름과 숫자만 담는다.
+  logError("turso-usage", new Error(usageAlertSummary(alerts, blocked)));
+
   const sent = await sendEmail({ to: config.to, ...usageAlertEmail(alerts, config, blocked) });
   if (!sent.delivered) return { status: "error", reason: sent.error ?? "email_not_sent" };
   return { status: "alerted", alerts: alerts.length };
 }
 
 const formatNumber = (n: number) => Math.round(n).toLocaleString("ko-KR");
+
+/** 로그 한 줄용 요약. 메일 본문과 같은 숫자를 짧게 적는다. */
+export function usageAlertSummary(alerts: UsageAlert[], blocked: boolean): string {
+  const parts = alerts.map(
+    (alert) =>
+      `${METRIC_LABEL[alert.metric]} ${formatNumber(alert.used)}/${formatNumber(alert.limit)} (${Math.floor(alert.ratio * 100)}%)`,
+  );
+  return `Turso 사용량 한도 근접${blocked ? " — 이미 쿼리가 막힘" : ""}: ${parts.join(", ") || "지표 없음"}`;
+}
 
 export function usageAlertEmail(
   alerts: UsageAlert[],

@@ -5,6 +5,7 @@ import {
   readPlanQuotas,
   readUsageAlertConfig,
   usageAlertEmail,
+  usageAlertSummary,
   usageAlerts,
 } from "@lib/turso-usage";
 
@@ -123,6 +124,33 @@ describe("Turso 사용량 알림", () => {
       await checkTursoUsage(readUsageAlertConfig({ ...BASE, TURSO_ROWS_WRITTEN_LIMIT: "10" })),
     ).toEqual({ status: "error", reason: "email_not_sent" });
     vi.unstubAllEnvs();
+  });
+
+  it("한도에 가깝거나 막혔으면 메일 결과와 상관없이 [turso-usage] 오류 줄을 남긴다", async () => {
+    vi.stubEnv("RESEND_API_KEY", "");
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const config = readUsageAlertConfig(BASE);
+
+    stubTurso(turso(10));
+    await checkTursoUsage(config);
+    expect(spy).not.toHaveBeenCalled();
+
+    stubTurso(turso(900));
+    await checkTursoUsage(config);
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(String(spy.mock.calls[0][0])).toMatch(/^\[turso-usage\] .*행 쓰기 900\/1,000 \(90%\)/);
+    spy.mockRestore();
+    vi.unstubAllEnvs();
+  });
+
+  it("로그 요약은 지표 이름과 숫자만 담는다", () => {
+    const text = usageAlertSummary(
+      [{ metric: "rows_written", used: 900, limit: 1000, ratio: 0.9 }],
+      true,
+    );
+    expect(text).toContain("이미 쿼리가 막힘");
+    expect(text).toContain("행 쓰기");
+    expect(text).toContain("90%");
   });
 
   it("토큰이 틀렸거나 요금제를 모르면 오류로 돌려준다", async () => {
