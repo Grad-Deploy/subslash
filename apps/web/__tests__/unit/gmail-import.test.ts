@@ -684,6 +684,7 @@ describe("원클릭 연결 웹 앱", () => {
     };
 
     return {
+      options,
       titles,
       api,
       connect,
@@ -804,6 +805,56 @@ describe("원클릭 연결 웹 앱", () => {
     // 한 번 더 돌아도 다시 보내지 않는다.
     run.api.scanOlder();
     expect(ingests()).toBe(windows.length + 1);
+  });
+
+  it("창을 보내다 실패하면 같은 창을 2분 뒤에 다시 시도하고, 성공하면 다음 창으로 이어 간다", () => {
+    // 예전에는 예외가 그대로 올라가고 트리거는 이미 지워져, 뒤의 창이 조용히 영영 빠졌다.
+    const run = runWebApp();
+    run.connect({ code: "signed-code", origin: ORIGIN });
+    const ingests = () => run.fetched.filter((f) => f.url.endsWith("/api/gmail/ingest")).length;
+    const before = ingests();
+
+    run.options.ingestStatus = 500;
+    run.triggers.length = 0;
+    expect(() => run.api.scanOlder()).not.toThrow();
+    expect(run.triggers).toEqual([{ handler: "scanOlder", afterMs: 120_000 }]);
+    expect(run.properties.get("olderRetries")).toBe("1");
+    // 창은 그대로다 — 건너뛰지 않는다.
+    expect(run.properties.get("olderWindow")).toBeUndefined();
+    expect(run.properties.get("lastScanAt")).toBeUndefined();
+
+    // 서버가 돌아오면 같은 첫 창을 보내고, 재시도 횟수를 지우고 다음 창을 건다.
+    run.options.ingestStatus = 200;
+    run.queries.length = 0;
+    run.triggers.length = 0;
+    run.api.scanOlder();
+    expect(run.queries.every((q) => q.endsWith(" newer_than:130d older_than:40d"))).toBe(true);
+    expect(run.properties.get("olderRetries")).toBeUndefined();
+    expect(run.properties.get("olderWindow")).toBe("1");
+    expect(run.triggers).toEqual([{ handler: "scanOlder", afterMs: 60_000 }]);
+    expect(ingests()).toBeGreaterThan(before);
+  });
+
+  it("계속 실패하면 3번까지만 다시 시도하고, 그만둘 때는 검사 시각을 남기지 않는다", () => {
+    // 검사 시각이 없으면 2주 뒤 검사가 400일치를 처음부터 다시 본다 — 빠진 창을 메운다.
+    const run = runWebApp();
+    run.connect({ code: "signed-code", origin: ORIGIN });
+    run.options.ingestStatus = 500;
+
+    for (const attempt of [1, 2, 3]) {
+      run.triggers.length = 0;
+      run.api.scanOlder();
+      expect(run.properties.get("olderRetries")).toBe(String(attempt));
+      expect(run.triggers).toEqual([{ handler: "scanOlder", afterMs: 120_000 }]);
+    }
+
+    run.triggers.length = 0;
+    run.api.scanOlder();
+    expect(run.triggers).toEqual([]);
+    expect(run.properties.get("lastScanAt")).toBeUndefined();
+    expect(run.properties.get("firstScanStartedAt")).toBeUndefined();
+    expect(run.properties.get("olderRetries")).toBeUndefined();
+    expect(run.properties.get("olderWindow")).toBeUndefined();
   });
 
   it("영수증 발신 도메인이 확인된 서비스의 메일을 따로 찾는다", () => {

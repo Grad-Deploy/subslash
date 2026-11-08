@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { POPULAR_SERVICES, type Subscription } from "@subslash/shared";
 import {
   GMAIL_OLDER_SCAN_MS,
+  OLDER_SCAN_REFETCH_MS,
   discoveryToCandidate,
   discoveryToFormData,
   isGmailOlderScanPending,
@@ -190,6 +191,19 @@ describe("isGmailOlderScanPending", () => {
         false,
       );
     });
+  });
+
+  it("다시 받기는 마지막 창이 실제로 도착하는 시각(연결 뒤 약 344초)보다 오래 이어진다", () => {
+    // 실측: 최근 나머지 13초, 130~40일 159초, 250~130일 253초, 400~250일 344초(2026-11-05).
+    // 예전 주기(90·180·300초)는 마지막 창보다 먼저 끝나 그 결과가 보이지 않았다.
+    const lastWindowArrivesAt = 344_000;
+    expect(Math.max(...OLDER_SCAN_REFETCH_MS)).toBeGreaterThan(lastWindowArrivesAt + 60_000);
+    // 마지막 창이 늦어도 다시 받기가 한 번은 그 뒤에 있도록 간격이 촘촘해야 한다.
+    const sorted = [...OLDER_SCAN_REFETCH_MS].sort((a, b) => a - b);
+    for (let i = 1; i < sorted.length; i += 1)
+      expect(sorted[i] - sorted[i - 1]).toBeLessThanOrEqual(90_000);
+    // 안내는 마지막 다시 받기보다 뒤에 거둔다 — 안내가 먼저 사라지면 아직 받는 중인데 끝난 것처럼 보인다.
+    expect(GMAIL_OLDER_SCAN_MS).toBeGreaterThan(sorted[sorted.length - 1]);
   });
 
   it("스크립트를 복사해 설치한 연결에는 띄우지 않는다 — 복사한 스크립트는 400일치를 한 번에 보낸다", () => {
