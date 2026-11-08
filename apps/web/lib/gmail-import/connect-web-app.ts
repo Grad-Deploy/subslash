@@ -85,6 +85,11 @@ var RECENT_MAX_MESSAGES = 60;
 // OLDER_BOUNDS[i]~OLDER_BOUNDS[i+1]일 전이 i번째 창이다.
 var OLDER_BOUNDS = [RECENT_DAYS, 130, 250, FIRST_SCAN_DAYS];
 var OLDER_WINDOW_MAX_MESSAGES = 80;
+// 창을 보내다 실패하면(서버·Gmail의 일시 오류) 같은 창을 이 간격으로 다시 시도한다. 횟수를 넘으면 그만두고,
+// 검사 시각을 남기지 않으므로 2주 뒤 검사가 처음부터 다시 본다. 예전에는 실패가 그대로 던져져 이미 지운
+// 트리거 때문에 뒤의 창이 조용히 영영 빠졌다.
+var OLDER_MAX_RETRIES = 3;
+var OLDER_RETRY_DELAY_MS = 2 * 60 * 1000;
 var MAX_BODY_CHARS = 1500;
 // 연결 코드를 바꾸려고 외부 요청 권한이 이미 있어, 메일을 여러 통씩 한꺼번에 받습니다. 사용자가
 // 연결 화면에서 첫 검사가 끝나기를 기다리므로 여기가 가장 중요합니다.
@@ -635,11 +640,26 @@ function scanOlder() {
   if (!startedAt || properties.getProperty("lastScanAt")) return;
   var index = Number(properties.getProperty("olderWindow") || 0);
   if (!(index >= 0 && index < OLDER_BOUNDS.length - 1)) index = 0;
-  var sent = sendRange(
-    " newer_than:" + OLDER_BOUNDS[index + 1] + "d older_than:" + OLDER_BOUNDS[index] + "d",
-    OLDER_WINDOW_MAX_MESSAGES,
-  );
+  var sent;
+  try {
+    sent = sendRange(
+      " newer_than:" + OLDER_BOUNDS[index + 1] + "d older_than:" + OLDER_BOUNDS[index] + "d",
+      OLDER_WINDOW_MAX_MESSAGES,
+    );
+  } catch (error) {
+    var retries = Number(properties.getProperty("olderRetries") || 0) + 1;
+    if (retries <= OLDER_MAX_RETRIES) {
+      properties.setProperty("olderRetries", String(retries));
+      ScriptApp.newTrigger("scanOlder").timeBased().after(OLDER_RETRY_DELAY_MS).create();
+    } else {
+      properties.deleteProperty("firstScanStartedAt");
+      properties.deleteProperty("olderWindow");
+      properties.deleteProperty("olderRetries");
+    }
+    return;
+  }
   if (sent < 0) return;
+  properties.deleteProperty("olderRetries");
   if (index + 1 < OLDER_BOUNDS.length - 1) {
     properties.setProperty("olderWindow", String(index + 1));
     ScriptApp.newTrigger("scanOlder").timeBased().after(60 * 1000).create();
