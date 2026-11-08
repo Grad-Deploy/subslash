@@ -196,3 +196,25 @@ pnpm --filter subslash-usage start -- --json   # 결과를 JSON으로
       `regions`를 적어 두지 않아 프로젝트 기본값을 따릅니다.
 - [ ] Gmail 원클릭 연결·Google 계정 용량 측정을 계속 열어 둘 것이면 Google 심사를 신청합니다. 심사 전에는 '확인되지
       않은 앱' 경고와 새 사용자 100명 제한이 있습니다.
+
+## 운영 알림 (Grafana → Slack)
+
+서버 오류와 서비스 중단은 Grafana Cloud에서 감지해 Slack `#subslash-alerts`로 알린다. 규칙은 코드로 관리하지 않고
+Grafana UI에 있다(규칙이 몇 개 안 되고 Grafana에 변경 이력이 남는다). 비밀값(웹훅 URL·토큰)은 저장소에 두지 않는다.
+
+| 무엇을      | 어디서                                                       | 설정                                                                                                                                                       |
+| ----------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 서버 오류   | 규칙 `SubSlash 서버 오류 발생 (Slack)`                       | `lib/error-export`가 Loki로 보낸 `{app="subslash", env="production", level="error"}` 줄을 `[scope]`별로 최근 2분 집계, 1건 이상이면 알림(해소 포함)        |
+| 서비스 중단 | 규칙 `SubSlash 서비스 중단 (외부 감시)`                      | Synthetic Monitoring 체크 2개(홈, `/api/health`) × 프로브 3곳(Seoul·Tokyo·Frankfurt), 5분 간격. 최근 7분 평균 성공률 50% 미만이면 중단(데이터 끊김도 포함) |
+| 알림 문구   | 연락처 `SubSlash Slack`(오류), `SubSlash 중단 알림 v2`(중단) | Slack 템플릿. 오류 알림은 scope로 영역(🗄️ DB·저장소, ✉️ 메일, 🌐 외부 API, 🔧 운영 점검)을 표시한다                                                        |
+
+- 영역 분류는 연락처 템플릿의 `match` 목록(scope 이름 규칙)에 의존한다. 새 `logError` scope를 만들면 그 목록도 고친다. 빠지면 "분류 없음"으로 보인다.
+- 외부 감시는 `/api/health`(DB 연결 확인, 실패 시 503)를 본다.
+- Synthetic Monitoring은 체크 수 × 프로브 수 ÷ 간격에 비례해 실행 횟수가 늘어난다(무료 한도 월 10만 회). 간격을 줄이기 전에 한도를 확인한다.
+- 확인: `POST /api/ops/error-export-check`(`Authorization: Bearer <CRON_SECRET>`)가 `ops/error-export-check` 범위의 오류 한 줄을 남긴다. 1~3분 안에 Slack에 알림이 오고, 그친 뒤 "해소됨"이 오면 연결된 것이다.
+
+### Turso 사용량 사전 경고
+
+`/api/cron/notify`(하루 한 번)가 Turso 사용량을 점검한다. 한도의 `TURSO_USAGE_ALERT_PERCENT`(기본 80)% 이상이거나 이미 막혔으면
+메일(`OPS_ALERT_EMAIL`)을 보내고, 같은 내용을 `[turso-usage]` 오류 줄로도 남겨 위 Slack 오류 알림으로 보낸다.
+`TURSO_PLATFORM_API_TOKEN`·`TURSO_ORG_SLUG`·`OPS_ALERT_EMAIL`이 모두 있어야 켜진다(`apps/web/.env.example` 참고).
