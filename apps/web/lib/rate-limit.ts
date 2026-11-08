@@ -12,15 +12,21 @@ import { NextResponse } from "next/server";
 interface Bucket {
   /** 창 안에서 센 시각들(ms). */
   hits: number[];
+  /** 이 칸을 센 규칙의 창. 청소는 지금 요청의 창이 아니라 칸 자기의 창으로 낡았는지 본다. */
+  windowMs: number;
 }
 
 const buckets = new Map<string, Bucket>();
-/** 메모리가 끝없이 늘지 않게, 이만큼 쌓이면 오래된 칸을 한 번 치운다. */
+/** 메모리가 끝없이 늘지 않게, 이만큼 쌓이면 오래된 칸을 치운다. */
 const SWEEP_AT = 5000;
+/** 칸이 가득 찬 채로 모두 최근 것이어도 요청마다 훑지 않게, 청소는 이 간격 안에 한 번만 한다. */
+const SWEEP_EVERY_MS = 60_000;
+let lastSweepAt = 0;
 
-function sweep(now: number, windowMs: number) {
+function sweep(now: number) {
+  lastSweepAt = now;
   for (const [key, bucket] of buckets) {
-    if (bucket.hits.every((at) => now - at >= windowMs)) buckets.delete(key);
+    if (bucket.hits.every((at) => now - at >= bucket.windowMs)) buckets.delete(key);
   }
 }
 
@@ -41,8 +47,9 @@ export function retryAfterSeconds(key: string, rule: RateLimitRule, now = Date.n
 
 /** 한 번 센다. */
 export function hit(key: string, rule: RateLimitRule, now = Date.now()): void {
-  if (buckets.size >= SWEEP_AT) sweep(now, rule.windowMs);
-  const bucket = buckets.get(key) ?? { hits: [] };
+  if (buckets.size >= SWEEP_AT && now - lastSweepAt >= SWEEP_EVERY_MS) sweep(now);
+  const bucket = buckets.get(key) ?? { hits: [], windowMs: rule.windowMs };
+  bucket.windowMs = rule.windowMs;
   bucket.hits = bucket.hits.filter((at) => now - at < rule.windowMs);
   bucket.hits.push(now);
   buckets.set(key, bucket);
@@ -68,6 +75,7 @@ export function reset(key: string): void {
 /** 테스트용. */
 export function resetAllRateLimits(): void {
   buckets.clear();
+  lastSweepAt = 0;
 }
 
 /**
