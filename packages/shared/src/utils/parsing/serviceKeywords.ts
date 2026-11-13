@@ -15,6 +15,12 @@ export const SERVICE_KEYWORDS: {
    */
   senderDomains?: string[];
 }[] = [
+  // 유튜브 프리미엄보다 앞에 둔다(결합 상품 메일에 '유튜브'가 함께 적힌다). 발신 도메인(woowahan.com)은
+  // 적지 않는다 — 같은 주소가 음식 주문 결제 메일도 보내, 도메인으로 잡으면 주문이 배민클럽이 된다.
+  {
+    keywords: ["배민클럽", "배민 클럽", "baemin club"],
+    presetId: "baemin-club",
+  },
   {
     keywords: ["넷플릭스", "netflix", "넷플릭스코리아"],
     presetId: "netflix",

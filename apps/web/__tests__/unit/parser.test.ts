@@ -392,6 +392,26 @@ describe("결제 메일이 아닌 메일을 구독으로 읽지 않는다", () =
     { from, subject, body, date: "2026-09-10T03:00:00.000Z" },
   ];
 
+  it("배민클럽 '이용료가 결제됐어요' 메일을 배민클럽으로 읽는다", () => {
+    const [item] = parseReceiptEmails(
+      mail(
+        "배민클럽 이용료가 결제됐어요",
+        "결제 금액 3,990원",
+        "배달의민족 <noreply@woowahan.com>",
+      ),
+      { now: NOW },
+    );
+
+    expect(item.presetId).toBe("baemin-club");
+    expect(item.amount).toBe(3990);
+    // 단독 요금인지 배민클럽 + 유튜브 프리미엄인지 메일로는 알 수 없어, 등록하지 않고 묻는다.
+    expect(item.selected).toBe(false);
+    expect(item.statusReason).toEqual({
+      type: "bundle-check",
+      bundleName: "배민클럽 + 유튜브 프리미엄",
+    });
+  });
+
   it("광고 메일의 안내 가격을 결제액으로 읽지 않는다", () => {
     // 쓰지도 않는 챗GPT가 '$20 구독'으로 등록되던 메일이다. 메일함 검색이 'subscription'까지
     // 훑기 때문에 광고가 함께 걸리고, 그 본문에도 서비스 이름과 금액이 있다.
