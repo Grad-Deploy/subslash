@@ -18,6 +18,23 @@ export function bundlesIncluding(serviceId: string) {
   return POPULAR_SERVICES.filter((preset) => preset.includes?.includes(serviceId));
 }
 
+/**
+ * 같은 이름의 결제 메일이 단독 구독과 결합 상품 중 어느 쪽인지 메일만으로는 알 수 없는 서비스 →
+ * 그 결합 상품(서비스 목록의 id). 배민클럽 이용료는 단독 요금이든 배민클럽 + 유튜브 프리미엄이든
+ * 같은 '배민클럽' 메일로 오므로, 확인 없이 단독 구독으로 등록하면 결합 상품 사용자가 유튜브 프리미엄을
+ * 따로 낸다고 읽힌다. 모든 결합 포함 서비스(넷플릭스·유튜브)에 걸면 평범한 영수증까지 묻게 되므로
+ * 메일이 구분되지 않는다고 확인한 서비스만 적는다.
+ */
+const BUNDLE_TO_CONFIRM: Record<string, string> = {
+  "baemin-club": "baemin-youtube-premium",
+};
+
+/** 이 서비스의 영수증을 등록하기 전에 결합 상품인지 물어야 하면 그 결합 상품의 이름. */
+export function bundleToConfirm(serviceId: string | null | undefined): string | null {
+  const bundleId = serviceId ? BUNDLE_TO_CONFIRM[serviceId] : undefined;
+  return bundleId ? serviceNameOf(bundleId) : null;
+}
+
 export interface BundleOverlap {
   /** 결합 상품 구독. */
   bundle: Subscription;

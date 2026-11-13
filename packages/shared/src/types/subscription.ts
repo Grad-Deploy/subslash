@@ -321,6 +321,7 @@ export interface DiscoveredSubscription {
  * - `recent`: 며칠 전 결제 메일을 확인했다
  * - `killed-charged`: 해지로 기록한 서비스인데 결제 메일이 왔다
  * - `unsure`: 결제 메일에서 찾았지만 어떤 서비스인지 확실하지 않다
+ * - `bundle-check`: 같은 메일이 단독 구독과 결합 상품 모두에서 올 수 있어 어느 쪽인지 사용자가 정해야 한다
  */
 export type DiscoveryStatus =
   | { type: "sms-canceled" }
@@ -329,4 +330,5 @@ export type DiscoveryStatus =
   | { type: "stale"; daysAgo: number }
   | { type: "recent"; daysAgo: number }
   | { type: "killed-charged" }
+  | { type: "bundle-check"; bundleName: string }
   | { type: "unsure" };

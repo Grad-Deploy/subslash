@@ -23,6 +23,8 @@ export const ko = {
       recent: (days: number) => `${days}일 전 결제 메일 확인됨`,
       "killed-charged":
         "해지로 기록한 서비스인데 결제 메일이 왔습니다. 해지가 됐는지 확인해 주세요",
+      "bundle-check": (bundle: string) =>
+        `단독 구독인지 '${bundle}' 같은 결합 상품인지 메일만으로는 알 수 없습니다. 결합 상품이면 등록하지 말고 '${bundle}'으로 직접 등록해 주세요`,
       unsure: "결제 메일에서 찾았지만 어떤 서비스인지 확실하지 않습니다",
     },
     row: {
@@ -322,6 +324,8 @@ export const en: Widen<typeof ko> = {
       recent: (days) => `Payment email from ${days} ${pluralOf(days, "day", "days")} ago confirmed`,
       "killed-charged":
         "You recorded this as cancelled, but a payment email came. Check that the cancellation went through",
+      "bundle-check": (bundle) =>
+        `The email can't tell whether this is a standalone subscription or a bundle like "${bundle}". If it's the bundle, don't add this one — add "${bundle}" yourself`,
       unsure: "Found in a payment email, but we're not sure which service it is",
     },
     row: {
@@ -633,6 +637,8 @@ export const zh: Widen<typeof ko> = {
       stale: (days) => `最后一封付款邮件是 ${days} 天前的，无法确定是否还在付款`,
       recent: (days) => `已确认 ${days} 天前的付款邮件`,
       "killed-charged": "你记录为已退订，但收到了付款邮件。请确认退订是否完成",
+      "bundle-check": (bundle) =>
+        `仅凭邮件无法判断这是单独订阅还是“${bundle}”这样的组合产品。如果是组合产品，请不要添加此项，而是自行添加“${bundle}”`,
       unsure: "在付款邮件中发现，但不确定是哪项服务",
     },
     row: {
@@ -913,6 +919,8 @@ export const ja: Widen<typeof ko> = {
       recent: (days) => `${days} 日前の支払いメールを確認しました`,
       "killed-charged":
         "解約済みと記録しましたが、支払いメールが届きました。解約できているか確認してください",
+      "bundle-check": (bundle) =>
+        `メールだけでは、単独の契約なのか「${bundle}」のようなセット商品なのか分かりません。セット商品の場合はこれを登録せず、「${bundle}」を自分で登録してください`,
       unsure: "支払いメールで見つかりましたが、どのサービスか確かではありません",
     },
     row: {
@@ -1214,6 +1222,8 @@ export const vi: Widen<typeof ko> = {
       recent: (days) => `Đã xác nhận email thanh toán cách đây ${days} ngày`,
       "killed-charged":
         "Bạn đã ghi là đã hủy nhưng có email thanh toán. Hãy kiểm tra việc hủy đã xong chưa",
+      "bundle-check": (bundle) =>
+        `Chỉ dựa vào email thì không biết đây là gói riêng lẻ hay gói kết hợp như "${bundle}". Nếu là gói kết hợp, đừng thêm mục này mà hãy tự thêm "${bundle}"`,
       unsure: "Tìm thấy trong email thanh toán nhưng không chắc là dịch vụ nào",
     },
     row: {
@@ -1516,6 +1526,8 @@ export const fr: Widen<typeof ko> = {
       recent: (days) => `E-mail de paiement d'il y a ${days} jour${imPl(days, "", "s")} confirmé`,
       "killed-charged":
         "Vous l'avez indiqué comme résilié, mais un e-mail de paiement est arrivé. Vérifiez que la résiliation a abouti",
+      "bundle-check": (bundle) =>
+        `L'e-mail ne permet pas de savoir s'il s'agit d'un abonnement seul ou d'un pack comme « ${bundle} ». Si c'est le pack, n'ajoutez pas celui-ci : ajoutez « ${bundle} » vous-même`,
       unsure:
         "Trouvé dans un e-mail de paiement, mais nous ne savons pas avec certitude de quel service il s'agit",
     },
@@ -1838,6 +1850,8 @@ export const es: Widen<typeof ko> = {
       recent: (days) => `Correo de pago de hace ${days} día${imPl(days, "", "s")} confirmado`,
       "killed-charged":
         "La marcaste como cancelada, pero llegó un correo de pago. Comprueba que la cancelación se completó",
+      "bundle-check": (bundle) =>
+        `El correo no permite saber si es una suscripción individual o un paquete como "${bundle}". Si es el paquete, no añadas este: añade "${bundle}" tú mismo`,
       unsure: "Encontrado en un correo de pago, pero no estamos seguros de qué servicio es",
     },
     row: {
@@ -2144,6 +2158,8 @@ export const de: Widen<typeof ko> = {
       recent: (days) => `Zahlungs-E-Mail von vor ${days} ${imPl(days, "Tag", "Tagen")} bestätigt`,
       "killed-charged":
         "Du hast es als gekündigt eingetragen, aber eine Zahlungs-E-Mail kam. Prüf, ob die Kündigung durchging",
+      "bundle-check": (bundle) =>
+        `Die E-Mail verrät nicht, ob es ein Einzelabo oder ein Paket wie „${bundle}“ ist. Falls es das Paket ist, füg dieses nicht hinzu, sondern leg „${bundle}“ selbst an`,
       unsure:
         "In einer Zahlungs-E-Mail gefunden, aber wir sind nicht sicher, welcher Dienst es ist",
     },
@@ -2459,6 +2475,8 @@ export const pt: Widen<typeof ko> = {
       recent: (days) => `E-mail de pagamento de ${days} dia${imPl(days, "", "s")} atrás confirmado`,
       "killed-charged":
         "Você registrou como cancelada, mas chegou um e-mail de pagamento. Confira se o cancelamento foi concluído",
+      "bundle-check": (bundle) =>
+        `O e-mail não deixa claro se é uma assinatura avulsa ou um pacote como "${bundle}". Se for o pacote, não adicione este: adicione "${bundle}" você mesmo`,
       unsure: "Encontrado em um e-mail de pagamento, mas não temos certeza de qual serviço é",
     },
     row: {

@@ -558,7 +558,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     ],
     priceNote: "2025년 9월 출시 때 발표한 가격이에요. 결제 화면의 금액과 다르면 고쳐 주세요.",
     currency: "KRW",
-    // 배민 앱에서 결제하고 해지한다. 결제 메일이 Gmail로 오지 않아 가져오기로는 찾지 못한다.
+    // 배민 앱에서 결제하고 해지한다. 결제 메일('배민클럽 이용료가 결제됐어요')은 단독 요금과 같은 이름으로
+    // 와서 결합 상품인지 구분되지 않으므로, 가져오기는 등록하지 않고 묻는다(`bundleToConfirm`).
     cancelUrl: "https://www.baemin.com/",
     cancelUrlKind: "entry",
     // 배달의민족 앱(2026-09-29 Play 스토어 '배달의민족', 개발사 WoowaBrothers로 확인).

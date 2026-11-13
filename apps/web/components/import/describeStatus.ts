@@ -9,6 +9,8 @@ export function describeStatus(t: Messages, status: DiscoveryStatus): string {
       return s.stale(status.daysAgo);
     case "recent":
       return s.recent(status.daysAgo);
+    case "bundle-check":
+      return s["bundle-check"](status.bundleName);
     default:
       return s[status.type];
   }

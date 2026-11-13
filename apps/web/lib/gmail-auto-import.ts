@@ -81,7 +81,7 @@ function readChargeHistory(value: string | null): ChargeRecord[] {
  */
 export function discoveryTier(item: DiscoveredSubscription): "auto" | "review" | null {
   if (item.isCanceled) return null;
-  // 해지 알림을 걸러낸 뒤 남은 `selected: false`는 '오래된 메일'뿐이다.
+  // 해지 알림을 걸러낸 뒤 남은 `selected: false`는 '오래된 메일'과 '결합 상품인지 물어야 하는 것'(배민클럽)이다.
   if (!item.selected) return "review";
   return item.presetId && item.confidence === "high" ? "auto" : "review";
 }

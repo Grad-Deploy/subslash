@@ -18,6 +18,7 @@ import {
   merchantNameFromSms,
 } from "./parsing/fields";
 import { matchService } from "./parsing/matchService";
+import { bundleToConfirm } from "./bundles";
 import type { CalendarDate, ReceiptHints } from "./parsing/types";
 
 /**
@@ -357,6 +358,8 @@ ${piece.body}`;
       const daysAgo = Math.max(0, daysBetween(receivedAt, now));
       const stale = daysAgo > STALE_AFTER_DAYS[parsed.billingCycle];
       const snippet = `${receiptDate} · ${email.from} · ${email.subject}`;
+      // 단독 구독인지 결합 상품인지 메일로는 알 수 없는 서비스는 체크를 풀어 두고 묻는다.
+      const bundleName = parsed.isCanceled ? null : bundleToConfirm(parsed.presetId);
 
       const candidate: DiscoveredSubscription = {
         ...parsed,
@@ -367,13 +370,15 @@ ${piece.body}`;
         sourceSnippet: snippet.length > 120 ? `${snippet.slice(0, 120)}...` : snippet,
         receiptDate,
         daysAgo,
-        selected: !parsed.isCanceled && !stale,
+        selected: !parsed.isCanceled && !stale && !bundleName,
         isWithin30Days: !parsed.isCanceled && !stale,
         statusReason: parsed.isCanceled
           ? { type: "mail-canceled" }
-          : stale
-            ? { type: "stale", daysAgo }
-            : { type: "recent", daysAgo },
+          : bundleName
+            ? { type: "bundle-check", bundleName }
+            : stale
+              ? { type: "stale", daysAgo }
+              : { type: "recent", daysAgo },
         chargeHistory: charge ? [{ date: charge, amount: parsed.amount }] : [],
       };
       seen.set(key, candidate);

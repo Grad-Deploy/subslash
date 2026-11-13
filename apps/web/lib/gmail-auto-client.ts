@@ -11,6 +11,7 @@ import {
   type Subscription,
   type SubscriptionCategory,
   type SubscriptionFormData,
+  bundleToConfirm,
   coveredServices,
   serviceNameKey,
 } from "@subslash/shared";
@@ -336,6 +337,7 @@ export function discoveryToCandidate(
   );
   const daysAgo = daysSinceReceipt(discovery.receiptDate, now);
   const stale = isStaleReceipt(discovery.receiptDate, discovery.billingCycle, now);
+  const bundleName = bundleToConfirm(discovery.presetId);
 
   return {
     ...form,
@@ -349,12 +351,14 @@ export function discoveryToCandidate(
     chargeHistory: discovery.chargeHistory,
     daysAgo: daysAgo ?? undefined,
     confidence: discovery.presetId ? "high" : "medium",
-    selected: !killed && !stale,
+    selected: !killed && !stale && !bundleName,
     isWithin30Days: !stale,
     statusReason: killed
       ? { type: "killed-charged" }
-      : stale
-        ? { type: "stale", daysAgo: daysAgo ?? 0 }
-        : { type: "unsure" },
+      : bundleName
+        ? { type: "bundle-check", bundleName }
+        : stale
+          ? { type: "stale", daysAgo: daysAgo ?? 0 }
+          : { type: "unsure" },
   };
 }
