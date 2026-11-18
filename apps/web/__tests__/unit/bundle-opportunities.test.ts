@@ -73,4 +73,15 @@ describe("findBundleOpportunities", () => {
     const bundle = sub({ id: "b", name: "네이버플러스 + 넷플릭스", amount: 4900, planId: "ads" });
     expect(find([bundle, netflix("ads"), naverPlus])).toEqual([]);
   });
+
+  it("같은 구독을 바꾸는 결합 상품이 여럿이면 가장 많이 덜 내는 하나만 보인다", () => {
+    const tving = sub({ id: "t", name: "티빙", amount: 13500, planId: "standard" });
+    const disney = sub({ id: "d", name: "디즈니플러스", amount: 9900, planId: "standard" });
+    // 티빙 더블 18,000(5,400 절약)과 3 PACK 21,500(1,900 절약, 웨이브 덤) 중 앞의 것만.
+    expect(find([tving, disney]).map((o) => o.bundle.id)).toEqual(["tving-double-disney"]);
+    // 넷플릭스 광고형 + 네이버플러스는 4,900짜리 결합이 있어 스포티파이까지 든 10,800짜리는 따로 안 보인다.
+    expect(find([netflix("ads"), naverPlus]).map((o) => o.bundle.id)).toEqual([
+      "naver-plus-netflix",
+    ]);
+  });
 });
