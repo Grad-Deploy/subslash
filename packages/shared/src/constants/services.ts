@@ -4,8 +4,11 @@ import {
   SubscriptionCategory,
   SubscriptionFormData,
   Currency,
+  PaymentMethod,
 } from "../types";
 import { formatCurrency } from "../utils/cost-per-use";
+
+export type BundleRequirement = "apple-device" | "lguplus";
 
 /** 한 서비스 안의 요금제 하나. */
 export interface ServicePlan {
@@ -121,6 +124,17 @@ export interface ServicePreset {
    * 요금제가 하나뿐인 서비스(네이버플러스·애플 TV)는 적지 않는다.
    */
   includedPlans?: Record<string, string>;
+  /**
+   * 결합 상품을 받으려고 따로 갖춰야 하는 것 — 확인한 것만 적는다. 없다는 것은 조건이 없다는 뜻이 아니라
+   * 확인하지 않았다는 뜻이다. 절약 추천(`findBundleOpportunities`)이 '이 조건이면 덜 내요'로 조건을 함께 적는다.
+   * `apple-device`: Apple 기기에서 쓰는 상품, `lguplus`: LG U+ 구독 플랫폼 상품(가입 자격은 확인하지 못했다).
+   */
+  requires?: BundleRequirement[];
+  /**
+   * 결합 상품이 결제되는 경로(판매처). 앱스토어·구글 플레이·통신사로 결제 중인 구독은 그 경로의 결합 상품으로만
+   * 옮길 수 있어, 경로가 같지 않으면 절약 추천에서 뺀다. 적지 않으면 그런 구독으로는 옮기지 않는다.
+   */
+  billedVia?: PaymentMethod;
   /** 결합 구성·요금제 요금을 확인한 곳. 요금이 바뀌면 여기부터 다시 본다. */
   sourceUrl?: string;
 }
@@ -610,6 +624,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "1. LG U+ 구독 플랫폼 '유독' 접속 후 로그인\n2. 구독 중인 더블스트리밍 선택\n3. 해지 — 유독은 버튼 한 번으로 해지할 수 있다고 안내해요(연간권은 약정 조건을 확인하세요)",
     includes: ["netflix", "youtube-premium"],
+    requires: ["lguplus"],
     sourceUrl: "https://www.newsis.com/view/NISX20260506_0003617774",
   },
   {
@@ -706,6 +721,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "1. 아이폰 [설정] 앱 > 맨 위 내 이름\n2. [구독] > [Apple One] 선택\n3. [구독 취소] 클릭\n4. 웹에서는 Apple 계정의 구독 관리 화면에서 Apple One을 골라 취소",
     includes: ["apple-music", "apple-tv", "apple-icloud"],
+    requires: ["apple-device"],
+    billedVia: "apple_iap",
     sourceUrl: "https://www.apple.com/kr/apple-one/",
   },
   {
@@ -727,6 +744,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "1. LG U+ 구독 플랫폼 '유독' 접속 후 로그인\n2. 구독 중인 구글 AI 프로 + 유튜브 프리미엄 선택\n3. 해지",
     includes: ["google-ai-pro", "youtube-premium"],
+    requires: ["lguplus"],
     sourceUrl: "https://view.asiae.co.kr/article/2026060108404250306",
   },
   {

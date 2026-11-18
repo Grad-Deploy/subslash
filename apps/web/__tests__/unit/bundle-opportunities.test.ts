@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findBundleOpportunities, type Subscription } from "@subslash/shared";
+import { POPULAR_SERVICES, findBundleOpportunities, type Subscription } from "@subslash/shared";
 
 function sub(overrides: Partial<Subscription>): Subscription {
   return {
@@ -83,5 +83,25 @@ describe("findBundleOpportunities", () => {
     expect(find([netflix("ads"), naverPlus]).map((o) => o.bundle.id)).toEqual([
       "naver-plus-netflix",
     ]);
+  });
+
+  it("앱스토어·플레이스토어·통신사로 내는 구독은 판매처가 같지 않으면 대신하지 않는다", () => {
+    for (const paymentMethod of ["apple_iap", "google_play", "telecom"] as const) {
+      expect(find([{ ...netflix("ads"), paymentMethod }, naverPlus])).toEqual([]);
+    }
+    // 카드·네이버페이 같은 일반 결제는 그대로 견준다.
+    expect(find([{ ...netflix("ads"), paymentMethod: "credit_card" }, naverPlus])).toHaveLength(1);
+  });
+
+  it("가입 조건은 걸러 내지 않고 결과에 싣는다", () => {
+    const [found] = find([netflix("ads"), naverPlus]);
+    expect(found.requires).toEqual([]);
+  });
+
+  it("조건이 있는 결합 상품(Apple One, 유독)은 조건을 적어 두었다", () => {
+    const byId = (id: string) => POPULAR_SERVICES.find((s) => s.id === id);
+    expect(byId("apple-one")?.requires).toEqual(["apple-device"]);
+    expect(byId("uplus-double-streaming")?.requires).toEqual(["lguplus"]);
+    expect(byId("uplus-google-ai-youtube")?.requires).toEqual(["lguplus"]);
   });
 });
