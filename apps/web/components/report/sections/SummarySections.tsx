@@ -129,7 +129,7 @@ export function BundleSavingNotice({
       {opportunities.map(({ bundle, replaced, bundleMonthly, saving, extraServiceIds }) => (
         <p key={bundle.id} className="text-xs leading-relaxed">
           {b.line(
-            replaced.map((sub) => sub.name).join(", "),
+            replaced.map((sub) => names.sub(sub)).join(", "),
             names.id(bundle.id),
             range(bundleMonthly.min, bundleMonthly.max),
             range(saving.min, saving.max),

@@ -160,7 +160,18 @@ export function findBundleOpportunities(
       extraServiceIds: bundle.includes.filter((id) => !ids.includes(id)),
     });
   }
-  return out.sort((a, b) => b.saving.min - a.saving.min);
+  // 같은 구독들을 바꾸는 결합 상품이 여럿이면 가장 많이 덜 내는 하나만 — 쓰지 않는 서비스가 더 든 비싼 상품을
+  // 함께 보이면 같은 말을 되풀이한다(티빙 더블과 3 PACK).
+  const best = new Map<string, BundleOpportunity>();
+  for (const opportunity of out) {
+    const key = opportunity.replaced
+      .map((sub) => sub.id)
+      .sort()
+      .join("|");
+    const kept = best.get(key);
+    if (!kept || opportunity.saving.min > kept.saving.min) best.set(key, opportunity);
+  }
+  return [...best.values()].sort((a, b) => b.saving.min - a.saving.min);
 }
 
 /** 서비스 id → 화면에 적을 이름. */
