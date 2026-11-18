@@ -1,9 +1,13 @@
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ReceiptText } from "lucide-react";
 import { formatKRW, type findBundleOpportunities, type findBundleOverlaps } from "@subslash/shared";
 import { IS_APP_BUILD } from "@lib/platform";
 import { receiptHref, type ReceiptMonth } from "@lib/receipt-view";
 import { useServiceNames, useT } from "@lib/i18n";
+import { ownerScopedKey } from "@lib/owner-scoped";
+import { dismissUntil } from "@lib/usage/suggest";
+import { dayKey } from "@lib/usage/history";
 import { FitText } from "@components/ui/fit-text";
 
 /**
@@ -113,7 +117,23 @@ export function BundleOverlapNotice({
 const range = (min: number, max: number) =>
   min === max ? formatKRW(min) : `${formatKRW(min)}~${formatKRW(max)}`;
 
-/** 따로 내는 구독을 결합 상품 하나로 바꾸면 덜 내는 경우. 같은 요금제끼리 견준 것만 온다(`findBundleOpportunities`). */
+const DISMISSED_KEY = "subslash-bundle-saving-dismissed";
+
+/** 결합 상품 id → 이 날(YYYY-MM-DD)까지 보이지 않는다. 기기에만 두고(기록 주인별), 쓸 수 없으면 이번 화면에서만 숨긴다. */
+function readDismissed(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(ownerScopedKey(DISMISSED_KEY));
+    const parsed: unknown = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * 따로 내는 구독을 결합 상품 하나로 바꾸면 덜 내는 경우. 같은 요금제끼리 견준 것만 온다(`findBundleOpportunities`).
+ * 가입 조건(`requires`)은 사용자가 갖췄는지 모르므로 조건으로 적고, '해당 안 돼요'로 90일 숨길 수 있다.
+ */
 export function BundleSavingNotice({
   opportunities,
 }: {
@@ -121,23 +141,51 @@ export function BundleSavingNotice({
 }) {
   const b = useT().reportPage.bundleSaving;
   const names = useServiceNames();
-  if (opportunities.length === 0) return null;
+  const [dismissed, setDismissed] = useState<Record<string, string>>({});
+  useEffect(() => setDismissed(readDismissed()), []);
+  const today = dayKey(new Date());
+  const shown = opportunities.filter(
+    // 앱은 안드로이드뿐이라 Apple 기기 상품은 맞지 않는다.
+    (o) =>
+      (dismissed[o.bundle.id] ?? "") <= today &&
+      !(IS_APP_BUILD && o.requires.includes("apple-device")),
+  );
+  if (shown.length === 0) return null;
+  const dismiss = (id: string) => {
+    const next = { ...dismissed, [id]: dismissUntil(new Date()) };
+    setDismissed(next);
+    try {
+      localStorage.setItem(ownerScopedKey(DISMISSED_KEY), JSON.stringify(next));
+    } catch {
+      // 저장하지 못해도 이번 화면에서는 숨긴다.
+    }
+  };
   return (
     <section
       aria-label={b.label}
       className="space-y-1.5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm"
     >
       <p className="font-bold">{b.title}</p>
-      {opportunities.map(({ bundle, replaced, bundleMonthly, saving, extraServiceIds }) => (
-        <p key={bundle.id} className="text-xs leading-relaxed">
-          {b.line(
-            replaced.map((sub) => names.sub(sub)).join(", "),
-            names.id(bundle.id),
-            range(bundleMonthly.min, bundleMonthly.max),
-            range(saving.min, saving.max),
-          )}
-          {extraServiceIds.length > 0 && ` ${b.extra(extraServiceIds.map(names.id).join(", "))}`}
-        </p>
+      {shown.map(({ bundle, replaced, bundleMonthly, saving, extraServiceIds, requires }) => (
+        <div key={bundle.id} className="space-y-0.5 text-xs leading-relaxed">
+          <p>
+            {b.line(
+              replaced.map((sub) => sub.name).join(", "),
+              names.id(bundle.id),
+              range(bundleMonthly.min, bundleMonthly.max),
+              range(saving.min, saving.max),
+            )}
+            {extraServiceIds.length > 0 && ` ${b.extra(extraServiceIds.map(names.id).join(", "))}`}
+            {requires.map((need) => ` ${b.requires[need]}`).join("")}
+          </p>
+          <button
+            type="button"
+            onClick={() => dismiss(bundle.id)}
+            className="text-muted-foreground underline underline-offset-2"
+          >
+            {b.dismiss}
+          </button>
+        </div>
       ))}
       <p className="text-xs text-muted-foreground">{b.note}</p>
     </section>

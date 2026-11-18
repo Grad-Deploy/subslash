@@ -2,6 +2,7 @@ import type { Subscription } from "../types";
 import {
   POPULAR_SERVICES,
   findPresetForSubscription,
+  type BundleRequirement,
   type ServicePreset,
 } from "../constants/services";
 import { isPaying } from "./date";
@@ -86,7 +87,12 @@ export interface BundleOpportunity {
   saving: { min: number; max: number };
   /** 결합 상품에만 있는 서비스 — 덤일 뿐 절약액에 넣지 않는다. */
   extraServiceIds: string[];
+  /** 옮기려면 갖춰야 하는 것(서비스 목록의 `requires`). 사용자가 갖췄는지는 모르므로 화면이 조건으로 적는다. */
+  requires: BundleRequirement[];
 }
+
+/** 결제하는 곳이 앱스토어·플레이스토어·통신사라 결합 상품의 판매처가 같지 않으면 옮길 수 없는 결제 경로. */
+const PLATFORM_BILLED = new Set(["apple_iap", "google_play", "telecom"]);
 
 /**
  * 따로 내는 구독을 결합 상품 하나로 바꾸면 덜 내는 경우. 거짓 추천을 막으려고 확인된 것만 견준다.
@@ -96,6 +102,9 @@ export interface BundleOpportunity {
  * - 구독이 확실한 것만: 구독 중이고 체험 중이 아닌 등록된 구독. 폰 사용 기록의 후보는 등록 전이라 들지 않는다.
  * - 나눠 내는 구독, 같은 서비스를 둘 이상 낸다, 이미 결합 상품이다, 0원 기록이면 뺀다. 이미 그 결합
  *   상품을 쓰고 있으면 겹침 안내(`findBundleOverlaps`)가 맡는다.
+ * - 결제 경로: 앱스토어·구글 플레이·통신사로 내는 구독은 결합 상품의 판매처(`billedVia`)가 같을 때만 대신한다.
+ *   그 결제를 다른 곳으로 옮길 수 있는지 확인하지 못했다.
+ * - 결합 상품의 가입 조건(`requires`)은 걸러 내지 않고 결과에 실어 화면이 '조건이면'으로 적는다.
  * - 대신할 구독이 둘 이상일 때만 — 하나뿐이면 새 멤버십에 가입하라는 말이 된다.
  */
 export function findBundleOpportunities(
@@ -121,6 +130,13 @@ export function findBundleOpportunities(
       return solo && bundle.includes?.includes(preset.id) ? [{ sub, preset }] : [];
     });
     const ids = pairs.map((pair) => pair.preset.id);
+    if (
+      pairs.some(
+        ({ sub }) =>
+          PLATFORM_BILLED.has(sub.paymentMethod ?? "") && sub.paymentMethod !== bundle.billedVia,
+      )
+    )
+      continue;
     if (pairs.length < 2 || new Set(ids).size !== ids.length) continue;
     if (ids.some((id) => inBundle.has(id))) continue;
     if (pairs.some(({ sub }) => (sub.sharingCount ?? 1) > 1)) continue;
@@ -158,6 +174,7 @@ export function findBundleOpportunities(
       bundleMonthly,
       saving,
       extraServiceIds: bundle.includes.filter((id) => !ids.includes(id)),
+      requires: bundle.requires ?? [],
     });
   }
   // 같은 구독들을 바꾸는 결합 상품이 여럿이면 가장 많이 덜 내는 하나만 — 쓰지 않는 서비스가 더 든 비싼 상품을
