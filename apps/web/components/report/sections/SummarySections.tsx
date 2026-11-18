@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ReceiptText } from "lucide-react";
 import { formatKRW, type findBundleOpportunities, type findBundleOverlaps } from "@subslash/shared";
@@ -141,8 +141,8 @@ export function BundleSavingNotice({
 }) {
   const b = useT().reportPage.bundleSaving;
   const names = useServiceNames();
-  const [dismissed, setDismissed] = useState<Record<string, string>>({});
-  useEffect(() => setDismissed(readDismissed()), []);
+  // 리포트 페이지는 마운트 뒤에만 이 칸을 그리므로(서버 렌더 없음) 처음 그릴 때 읽어도 하이드레이션이 어긋나지 않는다.
+  const [dismissed, setDismissed] = useState<Record<string, string>>(readDismissed);
   const today = dayKey(new Date());
   const shown = opportunities.filter(
     // 앱은 안드로이드뿐이라 Apple 기기 상품은 맞지 않는다.
