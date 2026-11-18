@@ -33,6 +33,8 @@ export interface ServicePlan {
    * 빠지는 요금제를 권하지 않는다(utils/storagePlan) — 이 요금제를 내는 이유가 용량이 아닐 수 있다.
    */
   extras?: string;
+  /** 결합 상품의 요금제가 주는 서비스별 요금제(서비스 id → 그 서비스의 요금제 id). `ServicePreset.includedPlans`보다 앞선다. */
+  includedPlans?: Record<string, string>;
 }
 
 export interface ServicePreset {
@@ -113,6 +115,12 @@ export interface ServicePreset {
    * 따로 구독하고 있으면 두 번 내는 것일 수 있다고 알린다(utils/bundles).
    */
   includes?: string[];
+  /**
+   * 결합 상품이 주는 서비스별 요금제(서비스 id → 그 서비스의 요금제 id). 확인한 것만 적는다 — 없는 서비스는
+   * 요금제를 모르는 것이라, 요금제가 여럿인 서비스는 따로 내는 값과 견주지 않는다(`findBundleOpportunities`).
+   * 요금제가 하나뿐인 서비스(네이버플러스·애플 TV)는 적지 않는다.
+   */
+  includedPlans?: Record<string, string>;
   /** 결합 구성·요금제 요금을 확인한 곳. 요금이 바뀌면 여기부터 다시 본다. */
   sourceUrl?: string;
 }
@@ -477,9 +485,19 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // (+10,000원)으로 올린다. 추가 요금은 2026년 7월부터의 값이다(heraldk 2026-06-25).
     defaultAmount: null,
     plans: [
-      { id: "ads", name: "광고형 스탠다드", amount: 4900 },
-      { id: "standard", name: "스탠다드 (추가 결제)", amount: 11400 },
-      { id: "premium", name: "프리미엄 (추가 결제)", amount: 14900 },
+      { id: "ads", name: "광고형 스탠다드", amount: 4900, includedPlans: { netflix: "ads" } },
+      {
+        id: "standard",
+        name: "스탠다드 (추가 결제)",
+        amount: 11400,
+        includedPlans: { netflix: "standard" },
+      },
+      {
+        id: "premium",
+        name: "프리미엄 (추가 결제)",
+        amount: 14900,
+        includedPlans: { netflix: "premium" },
+      },
     ],
     priceNote: "추가 결제 요금은 2026년 7월부터의 값이에요. 결제 화면의 금액과 다르면 고쳐 주세요.",
     currency: "KRW",
@@ -504,6 +522,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "1. 네이버플러스 멤버십 마이페이지 접속\n2. 우측 상단 설정(톱니바퀴) 아이콘 클릭\n3. [네이버플러스 멤버십 관리] 클릭\n4. 하단의 [네이버플러스 멤버십 해지하기] 클릭\n— 스포티파이 혜택도 함께 끝나요",
     includes: ["naver-plus", "spotify"],
+    includedPlans: { spotify: "basic" },
     sourceUrl: "https://www.newsis.com/view/NISX20251128_0003420668",
   },
   {
@@ -523,6 +542,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "1. 네이버플러스 멤버십 마이페이지 접속\n2. 우측 상단 설정(톱니바퀴) 아이콘 클릭\n3. [네이버플러스 멤버십 관리] 클릭\n4. 하단의 [네이버플러스 멤버십 해지하기] 클릭\n— 넷플릭스·스포티파이 혜택과 추가 구독도 함께 끝나요",
     includes: ["naver-plus", "netflix", "spotify"],
+    includedPlans: { netflix: "ads", spotify: "basic" },
     sourceUrl: "https://www.newsis.com/view/NISX20251128_0003420668",
   },
   {
@@ -610,6 +630,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "1. 티빙 웹에서 로그인 후 마이페이지 진입\n2. [나의 이용권] 선택\n3. 이용권 상세 페이지에서 [변경/해지] 클릭\n4. 하단의 [자동결제 해지] 선택",
     includes: ["tving", "disney-plus", "wavve"],
+    includedPlans: { tving: "standard", "disney-plus": "standard", wavve: "standard" },
     sourceUrl:
       "https://cjnews.cj.net/%ED%8B%B0%EB%B9%99-%EB%94%94%EC%A6%88%EB%8B%88%EC%99%80-%EA%B5%AD%EB%82%B4-%ED%8C%8C%ED%8A%B8%EB%84%88%EC%8B%AD-%EC%B2%B4%EA%B2%B0-%EA%B5%AD%EB%82%B4-%EC%B5%9C%EC%B4%88-3%EC%9E%90-ott-%EA%B2%B0/",
   },
@@ -629,6 +650,7 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     cancelGuide:
       "1. 티빙 웹에서 로그인 후 마이페이지 진입\n2. [나의 이용권] 선택\n3. 이용권 상세 페이지에서 [변경/해지] 클릭\n4. 하단의 [자동결제 해지] 선택",
     includes: ["tving", "disney-plus"],
+    includedPlans: { tving: "standard", "disney-plus": "standard" },
     sourceUrl:
       "https://cjnews.cj.net/%ED%8B%B0%EB%B9%99-%EB%94%94%EC%A6%88%EB%8B%88%EC%99%80-%EA%B5%AD%EB%82%B4-%ED%8C%8C%ED%8A%B8%EB%84%88%EC%8B%AD-%EC%B2%B4%EA%B2%B0-%EA%B5%AD%EB%82%B4-%EC%B5%9C%EC%B4%88-3%EC%9E%90-ott-%EA%B2%B0/",
   },
@@ -664,9 +686,19 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // Arcade도 들어 있다(Arcade는 서비스 목록에 없어 includes에 적지 않는다).
     defaultAmount: null,
     plans: [
-      { id: "individual", name: "개인", amount: 14900 },
+      {
+        id: "individual",
+        name: "개인",
+        amount: 14900,
+        includedPlans: { "apple-music": "individual", "apple-icloud": "50gb" },
+      },
       // 최대 인원은 안내 문구(priceNote)가 아니라 이름에 적는다 — 안내 문구는 영어 화면에서도 한국어로 보인다.
-      { id: "family", name: "가족 (최대 6명)", amount: 20900 },
+      {
+        id: "family",
+        name: "가족 (최대 6명)",
+        amount: 20900,
+        includedPlans: { "apple-music": "family", "apple-icloud": "200gb" },
+      },
     ],
     currency: "KRW",
     cancelUrl: "https://account.apple.com/account/manage/section/subscriptions",

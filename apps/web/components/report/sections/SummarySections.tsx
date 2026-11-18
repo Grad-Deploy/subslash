@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ReceiptText } from "lucide-react";
-import { formatKRW, type findBundleOverlaps } from "@subslash/shared";
+import { formatKRW, type findBundleOpportunities, type findBundleOverlaps } from "@subslash/shared";
 import { IS_APP_BUILD } from "@lib/platform";
 import { receiptHref, type ReceiptMonth } from "@lib/receipt-view";
 import { useServiceNames, useT } from "@lib/i18n";
@@ -104,6 +104,40 @@ export function BundleOverlapNotice({
           {o.after}
         </p>
       ))}
+    </section>
+  );
+}
+
+const range = (min: number, max: number) =>
+  min === max ? formatKRW(min) : `${formatKRW(min)}~${formatKRW(max)}`;
+
+/** 따로 내는 구독을 결합 상품 하나로 바꾸면 덜 내는 경우. 같은 요금제끼리 견준 것만 온다(`findBundleOpportunities`). */
+export function BundleSavingNotice({
+  opportunities,
+}: {
+  opportunities: ReturnType<typeof findBundleOpportunities>;
+}) {
+  const b = useT().reportPage.bundleSaving;
+  const names = useServiceNames();
+  if (opportunities.length === 0) return null;
+  return (
+    <section
+      aria-label={b.label}
+      className="space-y-1.5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm"
+    >
+      <p className="font-bold">{b.title}</p>
+      {opportunities.map(({ bundle, replaced, bundleMonthly, saving, extraServiceIds }) => (
+        <p key={bundle.id} className="text-xs leading-relaxed">
+          {b.line(
+            replaced.map((sub) => sub.name).join(", "),
+            names.id(bundle.id),
+            range(bundleMonthly.min, bundleMonthly.max),
+            range(saving.min, saving.max),
+          )}
+          {extraServiceIds.length > 0 && ` ${b.extra(extraServiceIds.map(names.id).join(", "))}`}
+        </p>
+      ))}
+      <p className="text-xs text-muted-foreground">{b.note}</p>
     </section>
   );
 }
