@@ -28,8 +28,10 @@ export function ReceiptLinks({ now, month }: { now: Date; month: ReceiptMonth })
           className="flex items-center gap-2 rounded-2xl border p-3 hover:bg-muted/50"
         >
           <ReceiptText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-          {/* 좁은 칸에서 '결산 영수 / 증'처럼 낱말 가운데서 끊지 않는다. */}
-          <span className="min-w-0 break-keep text-sm font-semibold">{link.label}</span>
+          {/* 좁은 칸에서 '결산 영수 / 증'처럼 낱말 가운데서 끊지 않는다. 다만 띄어쓰기 없는 일본어는 낱말이 칸보다 길어 칸을 넘으므로(375px에서 5px) 그때만 끊는다. */}
+          <span className="min-w-0 break-keep text-sm font-semibold [overflow-wrap:anywhere]">
+            {link.label}
+          </span>
         </Link>
       ))}
     </section>
