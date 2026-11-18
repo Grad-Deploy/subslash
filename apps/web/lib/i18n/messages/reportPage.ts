@@ -32,6 +32,14 @@ export const ko = {
       middle: (services: string) => `에 ${withJosa(services, "이", "가")} 들어 있는데 `,
       after: "도 따로 구독 중이에요. 다른 계정으로 쓰는 게 아니라면 한 쪽을 해지해도 돼요.",
     },
+    bundleSaving: {
+      label: "결합 상품으로 덜 낼 수 있는 구독",
+      title: "묶으면 덜 낼 수 있어요",
+      line: (subs: string, bundle: string, price: string, saving: string) =>
+        `${subs} 따로 내고 있어요. ${bundle}(월 ${price})로 합치면 한 달 ${saving} 덜 내요.`,
+      extra: (services: string) => `${services}도 함께 받아요.`,
+      note: "같은 요금제끼리 견준 값이에요. 가입 조건과 결제 화면의 금액을 확인하고 옮기세요.",
+    },
     ranking: {
       title: "1회 단가 순위",
       monthly: (amount: string) => `한 달 ${amount}`,
@@ -93,6 +101,14 @@ export const en: Widen<typeof ko> = {
       title: "You may be paying twice",
       middle: (services) => ` includes ${services}, but you also subscribe to `,
       after: " separately. Unless it's a different account, you can cancel one of them.",
+    },
+    bundleSaving: {
+      label: "Subscriptions that cost less in a bundle",
+      title: "You could pay less by bundling",
+      line: (subs, bundle, price, saving) =>
+        `You pay for ${subs} separately. ${bundle} (${price} a month) would save you ${saving} a month.`,
+      extra: (services) => `Also includes ${services}.`,
+      note: "Compared plan for plan, using Korean list prices. Check the terms and the checkout price before switching.",
     },
     ranking: {
       title: "Cost per use ranking",
@@ -159,6 +175,14 @@ export const zh: Widen<typeof ko> = {
       middle: (services) => ` 包含 ${services}，但你还另外订阅了 `,
       after: "。除非是不同的账户，否则可以退订其中一个。",
     },
+    bundleSaving: {
+      label: "组合套餐更省钱的订阅",
+      title: "合并后可能更省钱",
+      line: (subs, bundle, price, saving) =>
+        `你正在分别支付 ${subs}。换成 ${bundle}（每月 ${price}）每月可省 ${saving}。`,
+      extra: (services) => `还包含 ${services}。`,
+      note: "按相同档位对比，使用韩国的标价。切换前请确认条件和结算页面的金额。",
+    },
     ranking: {
       title: "单次成本排行",
       monthly: (amount) => `每月 ${amount}`,
@@ -219,6 +243,14 @@ export const ja: Widen<typeof ko> = {
       title: "二重に払っているかもしれません",
       middle: (services) => ` には ${services} が含まれていますが、別に `,
       after: " も契約しています。別のアカウントでなければ、どちらかを解約できます。",
+    },
+    bundleSaving: {
+      label: "セット商品のほうが安くなるサブスク",
+      title: "まとめると安くなるかもしれません",
+      line: (subs, bundle, price, saving) =>
+        `${subs} を別々に支払っています。${bundle}（月 ${price}）にまとめると月 ${saving} 安くなります。`,
+      extra: (services) => `${services} も付いてきます。`,
+      note: "同じプラン同士を、韓国の表示価格で比べた値です。切り替える前に条件と決済画面の金額を確認してください。",
     },
     ranking: {
       title: "1 回あたりの単価ランキング",
@@ -281,6 +313,14 @@ export const vi: Widen<typeof ko> = {
       middle: (services) => ` đã gồm ${services}, nhưng bạn còn đăng ký riêng `,
       after: ". Nếu không phải tài khoản khác, bạn có thể hủy một trong hai.",
     },
+    bundleSaving: {
+      label: "Gói đăng ký rẻ hơn khi gộp",
+      title: "Gộp lại có thể rẻ hơn",
+      line: (subs, bundle, price, saving) =>
+        `Bạn đang trả riêng ${subs}. Chuyển sang ${bundle} (${price} mỗi tháng) sẽ tiết kiệm ${saving} mỗi tháng.`,
+      extra: (services) => `Còn có thêm ${services}.`,
+      note: "So sánh cùng gói, theo giá niêm yết tại Hàn Quốc. Hãy kiểm tra điều kiện và số tiền ở trang thanh toán trước khi chuyển.",
+    },
     ranking: {
       title: "Xếp hạng chi phí mỗi lần dùng",
       monthly: (amount) => `${amount} mỗi tháng`,
@@ -342,6 +382,14 @@ export const fr: Widen<typeof ko> = {
       title: "Vous payez peut-être deux fois",
       middle: (services) => ` inclut ${services}, mais vous êtes aussi abonné séparément à `,
       after: ". Sauf s'il s'agit d'un autre compte, vous pouvez en résilier un.",
+    },
+    bundleSaving: {
+      label: "Abonnements moins chers en offre groupée",
+      title: "Vous pourriez payer moins en regroupant",
+      line: (subs, bundle, price, saving) =>
+        `Vous payez ${subs} séparément. ${bundle} (${price} par mois) vous ferait économiser ${saving} par mois.`,
+      extra: (services) => `Inclut aussi ${services}.`,
+      note: "Comparaison à formule identique, sur les tarifs affichés en Corée. Vérifiez les conditions et le montant au paiement avant de changer.",
     },
     ranking: {
       title: "Classement du coût par utilisation",
@@ -408,6 +456,14 @@ export const es: Widen<typeof ko> = {
       middle: (services) => ` incluye ${services}, pero también estás suscrito por separado a `,
       after: ". Salvo que sea otra cuenta, puedes cancelar una de las dos.",
     },
+    bundleSaving: {
+      label: "Suscripciones que cuestan menos en un paquete",
+      title: "Podrías pagar menos al juntarlas",
+      line: (subs, bundle, price, saving) =>
+        `Pagas ${subs} por separado. ${bundle} (${price} al mes) te ahorraría ${saving} al mes.`,
+      extra: (services) => `También incluye ${services}.`,
+      note: "Comparado plan por plan, con precios de lista de Corea. Revisa las condiciones y el importe al pagar antes de cambiar.",
+    },
     ranking: {
       title: "Ranking de coste por uso",
       monthly: (amount) => `${amount} al mes`,
@@ -472,6 +528,14 @@ export const de: Widen<typeof ko> = {
       middle: (services) => ` enthält ${services}, aber du hast zusätzlich separat `,
       after: " abonniert. Wenn es nicht ein anderes Konto ist, kannst du eines davon kündigen.",
     },
+    bundleSaving: {
+      label: "Abos, die im Paket günstiger sind",
+      title: "Gebündelt zahlst du vielleicht weniger",
+      line: (subs, bundle, price, saving) =>
+        `Du zahlst ${subs} einzeln. ${bundle} (${price} pro Monat) würde ${saving} pro Monat sparen.`,
+      extra: (services) => `Enthält außerdem ${services}.`,
+      note: "Verglichen wird Tarif für Tarif mit koreanischen Listenpreisen. Prüfe vor dem Wechsel die Bedingungen und den Betrag an der Kasse.",
+    },
     ranking: {
       title: "Ranking der Kosten pro Nutzung",
       monthly: (amount) => `${amount} im Monat`,
@@ -534,6 +598,14 @@ export const pt: Widen<typeof ko> = {
       title: "Você pode estar pagando duas vezes",
       middle: (services) => ` inclui ${services}, mas você também assina separadamente `,
       after: ". A menos que seja outra conta, dá para cancelar uma delas.",
+    },
+    bundleSaving: {
+      label: "Assinaturas que saem mais baratas em pacote",
+      title: "Juntando, você pode pagar menos",
+      line: (subs, bundle, price, saving) =>
+        `Você paga ${subs} separadamente. ${bundle} (${price} por mês) economizaria ${saving} por mês.`,
+      extra: (services) => `Também inclui ${services}.`,
+      note: "Comparado plano a plano, com preços de tabela da Coreia. Confira as condições e o valor no pagamento antes de trocar.",
     },
     ranking: {
       title: "Ranking de custo por uso",

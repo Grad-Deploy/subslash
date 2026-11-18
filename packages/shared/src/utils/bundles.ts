@@ -1,5 +1,11 @@
 import type { Subscription } from "../types";
-import { POPULAR_SERVICES, findPresetForSubscription } from "../constants/services";
+import {
+  POPULAR_SERVICES,
+  findPresetForSubscription,
+  type ServicePreset,
+} from "../constants/services";
+import { isPaying } from "./date";
+import { getMyMonthlyAmountKRW } from "./sharing";
 
 type Identified = Pick<Subscription, "name" | "cancelUrl">;
 
@@ -66,6 +72,95 @@ export function findBundleOverlaps(subscriptions: readonly Subscription[]): Bund
     }
   }
   return overlaps;
+}
+
+export interface BundleOpportunity {
+  bundle: ServicePreset;
+  /** 결합 상품으로 대신할 수 있는 지금 구독(서비스마다 하나, 둘 이상). */
+  replaced: Subscription[];
+  /** 그 구독들에 내 몫으로 내는 한 달 금액(원). */
+  currentMonthly: number;
+  /** 결합 상품의 한 달 요금 범위(원). 같은 구성에 조건별 요금(할인가·정가)이 있으면 둘이 다르다. */
+  bundleMonthly: { min: number; max: number };
+  /** 한 달에 덜 내는 금액 범위(원). `min`은 가장 비싼 요금 기준이라 늘 0보다 크다. */
+  saving: { min: number; max: number };
+  /** 결합 상품에만 있는 서비스 — 덤일 뿐 절약액에 넣지 않는다. */
+  extraServiceIds: string[];
+}
+
+/**
+ * 따로 내는 구독을 결합 상품 하나로 바꾸면 덜 내는 경우. 거짓 추천을 막으려고 확인된 것만 견준다.
+ *
+ * - 같은 등급끼리만: 결합이 주는 요금제(`includedPlans`)를 적어 둔 상품이고, 내 구독의 요금제가 그것과
+ *   같을 때만 견준다. 요금제를 고르지 않았거나 결합의 요금제를 모르면 견주지 않는다.
+ * - 구독이 확실한 것만: 구독 중이고 체험 중이 아닌 등록된 구독. 폰 사용 기록의 후보는 등록 전이라 들지 않는다.
+ * - 나눠 내는 구독, 같은 서비스를 둘 이상 낸다, 이미 결합 상품이다, 0원 기록이면 뺀다. 이미 그 결합
+ *   상품을 쓰고 있으면 겹침 안내(`findBundleOverlaps`)가 맡는다.
+ * - 대신할 구독이 둘 이상일 때만 — 하나뿐이면 새 멤버십에 가입하라는 말이 된다.
+ */
+export function findBundleOpportunities(
+  subscriptions: readonly Subscription[],
+  rate: number,
+  now: Date = new Date(),
+): BundleOpportunity[] {
+  const paying = subscriptions.filter((sub) => isPaying(sub, now));
+  const owned = new Set(paying.map((sub) => findPresetForSubscription(sub)?.id));
+  // 이미 결합 상품으로 받는 서비스는 다른 결합 상품으로 옮기라고 하지 않는다 — 겹침 안내가 맡는다.
+  const inBundle = new Set(
+    paying.flatMap((sub) => {
+      const preset = findPresetForSubscription(sub);
+      return preset?.includes?.length ? coveredServices(sub) : [];
+    }),
+  );
+  const out: BundleOpportunity[] = [];
+  for (const bundle of POPULAR_SERVICES) {
+    if (!bundle.includes?.length || owned.has(bundle.id) || bundle.currency !== "KRW") continue;
+    const pairs = paying.flatMap((sub) => {
+      const preset = findPresetForSubscription(sub);
+      const solo = preset && !preset.includes?.length;
+      return solo && bundle.includes?.includes(preset.id) ? [{ sub, preset }] : [];
+    });
+    const ids = pairs.map((pair) => pair.preset.id);
+    if (pairs.length < 2 || new Set(ids).size !== ids.length) continue;
+    if (ids.some((id) => inBundle.has(id))) continue;
+    if (pairs.some(({ sub }) => (sub.sharingCount ?? 1) > 1)) continue;
+    const costs = pairs.map(({ sub }) => getMyMonthlyAmountKRW(sub, rate));
+    if (costs.some((cost) => !(cost > 0))) continue;
+    const currentMonthly = Math.round(costs.reduce((a, b) => a + b, 0));
+
+    const options = bundle.plans ?? [
+      { amount: bundle.defaultAmount as number, billingCycle: undefined, includedPlans: undefined },
+    ];
+    const prices = options
+      .filter((option) => {
+        if (typeof option.amount !== "number") return false;
+        const given = option.includedPlans ?? bundle.includedPlans ?? {};
+        return pairs.every(
+          ({ sub, preset }) =>
+            !preset.plans?.length || (!!sub.planId && given[preset.id] === sub.planId),
+        );
+      })
+      .map((option) => (option.billingCycle === "yearly" ? option.amount / 12 : option.amount));
+    if (prices.length === 0) continue;
+    const bundleMonthly = {
+      min: Math.round(Math.min(...prices)),
+      max: Math.round(Math.max(...prices)),
+    };
+    const saving = {
+      min: currentMonthly - bundleMonthly.max,
+      max: currentMonthly - bundleMonthly.min,
+    };
+    if (saving.min <= 0) continue;
+    out.push({
+      bundle,
+      replaced: pairs.map((pair) => pair.sub),
+      currentMonthly,
+      bundleMonthly,
+      saving,
+      extraServiceIds: bundle.includes.filter((id) => !ids.includes(id)),
+    });
+  }
+  return out.sort((a, b) => b.saving.min - a.saving.min);
 }
 
 /** 서비스 id → 화면에 적을 이름. */

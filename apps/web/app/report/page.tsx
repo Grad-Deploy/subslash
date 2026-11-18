@@ -5,6 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { BarChart3 } from "lucide-react";
 import {
+  findBundleOpportunities,
   findBundleOverlaps,
   isInTrial,
   isPaying,
@@ -24,6 +25,7 @@ import {
 } from "@components/report/valueRows";
 import {
   BundleOverlapNotice,
+  BundleSavingNotice,
   ReceiptLinks,
   SpendSummary,
   TrialExcludedNote,
@@ -68,6 +70,10 @@ export default function ReportPage() {
     [subscriptions, now],
   );
   const overlaps = useMemo(() => findBundleOverlaps(subscriptions), [subscriptions]);
+  const bundleSavings = useMemo(
+    () => findBundleOpportunities(subscriptions, rate, now),
+    [subscriptions, rate, now],
+  );
   const receiptMonth = useMemo(
     () => defaultReceiptMonth(subscriptions, usageLogs, rate, now),
     [subscriptions, usageLogs, rate, now],
@@ -123,6 +129,7 @@ export default function ReportPage() {
       ) : (
         <>
           <BundleOverlapNotice overlaps={overlaps} />
+          <BundleSavingNotice opportunities={bundleSavings} />
           <SpendSummary
             monthly={monthly}
             annual={sumMyAnnualKRW(active, rate)}
