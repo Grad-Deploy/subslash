@@ -38,6 +38,14 @@ export const ko = {
       line: (subs: string, bundle: string, price: string, saving: string) =>
         `${subs} 따로 내고 있어요. ${bundle}(월 ${price})로 합치면 한 달 ${saving} 덜 내요.`,
       extra: (services: string) => `${services}도 함께 받아요.`,
+      both: (subs: string, amount: string) =>
+        `${withJosa(subs, "은", "는")} 최근 체크인이 애매해요. 해지하면 한 달 ${amount} 덜 내요 — 계속 쓸 거면 결합, 아니면 해지를 고르세요.`,
+      cancel: (subs: string, amount: string) =>
+        `${withJosa(subs, "은", "는")} 최근 거의 쓰지 않았어요. 결합 상품으로 바꾸기보다 해지하면 한 달 ${amount} 덜 내요.`,
+      cancelCompare: (bundle: string, amount: string) =>
+        `${bundle}로 합치면 한 달 ${amount} 덜 내요.`,
+      limited: (year: number, month: number, day: number) =>
+        `기간 한정 가격이에요(${year}년 ${month}월 ${day}일까지 판매). 그 뒤 요금은 판매 화면에서 확인해 주세요.`,
       note: "같은 요금제끼리 견준 값이에요. 가입 조건과 결제 화면의 금액을 확인하고 옮기세요.",
       requires: {
         "apple-device": "Apple 기기를 쓰는 경우에만 맞아요.",
@@ -113,6 +121,13 @@ export const en: Widen<typeof ko> = {
       line: (subs, bundle, price, saving) =>
         `You pay for ${subs} separately. ${bundle} (${price} a month) would save you ${saving} a month.`,
       extra: (services) => `Also includes ${services}.`,
+      both: (subs, amount) =>
+        `Your latest check-in for ${subs} is borderline. Cancelling saves ${amount} a month — bundle it if you'll keep using it, otherwise cancel.`,
+      cancel: (subs, amount) =>
+        `You've barely used ${subs} lately. Cancelling saves ${amount} a month, more than switching to a bundle.`,
+      cancelCompare: (bundle, amount) => `Switching to ${bundle} would save ${amount} a month.`,
+      limited: (year, month, day) =>
+        `Limited-time price (on sale until ${monthLong(month)} ${day}, ${year}). Check the seller's page for the price after that.`,
       note: "Compared plan for plan, using Korean list prices. Check the terms and the checkout price before switching.",
       requires: {
         "apple-device": "Only fits if you use Apple devices.",
@@ -192,6 +207,12 @@ export const zh: Widen<typeof ko> = {
       line: (subs, bundle, price, saving) =>
         `你正在分别支付 ${subs}。换成 ${bundle}（每月 ${price}）每月可省 ${saving}。`,
       extra: (services) => `还包含 ${services}。`,
+      both: (subs, amount) =>
+        `${subs} 最近的打卡结果不太明确。退订每月可少付 ${amount} —— 继续使用就选套餐，否则就退订。`,
+      cancel: (subs, amount) => `${subs} 最近几乎没用。比起换成套餐，退订每月可少付 ${amount}。`,
+      cancelCompare: (bundle, amount) => `换成 ${bundle} 每月少付 ${amount}。`,
+      limited: (year, month, day) =>
+        `限时价格（销售至 ${year}年${month}月${day}日）。之后的价格请在销售页面确认。`,
       note: "按相同档位对比，使用韩国的标价。切换前请确认条件和结算页面的金额。",
       requires: {
         "apple-device": "仅适合使用 Apple 设备的情况。",
@@ -266,6 +287,13 @@ export const ja: Widen<typeof ko> = {
       line: (subs, bundle, price, saving) =>
         `${subs} を別々に支払っています。${bundle}（月 ${price}）にまとめると月 ${saving} 安くなります。`,
       extra: (services) => `${services} も付いてきます。`,
+      both: (subs, amount) =>
+        `${subs} の最近のチェックインは微妙です。解約すると月 ${amount} 安くなります — 使い続けるならセット、そうでなければ解約を。`,
+      cancel: (subs, amount) =>
+        `${subs} は最近ほとんど使っていません。セットプランに替えるより、解約すると月 ${amount} 安くなります。`,
+      cancelCompare: (bundle, amount) => `${bundle} にまとめると月 ${amount} 安くなります。`,
+      limited: (year, month, day) =>
+        `期間限定価格です（${year}年${month}月${day}日まで販売）。その後の料金は販売ページで確認してください。`,
       note: "同じプラン同士を、韓国の表示価格で比べた値です。切り替える前に条件と決済画面の金額を確認してください。",
       requires: {
         "apple-device": "Apple デバイスを使っている場合のみ当てはまります。",
@@ -340,6 +368,13 @@ export const vi: Widen<typeof ko> = {
       line: (subs, bundle, price, saving) =>
         `Bạn đang trả riêng ${subs}. Chuyển sang ${bundle} (${price} mỗi tháng) sẽ tiết kiệm ${saving} mỗi tháng.`,
       extra: (services) => `Còn có thêm ${services}.`,
+      both: (subs, amount) =>
+        `Lần check-in gần đây của ${subs} chưa rõ ràng. Hủy sẽ tiết kiệm ${amount} mỗi tháng — nếu vẫn dùng hãy chọn gói kết hợp, nếu không thì hủy.`,
+      cancel: (subs, amount) =>
+        `Gần đây bạn hầu như không dùng ${subs}. Hủy sẽ tiết kiệm ${amount} mỗi tháng, nhiều hơn chuyển sang gói kết hợp.`,
+      cancelCompare: (bundle, amount) => `Chuyển sang ${bundle} sẽ tiết kiệm ${amount} mỗi tháng.`,
+      limited: (year, month, day) =>
+        `Giá có thời hạn (bán đến ngày ${day}/${month}/${year}). Hãy kiểm tra giá sau thời điểm đó trên trang bán.`,
       note: "So sánh cùng gói, theo giá niêm yết tại Hàn Quốc. Hãy kiểm tra điều kiện và số tiền ở trang thanh toán trước khi chuyển.",
       requires: {
         "apple-device": "Chỉ phù hợp nếu bạn dùng thiết bị Apple.",
@@ -416,6 +451,13 @@ export const fr: Widen<typeof ko> = {
       line: (subs, bundle, price, saving) =>
         `Vous payez ${subs} séparément. ${bundle} (${price} par mois) vous ferait économiser ${saving} par mois.`,
       extra: (services) => `Inclut aussi ${services}.`,
+      both: (subs, amount) =>
+        `Votre dernier check-in pour ${subs} est mitigé. Résilier économise ${amount} par mois — prenez l'offre groupée si vous continuez à l'utiliser, sinon résiliez.`,
+      cancel: (subs, amount) =>
+        `Vous n'avez presque pas utilisé ${subs} récemment. Résilier économise ${amount} par mois, plus qu'une offre groupée.`,
+      cancelCompare: (bundle, amount) => `Passer à ${bundle} économiserait ${amount} par mois.`,
+      limited: (year, month, day) =>
+        `Prix à durée limitée (en vente jusqu'au ${day}/${month}/${year}). Vérifiez ensuite le prix sur la page du vendeur.`,
       note: "Comparaison à formule identique, sur les tarifs affichés en Corée. Vérifiez les conditions et le montant au paiement avant de changer.",
       requires: {
         "apple-device": "Ne convient que si vous utilisez des appareils Apple.",
@@ -495,6 +537,13 @@ export const es: Widen<typeof ko> = {
       line: (subs, bundle, price, saving) =>
         `Pagas ${subs} por separado. ${bundle} (${price} al mes) te ahorraría ${saving} al mes.`,
       extra: (services) => `También incluye ${services}.`,
+      both: (subs, amount) =>
+        `Tu último check-in de ${subs} es dudoso. Cancelar ahorra ${amount} al mes: elige el paquete si lo seguirás usando; si no, cancela.`,
+      cancel: (subs, amount) =>
+        `Casi no has usado ${subs} últimamente. Cancelar ahorra ${amount} al mes, más que cambiar a un paquete.`,
+      cancelCompare: (bundle, amount) => `Cambiar a ${bundle} ahorraría ${amount} al mes.`,
+      limited: (year, month, day) =>
+        `Precio por tiempo limitado (a la venta hasta el ${day}/${month}/${year}). Después, comprueba el precio en la página del vendedor.`,
       note: "Comparado plan por plan, con precios de lista de Corea. Revisa las condiciones y el importe al pagar antes de cambiar.",
       requires: {
         "apple-device": "Solo encaja si usas dispositivos Apple.",
@@ -573,6 +622,14 @@ export const de: Widen<typeof ko> = {
       line: (subs, bundle, price, saving) =>
         `Du zahlst ${subs} einzeln. ${bundle} (${price} pro Monat) würde ${saving} pro Monat sparen.`,
       extra: (services) => `Enthält außerdem ${services}.`,
+      both: (subs, amount) =>
+        `Dein letzter Check-in für ${subs} ist uneindeutig. Kündigen spart ${amount} pro Monat – nimm das Paket, wenn du es weiter nutzt, sonst kündige.`,
+      cancel: (subs, amount) =>
+        `Du hast ${subs} zuletzt kaum genutzt. Kündigen spart ${amount} pro Monat, mehr als ein Wechsel zum Paket.`,
+      cancelCompare: (bundle, amount) =>
+        `Ein Wechsel zu ${bundle} würde ${amount} pro Monat sparen.`,
+      limited: (year, month, day) =>
+        `Zeitlich begrenzter Preis (im Verkauf bis ${day}.${month}.${year}). Den Preis danach prüfst du auf der Seite des Anbieters.`,
       note: "Verglichen wird Tarif für Tarif mit koreanischen Listenpreisen. Prüfe vor dem Wechsel die Bedingungen und den Betrag an der Kasse.",
       requires: {
         "apple-device": "Passt nur, wenn du Apple-Geräte nutzt.",
@@ -650,6 +707,13 @@ export const pt: Widen<typeof ko> = {
       line: (subs, bundle, price, saving) =>
         `Você paga ${subs} separadamente. ${bundle} (${price} por mês) economizaria ${saving} por mês.`,
       extra: (services) => `Também inclui ${services}.`,
+      both: (subs, amount) =>
+        `Seu último check-in de ${subs} está indefinido. Cancelar economiza ${amount} por mês — escolha o pacote se continuar usando; se não, cancele.`,
+      cancel: (subs, amount) =>
+        `Você quase não usou ${subs} recentemente. Cancelar economiza ${amount} por mês, mais do que trocar por um pacote.`,
+      cancelCompare: (bundle, amount) => `Trocar por ${bundle} economizaria ${amount} por mês.`,
+      limited: (year, month, day) =>
+        `Preço por tempo limitado (à venda até ${day}/${month}/${year}). Depois disso, confira o preço na página do vendedor.`,
       note: "Comparado plano a plano, com preços de tabela da Coreia. Confira as condições e o valor no pagamento antes de trocar.",
       requires: {
         "apple-device": "Só serve se você usa dispositivos Apple.",

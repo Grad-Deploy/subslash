@@ -21,6 +21,7 @@ import {
   startOfMonth,
 } from "@subslash/shared";
 import { buildValueRows } from "../../components/report/valueRows";
+import { bundleOpportunitiesFor } from "@lib/bundle-savings";
 import { latestFreshLog } from "@lib/checkins";
 import { planName, presetName, serviceIdName, subscriptionName } from "@lib/service-name";
 import type { Locale } from "@lib/i18n/config";
@@ -412,6 +413,59 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         k.overlaps.source,
         [...bundle, ...crowded],
         crowded.length > 0 ? [k.overlaps.note] : [],
+      );
+    }
+
+    case "bundleSavings": {
+      // 리포트의 '묶으면 덜 낼 수 있어요' 칸과 같은 함수로 센다(lib/bundle-savings).
+      if (active.length === 0) return noSubscriptions();
+      const b = k.bundleSavings;
+      const found = bundleOpportunitiesFor(ctx.subscriptions, ctx.usageLogs, ctx.rate, ctx.now);
+      if (found.length === 0) return answer(b.none, b.source, [], [b.note]);
+      const names = (list: Subscription[]) => list.map((sub) => nameOf(sub)).join(", ");
+      const range = (min: number, max: number) =>
+        min === max ? formatKRW(min) : `${formatKRW(min)}~${formatKRW(max)}`;
+      const bundleName = (item: (typeof found)[number]) => presetName(item.bundle, locale);
+      const rows = found.map((item) => ({
+        label: bundleName(item),
+        value:
+          item.advice === "cancel"
+            ? b.cancelValue(names(item.cancelTargets), formatKRW(item.cancelMonthly))
+            : b.value(names(item.replaced), range(item.saving.min, item.saving.max)),
+      }));
+      const notes = [
+        ...found.map((item) =>
+          b.includes(
+            bundleName(item),
+            (item.bundle.includes ?? []).map((id) => serviceIdName(id, locale)).join(", "),
+          ),
+        ),
+        ...found.flatMap((item) => {
+          if (!item.availableUntil) return [];
+          const [year, month, day] = item.availableUntil.split("-").map(Number);
+          return [`${bundleName(item)}: ${b.limited(year, month, day)}`];
+        }),
+        ...found.flatMap((item) =>
+          item.advice === "both"
+            ? [b.both(names(item.cancelTargets), formatKRW(item.cancelMonthly))]
+            : item.advice === "cancel"
+              ? [b.cancel(names(item.cancelTargets))]
+              : [],
+        ),
+        ...found.flatMap((item) =>
+          item.requires.map(
+            (need) => `${bundleName(item)}: ${ctx.t.reportPage.bundleSaving.requires[need]}`,
+          ),
+        ),
+        b.note,
+      ];
+      // 서로 다른 결합 상품이 같은 구독을 대신할 수 있어(티빙 더블과 3 PACK) 절약액을 더하지 않고 가장 많이 덜 내는 하나로 말한다.
+      const best = found.find((item) => item.advice !== "cancel");
+      return answer(
+        best ? b.head(range(best.saving.min, best.saving.max)) : b.cancelHead,
+        b.source,
+        rows,
+        notes,
       );
     }
 

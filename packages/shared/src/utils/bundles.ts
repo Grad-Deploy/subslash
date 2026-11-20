@@ -1,4 +1,4 @@
-import type { Subscription } from "../types";
+import type { RiskLevel, Subscription } from "../types";
 import {
   POPULAR_SERVICES,
   findPresetForSubscription,
@@ -6,7 +6,7 @@ import {
   type ServicePreset,
 } from "../constants/services";
 import { isPaying } from "./date";
-import { getMyMonthlyAmountKRW } from "./sharing";
+import { getMyMonthlyAmountKRW, sumMyMonthlyKRW } from "./sharing";
 
 type Identified = Pick<Subscription, "name" | "cancelUrl">;
 
@@ -89,6 +89,25 @@ export interface BundleOpportunity {
   extraServiceIds: string[];
   /** 옮기려면 갖춰야 하는 것(서비스 목록의 `requires`). 사용자가 갖췄는지는 모르므로 화면이 조건으로 적는다. */
   requires: BundleRequirement[];
+  /** 견준 요금 중에 기간 한정 요금이 있으면 그 판매 마지막 날(YYYY-MM-DD, 가장 이른 것). 화면이 '기간 한정'이라고 적는다. */
+  availableUntil: string | null;
+  /**
+   * 체크인으로 본 권유. `bundle`: 결합 상품으로 바꾸기. `both`: 대신할 구독 중에 체크인이 노랑(애매)인 것이 있어 결합과 그
+   * 구독의 해지를 나란히. `cancel`: 빨강(거의 안 씀)인 것이 있어 결합 대신 해지.
+   */
+  advice: BundleAdvice;
+  /** `both`면 노랑인 구독, `cancel`이면 빨강인 구독. `bundle`이면 비어 있다. */
+  cancelTargets: Subscription[];
+  /** 그 구독들을 해지하면 한 달에 덜 내는 금액(원, 내 몫). */
+  cancelMonthly: number;
+}
+
+export type BundleAdvice = "bundle" | "both" | "cancel";
+
+/** `now`의 날짜(기기 시간대, YYYY-MM-DD). 기간 한정 요금의 마지막 날과 견준다. */
+function dayOf(now: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
 /** 결제하는 곳이 앱스토어·플레이스토어·통신사라 결합 상품의 판매처가 같지 않으면 옮길 수 없는 결제 경로. */
@@ -105,13 +124,19 @@ const PLATFORM_BILLED = new Set(["apple_iap", "google_play", "telecom"]);
  * - 결제 경로: 앱스토어·구글 플레이·통신사로 내는 구독은 결합 상품의 판매처(`billedVia`)가 같을 때만 대신한다.
  *   그 결제를 다른 곳으로 옮길 수 있는지 확인하지 못했다.
  * - 결합 상품의 가입 조건(`requires`)은 걸러 내지 않고 결과에 실어 화면이 '조건이면'으로 적는다.
+ * - 조건이 붙은 요금(`condition`: 통신사 쿠폰·약정·가입자 대상 프로모션)은 쓰지 않는다 — 누구나 낼 수 있는 요금만 견준다.
+ *   누구나 낼 수 있는 기간 한정 요금(`availableUntil`)은 판매 마지막 날까지만 쓰고 그 날을 실어 화면이 적게 한다.
+ * - 체크인(`levelOf`)이 빨강인 구독이 들었으면 결합보다 해지를, 노랑이면 둘을 나란히 권한다. 체크인 전은 모름이라 결합만.
  * - 대신할 구독이 둘 이상일 때만 — 하나뿐이면 새 멤버십에 가입하라는 말이 된다.
  */
 export function findBundleOpportunities(
   subscriptions: readonly Subscription[],
   rate: number,
   now: Date = new Date(),
+  /** 구독의 최근 체크인 색. 체크인 전이거나 오래돼 모르면 null. 주지 않으면 모두 모름이다. */
+  levelOf: (sub: Subscription) => RiskLevel | null = () => null,
 ): BundleOpportunity[] {
+  const today = dayOf(now);
   const paying = subscriptions.filter((sub) => isPaying(sub, now));
   const owned = new Set(paying.map((sub) => findPresetForSubscription(sub)?.id));
   // 이미 결합 상품으로 받는 서비스는 다른 결합 상품으로 옮기라고 하지 않는다 — 겹침 안내가 맡는다.
@@ -145,18 +170,35 @@ export function findBundleOpportunities(
     const currentMonthly = Math.round(costs.reduce((a, b) => a + b, 0));
 
     const options = bundle.plans ?? [
-      { amount: bundle.defaultAmount as number, billingCycle: undefined, includedPlans: undefined },
+      {
+        amount: bundle.defaultAmount as number,
+        billingCycle: undefined,
+        includedPlans: undefined,
+        condition: bundle.condition,
+        availableUntil: bundle.availableUntil,
+      },
     ];
-    const prices = options
-      .filter((option) => {
-        if (typeof option.amount !== "number") return false;
-        const given = option.includedPlans ?? bundle.includedPlans ?? {};
-        return pairs.every(
-          ({ sub, preset }) =>
-            !preset.plans?.length || (!!sub.planId && given[preset.id] === sub.planId),
-        );
-      })
-      .map((option) => (option.billingCycle === "yearly" ? option.amount / 12 : option.amount));
+    const usable = options.filter((option) => {
+      if (typeof option.amount !== "number") return false;
+      if (option.condition) return false;
+      const until = option.availableUntil ?? bundle.availableUntil;
+      if (until && today > until) return false;
+      return true;
+    });
+    const matched = usable.filter((option) => {
+      const given = option.includedPlans ?? bundle.includedPlans ?? {};
+      return pairs.every(
+        ({ sub, preset }) =>
+          !preset.plans?.length || (!!sub.planId && given[preset.id] === sub.planId),
+      );
+    });
+    const prices = matched.map((option) =>
+      option.billingCycle === "yearly" ? option.amount / 12 : option.amount,
+    );
+    const limitedUntil = matched
+      .map((option) => option.availableUntil ?? bundle.availableUntil)
+      .filter((until): until is string => !!until)
+      .sort()[0];
     if (prices.length === 0) continue;
     const bundleMonthly = {
       min: Math.round(Math.min(...prices)),
@@ -167,14 +209,22 @@ export function findBundleOpportunities(
       max: currentMonthly - bundleMonthly.min,
     };
     if (saving.min <= 0) continue;
+    const replaced = pairs.map((pair) => pair.sub);
+    const red = replaced.filter((sub) => levelOf(sub) === "red");
+    const yellow = replaced.filter((sub) => levelOf(sub) === "yellow");
+    const cancelTargets = red.length > 0 ? red : yellow;
     out.push({
       bundle,
-      replaced: pairs.map((pair) => pair.sub),
+      replaced,
       currentMonthly,
       bundleMonthly,
       saving,
       extraServiceIds: bundle.includes.filter((id) => !ids.includes(id)),
       requires: bundle.requires ?? [],
+      availableUntil: limitedUntil ?? null,
+      advice: red.length > 0 ? "cancel" : yellow.length > 0 ? "both" : "bundle",
+      cancelTargets,
+      cancelMonthly: Math.round(sumMyMonthlyKRW(cancelTargets, rate)),
     });
   }
   // 같은 구독들을 바꾸는 결합 상품이 여럿이면 가장 많이 덜 내는 하나만 — 쓰지 않는 서비스가 더 든 비싼 상품을

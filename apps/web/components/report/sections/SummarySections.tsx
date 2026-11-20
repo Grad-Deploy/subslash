@@ -166,27 +166,51 @@ export function BundleSavingNotice({
       className="space-y-1.5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm"
     >
       <p className="font-bold">{b.title}</p>
-      {shown.map(({ bundle, replaced, bundleMonthly, saving, extraServiceIds, requires }) => (
-        <div key={bundle.id} className="space-y-0.5 text-xs leading-relaxed">
-          <p>
-            {b.line(
-              replaced.map((sub) => sub.name).join(", "),
-              names.id(bundle.id),
-              range(bundleMonthly.min, bundleMonthly.max),
-              range(saving.min, saving.max),
+      {shown.map((item) => {
+        const { bundle, replaced, bundleMonthly, saving, extraServiceIds, requires } = item;
+        const subNames = (list: typeof replaced) => list.map((sub) => sub.name).join(", ");
+        const [year, month, day] = (item.availableUntil ?? "").split("-").map(Number);
+        return (
+          <div key={bundle.id} className="space-y-0.5 text-xs leading-relaxed">
+            {/* 거의 안 쓰는 구독이 들었으면 결합보다 해지가 더 아낀다 — 해지를 앞에 두고 결합은 견주는 값으로만 적는다. */}
+            {item.advice === "cancel" ? (
+              <>
+                <p className="font-semibold">
+                  {b.cancel(subNames(item.cancelTargets), formatKRW(item.cancelMonthly))}
+                </p>
+                <p className="text-muted-foreground">
+                  {b.cancelCompare(names.id(bundle.id), range(saving.min, saving.max))}
+                </p>
+              </>
+            ) : (
+              <p>
+                {b.line(
+                  subNames(replaced),
+                  names.id(bundle.id),
+                  range(bundleMonthly.min, bundleMonthly.max),
+                  range(saving.min, saving.max),
+                )}
+                {extraServiceIds.length > 0 &&
+                  ` ${b.extra(extraServiceIds.map(names.id).join(", "))}`}
+                {requires.map((need) => ` ${b.requires[need]}`).join("")}
+              </p>
             )}
-            {extraServiceIds.length > 0 && ` ${b.extra(extraServiceIds.map(names.id).join(", "))}`}
-            {requires.map((need) => ` ${b.requires[need]}`).join("")}
-          </p>
-          <button
-            type="button"
-            onClick={() => dismiss(bundle.id)}
-            className="text-muted-foreground underline underline-offset-2"
-          >
-            {b.dismiss}
-          </button>
-        </div>
-      ))}
+            {item.availableUntil && (
+              <p className="text-muted-foreground">{b.limited(year, month, day)}</p>
+            )}
+            {item.advice === "both" && (
+              <p>{b.both(subNames(item.cancelTargets), formatKRW(item.cancelMonthly))}</p>
+            )}
+            <button
+              type="button"
+              onClick={() => dismiss(bundle.id)}
+              className="text-muted-foreground underline underline-offset-2"
+            >
+              {b.dismiss}
+            </button>
+          </div>
+        );
+      })}
       <p className="text-xs text-muted-foreground">{b.note}</p>
     </section>
   );

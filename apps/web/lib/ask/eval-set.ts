@@ -222,6 +222,23 @@ export const ASK_EVAL_SET: readonly AskEvalCase[] = [
   { q: "두 번 돈 내고 있는 거 없나", expect: { tool: "overlaps" }, tag: "paraphrase" },
   { q: "배민클럽이랑 유튜브 프리미엄 중복이야?", expect: { tool: "overlaps" }, tag: "paraphrase" },
   { q: "비슷한 구독 여러개 하고 있나", expect: { tool: "overlaps" }, tag: "casual" },
+  // bundleSavings
+  { q: "결합 상품으로 바꾸면 더 싸?", expect: { tool: "bundleSavings" }, tag: "basic" },
+  {
+    q: "내 구독들 묶어서 싸게 쓸 방법 없을까",
+    expect: { tool: "bundleSavings" },
+    tag: "paraphrase",
+  },
+  {
+    q: "넷플이랑 스포티파이 패키지로 하면 아껴짐?",
+    expect: { tool: "bundleSavings" },
+    tag: "casual",
+  },
+  {
+    q: "Would a bundle be cheaper than what I pay now?",
+    expect: { tool: "bundleSavings" },
+    tag: "lang",
+  },
 
   // cheaperPlan
   {
