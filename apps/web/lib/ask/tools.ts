@@ -104,6 +104,13 @@ export const ASK_TOOLS = {
     params: {},
     computedBy: "findBundleOverlaps + 같은 분류 묶기",
   },
+  bundleSavings: {
+    description:
+      '따로 내는 구독을 결합 상품 하나로 바꾸면 덜 내는지("결합 상품으로 아낄 수 있어?", "묶어서 싸게 쓰는 방법 있어?"). 이미 두 번 내고 있는지는 overlaps다.',
+    params: {},
+    computedBy:
+      "findBundleSavings(리포트의 '결합 상품으로 바꾸면' 칸과 같은 함수, lib/bundle-savings)",
+  },
   cheaperPlan: {
     description: "한 서비스에 지금보다 싼 요금제가 있는지.",
     params: { service: { type: "text", maxLength: 30, required: true } },

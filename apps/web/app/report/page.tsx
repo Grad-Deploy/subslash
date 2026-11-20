@@ -5,7 +5,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { BarChart3 } from "lucide-react";
 import {
-  findBundleOpportunities,
   findBundleOverlaps,
   isInTrial,
   isPaying,
@@ -23,6 +22,7 @@ import {
   buildOtherMetricRows,
   buildValueRows,
 } from "@components/report/valueRows";
+import { bundleOpportunitiesFor } from "@lib/bundle-savings";
 import {
   BundleOverlapNotice,
   BundleSavingNotice,
@@ -71,8 +71,8 @@ export default function ReportPage() {
   );
   const overlaps = useMemo(() => findBundleOverlaps(subscriptions), [subscriptions]);
   const bundleSavings = useMemo(
-    () => findBundleOpportunities(subscriptions, rate, now),
-    [subscriptions, rate, now],
+    () => bundleOpportunitiesFor(subscriptions, usageLogs, rate, now),
+    [subscriptions, usageLogs, rate, now],
   );
   const receiptMonth = useMemo(
     () => defaultReceiptMonth(subscriptions, usageLogs, rate, now),

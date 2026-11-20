@@ -38,6 +38,17 @@ export interface ServicePlan {
   extras?: string;
   /** 결합 상품의 요금제가 주는 서비스별 요금제(서비스 id → 그 서비스의 요금제 id). `ServicePreset.includedPlans`보다 앞선다. */
   includedPlans?: Record<string, string>;
+  /**
+   * 누구나 그 값에 낼 수 없는 요금: 통신사 멤버십 쿠폰·약정·가입자 대상 프로모션 등. 무엇이 조건인지 한 줄로 적는다.
+   * 절약 추천(`findBundleOpportunities`)은 이 요금을 쓰지 않는다 — 조건을 갖추지 못한 사람에게 낼 수 없는 금액으로
+   * 덜 낸다고 말하게 된다.
+   */
+  condition?: string;
+  /**
+   * 누구나 낼 수 있지만 판매 기간이 정해진 요금의 마지막 날(YYYY-MM-DD, 판매 화면의 '기간 한정'). 절약 추천은 이 날이
+   * 지나면 이 요금을 쓰지 않고, 쓰는 동안에는 기간 한정이라고 적는다.
+   */
+  availableUntil?: string;
 }
 
 export interface ServicePreset {
@@ -130,6 +141,10 @@ export interface ServicePreset {
    * `apple-device`: Apple 기기에서 쓰는 상품, `lguplus`: LG U+ 구독 플랫폼 상품(가입 자격은 확인하지 못했다).
    */
   requires?: BundleRequirement[];
+  /** 요금이 하나뿐인 결합 상품의 요금에 붙는 조건(`ServicePlan.condition`과 같은 뜻). */
+  condition?: string;
+  /** 요금이 하나뿐인 결합 상품의 기간 한정 요금의 마지막 날(`ServicePlan.availableUntil`과 같은 뜻). */
+  availableUntil?: string;
   /**
    * 결합 상품이 결제되는 경로(판매처). 앱스토어·구글 플레이·통신사로 결제 중인 구독은 그 경로의 결합 상품으로만
    * 옮길 수 있어, 경로가 같지 않으면 절약 추천에서 뺀다. 적지 않으면 그런 구독으로는 옮기지 않는다.
@@ -587,8 +602,14 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // 등록할 때 고르게 한다 — 할인이 끝났는지는 알 수 없다.
     defaultAmount: null,
     plans: [
-      { id: "discounted", name: "상시 할인가", amount: 13990 },
-      { id: "list", name: "정가", amount: 15990 },
+      // 기사(sourceUrl)는 단독 유튜브 프리미엄(14,900원)과 견주고, 할인가는 상시라 대상·기간 조건이 없다(2026-11-20 사용자 확인).
+      {
+        id: "discounted",
+        name: "상시 할인가",
+        amount: 13990,
+        includedPlans: { "youtube-premium": "premium" },
+      },
+      { id: "list", name: "정가", amount: 15990, includedPlans: { "youtube-premium": "premium" } },
     ],
     priceNote: "2025년 9월 출시 때 발표한 가격이에요. 결제 화면의 금액과 다르면 고쳐 주세요.",
     currency: "KRW",
@@ -613,8 +634,13 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // 넷플릭스가 어느 요금제인지도 발표에 없다.
     defaultAmount: null,
     plans: [
-      { id: "regular", name: "기본", amount: 18900 },
-      { id: "vip", name: "U+ 멤버십 VIP 쿠폰 적용", amount: 14900 },
+      { id: "regular", name: "기본", amount: 18900, condition: "1년 연간권" },
+      {
+        id: "vip",
+        name: "U+ 멤버십 VIP 쿠폰 적용",
+        amount: 14900,
+        condition: "1년 연간권 · U+ 멤버십 VIP 이상",
+      },
     ],
     priceNote:
       "2026년 5월 발표한 연간권의 월 요금이에요. 1년치를 한 번에 냈다면 결제 주기를 연간으로 바꿔 주세요.",
@@ -646,6 +672,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
       "1. 티빙 웹에서 로그인 후 마이페이지 진입\n2. [나의 이용권] 선택\n3. 이용권 상세 페이지에서 [변경/해지] 클릭\n4. 하단의 [자동결제 해지] 선택",
     includes: ["tving", "disney-plus", "wavve"],
     includedPlans: { tving: "standard", "disney-plus": "standard", wavve: "standard" },
+    // 21,500원은 티빙 이용권 화면에 기간 한정(2026-10-06~2027-01-31, 정가 34,300원)으로 적혀 있다(2026-11-20 사용자 확인).
+    availableUntil: "2027-01-31",
     sourceUrl:
       "https://cjnews.cj.net/%ED%8B%B0%EB%B9%99-%EB%94%94%EC%A6%88%EB%8B%88%EC%99%80-%EA%B5%AD%EB%82%B4-%ED%8C%8C%ED%8A%B8%EB%84%88%EC%8B%AD-%EC%B2%B4%EA%B2%B0-%EA%B5%AD%EB%82%B4-%EC%B5%9C%EC%B4%88-3%EC%9E%90-ott-%EA%B2%B0/",
   },
@@ -666,6 +694,8 @@ export const POPULAR_SERVICES: ServicePreset[] = [
       "1. 티빙 웹에서 로그인 후 마이페이지 진입\n2. [나의 이용권] 선택\n3. 이용권 상세 페이지에서 [변경/해지] 클릭\n4. 하단의 [자동결제 해지] 선택",
     includes: ["tving", "disney-plus"],
     includedPlans: { tving: "standard", "disney-plus": "standard" },
+    // 18,000원은 티빙 이용권 화면에 기간 한정(2026-10-06~2027-01-31, 정가 23,400원)으로 적혀 있다(2026-11-20 사용자 확인).
+    availableUntil: "2027-01-31",
     sourceUrl:
       "https://cjnews.cj.net/%ED%8B%B0%EB%B9%99-%EB%94%94%EC%A6%88%EB%8B%88%EC%99%80-%EA%B5%AD%EB%82%B4-%ED%8C%8C%ED%8A%B8%EB%84%88%EC%8B%AD-%EC%B2%B4%EA%B2%B0-%EA%B5%AD%EB%82%B4-%EC%B5%9C%EC%B4%88-3%EC%9E%90-ott-%EA%B2%B0/",
   },
@@ -679,10 +709,30 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // 사용자 확인). 판매 화면의 이름은 '더블 광고형 스탠다드'처럼 '더블'이 붙지만 서비스 이름에 이미 있어 뺀다.
     defaultAmount: null,
     plans: [
-      { id: "ad-standard", name: "광고형 스탠다드", amount: 7000 },
+      // 등급·기간은 티빙 이용권 화면(tving.com/bill/subscription/plan, 2026-11-20 사용자 확인): 광고형 스탠다드·스탠다드·
+      // 프리미엄은 두 서비스에서 같은 등급을 주고, 광고형 스탠다드·스탠다드는 2026-10-06~2027-01-31 기간 한정 가격이다.
+      // 베이직의 등급은 확인하지 못했다.
+      {
+        id: "ad-standard",
+        name: "광고형 스탠다드",
+        amount: 7000,
+        includedPlans: { tving: "ads", wavve: "ads" },
+        availableUntil: "2027-01-31",
+      },
       { id: "basic", name: "베이직", amount: 13500 },
-      { id: "standard", name: "스탠다드", amount: 15000 },
-      { id: "premium", name: "프리미엄", amount: 19500 },
+      {
+        id: "standard",
+        name: "스탠다드",
+        amount: 15000,
+        includedPlans: { tving: "standard", wavve: "standard" },
+        availableUntil: "2027-01-31",
+      },
+      {
+        id: "premium",
+        name: "프리미엄",
+        amount: 19500,
+        includedPlans: { tving: "premium", wavve: "premium" },
+      },
     ],
     currency: "KRW",
     cancelUrl: "https://www.tving.com/",
@@ -734,8 +784,14 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     // 2026년 6월 출시 때 발표한 월 요금. U+ 멤버십 VIP 이상은 4,000원 할인 쿠폰을 쓸 수 있다고 발표했다.
     defaultAmount: null,
     plans: [
-      { id: "regular", name: "기본", amount: 29000 },
-      { id: "vip", name: "U+ 멤버십 VIP 쿠폰 적용", amount: 25000 },
+      // 유독 판매 화면이 29,000원을 '24개월 할인 프로모션'으로 적는다.
+      { id: "regular", name: "기본", amount: 29000, condition: "24개월 할인 프로모션" },
+      {
+        id: "vip",
+        name: "U+ 멤버십 VIP 쿠폰 적용",
+        amount: 25000,
+        condition: "24개월 할인 프로모션 · U+ 멤버십 VIP 이상",
+      },
     ],
     priceNote: "2026년 6월 출시 때 발표한 요금이에요. 결제 화면의 금액과 다르면 고쳐 주세요.",
     currency: "KRW",

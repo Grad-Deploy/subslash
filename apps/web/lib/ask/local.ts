@@ -571,6 +571,10 @@ export function localAskCall(
   // 겹치는 구독
   if (/겹치|중복|두\s*번\s*내|overlap|duplicate/.test(q)) return { tool: "overlaps" };
 
+  // 결합 상품으로 바꾸면 덜 내는지. 겹침(이미 두 번 냄)은 위에서 먼저 가른다.
+  if (/결합\s*(?:상품|요금|으로|하면|해서)|묶어서|묶으면|bundle/.test(q))
+    return { tool: "bundleSavings" };
+
   // 거의 안 쓰는 구독
   // '안'은 낱말 앞에서만 본다 — "한 해 동안 쓴"의 '안 쓴'을 '안 쓰는 구독'으로 읽었다
   // 돈 말이 함께 있으면("안 쓰는데 비용이 제일 비싼") 아까운 구독을 묻는 것일 수 있어 AI에 맡긴다.

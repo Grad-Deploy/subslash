@@ -1,6 +1,6 @@
 import { withJosa } from "../josa";
 import type { Widen } from "../types";
-import { MONTHS_SHORT, one } from "../english";
+import { MONTHS_SHORT, monthLong, one } from "../english";
 import { monthName } from "../months";
 
 /**
@@ -110,6 +110,22 @@ export const ko = {
       bundleHead: "두 번 내고 있을 수 있는 구독이 있어요.",
       crowdedHead: "같은 분류에 여러 개 구독하고 있어요.",
       note: "같은 분류라도 쓰임이 다를 수 있어요. 겹치는지는 직접 판단해 주세요.",
+    },
+    bundleSavings: {
+      source: "결합 상품 요금 · 지금 내는 금액 · 최근 체크인",
+      none: "지금 구독을 결합 상품으로 바꿔 덜 내는 경우는 찾지 못했어요.",
+      head: (saving: string) => `결합 상품으로 바꾸면 한 달 최대 ${saving} 덜 낼 수 있어요.`,
+      cancelHead: "결합 상품보다 해지가 더 아끼는 구독이 있어요.",
+      value: (subs: string, saving: string) => `${subs} 대신 · 한 달 ${saving} 덜 냄`,
+      cancelValue: (subs: string, amount: string) => `${subs} 해지 · 한 달 ${amount} 덜 냄`,
+      includes: (bundle: string, services: string) => `${bundle} 포함 서비스: ${services}`,
+      both: (subs: string, amount: string) =>
+        `${withJosa(subs, "은", "는")} 최근 체크인이 애매해요. 해지하면 한 달 ${amount} 덜 내요.`,
+      cancel: (subs: string) =>
+        `${withJosa(subs, "은", "는")} 최근 거의 쓰지 않아 결합보다 해지를 권해요.`,
+      limited: (year: number, month: number, day: number) =>
+        `기간 한정 가격이에요(${year}년 ${month}월 ${day}일까지 판매). 그 뒤 요금은 판매 화면에서 확인해 주세요.`,
+      note: "같은 등급의 요금제, 혼자 내는 구독, 누구나 낼 수 있는 요금(쿠폰·약정 제외)만 견줬어요. 요금은 한국에서 확인한 값이에요.",
     },
     service: {
       source: "등록한 구독 이름",
@@ -296,6 +312,21 @@ export const en: Widen<typeof ko> = {
       crowdedHead: "You have several subscriptions in the same category.",
       note: "Even in the same category, they may serve different purposes. Decide for yourself whether they overlap.",
     },
+    bundleSavings: {
+      source: "Bundle prices · what you pay now · latest check-ins",
+      none: "Switching your subscriptions to a bundle wouldn't save you anything right now.",
+      head: (saving) => `Switching to a bundle could save you up to ${saving} a month.`,
+      cancelHead: "Cancelling saves more than a bundle for some subscriptions.",
+      value: (subs, saving) => `Instead of ${subs} · saves ${saving} a month`,
+      cancelValue: (subs, amount) => `Cancel ${subs} · saves ${amount} a month`,
+      includes: (bundle, services) => `${bundle} includes: ${services}`,
+      both: (subs, amount) =>
+        `Your latest check-in for ${subs} is borderline. Cancelling saves ${amount} a month.`,
+      cancel: (subs) => `You've barely used ${subs} lately, so cancelling beats a bundle.`,
+      limited: (year, month, day) =>
+        `Limited-time price (on sale until ${monthLong(month)} ${day}, ${year}). Check the seller's page for the price after that.`,
+      note: "Only compares the same plan tier, subscriptions you pay for alone, and prices anyone can get (no coupons or contracts). Prices were checked in Korea.",
+    },
     service: {
       source: "Names of your subscriptions",
       notFound: (query) => `Couldn't find a subscription matching '${query}'.`,
@@ -478,6 +509,20 @@ export const zh: Widen<typeof ko> = {
       crowdedHead: "同一类别中有好几个订阅。",
       note: "即使类别相同，用途也可能不同。是否重复请自行判断。",
     },
+    bundleSavings: {
+      source: "组合套餐价格 · 目前支付金额 · 最近打卡",
+      none: "目前没有发现换成组合套餐能少花钱的订阅。",
+      head: (saving) => `换成组合套餐每月最多可少付 ${saving}。`,
+      cancelHead: "有些订阅退订比换套餐更省钱。",
+      value: (subs, saving) => `代替 ${subs} · 每月少付 ${saving}`,
+      cancelValue: (subs, amount) => `退订 ${subs} · 每月少付 ${amount}`,
+      includes: (bundle, services) => `${bundle} 包含：${services}`,
+      both: (subs, amount) => `${subs} 最近的打卡结果不太明确。退订每月可少付 ${amount}。`,
+      cancel: (subs) => `${subs} 最近几乎没用，建议退订而不是换套餐。`,
+      limited: (year, month, day) =>
+        `限时价格（销售至 ${year}年${month}月${day}日）。之后的价格请在销售页面确认。`,
+      note: "只比较相同等级的方案、你独自付费的订阅，以及人人都能享受的价格（不含优惠券和合约）。价格为在韩国确认的金额。",
+    },
     service: {
       source: "你的订阅名称",
       notFound: (query) => `找不到与“${query}”相符的订阅。`,
@@ -647,6 +692,21 @@ export const ja: Widen<typeof ko> = {
       bundleHead: "二重に払っているかもしれないサブスクがあります。",
       crowdedHead: "同じカテゴリにいくつもサブスクがあります。",
       note: "同じカテゴリでも用途が違うことがあります。重なっているかはご自身で判断してください。",
+    },
+    bundleSavings: {
+      source: "セットプランの料金 · 今の支払額 · 最近のチェックイン",
+      none: "今のサブスクをセットプランに替えて安くなるケースは見つかりませんでした。",
+      head: (saving) => `セットプランに替えると月最大 ${saving} 安くなります。`,
+      cancelHead: "セットプランより解約のほうが節約になるサブスクがあります。",
+      value: (subs, saving) => `${subs} の代わりに · 月 ${saving} 節約`,
+      cancelValue: (subs, amount) => `${subs} を解約 · 月 ${amount} 節約`,
+      includes: (bundle, services) => `${bundle} に含まれるサービス：${services}`,
+      both: (subs, amount) =>
+        `${subs} の最近のチェックインは微妙です。解約すると月 ${amount} 安くなります。`,
+      cancel: (subs) => `${subs} は最近ほとんど使っていないので、セットより解約をおすすめします。`,
+      limited: (year, month, day) =>
+        `期間限定価格です（${year}年${month}月${day}日まで販売）。その後の料金は販売ページで確認してください。`,
+      note: "同じグレードのプラン、一人で払っているサブスク、誰でも払える料金（クーポン・契約割引を除く）だけを比べました。料金は韓国で確認した金額です。",
     },
     service: {
       source: "あなたのサブスクの名前",
@@ -822,6 +882,21 @@ export const vi: Widen<typeof ko> = {
       bundleHead: "Có thể bạn đang trả hai lần cho một số gói.",
       crowdedHead: "Bạn có nhiều gói trong cùng một danh mục.",
       note: "Dù cùng danh mục, mục đích có thể khác nhau. Hãy tự quyết định chúng có trùng không.",
+    },
+    bundleSavings: {
+      source: "Giá gói kết hợp · số tiền đang trả · check-in gần đây",
+      none: "Hiện không có gói đăng ký nào rẻ hơn khi chuyển sang gói kết hợp.",
+      head: (saving) => `Chuyển sang gói kết hợp có thể tiết kiệm tới ${saving} mỗi tháng.`,
+      cancelHead: "Với một số gói, hủy sẽ tiết kiệm hơn chuyển sang gói kết hợp.",
+      value: (subs, saving) => `Thay cho ${subs} · tiết kiệm ${saving} mỗi tháng`,
+      cancelValue: (subs, amount) => `Hủy ${subs} · tiết kiệm ${amount} mỗi tháng`,
+      includes: (bundle, services) => `${bundle} bao gồm: ${services}`,
+      both: (subs, amount) =>
+        `Lần check-in gần đây của ${subs} chưa rõ ràng. Hủy sẽ tiết kiệm ${amount} mỗi tháng.`,
+      cancel: (subs) => `Gần đây bạn hầu như không dùng ${subs}, nên hủy sẽ tốt hơn gói kết hợp.`,
+      limited: (year, month, day) =>
+        `Giá có thời hạn (bán đến ngày ${day}/${month}/${year}). Hãy kiểm tra giá sau thời điểm đó trên trang bán.`,
+      note: "Chỉ so sánh gói cùng cấp, gói bạn trả một mình và mức giá ai cũng mua được (không tính phiếu giảm giá hay hợp đồng). Giá được kiểm tra tại Hàn Quốc.",
     },
     service: {
       source: "Tên các gói đăng ký của bạn",
@@ -1005,6 +1080,23 @@ export const fr: Widen<typeof ko> = {
       bundleHead: "Vous payez peut-être deux fois certains abonnements.",
       crowdedHead: "Vous avez plusieurs abonnements dans la même catégorie.",
       note: "Même dans une catégorie, ils peuvent avoir des usages différents. À vous de juger s'ils font doublon.",
+    },
+    bundleSavings: {
+      source: "Prix des offres groupées · ce que vous payez · derniers check-ins",
+      none: "Passer à une offre groupée ne vous ferait rien économiser pour l'instant.",
+      head: (saving) =>
+        `Passer à une offre groupée pourrait vous faire économiser jusqu'à ${saving} par mois.`,
+      cancelHead: "Pour certains abonnements, résilier économise plus qu'une offre groupée.",
+      value: (subs, saving) => `À la place de ${subs} · ${saving} économisés par mois`,
+      cancelValue: (subs, amount) => `Résilier ${subs} · ${amount} économisés par mois`,
+      includes: (bundle, services) => `${bundle} comprend : ${services}`,
+      both: (subs, amount) =>
+        `Votre dernier check-in pour ${subs} est mitigé. Résilier économise ${amount} par mois.`,
+      cancel: (subs) =>
+        `Vous n'avez presque pas utilisé ${subs} récemment : mieux vaut résilier qu'une offre groupée.`,
+      limited: (year, month, day) =>
+        `Prix à durée limitée (en vente jusqu'au ${day}/${month}/${year}). Vérifiez ensuite le prix sur la page du vendeur.`,
+      note: "Seuls sont comparés la même formule, les abonnements que vous payez seul et les prix accessibles à tous (sans coupon ni engagement). Prix vérifiés en Corée.",
     },
     service: {
       source: "Noms de vos abonnements",
@@ -1194,6 +1286,22 @@ export const es: Widen<typeof ko> = {
       crowdedHead: "Tienes varias suscripciones en la misma categoría.",
       note: "Aunque sean de la misma categoría, pueden tener usos distintos. Decide tú si se solapan.",
     },
+    bundleSavings: {
+      source: "Precios de paquetes · lo que pagas ahora · últimos check-ins",
+      none: "Ahora mismo no ahorrarías nada pasando tus suscripciones a un paquete.",
+      head: (saving) => `Cambiar a un paquete podría ahorrarte hasta ${saving} al mes.`,
+      cancelHead: "En algunas suscripciones, cancelar ahorra más que un paquete.",
+      value: (subs, saving) => `En lugar de ${subs} · ahorras ${saving} al mes`,
+      cancelValue: (subs, amount) => `Cancelar ${subs} · ahorras ${amount} al mes`,
+      includes: (bundle, services) => `${bundle} incluye: ${services}`,
+      both: (subs, amount) =>
+        `Tu último check-in de ${subs} es dudoso. Cancelar ahorra ${amount} al mes.`,
+      cancel: (subs) =>
+        `Casi no has usado ${subs} últimamente, así que conviene cancelar antes que un paquete.`,
+      limited: (year, month, day) =>
+        `Precio por tiempo limitado (a la venta hasta el ${day}/${month}/${year}). Después, comprueba el precio en la página del vendedor.`,
+      note: "Solo se comparan planes del mismo nivel, suscripciones que pagas tú solo y precios que cualquiera puede obtener (sin cupones ni permanencia). Precios comprobados en Corea.",
+    },
     service: {
       source: "Nombres de tus suscripciones",
       notFound: (query) => `No se encontró una suscripción que coincida con «${query}».`,
@@ -1381,6 +1489,21 @@ export const de: Widen<typeof ko> = {
       crowdedHead: "Du hast mehrere Abos in derselben Kategorie.",
       note: "Auch in derselben Kategorie können sie unterschiedlichen Zwecken dienen. Entscheide selbst, ob sie sich überschneiden.",
     },
+    bundleSavings: {
+      source: "Paketpreise · was du jetzt zahlst · letzte Check-ins",
+      none: "Ein Wechsel zu einem Paket würde dir gerade nichts sparen.",
+      head: (saving) => `Ein Wechsel zu einem Paket könnte dir bis zu ${saving} pro Monat sparen.`,
+      cancelHead: "Bei manchen Abos spart Kündigen mehr als ein Paket.",
+      value: (subs, saving) => `Statt ${subs} · spart ${saving} pro Monat`,
+      cancelValue: (subs, amount) => `${subs} kündigen · spart ${amount} pro Monat`,
+      includes: (bundle, services) => `${bundle} enthält: ${services}`,
+      both: (subs, amount) =>
+        `Dein letzter Check-in für ${subs} ist uneindeutig. Kündigen spart ${amount} pro Monat.`,
+      cancel: (subs) => `Du hast ${subs} zuletzt kaum genutzt – Kündigen ist besser als ein Paket.`,
+      limited: (year, month, day) =>
+        `Zeitlich begrenzter Preis (im Verkauf bis ${day}.${month}.${year}). Den Preis danach prüfst du auf der Seite des Anbieters.`,
+      note: "Verglichen werden nur gleiche Tarifstufen, Abos, die du allein zahlst, und Preise, die jeder bekommt (ohne Gutscheine oder Vertragsbindung). Die Preise wurden in Korea geprüft.",
+    },
     service: {
       source: "Namen deiner Abos",
       notFound: (query) => `Kein Abo passt zu „${query}“.`,
@@ -1567,6 +1690,22 @@ export const pt: Widen<typeof ko> = {
       bundleHead: "Você pode estar pagando duas vezes por algumas assinaturas.",
       crowdedHead: "Você tem várias assinaturas na mesma categoria.",
       note: "Mesmo na mesma categoria, podem servir a usos diferentes. Decida você se elas se sobrepõem.",
+    },
+    bundleSavings: {
+      source: "Preços de pacotes · quanto você paga hoje · últimos check-ins",
+      none: "No momento, trocar suas assinaturas por um pacote não traria economia.",
+      head: (saving) => `Trocar por um pacote pode economizar até ${saving} por mês.`,
+      cancelHead: "Em algumas assinaturas, cancelar economiza mais do que um pacote.",
+      value: (subs, saving) => `No lugar de ${subs} · economiza ${saving} por mês`,
+      cancelValue: (subs, amount) => `Cancelar ${subs} · economiza ${amount} por mês`,
+      includes: (bundle, services) => `${bundle} inclui: ${services}`,
+      both: (subs, amount) =>
+        `Seu último check-in de ${subs} está indefinido. Cancelar economiza ${amount} por mês.`,
+      cancel: (subs) =>
+        `Você quase não usou ${subs} recentemente, então cancelar é melhor do que um pacote.`,
+      limited: (year, month, day) =>
+        `Preço por tempo limitado (à venda até ${day}/${month}/${year}). Depois disso, confira o preço na página do vendedor.`,
+      note: "Só comparamos planos do mesmo nível, assinaturas que você paga sozinho e preços que qualquer pessoa consegue (sem cupons ou fidelidade). Preços conferidos na Coreia.",
     },
     service: {
       source: "Nomes das suas assinaturas",
