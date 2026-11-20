@@ -168,7 +168,7 @@ export function BundleSavingNotice({
       <p className="font-bold">{b.title}</p>
       {shown.map((item) => {
         const { bundle, replaced, bundleMonthly, saving, extraServiceIds, requires } = item;
-        const subNames = (list: typeof replaced) => list.map((sub) => sub.name).join(", ");
+        const subNames = (list: typeof replaced) => list.map(names.sub).join(", ");
         const [year, month, day] = (item.availableUntil ?? "").split("-").map(Number);
         return (
           <div key={bundle.id} className="space-y-0.5 text-xs leading-relaxed">
