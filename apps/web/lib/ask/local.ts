@@ -1,5 +1,7 @@
 import { POPULAR_SERVICES, daysInMonth, type Subscription } from "@subslash/shared";
-import { isPromptAttack } from "./attack";
+import { isMixedLanguage, isPromptAttack } from "./attack";
+
+export { isMixedLanguage };
 import { ALIAS_NAMES, compactName } from "./fuzzy";
 import { matchPresets, matchSubscriptions } from "./service-match";
 import type { ASK_CATEGORIES, AskCall } from "./tools";
@@ -91,21 +93,6 @@ const STEERING = /무시|시스템|프롬프트|지시|관리자|모드|도구|i
  */
 const NOT_MY_RECORDS =
   /다른\s*(?:사용자|사람|유저|이용자)|남들|사람들|other\s+(?:users|people)|everyone|학습|기억해|피드백|(?:으?로|처럼)\s*답(?:하|해)|remember|from now on/;
-
-/**
- * 한글과 다른 문자(한자·가나·키릴·태국·아랍 등)가 한 질문에 섞였는지. 영문은 서비스 이름("Netflix")·약어("OTT")로
- * 한국어 질문에 늘 섞이므로 보지 않고, 일본어는 원래 한자와 가나를 함께 쓰므로 한글이 없으면 섞인 것이 아니다.
- * 섞인 질문("이 달 구독료 총계是多少?")은 뜻을 짐작해 답하지 않고 곧바로 unsupported다 — AI는 이런 질문에도 그럴듯한
- * 도구를 골랐고, 어느 말을 따랐는지 사용자는 알 수 없다.
- */
-export function isMixedLanguage(question: string): boolean {
-  return (
-    /\p{Script=Hangul}/u.test(question) &&
-    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Cyrillic}\p{Script=Thai}\p{Script=Arabic}\p{Script=Hebrew}\p{Script=Devanagari}]/u.test(
-      question,
-    )
-  );
-}
 
 // '스트리밍'은 음악에도 붙어("음악 스트리밍") OTT 낱말에 두지 않고, 다른 분류 낱말이 없을 때만 OTT로 본다(localAskCall).
 const CATEGORY_WORDS: [RegExp, AskCategory][] = [

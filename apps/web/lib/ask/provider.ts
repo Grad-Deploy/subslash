@@ -1,5 +1,7 @@
+import { isBlockedQuestion } from "./attack";
 import {
   ASK_TOOLS,
+  isContextTurn,
   isValidAskCall,
   splitServiceNames,
   type AskCall,
@@ -407,8 +409,17 @@ export async function pickAskCall(
   fetcher: typeof fetch = fetch,
   history: readonly AskTurn[] = [],
 ): Promise<AskPick> {
+  // 공격 문구·언어가 섞인 질문은 AI에 보내지 않는다. 입구(localAskCall)도 막지만, AI를 부르는 길이 늘어도 빠지지 않게
+  // 여기서 한 번 더 본다. 앞선 턴도 같은 기준으로 거른다.
+  if (isBlockedQuestion(question)) {
+    return {
+      call: { tool: "unsupported" },
+      rejected: false,
+      usage: { inputTokens: 0, outputTokens: 0 },
+    };
+  }
   const raw = await pickTool(
-    askUserMessage(question, history),
+    askUserMessage(question, history.filter(isContextTurn)),
     ASK_SYSTEM_PROMPT,
     ASK_TOOL_DEFINITIONS,
     config,
