@@ -174,7 +174,16 @@ export function AskReport({
                     />
                   </>
                 )}
-                {turn.error && <p className="text-destructive">{known(turn.error)}</p>}
+                {turn.error && (
+                  <>
+                    <p className="text-destructive">{known(turn.error)}</p>
+                    {/* AI가 실패해도 추천 질문은 기기에서 답하므로 다음 할 일을 남긴다(AI가 닫혀 있을 때와 같다). */}
+                    <Suggestions
+                      disabled={busy}
+                      onPick={(text, preset) => void ask(text, preset)}
+                    />
+                  </>
+                )}
                 {turn.answer && (
                   <AnswerBody
                     answer={turn.answer}
@@ -297,7 +306,9 @@ function AnswerBody({
           {answer.switchTo.label}
         </button>
       )}
-      <p className="text-[11px] text-muted-foreground">{a.source(answer.source)}</p>
+      {!answer.noFigures && (
+        <p className="text-[11px] text-muted-foreground">{a.source(answer.source)}</p>
+      )}
     </>
   );
 }

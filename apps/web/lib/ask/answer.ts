@@ -49,6 +49,8 @@ export interface AskAnswer {
   source: string;
   /** 도움말로 넘겨야 하는 질문. */
   goHelp?: boolean;
+  /** 계산한 숫자가 없는 답(도움말로 넘김·답할 수 없음). '숫자는 이 기기에서 계산했어요'를 붙이지 않는다. */
+  noFigures?: boolean;
   /**
    * 같은 것을 다른 기간으로 보는 버튼. 기간을 적지 않은 "해지해서 얼마 아꼈어?"를 이번 달로 답하고, 올해를 물은 것이었으면
    * 눌러 바꾸게 한다 — 기간을 짐작해 답했다는 것을 숨기지 않는다.
@@ -107,15 +109,18 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
   const noSubscriptions = () => answer(k.noSubs.headline, k.noSubs.source, [], [k.noSubs.note]);
   const dateText = (date: Date) => k.upcoming.date(date.getMonth() + 1, date.getDate());
   if (call.tool === "help") {
-    return { ...answer(k.help.headline, k.help.source), goHelp: true };
+    return { ...answer(k.help.headline, k.help.source), goHelp: true, noFigures: true };
   }
   if (call.tool === "unsupported") {
-    return answer(
-      k.unsupported.headline,
-      k.unsupported.source,
-      [],
-      [k.unsupported.note(k.suggestions.join(" / "))],
-    );
+    return {
+      ...answer(
+        k.unsupported.headline,
+        k.unsupported.source,
+        [],
+        [k.unsupported.note(k.suggestions.join(" / "))],
+      ),
+      noFigures: true,
+    };
   }
 
   const active = ctx.subscriptions.filter((sub) => sub.status === "active");

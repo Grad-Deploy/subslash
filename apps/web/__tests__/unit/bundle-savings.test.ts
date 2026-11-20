@@ -114,6 +114,12 @@ describe("리포트에 물어보기 — 결합 상품", () => {
     t: messages.ko,
   });
 
+  it("숫자가 없는 답(도움말·답할 수 없음)에만 noFigures를 둔다", () => {
+    expect(answerAsk({ tool: "help" }, ctx([TVING])).noFigures).toBe(true);
+    expect(answerAsk({ tool: "unsupported" }, ctx([TVING])).noFigures).toBe(true);
+    expect(answerAsk({ tool: "bundleSavings" }, ctx([TVING])).noFigures).toBeUndefined();
+  });
+
   it("결합 질문은 기기 규칙이 bundleSavings로 읽고, 겹침 질문은 그대로 overlaps다", () => {
     expect(localAskCall("결합 상품 쓰면 더 싸?", { now: NOW })).toEqual({ tool: "bundleSavings" });
     expect(localAskCall("결합 상품이랑 겹치는 거 있어?", { now: NOW })).toEqual({
@@ -136,5 +142,26 @@ describe("리포트에 물어보기 — 결합 상품", () => {
       ctx([sub({ id: "w", name: "왓챠", amount: 7900 })]),
     );
     expect(result.headline).toBe(messages.ko.ask.bundleSavings.none);
+  });
+});
+
+describe("리포트 결합 문구 — 조사", () => {
+  const b = messages.ko.reportPage.bundleSaving;
+
+  it("받침 있는 상품 이름 뒤에는 '으로'를 쓴다", () => {
+    expect(b.line("티빙", "티빙 x 웨이브 더블 이용권", "₩15,000", "₩9,400")).toContain(
+      "티빙 x 웨이브 더블 이용권으로 합치면 월 ₩15,000",
+    );
+    expect(b.cancelCompare("티빙 x 웨이브 더블 이용권", "₩9,400")).toBe(
+      "티빙 x 웨이브 더블 이용권으로 합치면 한 달 ₩9,400 덜 내요.",
+    );
+  });
+
+  it("끝 글자의 받침으로 고른다('+'·ㄹ 받침 뒤는 '로')", () => {
+    expect(b.cancelCompare("유독 더블스트리밍", "₩1,000")).toContain("더블스트리밍으로");
+    expect(b.cancelCompare("배민클럽 + 유튜브 프리미엄", "₩1,000")).toContain("프리미엄으로");
+    expect(b.cancelCompare("Apple One 개인", "₩1,000")).toContain("개인으로");
+    expect(b.cancelCompare("티빙 3 PACK 디즈니+", "₩1,000")).toContain("디즈니+로");
+    expect(b.cancelCompare("구글 원 플랜 메일", "₩1,000")).toContain("메일로");
   });
 });
