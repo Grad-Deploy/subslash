@@ -1,3 +1,4 @@
+import { isBlockedQuestion } from "@lib/ask/attack";
 import { pickTool, type AskProviderConfig, type ToolDefinition } from "@lib/ask/provider";
 import type { Faq } from "./faq";
 
@@ -71,6 +72,10 @@ export async function pickHelpFaqs(
   rejected: boolean;
   usage: { inputTokens: number; outputTokens: number };
 }> {
+  // 공격 문구·언어가 섞인 질문은 AI에 보내지 않는다(입구 /api/help-ask도 막는다).
+  if (isBlockedQuestion(question)) {
+    return { ids: [], rejected: false, usage: { inputTokens: 0, outputTokens: 0 } };
+  }
   const raw = await pickTool(
     question,
     `${HELP_SYSTEM_PROMPT}\n\n도움말 항목:\n${faqCatalog(faqs)}`,
