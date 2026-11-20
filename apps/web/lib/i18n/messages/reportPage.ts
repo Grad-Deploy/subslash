@@ -36,14 +36,14 @@ export const ko = {
       label: "결합 상품으로 덜 낼 수 있는 구독",
       title: "묶으면 덜 낼 수 있어요",
       line: (subs: string, bundle: string, price: string, saving: string) =>
-        `${subs} 따로 내고 있어요. ${bundle}(월 ${price})로 합치면 한 달 ${saving} 덜 내요.`,
+        `${subs} 따로 내고 있어요. ${withJosa(bundle, "으로", "로")} 합치면 월 ${price}, 한 달 ${saving} 덜 내요.`,
       extra: (services: string) => `${services}도 함께 받아요.`,
       both: (subs: string, amount: string) =>
         `${withJosa(subs, "은", "는")} 최근 체크인이 애매해요. 해지하면 한 달 ${amount} 덜 내요 — 계속 쓸 거면 결합, 아니면 해지를 고르세요.`,
       cancel: (subs: string, amount: string) =>
         `${withJosa(subs, "은", "는")} 최근 거의 쓰지 않았어요. 결합 상품으로 바꾸기보다 해지하면 한 달 ${amount} 덜 내요.`,
       cancelCompare: (bundle: string, amount: string) =>
-        `${bundle}로 합치면 한 달 ${amount} 덜 내요.`,
+        `${withJosa(bundle, "으로", "로")} 합치면 한 달 ${amount} 덜 내요.`,
       limited: (year: number, month: number, day: number) =>
         `기간 한정 가격이에요(${year}년 ${month}월 ${day}일까지 판매). 그 뒤 요금은 판매 화면에서 확인해 주세요.`,
       note: "같은 요금제끼리 견준 값이에요. 가입 조건과 결제 화면의 금액을 확인하고 옮기세요.",
