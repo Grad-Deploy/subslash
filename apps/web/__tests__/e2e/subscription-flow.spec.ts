@@ -88,12 +88,11 @@ test.describe("Subscription Flow (E2E)", () => {
     await page.goto("/dashboard");
 
     await page.getByRole("button", { name: "체크인" }).first().click();
-    // 첫 체크인 카드(대시보드 본문)에도 횟수 버튼이 있어, 연 창 안의 것을 누른다.
-    await page.getByRole("dialog").getByRole("button", { name: "1회" }).click();
+    // 넷플릭스(OTT)는 본 시간으로 잰다. 첫 체크인 카드에도 같은 버튼이 있어, 연 창 안의 것을 누른다.
+    await page.getByRole("dialog").getByRole("button", { name: "1시간", exact: true }).click();
     await page.getByRole("button", { name: /가성비 분석 결과 보기/ }).click();
 
-    // Cost-per-use shock message for a single use.
-    await expect(page.getByText(/1회를/)).toBeVisible();
+    await expect(page.getByText(/한 시간에/)).toBeVisible();
     await expect(page.getByText("₩17,000").first()).toBeVisible();
   });
 
