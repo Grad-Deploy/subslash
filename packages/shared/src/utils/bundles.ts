@@ -3,6 +3,7 @@ import {
   POPULAR_SERVICES,
   findPresetForSubscription,
   type BundleRequirement,
+  type ServicePlan,
   type ServicePreset,
 } from "../constants/services";
 import { isPaying } from "./date";
@@ -239,6 +240,90 @@ export function findBundleOpportunities(
     if (!kept || opportunity.saving.min > kept.saving.min) best.set(key, opportunity);
   }
   return [...best.values()].sort((a, b) => b.saving.min - a.saving.min);
+}
+
+export interface BundleDowngrade {
+  /** 지금 내는 결합 상품 구독. */
+  sub: Subscription;
+  bundle: ServicePreset;
+  /** 따로 내면 되는 서비스와 그 요금제(결합이 주는 것과 같은 등급). 요금제 목록이 없는 서비스면 null. */
+  keep: ServicePreset;
+  keepPlan: ServicePlan | null;
+  /** 이 결합 구독에서 쓰지 않는다고 확인된 서비스(서비스 목록의 id). */
+  unusedServiceIds: string[];
+  /** 지금 내는 내 몫 한 달(원). */
+  currentMonthly: number;
+  /** 따로 낼 때의 한 달 요금표 가격(원). */
+  soloMonthly: number;
+  saving: number;
+}
+
+/**
+ * 결합 상품을 내는데 포함된 서비스 하나만 쓰면, 그 서비스만 따로 내는 편이 덜 드는 경우(`findBundleOpportunities`의 반대).
+ *
+ * - '안 쓴다'는 부르는 쪽이 `unusedOf`로 준다(앱의 폰 기록). 잴 수 없거나 모르는 서비스는 넣지 않는다 — 모름을 안 씀으로
+ *   읽지 않는다. 그래서 혜택형 멤버십(배민클럽·네이버플러스)은 안 쓴다고 보지 않는다.
+ * - 남는 서비스가 하나일 때만 — 둘 이상이면 더 작은 결합 상품과 견줘야 하는데 아직 하지 않는다. 하나도 안 남으면 해지의 일이다.
+ * - 남길 서비스의 요금제는 결합이 주는 요금제(`includedPlans`)와 같은 것, 요금제가 하나뿐이면 그것, 요금제 목록이 없는
+ *   서비스면 서비스의 한 달 요금(`defaultAmount`). 모르면 견주지 않는다. 결합 상품에 요금제가 여럿이면 내 구독의 요금제
+ *   (`planId`)를 알아야 한다. 그래서 유튜브를 안 쓰는 배민클럽 + 유튜브 프리미엄은 배민클럽만 내는 편과 견준다.
+ * - 단독 요금은 매달 내는 원화 요금표 가격만 — 조건 붙은 요금, 판매가 끝난 기간 한정 요금, 연 결제는 쓰지 않는다.
+ * - 나눠 내는 구독은 뺀다 — 같이 내는 사람이 나머지 서비스를 쓸 수 있다. 체험 중·0원 기록도 뺀다.
+ */
+export function findBundleDowngrades(
+  subscriptions: readonly Subscription[],
+  rate: number,
+  now: Date,
+  unusedOf: (sub: Subscription) => readonly string[],
+): BundleDowngrade[] {
+  const today = dayOf(now);
+  const out: BundleDowngrade[] = [];
+  for (const sub of subscriptions) {
+    const bundle = findPresetForSubscription(sub);
+    if (!bundle?.includes?.length || !isPaying(sub, now) || (sub.sharingCount ?? 1) > 1) continue;
+    const unused = unusedOf(sub).filter((id) => bundle.includes!.includes(id));
+    const kept = bundle.includes.filter((id) => !unused.includes(id));
+    if (unused.length === 0 || kept.length !== 1) continue;
+
+    const bundlePlan = bundle.plans?.length
+      ? bundle.plans.find((plan) => plan.id === sub.planId)
+      : undefined;
+    if (bundle.plans?.length && !bundlePlan) continue;
+    const given = { ...bundle.includedPlans, ...bundlePlan?.includedPlans };
+    const keep = POPULAR_SERVICES.find((service) => service.id === kept[0]);
+    if (!keep) continue;
+    // 요금제가 여럿이면 결합이 주는 것(없으면 하나뿐일 때 그것), 요금제 목록이 없으면 서비스의 한 달 요금(배민클럽·네이버플러스).
+    const keepPlan = keep.plans?.length
+      ? given[keep.id]
+        ? keep.plans.find((plan) => plan.id === given[keep.id])
+        : keep.plans.length === 1
+          ? keep.plans[0]
+          : undefined
+      : null;
+    if (keepPlan === undefined) continue;
+    const price = keepPlan ? keepPlan.amount : keep.defaultAmount;
+    const condition = keepPlan ? keepPlan.condition : keep.condition;
+    const until = keepPlan ? keepPlan.availableUntil : keep.availableUntil;
+    if (typeof price !== "number" || !(price > 0) || condition) continue;
+    if ((keepPlan?.billingCycle ?? "monthly") !== "monthly") continue;
+    if ((keepPlan?.currency ?? keep.currency) !== "KRW") continue;
+    if (until && today > until) continue;
+
+    const currentMonthly = Math.round(getMyMonthlyAmountKRW(sub, rate));
+    const saving = currentMonthly - price;
+    if (!(currentMonthly > 0) || saving <= 0) continue;
+    out.push({
+      sub,
+      bundle,
+      keep,
+      keepPlan,
+      unusedServiceIds: unused,
+      currentMonthly,
+      soloMonthly: price,
+      saving,
+    });
+  }
+  return out.sort((a, b) => b.saving - a.saving);
 }
 
 /** 서비스 id → 화면에 적을 이름. */
