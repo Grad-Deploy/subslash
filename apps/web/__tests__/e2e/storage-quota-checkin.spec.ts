@@ -49,7 +49,7 @@ async function fakeWebApp(context: BrowserContext, usage: number, limit: number)
 async function openCheckIn(page: import("@playwright/test").Page, state: string) {
   await page.addInitScript((value) => localStorage.setItem("subslash-storage", value), state);
   await page.goto("/subs/detail?id=gone");
-  await page.getByRole("button", { name: "이용 횟수 체크인" }).first().click({ timeout: 30_000 });
+  await page.getByRole("button", { name: "사용량 체크인" }).first().click({ timeout: 30_000 });
   return page.getByRole("dialog");
 }
 
