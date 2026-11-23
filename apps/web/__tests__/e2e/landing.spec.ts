@@ -7,21 +7,21 @@ import { test, expect } from "@playwright/test";
 test.describe("첫 화면 소개 (E2E)", () => {
   test("계산기·기능·안심 칸을 내려 읽고, 등록은 이 화면에서 하지 않는다", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/1회당 단가로/, {
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/시간당 단가로/, {
       timeout: 30_000,
     });
 
-    // 1회 단가 계산기. 횟수를 움직이면 단가가 바뀐다.
+    // 시간당 단가 계산기. 본 시간을 움직이면 단가가 바뀐다.
     // 화면이 막 그려진 직후에는 아직 손을 받지 않을 수 있어, 바뀔 때까지 다시 움직인다.
     await expect(async () => {
-      await page.getByLabel("월 이용 횟수").fill("1");
-      await expect(page.getByText("한 번 쓰려고 한 달 요금을 다 냈어요")).toBeVisible({
+      await page.getByLabel("월 이용 시간").fill("1");
+      await expect(page.getByText("1시간 보려고 한 달 요금을 다 냈어요")).toBeVisible({
         timeout: 1_000,
       });
     }).toPass({ timeout: 30_000 });
 
     for (const title of [
-      /그 구독, ?한 달에 몇 번 써요/,
+      /그 구독, ?한 달에 몇 시간 봐요/,
       /결정할 구독만/,
       /해지하는 곳까지/,
       /결제 메일로/,
@@ -105,7 +105,7 @@ test.describe("첫 화면 소개 — 첫 칸의 장면 (E2E)", () => {
     );
     test.skip(!supportsScene, "스크롤 애니메이션을 모르는 브라우저는 시작하기 칸만 보인다");
 
-    const question = page.getByRole("heading", { name: "넷플릭스, 이번 달에 몇 번 봤어요?" });
+    const question = page.getByRole("heading", { name: "넷플릭스, 이번 달에 몇 시간 봤어요?" });
     const scene = page.locator(".opening-b");
     await expect(question).toBeVisible({ timeout: 30_000 });
     // 처음에는 앞 장면이 위에 있고 시작하기 칸은 보이지 않는다.

@@ -58,12 +58,12 @@ test.describe("해지한 구독의 상태 (E2E)", () => {
 
     // 버튼은 하이드레이션 전에는 늘 '시작하기'다. 계산기가 반응하면(살아난 뒤) 센 결과를 본다.
     await expect(async () => {
-      await page.getByLabel("월 이용 횟수").fill("1");
-      await expect(page.getByText("한 번 쓰려고 한 달 요금을 다 냈어요")).toBeVisible({
+      await page.getByLabel("월 이용 시간").fill("1");
+      await expect(page.getByText("1시간 보려고 한 달 요금을 다 냈어요")).toBeVisible({
         timeout: 1_000,
       });
     }).toPass({ timeout: 30_000 });
-    const hero = page.getByRole("region", { name: /1회당 단가로/ });
+    const hero = page.getByRole("region", { name: /시간당 단가로/ });
     await expect(hero.getByRole("link", { name: "웹에서 바로 시작하기 →" })).toBeVisible();
     await expect(page.getByText(/구독 중 \d+개/)).toHaveCount(0);
   });

@@ -148,6 +148,30 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
     expect(best.rows[0].label).toBe("넷플릭스");
   });
 
+  it("가성비가 좋은 쪽은 같은 색 안에서 시간당 단가가 있는 구독을 앞에, 시간당 단가가 싼 순서로 둔다", () => {
+    // 아이클라우드(용량)는 단가가 없어 같은 초록이라도 뒤로 간다. 넷플릭스(시간당 ₩540)가 유튜브(₩373)보다 비싸다.
+    const hours = (id: string, q: number, cost: number) => ({
+      ...uses(id, q, "green"),
+      metric: "hours" as const,
+      costPerUse: cost,
+    });
+    const subs = [
+      sub({ id: "icloud", name: "아이클라우드", amount: 1100, category: "cloud" }),
+      sub({ id: "netflix", name: "넷플릭스", amount: 13500 }),
+      sub({ id: "yt", name: "유튜브 프리미엄", amount: 14900 }),
+    ];
+    const logs = [
+      { ...uses("icloud", 60, "green"), metric: "storage" as const },
+      hours("netflix", 25, 540),
+      hours("yt", 40, 373),
+    ];
+    const best = answerAsk(
+      { tool: "costPerUseRank", args: { order: "best", limit: 3 } },
+      { ...CTX, subscriptions: subs, usageLogs: logs },
+    );
+    expect(best.rows.map((r) => r.label)).toEqual(["유튜브 프리미엄", "넷플릭스", "아이클라우드"]);
+  });
+
   it("안 쓰는 구독은 체크인 빨강만 말하고, 체크인이 없는 구독은 모른다고 한다", () => {
     const result = answerAsk({ tool: "lowUsage" }, CTX);
     expect(result.rows.map((r) => r.label)).toEqual(["웨이브"]);

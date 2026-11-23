@@ -26,6 +26,7 @@ import { useToast } from "@hooks/useToast";
 import { useDashboardActions } from "@hooks/useDashboardActions";
 import { useT } from "@lib/i18n";
 import { SavedMoneyLink } from "../../components/dashboard/SavedMoneyLink";
+import { MetricChangeNotice } from "../../components/dashboard/MetricChangeNotice";
 import {
   AppAddButton,
   AppDecisionFold,
@@ -230,6 +231,12 @@ export default function Dashboard() {
               }}
             />
           )}
+
+          <MetricChangeNotice
+            active={activeSubs}
+            usageLogs={usageLogs}
+            onCheckIn={handleOpenCheckIn}
+          />
 
           {/* 지금 결정할 것 — 이 화면의 본체 */}
           {startFlow && isFirstVisit ? (
