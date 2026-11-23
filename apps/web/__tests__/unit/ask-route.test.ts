@@ -139,6 +139,19 @@ describe("POST /api/ask", () => {
     expect(upstream).toHaveBeenCalledTimes(1);
   });
 
+  it("AI가 고른 '답할 수 없음'은 저장하지 않고, 다음에 다시 AI에 묻는다", async () => {
+    // 한 번 흔들린 거절이 하루 동안 같은 질문의 모든 사람에게 갔다(베트남어 "이번 주 결제").
+    upstream.mockImplementationOnce(async () => toolUse("unsupported"));
+    upstream.mockImplementationOnce(async () => toolUse("upcomingCharges", { days: 7 }));
+    const q = "Tuần này có khoản nào bị trừ tiền không?";
+    expect(await (await ask(q)).json()).toEqual({ call: { tool: "unsupported" }, cached: false });
+    expect(await (await ask(q)).json()).toEqual({
+      call: { tool: "upcomingCharges", args: { days: 7 } },
+      cached: false,
+    });
+    expect(upstream).toHaveBeenCalledTimes(2);
+  });
+
   it("목록 밖의 도구는 unsupported로 바꿔 돌려주고, 그 답은 저장하지 않는다", async () => {
     upstream.mockResolvedValueOnce(toolUse("deleteAllSubscriptions"));
     expect(await (await ask("다 지워")).json()).toEqual({

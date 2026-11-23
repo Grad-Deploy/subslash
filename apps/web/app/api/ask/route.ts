@@ -45,7 +45,9 @@ export async function POST(request: NextRequest) {
     field: "call",
     pick: async () => {
       const { call, rejected } = await pickAskCall(question, config, fetch, history);
-      return { value: call, rejected };
+      // AI가 고른 '답할 수 없음'도 저장하지 않는다 — 한 번 흔들린 거절이 하루 동안 같은 질문을 한 모든 사람에게 갔다
+      // (베트남어 "이번 주 결제", 다시 물으면 맞게 골랐다). 진짜 못 답하는 질문은 다시 물어도 같은 답이다.
+      return { value: call, rejected: rejected || call.tool === "unsupported" };
     },
   });
 }
