@@ -197,8 +197,8 @@ describe("결합 상품", () => {
     expect(metricForSubscription(both)).toBe("hours");
     expect(packagesFor(both)).toEqual(["com.netflix.mediaclient", "com.spotify.music"]);
     expect(metricForSubscription(presetNamed("naver-plus-spotify"))).toBe("hours");
-    // 스포티파이가 없는 넷플릭스 결합은 넷플릭스 단독과 같이 횟수다.
-    expect(metricForSubscription(presetNamed("naver-plus-netflix"))).toBe("uses");
+    // 스포티파이가 없는 넷플릭스 결합도 넷플릭스 단독과 같이 시간이다(OTT는 시간으로 잰다).
+    expect(metricForSubscription(presetNamed("naver-plus-netflix"))).toBe("hours");
   });
 
   it("앱이 여럿이면 패키지 이름이 아니라 서비스 이름으로 보인다", () => {

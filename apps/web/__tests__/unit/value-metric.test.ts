@@ -35,7 +35,8 @@ const shock = (result: { outcome: Parameters<typeof describeCheckInOutcome>[1] }
 
 describe("metricForSubscription", () => {
   it("서비스 목록의 서비스는 그 서비스의 지표로 잰다", () => {
-    expect(metricForSubscription(sub({ name: "넷플릭스" }))).toBe("uses");
+    // OTT는 본 시간으로 잰다 — 연 횟수로는 두 시간 본 것과 1분 보고 끈 것이 같은 1회다.
+    expect(metricForSubscription(sub({ name: "넷플릭스" }))).toBe("hours");
     // 백그라운드 재생·유튜브 뮤직이 프리미엄의 값이라 시간으로 잰다.
     expect(metricForSubscription(sub({ name: "유튜브 프리미엄" }))).toBe("hours");
     expect(metricForSubscription(sub({ name: "Spotify", category: "music" }))).toBe("hours");

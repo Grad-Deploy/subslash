@@ -20,7 +20,7 @@ import {
   type UsageLog,
   startOfMonth,
 } from "@subslash/shared";
-import { buildValueRows } from "../../components/report/valueRows";
+import { buildOtherMetricRows, buildValueRows } from "../../components/report/valueRows";
 import { bundleOpportunitiesFor } from "@lib/bundle-savings";
 import { latestFreshLog } from "@lib/checkins";
 import { planName, presetName, serviceIdName, subscriptionName } from "@lib/service-name";
@@ -293,12 +293,28 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const rows = buildValueRows(subs, ctx.usageLogs, ctx.rate, ctx.now).filter(
         (row) => row.usageCount !== null,
       );
-      if (rows.length === 0) {
-        return answer(k.rank.none, k.rank.sourceNone, [], [k.rank.noneNote]);
-      }
       const worst = args.order !== "best";
-      const ordered = worst ? rows : [...rows].reverse();
       const limit = typeof args.limit === "number" ? args.limit : 3;
+      if (rows.length === 0) {
+        // OTT·음악처럼 시간으로 재는 구독만 체크인했으면 1회 단가가 없다. 시간당과 1회를 한 줄에 세우지 않고
+        // (buildValueRows) 최근 체크인의 가성비 색 순서로 답한다 — 체크인했는데 "체크인이 없어요"라고 하지 않게.
+        const checked = buildOtherMetricRows(subs, ctx.usageLogs, ctx.now).filter(
+          (row): row is typeof row & { log: UsageLog } => row.log !== null,
+        );
+        if (checked.length === 0) {
+          return answer(k.rank.none, k.rank.sourceNone, [], [k.rank.noneNote]);
+        }
+        const top = (worst ? checked : [...checked].reverse()).slice(0, limit);
+        const said = (row: (typeof checked)[number]) =>
+          `${describeQuantityText(ctx.t, metricOfLog(row.log), row.log.usageCount)} · ${ctx.t.checkin.appResult[row.log.riskLevel]}`;
+        return answer(
+          (worst ? k.rank.worst : k.rank.best)(nameOf(top[0].sub), said(top[0])),
+          k.rank.sourceLevel,
+          top.map((row) => ({ label: nameOf(row.sub), value: said(row) })),
+          [k.rank.byLevel],
+        );
+      }
+      const ordered = worst ? rows : [...rows].reverse();
       const top = ordered.slice(0, limit);
       const per = (row: (typeof rows)[number]) =>
         row.usageCount === 0 ? k.rank.perZero : k.rank.perUse(formatKRW(row.costPerUse ?? 0));
