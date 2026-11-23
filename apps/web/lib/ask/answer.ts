@@ -295,7 +295,19 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
         if (checked.length === 0) {
           return answer(k.rank.none, k.rank.sourceNone, [], [k.rank.noneNote]);
         }
-        const top = (worst ? checked : [...checked].reverse()).slice(0, limit);
+        // 색이 먼저(아까운 쪽은 빨강부터, 좋은 쪽은 초록부터). 같은 색 안에서는 시간당 단가가 있는 구독(시간으로 잰 것)을
+        // 앞에 두고 시간당 단가로 줄 세운다 — 용량·혜택처럼 단가가 없는 것끼리는 견줄 수 없어 뒤로 간다.
+        const levelOf = { red: 3, yellow: 2, green: 1 } as const;
+        const hourly = (row: (typeof checked)[number]) => metricOfLog(row.log) === "hours";
+        const ordered = [...checked].sort((a, b) => {
+          const level = levelOf[a.log.riskLevel] - levelOf[b.log.riskLevel];
+          if (level !== 0) return worst ? -level : level;
+          if (hourly(a) !== hourly(b)) return hourly(a) ? -1 : 1;
+          if (!hourly(a)) return 0;
+          const cost = a.log.costPerUse - b.log.costPerUse;
+          return worst ? -cost : cost;
+        });
+        const top = ordered.slice(0, limit);
         const said = (row: (typeof checked)[number]) =>
           `${describeQuantityText(ctx.t, metricOfLog(row.log), row.log.usageCount)} · ${ctx.t.checkin.appResult[row.log.riskLevel]}`;
         return answer(

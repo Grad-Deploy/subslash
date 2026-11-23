@@ -38,6 +38,12 @@ export const ko = {
       andMore: (count: number) => ` 외 ${count}건`,
     },
   },
+  metricChange: {
+    title: "OTT는 이제 본 시간으로 재요",
+    body: "예전에 몇 번 봤는지로 한 체크인은 가성비 판단에 쓰지 않아요. 최근 30일 동안 본 시간으로 다시 체크인해 주세요.",
+    checkIn: (name: string) => `${name} 체크인`,
+    dismiss: "확인",
+  },
   reason: {
     chargedAfterKill: (date: string, amount: string | null) =>
       `해지로 기록한 뒤인 ${date}에 결제 메일이 왔습니다${amount ? ` (${amount})` : ""}. 해지가 안 됐을 수 있으니 다시 확인해 주세요.`,
@@ -114,6 +120,12 @@ export const en: Widen<typeof ko> = {
       mostUrgent: "Most urgent:",
       andMore: (count) => ` and ${count} more`,
     },
+  },
+  metricChange: {
+    title: "OTT is now measured by hours watched",
+    body: "Check-ins made by the number of times you watched are no longer used to judge value. Check in again with the hours you watched in the last 30 days.",
+    checkIn: (name) => `Check in ${name}`,
+    dismiss: "Got it",
   },
   reason: {
     chargedAfterKill: (date, amount) =>
@@ -192,6 +204,12 @@ export const zh: Widen<typeof ko> = {
       andMore: (count) => ` 等 ${count} 项`,
     },
   },
+  metricChange: {
+    title: "OTT 现在按观看时长计算",
+    body: "以前按观看次数做的签到不再用于判断性价比。请按最近 30 天的观看时长重新签到。",
+    checkIn: (name) => `签到 ${name}`,
+    dismiss: "知道了",
+  },
   reason: {
     chargedAfterKill: (date, amount) =>
       `在你标记为已退订之后，${date} 收到了付款邮件${amount ? `（${amount}）` : ""}。退订可能没有成功，请再确认一下。`,
@@ -262,6 +280,12 @@ export const ja: Widen<typeof ko> = {
       mostUrgent: "いちばん急ぐもの:",
       andMore: (count) => ` ほか ${count} 件`,
     },
+  },
+  metricChange: {
+    title: "OTT は見た時間で測るようになりました",
+    body: "以前の回数でのチェックインはコスパの判断に使いません。直近 30 日に見た時間でもう一度チェックインしてください。",
+    checkIn: (name) => `${name} をチェックイン`,
+    dismiss: "OK",
   },
   reason: {
     chargedAfterKill: (date, amount) =>
@@ -340,6 +364,12 @@ export const vi: Widen<typeof ko> = {
       andMore: (count) => ` và ${count} mục khác`,
     },
   },
+  metricChange: {
+    title: "OTT giờ được đo theo thời gian xem",
+    body: "Các lần check-in theo số lần xem trước đây không còn dùng để đánh giá mức đáng tiền. Hãy check-in lại bằng số giờ đã xem trong 30 ngày gần nhất.",
+    checkIn: (name) => `Check-in ${name}`,
+    dismiss: "Đã hiểu",
+  },
   reason: {
     chargedAfterKill: (date, amount) =>
       `Email thanh toán đến vào ${date}, sau khi bạn đánh dấu đã hủy${amount ? ` (${amount})` : ""}. Có thể việc hủy chưa thành công, hãy kiểm tra lại.`,
@@ -416,6 +446,12 @@ export const fr: Widen<typeof ko> = {
       mostUrgent: "Le plus urgent :",
       andMore: (count) => ` et ${count} de plus`,
     },
+  },
+  metricChange: {
+    title: "L'OTT se mesure désormais en heures de visionnage",
+    body: "Les check-ins faits en nombre de visionnages ne servent plus à juger le rapport qualité-prix. Refaites un check-in avec les heures regardées ces 30 derniers jours.",
+    checkIn: (name) => `Check-in ${name}`,
+    dismiss: "Compris",
   },
   reason: {
     chargedAfterKill: (date, amount) =>
@@ -495,6 +531,12 @@ export const es: Widen<typeof ko> = {
       andMore: (count) => ` y ${count} más`,
     },
   },
+  metricChange: {
+    title: "El OTT ahora se mide por horas vistas",
+    body: "Los registros hechos por número de veces ya no se usan para valorar la relación calidad-precio. Vuelve a registrar las horas que viste en los últimos 30 días.",
+    checkIn: (name) => `Registrar ${name}`,
+    dismiss: "Entendido",
+  },
   reason: {
     chargedAfterKill: (date, amount) =>
       `Llegó un correo de pago el ${date}, después de marcarla como cancelada${amount ? ` (${amount})` : ""}. Puede que la cancelación no se completara: compruébalo otra vez.`,
@@ -571,6 +613,12 @@ export const de: Widen<typeof ko> = {
       mostUrgent: "Am dringendsten:",
       andMore: (count) => ` und ${count} weitere`,
     },
+  },
+  metricChange: {
+    title: "OTT wird jetzt nach Sehstunden gemessen",
+    body: "Einträge nach Anzahl der Nutzungen zählen nicht mehr für das Preis-Leistungs-Urteil. Trag die Stunden der letzten 30 Tage neu ein.",
+    checkIn: (name) => `${name} eintragen`,
+    dismiss: "Verstanden",
   },
   reason: {
     chargedAfterKill: (date, amount) =>
@@ -649,6 +697,12 @@ export const pt: Widen<typeof ko> = {
       mostUrgent: "Mais urgente:",
       andMore: (count) => ` e mais ${count}`,
     },
+  },
+  metricChange: {
+    title: "OTT agora é medido por horas assistidas",
+    body: "Registros feitos por número de vezes não são mais usados para avaliar o custo-benefício. Registre de novo as horas assistidas nos últimos 30 dias.",
+    checkIn: (name) => `Registrar ${name}`,
+    dismiss: "Entendi",
   },
   reason: {
     chargedAfterKill: (date, amount) =>

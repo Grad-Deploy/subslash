@@ -11,7 +11,7 @@ import { cn } from "@lib/utils";
 import { RISE_PHONE, RISE_TEXT, kicker, slideBody, slideTitle, slideTop } from "./styles";
 
 /**
- * 앱 소개의 앞 장들: 문제(결제 알림) → 답(가격 말고 1회당 단가로) → 1회 단가 계산기 → 기능 셋. 화면 캡처는 웹
+ * 앱 소개의 앞 장들: 문제(결제 알림) → 답(가격 말고 시간당 단가로) → 시간당 단가 계산기 → 기능 셋. 화면 캡처는 웹
  * 소개와 같은 샘플 데이터 캡처(`public/landing/`)이고 그렇게 밝힌다. 첫 장의 결제 알림은 서비스 목록 기준 요금으로
  * 만든 예시다.
  */
