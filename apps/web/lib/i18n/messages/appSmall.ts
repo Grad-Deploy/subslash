@@ -14,7 +14,7 @@ export const ko = {
       saved: (count: number) => `${count}개 체크인했어요`,
       close: "닫기",
       intro: (coveredDays: number) =>
-        `${coveredDays < 30 ? `기록이 있는 최근 ${coveredDays}일 동안` : "최근 30일 동안"} 이 폰에서 잰 값이에요. OTT는 연 횟수, AI는 5분 넘게 쓴 날, 음악·독서는 들은 시간이에요. 확인하고 고쳐 주세요.`,
+        `${coveredDays < 30 ? `기록이 있는 최근 ${coveredDays}일 동안` : "최근 30일 동안"} 이 폰에서 잰 값이에요. OTT는 본 시간, 음악·독서는 들은 시간, AI는 5분 넘게 쓴 날이에요. 확인하고 고쳐 주세요.`,
       none: "폰 기록으로 잴 수 있는 구독이 없어요. 체크인은 구독마다 직접 해 주세요.",
       pick: (name: string) => `${name} 체크인에 넣기`,
       notInstalled: "이 폰에 앱이 없어요 · 따로 체크인",
@@ -73,7 +73,7 @@ export const en: Widen<typeof ko> = {
       saved: (count) => `Checked in ${count} ${one(count) ? "subscription" : "subscriptions"}`,
       close: "Close",
       intro: (coveredDays) =>
-        `These are values measured on this phone over ${Number(coveredDays) < 30 ? `the last ${coveredDays} days that have records` : "the last 30 days"}. For OTT it's the number of uses in the year, for AI the days you used it for over 5 minutes, and for music and reading the time listened. Check and edit them.`,
+        `These are values measured on this phone over ${Number(coveredDays) < 30 ? `the last ${coveredDays} days that have records` : "the last 30 days"}. For OTT it's the time watched, for music and reading the time listened, and for AI the days you used it for over 5 minutes. Check and edit them.`,
       none: "No subscription can be measured from phone records. Check in each one yourself.",
       pick: (name) => `Include ${name} in the check-in`,
       notInstalled: "The app isn't on this phone · check in separately",
@@ -132,7 +132,7 @@ export const zh: Widen<typeof ko> = {
       saved: (count) => `已签到 ${count} 个订阅`,
       close: "关闭",
       intro: (coveredDays) =>
-        `这些是这部手机在${Number(coveredDays) < 30 ? `最近有记录的 ${coveredDays} 天` : "最近 30 天"}里测得的数值。OTT 是全年的使用次数，AI 是使用超过 5 分钟的天数，音乐和阅读是收听时长。请确认并修改。`,
+        `这些是这部手机在${Number(coveredDays) < 30 ? `最近有记录的 ${coveredDays} 天` : "最近 30 天"}里测得的数值。OTT 是观看时长，音乐和阅读是收听时长，AI 是使用超过 5 分钟的天数。请确认并修改。`,
       none: "没有可以用手机记录测量的订阅。请逐个签到。",
       pick: (name) => `把 ${name} 加入签到`,
       notInstalled: "这部手机上没有该应用 · 请单独签到",
@@ -190,7 +190,7 @@ export const ja: Widen<typeof ko> = {
       saved: (count) => `${count} 件をチェックインしました`,
       close: "閉じる",
       intro: (coveredDays) =>
-        `このスマホで${Number(coveredDays) < 30 ? `記録がある直近 ${coveredDays} 日` : "直近 30 日"}に測った値です。OTT は年間の利用回数、AI は 5 分以上使った日数、音楽・読書は聞いた時間です。確認して直してください。`,
+        `このスマホで${Number(coveredDays) < 30 ? `記録がある直近 ${coveredDays} 日` : "直近 30 日"}に測った値です。OTT は見た時間、音楽・読書は聞いた時間、AI は 5 分以上使った日数です。確認して直してください。`,
       none: "スマホの記録で測れるサブスクがありません。1 件ずつチェックインしてください。",
       pick: (name) => `${name} をチェックインに含める`,
       notInstalled: "このスマホにアプリがありません · 別にチェックイン",
@@ -250,7 +250,7 @@ export const vi: Widen<typeof ko> = {
       saved: (count) => `Đã check-in ${count} gói đăng ký`,
       close: "Đóng",
       intro: (coveredDays) =>
-        `Đây là số liệu đo trên điện thoại này trong ${Number(coveredDays) < 30 ? `${coveredDays} ngày gần nhất có dữ liệu` : "30 ngày gần nhất"}. Với OTT là số lần dùng trong năm, với AI là số ngày dùng trên 5 phút, với nhạc và đọc sách là thời gian nghe. Hãy kiểm tra và sửa lại.`,
+        `Đây là số liệu đo trên điện thoại này trong ${Number(coveredDays) < 30 ? `${coveredDays} ngày gần nhất có dữ liệu` : "30 ngày gần nhất"}. Với OTT là thời gian xem, với nhạc và đọc sách là thời gian nghe, với AI là số ngày dùng trên 5 phút. Hãy kiểm tra và sửa lại.`,
       none: "Không có gói nào đo được bằng dữ liệu điện thoại. Hãy check-in từng gói.",
       pick: (name) => `Đưa ${name} vào check-in`,
       notInstalled: "Điện thoại này không có ứng dụng · check-in riêng",
@@ -311,7 +311,7 @@ export const fr: Widen<typeof ko> = {
         `${count} abonnement${Number(count) === 1 ? "" : "s"} enregistré${Number(count) === 1 ? "" : "s"}`,
       close: "Fermer",
       intro: (coveredDays) =>
-        `Ces valeurs ont été mesurées sur ce téléphone ${Number(coveredDays) < 30 ? `sur les ${coveredDays} derniers jours enregistrés` : "sur les 30 derniers jours"}. Pour l'OTT, c'est le nombre d'utilisations de l'année ; pour l'IA, les jours d'utilisation de plus de 5 minutes ; pour la musique et la lecture, le temps d'écoute. Vérifiez et corrigez.`,
+        `Ces valeurs ont été mesurées sur ce téléphone ${Number(coveredDays) < 30 ? `sur les ${coveredDays} derniers jours enregistrés` : "sur les 30 derniers jours"}. Pour l'OTT, c'est le temps de visionnage ; pour la musique et la lecture, le temps d'écoute ; pour l'IA, les jours d'utilisation de plus de 5 minutes. Vérifiez et corrigez.`,
       none: "Aucun abonnement ne peut être mesuré par le téléphone. Faites le check-in de chacun.",
       pick: (name) => `Inclure ${name} dans le check-in`,
       notInstalled: "L'application n'est pas sur ce téléphone · check-in séparé",
@@ -372,7 +372,7 @@ export const es: Widen<typeof ko> = {
         `${count} suscripci${Number(count) === 1 ? "ón registrada" : "ones registradas"}`,
       close: "Cerrar",
       intro: (coveredDays) =>
-        `Son valores medidos en este móvil ${Number(coveredDays) < 30 ? `en los últimos ${coveredDays} días con datos` : "en los últimos 30 días"}. Para OTT es el número de usos del año; para IA, los días con más de 5 minutos de uso; para música y lectura, el tiempo escuchado. Revísalos y corrígelos.`,
+        `Son valores medidos en este móvil ${Number(coveredDays) < 30 ? `en los últimos ${coveredDays} días con datos` : "en los últimos 30 días"}. Para OTT es el tiempo visto; para música y lectura, el tiempo escuchado; para IA, los días con más de 5 minutos de uso. Revísalos y corrígelos.`,
       none: "Ninguna suscripción se puede medir con los datos del móvil. Regístralas una por una.",
       pick: (name) => `Incluir ${name} en el registro`,
       notInstalled: "La app no está en este móvil · regístrala aparte",
@@ -432,7 +432,7 @@ export const de: Widen<typeof ko> = {
       saved: (count) => `${count} ${Number(count) === 1 ? "Abo" : "Abos"} eingetragen`,
       close: "Schließen",
       intro: (coveredDays) =>
-        `Diese Werte wurden auf diesem Handy ${Number(coveredDays) < 30 ? `in den letzten ${coveredDays} Tagen mit Daten` : "in den letzten 30 Tagen"} gemessen. Bei OTT ist es die Zahl der Nutzungen im Jahr, bei KI die Tage mit über 5 Minuten Nutzung, bei Musik und Lesen die Hördauer. Prüf und korrigiere sie.`,
+        `Diese Werte wurden auf diesem Handy ${Number(coveredDays) < 30 ? `in den letzten ${coveredDays} Tagen mit Daten` : "in den letzten 30 Tagen"} gemessen. Bei OTT ist es die Sehdauer, bei Musik und Lesen die Hördauer, bei KI die Tage mit über 5 Minuten Nutzung. Prüf und korrigiere sie.`,
       none: "Kein Abo lässt sich aus Handydaten messen. Trag jedes einzeln ein.",
       pick: (name) => `${name} in den Eintrag aufnehmen`,
       notInstalled: "Die App ist nicht auf diesem Handy · separat eintragen",
@@ -494,7 +494,7 @@ export const pt: Widen<typeof ko> = {
         `${count} assinatura${Number(count) === 1 ? " registrada" : "s registradas"}`,
       close: "Fechar",
       intro: (coveredDays) =>
-        `Estes valores foram medidos neste celular ${Number(coveredDays) < 30 ? `nos últimos ${coveredDays} dias com dados` : "nos últimos 30 dias"}. Para OTT é o número de usos do ano; para IA, os dias com mais de 5 minutos de uso; para música e leitura, o tempo ouvido. Confira e ajuste.`,
+        `Estes valores foram medidos neste celular ${Number(coveredDays) < 30 ? `nos últimos ${coveredDays} dias com dados` : "nos últimos 30 dias"}. Para OTT é o tempo assistido; para música e leitura, o tempo ouvido; para IA, os dias com mais de 5 minutos de uso. Confira e ajuste.`,
       none: "Nenhuma assinatura pode ser medida com os dados do celular. Registre uma por uma.",
       pick: (name) => `Incluir ${name} no registro`,
       notInstalled: "O app não está neste celular · registre à parte",

@@ -71,8 +71,9 @@ describe("구독 기록 규칙(lib/store/records)", () => {
     const now = new Date("2026-10-25T09:00:00+09:00");
     const cases: Array<{ sub: Subscription; counts: number[]; expected: string[] }> = [
       {
+        // OTT는 본 시간: 2시간 미만 빨강, 10시간 이상 초록
         sub: { ...base, name: "넷플릭스", amount: 17000, category: "ott" },
-        counts: [0, 1, 2, 3, 4, 8],
+        counts: [0, 1, 2, 9, 10, 40],
         expected: ["red", "red", "yellow", "yellow", "green", "green"],
       },
       {

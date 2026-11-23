@@ -40,7 +40,7 @@ export function isValueMetric(value: unknown): value is ValueMetric {
 /**
  * 서비스 목록의 서비스 → 지표. 여기 없는 서비스는 `uses`다.
  *
- * 적지 않은 것: 이모티콘(사는 것이라 횟수가 맞다), 유튜브를 뺀 OTT.
+ * 적지 않은 것: 이모티콘(사는 것이라 횟수가 맞다). OTT는 분류(CATEGORY_METRICS)가 시간으로 정한다.
  */
 export const SERVICE_METRICS: Readonly<Record<string, ValueMetric>> = {
   // 프리미엄의 값은 광고 없는 영상과 백그라운드 재생·유튜브 뮤직이다. 연 횟수로는 화면을 끄고 듣는
@@ -82,9 +82,13 @@ export const SERVICE_METRICS: Readonly<Record<string, ValueMetric>> = {
 /**
  * 목록에 없는 구독(직접 입력)은 고른 분류로 정한다. 그 분류의 구독이 돈을 내서 받는 것으로 잰다 —
  * 쇼핑 멤버십은 무료배송·할인, 클라우드는 저장해 둔 자리다. 예전에는 음악·AI만 적어, 직접 적은 쇼핑
- * 멤버십과 클라우드에 "몇 번 썼어요?"를 물었다. OTT·기타는 횟수다.
+ * 멤버십과 클라우드에 "몇 번 썼어요?"를 물었다. 기타는 횟수다.
+ *
+ * OTT는 시간이다. 연 횟수로는 한 번 켜고 두 시간 본 것과 1분 보고 끈 것이 같은 1회라, 실제로 얼마나 봤는지 알 수 없었다.
+ * 폰 기록도 시간(앞에 있던 시간과 재생 시간)을 재므로 체크인과 자동 체크인이 같은 기준이 된다.
  */
 const CATEGORY_METRICS: Readonly<Partial<Record<Subscription["category"], ValueMetric>>> = {
+  ott: "hours",
   music: "hours",
   ai: "days",
   shopping: "benefit",

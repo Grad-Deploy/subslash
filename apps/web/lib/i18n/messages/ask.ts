@@ -65,6 +65,9 @@ export const ko = {
       perZero: "0회 (한 번도 안 씀)",
       perUse: (amount: string) => `1회 ${amount}`,
       skipped: "체크인하지 않았거나 횟수로 재지 않는 구독은 순위에서 빠졌어요.",
+      sourceLevel: "최근 30일 체크인의 가성비",
+      byLevel:
+        "시간·쓴 날처럼 횟수가 아닌 것으로 재는 구독이라, 금액이 아니라 최근 체크인의 가성비 순서로 줄 세웠어요.",
     },
     price: {
       none: "결제 중인 구독이 없어요.",
@@ -265,6 +268,9 @@ export const en: Widen<typeof ko> = {
       perUse: (amount) => `${amount} per use`,
       skipped:
         "Subscriptions without a check-in, or not measured by uses, are left out of the ranking.",
+      sourceLevel: "Value for money in the last 30 days' check-ins",
+      byLevel:
+        "These are measured in hours, days and the like rather than uses, so they're ordered by the value for money of their latest check-in, not by price.",
     },
     price: {
       none: "You have no paid subscriptions.",
@@ -467,6 +473,9 @@ export const zh: Widen<typeof ko> = {
       perZero: "使用 0 次（一次都没用）",
       perUse: (amount) => `每次 ${amount}`,
       skipped: "没有签到或不是按次数衡量的订阅不在排行中。",
+      sourceLevel: "最近 30 天签到的性价比",
+      byLevel:
+        "这些订阅按时长、使用天数等而非次数衡量，因此按最近一次签到的性价比排序，而不是按金额。",
     },
     price: {
       none: "没有正在付费的订阅。",
@@ -649,6 +658,9 @@ export const ja: Widen<typeof ko> = {
       perZero: "0 回（一度も使っていません）",
       perUse: (amount) => `1 回 ${amount}`,
       skipped: "チェックインがないサブスクや回数で測らないサブスクはランキングから除いています。",
+      sourceLevel: "直近30日のチェックインのコスパ",
+      byLevel:
+        "時間や利用日数など回数以外で測るサブスクなので、金額ではなく最新チェックインのコスパ順に並べています。",
     },
     price: {
       none: "支払い中のサブスクがありません。",
@@ -839,6 +851,9 @@ export const vi: Widen<typeof ko> = {
       perZero: "0 lần (chưa dùng lần nào)",
       perUse: (amount) => `${amount} mỗi lần`,
       skipped: "Gói chưa check-in hoặc không đo theo số lần không có trong xếp hạng.",
+      sourceLevel: "Mức đáng tiền của lần check-in 30 ngày gần nhất",
+      byLevel:
+        "Các gói này đo bằng giờ, số ngày dùng… chứ không theo số lần, nên được xếp theo mức đáng tiền của lần check-in gần nhất chứ không theo số tiền.",
     },
     price: {
       none: "Bạn không có gói trả phí nào.",
@@ -1034,6 +1049,9 @@ export const fr: Widen<typeof ko> = {
       perUse: (amount) => `${amount} par utilisation`,
       skipped:
         "Les abonnements sans check-in ou non mesurés en utilisations sont exclus du classement.",
+      sourceLevel: "Rapport qualité-prix des check-ins des 30 derniers jours",
+      byLevel:
+        "Ces abonnements se mesurent en heures, en jours, etc., et non en utilisations : ils sont classés selon le rapport qualité-prix du dernier check-in, pas selon le prix.",
     },
     price: {
       none: "Vous n'avez aucun abonnement payant.",
@@ -1239,6 +1257,9 @@ export const es: Widen<typeof ko> = {
       perUse: (amount) => `${amount} por uso`,
       skipped:
         "Las suscripciones sin registro o que no se miden por usos quedan fuera del ranking.",
+      sourceLevel: "Relación calidad-precio de los registros de los últimos 30 días",
+      byLevel:
+        "Estas suscripciones se miden en horas, días, etc., no por usos, así que se ordenan por la relación calidad-precio del último registro, no por el precio.",
     },
     price: {
       none: "No tienes suscripciones de pago.",
@@ -1443,6 +1464,9 @@ export const de: Widen<typeof ko> = {
       perZero: "0 Nutzungen (kein einziges Mal)",
       perUse: (amount) => `${amount} pro Nutzung`,
       skipped: "Abos ohne Eintrag oder nicht nach Nutzungen gemessen fehlen im Ranking.",
+      sourceLevel: "Preis-Leistung der Einträge der letzten 30 Tage",
+      byLevel:
+        "Diese Abos werden in Stunden, Tagen usw. statt in Nutzungen gemessen, daher nach dem Preis-Leistungs-Verhältnis des letzten Eintrags sortiert, nicht nach dem Preis.",
     },
     price: {
       none: "Du hast keine kostenpflichtigen Abos.",
@@ -1645,6 +1669,9 @@ export const pt: Widen<typeof ko> = {
       perZero: "0 usos (nenhuma vez)",
       perUse: (amount) => `${amount} por uso`,
       skipped: "Assinaturas sem registro ou não medidas por usos ficam fora do ranking.",
+      sourceLevel: "Custo-benefício dos registros dos últimos 30 dias",
+      byLevel:
+        "Essas assinaturas são medidas em horas, dias etc., não por usos, então estão ordenadas pelo custo-benefício do último registro, não pelo preço.",
     },
     price: {
       none: "Você não tem assinaturas pagas.",

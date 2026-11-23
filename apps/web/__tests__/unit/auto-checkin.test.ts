@@ -23,11 +23,17 @@ function sub(overrides: Partial<Subscription> = {}): Subscription {
   } as Subscription;
 }
 
-/** 최근 `days`일에 기록 칸을 만들고, 그중 앞의 `opens`일에 한 번씩 열었다고 적는다. */
+/** 최근 `days`일에 기록 칸을 만들고, 그중 앞의 `opens`일에 한 번씩 열어 한 시간 봤다고 적는다(재생 시간도 아는 기록). */
 function history(days: number, opens: number): UsageHistory {
-  const result: UsageHistory = { v: 1, days: {}, syncedAt: NOW.toISOString() };
-  lastDays(NOW, days).forEach((date, index) => {
-    result.days[date] = index < opens ? { [PKG]: [600_000, 1] } : {};
+  const dates = lastDays(NOW, days);
+  const result: UsageHistory = {
+    v: 1,
+    days: {},
+    syncedAt: NOW.toISOString(),
+    playbackFrom: dates[0],
+  };
+  dates.forEach((date, index) => {
+    result.days[date] = index < opens ? { [PKG]: [3_600_000, 1, 3_600_000] } : {};
   });
   return result;
 }
@@ -41,6 +47,7 @@ function log(overrides: Partial<UsageLog>): UsageLog {
     costPerUse: 5000,
     riskLevel: "yellow",
     checkedAt: "2026-09-20T00:00:00.000Z",
+    metric: "hours",
     ...overrides,
   };
 }
@@ -49,9 +56,9 @@ const plan = (logs: UsageLog[], h: UsageHistory, subs = [sub()]) =>
   planAutoCheckIns(subs, logs, h, [PKG], NOW, RATE);
 
 describe("planAutoCheckIns", () => {
-  it("30일을 온전히 덮으면 이 폰에서 연 횟수로 적는다", () => {
+  it("30일을 온전히 덮으면 이 폰에서 본 시간으로 적는다(OTT는 시간으로 잰다)", () => {
     expect(plan([], history(30, 12))).toEqual([
-      { subscriptionId: "s1", metric: "uses", quantity: 12 },
+      { subscriptionId: "s1", metric: "hours", quantity: 12 },
     ]);
   });
 
@@ -68,24 +75,24 @@ describe("planAutoCheckIns", () => {
     expect(plan([manual], history(30, 12))).toEqual([]);
   });
 
-  it("직접 센 숫자보다 폰에서 더 많이 열었으면 새로 적는다", () => {
+  it("직접 적은 시간보다 폰에서 더 오래 봤으면 새로 적는다", () => {
     const manual = log({ usageCount: 2, checkedAt: "2026-09-10T00:00:00.000Z" });
     expect(plan([manual], history(30, 12))).toEqual([
-      { subscriptionId: "s1", metric: "uses", quantity: 12 },
+      { subscriptionId: "s1", metric: "hours", quantity: 12 },
     ]);
   });
 
   it("같은 달의 자동 체크인은 새로 쌓지 않고 그 줄을 바꾼다", () => {
     const auto = log({ id: "auto", source: "phone", checkedAt: "2026-09-20T00:00:00.000Z" });
     expect(plan([auto], history(30, 12))).toEqual([
-      { subscriptionId: "s1", metric: "uses", quantity: 12, replaceLogId: "auto" },
+      { subscriptionId: "s1", metric: "hours", quantity: 12, replaceLogId: "auto" },
     ]);
   });
 
   it("지난달의 자동 체크인은 두고 새 줄을 적는다", () => {
     const auto = log({ id: "auto", source: "phone", checkedAt: "2026-08-31T00:00:00.000Z" });
     expect(plan([auto], history(30, 12))).toEqual([
-      { subscriptionId: "s1", metric: "uses", quantity: 12 },
+      { subscriptionId: "s1", metric: "hours", quantity: 12 },
     ]);
   });
 
@@ -156,7 +163,12 @@ describe("쓴 날·시간으로 재는 구독", () => {
     const spotify = sub({ name: "Spotify", cancelUrl: undefined, category: "music" });
     const first = lastDays(NOW, 30)[0];
     const h = playbackHistory(SPOTIFY, (i) => (i < 10 ? [0, 0, 3_600_000] : null), first);
-    const manual = log({ usageCount: 30, checkedAt: "2026-09-20T00:00:00.000Z" });
+    // metric이 없는 예전 체크인은 횟수다.
+    const manual = log({
+      usageCount: 30,
+      checkedAt: "2026-09-20T00:00:00.000Z",
+      metric: undefined,
+    });
     expect(planAutoCheckIns([spotify], [manual], h, [SPOTIFY], NOW, RATE)).toEqual([
       { subscriptionId: "s1", metric: "hours", quantity: 10 },
     ]);
