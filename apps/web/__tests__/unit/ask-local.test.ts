@@ -37,6 +37,21 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
     expect(localAskCall("겹치는 구독 있어?", { now: NOW })).toEqual({ tool: "overlaps" });
   });
 
+  it("결합 상품으로 아끼는 돈은 지킨 돈이 아니라 결합 추천이다", () => {
+    // '절약·save'를 지킨 돈 규칙이 먼저 가져가 "아직 해지한 구독이 없어요"라고 답했다(스토어 앱 v71 QA).
+    for (const q of [
+      "결합 상품으로 바꾸면 얼마 절약돼?",
+      "묶으면 얼마 아낄 수 있어?",
+      "Can I save by bundling?",
+    ]) {
+      expect(localAskCall(q, { now: NOW })).toEqual({ tool: "bundleSavings" });
+    }
+    expect(localAskCall("이번 달 해지로 얼마 절약했어?", { now: NOW })).toEqual({
+      tool: "savedSoFar",
+      args: { period: "month" },
+    });
+  });
+
   it("학습 세트에서도 규칙이 답한 질문은 모두 정답이다 — 규칙은 이 세트를 보며 넓힌다", () => {
     let answered = 0;
     const wrong: string[] = [];

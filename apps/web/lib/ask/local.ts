@@ -540,6 +540,14 @@ export function localAskCall(
     return { tool: "trialsEnding", args: { days: days ?? 31 } };
   }
 
+  // 겹치는 구독
+  if (/겹치|중복|두\s*번\s*내|overlap|duplicate/.test(q)) return { tool: "overlaps" };
+
+  // 결합 상품으로 바꾸면 덜 내는지. 겹침(이미 두 번 냄)은 위에서 먼저 가른다. 지킨 돈보다 먼저 본다 — "결합 상품으로
+  // 바꾸면 얼마 절약돼?"·"Can I save by bundling?"의 '절약·save'를 지킨 돈이 가져가 "아직 해지한 구독이 없어요"라고 답했다.
+  if (/결합\s*(?:상품|요금|으로|하면|해서)|묶어서|묶으면|bundl(?:e|ing)/.test(q))
+    return { tool: "bundleSavings" };
+
   // 지킨 돈(해지로 아낀 돈). 기간이 적히지 않았으면("얼마 아꼈어?") 이번 달인지 올해인지 정하지 않고 AI에 맡긴다.
   if (
     /아낀|아꼈|절약|지킨|굳은|sav(?:e|ed|ing)\b/.test(q) ||
@@ -554,13 +562,6 @@ export function localAskCall(
     // 기간을 적지 않았으면 이번 달로 답한다. 답에 '올해로 보기'를 둬 올해를 물은 것이었으면 바꾸게 한다(answer의 switchTo).
     return { tool: "savedSoFar", args: { period: isYear ? "year" : "month" } };
   }
-
-  // 겹치는 구독
-  if (/겹치|중복|두\s*번\s*내|overlap|duplicate/.test(q)) return { tool: "overlaps" };
-
-  // 결합 상품으로 바꾸면 덜 내는지. 겹침(이미 두 번 냄)은 위에서 먼저 가른다.
-  if (/결합\s*(?:상품|요금|으로|하면|해서)|묶어서|묶으면|bundle/.test(q))
-    return { tool: "bundleSavings" };
 
   // 거의 안 쓰는 구독
   // '안'은 낱말 앞에서만 본다 — "한 해 동안 쓴"의 '안 쓴'을 '안 쓰는 구독'으로 읽었다
