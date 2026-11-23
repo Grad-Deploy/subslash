@@ -318,6 +318,26 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
     ).not.toContain("왓챠");
   });
 
+  it("분류 이름을 합치면 서비스로 맞추지 않고 그 분류의 구독을 더한다", () => {
+    // '클라우드'를 '아이클라우드' 서비스로 맞춰 그 요금만 답했다(₩1,100). 음악(멜론 10,900) + 클라우드(아이클라우드 1,100)다.
+    const icloud = sub({ id: "icloud", name: "아이클라우드", amount: 1100, category: "cloud" });
+    const ctx = {
+      ...CTX,
+      subscriptions: [...SUBS, icloud],
+      asked: ["음악이랑 클라우드 합치면 한 달에 얼마야?"],
+    };
+    const result = answerAsk({ tool: "serviceSum", args: { services: "음악, 클라우드" } }, ctx);
+    expect(result.headline).toContain(won(10900 + 1100));
+    expect(result.rows.map((row) => row.label)).toEqual(["멜론", "아이클라우드"]);
+    // 서비스 이름과 분류를 섞어도 된다. 구독이 없는 분류는 그렇게 적는다.
+    const mixed = answerAsk(
+      { tool: "serviceSum", args: { services: "넷플릭스, 음악, 쇼핑" } },
+      { ...CTX, asked: ["넷플릭스랑 음악이랑 쇼핑 합치면?"] },
+    );
+    expect(mixed.headline).toContain(won(17000 + 10900));
+    expect(mixed.notes.join()).toContain("쇼핑");
+  });
+
   it("하루치를 물으면 한 달 합계에 하루치를 함께 적는다", () => {
     const total = sumMyMonthlyKRW(PAYING, 1400);
     const result = answerAsk(

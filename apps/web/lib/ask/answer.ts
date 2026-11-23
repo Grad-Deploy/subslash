@@ -29,6 +29,7 @@ import { describeQuantityText } from "@lib/i18n/check-in-text";
 import type { Messages } from "@lib/i18n/messages";
 import { splitServiceNames, type AskCall } from "./tools";
 import { compactName } from "./fuzzy";
+import { categoryOfName } from "./local";
 import { matchPresets, matchSubscriptions } from "./service-match";
 
 /**
@@ -206,6 +207,14 @@ export function answerAsk(call: AskCall, ctx: AskContext): AskAnswer {
       const notSubscribed: string[] = [];
       const ambiguous: string[] = [];
       for (const name of names) {
+        // 분류 이름("음악이랑 클라우드")이면 그 분류의 구독을 모두 더한다 — AI도 분류 둘을 이 도구로 고른다.
+        const category = categoryOfName(name);
+        if (category) {
+          const inCategory = active.filter((sub) => sub.category === category);
+          if (inCategory.length === 0) notSubscribed.push(ctx.t.value.category[category]);
+          for (const sub of inCategory) counted.set(sub.id, sub);
+          continue;
+        }
         const matches = matchSubscriptions(name, active);
         if (matches.length === 0) {
           // 서비스 목록의 서비스면 화면 언어의 이름으로 적는다(영어 화면에 "웨이브" 대신 "Wavve").

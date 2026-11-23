@@ -37,6 +37,17 @@ describe("리포트에 물어보기 — 기기 규칙", () => {
     expect(localAskCall("겹치는 구독 있어?", { now: NOW })).toEqual({ tool: "overlaps" });
   });
 
+  it("분류 이름을 '이랑'으로 이어 합치면 분류의 합계로 읽는다 — 띄어 쓴 말은 한 분류를 꾸민 것이다", () => {
+    const icloud = [{ id: "i", name: "아이클라우드", category: "cloud" } as Subscription];
+    expect(
+      localAskCall("음악이랑 클라우드 합치면 한 달에 얼마야?", { now: NOW, subscriptions: icloud }),
+    ).toEqual({ tool: "serviceSum", args: { services: "음악, 클라우드" } });
+    expect(localAskCall("클라우드 저장공간 비용", { now: NOW })).toEqual({
+      tool: "spendByCategory",
+      args: { category: "cloud" },
+    });
+  });
+
   it("결합 상품으로 아끼는 돈은 지킨 돈이 아니라 결합 추천이다", () => {
     // '절약·save'를 지킨 돈 규칙이 먼저 가져가 "아직 해지한 구독이 없어요"라고 답했다(스토어 앱 v71 QA).
     for (const q of [

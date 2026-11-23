@@ -103,6 +103,24 @@ const CATEGORY_WORDS: [RegExp, AskCategory][] = [
   [/\bai\b|인공지능|ai\s*툴|ai\s*구독/, "ai"],
 ];
 
+/**
+ * 이름 자리에 온 말이 분류 이름 그대로인지("음악", "클라우드 구독"). '음악이랑 클라우드 합치면'은 서비스가 아니라 분류의 합계다 —
+ * 서비스로 맞추면 '클라우드'가 '아이클라우드'에 맞아 그 요금만 답했다. 낱말 전체가 분류일 때만 보므로 '애플 뮤직'·'아이클라우드'는
+ * 서비스 이름 그대로다.
+ */
+const CATEGORY_NAMES: [RegExp, AskCategory][] = [
+  [/^(?:ott|영상|동영상|드라마|영화)$/, "ott"],
+  [/^(?:음악|음원|뮤직|music)$/, "music"],
+  [/^(?:클라우드|저장\s*공간|스토리지|cloud)$/, "cloud"],
+  [/^(?:쇼핑|멤버십|shopping)$/, "shopping"],
+  [/^(?:ai|인공지능|ai\s*툴)$/, "ai"],
+];
+
+export function categoryOfName(name: string): AskCategory | null {
+  const bare = normalize(name).replace(/\s*(?:구독|서비스|쪽|류|분야|카테고리)$/, "");
+  return CATEGORY_NAMES.find(([pattern]) => pattern.test(bare))?.[1] ?? null;
+}
+
 /** 서비스 하나에 대해 묻는 말(요금·결제일·쓴 횟수). 이 낱말 앞이 서비스 이름이어야 한다. */
 const DETAIL_WORD =
   /얼마|요금제?|가격|구독료|구독비|월정액|이용료|비용|결제\s*금액|결제액|몇\s*원|다음\s*(?:결제|청구|요금)|결제일|청구일|결제\s*(?:날짜|일정)|빠지는\s*날|몇\s*번|(?:사용|이용)\s*횟수|언제\s*(?:결제|청구|빠져|빠지|나가|돈\s*나가)|(?:결제|청구)\s*(?:가|는|되는\s*날은?)?\s*언제/;
@@ -223,12 +241,15 @@ function serviceSumCall(q: string, subscriptions: readonly Subscription[]): AskC
   const end = sumWord && sumWord.index < amount.index ? sumWord.index : amount.index;
   const head = text.slice(0, end).trim();
   let parts = head.split(SERVICE_JOINER).filter(Boolean);
-  if (parts.length < 2) parts = head.split(/\s+/);
+  // 분류 이름은 '이랑·하고'로 이었을 때만 받는다 — "클라우드 저장공간"·"밀리 멤버십"은 한 분류·한 서비스를 꾸민 말이다.
+  const joined = parts.length >= 2;
+  if (!joined) parts = head.split(/\s+/);
   if (parts.length < 2 || parts.length > 5) return null;
   const names: string[] = [];
   for (const part of parts) {
-    // "웨이브 1년에"처럼 기간이 붙은 마지막 이름에서 기간을 뗀다.
-    const name = serviceNameIn(part.replace(SERVICE_YEAR, " ").trim(), subscriptions);
+    // "웨이브 1년에"처럼 기간이 붙은 마지막 이름에서 기간을 뗀다. 분류 이름("음악")은 그대로 두고 답(serviceSum)이 분류로 더한다.
+    const bare = part.replace(SERVICE_YEAR, " ").trim();
+    const name = joined && categoryOfName(bare) ? bare : serviceNameIn(bare, subscriptions);
     if (!name) return null;
     names.push(name);
   }
