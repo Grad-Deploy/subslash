@@ -135,8 +135,12 @@ function readDismissed(): Record<string, string> {
   }
 }
 
+/** "2027-01-31" → [2027, 1, 31] (기간 한정 문구의 인자). */
+const limitedDate = (until: string) => until.split("-").map(Number) as [number, number, number];
+
 /**
- * 결합 상품을 내는데 하나만 쓰면 그 서비스만 따로 내는 편이 덜 드는 경우(`findBundleDowngrades`, 앱의 폰 기록으로 판단).
+ * 결합 상품에서 안 쓰는 서비스를 빼면 덜 내는 경우 — 하나만 따로 내기, 또는 더 작은 결합 상품(`findBundleDowngrades`, 앱의
+ * 폰 기록으로 판단).
  * 폰 기록은 TV·PC를 모르므로 그렇게 적고, 결합 추천과 같은 '해당 안 돼요'로 90일 숨긴다(키는 `downgrade:<구독 id>`).
  */
 export function BundleDowngradeNotice({ downgrades }: { downgrades: BundleDowngrade[] }) {
@@ -167,14 +171,22 @@ export function BundleDowngradeNotice({ downgrades }: { downgrades: BundleDowngr
       {shown.map((item) => (
         <div key={item.sub.id} className="space-y-0.5 text-xs leading-relaxed">
           <p>
-            {d.line(
+            {(item.kind === "solo" ? d.line : d.lineBundle)(
               item.unusedServiceIds.map(names.id).join(", "),
               names.sub(item.sub),
-              names.id(item.keep.id),
-              formatKRW(item.soloMonthly),
+              // 요금제가 여럿인 상품으로 옮기면 어느 요금제인지 붙인다 — 같은 등급이라야 견준 값이 맞다.
+              item.targetPlan && (item.target.plans?.length ?? 0) > 1
+                ? `${names.id(item.target.id)} (${names.plan(item.targetPlan.name)})`
+                : names.id(item.target.id),
+              formatKRW(item.newMonthly),
               formatKRW(item.saving),
             )}
           </p>
+          {item.availableUntil && (
+            <p className="text-muted-foreground">
+              {t.bundleSaving.limited(...limitedDate(item.availableUntil))}
+            </p>
+          )}
           <p className="text-muted-foreground">{d.offDevice}</p>
           <button
             type="button"
