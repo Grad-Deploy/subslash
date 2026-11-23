@@ -3,6 +3,7 @@ import {
   POPULAR_SERVICES,
   findPresetForSubscription,
   type BundleRequirement,
+  type ServicePlan,
   type ServicePreset,
 } from "../constants/services";
 import { isPaying } from "./date";
@@ -239,6 +240,150 @@ export function findBundleOpportunities(
     if (!kept || opportunity.saving.min > kept.saving.min) best.set(key, opportunity);
   }
   return [...best.values()].sort((a, b) => b.saving.min - a.saving.min);
+}
+
+export interface BundleDowngrade {
+  /** 지금 내는 결합 상품 구독. */
+  sub: Subscription;
+  bundle: ServicePreset;
+  /** `solo`: 남는 서비스 하나만 따로 낸다. `bundle`: 지금 결합에 든 서비스로만 된 더 작은 결합 상품으로 옮긴다. */
+  kind: "solo" | "bundle";
+  /** 옮길 곳(서비스 또는 더 작은 결합 상품)과 그 요금제. 요금제 목록이 없으면 null. */
+  target: ServicePreset;
+  targetPlan: ServicePlan | null;
+  /** 이 결합 구독에서 쓰지 않는다고 확인된 서비스(서비스 목록의 id). */
+  unusedServiceIds: string[];
+  /** 지금 내는 내 몫 한 달(원). */
+  currentMonthly: number;
+  /** 옮긴 뒤의 한 달 요금표 가격(원). */
+  newMonthly: number;
+  saving: number;
+  /** 옮길 곳의 요금이 기간 한정이면 판매 마지막 날(YYYY-MM-DD). */
+  availableUntil: string | null;
+}
+
+/** 매달 내는 원화 요금표 가격. 조건 붙은 요금·판매가 끝난 기간 한정 요금·연 결제·모르는 값이면 null. */
+function monthlyListPrice(
+  preset: ServicePreset,
+  plan: ServicePlan | null,
+  today: string,
+): { price: number; until: string | null } | null {
+  const price = plan ? plan.amount : preset.defaultAmount;
+  const condition = plan ? plan.condition : preset.condition;
+  const until = (plan ? plan.availableUntil : undefined) ?? preset.availableUntil ?? null;
+  if (typeof price !== "number" || !(price > 0) || condition) return null;
+  if ((plan?.billingCycle ?? "monthly") !== "monthly") return null;
+  if ((plan?.currency ?? preset.currency) !== "KRW") return null;
+  if (until && today > until) return null;
+  return { price, until };
+}
+
+/**
+ * 결합 상품을 내는데 포함된 서비스 일부만 쓰면 덜 내는 쪽으로 옮기는 경우(`findBundleOpportunities`의 반대). 옮길 곳은
+ * 둘이고 가장 덜 내는 하나를 고른다(값이 같으면 단독).
+ *
+ * - 단독: 남는 서비스가 하나면 그 서비스만 따로 낸다. 요금제는 결합이 주는 요금제(`includedPlans`)와 같은 것, 요금제가
+ *   하나뿐이면 그것, 요금제 목록이 없는 서비스면 서비스의 한 달 요금(`defaultAmount`) — 유튜브를 안 쓰는 배민클럽 +
+ *   유튜브 프리미엄은 배민클럽만 내는 편과 견준다.
+ * - 더 작은 결합 상품: 지금 결합에 든 서비스로만 되어 있고(새 서비스에 가입하라고 하지 않는다), 남는 서비스를 모두 담고,
+ *   남는 서비스마다 지금과 같은 등급을 주는 요금제만 — 3 PACK에서 웨이브를 안 쓰면 티빙 더블. 가입 조건(`requires`)이 붙은
+ *   상품은 갖췄는지 모르므로 쓰지 않는다.
+ * - '안 쓴다'는 부르는 쪽이 `unusedOf`로 준다(앱의 폰 기록). 잴 수 없거나 모르는 서비스는 넣지 않는다 — 모름을 안 씀으로
+ *   읽지 않는다. 그래서 혜택형 멤버십(배민클럽·네이버플러스)은 늘 남는다. 하나도 안 남으면 해지의 일이다.
+ * - 결합 상품에 요금제가 여럿이면 내 구독의 요금제(`planId`)를 알아야 한다. 등급을 모르는 서비스가 남으면 견주지 않는다.
+ * - 요금은 매달 내는 원화 요금표 가격만(`monthlyListPrice`). 나눠 내는 구독은 뺀다 — 같이 내는 사람이 나머지 서비스를 쓸
+ *   수 있다. 체험 중·0원 기록도 뺀다.
+ */
+export function findBundleDowngrades(
+  subscriptions: readonly Subscription[],
+  rate: number,
+  now: Date,
+  unusedOf: (sub: Subscription) => readonly string[],
+): BundleDowngrade[] {
+  const today = dayOf(now);
+  const out: BundleDowngrade[] = [];
+  for (const sub of subscriptions) {
+    const bundle = findPresetForSubscription(sub);
+    const includes = bundle?.includes;
+    if (!bundle || !includes?.length || !isPaying(sub, now) || (sub.sharingCount ?? 1) > 1)
+      continue;
+    const unused = unusedOf(sub).filter((id) => includes.includes(id));
+    const kept = includes.filter((id) => !unused.includes(id));
+    if (unused.length === 0 || kept.length === 0) continue;
+
+    const bundlePlan = bundle.plans?.length
+      ? bundle.plans.find((plan) => plan.id === sub.planId)
+      : undefined;
+    if (bundle.plans?.length && !bundlePlan) continue;
+    const given: Record<string, string> = { ...bundle.includedPlans, ...bundlePlan?.includedPlans };
+    const presetOf = (id: string) => POPULAR_SERVICES.find((service) => service.id === id);
+    // 남는 서비스 중 요금제가 여럿인 것은 지금 받는 등급을 알아야 견줄 수 있다.
+    const keptGraded = kept.filter((id) => presetOf(id)?.plans?.length);
+    if (keptGraded.some((id) => !given[id] && presetOf(id)!.plans!.length > 1)) continue;
+
+    type Candidate = Omit<
+      BundleDowngrade,
+      "sub" | "bundle" | "unusedServiceIds" | "currentMonthly" | "saving"
+    >;
+    const candidates: Candidate[] = [];
+    if (kept.length === 1) {
+      const target = presetOf(kept[0]);
+      const targetPlan = target?.plans?.length
+        ? (target.plans.find((plan) => plan.id === given[target.id]) ??
+          (target.plans.length === 1 ? target.plans[0] : undefined))
+        : null;
+      const listed =
+        target && targetPlan !== undefined && monthlyListPrice(target, targetPlan, today);
+      if (target && targetPlan !== undefined && listed) {
+        candidates.push({
+          kind: "solo",
+          target,
+          targetPlan,
+          newMonthly: listed.price,
+          availableUntil: listed.until,
+        });
+      }
+    }
+    for (const smaller of POPULAR_SERVICES) {
+      const inner = smaller.includes;
+      if (!inner?.length || smaller.id === bundle.id || smaller.requires?.length) continue;
+      if (inner.length >= includes.length || !inner.every((id) => includes.includes(id))) continue;
+      if (!kept.every((id) => inner.includes(id))) continue;
+      for (const plan of smaller.plans?.length ? smaller.plans : [null]) {
+        const offered: Record<string, string> = {
+          ...smaller.includedPlans,
+          ...plan?.includedPlans,
+        };
+        if (
+          !keptGraded.every(
+            (id) => offered[id] && offered[id] === (given[id] ?? presetOf(id)!.plans![0].id),
+          )
+        )
+          continue;
+        const listed = monthlyListPrice(smaller, plan, today);
+        if (listed) {
+          candidates.push({
+            kind: "bundle",
+            target: smaller,
+            targetPlan: plan,
+            newMonthly: listed.price,
+            availableUntil: listed.until,
+          });
+        }
+      }
+    }
+    // 가장 덜 내는 곳 하나. 값이 같으면 앞에 넣은 단독이 남는다(서비스가 적은 쪽).
+    const best = candidates.reduce<Candidate | null>(
+      (min, next) => (!min || next.newMonthly < min.newMonthly ? next : min),
+      null,
+    );
+    if (!best) continue;
+    const currentMonthly = Math.round(getMyMonthlyAmountKRW(sub, rate));
+    const saving = currentMonthly - best.newMonthly;
+    if (!(currentMonthly > 0) || saving <= 0) continue;
+    out.push({ sub, bundle, unusedServiceIds: unused, currentMonthly, saving, ...best });
+  }
+  return out.sort((a, b) => b.saving - a.saving);
 }
 
 /** 서비스 id → 화면에 적을 이름. */

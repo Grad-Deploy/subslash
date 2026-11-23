@@ -1,7 +1,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ReceiptText } from "lucide-react";
-import { formatKRW, type findBundleOpportunities, type findBundleOverlaps } from "@subslash/shared";
+import {
+  formatKRW,
+  type BundleDowngrade,
+  type findBundleOpportunities,
+  type findBundleOverlaps,
+} from "@subslash/shared";
 import { IS_APP_BUILD } from "@lib/platform";
 import { receiptHref, type ReceiptMonth } from "@lib/receipt-view";
 import { useServiceNames, useT } from "@lib/i18n";
@@ -128,6 +133,73 @@ function readDismissed(): Record<string, string> {
   } catch {
     return {};
   }
+}
+
+/** "2027-01-31" → [2027, 1, 31] (기간 한정 문구의 인자). */
+const limitedDate = (until: string) => until.split("-").map(Number) as [number, number, number];
+
+/**
+ * 결합 상품에서 안 쓰는 서비스를 빼면 덜 내는 경우 — 하나만 따로 내기, 또는 더 작은 결합 상품(`findBundleDowngrades`, 앱의
+ * 폰 기록으로 판단).
+ * 폰 기록은 TV·PC를 모르므로 그렇게 적고, 결합 추천과 같은 '해당 안 돼요'로 90일 숨긴다(키는 `downgrade:<구독 id>`).
+ */
+export function BundleDowngradeNotice({ downgrades }: { downgrades: BundleDowngrade[] }) {
+  const t = useT().reportPage;
+  const d = t.bundleDowngrade;
+  const names = useServiceNames();
+  const [dismissed, setDismissed] = useState<Record<string, string>>(readDismissed);
+  const today = dayKey(new Date());
+  const keyOf = (item: BundleDowngrade) => `downgrade:${item.sub.id}`;
+  const shown = downgrades.filter((item) => (dismissed[keyOf(item)] ?? "") <= today);
+  if (shown.length === 0) return null;
+  const dismiss = (key: string) => {
+    // 결합 추천이 같은 칸에 쓴 것을 덮지 않게 저장된 것을 다시 읽어 더한다.
+    const next = { ...readDismissed(), ...dismissed, [key]: dismissUntil(new Date()) };
+    setDismissed(next);
+    try {
+      localStorage.setItem(ownerScopedKey(DISMISSED_KEY), JSON.stringify(next));
+    } catch {
+      // 저장하지 못해도 이번 화면에서는 숨긴다.
+    }
+  };
+  return (
+    <section
+      aria-label={d.label}
+      className="space-y-1.5 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm"
+    >
+      <p className="font-bold">{d.title}</p>
+      {shown.map((item) => (
+        <div key={item.sub.id} className="space-y-0.5 text-xs leading-relaxed">
+          <p>
+            {(item.kind === "solo" ? d.line : d.lineBundle)(
+              item.unusedServiceIds.map(names.id).join(", "),
+              names.sub(item.sub),
+              // 요금제가 여럿인 상품으로 옮기면 어느 요금제인지 붙인다 — 같은 등급이라야 견준 값이 맞다.
+              item.targetPlan && (item.target.plans?.length ?? 0) > 1
+                ? `${names.id(item.target.id)} (${names.plan(item.targetPlan.name)})`
+                : names.id(item.target.id),
+              formatKRW(item.newMonthly),
+              formatKRW(item.saving),
+            )}
+          </p>
+          {item.availableUntil && (
+            <p className="text-muted-foreground">
+              {t.bundleSaving.limited(...limitedDate(item.availableUntil))}
+            </p>
+          )}
+          <p className="text-muted-foreground">{d.offDevice}</p>
+          <button
+            type="button"
+            onClick={() => dismiss(keyOf(item))}
+            className="text-muted-foreground underline underline-offset-2"
+          >
+            {t.bundleSaving.dismiss}
+          </button>
+        </div>
+      ))}
+      <p className="text-xs text-muted-foreground">{d.note}</p>
+    </section>
+  );
 }
 
 /**

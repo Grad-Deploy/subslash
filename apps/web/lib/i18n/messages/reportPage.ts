@@ -53,6 +53,17 @@ export const ko = {
       },
       dismiss: "해당 안 돼요",
     },
+    bundleDowngrade: {
+      label: "안 쓰는 서비스를 빼면 덜 내는 결합 상품",
+      title: "안 쓰는 서비스를 빼면 덜 내요",
+      line: (unused: string, bundle: string, keep: string, price: string, saving: string) =>
+        `이 폰에서 30일 동안 ${unused} 사용 기록이 없어요. ${bundle} 대신 ${keep}만 따로 내면 월 ${price}, 한 달 ${saving} 덜 내요.`,
+      lineBundle: (unused: string, bundle: string, target: string, price: string, saving: string) =>
+        `이 폰에서 30일 동안 ${unused} 사용 기록이 없어요. ${bundle} 대신 ${withJosa(target, "으로", "로")} 바꾸면 월 ${price}, 한 달 ${saving} 덜 내요.`,
+      offDevice:
+        "TV·PC 등 다른 기기에서 본 것은 폰 기록에 없어요. 다른 기기에서도 쓰지 않을 때만 바꾸세요.",
+      note: "지금 받는 것과 같은 요금제의 요금(한국에서 확인한 값)과 견줬어요. 결합 상품을 해지하면 포함된 서비스가 모두 끝나니, 바꿀 상품에 먼저 가입하고 해지하세요.",
+    },
     ranking: {
       title: "1회 단가 순위",
       monthly: (amount: string) => `한 달 ${amount}`,
@@ -135,6 +146,17 @@ export const en: Widen<typeof ko> = {
           "This is an LG U+ subscription platform product, so check that you are eligible to sign up first.",
       },
       dismiss: "Not for me",
+    },
+    bundleDowngrade: {
+      label: "Bundles you could trim",
+      title: "Drop what you don't use and pay less",
+      line: (unused, bundle, keep, price, saving) =>
+        `No ${unused} use on this phone in 30 days. Paying for ${keep} alone instead of ${bundle} costs ${price} a month, ${saving} less.`,
+      lineBundle: (unused, bundle, target, price, saving) =>
+        `No ${unused} use on this phone in 30 days. Switching from ${bundle} to ${target} costs ${price} a month, ${saving} less.`,
+      offDevice:
+        "Watching on a TV or PC isn't in phone records. Switch only if you don't use it on other devices either.",
+      note: "Compared with the same plan you get now, using Korean list prices. Cancelling the bundle ends every service in it, so sign up for the new one first, then cancel.",
     },
     ranking: {
       title: "Cost per use ranking",
@@ -220,6 +242,16 @@ export const zh: Widen<typeof ko> = {
       },
       dismiss: "与我无关",
     },
+    bundleDowngrade: {
+      label: "可以精简的合并套餐",
+      title: "去掉不用的服务更省钱",
+      line: (unused, bundle, keep, price, saving) =>
+        `这部手机 30 天内没有 ${unused} 的使用记录。不订 ${bundle}，只单独订阅 ${keep}，每月 ${price}，每月少付 ${saving}。`,
+      lineBundle: (unused, bundle, target, price, saving) =>
+        `这部手机 30 天内没有 ${unused} 的使用记录。从 ${bundle} 换成 ${target}，每月 ${price}，每月少付 ${saving}。`,
+      offDevice: "在电视、电脑等其他设备上观看不会记入手机记录。只有其他设备上也不用时再更换。",
+      note: "与你现在所享同档位的价格（韩国标价）对比。取消套餐后其中所有服务都会结束，请先订阅新的，再取消原套餐。",
+    },
     ranking: {
       title: "单次成本排行",
       monthly: (amount) => `每月 ${amount}`,
@@ -300,6 +332,17 @@ export const ja: Widen<typeof ko> = {
         lguplus: "LG U+ のサブスクプラットフォームの商品なので、先に加入資格を確認してください。",
       },
       dismiss: "当てはまらない",
+    },
+    bundleDowngrade: {
+      label: "見直せるセット",
+      title: "使わないサービスを外すと安くなる",
+      line: (unused, bundle, keep, price, saving) =>
+        `この端末では30日間 ${unused} の利用記録がありません。${bundle} の代わりに ${keep} だけを契約すると月 ${price}、毎月 ${saving} 安くなります。`,
+      lineBundle: (unused, bundle, target, price, saving) =>
+        `この端末では30日間 ${unused} の利用記録がありません。${bundle} から ${target} に替えると月 ${price}、毎月 ${saving} 安くなります。`,
+      offDevice:
+        "テレビやPCなど他の端末での視聴は端末の記録に含まれません。他の端末でも使っていない場合だけ切り替えてください。",
+      note: "今受けているのと同じプランの価格（韓国の定価）と比べています。セットを解約すると含まれるサービスはすべて終わるので、新しいほうを先に契約してから解約してください。",
     },
     ranking: {
       title: "1 回あたりの単価ランキング",
@@ -383,6 +426,17 @@ export const vi: Widen<typeof ko> = {
       },
       dismiss: "Không áp dụng",
     },
+    bundleDowngrade: {
+      label: "Gói gộp có thể rút gọn",
+      title: "Bỏ dịch vụ không dùng để trả ít hơn",
+      line: (unused, bundle, keep, price, saving) =>
+        `Điện thoại này không ghi nhận việc dùng ${unused} trong 30 ngày. Thay vì ${bundle}, chỉ đăng ký riêng ${keep} giá ${price}/tháng, rẻ hơn ${saving} mỗi tháng.`,
+      lineBundle: (unused, bundle, target, price, saving) =>
+        `Điện thoại này không ghi nhận việc dùng ${unused} trong 30 ngày. Đổi từ ${bundle} sang ${target} giá ${price}/tháng, rẻ hơn ${saving} mỗi tháng.`,
+      offDevice:
+        "Xem trên TV, máy tính hay thiết bị khác không có trong dữ liệu điện thoại. Chỉ đổi nếu bạn cũng không dùng trên thiết bị khác.",
+      note: "So với giá của cùng gói bạn đang nhận (giá niêm yết tại Hàn Quốc). Hủy gói gộp sẽ chấm dứt mọi dịch vụ trong đó, hãy đăng ký gói mới trước rồi mới hủy.",
+    },
     ranking: {
       title: "Xếp hạng chi phí mỗi lần dùng",
       monthly: (amount) => `${amount} mỗi tháng`,
@@ -465,6 +519,17 @@ export const fr: Widen<typeof ko> = {
           "C'est un produit de la plateforme d'abonnements LG U+ : vérifiez d'abord que vous pouvez y souscrire.",
       },
       dismiss: "Pas pour moi",
+    },
+    bundleDowngrade: {
+      label: "Offres groupées à alléger",
+      title: "Retirez ce que vous n'utilisez pas et payez moins",
+      line: (unused, bundle, keep, price, saving) =>
+        `Aucune utilisation de ${unused} sur ce téléphone en 30 jours. Au lieu de ${bundle}, ne payer que ${keep} coûte ${price} par mois, soit ${saving} de moins.`,
+      lineBundle: (unused, bundle, target, price, saving) =>
+        `Aucune utilisation de ${unused} sur ce téléphone en 30 jours. Passer de ${bundle} à ${target} coûte ${price} par mois, soit ${saving} de moins.`,
+      offDevice:
+        "Ce que vous regardez sur une TV ou un PC n'apparaît pas dans les données du téléphone. Ne changez que si vous ne l'utilisez pas non plus sur d'autres appareils.",
+      note: "Comparé à la même formule que vous avez aujourd'hui, selon les tarifs coréens. Résilier l'offre groupée met fin à tous ses services : souscrivez d'abord la nouvelle, puis résiliez.",
     },
     ranking: {
       title: "Classement du coût par utilisation",
@@ -552,6 +617,17 @@ export const es: Widen<typeof ko> = {
       },
       dismiss: "No me aplica",
     },
+    bundleDowngrade: {
+      label: "Paquetes que puedes reducir",
+      title: "Quita lo que no usas y paga menos",
+      line: (unused, bundle, keep, price, saving) =>
+        `No hay uso de ${unused} en este teléfono en 30 días. En lugar de ${bundle}, pagar solo ${keep} cuesta ${price} al mes, ${saving} menos.`,
+      lineBundle: (unused, bundle, target, price, saving) =>
+        `No hay uso de ${unused} en este teléfono en 30 días. Cambiar de ${bundle} a ${target} cuesta ${price} al mes, ${saving} menos.`,
+      offDevice:
+        "Lo que ves en una TV o un PC no está en los registros del teléfono. Cambia solo si tampoco lo usas en otros dispositivos.",
+      note: "Comparado con el mismo plan que tienes ahora, con precios de Corea. Cancelar el paquete termina todos sus servicios, así que suscríbete primero al nuevo y luego cancela.",
+    },
     ranking: {
       title: "Ranking de coste por uso",
       monthly: (amount) => `${amount} al mes`,
@@ -638,6 +714,17 @@ export const de: Widen<typeof ko> = {
       },
       dismiss: "Trifft nicht zu",
     },
+    bundleDowngrade: {
+      label: "Bundles zum Verkleinern",
+      title: "Lass weg, was du nicht nutzt, und zahl weniger",
+      line: (unused, bundle, keep, price, saving) =>
+        `Auf diesem Handy keine Nutzung von ${unused} in 30 Tagen. Statt ${bundle} nur ${keep} zu zahlen kostet ${price} im Monat, ${saving} weniger.`,
+      lineBundle: (unused, bundle, target, price, saving) =>
+        `Auf diesem Handy keine Nutzung von ${unused} in 30 Tagen. Ein Wechsel von ${bundle} zu ${target} kostet ${price} im Monat, ${saving} weniger.`,
+      offDevice:
+        "Was du auf TV oder PC schaust, steht nicht in den Handydaten. Wechsle nur, wenn du es auch auf anderen Geräten nicht nutzt.",
+      note: "Verglichen mit demselben Tarif, den du jetzt hast (koreanische Listenpreise). Kündigst du das Bundle, enden alle enthaltenen Dienste – schließ zuerst das neue ab und kündige dann.",
+    },
     ranking: {
       title: "Ranking der Kosten pro Nutzung",
       monthly: (amount) => `${amount} im Monat`,
@@ -721,6 +808,17 @@ export const pt: Widen<typeof ko> = {
           "É um produto da plataforma de assinaturas da LG U+, então confira antes se você pode contratar.",
       },
       dismiss: "Não se aplica",
+    },
+    bundleDowngrade: {
+      label: "Pacotes que dá para enxugar",
+      title: "Tire o que você não usa e pague menos",
+      line: (unused, bundle, keep, price, saving) =>
+        `Nenhum uso de ${unused} neste celular em 30 dias. Em vez de ${bundle}, pagar só ${keep} custa ${price} por mês, ${saving} a menos.`,
+      lineBundle: (unused, bundle, target, price, saving) =>
+        `Nenhum uso de ${unused} neste celular em 30 dias. Trocar ${bundle} por ${target} custa ${price} por mês, ${saving} a menos.`,
+      offDevice:
+        "O que você assiste na TV ou no PC não aparece nos registros do celular. Troque só se também não usar em outros aparelhos.",
+      note: "Comparado ao mesmo plano que você tem hoje, com preços da Coreia. Cancelar o pacote encerra todos os serviços dele, então assine o novo primeiro e depois cancele.",
     },
     ranking: {
       title: "Ranking de custo por uso",

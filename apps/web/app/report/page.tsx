@@ -37,6 +37,13 @@ import { PageSpinner } from "../../components/ui/spinner";
 import { useT } from "@lib/i18n";
 
 // 폰 사용 기록(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
+const AppBundleDowngrade = IS_APP_BUILD
+  ? dynamic(
+      () =>
+        import("../../components/usage/app/AppBundleDowngrade").then((m) => m.AppBundleDowngrade),
+      { ssr: false },
+    )
+  : null;
 const AppUsageReport = IS_APP_BUILD
   ? dynamic(
       () => import("../../components/usage/app/AppUsageReport").then((m) => m.AppUsageReport),
@@ -130,6 +137,7 @@ export default function ReportPage() {
         <>
           <BundleOverlapNotice overlaps={overlaps} />
           <BundleSavingNotice opportunities={bundleSavings} />
+          {AppBundleDowngrade && <AppBundleDowngrade />}
           <SpendSummary
             monthly={monthly}
             annual={sumMyAnnualKRW(active, rate)}
