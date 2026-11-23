@@ -15,6 +15,17 @@ import { AppBatchCheckIn } from "./AppBatchCheckIn";
 import { AppUsageAccessSheet } from "./AppUsageAccessSheet";
 
 /**
+ * 폰 기록으로 잴 수 있는 구독(횟수·쓴 날·시간으로 재고 연결표에 있는 것)이 있는지. 없으면 아래 칸은 그리지 않으므로,
+ * 칸을 감싸는 제목(설정의 '체크인')도 이것으로 가린다. '한 번에 체크인'도 자동 체크인과 같은 구독을 모두 다룬다.
+ */
+export function hasPhoneMeasurable(paying: Subscription[]): boolean {
+  return paying.some(
+    (sub) =>
+      packagesFor(sub) && ["uses", "days", "hours"].includes(metricForSubscription(sub, "app")),
+  );
+}
+
+/**
  * 구독 관리 위쪽의 '폰 기록으로 체크인'(안드로이드 앱). 대시보드 카드는 체크인이 밀렸을 때만 뜨고, 여기는
  * 언제든 전체 숫자를 폰 기록으로 다시 맞추는 입구다. 기록을 아직 켜지 않았으면 켜는 안내를 먼저 연다.
  * 폰 기록으로 잴 수 있는 구독이 하나도 없으면 두지 않는다.
@@ -48,13 +59,7 @@ export function AppPhoneCheckInButton({
   const now = new Date();
   const paying = subscriptions.filter((sub) => isPaying(sub, now));
   if (status === "loading" || status === "unsupported") return null;
-  // 폰 기록으로 잴 수 있는 구독(횟수·쓴 날·시간으로 재고 연결표에 있는 것)이 없으면 두지 않는다.
-  // '한 번에 체크인'도 자동 체크인과 같은 구독을 모두 다룬다(구독마다 자기 지표로).
-  const mapped = paying.filter((sub) => packagesFor(sub));
-  const autoable = mapped.some((sub) =>
-    ["uses", "days", "hours"].includes(metricForSubscription(sub, "app")),
-  );
-  if (!autoable) return null;
+  if (!hasPhoneMeasurable(paying)) return null;
 
   const remaining = daysUntilAutoCheckIn(history, now);
 
