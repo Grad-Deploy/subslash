@@ -9,6 +9,8 @@ import { ReportRowList } from "./ReportRowList";
 export function CostPerUseRanking({ rows }: { rows: ValueRow[] }) {
   const r = useT().reportPage.ranking;
   const headingId = useId();
+  // 횟수로 재는 구독이 없으면 칸을 두지 않는다 — OTT·음악은 시간이라 '다른 기준' 목록에 있고, 제목만 남았다.
+  if (rows.length === 0) return null;
   // 제목을 칸 이름으로 단다 — 위에 구독별 막대그래프도 목록이라, 이름이 없으면 어느 목록의 줄인지 가릴 수 없다.
   return (
     <section className="space-y-3" aria-labelledby={headingId}>

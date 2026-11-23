@@ -43,7 +43,7 @@ test.describe("구독 리포트 (E2E)", () => {
     await expect(page).toHaveURL(/\/dashboard$/);
   });
 
-  test("해지하지 않아도 한 달 지출과 1회 단가 순위를 보여준다", async ({ page }) => {
+  test("해지하지 않아도 한 달 지출과 구독마다의 가성비를 보여준다", async ({ page }) => {
     await seed(page, {
       subscriptions: [NETFLIX, MELON],
       usageLogs: [
@@ -55,6 +55,7 @@ test.describe("구독 리포트 (E2E)", () => {
           costPerUse: 8500,
           riskLevel: "yellow",
           checkedAt: new Date().toISOString(),
+          metric: "hours",
         },
       ],
       accounts: [],
@@ -65,17 +66,16 @@ test.describe("구독 리포트 (E2E)", () => {
     await expect(summary.getByText("₩28,990")).toBeVisible({ timeout: 30_000 });
     await expect(summary.getByText("2개")).toBeVisible();
 
-    // 위의 구독별 막대그래프도 목록이라 칸마다 그 안에서 찾는다. 횟수로 재는 넷플릭스는 1회 단가 순위에,
-    // 들은 시간으로 재는 멜론은 아래 칸에 체크인 전으로 들어간다.
-    const ranking = page.getByRole("region", { name: "1회 단가 순위" }).getByRole("listitem");
-    await expect(ranking).toHaveCount(1);
-    await expect(ranking.first()).toContainText("넷플릭스");
-    await expect(ranking.first()).toContainText("₩8,500");
+    // OTT는 본 시간, 음악은 들은 시간으로 잰다 — 둘 다 아래 칸에 들어가고, 횟수로 재는 구독이 없으니 1회 단가 순위는 없다.
+    // 위의 구독별 막대그래프도 목록이라 칸 안에서 찾는다.
+    await expect(page.getByRole("region", { name: "1회 단가 순위" })).toHaveCount(0);
     const other = page
       .getByRole("region", { name: "횟수 말고 다른 기준으로 재는 구독" })
       .getByRole("listitem");
-    await expect(other.first()).toContainText("멜론");
-    await expect(other.first()).toContainText("체크인 전");
+    await expect(other.first()).toContainText("넷플릭스");
+    await expect(other.first()).toContainText("2시간 사용 · 시간당 ₩8,500");
+    await expect(other.nth(1)).toContainText("멜론");
+    await expect(other.nth(1)).toContainText("체크인 전");
   });
 
   test("다른 사용자와의 비교와 여러 기기 사용 측정 칸은 리포트에 없다", async ({ page }) => {

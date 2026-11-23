@@ -269,7 +269,8 @@ export function AppIntro({
   };
 
   return (
-    <div className={styles.overlay} ref={overlayRef} onClick={handleTap}>
+    // 소개 화면 캡처(scripts/landing-screens)가 이 덮개가 사라질 때까지 기다린다 — CSS 모듈 클래스 이름은 빌드마다 바뀐다.
+    <div className={styles.overlay} ref={overlayRef} onClick={handleTap} data-app-intro="">
       <div className={styles.intro} ref={introRef}>
         <div className={styles.stage} ref={stageRef}>
           <div className={styles.layer} ref={cardsRef}>

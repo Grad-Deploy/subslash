@@ -101,7 +101,7 @@ test.describe("긴 이름이 칸 밖으로 넘치지 않는다 (E2E)", () => {
       await page.keyboard.press("Escape");
       await expect(page.getByRole("dialog")).toHaveCount(0);
 
-      await page.getByRole("button", { name: /이용 횟수 체크인/ }).click();
+      await page.getByRole("button", { name: /사용량 체크인/ }).click();
       await page.getByRole("button", { name: "가성비 분석 결과 보기" }).click();
       const result = page.getByRole("dialog");
       await expect(result.getByRole("button", { name: "닫기" }).first()).toBeVisible();

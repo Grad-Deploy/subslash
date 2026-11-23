@@ -75,7 +75,7 @@ export const ko = {
     },
     other: {
       title: "횟수 말고 다른 기준으로 재는 구독",
-      note: "음악은 들은 시간, AI·업무 도구는 쓴 날, 멤버십은 받은 혜택, 저장 공간은 쓰는 용량으로 봐요.",
+      note: "OTT는 본 시간, 음악은 들은 시간, AI·업무 도구는 쓴 날, 멤버십은 받은 혜택, 저장 공간은 쓰는 용량으로 봐요.",
     },
     ask: {
       label: "리포트에 물어보기",
@@ -169,7 +169,7 @@ export const en: Widen<typeof ko> = {
     },
     other: {
       title: "Subscriptions measured another way",
-      note: "Music is measured by hours listened, AI and work tools by days used, memberships by benefits received, and storage by space used.",
+      note: "OTT is measured by hours watched, music by hours listened, AI and work tools by days used, memberships by benefits received, and storage by space used.",
     },
     ask: {
       label: "Ask your report",
@@ -263,7 +263,7 @@ export const zh: Widen<typeof ko> = {
     },
     other: {
       title: "用其他方式衡量的订阅",
-      note: "音乐按收听时长，AI 和工作工具按使用天数，会员按获得的优惠，存储按已用空间衡量。",
+      note: "OTT 按观看时长，音乐按收听时长，AI 和工作工具按使用天数，会员按获得的优惠，存储按已用空间衡量。",
     },
     ask: {
       label: "询问报告",
@@ -355,7 +355,7 @@ export const ja: Widen<typeof ko> = {
     },
     other: {
       title: "別の方法で測るサブスク",
-      note: "音楽は聞いた時間、AI や仕事のツールは使った日数、メンバーシップは受けた特典、ストレージは使った容量で測ります。",
+      note: "OTT は見た時間、音楽は聞いた時間、AI や仕事のツールは使った日数、メンバーシップは受けた特典、ストレージは使った容量で測ります。",
     },
     ask: {
       label: "レポートに質問",
@@ -448,7 +448,7 @@ export const vi: Widen<typeof ko> = {
     },
     other: {
       title: "Gói được đo theo cách khác",
-      note: "Nhạc đo theo giờ nghe, AI và công cụ làm việc theo số ngày dùng, gói thành viên theo ưu đãi nhận được, lưu trữ theo dung lượng đã dùng.",
+      note: "OTT đo theo giờ xem, nhạc theo giờ nghe, AI và công cụ làm việc theo số ngày dùng, gói thành viên theo ưu đãi nhận được, lưu trữ theo dung lượng đã dùng.",
     },
     ask: {
       label: "Hỏi báo cáo",
@@ -542,7 +542,7 @@ export const fr: Widen<typeof ko> = {
     },
     other: {
       title: "Abonnements mesurés autrement",
-      note: "La musique se mesure en heures d'écoute, l'IA et les outils de travail en jours d'utilisation, les adhésions en avantages reçus et le stockage en espace utilisé.",
+      note: "L'OTT se mesure en heures de visionnage, la musique en heures d'écoute, l'IA et les outils de travail en jours d'utilisation, les adhésions en avantages reçus et le stockage en espace utilisé.",
     },
     ask: {
       label: "Interroger votre rapport",
@@ -639,7 +639,7 @@ export const es: Widen<typeof ko> = {
     },
     other: {
       title: "Suscripciones medidas de otra forma",
-      note: "La música se mide por horas escuchadas, la IA y las herramientas de trabajo por días de uso, las membresías por ventajas recibidas y el almacenamiento por espacio usado.",
+      note: "El OTT se mide por horas vistas, la música por horas escuchadas, la IA y las herramientas de trabajo por días de uso, las membresías por ventajas recibidas y el almacenamiento por espacio usado.",
     },
     ask: {
       label: "Pregunta a tu informe",
@@ -736,7 +736,7 @@ export const de: Widen<typeof ko> = {
     },
     other: {
       title: "Anders gemessene Abos",
-      note: "Musik wird nach Hörstunden gemessen, KI und Arbeitstools nach Nutzungstagen, Mitgliedschaften nach erhaltenen Vorteilen und Speicher nach belegtem Platz.",
+      note: "OTT wird nach Sehstunden gemessen, Musik nach Hörstunden, KI und Arbeitstools nach Nutzungstagen, Mitgliedschaften nach erhaltenen Vorteilen und Speicher nach belegtem Platz.",
     },
     ask: {
       label: "Deinen Bericht fragen",
@@ -831,7 +831,7 @@ export const pt: Widen<typeof ko> = {
     },
     other: {
       title: "Assinaturas medidas de outro jeito",
-      note: "Música é medida por horas ouvidas, IA e ferramentas de trabalho por dias de uso, planos de membro por benefícios recebidos e armazenamento por espaço usado.",
+      note: "OTT é medido por horas assistidas, música por horas ouvidas, IA e ferramentas de trabalho por dias de uso, planos de membro por benefícios recebidos e armazenamento por espaço usado.",
     },
     ask: {
       label: "Pergunte ao seu relatório",

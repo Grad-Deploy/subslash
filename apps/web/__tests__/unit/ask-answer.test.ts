@@ -119,13 +119,57 @@ describe("리포트에 물어보기 — 기기에서 만드는 답", () => {
     expect(result.rows[0]).toEqual({ label: "넷플릭스", value: won(17000 * 12) });
   });
 
-  it("1회 단가 순위는 리포트와 같고, worst와 best가 반대 순서다", () => {
+  it("1회 단가 순위는 횟수로 재는 구독의 리포트 순위와 같고, worst와 best가 반대 순서다", () => {
+    const etc = (id: string, name: string, amount: number) =>
+      sub({ id, name, amount, category: "other" });
+    const subs = [
+      etc("a", "웹툰 패스", 9900),
+      etc("b", "전자책 대여", 4750),
+      etc("c", "운동 앱", 17000),
+    ];
+    const logs = [uses("a", 1, "red"), uses("b", 3, "yellow"), uses("c", 8, "green")];
+    const ctx = { ...CTX, subscriptions: subs, usageLogs: logs };
+    const worst = answerAsk({ tool: "costPerUseRank", args: { order: "worst", limit: 3 } }, ctx);
+    const best = answerAsk({ tool: "costPerUseRank", args: { order: "best", limit: 3 } }, ctx);
+    expect(worst.rows[0].label).toBe("웹툰 패스");
+    // 전자책은 4,750원 ÷ 3회 — 운동 앱(17,000원 ÷ 8회)보다 1회가 싸다.
+    expect(best.rows[0].label).toBe("전자책 대여");
+    expect(worst.rows.map((r) => r.label)).toEqual([...best.rows.map((r) => r.label)].reverse());
+  });
+
+  it("OTT처럼 시간으로 재는 구독만 체크인했으면 1회 단가와 섞지 않고 가성비 색 순서로 답한다", () => {
+    // OTT는 본 시간으로 잰다. 체크인했는데 "1회 단가를 계산할 체크인이 없어요"라고 하지 않는다.
     const worst = answerAsk({ tool: "costPerUseRank", args: { order: "worst", limit: 3 } }, CTX);
     const best = answerAsk({ tool: "costPerUseRank", args: { order: "best", limit: 3 } }, CTX);
-    expect(worst.rows[0].label).toBe("웨이브");
-    // 티빙은 둘이 나눠 내서 내 몫 4,750원 ÷ 3회 — 넷플릭스(17,000원 ÷ 8회)보다 1회가 싸다.
-    expect(best.rows[0].label).toBe("티빙");
-    expect(worst.rows.map((r) => r.label)).toEqual([...best.rows.map((r) => r.label)].reverse());
+    expect(worst.rows.map((r) => r.label)).toEqual(["웨이브", "티빙", "넷플릭스"]);
+    expect(worst.headline).toContain("웨이브");
+    expect(worst.headline).toContain(messages.ko.checkin.appResult.red);
+    expect(worst.notes).toEqual([messages.ko.ask.rank.byLevel]);
+    expect(best.rows[0].label).toBe("넷플릭스");
+  });
+
+  it("가성비가 좋은 쪽은 같은 색 안에서 시간당 단가가 있는 구독을 앞에, 시간당 단가가 싼 순서로 둔다", () => {
+    // 아이클라우드(용량)는 단가가 없어 같은 초록이라도 뒤로 간다. 넷플릭스(시간당 ₩540)가 유튜브(₩373)보다 비싸다.
+    const hours = (id: string, q: number, cost: number) => ({
+      ...uses(id, q, "green"),
+      metric: "hours" as const,
+      costPerUse: cost,
+    });
+    const subs = [
+      sub({ id: "icloud", name: "아이클라우드", amount: 1100, category: "cloud" }),
+      sub({ id: "netflix", name: "넷플릭스", amount: 13500 }),
+      sub({ id: "yt", name: "유튜브 프리미엄", amount: 14900 }),
+    ];
+    const logs = [
+      { ...uses("icloud", 60, "green"), metric: "storage" as const },
+      hours("netflix", 25, 540),
+      hours("yt", 40, 373),
+    ];
+    const best = answerAsk(
+      { tool: "costPerUseRank", args: { order: "best", limit: 3 } },
+      { ...CTX, subscriptions: subs, usageLogs: logs },
+    );
+    expect(best.rows.map((r) => r.label)).toEqual(["유튜브 프리미엄", "넷플릭스", "아이클라우드"]);
   });
 
   it("안 쓰는 구독은 체크인 빨강만 말하고, 체크인이 없는 구독은 모른다고 한다", () => {

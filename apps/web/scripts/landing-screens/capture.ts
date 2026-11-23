@@ -193,10 +193,12 @@ async function main() {
     await page.waitForLoadState("networkidle").catch(() => undefined);
     // 페이지를 새로 열 때마다 앱 시작 인트로(AppIntro)가 잠깐 덮는다. 사라진 뒤에 찍는다.
     await page
-      .waitForFunction(() => !document.querySelector('[class*="AppIntro"]'), undefined, {
-        timeout: 10_000,
+      .waitForFunction(() => !document.querySelector("[data-app-intro]"), undefined, {
+        timeout: 15_000,
       })
-      .catch(() => undefined);
+      .catch(() => {
+        throw new Error(`${name}: 앱 시작 인트로가 사라지지 않았다`);
+      });
     await page.waitForTimeout(600);
     await page.screenshot({ path: join(OUT, `${name}.png`) });
     console.error(`찍음: ${OUT_DIR}/${name}.png`);

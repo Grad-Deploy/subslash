@@ -4,7 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   calculateCostPerUse,
   formatCurrency,
-  getRiskLevel,
+  metricForSubscription,
+  metricRiskLevel,
   type RiskLevel,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
@@ -21,7 +22,7 @@ const riskColor: Record<RiskLevel, string> = {
 };
 
 /**
- * 판정 문구는 앱의 신호등(getRiskLevel)과 같은 기준을 쓴다. 커피·영화표처럼
+ * 판정 문구는 앱의 신호등(metricRiskLevel의 시간 기준)과 같은 기준을 쓴다. 커피·영화표처럼
  * 바깥 물건 값에 빗대지 않는다 — 그 값이 틀리면 이 숫자 전체가 의심받는다.
  */
 function verdict(
@@ -37,23 +38,32 @@ function verdict(
 }
 
 /**
- * 1회 단가 계산기. 소개 페이지 '1회당 단가' 칸의 오른쪽이다 — 서비스와 횟수를 움직여 보며 "가격 말고 1회당 얼마"를
- * 직접 느끼게 한다. 등록은 이 칸이 아니라 대시보드에서 한다.
+ * 시간당 단가 계산기. 소개 페이지 '시간당 단가' 칸의 오른쪽이다 — 서비스와 본 시간을 움직여 보며 "가격 말고 시간당 얼마"를
+ * 직접 느끼게 한다. 앱이 OTT·음악을 본(들은) 시간으로 재므로 같은 기준이다. 등록은 이 칸이 아니라 대시보드에서 한다.
  */
+// 시간으로 재는 견본만 — 쿠팡 와우처럼 혜택 금액으로 재는 멤버십은 시간당 단가가 맞지 않는다(첫 장면의 합계에는 남는다).
+const HOURLY = SAMPLES.filter(
+  (s) =>
+    metricForSubscription({
+      name: s.preset.nameKo,
+      category: s.preset.category,
+      currency: s.currency,
+    }) === "hours",
+);
 export function UnitCostCalculator() {
   const c = useT().landing.calc;
   const locale = useLocale();
-  const [selectedId, setSelectedId] = useState<string>(SAMPLES[0]?.preset.id ?? "");
-  const [uses, setUses] = useState(4);
+  const [selectedId, setSelectedId] = useState<string>(HOURLY[0]?.preset.id ?? "");
+  const [uses, setUses] = useState(5);
 
-  const selected = SAMPLES.find((s) => s.preset.id === selectedId) ?? SAMPLES[0];
+  const selected = HOURLY.find((s) => s.preset.id === selectedId) ?? HOURLY[0];
   if (!selected) return null;
 
   return (
     // 테마 색 변수로 칠한다. 예전에는 라이트 모드에서도 이 상자만 검게 칠해져 화면에서 따로 놀았다.
     <div className="w-full rounded-[1.75rem] border bg-card p-5 text-left text-card-foreground shadow-[0_40px_80px_-32px_rgba(9,9,11,0.22),0_2px_6px_rgba(9,9,11,0.04)] sm:p-9">
       <div className="flex flex-wrap gap-2" role="group" aria-label={c.servicesLabel}>
-        {SAMPLES.map((sample) => {
+        {HOURLY.map((sample) => {
           const active = sample.preset.id === selected.preset.id;
           return (
             <button
@@ -122,7 +132,7 @@ function HeroResult({
   const locale = useLocale();
   const { amount, currency } = sample;
   const costPerUse = calculateCostPerUse(amount, uses);
-  const risk = getRiskLevel(costPerUse, amount, uses);
+  const risk = metricRiskLevel("hours", amount, uses);
   const amountText = formatCurrency(amount, currency);
   const shown = useTweenedNumber(costPerUse);
   const costText = formatCurrency(costPerUse, currency);
@@ -143,7 +153,7 @@ function HeroResult({
           id="hero-uses"
           type="range"
           min={0}
-          max={30}
+          max={60}
           step={1}
           value={uses}
           onChange={(e) => onUsesChange(Number(e.target.value))}
