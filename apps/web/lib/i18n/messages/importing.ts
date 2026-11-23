@@ -450,8 +450,8 @@ export const en: Widen<typeof ko> = {
       undo: "Undo",
       close: "Close",
       review: (count) =>
-        `${count} ${pluralOf(count, "subscription needs", "subscriptions need")} checking from Gmail payment emails`,
-      reviewAfter: " found.",
+        `Found ${count} ${pluralOf(count, "subscription", "subscriptions")} to check in your Gmail payment emails`,
+      reviewAfter: ".",
       check: "Check",
       discard: "Discard",
       discardConfirm: (count) =>
@@ -1342,8 +1342,8 @@ export const vi: Widen<typeof ko> = {
       registeredAfter: ". Số tiền được đọc từ email, hãy kiểm tra lại một lần.",
       undo: "Hoàn tác",
       close: "Đóng",
-      review: (count) => `${count} gói cần kiểm tra từ email thanh toán Gmail`,
-      reviewAfter: " đã được tìm thấy.",
+      review: (count) => `Đã tìm thấy ${count} gói cần kiểm tra trong email thanh toán Gmail`,
+      reviewAfter: ".",
       check: "Kiểm tra",
       discard: "Bỏ",
       discardConfirm: (count) =>
@@ -1657,8 +1657,8 @@ export const fr: Widen<typeof ko> = {
       undo: "Annuler",
       close: "Fermer",
       review: (count) =>
-        `${count} abonnement${imPl(count, "", "s")} à vérifier dans les e-mails de paiement Gmail`,
-      reviewAfter: " trouvé(s).",
+        `${count} abonnement${imPl(count, "", "s")} à vérifier trouvé${imPl(count, "", "s")} dans les e-mails de paiement Gmail`,
+      reviewAfter: ".",
       check: "Vérifier",
       discard: "Ignorer",
       discardConfirm: (count) =>
@@ -1974,8 +1974,8 @@ export const es: Widen<typeof ko> = {
       undo: "Deshacer",
       close: "Cerrar",
       review: (count) =>
-        `${count} suscripci${imPl(count, "ón", "ones")} que revisar de correos de pago de Gmail`,
-      reviewAfter: " encontrada(s).",
+        `${count} suscripci${imPl(count, "ón", "ones")} para revisar encontrada${imPl(count, "", "s")} en los correos de pago de Gmail`,
+      reviewAfter: ".",
       check: "Revisar",
       discard: "Descartar",
       discardConfirm: (count) =>
@@ -2285,8 +2285,8 @@ export const de: Widen<typeof ko> = {
       undo: "Rückgängig",
       close: "Schließen",
       review: (count) =>
-        `${count} ${imPl(count, "Abo", "Abos")} zum Prüfen aus Gmail-Zahlungs-E-Mails`,
-      reviewAfter: " gefunden.",
+        `${count} ${imPl(count, "Abo", "Abos")} zum Prüfen in Gmail-Zahlungs-E-Mails gefunden`,
+      reviewAfter: ".",
       check: "Prüfen",
       discard: "Verwerfen",
       discardConfirm: (count) =>
@@ -2600,8 +2600,8 @@ export const pt: Widen<typeof ko> = {
       undo: "Desfazer",
       close: "Fechar",
       review: (count) =>
-        `${count} assinatura${imPl(count, "", "s")} para conferir dos e-mails de pagamento do Gmail`,
-      reviewAfter: " encontrada(s).",
+        `${count} assinatura${imPl(count, "", "s")} para conferir encontrada${imPl(count, "", "s")} nos e-mails de pagamento do Gmail`,
+      reviewAfter: ".",
       check: "Conferir",
       discard: "Descartar",
       discardConfirm: (count) =>

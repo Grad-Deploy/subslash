@@ -249,7 +249,8 @@ test.describe("계정 자동 동기화 (E2E)", () => {
 
     // 다이얼로그 부품이 창에 이름을 붙이지 않아, 제목이 든 창으로 찾는다.
     const dialog = laptop.getByRole("dialog").filter({ hasText: "어느 기록을 쓸까요?" });
-    await expect(dialog).toBeVisible();
+    // 다시 연 뒤 로그인 확인 → 계정 기록 조회를 거쳐야 뜬다. CI의 WebKit은 기본 5초로 모자라다.
+    await expect(dialog).toBeVisible({ timeout: 30_000 });
     await expect(dialog).toContainText("구독 2개");
 
     await dialog.getByRole("button", { name: /계정 기록 쓰기/ }).click();
