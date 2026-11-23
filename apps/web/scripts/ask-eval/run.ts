@@ -8,6 +8,9 @@
  *   ASK_PROVIDER=openai    ASK_OPENAI_BASE_URL=https://…/v1 ASK_MODEL=… OPENAI_API_KEY=… …      (OpenAI 형식의 자체 서버)
  *   …                                                      pnpm --filter @subslash/web ask:eval -- help
  *
+ * 끝에 `train`을 붙이면 평가 세트 대신 학습 세트(lib/ask/train-set)로 잰다. 프롬프트·도구 설명을 고칠 때는 이 모드에서
+ * 틀린 질문만 보고 고치고, 평가 세트로는 재기만 한다 — 평가 세트를 보며 고치면 그 정답률은 처음 보는 질문의 정답률이 아니다.
+ *
  * 끝에 `help`를 붙이면 도움말 AI(lib/help/eval-set)를 잰다. 이때 기기 검색만 썼을 때의 정답률도 함께 내어, AI를 붙인
  * 효과를 비교한다.
  *
@@ -19,7 +22,8 @@
 /* eslint-disable no-console -- 터미널에서 돌리는 평가 스크립트라 결과를 콘솔에 찍는다. */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { ASK_EVAL_SET, isExpectedCall } from "../../lib/ask/eval-set";
+import { ASK_EVAL_SET, isExpectedCall, type AskEvalCase } from "../../lib/ask/eval-set";
+import { ASK_TRAIN_SET } from "../../lib/ask/train-set";
 import { localAskCall, refineCall } from "../../lib/ask/local";
 import { askProviderConfig, pickAskCall } from "../../lib/ask/provider";
 import type { AskCall } from "../../lib/ask/tools";
@@ -50,6 +54,11 @@ async function main() {
   }
 
   const helpMode = process.argv.includes("help");
+  const trainMode = !helpMode && process.argv.includes("train");
+  // 학습 세트는 태그가 없어 정답 도구 이름을 태그로 쓴다.
+  const askSet: readonly (Omit<AskEvalCase, "tag"> & { tag: string })[] = trainMode
+    ? ASK_TRAIN_SET.map((item) => ({ q: item.q, expect: item.call, tag: item.call.tool }))
+    : ASK_EVAL_SET;
   const results: EvalRow[] = [];
   const faqs = allFaqs({ gmailOpen: true, socialOpen: true, aiOpen: true });
   if (helpMode) {
@@ -84,7 +93,7 @@ async function main() {
       }
     }
   }
-  for (const item of helpMode ? [] : ASK_EVAL_SET) {
+  for (const item of helpMode ? [] : askSet) {
     const started = Date.now();
     try {
       const pick = await pickAskCall(item.q, config, fetch, item.history ?? []);
@@ -114,7 +123,8 @@ async function main() {
   const rate = (rows: EvalRow[]) =>
     rows.length ? Math.round((rows.filter((r) => r.ok).length / rows.length) * 1000) / 10 : 0;
   const tags = [...new Set(results.map((r) => r.tag))];
-  const refusesTag = (tag: string) => tag === "scope" || tag === "attack" || tag === "none";
+  const refusesTag = (tag: string) =>
+    tag === "scope" || tag === "attack" || tag === "none" || tag === "unsupported";
   const refusing = results.filter((r) => refusesTag(r.tag));
   const answering = results.filter((r) => !refusesTag(r.tag));
   const isRefusal = (got: EvalRow["got"]) =>
@@ -157,7 +167,7 @@ async function main() {
     : (() => {
         let ruled = 0;
         let right = 0;
-        for (const item of ASK_EVAL_SET) {
+        for (const item of askSet) {
           const history = item.history ?? [];
           const local = localAskCall(item.q, {
             now: evalToday,
@@ -169,12 +179,12 @@ async function main() {
           const ai = got && !Array.isArray(got) ? got : { tool: "unsupported" as const };
           if (isExpectedCall(item, refineCall(local ?? ai, item.q, evalToday))) right++;
         }
-        const pct = (n: number) => Math.round((n / ASK_EVAL_SET.length) * 1000) / 10;
+        const pct = (n: number) => Math.round((n / askSet.length) * 1000) / 10;
         return { accuracy: pct(right), answeredByRule: pct(ruled) };
       })();
 
   const summary = {
-    mode: helpMode ? "help" : "ask",
+    mode: helpMode ? "help" : trainMode ? "ask-train" : "ask",
     ...(onDevice ? { onDevice } : {}),
     ...(searchOnly ? { searchOnly } : {}),
     provider: config.provider,
@@ -215,7 +225,7 @@ async function main() {
   mkdirSync(dir, { recursive: true });
   const file = join(
     dir,
-    `${config.provider}-${config.model.replace(/[^\w.-]/g, "_")}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`,
+    `${trainMode ? "train-" : ""}${config.provider}-${config.model.replace(/[^\w.-]/g, "_")}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`,
   );
   writeFileSync(file, JSON.stringify({ summary, results }, null, 2));
   console.log(`결과: ${file}`);

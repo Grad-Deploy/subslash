@@ -148,3 +148,49 @@ export function isPromptAttack(question: string): boolean {
   if (COMPACT_WORDS.some((word) => plain.includes(word))) return true;
   return PATTERNS.some((pattern) => pattern.test(text));
 }
+
+/**
+ * 두 언어 이상이 한 질문에 섞였는지. 글자를 문자 체계로 나눠 둘 이상이면 섞인 것이다.
+ *
+ * - 기본 영문(a–z)은 보지 않는다 — 서비스 이름("Netflix")·약어("OTT")가 어느 언어의 질문에도 늘 섞인다.
+ * - 한자와 가나는 한 묶음이다 — 일본어는 원래 함께 쓰고, 중국어는 한자만 쓴다.
+ * - 악센트가 붙은 로마자(베트남어·프랑스어·독일어 등)는 따로 한 묶음이다 — 영문만 쓰는 묶음과 달리 그 언어라는 표시다.
+ * - 전각 글자("ＯＴＴ")는 NFKC로 되돌린 뒤 본다.
+ *
+ * 섞인 질문("이 달 구독료 총계是多少?", "이번 달 chi phí bao nhiêu")은 뜻을 짐작하지 않고 답하지 않는다. AI는 이런 질문에도
+ * 그럴듯한 도구를 골랐고, 어느 말을 따랐는지 사용자는 알 수 없다. 언어를 섞어 금지 문구를 피해 가는 공격도 함께 막힌다.
+ * 기기·서버 입구(localAskCall·/api/help-ask)와 AI를 부르는 곳(pickAskCall·pickHelpFaqs)이 모두 본다.
+ */
+export function isMixedLanguage(question: string): boolean {
+  const groups = new Set<string>();
+  for (const char of question.normalize("NFKC")) {
+    // 글자가 아니거나, 기본 영문이거나, 여러 문자 체계가 함께 쓰는 글자(일본어 장음 'ー'·반복 '々' 등)면 보지 않는다.
+    if (
+      !/\p{L}/u.test(char) ||
+      /[a-z]/i.test(char) ||
+      /[\p{Script=Common}\p{Script=Inherited}]/u.test(char)
+    ) {
+      continue;
+    }
+    groups.add(SCRIPT_GROUPS.find(([, pattern]) => pattern.test(char))?.[0] ?? "other");
+    if (groups.size > 1) return true;
+  }
+  return false;
+}
+
+const SCRIPT_GROUPS: [string, RegExp][] = [
+  ["hangul", /\p{Script=Hangul}/u],
+  ["cjk", /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Bopomofo}]/u],
+  ["latin", /\p{Script=Latin}/u],
+  ["cyrillic", /\p{Script=Cyrillic}/u],
+  ["greek", /\p{Script=Greek}/u],
+  ["thai", /\p{Script=Thai}/u],
+  ["arabic", /\p{Script=Arabic}/u],
+  ["hebrew", /\p{Script=Hebrew}/u],
+  ["devanagari", /\p{Script=Devanagari}/u],
+];
+
+/** AI에 보내지 않고 막는 질문: 공격 문구이거나 언어가 섞인 질문. */
+export function isBlockedQuestion(question: string): boolean {
+  return isPromptAttack(question) || isMixedLanguage(question);
+}
