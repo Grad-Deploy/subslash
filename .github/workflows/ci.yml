@@ -61,7 +61,7 @@ jobs:
   e2e:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30 # 1 worker로 408개 ≈ 15분 + 빌드·브라우저 설치 ≈ 5분이라 20분에 걸려 취소됐다
     needs: verify
 
     steps:
