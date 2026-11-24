@@ -35,7 +35,7 @@ describe("accountVerificationEmail", () => {
 
 describe("maskEmail", () => {
   it("앞 한 글자와 도메인만 남긴다", () => {
-    expect(maskEmail("dldmstjd154@gmail.com")).toBe("d***@gmail.com");
+    expect(maskEmail("someone@gmail.com")).toBe("s***@gmail.com");
     expect(maskEmail("a@b.co")).toBe("a***@b.co");
   });
 
