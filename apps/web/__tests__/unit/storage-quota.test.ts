@@ -195,6 +195,13 @@ describe("Google 계정 용량 측정 — 체크인 값", () => {
   it("시험 배포의 값: AI 프로 5TB(5,120GB 한도)에 3.42GB → 1% 미만이라 1%", () => {
     const checkIn = storageCheckInFrom(googleOne("ai-pro"), measured(3.42, 5120), text);
     expect(checkIn.quantity).toBe(1);
+    // 반올림하지 않은 비율도 함께 준다(용량과 AI를 함께 주는 요금제의 용량 칸이 쓴다).
+    expect(checkIn.exactPercent).toBeCloseTo((3.42 / 5120) * 100, 5);
+    // 소수를 받는 칸에는 '1%로 채웠어요'라고 하지 않는다.
+    const exact = storageCheckInFrom(googleOne("ai-pro"), measured(3.42, 5120), text, {
+      exact: true,
+    });
+    expect(exact.message).not.toContain(text.underOne.trim());
     expect(checkIn.message).toContain("5TB 중 3.42GB");
     expect(checkIn.message).toContain("1%로 채웠어요");
   });

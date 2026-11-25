@@ -182,9 +182,11 @@ export function isFreeTierAnswer(value: unknown): value is FreeTierAnswer {
 
 /** 이 구독의 체크인에서 무료 요금제로 충분했는지 묻는지. 쓴 날로 재는, 무료 요금제가 있는 서비스만. */
 export function asksFreeTier(
-  sub: Pick<Subscription, "name" | "cancelUrl" | "category" | "currency">,
+  sub: Pick<Subscription, "name" | "cancelUrl" | "category" | "currency" | "planId">,
 ): boolean {
   if (metricForSubscription(sub) !== "days") return false;
+  // 구글 원의 AI 요금제는 Google AI Pro와 같은 상품이라 같은 질문을 한다.
+  if (isAiStoragePlan(sub)) return true;
   const preset = findPresetForSubscription(sub);
   return !!preset && FREE_TIER_SERVICES.has(preset.id);
 }
@@ -303,10 +305,10 @@ export function metricRiskLevel(
       const daysLevel = level === "green" && freeTier === "enough" ? "yellow" : level;
       if (!aiStorage) return daysLevel;
       // 해지하면 Gemini와 저장한 것을 함께 잃는다. 어느 한쪽을 잘 쓰면 초록이다 — 쓰는 양이 더 싼 요금제에 들어가지
-      // 않으면 용량 때문에 이 요금제가 필요하다. 둘 다 아니면 노랑(더 작은 AI 요금제가 있으면 그것을 권한다)이고,
-      // Gemini 0일·용량 0%만 빨강이다.
+      // 않으면 용량 때문에 이 요금제가 필요하다. Gemini를 안 쓰고 저장한 것도 무료 용량에 들어가면 해지해도 잃는 것이
+      // 없어 빨강, 그 밖에는 노랑이다(더 싼 요금제는 결과 문장이 권한다).
       if (daysLevel === "green" || aiStorage.needsThisPlan) return "green";
-      return quantity === 0 && aiStorage.percent === 0 ? "red" : "yellow";
+      return quantity === 0 && aiStorage.fitsFree ? "red" : "yellow";
     }
     case "hours": {
       const { redBelow, greenAt } = VERDICT_THRESHOLDS.hours;

@@ -3,7 +3,6 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { recordStorage } from "../mirrored-storage";
 import type { LinkedAccount, Subscription } from "@subslash/shared";
 import {
-  clampQuantity,
   findPresetForSubscription,
   sumMonthlyKRW,
   sumMyMonthlyKRW,
@@ -265,7 +264,12 @@ export const useStore = create<SubSlashStore>()(
             (sub) => sub.id === id,
             (sub) => ({
               ...sub,
-              storagePercent: percent === null ? undefined : clampQuantity("storage", percent),
+              // 소수 둘째 자리까지 둔다 — 5TB의 1%가 50GB라, 정수로 두면 4GB를 '약 50GB'로 보이고 무료 15GB 안인지
+              // 가리지 못한다.
+              storagePercent:
+                percent === null || !Number.isFinite(percent)
+                  ? undefined
+                  : Math.round(Math.min(100, Math.max(0, percent)) * 100) / 100,
             }),
           );
         },

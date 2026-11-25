@@ -31,9 +31,13 @@ type Sub = Pick<Subscription, "name" | "cancelUrl" | "planId" | "sharingCount">;
 export function GoogleStorageCheck({
   subscription,
   onMeasured,
+  exact = false,
 }: {
   subscription: Sub;
-  onMeasured: (quantity: number) => void;
+  /** 칸이 반올림하지 않은 비율을 받는다(용량과 AI를 함께 주는 요금제). 안내 문장을 그에 맞춘다. */
+  exact?: boolean;
+  /** `exactPercent`는 반올림하지 않은 비율(용량과 AI를 함께 주는 요금제의 용량 칸이 쓴다). */
+  onMeasured: (quantity: number, exactPercent: number) => void;
 }) {
   const base = storageQuotaWebAppUrl();
   const s = useT().checkin.storage;
@@ -56,9 +60,12 @@ export function GoogleStorageCheck({
       latest.current.subscription,
       result,
       tRef.current.checkin.storage,
+      { exact },
     );
     setMessage(checkIn.message);
-    if (checkIn.quantity !== null) latest.current.onMeasured(checkIn.quantity);
+    if (checkIn.quantity !== null) {
+      latest.current.onMeasured(checkIn.quantity, checkIn.exactPercent ?? checkIn.quantity);
+    }
   };
   const applyRef = useRef(apply);
   useEffect(() => {

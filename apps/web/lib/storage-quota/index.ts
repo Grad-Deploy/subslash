@@ -96,6 +96,10 @@ export function formatQuotaBytes(value: number): string {
 export interface StorageCheckIn {
   /** 체크인 칸에 채울 비율(%). 채우지 않으면 null. */
   quantity: number | null;
+  /**
+   * 반올림하지 않은 비율(%). 용량과 AI를 함께 주는 요금제의 용량 칸(소수로 받는다)이 쓴다. 채우지 않으면 null.
+   */
+  exactPercent: number | null;
   /** 칸 아래에 보일 문장. 채웠으면 근거, 아니면 채우지 않은 이유. */
   message: string;
 }
@@ -109,10 +113,13 @@ export function storageCheckInFrom(
   result: StorageQuotaResult,
   /** 지금 언어의 문구(`messages`의 `checkin.storage`). */
   text: Messages["checkin"]["storage"],
+  /** 칸이 `exactPercent`(소수)를 쓰면 '1% 미만이라 1%로 채웠어요'를 붙이지 않는다 — 그렇게 채우지 않았다. */
+  options?: { exact?: boolean },
 ): StorageCheckIn {
   if (!result.ok) {
     return {
       quantity: null,
+      exactPercent: null,
       message: text.failed,
     };
   }
@@ -120,6 +127,7 @@ export function storageCheckInFrom(
   if (!limit) {
     return {
       quantity: null,
+      exactPercent: null,
       message: text.noLimit,
     };
   }
@@ -127,6 +135,7 @@ export function storageCheckInFrom(
   if ((sub.sharingCount ?? 1) > 1) {
     return {
       quantity: null,
+      exactPercent: null,
       message: text.family(measured),
     };
   }
@@ -136,6 +145,7 @@ export function storageCheckInFrom(
     if (ratio < 0.9 || ratio > 1.1) {
       return {
         quantity: null,
+        exactPercent: null,
         message: text.planMismatch(measured, plan.planName),
       };
     }
@@ -143,9 +153,9 @@ export function storageCheckInFrom(
   const percent = (usage / limit) * 100;
   // 0%는 '아무것도 두지 않음'이다. 조금이라도 쓰면 1% 이상으로 적는다.
   const quantity = usage > 0 ? Math.max(1, clampQuantity("storage", percent)) : 0;
-  const note = usage > 0 && percent < 1 ? text.underOne : "";
+  const note = usage > 0 && percent < 1 && !options?.exact ? text.underOne : "";
   const unknownPlan = plan ? "" : text.choosePlan;
-  return { quantity, message: `${measured}${note}${unknownPlan}` };
+  return { quantity, exactPercent: percent, message: `${measured}${note}${unknownPlan}` };
 }
 
 /**

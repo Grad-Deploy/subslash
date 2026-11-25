@@ -77,8 +77,8 @@ export function storagePlanFit(sub: StorageSub, percent: number): StoragePlanFit
  *
  * 이런 구독은 Gemini를 쓴 날로 재되, 해지하면 저장한 것도 잃으므로 용량도 본다(`metricRiskLevel`의
  * `aiStorage`). 한국에는 AI 없이 2TB·5TB만 주는 요금제가 없어서, 권할 수 있는 것은 AI를 주는 더 작은 요금제
- * (AI Pro → AI Plus)뿐이다. AI가 빠지는 베이직 100GB는 권하지 않지만, 쓰는 양이 거기에 들어가는지는 '이
- * 요금제의 용량이 필요한지'를 가리는 데 쓴다.
+ * (AI Pro → AI Plus)이고, Gemini를 쓰지 않으면 AI가 없는 요금제(베이직 100GB)도 권한다. 무료 용량(15GB) 안에
+ * 들어가면 아무 요금제도 권하지 않는다 — Gemini도 안 쓰면 해지해도 잃는 것이 없다.
  */
 export interface AiStorageFit {
   /** 지금 요금제(서비스 목록의 한국어 이름). */
@@ -90,7 +90,17 @@ export interface AiStorageFit {
   needsThisPlan: boolean;
   /** 쓰는 양이 들어가는, AI도 주는 더 싼 요금제. 없으면 null. */
   smallerAi: { planName: string; capacityGB: number; amount: number } | null;
+  /** 쓰는 양이 들어가는 가장 싼 요금제(AI가 없어도). Gemini를 쓰지 않을 때 권한다. 없으면 null. */
+  cheapest: { planName: string; capacityGB: number; amount: number } | null;
+  /** 쓰는 양이 모든 Google 계정의 무료 용량(`GOOGLE_FREE_STORAGE_GB`)에 들어간다. */
+  fitsFree: boolean;
 }
+
+/**
+ * 모든 Google 계정에 주는 무료 용량(GB). one.google.com/about/plans(2026-11-25 확인): "모든 Google 계정에는 최대
+ * 15GB의 스토리지가 제공되며". 용량과 AI를 함께 주는 요금제는 지금 구글 것뿐이라 여기 둔다.
+ */
+export const GOOGLE_FREE_STORAGE_GB = 15;
 
 /** 이 구독의 요금제가 용량과 AI를 함께 주는지. 요금제를 모르면 false(짐작하지 않는다). */
 export function isAiStoragePlan(sub: StorageSub): boolean {
@@ -120,15 +130,22 @@ export function aiStorageFit(sub: StorageSub, percent: number): AiStorageFit | n
         (p.billingCycle ?? "monthly") === (plan.billingCycle ?? "monthly") &&
         usedGB <= p.storageGB * HEADROOM,
     );
-  const smallerAi = cheaper.filter((p) => p.extras).sort((a, b) => a.amount - b.amount)[0];
+  const byAmount = [...cheaper].sort((a, b) => a.amount - b.amount);
+  const smallerAi = byAmount.find((p) => p.extras);
+  const cheapest = byAmount[0];
+  const brief = (p: ServicePlan) => ({
+    planName: p.name,
+    capacityGB: p.storageGB!,
+    amount: p.amount,
+  });
   return {
     planName: plan.name,
     percent: clamped,
     usedGB,
     needsThisPlan: clamped > 0 && cheaper.length === 0,
-    smallerAi: smallerAi
-      ? { planName: smallerAi.name, capacityGB: smallerAi.storageGB!, amount: smallerAi.amount }
-      : null,
+    smallerAi: smallerAi ? brief(smallerAi) : null,
+    cheapest: cheapest ? brief(cheapest) : null,
+    fitsFree: usedGB <= GOOGLE_FREE_STORAGE_GB,
   };
 }
 

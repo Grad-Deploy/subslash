@@ -1,5 +1,6 @@
 import {
   GOOD_AT,
+  GOOGLE_FREE_STORAGE_GB,
   calculateCostPerUse,
   formatAmount,
   formatCurrency,
@@ -101,6 +102,13 @@ function aiStorageNote(
   const o = t.checkin.outcome;
   const used = t.checkin.input.storageGB(fit.usedGB);
   if (fit.needsThisPlan) return ` ${o.aiStorageNeeded(used)}`;
+  // Gemini를 안 썼으면 AI가 없는 요금제도 권하고, 무료 용량에 들어가면 아무 요금제도 권하지 않는다.
+  if (outcome.quantity === 0) {
+    if (fit.fitsFree) return ` ${o.aiStorageFree(used, GOOGLE_FREE_STORAGE_GB)}`;
+    return fit.cheapest
+      ? ` ${o.aiStorageCheapest(used, fit.cheapest.planName, money(fit.cheapest.amount))}`
+      : "";
+  }
   if (fit.smallerAi && outcome.quantity < GOOD_AT.days) {
     return ` ${o.aiStorageSmaller(used, fit.smallerAi.planName, money(fit.smallerAi.amount))}`;
   }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   aiStorageFit,
+  asksFreeTier,
   isAiStoragePlan,
   metricForSubscription,
   metricsForSubscription,
@@ -53,6 +54,10 @@ describe("구글 AI 프로: Gemini를 쓴 날 + 용량", () => {
     expect(metricForSubscription({ ...googleOne, planId: "basic" })).toBe("storage");
     // 요금제를 모르면 짐작하지 않는다.
     expect(isAiStoragePlan({ name: "Google AI Pro" })).toBe(false);
+    // 같은 상품이라 '무료 요금제로도 충분했을까요?'도 똑같이 묻는다.
+    expect(asksFreeTier({ ...googleOne, planId: "ai-pro" })).toBe(true);
+    expect(asksFreeTier(aiPro())).toBe(true);
+    expect(asksFreeTier({ ...googleOne, planId: "basic" })).toBe(false);
   });
 
   it("용량을 비워 두면 예전처럼 쓴 날로만 판단한다", () => {
@@ -85,9 +90,28 @@ describe("구글 AI 프로: Gemini를 쓴 날 + 용량", () => {
     expect(ko(15, 10)).not.toContain("AI Plus");
   });
 
-  it("Gemini 0일·용량 0%만 빨강이다", () => {
+  it("Gemini를 안 쓰고 저장한 것도 무료 15GB에 들어가면 빨강이고 요금제를 권하지 않는다", () => {
     expect(checkIn(0, 0).log.riskLevel).toBe("red");
+    // 5TB의 0.2% = 10GB
+    expect(checkIn(0, 0.2).log.riskLevel).toBe("red");
+    expect(checkIn(0, 0.2).log.storagePercent).toBe(0.2);
+    expect(ko(0, 0.2)).toContain("무료 15GB 안에 들어가요");
+    expect(ko(0, 0.2)).not.toContain("요금제(");
+  });
+
+  it("Gemini를 안 쓰고 무료 용량을 넘게 저장하면 들어가는 가장 싼 요금제를 권한다(AI가 없어도)", () => {
+    // 5TB의 1% = 50GB → 베이직 100GB(구글 원의 요금제)
     expect(checkIn(0, 1).log.riskLevel).toBe("yellow");
+    expect(ko(0, 1)).toContain("베이직 100GB 요금제(₩2,400)로 충분해요");
+    // 5TB의 20% = 1TB → 베이직에 안 들어가 AI Plus 2TB
+    expect(ko(0, 20)).toContain("Google AI Plus 요금제(₩11,900)로 충분해요");
+  });
+
+  it("1GB 미만도 조사가 맞는다", () => {
+    expect(ko(0, 0.01)).toContain("저장한 1GB 미만도");
+    expect(ko(0, 1)).toContain("저장한 약 50GB는");
+    expect(ko(0, 1)).not.toContain("(는)");
+    expect(ko(1, 60)).toContain("저장한 약 3TB는");
   });
 
   it("AI Plus는 더 작은 AI 요금제가 없다 — 베이직 100GB에도 안 들어가면 용량 때문에 필요하다", () => {

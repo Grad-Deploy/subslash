@@ -221,9 +221,12 @@ SubSlash 캘린더로 알아보고 등록한 언어의 이름으로 바꾼다. �
 
 용량과 AI를 함께 주는 요금제(구글 원·Google AI Pro의 AI Plus 2TB·AI Pro 5TB, `isAiStoragePlan`)는 어느 쪽으로 등록했든
 Gemini를 쓴 날로 재고, 체크인에서 용량 비율을 함께 묻는다(`AiStorageQuestion`, 구독의 `storagePercent`, 비우면 쓴 날로만).
-해지하면 둘 다 잃으므로 Gemini를 '잘 씀'만큼 썼거나 저장한 양이 더 싼 요금제에 들어가지 않으면 초록, 아니면 노랑(더 작은 AI
-요금제에 들어가면 그것을 권한다), Gemini 0일·용량 0%만 빨강이다(`aiStorageFit`, `metricRiskLevel`의 `aiStorage`). 한국에는 AI
-없이 2TB·5TB만 주는 요금제가 없어(2026-11-25 one.google.com 확인) 그런 요금제를 권하지 않는다. 폰 기록으로는 재지 않는다 —
+비율은 소수로 받는다 — 5TB의 1%가 50GB라 정수로 두면 4GB를 '약 50GB'로 보이고 무료 15GB 안인지 가리지 못한다(측정은
+`storageCheckInFrom`의 `exactPercent`). 해지하면 둘 다 잃으므로 Gemini를 '잘 씀'만큼 썼거나 저장한 양이 더 싼 요금제에
+들어가지 않으면 초록이다. Gemini 0일이면서 저장한 것이 모든 Google 계정의 무료 15GB(`GOOGLE_FREE_STORAGE_GB`)에 들어가면
+빨강이고 요금제를 권하지 않으며, 넘으면 들어가는 가장 싼 요금제(AI가 없는 베이직 포함)를 권한다. 그 밖에는 노랑이고 Gemini를
+조금 쓰면 더 작은 AI 요금제를 권한다(`aiStorageFit`, `metricRiskLevel`의 `aiStorage`). 한국에는 AI 없이 2TB·5TB만 주는
+요금제가 없다(2026-11-25 one.google.com 확인). 구글 원의 AI 요금제도 '무료 요금제로도 충분했을까요?'를 묻는다(`asksFreeTier`). 폰 기록으로는 재지 않는다 —
 Gemini 앱은 화면을 Google 앱으로 넘겨 대화 시간이 Google 앱 이름으로 쌓이고, 용량은 폰 기록에 없다.
 
 연결은 두 갈래다. 복사 방식은 사용자가 자기 계정에 스크립트를 붙여 넣어 Google 심사 대상이 아니다.

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useId } from "react";
+import React, { useId, useState } from "react";
 import { aiStorageFit } from "@subslash/shared";
 import { useStore } from "@lib/store";
 import { useServiceNames, useT } from "@lib/i18n";
@@ -23,6 +23,8 @@ export function AiStorageQuestion({ subscriptionId }: { subscriptionId: string }
   const names = useServiceNames();
   const a = t.checkin.aiStorage;
   const labelId = useId();
+  // 치는 중인 글자('0.')는 따로 둔다 — 저장한 숫자로만 그리면 '0.'이 곧바로 '0'이 되어 소수를 칠 수 없다.
+  const [draft, setDraft] = useState<string | null>(null);
   if (!sub) return null;
   const percent = sub.storagePercent ?? null;
   const fit = percent === null ? null : aiStorageFit(sub, percent);
@@ -37,17 +39,21 @@ export function AiStorageQuestion({ subscriptionId }: { subscriptionId: string }
       <div className="flex items-center justify-center gap-2">
         <Input
           type="number"
-          inputMode="numeric"
+          inputMode="decimal"
           min={0}
           max={100}
+          step="any"
           aria-labelledby={labelId}
           placeholder={a.unknown}
           className="h-10 w-28 rounded-xl text-center font-bold"
-          value={percent === null ? "" : percent}
+          value={draft ?? (percent === null ? "" : String(percent))}
           onChange={(e) => {
-            const digits = e.target.value.replace(/[^0-9]/g, "");
-            set(digits === "" ? null : Number(digits));
+            const raw = e.target.value.trim();
+            const next = Number(raw);
+            setDraft(raw);
+            set(raw === "" || !Number.isFinite(next) ? null : next);
           }}
+          onBlur={() => setDraft(null)}
         />
         <span className="text-sm font-bold">%</span>
         {percent !== null && (
@@ -56,7 +62,10 @@ export function AiStorageQuestion({ subscriptionId }: { subscriptionId: string }
             variant="ghost"
             size="sm"
             className="rounded-lg text-xs"
-            onClick={() => set(null)}
+            onClick={() => {
+              setDraft(null);
+              set(null);
+            }}
           >
             {a.clear}
           </Button>
@@ -70,7 +79,14 @@ export function AiStorageQuestion({ subscriptionId }: { subscriptionId: string }
           )}
         </p>
       )}
-      <GoogleStorageCheck subscription={sub} onMeasured={(quantity) => set(quantity)} />
+      <GoogleStorageCheck
+        subscription={sub}
+        exact
+        onMeasured={(_quantity, exact) => {
+          setDraft(null);
+          set(exact);
+        }}
+      />
     </div>
   );
 }
