@@ -11,6 +11,7 @@ import {
 } from "@subslash/shared";
 import type { Messages } from "./messages";
 import { formatRatio } from "../pc-usage";
+import { formatGoogleGB } from "../storage-quota";
 
 /**
  * 체크인 결과의 큰 한 문장. `@subslash/shared`의 `evaluateMetric`이 문장 대신 값(`CheckInOutcome`)을 돌려주므로
@@ -100,7 +101,8 @@ function aiStorageNote(
   const fit = outcome.aiStorage;
   if (!fit || fit.percent === 0) return "";
   const o = t.checkin.outcome;
-  const used = t.checkin.input.storageGB(fit.usedGB);
+  // 측정 문장('5TB 중 4.45GB')과 같은 숫자로 적는다 — '약 5GB'로 반올림하면 같은 창에 두 숫자가 보였다.
+  const used = formatGoogleGB(fit.usedGB);
   if (fit.needsThisPlan) return ` ${o.aiStorageNeeded(used)}`;
   // Gemini를 안 썼으면 AI가 없는 요금제도 권하고, 무료 용량에 들어가면 아무 요금제도 권하지 않는다.
   if (outcome.quantity === 0) {

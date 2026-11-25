@@ -222,7 +222,7 @@ SubSlash 캘린더로 알아보고 등록한 언어의 이름으로 바꾼다. �
 용량과 AI를 함께 주는 요금제(구글 원·Google AI Pro의 AI Plus 2TB·AI Pro 5TB, `isAiStoragePlan`)는 어느 쪽으로 등록했든
 Gemini를 쓴 날로 재고, 체크인에서 용량 비율을 함께 묻는다(`AiStorageQuestion`, 구독의 `storagePercent`, 비우면 쓴 날로만).
 비율은 소수로 받는다 — 5TB의 1%가 50GB라 정수로 두면 4GB를 '약 50GB'로 보이고 무료 15GB 안인지 가리지 못한다(측정은
-`storageCheckInFrom`의 `exactPercent`). 해지하면 둘 다 잃으므로 Gemini를 '잘 씀'만큼 썼거나 저장한 양이 더 싼 요금제에
+`storageCheckInFrom`의 `exactPercent`). 쓰는 양은 측정 문장과 같은 GB로 적는다 — Google은 1TB를 1,024GB로 세고(`aiStorageFit`), 비율은 소수 여섯째 자리까지 저장하며(칸에는 넷째 자리), 표기는 `formatGoogleGB`다. 반올림한 '약 5GB'가 측정한 '4.45GB' 옆에 보였다. 해지하면 둘 다 잃으므로 Gemini를 '잘 씀'만큼 썼거나 저장한 양이 더 싼 요금제에
 들어가지 않으면 초록이다. Gemini 0일이면서 저장한 것이 모든 Google 계정의 무료 15GB(`GOOGLE_FREE_STORAGE_GB`)에 들어가면
 빨강이고 요금제를 권하지 않으며, 넘으면 들어가는 가장 싼 요금제(AI가 없는 베이직 포함)를 권한다. 그 밖에는 노랑이고 Gemini를
 조금 쓰면 더 작은 AI 요금제를 권한다(`aiStorageFit`, `metricRiskLevel`의 `aiStorage`). 한국에는 AI 없이 2TB·5TB만 주는

@@ -7,6 +7,7 @@ import { useServiceNames, useT } from "@lib/i18n";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { GoogleStorageCheck } from "./GoogleStorageCheck";
+import { formatGoogleGB } from "@lib/storage-quota";
 
 /**
  * 체크인의 두 번째 질문: 요금제 용량 중 얼마나 쓰고 있는지. 용량과 AI를 함께 주는 요금제(구글 원·Google AI Pro의
@@ -46,7 +47,8 @@ export function AiStorageQuestion({ subscriptionId }: { subscriptionId: string }
           aria-labelledby={labelId}
           placeholder={a.unknown}
           className="h-10 w-28 rounded-xl text-center font-bold"
-          value={draft ?? (percent === null ? "" : String(percent))}
+          // 저장은 측정한 GB가 맞도록 여섯째 자리까지, 칸에는 넷째 자리까지만 보인다.
+          value={draft ?? (percent === null ? "" : String(Math.round(percent * 1e4) / 1e4))}
           onChange={(e) => {
             const raw = e.target.value.trim();
             const next = Number(raw);
@@ -73,10 +75,7 @@ export function AiStorageQuestion({ subscriptionId }: { subscriptionId: string }
       </div>
       {fit && (
         <p className="text-center text-[11px] text-muted-foreground">
-          {t.checkin.input.storageOf(
-            names.plan(fit.planName),
-            t.checkin.input.storageGB(fit.usedGB),
-          )}
+          {t.checkin.input.storageOf(names.plan(fit.planName), formatGoogleGB(fit.usedGB))}
         </p>
       )}
       <GoogleStorageCheck

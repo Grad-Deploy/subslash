@@ -12,6 +12,8 @@ import { createBackup, parseBackup } from "../../lib/backup";
 import { describeCheckInOutcome } from "../../lib/i18n/check-in-outcome";
 import { messages } from "../../lib/i18n/messages";
 import { previewFirstCheckInRisk } from "../../components/app-start/FirstCheckInCard";
+import { useStore } from "../../lib/store";
+import { formatGoogleGB, formatQuotaBytes, storageCheckInFrom } from "../../lib/storage-quota";
 
 const NOW = new Date("2026-11-25T12:00:00");
 
@@ -76,10 +78,10 @@ describe("구글 AI 프로: Gemini를 쓴 날 + 용량", () => {
   });
 
   it("둘 다 아니고 2TB에 들어가면 노랑으로 AI Plus를 권한다", () => {
-    // 5TB의 10% = 500GB
+    // 5TB(Google은 5,120GB로 센다)의 10% = 512GB
     expect(aiStorageFit(aiPro(), 10)?.smallerAi).toEqual({
       planName: "Google AI Plus",
-      capacityGB: 2000,
+      capacityGB: 2048,
       amount: 11900,
     });
     expect(checkIn(3, 10).log.riskLevel).toBe("yellow");
@@ -108,11 +110,11 @@ describe("구글 AI 프로: Gemini를 쓴 날 + 용량", () => {
     expect(ko(0, 20)).toContain("Google AI Plus 요금제(₩11,900)로 충분해요");
   });
 
-  it("1GB 미만도 조사가 맞는다", () => {
-    expect(ko(0, 0.01)).toContain("저장한 1GB 미만도");
-    expect(ko(0, 1)).toContain("저장한 약 50GB는");
+  it("용량은 측정 문장과 같은 GB로 적고 조사가 맞는다", () => {
+    expect(ko(0, 0.01)).toContain("저장한 0.51GB도");
+    expect(ko(0, 1)).toContain("저장한 51GB는");
     expect(ko(0, 1)).not.toContain("(는)");
-    expect(ko(1, 60)).toContain("저장한 약 3TB는");
+    expect(ko(1, 60)).toContain("저장한 3TB는");
   });
 
   it("AI Plus는 더 작은 AI 요금제가 없다 — 베이직 100GB에도 안 들어가면 용량 때문에 필요하다", () => {
@@ -164,5 +166,24 @@ describe("첫 체크인 카드의 미리보기", () => {
       );
     }
     expect(previewFirstCheckInRisk(aiPro(60), 0)).toBe("green");
+  });
+});
+
+describe("측정한 용량을 그대로 보인다", () => {
+  it("측정 문장의 GB와 체크인 칸 아래의 GB가 같다", () => {
+    // 실기기에서 읽은 값(2026-11-25): 5TB 중 4.45GB. 예전에는 0.09%로 저장해 '약 5GB'로 보였다.
+    const usage = 4774694696;
+    const limit = 5497558138880;
+    const measured = storageCheckInFrom(
+      aiPro(),
+      { ok: true, state: "s", usage, limit },
+      messages.ko.checkin.storage,
+      { exact: true },
+    );
+    useStore.setState({ subscriptions: [aiPro()] });
+    useStore.getState().setStoragePercent("sub-ai-pro", measured.exactPercent);
+    const stored = useStore.getState().subscriptions[0]!;
+    expect(formatQuotaBytes(usage)).toBe("4.45GB");
+    expect(formatGoogleGB(aiStorageFit(stored, stored.storagePercent!)!.usedGB)).toBe("4.45GB");
   });
 });

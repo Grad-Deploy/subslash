@@ -264,12 +264,12 @@ export const useStore = create<SubSlashStore>()(
             (sub) => sub.id === id,
             (sub) => ({
               ...sub,
-              // 소수 둘째 자리까지 둔다 — 5TB의 1%가 50GB라, 정수로 두면 4GB를 '약 50GB'로 보이고 무료 15GB 안인지
-              // 가리지 못한다.
+              // 소수 여섯째 자리까지 둔다 — 5TB의 0.01%가 0.5GB라, 둘째 자리로 두면 측정한 4.45GB(0.086848%)를
+              // 0.09%로 바꿔 '4.61GB'로, 넷째 자리로도 '4.44GB'로 보였다. 칸에는 넷째 자리까지만 보인다(AiStorageQuestion).
               storagePercent:
                 percent === null || !Number.isFinite(percent)
                   ? undefined
-                  : Math.round(Math.min(100, Math.max(0, percent)) * 100) / 100,
+                  : Math.round(Math.min(100, Math.max(0, percent)) * 1e6) / 1e6,
             }),
           );
         },

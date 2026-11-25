@@ -86,6 +86,11 @@ export function parseStorageQuotaResult(params: URLSearchParams | null): Storage
 }
 
 /** Google은 1024 단위로 센다(5TB 요금제의 한도가 5,120GB로 나온다). */
+/** Google이 세는 GB(1TB = 1,024GB)를 측정 문장과 같은 모양으로('4.45GB', '3TB'). */
+export function formatGoogleGB(gb: number): string {
+  return formatQuotaBytes(gb * GIB);
+}
+
 export function formatQuotaBytes(value: number): string {
   const gb = value / GIB;
   if (gb >= 1024) return `${Math.round((gb / 1024) * 10) / 10}TB`;

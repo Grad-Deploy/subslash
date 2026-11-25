@@ -85,10 +85,11 @@ export interface AiStorageFit {
   planName: string;
   /** 요금제 용량 중 쓰는 비율(%). */
   percent: number;
+  /** 쓰는 양(GB). Google이 세는 단위(1TB = 1,024GB)라 측정 문장의 GB와 같다. */
   usedGB: number;
   /** 쓰는 양이 이 요금제보다 싼 어느 요금제에도 여유 있게 들어가지 않는다 — 용량 때문에 이 요금제가 필요하다. */
   needsThisPlan: boolean;
-  /** 쓰는 양이 들어가는, AI도 주는 더 싼 요금제. 없으면 null. */
+  /** 쓰는 양이 들어가는, AI도 주는 더 싼 요금제. 없으면 null. 용량은 Google이 세는 GB(1TB = 1,024GB)다. */
   smallerAi: { planName: string; capacityGB: number; amount: number } | null;
   /** 쓰는 양이 들어가는 가장 싼 요금제(AI가 없어도). Gemini를 쓰지 않을 때 권한다. 없으면 null. */
   cheapest: { planName: string; capacityGB: number; amount: number } | null;
@@ -107,11 +108,18 @@ export function isAiStoragePlan(sub: StorageSub): boolean {
   return !!currentPlan(sub)?.extras;
 }
 
+/**
+ * 요금제 이름의 용량을 Google이 세는 GB로. Google은 1TB를 1,024GB로 센다(5TB 요금제의 한도가 5,120GB) — 1,000으로
+ * 셈하면 측정한 '4.45GB'가 '4.34GB'로 보인다. 100GB·15GB처럼 GB로 적힌 것은 그대로다.
+ */
+const googleGB = (gb: number) => (gb >= 1000 ? (gb / 1000) * 1024 : gb);
+
 export function aiStorageFit(sub: StorageSub, percent: number): AiStorageFit | null {
   const plan = currentPlan(sub);
   if (!plan?.storageGB || !plan.extras) return null;
+  const capacity = googleGB(plan.storageGB);
   const clamped = Math.min(100, Math.max(0, percent));
-  const usedGB = (plan.storageGB * clamped) / 100;
+  const usedGB = (capacity * clamped) / 100;
   // 같은 AI(`extras`)를 주는 서비스의 요금제를 모두 본다. Google AI Pro와 구글 원은 같은 상품인데 Google AI Pro의
   // 목록에는 AI가 없는 베이직 100GB가 없어, 그쪽으로 등록한 AI Plus는 용량을 조금만 써도 '용량 때문에 필요'가 됐다.
   // 등록한 서비스를 앞에 두어, 같은 값이면 그 서비스의 요금제 이름으로 권한다.
@@ -125,17 +133,17 @@ export function aiStorageFit(sub: StorageSub, percent: number): AiStorageFit | n
     .filter(
       (p) =>
         p.storageGB &&
-        p.storageGB < plan.storageGB! &&
+        googleGB(p.storageGB) < capacity &&
         p.amount < plan.amount &&
         (p.billingCycle ?? "monthly") === (plan.billingCycle ?? "monthly") &&
-        usedGB <= p.storageGB * HEADROOM,
+        usedGB <= googleGB(p.storageGB) * HEADROOM,
     );
   const byAmount = [...cheaper].sort((a, b) => a.amount - b.amount);
   const smallerAi = byAmount.find((p) => p.extras);
   const cheapest = byAmount[0];
   const brief = (p: ServicePlan) => ({
     planName: p.name,
-    capacityGB: p.storageGB!,
+    capacityGB: googleGB(p.storageGB!),
     amount: p.amount,
   });
   return {

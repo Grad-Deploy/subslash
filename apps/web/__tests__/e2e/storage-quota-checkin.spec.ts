@@ -83,9 +83,10 @@ test.describe("구글 원 체크인의 사용량 측정 (E2E)", () => {
     await dialog.getByRole("button", { name: "Google 계정에서 사용량 측정" }).click();
     await (await popup).waitForURL(/\/storage-quota\/done/);
 
-    // 3.42GB / 5TB = 0.0668% — 스토어가 소수 둘째 자리로 둔다.
-    await expect(input).toHaveValue("0.07");
-    await expect(dialog.getByText("5TB 중 3.42GB")).toBeVisible();
+    // 3.42GB / 5TB(5,120GB) = 0.0668% — 칸에는 소수 넷째 자리까지 보인다. 아래 줄도 측정 문장과 같은 GB다.
+    await expect(input).toHaveValue("0.0668");
+    await expect(dialog.getByText("Google AI Pro 5TB 중 3.42GB")).toBeVisible();
+    await expect(dialog.getByText(/한도 5TB 중 3.42GB/)).toBeVisible();
     await expect(dialog.getByText(/1%로 채웠어요/)).toHaveCount(0);
   });
 
