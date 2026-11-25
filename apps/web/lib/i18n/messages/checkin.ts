@@ -1872,9 +1872,9 @@ export const es: Widen<typeof ko> = {
       `Usas el ${percent} % del almacenamiento de tu plan de ${name}.`,
     freeTierEnough: "Si el plan gratuito bastaba, puedes pasarte a él en lugar de cancelar.",
     aiStorageNeeded: (used) =>
-      `Guardas ${used}, que no cabe en un plan más barato, así que necesitas este plan aunque sea por el almacenamiento.`,
+      `Guardas ${used}, y eso no cabe en un plan más barato, así que necesitas este plan aunque sea por el almacenamiento.`,
     aiStorageSmaller: (used, smaller, amount) =>
-      `Guardas ${used}, que cabría de sobra en el plan ${planName(smaller, "es")} (${amount}). Si usas Gemini así de poco, puedes bajar de plan.`,
+      `Guardas ${used}, y eso cabría de sobra en el plan ${planName(smaller, "es")} (${amount}). Si usas Gemini así de poco, puedes bajar de plan.`,
     tokensOver: (times) =>
       `Tu uso de tokens en el PC equivale a ${times}× la cuota a precio de API: aunque sean pocos días, ya la amortizaste.`,
     tokensUnder: (percent) =>
@@ -2464,9 +2464,9 @@ export const pt: Widen<typeof ko> = {
       `Você usa ${percent}% do armazenamento do seu plano ${name}.`,
     freeTierEnough: "Se o plano grátis bastava, dá para mudar para ele em vez de cancelar.",
     aiStorageNeeded: (used) =>
-      `Você guarda ${used}, que não cabe num plano mais barato, então só pelo armazenamento você precisa deste plano.`,
+      `Você guarda ${used}, e isso não cabe num plano mais barato, então só pelo armazenamento você precisa deste plano.`,
     aiStorageSmaller: (used, smaller, amount) =>
-      `Você guarda ${used}, que caberia com folga no plano ${planName(smaller, "pt")} (${amount}). Se você usa o Gemini nesse ritmo, dá para descer de plano.`,
+      `Você guarda ${used}, e isso caberia com folga no plano ${planName(smaller, "pt")} (${amount}). Se você usa o Gemini nesse ritmo, dá para descer de plano.`,
     tokensOver: (times) =>
       `Seu uso de tokens no PC equivale a ${times}× a mensalidade pelo preço da API — mesmo em poucos dias, já compensou.`,
     tokensUnder: (percent) =>
