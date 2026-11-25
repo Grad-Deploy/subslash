@@ -421,9 +421,9 @@ export const en: Widen<typeof ko> = {
       `You're using ${percent}% of your ${name} plan's storage.`,
     freeTierEnough: "If the free plan was enough, you can drop to it instead of cancelling.",
     aiStorageNeeded: (used) =>
-      `The ${used} you store doesn't fit a cheaper plan, so you need this plan for the storage alone.`,
+      `You store ${used}, which doesn't fit a cheaper plan, so you need this plan for the storage alone.`,
     aiStorageSmaller: (used, smaller, amount) =>
-      `The ${used} you store would fit comfortably in the ${plan(smaller)} plan (${amount}). If you use Gemini about this much, you can move down.`,
+      `You store ${used}, which would fit comfortably in the ${plan(smaller)} plan (${amount}). If you use Gemini about this much, you can move down.`,
     tokensOver: (times) =>
       `Your PC token use comes to ${times}× the fee at API prices — even on few days, you got your money's worth.`,
     tokensUnder: (percent) =>
@@ -1569,9 +1569,9 @@ export const fr: Widen<typeof ko> = {
       `Vous utilisez ${percent} % du stockage de votre formule ${name}.`,
     freeTierEnough: "Si la formule gratuite suffisait, vous pouvez y passer au lieu de résilier.",
     aiStorageNeeded: (used) =>
-      `Les ${used} que vous stockez ne tiennent pas dans une formule moins chère : le stockage seul justifie cette formule.`,
+      `Vous stockez ${used}, ce qui ne tient pas dans une formule moins chère : le stockage seul justifie cette formule.`,
     aiStorageSmaller: (used, smaller, amount) =>
-      `Les ${used} que vous stockez tiendraient largement dans la formule ${planName(smaller, "fr")} (${amount}). Si vous utilisez Gemini à ce rythme, vous pouvez descendre.`,
+      `Vous stockez ${used}, ce qui tiendrait largement dans la formule ${planName(smaller, "fr")} (${amount}). Si vous utilisez Gemini à ce rythme, vous pouvez descendre.`,
     tokensOver: (times) =>
       `Votre usage de jetons sur PC vaut ${times}× l'abonnement au prix de l'API — même avec peu de jours, il est rentabilisé.`,
     tokensUnder: (percent) =>
@@ -1872,9 +1872,9 @@ export const es: Widen<typeof ko> = {
       `Usas el ${percent} % del almacenamiento de tu plan de ${name}.`,
     freeTierEnough: "Si el plan gratuito bastaba, puedes pasarte a él en lugar de cancelar.",
     aiStorageNeeded: (used) =>
-      `Los ${used} que guardas no caben en un plan más barato, así que necesitas este plan aunque sea por el almacenamiento.`,
+      `Guardas ${used}, que no cabe en un plan más barato, así que necesitas este plan aunque sea por el almacenamiento.`,
     aiStorageSmaller: (used, smaller, amount) =>
-      `Los ${used} que guardas cabrían de sobra en el plan ${planName(smaller, "es")} (${amount}). Si usas Gemini así de poco, puedes bajar de plan.`,
+      `Guardas ${used}, que cabría de sobra en el plan ${planName(smaller, "es")} (${amount}). Si usas Gemini así de poco, puedes bajar de plan.`,
     tokensOver: (times) =>
       `Tu uso de tokens en el PC equivale a ${times}× la cuota a precio de API: aunque sean pocos días, ya la amortizaste.`,
     tokensUnder: (percent) =>
@@ -2171,9 +2171,9 @@ export const de: Widen<typeof ko> = {
     freeTierEnough:
       "Wenn der kostenlose Tarif gereicht hat, kannst du statt zu kündigen auf ihn wechseln.",
     aiStorageNeeded: (used) =>
-      `Die ${used}, die du speicherst, passen in keinen günstigeren Tarif – allein wegen des Speichers brauchst du diesen Tarif.`,
+      `Du speicherst ${used}; das passt in keinen günstigeren Tarif – allein wegen des Speichers brauchst du diesen Tarif.`,
     aiStorageSmaller: (used, smaller, amount) =>
-      `Die ${used}, die du speicherst, würden bequem in den Tarif ${planName(smaller, "de")} (${amount}) passen. Wenn du Gemini so viel nutzt, kannst du herunterstufen.`,
+      `Du speicherst ${used}; das würde bequem in den Tarif ${planName(smaller, "de")} (${amount}) passen. Wenn du Gemini so viel nutzt, kannst du herunterstufen.`,
     tokensOver: (times) =>
       `Deine Token-Nutzung am PC entspricht zu API-Preisen dem ${times}-Fachen der Gebühr — auch an wenigen Tagen hat es sich gelohnt.`,
     tokensUnder: (percent) =>
@@ -2464,9 +2464,9 @@ export const pt: Widen<typeof ko> = {
       `Você usa ${percent}% do armazenamento do seu plano ${name}.`,
     freeTierEnough: "Se o plano grátis bastava, dá para mudar para ele em vez de cancelar.",
     aiStorageNeeded: (used) =>
-      `Os ${used} que você guarda não cabem num plano mais barato, então só pelo armazenamento você precisa deste plano.`,
+      `Você guarda ${used}, que não cabe num plano mais barato, então só pelo armazenamento você precisa deste plano.`,
     aiStorageSmaller: (used, smaller, amount) =>
-      `Os ${used} que você guarda caberiam com folga no plano ${planName(smaller, "pt")} (${amount}). Se você usa o Gemini nesse ritmo, dá para descer de plano.`,
+      `Você guarda ${used}, que caberia com folga no plano ${planName(smaller, "pt")} (${amount}). Se você usa o Gemini nesse ritmo, dá para descer de plano.`,
     tokensOver: (times) =>
       `Seu uso de tokens no PC equivale a ${times}× a mensalidade pelo preço da API — mesmo em poucos dias, já compensou.`,
     tokensUnder: (percent) =>
