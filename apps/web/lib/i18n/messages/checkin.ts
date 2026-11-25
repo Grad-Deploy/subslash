@@ -132,6 +132,10 @@ export const ko = {
     storageUnknownPlan: (name: string, percent: number) =>
       `${name} 요금제 용량의 ${percent}%를 쓰고 있어요.`,
     freeTierEnough: "무료 요금제로도 충분했다면, 해지하지 않고 무료로 내려도 돼요.",
+    aiStorageNeeded: (used: string) =>
+      `저장한 ${used}는 더 싼 요금제에 들어가지 않아, 용량 때문에라도 이 요금제가 필요해요.`,
+    aiStorageSmaller: (used: string, plan: string, amount: string) =>
+      `저장한 ${used}는 ${plan} 요금제(${amount})에도 여유 있게 들어가요. Gemini를 지금만큼 쓴다면 내려도 돼요.`,
     tokensOver: (times: string) =>
       `PC의 토큰 사용량을 API 요금으로 환산하면 구독료의 ${times}배예요 — 쓴 날이 적어도 구독료 이상을 썼어요.`,
     tokensUnder: (percent: number) =>
@@ -281,6 +285,13 @@ export const ko = {
     hint: "사용 한도에 걸렸거나 유료 모델·기능을 썼다면 유료가 필요했던 거예요.",
   },
   /** 체크인 링크(/check-in)로 열었는데 체크인할 수 없을 때. */
+  /** 용량과 AI를 함께 주는 요금제(구글 AI 프로)의 두 번째 질문. */
+  aiStorage: {
+    question: "요금제 용량 중 얼마나 쓰고 있어요?",
+    hint: "Gemini를 적게 써도 드라이브·포토·Gmail에 둔 것이 많으면 이 요금제가 필요해요. 모르면 비워 두세요.",
+    unknown: "모름",
+    clear: "비우기",
+  },
   link: {
     invalidTitle: "잘못된 체크인 링크예요",
     invalidBody: "체크인은 대시보드나 내 구독에서 할 수 있어요.",
@@ -409,6 +420,10 @@ export const en: Widen<typeof ko> = {
     storageUnknownPlan: (name, percent) =>
       `You're using ${percent}% of your ${name} plan's storage.`,
     freeTierEnough: "If the free plan was enough, you can drop to it instead of cancelling.",
+    aiStorageNeeded: (used) =>
+      `The ${used} you store doesn't fit a cheaper plan, so you need this plan for the storage alone.`,
+    aiStorageSmaller: (used, smaller, amount) =>
+      `The ${used} you store would fit comfortably in the ${plan(smaller)} plan (${amount}). If you use Gemini about this much, you can move down.`,
     tokensOver: (times) =>
       `Your PC token use comes to ${times}× the fee at API prices — even on few days, you got your money's worth.`,
     tokensUnder: (percent) =>
@@ -561,6 +576,12 @@ export const en: Widen<typeof ko> = {
     question: "Would the free plan have been enough?",
     hint: "If you hit usage limits or used paid models or features, you needed the paid plan.",
   },
+  aiStorage: {
+    question: "How much of the plan's storage are you using?",
+    hint: "Even if you rarely use Gemini, you need this plan if you keep a lot in Drive, Photos, or Gmail. Leave it blank if you don't know.",
+    unknown: "Not sure",
+    clear: "Clear",
+  },
   link: {
     invalidTitle: "This check-in link isn't valid",
     invalidBody: "You can check in from the dashboard or your subscriptions.",
@@ -701,6 +722,9 @@ export const zh: Widen<typeof ko> = {
       `正在使用 ${name} 套餐容量的 ${percent}%。选择套餐后，会告诉你更小的套餐是否够用。`,
     storageUnknownPlan: (name, percent) => `正在使用 ${name} 套餐容量的 ${percent}%。`,
     freeTierEnough: "如果免费套餐就够用，也可以不退订而改用免费套餐。",
+    aiStorageNeeded: (used) => `您存储的 ${used} 放不进更便宜的套餐，单凭存储空间也需要这个套餐。`,
+    aiStorageSmaller: (used, smaller, amount) =>
+      `您存储的 ${used} 换成 ${planName(smaller, "zh")} 套餐（${amount}）也绰绰有余。如果 Gemini 用量就这么多，可以降级。`,
     tokensOver: (times) =>
       `电脑上的令牌用量按 API 价格相当于会费的 ${times} 倍——即使使用天数少，也已经够本了。`,
     tokensUnder: (percent) =>
@@ -838,6 +862,12 @@ export const zh: Widen<typeof ko> = {
     question: "免费套餐够用吗？",
     hint: "如果碰到了使用限制，或用了付费模型、付费功能，就是需要付费套餐。",
   },
+  aiStorage: {
+    question: "套餐的存储空间用了多少？",
+    hint: "即使很少用 Gemini，如果在云端硬盘、相册、Gmail 里存了很多内容，也需要这个套餐。不清楚的话请留空。",
+    unknown: "不清楚",
+    clear: "清空",
+  },
   link: {
     invalidTitle: "这个签到链接无效",
     invalidBody: "可以在仪表板或我的订阅中签到。",
@@ -960,6 +990,10 @@ export const ja: Widen<typeof ko> = {
       `${name} プランの容量の ${percent}% を使っています。プランを選ぶと、小さいプランで足りるかお知らせします。`,
     storageUnknownPlan: (name, percent) => `${name} プランの容量の ${percent}% を使っています。`,
     freeTierEnough: "無料プランで足りたなら、解約の代わりに無料プランに下げることもできます。",
+    aiStorageNeeded: (used) =>
+      `保存している${used}はより安いプランに収まらないため、容量だけでもこのプランが必要です。`,
+    aiStorageSmaller: (used, smaller, amount) =>
+      `保存している${used}は ${planName(smaller, "ja")} プラン（${amount}）でも十分に収まります。Gemini をこの程度使うなら、下げても大丈夫です。`,
     tokensOver: (times) =>
       `PC でのトークン利用は API 料金で会費の ${times} 倍です——使った日が少なくても元は取れています。`,
     tokensUnder: (percent) =>
@@ -1110,6 +1144,12 @@ export const ja: Widen<typeof ko> = {
     question: "無料プランで足りましたか？",
     hint: "利用制限に当たったり、有料のモデルや機能を使ったなら、有料プランが必要でした。",
   },
+  aiStorage: {
+    question: "プランの容量をどれくらい使っていますか？",
+    hint: "Gemini をあまり使わなくても、ドライブ・フォト・Gmail にたくさん保存していればこのプランが必要です。わからなければ空欄のままにしてください。",
+    unknown: "わからない",
+    clear: "クリア",
+  },
   link: {
     invalidTitle: "このチェックインのリンクは無効です",
     invalidBody: "チェックインはダッシュボードかサブスク一覧からできます。",
@@ -1232,6 +1272,10 @@ export const vi: Widen<typeof ko> = {
       `Bạn đang dùng ${percent}% dung lượng gói ${name}. Chọn gói để biết gói nhỏ hơn có đủ không.`,
     storageUnknownPlan: (name, percent) => `Bạn đang dùng ${percent}% dung lượng gói ${name}.`,
     freeTierEnough: "Nếu gói miễn phí là đủ, bạn có thể hạ xuống gói miễn phí thay vì hủy.",
+    aiStorageNeeded: (used) =>
+      `${used} bạn đang lưu không vừa gói rẻ hơn, nên riêng dung lượng cũng cần gói này.`,
+    aiStorageSmaller: (used, smaller, amount) =>
+      `${used} bạn đang lưu vẫn vừa thoải mái gói ${planName(smaller, "vi")} (${amount}). Nếu dùng Gemini cỡ này, bạn có thể hạ gói.`,
     tokensOver: (times) =>
       `Lượng token trên PC theo giá API gấp ${times} lần phí — dù ít ngày dùng, bạn vẫn đã đủ bù.`,
     tokensUnder: (percent) =>
@@ -1383,6 +1427,12 @@ export const vi: Widen<typeof ko> = {
     question: "Gói miễn phí có đủ không?",
     hint: "Nếu bạn chạm giới hạn sử dụng hoặc dùng mô hình, tính năng trả phí, thì bạn cần gói trả phí.",
   },
+  aiStorage: {
+    question: "Bạn đang dùng bao nhiêu phần dung lượng của gói?",
+    hint: "Dù ít dùng Gemini, nếu bạn lưu nhiều trong Drive, Ảnh hoặc Gmail thì vẫn cần gói này. Không rõ thì để trống.",
+    unknown: "Không rõ",
+    clear: "Xóa",
+  },
   link: {
     invalidTitle: "Đường dẫn check-in này không hợp lệ",
     invalidBody: "Bạn có thể check-in từ bảng điều khiển hoặc danh sách gói đăng ký.",
@@ -1518,6 +1568,10 @@ export const fr: Widen<typeof ko> = {
     storageUnknownPlan: (name, percent) =>
       `Vous utilisez ${percent} % du stockage de votre formule ${name}.`,
     freeTierEnough: "Si la formule gratuite suffisait, vous pouvez y passer au lieu de résilier.",
+    aiStorageNeeded: (used) =>
+      `Les ${used} que vous stockez ne tiennent pas dans une formule moins chère : le stockage seul justifie cette formule.`,
+    aiStorageSmaller: (used, smaller, amount) =>
+      `Les ${used} que vous stockez tiendraient largement dans la formule ${planName(smaller, "fr")} (${amount}). Si vous utilisez Gemini à ce rythme, vous pouvez descendre.`,
     tokensOver: (times) =>
       `Votre usage de jetons sur PC vaut ${times}× l'abonnement au prix de l'API — même avec peu de jours, il est rentabilisé.`,
     tokensUnder: (percent) =>
@@ -1678,6 +1732,12 @@ export const fr: Widen<typeof ko> = {
     question: "La formule gratuite aurait-elle suffi ?",
     hint: "Si vous avez atteint des limites d'utilisation ou utilisé des modèles ou fonctions payants, la formule payante était nécessaire.",
   },
+  aiStorage: {
+    question: "Quelle part du stockage de la formule utilisez-vous ?",
+    hint: "Même si vous utilisez peu Gemini, cette formule vous est nécessaire si vous stockez beaucoup dans Drive, Photos ou Gmail. Laissez vide si vous ne savez pas.",
+    unknown: "Je ne sais pas",
+    clear: "Effacer",
+  },
   link: {
     invalidTitle: "Ce lien de check-in n'est pas valide",
     invalidBody:
@@ -1811,6 +1871,10 @@ export const es: Widen<typeof ko> = {
     storageUnknownPlan: (name, percent) =>
       `Usas el ${percent} % del almacenamiento de tu plan de ${name}.`,
     freeTierEnough: "Si el plan gratuito bastaba, puedes pasarte a él en lugar de cancelar.",
+    aiStorageNeeded: (used) =>
+      `Los ${used} que guardas no caben en un plan más barato, así que necesitas este plan aunque sea por el almacenamiento.`,
+    aiStorageSmaller: (used, smaller, amount) =>
+      `Los ${used} que guardas cabrían de sobra en el plan ${planName(smaller, "es")} (${amount}). Si usas Gemini así de poco, puedes bajar de plan.`,
     tokensOver: (times) =>
       `Tu uso de tokens en el PC equivale a ${times}× la cuota a precio de API: aunque sean pocos días, ya la amortizaste.`,
     tokensUnder: (percent) =>
@@ -1963,6 +2027,12 @@ export const es: Widen<typeof ko> = {
     question: "¿Habría bastado el plan gratuito?",
     hint: "Si llegaste a límites de uso o usaste modelos o funciones de pago, necesitabas el plan de pago.",
   },
+  aiStorage: {
+    question: "¿Cuánto del almacenamiento del plan estás usando?",
+    hint: "Aunque uses poco Gemini, necesitas este plan si guardas mucho en Drive, Fotos o Gmail. Déjalo en blanco si no lo sabes.",
+    unknown: "No lo sé",
+    clear: "Borrar",
+  },
   link: {
     invalidTitle: "Este enlace de registro no es válido",
     invalidBody: "Puedes registrar el uso desde el panel o tus suscripciones.",
@@ -2100,6 +2170,10 @@ export const de: Widen<typeof ko> = {
       `Du nutzt ${percent} % des Speichers deines ${name}-Tarifs.`,
     freeTierEnough:
       "Wenn der kostenlose Tarif gereicht hat, kannst du statt zu kündigen auf ihn wechseln.",
+    aiStorageNeeded: (used) =>
+      `Die ${used}, die du speicherst, passen in keinen günstigeren Tarif – allein wegen des Speichers brauchst du diesen Tarif.`,
+    aiStorageSmaller: (used, smaller, amount) =>
+      `Die ${used}, die du speicherst, würden bequem in den Tarif ${planName(smaller, "de")} (${amount}) passen. Wenn du Gemini so viel nutzt, kannst du herunterstufen.`,
     tokensOver: (times) =>
       `Deine Token-Nutzung am PC entspricht zu API-Preisen dem ${times}-Fachen der Gebühr — auch an wenigen Tagen hat es sich gelohnt.`,
     tokensUnder: (percent) =>
@@ -2251,6 +2325,12 @@ export const de: Widen<typeof ko> = {
     question: "Hätte der kostenlose Tarif gereicht?",
     hint: "Wenn du an Nutzungsgrenzen gestoßen bist oder kostenpflichtige Modelle oder Funktionen genutzt hast, brauchtest du den kostenpflichtigen Tarif.",
   },
+  aiStorage: {
+    question: "Wie viel vom Speicher des Tarifs nutzt du?",
+    hint: "Auch wenn du Gemini selten nutzt, brauchst du diesen Tarif, wenn du viel in Drive, Fotos oder Gmail speicherst. Lass das Feld leer, wenn du es nicht weißt.",
+    unknown: "Weiß nicht",
+    clear: "Leeren",
+  },
   link: {
     invalidTitle: "Dieser Eintragslink ist ungültig",
     invalidBody: "Du kannst über das Dashboard oder deine Abos einchecken.",
@@ -2383,6 +2463,10 @@ export const pt: Widen<typeof ko> = {
     storageUnknownPlan: (name, percent) =>
       `Você usa ${percent}% do armazenamento do seu plano ${name}.`,
     freeTierEnough: "Se o plano grátis bastava, dá para mudar para ele em vez de cancelar.",
+    aiStorageNeeded: (used) =>
+      `Os ${used} que você guarda não cabem num plano mais barato, então só pelo armazenamento você precisa deste plano.`,
+    aiStorageSmaller: (used, smaller, amount) =>
+      `Os ${used} que você guarda caberiam com folga no plano ${planName(smaller, "pt")} (${amount}). Se você usa o Gemini nesse ritmo, dá para descer de plano.`,
     tokensOver: (times) =>
       `Seu uso de tokens no PC equivale a ${times}× a mensalidade pelo preço da API — mesmo em poucos dias, já compensou.`,
     tokensUnder: (percent) =>
@@ -2532,6 +2616,12 @@ export const pt: Widen<typeof ko> = {
     unsure: "Não sei",
     question: "O plano grátis teria bastado?",
     hint: "Se você bateu em limites de uso ou usou modelos ou recursos pagos, precisava do plano pago.",
+  },
+  aiStorage: {
+    question: "Quanto do armazenamento do plano você está usando?",
+    hint: "Mesmo usando pouco o Gemini, você precisa deste plano se guarda muita coisa no Drive, no Fotos ou no Gmail. Deixe em branco se não souber.",
+    unknown: "Não sei",
+    clear: "Limpar",
   },
   link: {
     invalidTitle: "Este link de registro não é válido",

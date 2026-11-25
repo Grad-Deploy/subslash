@@ -139,6 +139,13 @@ export interface Subscription {
   freeTierAnswer?: "needed" | "enough" | "unsure";
 
   /**
+   * 용량과 AI를 함께 주는 요금제(구글 원·Google AI Pro의 AI Plus·AI Pro)에서 체크인할 때 적은 용량 비율(%). 모르면
+   * 없다 — 비워 두면 Gemini를 쓴 날로만 판단한다. `freeTierAnswer`처럼 구독에 두어 한꺼번에 체크인에서도 같은 값을
+   * 쓰고, 체크인 화면은 지난번 값을 채워 둔다.
+   */
+  storagePercent?: number;
+
+  /**
    * 멤버십 혜택을 적을 때 기댈 근거: Gmail 가져오기에서 찾은 최근 30일 주문 메일 수
    * (utils/orderEvidence). 가져온 메일 안에서 센 것이라 **최소**이고, 금액으로 바꾸지 않는다 — 주문마다
    * 받은 혜택(배송비·할인)은 사용자가 안다. 다시 가져오면 바뀐다.
@@ -241,6 +248,7 @@ export type SubscriptionFormData = Omit<
   | "cancelNoticeAt"
   | "cancelNoticeDismissedAt"
   | "freeTierAnswer"
+  | "storagePercent"
   | "orderEvidence"
   | "chargeHistory"
   | "amountHistory"

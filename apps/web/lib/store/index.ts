@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { recordStorage } from "../mirrored-storage";
 import type { LinkedAccount, Subscription } from "@subslash/shared";
 import {
+  clampQuantity,
   findPresetForSubscription,
   sumMonthlyKRW,
   sumMyMonthlyKRW,
@@ -257,6 +258,15 @@ export const useStore = create<SubSlashStore>()(
           patchSubscriptions(
             (sub) => sub.id === id,
             (sub) => ({ ...sub, freeTierAnswer: answer }),
+          );
+        },
+        setStoragePercent: (id, percent) => {
+          patchSubscriptions(
+            (sub) => sub.id === id,
+            (sub) => ({
+              ...sub,
+              storagePercent: percent === null ? undefined : clampQuantity("storage", percent),
+            }),
           );
         },
         dismissCancelNotice: (id) => {

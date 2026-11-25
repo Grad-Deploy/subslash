@@ -2,7 +2,7 @@ import type { Currency, RiskLevel, Subscription, UsageLog } from "../types";
 import { findPresetForSubscription } from "../constants/services";
 import { GOOD_AT, VERDICT_THRESHOLDS } from "../constants/thresholds";
 import { calculateCostPerUse, formatCurrency, getRiskLevel } from "./cost-per-use";
-import type { StoragePlanFit } from "./storagePlan";
+import { isAiStoragePlan, type AiStorageFit, type StoragePlanFit } from "./storagePlan";
 
 export { GOOD_AT, VERDICT_THRESHOLDS };
 
@@ -113,9 +113,13 @@ const SURFACE_METRICS: Readonly<Record<string, Readonly<Record<MetricSurface, Va
  * 혜택 금액은 원으로 받으므로 원화 구독에만 쓴다 — 달러 회비와 원 혜택을 나누면 뜻 없는 숫자가 된다.
  */
 export function metricForSubscription(
-  sub: Pick<Subscription, "name" | "cancelUrl" | "category" | "currency">,
+  sub: Pick<Subscription, "name" | "cancelUrl" | "category" | "currency" | "planId">,
   surface: MetricSurface = "web",
 ): ValueMetric {
+  // 용량과 AI를 함께 주는 요금제(구글 원·Google AI Pro의 AI Plus·AI Pro)는 어느 쪽으로 등록했든 Gemini를 쓴 날로
+  // 재고 용량은 함께 묻는다(utils/storagePlan의 aiStorageFit). 용량으로만 재면 Gemini를 쓰려고 내는 사람을, 쓴 날로만
+  // 재면 드라이브에 몇 TB를 둔 사람을 '안 씀'으로 읽는다.
+  if (isAiStoragePlan(sub)) return "days";
   const preset = findPresetForSubscription(sub);
   const bySurface = preset && SURFACE_METRICS[preset.id];
   if (bySurface) return bySurface[surface];
@@ -133,9 +137,12 @@ export function hasSurfaceMetrics(sub: Pick<Subscription, "name" | "cancelUrl">)
 
 /** 이 구독의 체크인으로 받아들이는 지표들. 어느 곳에서 적은 체크인이든 지금 기준으로 읽는다. */
 export function metricsForSubscription(
-  sub: Pick<Subscription, "name" | "cancelUrl" | "category" | "currency">,
+  sub: Pick<Subscription, "name" | "cancelUrl" | "category" | "currency" | "planId">,
 ): readonly ValueMetric[] {
-  return [...new Set([metricForSubscription(sub, "app"), metricForSubscription(sub, "web")])];
+  const metrics = [metricForSubscription(sub, "app"), metricForSubscription(sub, "web")];
+  // 구글 원의 AI 요금제는 예전에 용량(%)으로 체크인했다. 그 기록도 그대로 읽는다.
+  if (isAiStoragePlan(sub)) metrics.push("storage");
+  return [...new Set(metrics)];
 }
 
 /**
@@ -278,6 +285,8 @@ export function metricRiskLevel(
   storageFit?: StoragePlanFit | null,
   freeTier?: FreeTierAnswer | null,
   apiValueRatio?: number | null,
+  /** 용량과 AI를 함께 주는 요금제의 용량 근거(쓴 날로 잴 때만). 모르면 null — 쓴 날로만 판단한다. */
+  aiStorage?: AiStorageFit | null,
 ): RiskLevel {
   switch (metric) {
     case "uses":
@@ -291,7 +300,13 @@ export function metricRiskLevel(
         apiValueRatio !== null && apiValueRatio !== undefined && apiValueRatio >= apiValueGreenRatio
           ? "green"
           : byDays;
-      return level === "green" && freeTier === "enough" ? "yellow" : level;
+      const daysLevel = level === "green" && freeTier === "enough" ? "yellow" : level;
+      if (!aiStorage) return daysLevel;
+      // 해지하면 Gemini와 저장한 것을 함께 잃는다. 어느 한쪽을 잘 쓰면 초록이다 — 쓰는 양이 더 싼 요금제에 들어가지
+      // 않으면 용량 때문에 이 요금제가 필요하다. 둘 다 아니면 노랑(더 작은 AI 요금제가 있으면 그것을 권한다)이고,
+      // Gemini 0일·용량 0%만 빨강이다.
+      if (daysLevel === "green" || aiStorage.needsThisPlan) return "green";
+      return quantity === 0 && aiStorage.percent === 0 ? "red" : "yellow";
     }
     case "hours": {
       const { redBelow, greenAt } = VERDICT_THRESHOLDS.hours;
@@ -330,6 +345,8 @@ export interface CheckInOutcome {
   freeTierEnough: boolean;
   /** PC 기록의 API 환산 금액이 내 몫 한 달 구독료의 몇 배인지(쓴 날로 재는 구독, 근거가 있을 때만). */
   apiValueRatio: number | null;
+  /** 용량과 AI를 함께 주는 요금제에서 함께 적은 용량 근거(쓴 날로 잴 때만). 적지 않았으면 null. */
+  aiStorage: AiStorageFit | null;
 }
 
 export interface MetricEvaluation {
@@ -351,11 +368,22 @@ export function evaluateMetric(
   freeTier?: FreeTierAnswer | null,
   /** PC 기록의 API 환산 금액 ÷ 내 몫 한 달 구독료(쓴 날로 재는 구독만). 근거가 없으면 null. */
   apiValueRatio?: number | null,
+  /** 용량과 AI를 함께 주는 요금제의 용량 근거(쓴 날로 재는 구독만). 적지 않았으면 null. */
+  aiStorage?: AiStorageFit | null,
 ): MetricEvaluation {
   const ratio = metric === "days" ? (apiValueRatio ?? null) : null;
+  const storage = metric === "days" ? (aiStorage ?? null) : null;
   return {
     costPerUse: calculateCostPerUse(monthlyShare, quantity),
-    riskLevel: metricRiskLevel(metric, monthlyShare, quantity, storageFit, freeTier, ratio),
+    riskLevel: metricRiskLevel(
+      metric,
+      monthlyShare,
+      quantity,
+      storageFit,
+      freeTier,
+      ratio,
+      storage,
+    ),
     outcome: {
       metric,
       serviceName,
@@ -365,6 +393,7 @@ export function evaluateMetric(
       storageFit: storageFit ?? null,
       freeTierEnough: metric === "days" && quantity > 0 && freeTier === "enough",
       apiValueRatio: ratio,
+      aiStorage: storage,
     },
   };
 }

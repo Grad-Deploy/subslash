@@ -75,11 +75,12 @@ describe("Google 계정 용량 측정 — 주소", () => {
     expect(storageQuotaWebAppUrl("javascript:alert(1)")).toBeNull();
   });
 
-  it("구글 원만 이 웹 앱으로 잰다", () => {
+  it("구글 원과 Google AI Pro만 이 웹 앱으로 잰다", () => {
     expect(canCheckGoogleStorage({ name: "구글 원" })).toBe(true);
     expect(canCheckGoogleStorage({ name: "Google One" })).toBe(true);
     expect(canCheckGoogleStorage({ name: "아이클라우드" })).toBe(false);
-    expect(canCheckGoogleStorage({ name: "Google AI Pro" })).toBe(false);
+    // 같은 상품이라 요금제가 구글 원 용량을 준다.
+    expect(canCheckGoogleStorage({ name: "Google AI Pro" })).toBe(true);
   });
 
   it("웹은 돌아올 주소를, 앱은 돌아올 앱 ID를 싣는다", () => {

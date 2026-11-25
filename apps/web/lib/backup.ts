@@ -96,6 +96,8 @@ const oneOf = (v: unknown, options: readonly string[]) =>
   typeof v === "string" && options.includes(v);
 /** 없어도 되는 칸. 있으면 형식이 맞아야 한다. */
 const optional = (v: unknown, check: (value: unknown) => boolean) => v === undefined || check(v);
+/** 용량 비율(%, Subscription·UsageLog의 storagePercent). */
+const isPercent = (v: unknown) => isAmount(v) && (v as number) <= 100;
 
 /**
  * 구독 한 개를 검사하고, 틀린 칸의 이름을 돌려준다. 맞으면 null.
@@ -137,6 +139,7 @@ function checkSubscription(v: unknown) {
   if (!optional(v.linkedAccountName, isString)) return "연동 계정 이름";
   if (!optional(v.accountMemo, isString)) return "메모";
   if (!optional(v.freeTierAnswer, isFreeTierAnswer)) return "무료 요금제로 충분했는지";
+  if (!optional(v.storagePercent, isPercent)) return "용량 비율";
   if (!optional(v.resubscribeRemindOn, (d) => typeof d === "string" && parseDateOnly(d) !== null)) {
     return "다시 살펴볼 날";
   }
@@ -204,6 +207,7 @@ function checkUsageLog(v: unknown) {
   if (!optional(v.metric, isValueMetric)) return "체크인 지표";
   if (!optional(v.freeTier, isFreeTierAnswer)) return "무료 요금제로 충분했는지";
   if (!optional(v.tokens, isTokenEvidence)) return "토큰 사용량";
+  if (!optional(v.storagePercent, isPercent)) return "용량 비율";
   if (!optional(v.device, isCheckInDevice)) return "체크인 기기";
   return null;
 }

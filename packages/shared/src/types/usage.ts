@@ -45,6 +45,11 @@ export interface UsageLog {
    * 올리는 데만 쓴다(utils/valueMetric).
    */
   tokens?: { count: number; apiUsd: number | null };
+  /**
+   * 용량과 AI를 함께 주는 요금제(구글 AI 프로)에서 이 체크인을 평가할 때 쓴 용량 비율(%, 구독의 `storagePercent`를
+   * 그때 옮겨 둔 것). 적지 않았으면 없다. `riskLevel`이 왜 초록·노랑인지 나중에 읽을 수 있게 남긴다.
+   */
+  storagePercent?: number;
   /** 체크인한 기기. 이 기능 전의 체크인과 기기를 알 수 없을 때(서버 렌더링 중 등)는 없다. */
   device?: CheckInDevice;
 }

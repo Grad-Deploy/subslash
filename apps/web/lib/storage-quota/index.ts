@@ -34,9 +34,13 @@ export function storageQuotaWebAppUrl(
   return url && WEB_APP_URL.test(url) ? url : null;
 }
 
-/** 이 구독의 용량을 이 웹 앱으로 확인할 수 있는지. 구글 원만 Google 계정 용량이 곧 요금제 용량이다. */
+/**
+ * 이 구독의 용량을 이 웹 앱으로 확인할 수 있는지. 구글 원과 Google AI Pro(같은 상품, 요금제가 구글 원 용량을 준다)만
+ * Google 계정 용량이 곧 요금제 용량이다.
+ */
 export function canCheckGoogleStorage(sub: Pick<Subscription, "name" | "cancelUrl">): boolean {
-  return findPresetForSubscription(sub)?.id === "google-one";
+  const id = findPresetForSubscription(sub)?.id;
+  return id === "google-one" || id === "google-ai-pro";
 }
 
 /** 웹 앱을 열 주소. `origin`은 웹이 돌아올 SubSlash 주소, `scheme`은 앱이 돌아올 앱 ID다. */

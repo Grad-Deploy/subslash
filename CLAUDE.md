@@ -219,6 +219,13 @@ SubSlash 캘린더로 알아보고 등록한 언어의 이름으로 바꾼다. �
 (`storagePlanFit`의 `bundledExtras`). 웹 앱 코드를 고치면 운영자가 '배포 관리'에서 같은 배포의 버전을 바꿔야 주소가
 그대로다.
 
+용량과 AI를 함께 주는 요금제(구글 원·Google AI Pro의 AI Plus 2TB·AI Pro 5TB, `isAiStoragePlan`)는 어느 쪽으로 등록했든
+Gemini를 쓴 날로 재고, 체크인에서 용량 비율을 함께 묻는다(`AiStorageQuestion`, 구독의 `storagePercent`, 비우면 쓴 날로만).
+해지하면 둘 다 잃으므로 Gemini를 '잘 씀'만큼 썼거나 저장한 양이 더 싼 요금제에 들어가지 않으면 초록, 아니면 노랑(더 작은 AI
+요금제에 들어가면 그것을 권한다), Gemini 0일·용량 0%만 빨강이다(`aiStorageFit`, `metricRiskLevel`의 `aiStorage`). 한국에는 AI
+없이 2TB·5TB만 주는 요금제가 없어(2026-11-25 one.google.com 확인) 그런 요금제를 권하지 않는다. 폰 기록으로는 재지 않는다 —
+Gemini 앱은 화면을 Google 앱으로 넘겨 대화 시간이 Google 앱 이름으로 쌓이고, 용량은 폰 기록에 없다.
+
 연결은 두 갈래다. 복사 방식은 사용자가 자기 계정에 스크립트를 붙여 넣어 Google 심사 대상이 아니다.
 원클릭('Gmail 연결하기')은 **SubSlash 소유** Apps Script 웹 앱(접속한 사용자로 실행)이라 Google 심사 전에는
 '확인되지 않은 앱' 경고와 새 사용자 100명 제한이 있고, 그 이상은 제한 권한 심사·연례 보안 평가가

@@ -46,6 +46,7 @@ const BACKUP_FIELDS: BackupFieldNames = {
   메모: "anotação",
   "무료 요금제로 충분했는지": "se o plano grátis bastava",
   "토큰 사용량": "tokens usados",
+  "용량 비율": "uso do armazenamento (%)",
   "체크인 기기": "Dispositivo do check-in",
   "다시 살펴볼 날": "data de revisão",
   "해지 기록": "registro de cancelamento",

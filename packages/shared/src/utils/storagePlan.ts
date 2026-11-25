@@ -1,5 +1,9 @@
 import type { Subscription } from "../types";
-import { findPresetForSubscription, type ServicePlan } from "../constants/services";
+import {
+  POPULAR_SERVICES,
+  findPresetForSubscription,
+  type ServicePlan,
+} from "../constants/services";
 
 /**
  * 저장 공간 구독이 더 작은 요금제에 들어가는지.
@@ -65,6 +69,66 @@ export function storagePlanFit(sub: StorageSub, percent: number): StoragePlanFit
       ? { planName: cheapest.name, capacityGB: cheapest.storageGB!, amount: cheapest.amount }
       : null,
     bundledExtras: !cheapest && fits.length > 0 ? (plan.extras ?? null) : null,
+  };
+}
+
+/**
+ * 저장 용량과 AI(`extras`)를 함께 주는 요금제(구글 원·Google AI Pro의 AI Plus·AI Pro)의 용량 쪽 근거.
+ *
+ * 이런 구독은 Gemini를 쓴 날로 재되, 해지하면 저장한 것도 잃으므로 용량도 본다(`metricRiskLevel`의
+ * `aiStorage`). 한국에는 AI 없이 2TB·5TB만 주는 요금제가 없어서, 권할 수 있는 것은 AI를 주는 더 작은 요금제
+ * (AI Pro → AI Plus)뿐이다. AI가 빠지는 베이직 100GB는 권하지 않지만, 쓰는 양이 거기에 들어가는지는 '이
+ * 요금제의 용량이 필요한지'를 가리는 데 쓴다.
+ */
+export interface AiStorageFit {
+  /** 지금 요금제(서비스 목록의 한국어 이름). */
+  planName: string;
+  /** 요금제 용량 중 쓰는 비율(%). */
+  percent: number;
+  usedGB: number;
+  /** 쓰는 양이 이 요금제보다 싼 어느 요금제에도 여유 있게 들어가지 않는다 — 용량 때문에 이 요금제가 필요하다. */
+  needsThisPlan: boolean;
+  /** 쓰는 양이 들어가는, AI도 주는 더 싼 요금제. 없으면 null. */
+  smallerAi: { planName: string; capacityGB: number; amount: number } | null;
+}
+
+/** 이 구독의 요금제가 용량과 AI를 함께 주는지. 요금제를 모르면 false(짐작하지 않는다). */
+export function isAiStoragePlan(sub: StorageSub): boolean {
+  return !!currentPlan(sub)?.extras;
+}
+
+export function aiStorageFit(sub: StorageSub, percent: number): AiStorageFit | null {
+  const plan = currentPlan(sub);
+  if (!plan?.storageGB || !plan.extras) return null;
+  const clamped = Math.min(100, Math.max(0, percent));
+  const usedGB = (plan.storageGB * clamped) / 100;
+  // 같은 AI(`extras`)를 주는 서비스의 요금제를 모두 본다. Google AI Pro와 구글 원은 같은 상품인데 Google AI Pro의
+  // 목록에는 AI가 없는 베이직 100GB가 없어, 그쪽으로 등록한 AI Plus는 용량을 조금만 써도 '용량 때문에 필요'가 됐다.
+  // 등록한 서비스를 앞에 두어, 같은 값이면 그 서비스의 요금제 이름으로 권한다.
+  const own = findPresetForSubscription(sub);
+  const siblings = [
+    ...(own ? [own] : []),
+    ...POPULAR_SERVICES.filter((s) => s !== own && s.plans?.some((p) => p.extras === plan.extras)),
+  ];
+  const cheaper = siblings
+    .flatMap((s) => s.plans ?? [])
+    .filter(
+      (p) =>
+        p.storageGB &&
+        p.storageGB < plan.storageGB! &&
+        p.amount < plan.amount &&
+        (p.billingCycle ?? "monthly") === (plan.billingCycle ?? "monthly") &&
+        usedGB <= p.storageGB * HEADROOM,
+    );
+  const smallerAi = cheaper.filter((p) => p.extras).sort((a, b) => a.amount - b.amount)[0];
+  return {
+    planName: plan.name,
+    percent: clamped,
+    usedGB,
+    needsThisPlan: clamped > 0 && cheaper.length === 0,
+    smallerAi: smallerAi
+      ? { planName: smallerAi.name, capacityGB: smallerAi.storageGB!, amount: smallerAi.amount }
+      : null,
   };
 }
 

@@ -1,4 +1,5 @@
 import {
+  aiStorageFit,
   asksFreeTier,
   clampQuantity,
   evaluateMetric,
@@ -110,6 +111,11 @@ export function buildCheckInLog(
     tokens?.apiUsd != null && options?.exchangeRate
       ? apiValueRatio(sub, tokens.apiUsd, options.exchangeRate, now)
       : null;
+  // 용량과 AI를 함께 주는 요금제는 체크인에서 함께 적은 용량도 본다(적지 않았으면 쓴 날로만).
+  const aiStorage =
+    metric === "days" && sub.storagePercent !== undefined
+      ? aiStorageFit(sub, sub.storagePercent)
+      : null;
   const { costPerUse, riskLevel, outcome } = evaluateMetric(
     metric,
     sub.name,
@@ -119,6 +125,7 @@ export function buildCheckInLog(
     metric === "storage" ? storagePlanFit(sub, quantity) : null,
     freeTier,
     ratio,
+    aiStorage,
   );
   const month = localMonthKey(now);
 
@@ -135,6 +142,7 @@ export function buildCheckInLog(
     ...(options?.source ? { source: options.source } : {}),
     ...(freeTier ? { freeTier } : {}),
     ...(tokens ? { tokens } : {}),
+    ...(aiStorage ? { storagePercent: aiStorage.percent } : {}),
     ...(options?.device ? { device: options.device } : {}),
   };
   return { log, response: { outcome, riskLevel, costPerUse } };
