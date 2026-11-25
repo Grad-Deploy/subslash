@@ -77,6 +77,24 @@ export function revivedRecord(sub: Subscription): Subscription {
 }
 
 /**
+ * 체크인 수량 말고 위험도에 함께 쓰는 근거. 저장(`buildCheckInLog`)과 첫 체크인 카드의 미리보기
+ * (`previewFirstCheckInRisk`)가 같은 값으로 판단하도록 한 곳에 둔다 — 따로 두었더니 미리보기만 AI 요금제의 용량을
+ * 보지 않아, 저장하면 초록인 구독을 빨강으로 미리 보였다.
+ */
+export function checkInEvidence(sub: Subscription, metric: ValueMetric, quantity: number) {
+  return {
+    storageFit: metric === "storage" ? storagePlanFit(sub, quantity) : null,
+    // 무료 요금제로 충분했는지의 답은 묻는 구독(쓴 날로 재는, 무료 요금제가 있는 서비스)에만 쓴다.
+    freeTier: metric === "days" && asksFreeTier(sub) ? (sub.freeTierAnswer ?? null) : null,
+    // 용량과 AI를 함께 주는 요금제는 체크인에서 함께 적은 용량도 본다(적지 않았으면 쓴 날로만).
+    aiStorage:
+      metric === "days" && sub.storagePercent !== undefined
+        ? aiStorageFit(sub, sub.storagePercent)
+        : null,
+  };
+}
+
+/**
  * 체크인 한 줄을 만든다. 체크인은 "지난 30일 동안 몇 번"이라, 한 달치 내 몫(`getMyMonthlyShareAmount`)으로
  * 나눈다 — 요금을 그대로 나누면 연간 구독의 1회 단가가 12배로, 공유 구독은 나누기 전 금액으로 나온다.
  */
@@ -103,18 +121,12 @@ export function buildCheckInLog(
   // 쪽이 다른 지표로 물었으면(메일의 'N회' 버튼) 그 지표를 넘긴다.
   const metric = options?.metric ?? currentMetricFor(sub);
   const quantity = clampQuantity(metric, usageCount);
-  // 무료 요금제로 충분했는지의 답은 묻는 구독(쓴 날로 재는, 무료 요금제가 있는 서비스)에만 쓴다.
-  const freeTier = metric === "days" && asksFreeTier(sub) ? (sub.freeTierAnswer ?? null) : null;
+  const { storageFit, freeTier, aiStorage } = checkInEvidence(sub, metric, quantity);
   // PC 기록의 토큰을 API로 냈다면 든 금액 ÷ 내 몫 한 달 구독료. 쓴 날로 재는 구독에서만 위험도를 올리는 데 쓴다.
   const tokens = metric === "days" ? options?.tokens : undefined;
   const ratio =
     tokens?.apiUsd != null && options?.exchangeRate
       ? apiValueRatio(sub, tokens.apiUsd, options.exchangeRate, now)
-      : null;
-  // 용량과 AI를 함께 주는 요금제는 체크인에서 함께 적은 용량도 본다(적지 않았으면 쓴 날로만).
-  const aiStorage =
-    metric === "days" && sub.storagePercent !== undefined
-      ? aiStorageFit(sub, sub.storagePercent)
       : null;
   const { costPerUse, riskLevel, outcome } = evaluateMetric(
     metric,
@@ -122,7 +134,7 @@ export function buildCheckInLog(
     monthlyShare,
     quantity,
     sub.currency,
-    metric === "storage" ? storagePlanFit(sub, quantity) : null,
+    storageFit,
     freeTier,
     ratio,
     aiStorage,

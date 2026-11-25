@@ -496,7 +496,7 @@ export function describeCheckIn(
 
 /** 이 구독의 체크인 질문. */
 export function checkInQuestion(
-  sub: Pick<Subscription, "name" | "cancelUrl" | "category" | "currency">,
+  sub: Pick<Subscription, "name" | "cancelUrl" | "category" | "currency" | "planId">,
 ): string {
   return METRIC_SPECS[metricForSubscription(sub)].question;
 }

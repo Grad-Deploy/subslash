@@ -11,6 +11,7 @@ import { buildCheckInLog, createSubscription } from "../../lib/store/records";
 import { createBackup, parseBackup } from "../../lib/backup";
 import { describeCheckInOutcome } from "../../lib/i18n/check-in-outcome";
 import { messages } from "../../lib/i18n/messages";
+import { previewFirstCheckInRisk } from "../../components/app-start/FirstCheckInCard";
 
 const NOW = new Date("2026-11-25T12:00:00");
 
@@ -146,5 +147,22 @@ describe("구글 AI 프로: Gemini를 쓴 날 + 용량", () => {
     expect(ok.ok && ok.data.usageLogs[0].storagePercent).toBe(10);
     expect(restore(120).ok).toBe(false);
     expect(restore("10").ok).toBe(false);
+  });
+});
+
+describe("첫 체크인 카드의 미리보기", () => {
+  it("저장할 때와 같은 용량 근거로 판단한다", () => {
+    // 5TB의 60%(3TB)는 더 싼 요금제에 들어가지 않아, Gemini를 안 써도 이 요금제가 필요하다.
+    for (const [days, percent] of [
+      [0, 60],
+      [0, 0.1],
+      [3, 30],
+      [20, undefined],
+    ] as const) {
+      expect(previewFirstCheckInRisk(aiPro(percent), days)).toBe(
+        checkIn(days, percent).log.riskLevel,
+      );
+    }
+    expect(previewFirstCheckInRisk(aiPro(60), 0)).toBe("green");
   });
 });

@@ -3,16 +3,15 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import {
-  asksFreeTier,
   clampQuantity,
   formatCurrency,
   getMyMonthlyShareAmount,
   metricRiskLevel,
-  storagePlanFit,
   type RiskLevel,
   type Subscription,
 } from "@subslash/shared";
 import { currentMetricFor } from "@lib/check-in-metric";
+import { checkInEvidence } from "@lib/store/records";
 import { useT, useServiceNames } from "@lib/i18n";
 import { ServiceLogo } from "@components/subscription/ServiceLogo";
 import { RiskBadge } from "@components/dashboard/RiskBadge";
@@ -26,17 +25,15 @@ interface FirstCheckInCardProps {
 
 /**
  * 첫 체크인 카드의 실시간 프리뷰 위험도. 스토어 `buildCheckInLog`가 저장할 때 쓰는 것과 같은
- * 지표(`currentMetricFor`)·수량 범위(`clampQuantity`)·내 몫(`getMyMonthlyShareAmount`)·
- * 저장 공간 요금제 적합도(`storagePlanFit`)·무료 요금제 응답(`asksFreeTier` + `freeTierAnswer`)으로 계산한다.
+ * 지표(`currentMetricFor`)·수량 범위(`clampQuantity`)·내 몫(`getMyMonthlyShareAmount`)·근거(`checkInEvidence`)로
+ * 계산한다.
  */
 export function previewFirstCheckInRisk(subscription: Subscription, count: number): RiskLevel {
   const metric = currentMetricFor(subscription);
   const monthly = getMyMonthlyShareAmount(subscription);
   const quantity = clampQuantity(metric, count);
-  const fit = metric === "storage" ? storagePlanFit(subscription, quantity) : null;
-  const freeTier =
-    metric === "days" && asksFreeTier(subscription) ? (subscription.freeTierAnswer ?? null) : null;
-  return metricRiskLevel(metric, monthly, quantity, fit, freeTier, null);
+  const { storageFit, freeTier, aiStorage } = checkInEvidence(subscription, metric, quantity);
+  return metricRiskLevel(metric, monthly, quantity, storageFit, freeTier, null, aiStorage);
 }
 
 /**
