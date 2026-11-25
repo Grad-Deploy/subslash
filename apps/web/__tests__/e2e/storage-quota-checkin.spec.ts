@@ -2,7 +2,7 @@ import { test, expect, type BrowserContext } from "@playwright/test";
 
 const GIB = 1024 ** 3;
 
-/** 구글 원 AI 프로 5TB 하나를 둔 저장소. */
+/** 구글 원 구독 하나를 둔 저장소. */
 function seed(planId: string, sharingCount?: number) {
   return JSON.stringify({
     state: {
@@ -58,8 +58,8 @@ test.describe("구글 원 체크인의 사용량 측정 (E2E)", () => {
     page,
     context,
   }) => {
-    await fakeWebApp(context, Math.round(3.42 * GIB), 5120 * GIB);
-    const dialog = await openCheckIn(page, seed("ai-pro"));
+    await fakeWebApp(context, Math.round(0.5 * GIB), 100 * GIB);
+    const dialog = await openCheckIn(page, seed("basic"));
     const input = dialog.getByRole("spinbutton");
 
     const popup = context.waitForEvent("page");
@@ -70,8 +70,23 @@ test.describe("구글 원 체크인의 사용량 측정 (E2E)", () => {
     await expect.poll(() => new URL(done.url()).hash).toBe("");
 
     await expect(input).toHaveValue("1");
-    await expect(dialog.getByText("5TB 중 3.42GB")).toBeVisible();
     await expect(dialog.getByText(/1%로 채웠어요/)).toBeVisible();
+  });
+
+  // AI 요금제는 Gemini 쓴 날과 용량 비율 칸이 따로 있고, 용량은 반올림하지 않은 소수로 채운다.
+  test("AI 요금제는 용량 칸에 소수 비율을 그대로 채운다", async ({ page, context }) => {
+    await fakeWebApp(context, Math.round(3.42 * GIB), 5120 * GIB);
+    const dialog = await openCheckIn(page, seed("ai-pro"));
+    const input = dialog.getByRole("spinbutton", { name: "요금제 용량 중 얼마나 쓰고 있어요?" });
+
+    const popup = context.waitForEvent("page");
+    await dialog.getByRole("button", { name: "Google 계정에서 사용량 측정" }).click();
+    await (await popup).waitForURL(/\/storage-quota\/done/);
+
+    // 3.42GB / 5TB = 0.0668% — 스토어가 소수 둘째 자리로 둔다.
+    await expect(input).toHaveValue("0.07");
+    await expect(dialog.getByText("5TB 중 3.42GB")).toBeVisible();
+    await expect(dialog.getByText(/1%로 채웠어요/)).toHaveCount(0);
   });
 
   test("한도가 등록한 요금제와 다르면 채우지 않고 이유를 말한다", async ({ page, context }) => {

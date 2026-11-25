@@ -12,6 +12,7 @@ import {
   getMyMonthlyShareAmount,
   storagePlanFit,
   asksFreeTier,
+  isAiStoragePlan,
   DAY_MS,
 } from "@subslash/shared";
 import { cn } from "@lib/utils";
@@ -23,6 +24,7 @@ import { unitCostText } from "@lib/i18n/check-in-text";
 import { unitCostPart } from "@subslash/shared";
 import { FreeTierQuestion } from "./FreeTierQuestion";
 import { GoogleStorageCheck } from "./GoogleStorageCheck";
+import { AiStorageQuestion } from "./AiStorageQuestion";
 
 // 폰 기록 한 줄(안드로이드 앱 전용). 웹 번들에 들어가지 않게 앱 빌드에서만 불러온다.
 const AppPhoneMetricHint = IS_APP_BUILD
@@ -177,6 +179,11 @@ export function MetricQuantityInput({
       {/* 무료 요금제가 있는 AI·업무 도구는 쓴 날만으로 판단하지 않는다. */}
       {metric === "days" && asksFreeTier(subscription) && (
         <FreeTierQuestion subscriptionId={subscription.id} />
+      )}
+
+      {/* 용량과 AI를 함께 주는 요금제(구글 AI 프로)는 해지하면 저장한 것도 잃어 용량도 묻는다. */}
+      {metric === "days" && isAiStoragePlan(subscription) && (
+        <AiStorageQuestion subscriptionId={subscription.id} />
       )}
 
       {AppPhoneMetricHint && (metric === "days" || metric === "hours") && (

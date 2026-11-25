@@ -123,6 +123,8 @@ export interface SubSlashStore {
   dismissCancelNotice: (id: string) => void;
   /** 체크인의 "무료 요금제로도 충분했을까요?" 답을 적는다(무료 요금제가 있는 AI·업무 도구). */
   setFreeTierAnswer: (id: string, answer: FreeTierAnswer) => void;
+  /** 체크인에서 적은 용량 비율(용량과 AI를 함께 주는 요금제). null이면 지운다(모름). */
+  setStoragePercent: (id: string, percent: number | null) => void;
   deleteSubscription: (id: string) => void;
   /** 여러 구독을 한 번에 지운다(체크인 기록도). 절약 현황에서도 빠진다. */
   deleteSubscriptions: (ids: string[]) => void;

@@ -930,9 +930,23 @@ export const POPULAR_SERVICES: ServicePreset[] = [
     nameKo: "Google AI Pro (Gemini Advanced)",
     category: "ai",
     defaultAmount: null,
+    // 구글 원 요금제와 같은 상품이다(one.google.com/about/plans, 2026-11-25 확인: AI Plus 2TB ₩11,900, AI Pro 5TB
+    // ₩29,000). 용량·Gemini를 같게 적어, 어느 쪽으로 등록해도 같은 판정이 나온다(utils/storagePlan의 aiStorageFit).
     plans: [
-      { id: "ai-plus", name: "Google AI Plus", amount: 11900 },
-      { id: "ai-pro", name: "Google AI Pro", amount: 29000 },
+      {
+        id: "ai-plus",
+        name: "Google AI Plus",
+        amount: 11900,
+        storageGB: 2000,
+        extras: "Google AI Plus의 Gemini 기능",
+      },
+      {
+        id: "ai-pro",
+        name: "Google AI Pro",
+        amount: 29000,
+        storageGB: 5000,
+        extras: "Google AI Pro의 Gemini 기능",
+      },
     ],
     currency: "KRW",
     cancelUrl: "https://play.google.com/store/account/subscriptions",

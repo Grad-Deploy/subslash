@@ -1,5 +1,6 @@
 import {
   GOOD_AT,
+  GOOGLE_FREE_STORAGE_GB,
   calculateCostPerUse,
   formatAmount,
   formatCurrency,
@@ -76,13 +77,42 @@ export function describeCheckInOutcome(t: Messages, outcome: CheckInOutcome): st
       }
     }
   })();
-  const withFreeTier = outcome.freeTierEnough ? `${message} ${o.freeTierEnough}` : message;
+  const withStorage = `${message}${aiStorageNote(t, outcome, money)}`;
+  const withFreeTier = outcome.freeTierEnough ? `${withStorage} ${o.freeTierEnough}` : withStorage;
   // PC 기록의 토큰 근거가 있으면(쓴 날로 재는 AI 구독) 구독료의 몇 배를 뽑아 썼는지 덧붙인다.
   const ratio = outcome.apiValueRatio;
   if (ratio === null || ratio === undefined) return withFreeTier;
   return `${withFreeTier} ${
     ratio >= 1 ? o.tokensOver(formatRatio(ratio)) : o.tokensUnder(Math.round(ratio * 100))
   }`;
+}
+
+/**
+ * 용량과 AI를 함께 주는 요금제(구글 AI 프로)에서 함께 적은 용량의 한 마디. 용량 때문에 이 요금제가 필요하면 그렇게
+ * 말하고, 더 작은 AI 요금제에 들어가면 그것을 권한다 — Gemini를 '잘 씀'만큼(GOOD_AT.days) 썼으면 권하지 않는다.
+ * 작은 요금제는 Gemini 한도도 작아, 많이 쓰는 사람에게 맞는지는 알 수 없다.
+ */
+function aiStorageNote(
+  t: Messages,
+  outcome: CheckInOutcome,
+  money: (amount: number) => string,
+): string {
+  const fit = outcome.aiStorage;
+  if (!fit || fit.percent === 0) return "";
+  const o = t.checkin.outcome;
+  const used = t.checkin.input.storageGB(fit.usedGB);
+  if (fit.needsThisPlan) return ` ${o.aiStorageNeeded(used)}`;
+  // Gemini를 안 썼으면 AI가 없는 요금제도 권하고, 무료 용량에 들어가면 아무 요금제도 권하지 않는다.
+  if (outcome.quantity === 0) {
+    if (fit.fitsFree) return ` ${o.aiStorageFree(used, GOOGLE_FREE_STORAGE_GB)}`;
+    return fit.cheapest
+      ? ` ${o.aiStorageCheapest(used, fit.cheapest.planName, money(fit.cheapest.amount))}`
+      : "";
+  }
+  if (fit.smallerAi && outcome.quantity < GOOD_AT.days) {
+    return ` ${o.aiStorageSmaller(used, fit.smallerAi.planName, money(fit.smallerAi.amount))}`;
+  }
+  return "";
 }
 
 /** 일상 소비재로 환산한 비교 한 줄과 설명 한 문장. */

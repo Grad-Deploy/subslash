@@ -15,6 +15,9 @@ import { serviceIdName } from "../service-name";
  * - 저장 공간(아이클라우드·구글 원·네이버 MYBOX): 앱을 열지 않아도 사진이 올라가며 제 일을 한다.
  * - 다른 앱 안에서 쓰는 것(카카오 이모티콘).
  * - PC에서 쓰는 도구(Cursor·GitHub Copilot)와 앱이 여럿인 묶음(어도비·마이크로소프트 365).
+ * - 구글 AI 프로: Gemini 앱(com.google.android.apps.bard)은 화면을 Google 앱으로 넘겨, 실제 대화 시간이
+ *   Google 앱 이름으로 쌓인다(2026-11-25 삼성 기기 확인 — Gemini 앱은 한 달 0분). 요금제의 드라이브 용량도
+ *   폰 기록으로는 모른다. 잴 수 없는 것을 0으로 읽어 '안 씀'으로 알리지 않도록 체크인으로 잰다.
  *
  * 여기에 패키지를 더하면 apps/mobile/android/app/src/main/AndroidManifest.xml의 <queries>에도 더한다
  * (안드로이드 11부터 매니페스트에 적지 않은 앱은 설치 여부를 알 수 없다). 테스트가 둘을 맞춰 본다.
@@ -33,7 +36,6 @@ export const USAGE_PACKAGES: Readonly<Record<string, readonly string[]>> = {
   spotify: ["com.spotify.music"],
   melon: ["com.iloen.melon"],
   "apple-music": ["com.apple.android.music"],
-  "google-ai-pro": ["com.google.android.apps.bard"],
   notion: ["notion.id"],
   "chatgpt-plus": ["com.openai.chatgpt"],
   "claude-pro": ["com.anthropic.claude"],
